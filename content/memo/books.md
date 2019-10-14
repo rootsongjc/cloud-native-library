@@ -19,9 +19,9 @@ toc: true
 ## 2016 年 {#year-2016}
 
 - 2016 年 1 月，[《Kubernetes权威指南 : 从 Docker 到 Kubernetes 实践全接触》](https://book.douban.com/subject/26689184/)，龚正 吴治辉 王伟 崔秀龙 闫健勇 崔晓宁 刘晓红 著
-- 2014 年 4 月，[《第一本 Docker 书修订版》](https://book.douban.com/subject/26780404/)，James Turnbull 著，李兆海 刘斌 巨震 著，人民邮电出版社
+- 2014 年 4 月，[《第一本 Docker 书修订版》](https://book.douban.com/subject/26780404/)，James Turnbull 著，李兆海 刘斌 巨震 译，人民邮电出版社
 - 2016 年 10 月，[《Docker 容器与容器云（第2版）》](https://item.jd.com/12052716.html)，浙江大学 SEL 实验室 著，人民邮电出版社
-- 2016 年 10 月，[《Kubernetes 权威指南：从 Docker 到 Kubernetes 实践全接触（第二版）》](https://book.douban.com/subject/26902153/)，龚正 吴治辉 王伟 崔秀龙 闫健勇 崔晓宁 刘晓红 著，
+- 2016 年 10 月，[《Kubernetes 权威指南：从 Docker 到 Kubernetes 实践全接触（第二版）》](https://book.douban.com/subject/26902153/)，龚正 吴治辉 王伟 崔秀龙 闫健勇 崔晓宁 刘晓红 著，电子工业出版社
 - 2016 年11 月，[《Docker 实战》](https://item.jd.com/12013041.html)，Jeff Nickoloff 著，胡震 译，电子工业出版社
 - 2016 年 11 月，[《循序渐进学 Docker》](https://item.jd.com/12015655.html)，李金榜，尹烨，刘天斯，陈纯 著，电子工业出版社
 
@@ -32,6 +32,7 @@ toc: true
 - 2017 年 6 月，[《Serverless 架构：无服务器单页应用开发》](https://item.jd.com/12103347.html)，Ben Rady 著，郑美赞 简传挺 译
 - 2017 年 7 月，[《自动动手写 Docker》](https://book.douban.com/subject/27082348/)，陈显鹭 王炳燊 秦妤嘉 著，电子工业出版社 
 - 2017 年 8 月，[《Docker 从入门到实战》](https://item.jd.com/12230240.html)，黄靖钧 著，机械工业出版社
+- 2017 年 8 月，[《云原生应用架构实践》](https://item.jd.com/12219496.html)，网易云基础服务架构团队 著，电子工业出版社
 - 2017 年9 月，[《Kubernetes权威指南：从Docker到Kubernetes实践全接触（纪念版）》](https://item.jd.com/12230380.html)，闫健勇，龚正，吴治辉，王伟，崔秀龙 著，电子工业出版社
 
 ## 2018年 {#year-2018}
@@ -53,7 +54,7 @@ toc: true
 - 2018 年 11 月，[《Docker 微服务架构实战》](https://item.jd.com/12479920.html)，蒋彪 著，电子工业出版社
 - 2018 年 12月：[《Kubernetes 即学即用》](https://item.jd.com/12476325.html)，Kelsey Hightower & Brendan Burns & Joe Beda 著，韩波 译，中国电力出版社
 - 2018 年 12 月，[《Kubernetes 进阶实战》](https://item.jd.com/12477105.html)，马永亮 著，机械工业出版社
-- 2018 年 12 月，[《Service Mesh 实战：基于Linkerd 和 Kubernetes 的微服务实践》](https://item.jd.com/12494016.html)，杨章显 著,
+- 2018 年 12 月，[《Service Mesh 实战：基于Linkerd 和 Kubernetes 的微服务实践》](https://item.jd.com/12494016.html)，杨章显 著，机械工业出版社
 - 2019 年 1 月，[《深入浅出 Istio：Service Mesh 快速入门与实践》](https://item.jd.com/12527008.html)，崔秀龙 著，电子工业出版社
 
 ## 2019 年 {#year-2019}
