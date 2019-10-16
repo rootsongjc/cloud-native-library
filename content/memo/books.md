@@ -32,6 +32,7 @@ toc: true
 - 2017 年 6 月，[《Serverless 架构：无服务器单页应用开发》](https://item.jd.com/12103347.html)，Ben Rady 著，郑美赞 简传挺 译
 - 2017 年 7 月，[《自己动手写 Docker》](https://book.douban.com/subject/27082348/)，陈显鹭 王炳燊 秦妤嘉 著，电子工业出版社 
 - 2017 年 8 月，[《Docker 从入门到实战》](https://item.jd.com/12230240.html)，黄靖钧 著，机械工业出版社
+- 2017 年 8 月，[《Cloud Native Go：构建基于Go和React的云原生Web应用与服务》](https://item.jd.com/12123347.html)，Kevin Hoffman、Dan Nemeth 著，宋净超、吴迎松、马超、徐蓓 译
 - 2017 年 8 月，[《云原生应用架构实践》](https://item.jd.com/12219496.html)，网易云基础服务架构团队 著，电子工业出版社
 - 2017 年 9 月，[《Kubernetes权威指南：从Docker到Kubernetes实践全接触（纪念版）》](https://item.jd.com/12230380.html)，闫健勇，龚正，吴治辉，王伟，崔秀龙 著，电子工业出版社
 
