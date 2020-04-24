@@ -69,4 +69,13 @@ toc: true
 - 2019 年 4 月，[《深入浅出 Prometheus：原理、应用、源码与拓展详解》](https://item.jd.com/12573580.html)，陈晓宇、杨川胡、陈啸 著，电子工业出版社
 - 2019 年 6 月，[《Kubernetes 权威指南：从 Docker 到 Kubernetes 实践全接触（第4版）》](https://item.jd.com/12601558.html)，龚正，吴治辉，崔秀龙，闫健勇 著，电子工业出版社
 - 2019 年 7 月，[《云原生服务网格 Istio：原理、实践、架构与源码解析》](https://item.jd.com/12538407.html)，张超盟，章鑫，徐中虎，徐飞 编，电子工业出版社
+- 2019 年 7 月，[《基于 Kubernetes 的 DevOps 实践：容器加速软件交付》](https://item.jd.com/12666062.html)，Hideto Saito 著，史天 译，电子工业出版社
 - 2019 年 8 月，[《Prometheus 监控实战》](https://item.jd.com/12564143.html)，James Turnbull 著，史天，张媛，肖力 译，机械工业出版社
+- 2019 年 8 月，[《再也不踩坑的 Kubernetes 实战指南》](https://item.jd.com/12708798.html)，杜宽 著，清华大学出版社
+- 2019 年 9 月，[《Istio 实战指南》](https://item.jd.com/12682850.html)，马若飞 著，人民邮电出版社
+- 2019 年 11 月，[《Kubernetes 网络权威指南：基础、原理与实践》](https://item.jd.com/12724298.html)，杜军 著，电子工业出版社
+
+## 2020 年
+
+- 2020 年 3 月，[《Istio 服务网格技术解析与实践》](https://item.jd.com/12814392.html)，王夕宁 著，机械工业出版社
+- 2020 年 4 月，[《Docker + Kubernetes 应用开发与快速上云》](https://item.jd.com/12831782.html)，李文强 著，机械工业出版社
