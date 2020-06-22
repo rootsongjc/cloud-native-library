@@ -79,3 +79,5 @@ toc: true
 
 - 2020 年 3 月，[《Istio 服务网格技术解析与实践》](https://item.jd.com/12814392.html)，王夕宁 著，机械工业出版社
 - 2020 年 4 月，[《Docker + Kubernetes 应用开发与快速上云》](https://item.jd.com/12831782.html)，李文强 著，机械工业出版社
+- 2020 年 5 月，[《云原生：运用容器、函数计算和数据构建下一代应用》](https://item.jd.com/12867066.html)，Boris Scholl 著，季奔牛 译，机械工业出版社
+- 2020 年 6 月，[《Kubernetes 源码剖析》](https://item.jd.com/70214929577.html)，郑东旭 著，电子工业出版社
