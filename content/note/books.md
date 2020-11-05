@@ -83,4 +83,4 @@ toc: true
 - 2020 年 5 月，[《云原生：运用容器、函数计算和数据构建下一代应用》](https://item.jd.com/12867066.html)，Boris Scholl 著，季奔牛 译，机械工业出版社
 - 2020 年 6 月，[《Kubernetes 源码剖析》](https://item.jd.com/70214929577.html)，郑东旭 著，电子工业出版社
 - 2020 年 8 月，[《云原生模式：设计拥抱变化的软件》](https://item.jd.com/12704245.html)，Cornelia Davis 著，张若飞、宋净超 译，电子工业出版社
-- 2020 年 11 月，[《Prometheus 云原生监控》](https://item.jd.com/10023693551989.html)，朱正科 著，机械工业出版社
+- 2020 年 11 月，[《Prometheus 云原生监控》](https://item.jd.com/10023693551989.html)，朱政科 著，机械工业出版社
