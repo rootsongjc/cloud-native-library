@@ -1,14 +1,13 @@
-# Cloud Native Wiki
+# 云原生资料库
 
-云原生百科|编年史。
+搜罗整理自 2017 年以来的云原生资料，涵盖容器、Kubernetes、服务网格、开源布道。在这里，你可以一站式了解学习云原生知识！
 
-- Github：https://github.com/rootsonjgc/cloud-native
-- Online：https://jimmysong.io/cloud-native
+资料库地址：<https://jimmysong.io/docs/>
 
-## License
+内容涵盖：
 
-<p align="left">
-  <img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g7m9ofbzirj302g00vq2p.jpg" alt="CC4 License"/>
-</p>
+- 开源电子书
+- 出版物
+- 译文
 
-[署名-非商业性使用-相同方式共享 4.0 (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)
+由 [Wowchemy](https://wowchemy.com/?utm_campaign=poweredby) 支持发布 —— 免费[开源](https://github.com/wowchemy/wowchemy-hugo-themes)网站，为创作者赋能。

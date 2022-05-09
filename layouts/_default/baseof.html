@@ -1,50 +1,63 @@
 <!DOCTYPE html>
-<html lang="{{.Site.LanguageCode}}">
+{{- $language_code := site.LanguageCode | default "en-us" -}}
+<html lang="{{$language_code}}" {{ if in site.Data.i18n.rtl.rtl $language_code }}dir="rtl"{{end}}>
 
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta http-equiv="X-UA-Compatible" content="ie=edge">
-	{{- with .Site.Params.themeColor }}
-	<meta name="theme-color" content="{{.}}">
-	<meta name="msapplication-TileColor" content="{{.}}">
-	{{- end }}
-	{{- partial "structured-data.html" . }}
-	{{- partial "favicons.html" }}
-	<title>{{.Title}}</title>
-	{{ range .AlternativeOutputFormats -}}
-		{{ printf `<link rel="%s" type="%s+%s" href="%s" title="%s" />` .Rel .MediaType.Type .MediaType.Suffix .Permalink $.Site.Title | safeHTML }}
-	{{ end -}}
-	{{ $style := resources.Get "scss/style.scss" | resources.ExecuteAsTemplate "css/style.css" . | toCSS | minify | fingerprint -}}
-	<link rel="stylesheet" href="{{ $style.Permalink | relURL }}">
-	{{- block "head" . -}}{{- end }}
-	{{- range .Site.Params.customCSS }}
-	<link rel="stylesheet" href="{{ . | absURL }}">
-	{{- end }}
-	{{- if templates.Exists "partials/extra-head.html" -}}
-	{{ partial "extra-head.html" . }}
-	{{- end }}
-</head>
+{{ partial "site_head" . }}
 
-<body id="page">
-	{{ block "header" . -}}{{ end -}}
-	{{ block "main" . -}}{{ end -}}
-	{{ block "footer" . -}}{{ end }}
+{{ $show_navbar := ((site.Params.header.navbar.enable | default true) | and (ne .Params.header.navbar.enable false)) | or .Params.header.navbar.enable }}
+{{- $highlight_active_link := site.Params.header.navbar.highlight_active_link | default true -}}
+<body id="top" data-spy="scroll" {{ if $show_navbar }}data-offset="70"{{end}} data-target="{{ if or .IsHome (eq .Type "widget_page") | and $highlight_active_link }}#navbar-main{{else}}#TableOfContents{{end}}" class="page-wrapper {{with .Params.design.css_class}}{{.}}{{end}} {{ if not (.Scratch.Get "light") }}dark{{end}} {{ if not $show_navbar }}no-navbar{{end}}" {{with .File}}data-wc-page-id="{{.File.UniqueID}}"{{end}} {{with .Params.design.css_style}}style="{{. | safeCSS}}"{{end}}>
 
-	{{ $main := resources.Get "js/main.js" -}}
-	{{ if .Site.Params.code_copy_button | default true -}}
-		{{ $codeCopy := resources.Get "js/code-copy.js" -}}
-		{{ $script := slice $main $codeCopy | resources.Concat "js/bundle.js" | minify | fingerprint -}}
-		<script src="{{ $script.Permalink }}" {{ printf "integrity=%q" $script.Data.Integrity | safeHTMLAttr }} crossorigin="anonymous"></script>
-	{{ else -}}
-		{{ $script := $main | minify | fingerprint -}}
-		<script src="{{ $script.Permalink }}" {{ printf "integrity=%q" $script.Data.Integrity | safeHTMLAttr }} crossorigin="anonymous"></script>
-	{{ end }}
+  {{/* Initialise Wowchemy. */}}
+  {{ $js_license := printf "/*! Wowchemy v%s | https://wowchemy.com/ */\n" site.Data.wowchemy.version }}
+  {{ $js_license := $js_license | printf "%s/*! Copyright 2016-present George Cushen (https://georgecushen.com/) */\n" }}
+  {{ $js_license := $js_license | printf "%s/*! License: https://github.com/wowchemy/wowchemy-hugo-themes/blob/main/LICENSE.md */\n" }}
+  {{ $js_bundle_head := $js_license | resources.FromString "js/bundle-head.js" }}
+  {{ $wcDarkLightEnabled := (and site.Params.appearance.theme_day site.Params.appearance.theme_night) }}
+  {{ $wcIsSiteThemeDark := not (.Scratch.Get "light") | default false }}
+  {{ $js_params := dict "wcDarkLightEnabled" $wcDarkLightEnabled "wcIsSiteThemeDark" $wcIsSiteThemeDark }}
+  {{ $js_bundle := resources.Get "js/wowchemy-init.js" | js.Build (dict "params" $js_params) }}
+  {{- if hugo.IsProduction -}}
+    {{- $js_bundle = $js_bundle | js.Build (dict "format" "iife") | minify -}}
+  {{- else -}}
+    {{- $js_bundle = $js_bundle | js.Build (dict "format" "iife" "sourceMap" "inline") -}}
+  {{ end }}
+  {{ $js_bundle := slice $js_bundle_head $js_bundle | resources.Concat "js/wowchemy-init.min.js" }}
+  {{- if hugo.IsProduction -}}
+    {{ $js_bundle = $js_bundle | fingerprint "md5" }}
+  {{- end -}}
+  <script src="{{ $js_bundle.RelPermalink }}"></script>
 
-	{{- partial "analytics.html" . }}
-	{{- if templates.Exists "partials/extra-foot.html" -}}
-	{{ partial "extra-foot.html" . }}
-	{{- end }}
+  {{ partial "search" . }}
+
+  <div class="page-header">
+    {{ partial "navbar" . }}
+  </div>
+
+  <div class="page-body">
+    {{/* Breadcrumb */}}
+    {{/* Don't apply to Book layout as that has different breadcrumb placement. */}}
+    {{ if .Params.show_breadcrumb | and (ne .Type "book") }}
+      <!-- Use page bg color rather than any color applied to article-container. -->
+      {{ $class := cond .IsSection "universal-wrapper" "article-container" }}
+      <div class="{{$class}} py-1" style="background: initial">
+        {{ partial "components/breadcrumb" . }}
+      </div>
+    {{ end }}
+
+    {{ block "main" . }}{{ end }}
+  </div>
+
+  <div class="page-footer">
+    {{/* Docs and Updates layouts include the site footer in a different location. */}}
+    {{ if not (in (slice "book" "docs" "updates") .Type) }}
+    <div class="container">
+      {{ partial "site_footer" . }}
+    </div>
+    {{ end }}
+  </div>
+
+  {{ partial "site_js" . }}
+
 </body>
-
 </html>

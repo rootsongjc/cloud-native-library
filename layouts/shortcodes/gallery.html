@@ -1,0 +1,33 @@
+{{/* Gallery Shortcode for Wowchemy. */}}
+{{/* Load gallery images from media library. */}}
+
+{{/* Get album folder or default to `media/albums/gallery/`. */}}
+{{ $album := (.Get "album") | default "gallery" }}
+{{ $album_path := path.Join "media" "albums" $album "*" }}
+
+{{/* Gallery options */}}
+{{ $sort_order := .Get "order" | default "asc" }}
+{{ $resize_options := printf "%s webp" (.Get "resize_options" | default "x190") }}
+
+<div class="gallery">
+
+  {{/* Attempt to automatically load gallery images from page bundle */}}
+  {{ $images := resources.Match $album_path }}
+  {{ range (sort $images "Name" $sort_order) }}
+    {{ $image := .Resize $resize_options }}
+    {{/* Check if the user set a caption for this image */}}
+    {{ $filename := path.Base .Name }}
+    {{ $caption := "" }}
+    {{ if $.Page.Params.gallery_item }}
+      {{ range (where (where $.Page.Params.gallery_item "album" $album) "image" $filename) }}
+        {{ $caption = .caption }}
+      {{ end }}
+    {{ end }}
+    <a data-fancybox="gallery-{{$album}}" href="{{ .RelPermalink }}" {{ with $caption }}data-caption="{{.|markdownify|emojify|safeHTMLAttr}}"{{ end }}>
+      <img src="{{ $image.RelPermalink }}" loading="lazy" alt="{{ plainify $caption | default $filename }}" width="{{ $image.Width }}" height="{{ $image.Height }}">{{/* Width & height (or low res src) required for lazy loading. */}}
+    </a>
+  {{else}}
+    {{ errorf "Unable to load gallery `%s` in `%s`." $album_path .Page.File.Filename }}
+  {{end}}
+
+</div>
