@@ -5,7 +5,7 @@ tags:
   - ebook
   - translation
 date: 2019-10-21
-#external_link: https://jimmysong.io/cloud-native-infra/
+image_link: https://jimmysong.io/cloud-native-infra/
 type: publication
 ---
 
