@@ -3,6 +3,7 @@ title: 云原生基础架构
 summary: 专为 Kubernetes 而优化的 Java 解决方案
 tags:
   - ebook
+  - translation
 date: 2019-10-21
 #external_link: https://jimmysong.io/cloud-native-infra/
 type: publication

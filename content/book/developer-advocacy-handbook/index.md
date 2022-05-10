@@ -3,8 +3,9 @@ title: 开发者布道手册
 summary: 开发者布道师的自我修养
 tags:
   - ebook
+  - translation
 date: 2022-03-24
-#external_link: https://jimmysong.io/developer-advocacy-handbook/
+image_link: https://jimmysong.io/developer-advocacy-handbook/
 type: publication
 ---
 

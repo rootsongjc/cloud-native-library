@@ -33,7 +33,7 @@ weight: 2
 
 关注云原生社区微信公众号，进入公众号后台，点击 “加入我们”。
 
-![云原生社区公众号二维码](../images/cloud-native-wechat.jpg)
+![云原生社区公众号二维码](https://jimmysong.io/kubernetes-handbook/images/cloud-native-wechat.jpg "云原生社区公众号")
 
 ## 参考
 

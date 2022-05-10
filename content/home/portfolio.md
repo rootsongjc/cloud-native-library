@@ -36,6 +36,8 @@ content:
       tag: printed
     - name: 电子书
       tag: ebook
+    - name: 翻译
+      tag: translation
 
 design:
   columns: '1'

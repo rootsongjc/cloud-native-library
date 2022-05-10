@@ -4,7 +4,7 @@ summary: 从零开始学习Envoy网络代理
 tags:
   - handbook
 date: 2022-03-12
-#external_link: https://jimmysong.io/envoy-handbook/
+image_link: https://jimmysong.io/envoy-handbook/
 type: publication
 ---
 

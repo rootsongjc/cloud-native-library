@@ -4,7 +4,7 @@ summary: 无服务器架构实践手册
 tags:
   - handbook
 date: 2019-10-21
-#external_link: https://jimmysong.io/serverless-handbook/
+image_link: https://jimmysong.io/serverless-handbook/
 type: publication
 ---
 

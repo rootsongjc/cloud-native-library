@@ -4,7 +4,7 @@ summary: Docker容器化实战手册
 tags:
   - handbook
 date: 2017-10-11
-#external_link: https://jimmysong.io/docker-handbook/
+image_link: https://jimmysong.io/docker-handbook/
 type: publication
 ---
 

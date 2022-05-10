@@ -4,7 +4,7 @@ summary: 静态网站构建指南
 tags:
   - handbook
 date: 2017-10-10
-#external_link: https://jimmysong.io/hugo-handbook/
+image_link: https://jimmysong.io/hugo-handbook/
 type: publication
 ---
 

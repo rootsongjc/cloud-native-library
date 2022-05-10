@@ -15,7 +15,7 @@ weight: 3
 
 下图是 OAM 定义的云原生应用模型示意图，为了便于理解，图中相同颜色的部分为同一类别的对象定义。
 
-![云原生应用模型](https://jimmysong.io/kubernetes-handbook/images/cloud-native-app-model.png)
+![云原生应用模型](https://jimmysong.io/kubernetes-handbook/images/cloud-native-app-model.png "云原生应用模型")
 
 OAM 的规范中定义了以下对象，它们既是 OAM 规范中的基本术语也是云原生应用的基本组成。
 
@@ -31,7 +31,7 @@ OAM 规范中提供了一个使用以上对象定义云原生应用的[工作流
 
 下图是不同角色对于该模型的关注点示意图。
 
-![云原生应用模型中的目标角色](https://jimmysong.io/kubernetes-handbook/images/roles.png)
+![云原生应用模型中的目标角色](https://jimmysong.io/kubernetes-handbook/images/roles.png "云原生应用模型中的目标角色")
 
 我们可以看到对于一个云原生应用来说，不同的对象是由不同的角色来负责的：
 
@@ -78,13 +78,13 @@ OAM 规范的设计遵循了以下[原则](https://github.com/oam-dev/spec/blob/
 
 下图是 OAM 规范示意图。
 
-![OAM 规范示意图](https://jimmysong.io/kubernetes-handbook/images/oam-spec.png)
+![OAM 规范示意图](https://jimmysong.io/kubernetes-handbook/images/oam-spec.png "OAM 规范示意图")
 
 ## OAM 工作原理
 
 OAM 的工作原理如下图所示（图片引用自孙健波在《OAM: 云原生时代的应用模型与 下一代 DevOps 技术》中的分享）。
 
-![OAM 的原理](https://jimmysong.io/kubernetes-handbook/images/oam-principle.jpg)
+![OAM 的原理](https://jimmysong.io/kubernetes-handbook/images/oam-principle.jpg "OAM 的原理")
 
 OAM Spec 定义了云原生应用的规范（使用一些 [CRD](https://jimmysong.io/kubernetes-handbook/GLOSSARY.html#crd) 定义）， [KubeVela](https://kubevela.io/) 可以看做是 OAM 规范的解析器，将应用定义翻译为 Kubernetes 中的资源对象。可以将上图分为三个层次：
 

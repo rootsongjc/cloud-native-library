@@ -4,7 +4,7 @@ summary: 云原生应用架构实战手册
 tags:
   - handbook
 date: 2022-03-09
-#external_link: https://jimmysong.io/kubernetes-handbook/
+image_link: https://jimmysong.io/kubernetes-handbook/
 type: publication
 ---
 

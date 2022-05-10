@@ -4,7 +4,7 @@ summary: 云原生应用网络构建指南
 tags:
   - handbook
 date: 2022-04-04
-#external_link: https://jimmysong.io/istio-handbook/
+image_link: https://jimmysong.io/istio-handbook/
 type: publication
 ---
 
