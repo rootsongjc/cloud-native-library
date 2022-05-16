@@ -1,0 +1,1638 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+    
+  
+  <meta name="description" content="本文是一个使用 Go 语言开发 Wasm 插件验证请求负载，并将其部署到 Istio 或 Envoy 上的教程。" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://jimmysong.io/docs/translation/validating-a-request-payload-with-wasm/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/docs/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/docs/css/wowchemy.8cd079ca4607b8e20aeba027ab5ceb91.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-93485976-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+
+  function gtag() {
+      dataLayer.push(arguments);
+  }
+
+  function trackOutboundLink(url, target) {
+    gtag('event', 'click', {
+         'event_category': 'outbound',
+         'event_label': url,
+         'transport_type': 'beacon',
+         'event_callback': function () {
+           if (target !== '_blank') {
+             document.location = url;
+           }
+         }
+    });
+    console.debug("Outbound link clicked: " + url);
+  }
+
+  function onClickCallback(event) {
+    if ((event.target.tagName !== 'A') || (event.target.host === window.location.host)) {
+      return;
+    }
+    trackOutboundLink(event.target, event.target.getAttribute('target'));  
+  }
+
+  gtag('js', new Date());
+  gtag('config', 'UA-93485976-1', {});
+  gtag('set', {'cookie_flags': 'SameSite=None;Secure'});
+
+  
+  document.addEventListener('click', onClickCallback, false);
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?11f7d254cfa4e0ca44b175c66d379ecc";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/docs/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://jimmysong.io/docs/translation/validating-a-request-payload-with-wasm/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary_large_image" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://jimmysong.io/docs/translation/validating-a-request-payload-with-wasm/" />
+  <meta property="og:title" content="使用 WebAssembly 验证请求负载 | 云原生资料库" />
+  <meta property="og:description" content="本文是一个使用 Go 语言开发 Wasm 插件验证请求负载，并将其部署到 Istio 或 Envoy 上的教程。" /><meta property="og:image" content="https://jimmysong.io/docs/translation/validating-a-request-payload-with-wasm/featured.jpg" />
+    <meta property="twitter:image" content="https://jimmysong.io/docs/translation/validating-a-request-payload-with-wasm/featured.jpg" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta property="article:published_time" content="2022-05-13T21:12:00&#43;08:00" />
+    
+    <meta property="article:modified_time" content="2022-05-16T22:28:23&#43;08:00">
+  
+
+  
+
+
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>使用 WebAssembly 验证请求负载 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="8af1f26bf600892899df1a8391cdf016" >
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/docs/js/wowchemy-init.min.62d6f8dfe8493f1c68557dde65bec362.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>搜索</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>主页</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/cloud-native"><span>云原生宝典</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#portfolio"><span>书目列表</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/event"><span>活动</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io/blog/" target="_blank" rel="noopener"><span>原创</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link  active" href="/docs/translation"><span>翻译</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+
+        
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/rootsongjc/docs/" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    <article class="article">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+<div class="article-container pt-3">
+  <h1>使用 WebAssembly 验证请求负载</h1>
+
+  
+
+  
+
+
+<div class="article-metadata">
+
+  
+  
+  
+  
+  <div>
+    
+
+  <span >
+      <a href="/docs/author/liam-byrne/">Liam Byrne</a></span>
+  </div>
+  
+  
+
+  
+  <span class="article-date">
+    
+    
+      
+    
+    2022-05-16
+  </span>
+  
+
+  
+
+  
+
+  
+  
+  
+  
+
+  
+  
+  <span class="middot-divider"></span>
+  <span class="article-categories">
+    <i class="fas fa-folder mr-1"></i><a href="/docs/category/service-mesh/">Service Mesh</a></span>
+  
+
+</div>
+
+  
+
+
+
+
+<div class="btn-links mb-3">
+  
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  <a class="btn btn-outline-primary btn-page-header" href="https://www.tetrate.io/blog/validating-a-request-payload-with-wasm/" target="_blank" rel="noopener">
+    <i class="fa fa-globe mr-1"></i>原文</a>
+
+
+</div>
+
+
+</div>
+
+
+<div class="article-container container featured-image-wrapper mt-4 mb-4">
+  <div style="position: relative">
+    <img src="/docs/translation/validating-a-request-payload-with-wasm/featured_huc0e17e3f03e9dccc41a7f9d50cc87bba_23807_1200x2500_fit_q75_h2_lanczos.webp" width="1200" height="800" alt="" class="featured-image">
+    <span class="article-header-caption">© <a href="https://jimmysong.io" target="_blank" rel="noopener"><strong>jimmysong.io</strong></a></span>
+  </div>
+</div>
+
+
+
+  <div class="article-container">
+
+    <div class="article-style">
+      <h3 id="什么是-wasm-插件">什么是 Wasm 插件？</h3>
+<p>你可以使用 Wasm 插件在数据路径上添加自定义代码，轻松地扩展服务网格的功能。可以用你选择的语言编写插件。目前，有 AssemblyScript（TypeScript-ish）、C++、Rust、Zig 和 Go 语言的 Proxy-Wasm SDK。</p>
+<p>在这篇博文中，我们描述了如何使用 Wasm 插件来验证一个请求的有效载荷。这是 Wasm 与 Istio 的一个重要用例，也是你可以使用 Wasm 扩展 Istio 的许多方法的一个例子。您可能有兴趣阅读我们关于<a href="https://www.tetrate.io/blog/category/wasm/" target="_blank" rel="noopener">在 Istio 中使用 Wasm 的博文</a>，并观看我们关于在 Istio 和 Envoy 中使用 Wasm 的免费研讨会的录音。</p>
+<h3 id="何时使用-wasm-插件">何时使用 Wasm 插件？</h3>
+<p>当你需要添加 Envoy 或 Istio 不支持的自定义功能时，你应该使用 Wasm 插件。使用 Wasm 插件来添加自定义验证、认证、日志或管理配额。</p>
+<p>在这个例子中，我们将构建和运行一个 Wasm 插件，验证请求 body 是 JSON，并包含两个必要的键 ——<code>id</code> 和 <code>token</code>。</p>
+<h3 id="编写-wasm-插件">编写 Wasm 插件</h3>
+<p>这个示例使用 <a href="https://tinygo.org/" target="_blank" rel="noopener">tinygo</a> 来编译成 Wasm。确保你已经安装了 <a href="https://tinygo.org/getting-started/install/" target="_blank" rel="noopener">tinygo 编译器</a>。</p>
+<h4 id="配置-wasm-上下文">配置 Wasm 上下文</h4>
+<p>首先配置 Wasm 上下文，这样 tinygo 文件才能操作 HTTP 请求：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">package</span> <span class="nx">main</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;github.com/tidwall/gjson&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// SetVMContext 是配置整个 Wasm VM 的入口。请确保该入口在 main 函数中调用，否则 VM 将启动失败。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">proxywasm</span><span class="p">.</span><span class="nf">SetVMContext</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">vmContext</span><span class="p">{})</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// vmContext 实现 proxy-wasm-go SDK 的 types.VMContext 接口。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">type</span> <span class="nx">vmContext</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 在这里嵌入默认的虚拟机环境，我们不需要实现所有方法。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">types</span><span class="p">.</span><span class="nx">DefaultVMContext</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// 复写 types.DefaultVMContext
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="o">*</span><span class="nx">vmContext</span><span class="p">)</span> <span class="nf">NewPluginContext</span><span class="p">(</span><span class="nx">contextID</span> <span class="kt">uint32</span><span class="p">)</span> <span class="nx">types</span><span class="p">.</span><span class="nx">PluginContext</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="o">&amp;</span><span class="nx">pluginContext</span><span class="p">{}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// pluginContext 实现 proxy-wasm-go SDK 的 types.PluginContext 接口
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">type</span> <span class="nx">pluginContext</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 在这里侵入默认的插件上下文，我们不需要实现所有方法。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">types</span><span class="p">.</span><span class="nx">DefaultPluginContext</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// 复写 types.DefaultPluginContext
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">ctx</span> <span class="o">*</span><span class="nx">pluginContext</span><span class="p">)</span> <span class="nf">NewHttpContext</span><span class="p">(</span><span class="nx">contextID</span> <span class="kt">uint32</span><span class="p">)</span> <span class="nx">types</span><span class="p">.</span><span class="nx">HttpContext</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="o">&amp;</span><span class="nx">payloadValidationContext</span><span class="p">{}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// payloadValidationContext 实现 proxy-wasm-go SDK 的 types.HttpContext 接口
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">type</span> <span class="nx">payloadValidationContext</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 在这里嵌入默认的根 http 上下文，我们不需要实现所有方法。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">types</span><span class="p">.</span><span class="nx">DefaultHttpContext</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">totalRequestBodySize</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><h4 id="验证负载">验证负载</h4>
+<p>内容类型头是通过实现 <code>OnHttpRequestHeaders</code> 来验证的，一旦从客户端收到请求头，就会调用该头。</p>
+<p><code>proxywasm.SendHttpResponse</code> 用于响应 403 forbidden 的错误代码和信息，如果内容类型丢失的话。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">ctx</span> <span class="o">*</span><span class="nx">payloadValidationContext</span><span class="p">)</span> <span class="nf">OnHttpRequestHeaders</span><span class="p">(</span><span class="nx">numHeaders</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">endOfStream</span> <span class="kt">bool</span><span class="p">)</span> <span class="nx">types</span><span class="p">.</span><span class="nx">Action</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">contentType</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">proxywasm</span><span class="p">.</span><span class="nf">GetHttpRequestHeader</span><span class="p">(</span><span class="s">&#34;content-type&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="o">||</span> <span class="nx">contentType</span> <span class="o">!=</span> <span class="s">&#34;application/json&#34;</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">// 如果 header 没有期望的 content type，返回 403 响应
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">proxywasm</span><span class="p">.</span><span class="nf">SendHttpResponse</span><span class="p">(</span><span class="mi">403</span><span class="p">,</span> <span class="kc">nil</span><span class="p">,</span> <span class="p">[]</span><span class="nb">byte</span><span class="p">(</span><span class="s">&#34;content-type must be provided&#34;</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">proxywasm</span><span class="p">.</span><span class="nf">LogErrorf</span><span class="p">(</span><span class="s">&#34;failed to send the 403 response: %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">// 终止 ActionPause 对流量的进一步处理
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="k">return</span> <span class="nx">types</span><span class="p">.</span><span class="nx">ActionPause</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="c1">// ActionContinue 让主机继续处理 body
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="k">return</span> <span class="nx">types</span><span class="p">.</span><span class="nx">ActionContinue</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>请求主体是通过实现 <code>OnHttpRequestBody</code> 来验证的，每次从客户端接收到请求的一个块时，都会调用该请求。这是通过等待直到 <code>endOfStream</code> 为真并记录所有收到的块的总大小来完成的。一旦收到整个主体，就会使用 <code>proxywasm.GetHttpRequestBody</code> 读取，然后可以使用 golang 进行验证。</p>
+<p>这个例子使用 <code>gjson</code>，因为 tinygo 不支持 golang 的默认 JSON 库。它检查有效载荷是否是有效的 JSON，以及键 <code>id</code> 和 <code>token</code> 是否存在。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">ctx</span> <span class="o">*</span><span class="nx">payloadValidationContext</span><span class="p">)</span> <span class="nf">OnHttpRequestBody</span><span class="p">(</span><span class="nx">bodySize</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">endOfStream</span> <span class="kt">bool</span><span class="p">)</span> <span class="nx">types</span><span class="p">.</span><span class="nx">Action</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">ctx</span><span class="p">.</span><span class="nx">totalRequestBodySize</span> <span class="o">+=</span> <span class="nx">bodySize</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="p">!</span><span class="nx">endOfStream</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">// OnHttpRequestBody 等待收到到 body 的全部才开始处理。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="k">return</span> <span class="nx">types</span><span class="p">.</span><span class="nx">ActionPause</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="nx">body</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">proxywasm</span><span class="p">.</span><span class="nf">GetHttpRequestBody</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">ctx</span><span class="p">.</span><span class="nx">totalRequestBodySize</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">proxywasm</span><span class="p">.</span><span class="nf">LogErrorf</span><span class="p">(</span><span class="s">&#34;failed to get request body: %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="k">return</span> <span class="nx">types</span><span class="p">.</span><span class="nx">ActionContinue</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="p">!</span><span class="nf">validatePayload</span><span class="p">(</span><span class="nx">body</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">// 如果验证失败，发送 403 响应。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">proxywasm</span><span class="p">.</span><span class="nf">SendHttpResponse</span><span class="p">(</span><span class="mi">403</span><span class="p">,</span> <span class="kc">nil</span><span class="p">,</span> <span class="p">[]</span><span class="nb">byte</span><span class="p">(</span><span class="s">&#34;invalid payload&#34;</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">proxywasm</span><span class="p">.</span><span class="nf">LogErrorf</span><span class="p">(</span><span class="s">&#34;failed to send the 403 response: %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">// 终止流量
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="k">return</span> <span class="nx">types</span><span class="p">.</span><span class="nx">ActionPause</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="nx">types</span><span class="p">.</span><span class="nx">ActionContinue</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// validatePayload 验证给定的 json 负载
+</span></span></span><span class="line"><span class="cl"><span class="c1">// 注意该函数使用 gjson 解析 json，因为 TinyGo 不支持 encoding/json
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="nf">validatePayload</span><span class="p">(</span><span class="nx">body</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="p">!</span><span class="nx">gjson</span><span class="p">.</span><span class="nf">ValidBytes</span><span class="p">(</span><span class="nx">body</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">proxywasm</span><span class="p">.</span><span class="nf">LogErrorf</span><span class="p">(</span><span class="s">&#34;body is not a valid json: %v&#34;</span><span class="p">,</span> <span class="nx">body</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="k">return</span> <span class="kc">false</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">jsonData</span> <span class="o">:=</span> <span class="nx">gjson</span><span class="p">.</span><span class="nf">ParseBytes</span><span class="p">(</span><span class="nx">body</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="c1">// 验证 json。检查示例中是否存在必须的键
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">requiredKey</span> <span class="o">:=</span> <span class="k">range</span> <span class="p">[]</span><span class="kt">string</span><span class="p">{</span><span class="s">&#34;id&#34;</span><span class="p">,</span> <span class="s">&#34;token&#34;</span><span class="p">}</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="p">!</span><span class="nx">jsonData</span><span class="p">.</span><span class="nf">Get</span><span class="p">(</span><span class="nx">requiredKey</span><span class="p">).</span><span class="nf">Exists</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">proxywasm</span><span class="p">.</span><span class="nf">LogErrorf</span><span class="p">(</span><span class="s">&#34;required key (%v) is missing: %v&#34;</span><span class="p">,</span> <span class="nx">requiredKey</span><span class="p">,</span> <span class="nx">jsonData</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">			<span class="k">return</span> <span class="kc">false</span>
+</span></span><span class="line"><span class="cl">		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="kc">true</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><h4 id="编译成-wasm">编译成 Wasm</h4>
+<p>使用 tinygo 编译器编译成 Wasm：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">tinygo build -o main.wasm -scheduler<span class="o">=</span>none -target<span class="o">=</span>wasi main.go
+</span></span></code></pre></div><h3 id="部署-wasm-插件">部署 Wasm 插件</h3>
+<h4 id="打包到-docker-中部署到-envoy">打包到 Docker 中部署到 Envoy</h4>
+<p>对于开发，这个插件可以在 Docker 中部署到 Envoy。下面的 Envoy 配置文件将设置 Envoy 监听 <code>localhost:18000</code>，运行所提供的 Wasm 插件，并在成功后响应 HTTP 200 和文本 <code>hello from server</code>。突出显示的部分是配置 Wasm 插件。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">static_resources</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">listeners</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">main</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">address</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">socket_address</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="m">0.0.0.0</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">port_value</span><span class="p">:</span><span class="w"> </span><span class="m">18000</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">filter_chains</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">filters</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">envoy.http_connection_manager</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">typed_config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="nt">&#34;@type&#34;: </span><span class="l">type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="nt">stat_prefix</span><span class="p">:</span><span class="w"> </span><span class="l">ingress_http</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="nt">codec_type</span><span class="p">:</span><span class="w"> </span><span class="l">auto</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="nt">route_config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">local_route</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                  </span><span class="nt">virtual_hosts</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">local_service</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                      </span><span class="nt">domains</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                        </span>- <span class="s2">&#34;*&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                      </span><span class="nt">routes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                        </span>- <span class="nt">match</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                            </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;/&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                          </span><span class="nt">route</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                            </span><span class="nt">cluster</span><span class="p">:</span><span class="w"> </span><span class="l">web_service</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="nt">http_filters</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                 </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">envoy.filters.http.wasm</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="nt">typed_config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                      </span><span class="nt">&#34;@type&#34;: </span><span class="l">type.googleapis.com/udpa.type.v1.TypedStruct</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                      </span><span class="nt">type_url</span><span class="p">:</span><span class="w"> </span><span class="l">type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                      </span><span class="nt">value</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                        </span><span class="nt">config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                          </span><span class="nt">vm_config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                            </span><span class="nt">runtime</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;envoy.wasm.runtime.v8&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                            </span><span class="nt">code</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                              </span><span class="nt">local</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                                </span><span class="nt">filename</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;./main.wasm&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">envoy.filters.http.router</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">staticreply</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">address</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">socket_address</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="m">127.0.0.1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">port_value</span><span class="p">:</span><span class="w"> </span><span class="m">8099</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">filter_chains</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">filters</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">envoy.http_connection_manager</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">typed_config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="nt">&#34;@type&#34;: </span><span class="l">type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="nt">stat_prefix</span><span class="p">:</span><span class="w"> </span><span class="l">ingress_http</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="nt">codec_type</span><span class="p">:</span><span class="w"> </span><span class="l">auto</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="nt">route_config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">local_route</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                  </span><span class="nt">virtual_hosts</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">local_service</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                      </span><span class="nt">domains</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                        </span>- <span class="s2">&#34;*&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                      </span><span class="nt">routes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                        </span>- <span class="nt">match</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                            </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;/&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                          </span><span class="nt">direct_response</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                            </span><span class="nt">status</span><span class="p">:</span><span class="w"> </span><span class="m">200</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                            </span><span class="nt">body</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                              </span><span class="nt">inline_string</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;hello from the server\n&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="nt">http_filters</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">envoy.filters.http.router</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="nt">typed_config</span><span class="p">:</span><span class="w"> </span>{}<span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">clusters</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">web_service</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">connect_timeout</span><span class="p">:</span><span class="w"> </span><span class="m">0.</span><span class="l">25s</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">STATIC</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">lb_policy</span><span class="p">:</span><span class="w"> </span><span class="l">ROUND_ROBIN</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">load_assignment</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">cluster_name</span><span class="p">:</span><span class="w"> </span><span class="l">mock_service</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">endpoints</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span>- <span class="nt">lb_endpoints</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span>- <span class="nt">endpoint</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                  </span><span class="nt">address</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="nt">socket_address</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                      </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="m">127.0.0.1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                      </span><span class="nt">port_value</span><span class="p">:</span><span class="w"> </span><span class="m">8099</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">admin</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">access_log_path</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;/dev/null&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">address</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">socket_address</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="m">0.0.0.0</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">port_value</span><span class="p">:</span><span class="w"> </span><span class="m">8001</span><span class="w">
+</span></span></span></code></pre></div><p>运行 Docker 容器：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run --rm -p 18000:18000 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -v <span class="nv">$PWD</span>/envoy.yaml:/envoy.yaml <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -v <span class="nv">$PWD</span>/main.wasm:/main.wasm <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --entrypoint envoy containers.istio.tetratelabs.com/proxyv2:1.9.7-tetrate-v0 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -l debug <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -c /envoy.yaml
+</span></span></code></pre></div><p>通过 curl 测试。首先，没有设置内容类型，将返回 403：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">% curl -i -X POST localhost:18000
+</span></span><span class="line"><span class="cl">HTTP/1.1 <span class="m">403</span> Forbidden
+</span></span><span class="line"><span class="cl">content-length: <span class="m">29</span>
+</span></span><span class="line"><span class="cl">content-type: text/plain
+</span></span><span class="line"><span class="cl">date: Sun, <span class="m">13</span> Mar <span class="m">2022</span> 22:13:37 GMT
+</span></span><span class="line"><span class="cl">server: envoy
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">content-type must be provided
+</span></span></code></pre></div><p>然后，请求 body 不是 JSON，同样返回 403。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">% curl -i -X POST localhost:18000 -H <span class="s1">&#39;Content-Type: application/json&#39;</span> --data <span class="s1">&#39;not JSON&#39;</span>
+</span></span><span class="line"><span class="cl">HTTP/1.1 <span class="m">403</span> Forbidden
+</span></span><span class="line"><span class="cl">content-length: <span class="m">15</span>
+</span></span><span class="line"><span class="cl">content-type: text/plain
+</span></span><span class="line"><span class="cl">date: Sun, <span class="m">13</span> Mar <span class="m">2022</span> 22:15:53 GMT
+</span></span><span class="line"><span class="cl">server: envoy
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">invalid payload
+</span></span></code></pre></div><p>JSON 负载中没有 <code>token</code> 字段，还是返回 403。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">% curl -i -X POST localhost:18000 -H <span class="s1">&#39;Content-Type: application/json&#39;</span> --data <span class="s1">&#39;{&#34;id&#34;: &#34;xxx&#34;}&#39;</span>
+</span></span><span class="line"><span class="cl">HTTP/1.1 <span class="m">403</span> Forbidden
+</span></span><span class="line"><span class="cl">content-length: <span class="m">15</span>
+</span></span><span class="line"><span class="cl">content-type: text/plain
+</span></span><span class="line"><span class="cl">date: Sun, <span class="m">13</span> Mar <span class="m">2022</span> 22:17:18 GMT
+</span></span><span class="line"><span class="cl">server: envoy
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">invalid payload
+</span></span></code></pre></div><p>当 id 和 token 字段都被提供时，将返回一个成功的响应。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">% curl -i -X POST localhost:18000 -H <span class="s1">&#39;Content-Type: application/json&#39;</span> --data <span class="s1">&#39;{&#34;id&#34;: &#34;xxx&#34;, &#34;token&#34;: &#34;xxx&#34;, &#34;anotherField&#34;: &#34;yyy&#34;}&#39;</span>
+</span></span><span class="line"><span class="cl">HTTP/1.1 <span class="m">200</span> OK
+</span></span><span class="line"><span class="cl">content-length: <span class="m">22</span>
+</span></span><span class="line"><span class="cl">content-type: text/plain
+</span></span><span class="line"><span class="cl">date: Sun, <span class="m">13</span> Mar <span class="m">2022</span> 22:18:37 GMT
+</span></span><span class="line"><span class="cl">server: envoy
+</span></span><span class="line"><span class="cl">x-envoy-upstream-service-time: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">hello from the server
+</span></span></code></pre></div><h3 id="部署到-istio">部署到 Istio</h3>
+<h4 id="部署-istio-和-httpbin-示例应用">部署 Istio 和 httpbin 示例应用</h4>
+<p>我们使用 <a href="https://kind.sigs.k8s.io/" target="_blank" rel="noopener">kind</a> 来创建测试集群，对于其他方式创建的 Kubernetes 集群同样适用。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kind create cluster
+</span></span></code></pre></div><p>集群创建完毕后，安装 Istio，我们使用的是 Istio 1.12.3，安装 <a href="https://github.com/istio/istio/tree/master/samples/httpbin" target="_blank" rel="noopener">Istio httpbin 示例应用</a>。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">istioctl install --set <span class="nv">profile</span><span class="o">=</span>demo
+</span></span><span class="line"><span class="cl">kubectl label namespace default istio-injection<span class="o">=</span>enabled
+</span></span><span class="line"><span class="cl">kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.12/samples/httpbin/httpbin.yaml
+</span></span><span class="line"><span class="cl">kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.12/samples/httpbin/httpbin-gateway.yaml
+</span></span></code></pre></div><p>在另一个终端中，将 Ingress 网关的 80 端口转发到你本地机器的 8080 端口上。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl port-forward -n istio-system svc/istio-ingressgateway 8080:80
+</span></span></code></pre></div><p>发送 curl 请求，检查服务是否正常启动，你应该应该看到成功的响应。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -X POST -i http://localhost:8080/post
+</span></span></code></pre></div><p>有两种方式在 Istio 中安装 Wasm 模块：</p>
+<ol>
+<li>对于 Istio 1.12 和更新版本的 Istio，支持 <a href="https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/" target="_blank" rel="noopener">WasmPlugin</a> 资源</li>
+<li>对于老版本的 Istio，可以使用 <a href="https://istio.io/latest/docs/reference/config/networking/envoy-filter/" target="_blank" rel="noopener">EnvoyFilter</a></li>
+</ol>
+<h4 id="使用-wasmplugin-安装">使用 WasmPlugin 安装</h4>
+<p>WasmPlugin 资源从镜像仓库中提取 wasm 模块。因此，让我们首先为我们的 wasm 模块构建并推送一个 Docker 镜像。下面的 Docker 文件允许从你的 wasm 模块建立一个 Docker 镜像。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-Docker" data-lang="Docker"><span class="line"><span class="cl"><span class="k">FROM</span><span class="s"> scratch</span><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">COPY</span> main.wasm ./<span class="err">
+</span></span></span></code></pre></div><p>构建镜像，推送到镜像仓库。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">HUB</span><span class="o">=</span>your_registry <span class="c1"># e.g. docker.io/tetrate</span>
+</span></span><span class="line"><span class="cl">docker build . -t <span class="nv">$HUB</span>/json-validation:v1
+</span></span><span class="line"><span class="cl">docker push <span class="nv">$HUB</span>/json-validation:v1
+</span></span></code></pre></div><p>现在我们创建 <a href="https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/" target="_blank" rel="noopener">WasmPlugin</a> 资源。这将适用于所有通过 Istio Ingress 网关暴露的路由，并对其应用我们的验证。确保你把 <code>{your_registry}</code> 替换为你上传 wasm 镜像的镜像仓库。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">extensions.istio.io/v1alpha1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">WasmPlugin</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">json-validation</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">istio-system</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">istio</span><span class="p">:</span><span class="w"> </span><span class="l">ingressgateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="l">oci://{your_registry}/json-validation:v3</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">imagePullPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">IfNotPresent</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">phase</span><span class="p">:</span><span class="w"> </span><span class="l">AUTHN</span><span class="w">
+</span></span></span></code></pre></div><h4 id="使用-envoyfilter-安装">使用 EnvoyFilter 安装</h4>
+<p>为了使用 EnvoyFilter，我们创建一个包含已编译的 Wasm 插件的 ConfigMap，将 ConfigMap 挂载到网关 pod 中，然后通过 EnvoyFilter 配置 Envoy，从本地文件加载 Wasm 插件。这种方法的限制是，更大和更复杂的 Wasm 模块可能超出 ConfigMap 1MB 的大小限制。</p>
+<p>首先，创建一个包含编译好的 Wasm 模块的 ConfigMap：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n istio-system create configmap wasm-plugins --from-file<span class="o">=</span>main.wasm
+</span></span></code></pre></div><p>然后在 Istio Ingress 网关部署中打补丁，挂载这个 ConfigMap。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n istio-system patch deployment istio-ingressgateway --patch<span class="o">=</span><span class="s1">&#39;
+</span></span></span><span class="line"><span class="cl"><span class="s1">spec:
+</span></span></span><span class="line"><span class="cl"><span class="s1">  template:
+</span></span></span><span class="line"><span class="cl"><span class="s1">    spec:
+</span></span></span><span class="line"><span class="cl"><span class="s1">      containers:
+</span></span></span><span class="line"><span class="cl"><span class="s1">        - name: istio-proxy
+</span></span></span><span class="line"><span class="cl"><span class="s1">          volumeMounts:
+</span></span></span><span class="line"><span class="cl"><span class="s1">            - name: wasm-plugins
+</span></span></span><span class="line"><span class="cl"><span class="s1">              mountPath: /var/local/lib/wasm-plugins
+</span></span></span><span class="line"><span class="cl"><span class="s1">              readOnly: true
+</span></span></span><span class="line"><span class="cl"><span class="s1">      volumes:
+</span></span></span><span class="line"><span class="cl"><span class="s1">        - name: wasm-plugins
+</span></span></span><span class="line"><span class="cl"><span class="s1">          configMap:
+</span></span></span><span class="line"><span class="cl"><span class="s1">            name: wasm-plugins&#39;</span>
+</span></span></code></pre></div><p>现在 Wasm 模块就挂载到了网关 Pod 中，应用这个 EnvoyFilter。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">networking.istio.io/v1alpha3</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">EnvoyFilter</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">json-validation</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">istio-system</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">configPatches</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">applyTo</span><span class="p">:</span><span class="w"> </span><span class="l">HTTP_FILTER</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">match</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">context</span><span class="p">:</span><span class="w"> </span><span class="l">GATEWAY</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">patch</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">operation</span><span class="p">:</span><span class="w"> </span><span class="l">INSERT_BEFORE</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">value</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">json-validation</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">typed_config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">&#39;@type&#39;</span><span class="p">:</span><span class="w"> </span><span class="l">type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">vm_config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">code</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="nt">local</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                  </span><span class="nt">filename</span><span class="p">:</span><span class="w"> </span><span class="l">/var/local/lib/wasm-plugins/main.wasm</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">runtime</span><span class="p">:</span><span class="w"> </span><span class="l">envoy.wasm.runtime.v8</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">vm_id</span><span class="p">:</span><span class="w"> </span><span class="l">json-validation</span><span class="w">
+</span></span></span></code></pre></div><h4 id="测试-wasm-插件">测试 Wasm 插件</h4>
+<p>重复之前的 curl 请求。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">% curl -X POST -i http://localhost:8080/post
+</span></span><span class="line"><span class="cl">HTTP/1.1 <span class="m">403</span> Forbidden
+</span></span><span class="line"><span class="cl">content-length: <span class="m">29</span>
+</span></span><span class="line"><span class="cl">content-type: text/plain
+</span></span><span class="line"><span class="cl">date: Tue, <span class="m">15</span> Mar <span class="m">2022</span> 22:04:35 GMT
+</span></span><span class="line"><span class="cl">server: istio-envoy
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">content-type must be provided
+</span></span></code></pre></div><p>如果提供了内容类型和 json 负载的话，请求将会成功。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -i http://localhost:8080/post  -H <span class="s1">&#39;Content-Type: application/json&#39;</span> --data <span class="s1">&#39;{&#34;id&#34;: &#34;xxx&#34;, &#34;token&#34;: &#34;xxx&#34;}&#39;</span>
+</span></span></code></pre></div><h3 id="让必填字段可配置">让必填字段可配置</h3>
+<p>与其在编译的 golang 代码中硬编码所需的 JSON 字段，不如允许通过 Envoy 配置来配置这些字段。</p>
+<p>当在 Docker 中运行 Envoy 时，可以通过向之前创建的 Wasm <code>http_filter</code> 添加配置来实现。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="w">  </span><span class="nt">http_filters</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">envoy.filters.http.wasm</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="nt">typed_config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                      </span><span class="nt">&#34;@type&#34;: </span><span class="l">type.googleapis.com/udpa.type.v1.TypedStruct</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                      </span><span class="nt">type_url</span><span class="p">:</span><span class="w"> </span><span class="l">type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                      </span><span class="nt">value</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                        </span><span class="nt">config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                          </span><span class="nt">configuration</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                            </span><span class="nt">&#34;@type&#34;: </span><span class="l">type.googleapis.com/google.protobuf.StringValue</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                            </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="p">|</span><span class="sd">
+</span></span></span><span class="line"><span class="cl"><span class="sd">                                                            </span><span class="w">                                                            </span>{<span class="w"> </span><span class="nt">&#34;requiredKeys&#34;: </span><span class="p">[</span><span class="s2">&#34;id&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;token&#34;</span><span class="p">]</span><span class="w"> </span>}<span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                          </span><span class="nt">vm_config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                            </span><span class="nt">runtime</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;envoy.wasm.runtime.v8&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                            </span><span class="nt">code</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                              </span><span class="nt">local</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                                </span><span class="nt">filename</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;./main.wasm&#34;</span><span class="w">
+</span></span></span></code></pre></div><p>当使用 WasmPlugin，在 <code>pluginConfig</code> 字段中配置。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">extensions.istio.io/v1alpha1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">WasmPlugin</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">json-validation</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">istio-system</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">istio</span><span class="p">:</span><span class="w"> </span><span class="l">ingressgateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="l">oci://{your_registry}/json-validation:v3</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">imagePullPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">IfNotPresent</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">phase</span><span class="p">:</span><span class="w"> </span><span class="l">AUTHN</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">pluginConfig</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">requiredKeys</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;id&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;token&#34;</span><span class="p">]</span><span class="w">
+</span></span></span></code></pre></div><p>最后，当使用 EnvoyFilter 时，将它添加到 filter 配置中。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="w">   </span><span class="nt">value</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">json-validation</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">typed_config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">&#39;@type&#39;</span><span class="p">:</span><span class="w"> </span><span class="l">type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">configuration</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">&#34;@type&#34;: </span><span class="l">type.googleapis.com/google.protobuf.StringValue</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="p">|</span><span class="sd">
+</span></span></span><span class="line"><span class="cl"><span class="sd">                                </span><span class="w">                                </span>{<span class="w"> </span><span class="nt">&#34;requiredKeys&#34;: </span><span class="p">[</span><span class="s2">&#34;id&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;token&#34;</span><span class="p">]</span><span class="w"> </span>}<span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">vm_config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">code</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="nt">local</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                  </span><span class="nt">filename</span><span class="p">:</span><span class="w"> </span><span class="l">/var/local/lib/wasm-plugins/main.wasm</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">runtime</span><span class="p">:</span><span class="w"> </span><span class="l">envoy.wasm.runtime.v8</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">vm_id</span><span class="p">:</span><span class="w"> </span><span class="l">json-validation</span><span class="w">
+</span></span></span></code></pre></div><p>在代码中，实现 <code>OnPluginStart</code>，使用 <code>proxywasm.GetPluginConfiguration</code> 加载。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="c1">// pluginContext 实现 proxy-wasm-go SDK 中的 types.PluginContext 接口
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">type</span> <span class="nx">pluginContext</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 在这里嵌入默认的 plugin 上下文，这样就不用实现所有方法
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">types</span><span class="p">.</span><span class="nx">DefaultPluginContext</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">configuration</span> <span class="o">*</span><span class="nx">pluginConfiguration</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// pluginConfiguration 代表这个 wasm 插件中的示例配置
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">type</span> <span class="nx">pluginConfiguration</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 示例配置字段，插件将验证 json 负载中是否存在这些字段。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">requiredKeys</span> <span class="p">[]</span><span class="kt">string</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// 复写 types.DefaultPluginContext
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">ctx</span> <span class="o">*</span><span class="nx">pluginContext</span><span class="p">)</span> <span class="nf">OnPluginStart</span><span class="p">(</span><span class="nx">pluginConfigurationSize</span> <span class="kt">int</span><span class="p">)</span> <span class="nx">types</span><span class="p">.</span><span class="nx">OnPluginStartStatus</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">data</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">proxywasm</span><span class="p">.</span><span class="nf">GetPluginConfiguration</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">proxywasm</span><span class="p">.</span><span class="nf">LogCriticalf</span><span class="p">(</span><span class="s">&#34;error reading plugin configuration: %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="k">return</span> <span class="nx">types</span><span class="p">.</span><span class="nx">OnPluginStartStatusFailed</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">config</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">parsePluginConfiguration</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">proxywasm</span><span class="p">.</span><span class="nf">LogCriticalf</span><span class="p">(</span><span class="s">&#34;error parsing plugin configuration: %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="k">return</span> <span class="nx">types</span><span class="p">.</span><span class="nx">OnPluginStartStatusFailed</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">ctx</span><span class="p">.</span><span class="nx">configuration</span> <span class="p">=</span> <span class="nx">config</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="nx">types</span><span class="p">.</span><span class="nx">OnPluginStartStatusOK</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// parsePluginConfiguration 解析 json 插件配置并返回 pluginConfiguration
+</span></span></span><span class="line"><span class="cl"><span class="c1">// 注意使用 gjson 解析 json，因为 TinyGo 不支持 encoding/json
+</span></span></span><span class="line"><span class="cl"><span class="c1">// 你也可以使用 https://github.com/mailru/easyjson，支持解析为结构体
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="nf">parsePluginConfiguration</span><span class="p">(</span><span class="nx">data</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">)</span> <span class="p">(</span><span class="o">*</span><span class="nx">pluginConfiguration</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">config</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="nx">pluginConfiguration</span><span class="p">{}</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="p">!</span><span class="nx">gjson</span><span class="p">.</span><span class="nf">ValidBytes</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;the plugin configuration is not a valid json: %v&#34;</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="nx">jsonData</span> <span class="o">:=</span> <span class="nx">gjson</span><span class="p">.</span><span class="nf">ParseBytes</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">requiredKeys</span> <span class="o">:=</span> <span class="nx">jsonData</span><span class="p">.</span><span class="nf">Get</span><span class="p">(</span><span class="s">&#34;requiredKeys&#34;</span><span class="p">).</span><span class="nf">Array</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">requiredKey</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">requiredKeys</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">config</span><span class="p">.</span><span class="nx">requiredKeys</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">config</span><span class="p">.</span><span class="nx">requiredKeys</span><span class="p">,</span> <span class="nx">requiredKey</span><span class="p">.</span><span class="nx">Str</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="nx">config</span><span class="p">,</span> <span class="kc">nil</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>现在它们被包含在 <code>pluginConfiguration</code> 结构中，它们可以像其他字段一样在验证过程中被使用。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="c1">// validatePayload 验证给定的 json 负载
+</span></span></span><span class="line"><span class="cl"><span class="c1">// 注意该函数使用 gjson 解析 json，因为 TinyGo 不支持 encoding/json
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">ctx</span> <span class="o">*</span><span class="nx">payloadValidationContext</span><span class="p">)</span> <span class="nf">validatePayload</span><span class="p">(</span><span class="nx">body</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="p">!</span><span class="nx">gjson</span><span class="p">.</span><span class="nf">ValidBytes</span><span class="p">(</span><span class="nx">body</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">proxywasm</span><span class="p">.</span><span class="nf">LogErrorf</span><span class="p">(</span><span class="s">&#34;body is not a valid json: %v&#34;</span><span class="p">,</span> <span class="nx">body</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="k">return</span> <span class="kc">false</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">jsonData</span> <span class="o">:=</span> <span class="nx">gjson</span><span class="p">.</span><span class="nf">ParseBytes</span><span class="p">(</span><span class="nx">body</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="c1">// 验证 json。检查示例中是否包含必须的键。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="c1">// 必须的键通过插件配置。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">requiredKey</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">ctx</span><span class="p">.</span><span class="nx">requiredKeys</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="p">!</span><span class="nx">jsonData</span><span class="p">.</span><span class="nf">Get</span><span class="p">(</span><span class="nx">requiredKey</span><span class="p">).</span><span class="nf">Exists</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">proxywasm</span><span class="p">.</span><span class="nf">LogErrorf</span><span class="p">(</span><span class="s">&#34;required key (%v) is missing: %v&#34;</span><span class="p">,</span> <span class="nx">requiredKey</span><span class="p">,</span> <span class="nx">jsonData</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">			<span class="k">return</span> <span class="kc">false</span>
+</span></span><span class="line"><span class="cl">		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="kc">true</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>然后可以使用与之前相同的命令对其进行编译和测试。</p>
+<h3 id="总结">总结</h3>
+<p>总而言之，要在 Istio 1.12 和更新的版本上使用 Wasm 插件，需要三个步骤：</p>
+<ol>
+<li>在你选择的语言中实现插件的功能。我在本教程中使用 Golang。</li>
+<li>编译 Wasm 插件并推送到镜像仓库。</li>
+<li>配置 Istio 以加载和使用镜像仓库中的插件。</li>
+</ol>
+<p>该教程还详细介绍了如何使用 Docker 在 Envoy 容器中运行 Wasm 插件，以加快开发速度，以及如何将其部署到旧的 Istio 版本。</p>
+
+    </div>
+
+    
+
+
+
+
+<div class="article-tags">
+  
+  <a class="badge badge-light" href="/docs/tag/wasm/">wasm</a>
+  
+  <a class="badge badge-light" href="/docs/tag/istio/">Istio</a>
+  
+  <a class="badge badge-light" href="/docs/tag/envoy/">Envoy</a>
+  
+</div>
+
+
+
+<div class="share-box">
+  <ul class="share">
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://twitter.com/intent/tweet?url=https://jimmysong.io/docs/translation/validating-a-request-payload-with-wasm/&amp;text=%e4%bd%bf%e7%94%a8%20WebAssembly%20%e9%aa%8c%e8%af%81%e8%af%b7%e6%b1%82%e8%b4%9f%e8%bd%bd" target="_blank" rel="noopener" class="share-btn-twitter" aria-label="twitter">
+          <i class="fab fa-twitter"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://www.facebook.com/sharer.php?u=https://jimmysong.io/docs/translation/validating-a-request-payload-with-wasm/&amp;t=%e4%bd%bf%e7%94%a8%20WebAssembly%20%e9%aa%8c%e8%af%81%e8%af%b7%e6%b1%82%e8%b4%9f%e8%bd%bd" target="_blank" rel="noopener" class="share-btn-facebook" aria-label="facebook">
+          <i class="fab fa-facebook"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="mailto:?subject=%e4%bd%bf%e7%94%a8%20WebAssembly%20%e9%aa%8c%e8%af%81%e8%af%b7%e6%b1%82%e8%b4%9f%e8%bd%bd&amp;body=https://jimmysong.io/docs/translation/validating-a-request-payload-with-wasm/" target="_blank" rel="noopener" class="share-btn-email" aria-label="envelope">
+          <i class="fas fa-envelope"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://www.linkedin.com/shareArticle?url=https://jimmysong.io/docs/translation/validating-a-request-payload-with-wasm/&amp;title=%e4%bd%bf%e7%94%a8%20WebAssembly%20%e9%aa%8c%e8%af%81%e8%af%b7%e6%b1%82%e8%b4%9f%e8%bd%bd" target="_blank" rel="noopener" class="share-btn-linkedin" aria-label="linkedin-in">
+          <i class="fab fa-linkedin-in"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="whatsapp://send?text=%e4%bd%bf%e7%94%a8%20WebAssembly%20%e9%aa%8c%e8%af%81%e8%af%b7%e6%b1%82%e8%b4%9f%e8%bd%bd%20https://jimmysong.io/docs/translation/validating-a-request-payload-with-wasm/" target="_blank" rel="noopener" class="share-btn-whatsapp" aria-label="whatsapp">
+          <i class="fab fa-whatsapp"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://service.weibo.com/share/share.php?url=https://jimmysong.io/docs/translation/validating-a-request-payload-with-wasm/&amp;title=%e4%bd%bf%e7%94%a8%20WebAssembly%20%e9%aa%8c%e8%af%81%e8%af%b7%e6%b1%82%e8%b4%9f%e8%bd%bd" target="_blank" rel="noopener" class="share-btn-weibo" aria-label="weibo">
+          <i class="fab fa-weibo"></i>
+        </a>
+      </li>
+    
+  </ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+</article>
+  </div>
+
+  <div class="page-footer">
+    
+    
+    <div class="container">
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2022 jimmysong.io all right reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+    </div>
+    
+  </div>
+
+      
+
+    
+    <script src="/docs/js/vendor-bundle.min.53d67dc2cb1ebceb89d5e2aba2f86112.js"></script>
+
+    
+    
+    
+      
+
+      
+      
+
+      
+
+      
+
+    
+
+    
+    
+    
+
+    
+    
+
+    
+    
+    
+      
+      <script id="search-hit-fuse-template" type="text/x-template">
+        <div class="search-hit" id="summary-{{key}}">
+          <div class="search-hit-content">
+            <div class="search-hit-name">
+              <a href="{{relpermalink}}">{{title}}</a>
+              <div class="article-metadata search-hit-type">{{type}}</div>
+              <p class="search-hit-description">{{snippet}}</p>
+            </div>
+          </div>
+        </div>
+      </script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/krisk/Fuse@v3.2.1/dist/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/gh/julmot/mark.js@8.11.1/dist/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+      
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+      
+      
+      
+      
+      
+      
+      
+    
+
+    
+
+    
+    
+    
+    <script id="page-data" type="application/json">{"use_headroom":true}</script>
+
+    
+    
+      <script src="/docs/js/wowchemy-headroom.c251366b4128fd5e6b046d4c97a62a51.js" type="module"></script>
+    
+    
+    
+    
+    
+    
+    
+      
+      
+    
+    
+    <script src="/docs/zh/js/wowchemy.min.0e54a7a5e910897ca9d4be1ceb14ed04.js"></script>
+
+    
+    
+    
+    
+    
+    
+      
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <script src="/docs/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+
+
+
+
+
+
+</body>
+</html>
