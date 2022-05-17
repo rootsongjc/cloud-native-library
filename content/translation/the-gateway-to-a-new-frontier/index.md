@@ -26,7 +26,7 @@ image:
   preview_only: false
 
 authors: ["Varun Talwar"]
-tags: ["Enovy","开源","网关"]
+tags: ["Enovy","开源","网关","Tetrate"]
 categories: ["Envoy"]
 links:
   - icon: globe
