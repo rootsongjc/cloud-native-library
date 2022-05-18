@@ -11,7 +11,7 @@ type: book # Do not modify.
 
 [Istio](https://istio.io) 是由 Google、IBM、Lyft 等共同开源的 Service Mesh（服务网格）框架，于2017 年开源。
 
-{{< figure src="images/cover.jpg" alt="封面" caption="《Envoy基础教程》封面" width="50%" >}}
+{{< figure src="images/cover.jpg" alt="封面" caption="《Istio 基础教程》封面" width="50%" >}}
 
 ## 关于本书
 
