@@ -1,10 +1,10 @@
 ---
-linktitle: Istio服务网格基础教程
+linktitle: Istio基础教程
 summary: 云原生应用网络构建指南。
 weight: 1
 icon: book
 icon_pack: fas
-title: Istio服务网格基础教程
+title: Istio基础教程
 date: '2022-05-18T00:00:00+08:00'
 type: book # Do not modify.
 ---
