@@ -21,13 +21,6 @@ type: book # Do not modify.
 - 应用程序的不同角色如何围绕 OpenTelemetry 来协同和独立工作
 - 关于在组织中采用和管理 OpenTelemetry 的实用建议
 
-## 如何阅读本书
-
-您可以使用以下方式阅读：
-
-- [在线阅读](https://jimmysong.io/docs/opentelemetry-obervability)（建议）
-- [下载 PDF](https://github.com/rootsongjc/opentelemetry-obervability/)
-
 注：PDF 非实时编译，内容可能落后于在线版本，建议在线阅读。
 
 ## 关于作者
