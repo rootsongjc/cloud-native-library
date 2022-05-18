@@ -1,0 +1,1983 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+    
+  
+  <meta name="description" content="这一节将带大家了解 Istio 为数据平面自动注入 Sidecar 的详细过程。 Sidecar 注入过" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://jimmysong.io/docs/istio-handbook/concepts/istio-sidecar-injector/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/docs/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/docs/css/wowchemy.cc915e15a67bf89bb087a2c650f2b1f1.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-93485976-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+
+  function gtag() {
+      dataLayer.push(arguments);
+  }
+
+  function trackOutboundLink(url, target) {
+    gtag('event', 'click', {
+         'event_category': 'outbound',
+         'event_label': url,
+         'transport_type': 'beacon',
+         'event_callback': function () {
+           if (target !== '_blank') {
+             document.location = url;
+           }
+         }
+    });
+    console.debug("Outbound link clicked: " + url);
+  }
+
+  function onClickCallback(event) {
+    if ((event.target.tagName !== 'A') || (event.target.host === window.location.host)) {
+      return;
+    }
+    trackOutboundLink(event.target, event.target.getAttribute('target'));  
+  }
+
+  gtag('js', new Date());
+  gtag('config', 'UA-93485976-1', {});
+  gtag('set', {'cookie_flags': 'SameSite=None;Secure'});
+
+  
+  document.addEventListener('click', onClickCallback, false);
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?11f7d254cfa4e0ca44b175c66d379ecc";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/docs/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://jimmysong.io/docs/istio-handbook/concepts/istio-sidecar-injector/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://jimmysong.io/docs/istio-handbook/concepts/istio-sidecar-injector/" />
+  <meta property="og:title" content="Sidecar 自动注入过程详解 | 云原生资料库" />
+  <meta property="og:description" content="这一节将带大家了解 Istio 为数据平面自动注入 Sidecar 的详细过程。 Sidecar 注入过" /><meta property="og:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" />
+    <meta property="twitter:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2022-05-18T00:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2022-05-19T00:11:14&#43;08:00">
+  
+
+  
+
+
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>Sidecar 自动注入过程详解 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="701101d65743d205c3818582031017bd" >
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/docs/js/wowchemy-init.min.62d6f8dfe8493f1c68557dde65bec362.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>搜索</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>主页</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/cloud-native"><span>云原生宝典</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#portfolio"><span>书目列表</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/event"><span>活动</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io/blog/" target="_blank" rel="noopener"><span>原创</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/translation"><span>翻译</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io/about/" target="_blank" rel="noopener"><span>关于</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+
+        
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/rootsongjc/docs/" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    
+
+
+
+
+<div class="container-fluid docs">
+  <div class="row flex-xl-nowrap">
+    <div class="col-12 col-md-3 col-xl-2 docs-sidebar">
+      <form class="docs-search d-flex align-items-center">
+  <button class="btn docs-toggle d-md-none p-0 mr-md-3 w-100" type="button" data-toggle="collapse" data-target="#docs-nav" aria-controls="docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    <div class="d-flex">
+      <span class="d-md-none pl-1 flex-grow-1 text-left overflow-hidden">
+        
+          概念原理
+        
+      </span>
+      <span><i class="fas fa-chevron-down"></i></span>
+    </div>
+  </button>
+
+  
+  <button class="form-control sidebar-search js-search d-none d-md-flex">
+    <i class="fas fa-search pr-2"></i>
+    <span class="sidebar-search-text">搜索...</span>
+    <span class="sidebar-search-shortcut">/</span>
+  </button>
+  
+</form>
+
+<nav class="collapse docs-links" id="docs-nav">
+  
+  
+  
+  
+  
+  
+
+  
+  
+    
+
+    
+      
+
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <ul class="nav docs-sidenav">
+        <li class=""><a href="/docs/istio-handbook/"><i class="fas fa-book pr-1"></i>Istio服务网格基础教程</a></li>
+    
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/intro/"><i class="fas fa-book-open pr-1"></i>服务网格概述</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/intro/what-is-service-mesh/">什么是服务网格？</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/intro/why-service-mesh/">为什么要使用服务网格？</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/intro/cloud-native-application-network/">云原生应用网络</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/concepts/"><i class="fas fa-book-open pr-1"></i>概念原理</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/service-mesh-architectures/">服务网格架构</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/service-mesh-patterns/">服务网格的实现模式</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/istio-intro/">Istio 简介</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/istio-architecture/">Istio 架构解析</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/sidecar-pattern/">Sidecar 模式</a></li>
+
+
+
+  <li class="active"><a href="/docs/istio-handbook/concepts/istio-sidecar-injector/">Sidecar 自动注入过程详解</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/transparent-traffic-hijacking/">Istio 中的透明流量劫持过程详解</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/sidecar-traffic-routing-deep-dive/">Istio 中的 Sidecar 的流量路由详解</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/what-is-istio/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/data-plane/"><i class="fas fa-book-open pr-1"></i>数据平面</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-terminology/">Envoy 中的基本术语</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-proxy-config-deep-dive/">Envoy 代理配置详解</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-xds-protocol/">xDS 协议解析</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-lds/">LDS（监听器发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-rds/">RDS（路由发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-cds/">CDS（集群发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-eds/">EDS（端点发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-sds/">SDS（秘钥发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-ads/">ADS（聚合发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/istio-sidecar-proxy-config/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/setup/"><i class="fas fa-book-open pr-1"></i>安装</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/setup/istio-installation/">安装 Istio</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/setup/getmesh/">GetMesh</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/setup/istio-observability-tool-kiali/">Kiali</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/setup/bookinfo-sample/">Bookinfo 示例</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/traffic-management/"><i class="fas fa-book-open pr-1"></i>流量管理</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/basic/">流量管理基础概念</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/gateway/">Gateway</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/basic-routing/">基本路由</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/subset-and-destinationrule/">Subset 和 DestinationRule</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/resiliency/">弹性</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/fault-injection/">错误注入</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/advanced-routing/">高级路由</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/seviceentry/">ServiceEntry</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/sidecar/">Sidecar</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/envoyfilter/">EnvoyFilter</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/config-networking/"><i class="fas fa-book-open pr-1"></i>流量管理配置</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/gateway/">Gateway</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/virtual-service/">VirtualService</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/destination-rule/">DestinationRule</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/workload-entry/">WorkloadEntry</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/workload-group/">WorkloadGroup</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/service-entry/">ServiceEntry</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/sidecar/">Sidecar</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/envoy-filter/">EnvoyFilter</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/proxy-config/">ProxyConfig</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/observability/"><i class="fas fa-book-open pr-1"></i>可观察性</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/observability/telemetry-api/">Telemetry API</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/observability/prometheus/">Prometheus</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/observability/grafana/">Grafana</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/observability/zipkin/">Zipkin</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/observability/kiali/">Kiali</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/security/"><i class="fas fa-book-open pr-1"></i>安全</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/security/authn/">认证</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/security/peer-and-request-authn/">对等认证和请求认证</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/security/mtls/">mTLS</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/security/authz/">授权</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/config-security/"><i class="fas fa-book-open pr-1"></i>安全配置</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/config-security/authorization-policy/">AuthorizationPolicy</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-security/request-authentication/">RequestAuthentication</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-security/peer-authentication/">PeerAuthentication</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-security/jwt/">JWTRule</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/advanced/"><i class="fas fa-book-open pr-1"></i>高级功能</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/advanced/multicluster-deployment/">多集群部署</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/advanced/vm/">虚拟机负载</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/troubleshooting/"><i class="fas fa-book-open pr-1"></i>问题排查</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/troubleshooting/envoy-basic/">Envoy 基础问题</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/troubleshooting/envoy-sample/">Envoy 示例</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/troubleshooting/checklist/">调试清单</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/troubleshooting/istio-dev-env/">Istio 开发环境配置</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/ecosystem/"><i class="fas fa-book-open pr-1"></i>Istio 生态</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/ecosystem/aeraki/">Aeraki</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/ecosystem/slime/">Slime</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/ecosystem/merbridge/">Merbridge</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/practice/"><i class="fas fa-book-open pr-1"></i>实战案例</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/create-cluster/">创建集群</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/online-boutique/">部署 Online Boutique 应用</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/observability/">部署可观察性工具</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/traffic-routing/">路由流量</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/fault-injection/">错误注入</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/resiliency/">弹性</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+      
+    
+
+    
+      </ul>
+    
+
+  
+</nav>
+
+    </div>
+
+    
+    
+    <div class="d-none d-xl-block col-xl-2 docs-toc">
+      
+
+      <ul class="nav toc-top">
+        <li><a href="#" id="back_to_top" class="docs-toc-title">目录</a></li>
+      </ul>
+
+      <nav id="TableOfContents">
+  <ul>
+    <li><a href="#sidecar-注入过程概览">Sidecar 注入过程概览</a>
+      <ul>
+        <li><a href="#手动注入-sidecar-与自动注入-sidecar-的区别">手动注入 sidecar 与自动注入 sidecar 的区别</a></li>
+      </ul>
+    </li>
+    <li><a href="#init-容器">Init 容器</a></li>
+    <li><a href="#istio-中的-sidecar-注入过程详解">Istio 中的 sidecar 注入过程详解</a></li>
+    <li><a href="#sidecar-注入示例分析">Sidecar 注入示例分析</a></li>
+    <li><a href="#init-容器解析">Init 容器解析</a>
+      <ul>
+        <li><a href="#init-容器启动入口">Init 容器启动入口</a></li>
+      </ul>
+    </li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+
+      
+    </div>
+    
+
+    <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 docs-content" role="main">
+
+      <article class="article">
+
+        <div class="docs-article-container">
+          
+
+          <h1>Sidecar 自动注入过程详解</h1>
+
+          <div class="article-style">
+            <p>这一节将带大家了解 Istio 为数据平面自动注入 Sidecar 的详细过程。</p>
+<h2 id="sidecar-注入过程概览">Sidecar 注入过程概览</h2>
+<p>如 Istio 官方文档中对 <a href="https://istio.io/latest/zh/docs/setup/additional-setup/sidecar-injection/" target="_blank" rel="noopener">Istio sidecar 注入</a>的描述，你可以使用 istioctl 命令手动注入 Sidecar，也可以为 Kubernetes 集群自动开启 sidecar 注入，这主要用到了 <a href="https://jimmysong.io/kubernetes-handbook/concepts/admission-controller.html" target="_blank" rel="noopener">Kubernetes 的准入控制器</a>中的 webhook，参考 Istio 官网中对 <a href="https://istio.io/latest/zh/docs/setup/additional-setup/sidecar-injection/" target="_blank" rel="noopener">Istio sidecar 注入</a>的描述。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-sidecar-注入流程图">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img src="../../images/006tKfTcly1g0bvoxmfvuj311i0fy0vh.jpg" alt="Sidecar 注入流程图" loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      Sidecar 注入流程图
+    </figcaption></figure>
+</p>
+<h3 id="手动注入-sidecar-与自动注入-sidecar-的区别">手动注入 sidecar 与自动注入 sidecar 的区别</h3>
+<p>不论是手动注入还是自动注入，sidecar 的注入过程有需要遵循如下步骤：</p>
+<ol>
+<li>Kubernetes 需要了解待注入的 sidecar 所连接的 Istio 集群及其配置；</li>
+<li>Kubernetes 需要了解待注入的 sidecar 容器本身的配置，如镜像地址、启动参数等；</li>
+<li>Kubernetes 根据 sidecar 注入模板和以上配置填充 sidecar 的配置参数，将以上配置注入到应用容器的一侧；</li>
+</ol>
+<p>Istio 和 sidecar 配置保存在 <code>istio</code> 和 <code>istio-sidecar-injector</code> 这两个 ConfigMap 中，其中包含了 Go template，所谓自动 sidecar 注入就是将生成 Pod 配置从应用 YAML 文件期间转移到 <a href="https://jimmysong.io/kubernetes-handbook/concepts/admission-controller.html" target="_blank" rel="noopener">mutable webhook</a> 中。</p>
+<h2 id="init-容器">Init 容器</h2>
+<p>Init 容器是一种专用容器，它在应用程序容器启动之前运行，用来包含一些应用镜像中不存在的实用工具或安装脚本。</p>
+<p>一个 Pod 中可以指定多个 Init 容器，如果指定了多个，那么 Init 容器将会按顺序依次运行。只有当前面的 Init 容器必须运行成功后，才可以运行下一个 Init 容器。当所有的 Init 容器运行完成后，Kubernetes 才初始化 Pod 和运行应用容器。</p>
+<p>Init 容器使用 Linux Namespace，所以相对应用程序容器来说具有不同的文件系统视图。因此，它们能够具有访问 Secret 的权限，而应用程序容器则不能。</p>
+<p>在 Pod 启动过程中，Init 容器会按顺序在网络和数据卷初始化之后启动。每个容器必须在下一个容器启动之前成功退出。如果由于运行时或失败退出，将导致容器启动失败，它会根据 Pod 的 <code>restartPolicy</code> 指定的策略进行重试。然而，如果 Pod 的 <code>restartPolicy</code> 设置为 Always，Init 容器失败时会使用 <code>RestartPolicy</code> 策略。</p>
+<p>在所有的 Init 容器没有成功之前，Pod 将不会变成 <code>Ready</code> 状态。Init 容器的端口将不会在 Service 中进行聚集。 正在初始化中的 Pod 处于 <code>Pending</code> 状态，但应该会将 <code>Initializing</code> 状态设置为 true。Init 容器运行完成以后就会自动终止。</p>
+<p>关于 Init 容器的详细信息请参考 <a href="https://jimmysong.io/kubernetes-handbook/concepts/init-containers.html" target="_blank" rel="noopener">Init 容器 - Kubernetes 中文指南/云原生应用架构实践手册</a>。</p>
+<h2 id="istio-中的-sidecar-注入过程详解">Istio 中的 sidecar 注入过程详解</h2>
+<p>Istio 中提供了以下两种 sidecar 注入方式：</p>
+<ul>
+<li>使用 <code>istioctl</code> 手动注入。</li>
+<li>基于 Kubernetes 的 <a href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/" target="_blank" rel="noopener">突变 webhook 准入控制器（mutating webhook addmission controller</a> 的自动 sidecar 注入方式。</li>
+</ul>
+<p>不论是手动注入还是自动注入，sidecar 的注入过程都需要遵循如下步骤：</p>
+<ol>
+<li>Kubernetes 需要了解待注入的 sidecar 所连接的 Istio 集群及其配置；</li>
+<li>Kubernetes 需要了解待注入的 sidecar 容器本身的配置，如镜像地址、启动参数等；</li>
+<li>Kubernetes 根据 sidecar 注入模板和以上配置填充 sidecar 的配置参数，将以上配置注入到应用容器的一侧；</li>
+</ol>
+<p>使用下面的命令可以手动注入 sidecar。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">istioctl kube-inject -f <span class="si">${</span><span class="nv">YAML_FILE</span><span class="si">}</span> <span class="p">|</span> kuebectl apply -f -
+</span></span></code></pre></div><p>该命令会使用 Istio 内置的 sidecar 配置来注入，下面使用 Istio详细配置请参考 <a href="https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/#manual-sidecar-injection" target="_blank" rel="noopener">Istio 官网</a>。</p>
+<p>注入完成后您将看到 Istio 为原有 pod template 注入了 <code>initContainer</code> 及 sidecar proxy相关的配置。</p>
+<h2 id="sidecar-注入示例分析">Sidecar 注入示例分析</h2>
+<p>以 Istio 官方提供的 <code>bookinfo</code> 中 <code>productpage</code> 的 YAML 为例，关于 <code>bookinfo</code> 应用的详细 YAML 配置请参考 <a href="https://github.com/istio/istio/blob/master/samples/bookinfo/platform/kube/bookinfo.yaml" target="_blank" rel="noopener">bookinfo.yaml</a>。</p>
+<p>下文将从以下几个方面讲解：</p>
+<ul>
+<li>Sidecar 容器的注入</li>
+<li>iptables 规则的创建</li>
+<li>路由的详细过程</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Deployment</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">productpage-v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">productpage</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">replicas</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">productpage</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">template</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">productpage</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">serviceAccountName</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo-productpage</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">productpage</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">docker.io/istio/examples-bookinfo-productpage-v1:1.15.0</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">imagePullPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">IfNotPresent</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="m">9080</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">volumeMounts</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">tmp</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l">/tmp</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">tmp</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">emptyDir</span><span class="p">:</span><span class="w"> </span>{}<span class="w">
+</span></span></span></code></pre></div><p>再查看下 <code>productpage</code> 容器的 <a href="https://github.com/istio/istio/blob/master/samples/bookinfo/src/productpage/Dockerfile" target="_blank" rel="noopener">Dockerfile</a>。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-docker" data-lang="docker"><span class="line"><span class="cl"><span class="k">FROM</span><span class="s"> python:3.7.4-slim</span><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">COPY</span> requirements.txt ./<span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">RUN</span> pip install --no-cache-dir -r requirements.txt<span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">COPY</span> test-requirements.txt ./<span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">RUN</span> pip install --no-cache-dir -r test-requirements.txt<span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">COPY</span> productpage.py /opt/microservices/<span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">COPY</span> tests/unit/* /opt/microservices/<span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">COPY</span> templates /opt/microservices/templates<span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">COPY</span> static /opt/microservices/static<span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">COPY</span> requirements.txt /opt/microservices/<span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">ARG</span> flood_factor<span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">ENV</span> FLOOD_FACTOR <span class="si">${</span><span class="nv">flood_factor</span><span class="k">:-</span><span class="nv">0</span><span class="si">}</span><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">EXPOSE</span><span class="s"> 9080</span><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">WORKDIR</span><span class="s"> /opt/microservices</span><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">RUN</span> python -m unittest discover<span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">USER</span><span class="s"> 1</span><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">CMD</span> <span class="p">[</span><span class="s2">&#34;python&#34;</span><span class="p">,</span> <span class="s2">&#34;productpage.py&#34;</span><span class="p">,</span> <span class="s2">&#34;9080&#34;</span><span class="p">]</span><span class="err">
+</span></span></span></code></pre></div><p>我们看到 <code>Dockerfile</code> 中没有配置 <code>ENTRYPOINT</code>，所以 <code>CMD</code> 的配置 <code>python productpage.py 9080</code> 将作为默认的 <code>ENTRYPOINT</code>，记住这一点，再看下注入 sidecar 之后的配置。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ istioctl kube-inject -f samples/bookinfo/platform/kube/bookinfo.yaml
+</span></span></code></pre></div><p>我们只截取其中与 <code>productpage</code> 相关的 <code>Deployment</code> 配置中的部分 YAML 配置。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="w">      </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">docker.io/istio/examples-bookinfo-productpage-v1:1.15.0</span><span class="w"> </span><span class="c"># 应用镜像</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">productpage</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="m">9080</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">args</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">proxy</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">sidecar</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">domain</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">$(POD_NAMESPACE).svc.cluster.local</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">configPath</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">/etc/istio/proxy</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">binaryPath</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">/usr/local/bin/envoy</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">serviceCluster</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">productpage.$(POD_NAMESPACE)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">drainDuration</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">45s</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">parentShutdownDuration</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">1m0s</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">discoveryAddress</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">istiod.istio-system.svc:15012</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">zipkinAddress</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">zipkin.istio-system:9411</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">proxyLogLevel=warning</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">proxyComponentLogLevel=misc:error</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">connectTimeout</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">10s</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">proxyAdminPort</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="s2">&#34;15000&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">concurrency</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="s2">&#34;2&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">controlPlaneAuthPolicy</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">NONE</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">dnsRefreshRate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">300s</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">statusPort</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="s2">&#34;15020&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">trust-domain=cluster.local</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">controlPlaneBootstrap=false</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">docker.io/istio/proxyv2:1.5.1</span><span class="w"> </span><span class="c"># sidecar proxy</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">istio-proxy</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="m">15090</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">http-envoy-prom</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l">TCP</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">initContainers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">command</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">istio-iptables</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- -<span class="l">p</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="s2">&#34;15001&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- -<span class="l">z</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="s2">&#34;15006&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- -<span class="l">u</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="s2">&#34;1337&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- -<span class="l">m</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">REDIRECT</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- -<span class="l">i</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="s1">&#39;*&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- -<span class="l">x</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="s2">&#34;&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- -<span class="l">b</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="s1">&#39;*&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- -<span class="l">d</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="m">15090</span><span class="p">,</span><span class="m">15020</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">docker.io/istio/proxyv2:1.5.1</span><span class="w"> </span><span class="c"># init 容器</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">istio-init</span><span class="w">
+</span></span></span></code></pre></div><p>Istio 给应用 Pod 注入的配置主要包括：</p>
+<ul>
+<li>Init 容器 <code>istio-init</code>：用于 pod 中设置 iptables 端口转发</li>
+<li>Sidecar 容器 <code>istio-proxy</code>：运行 sidecar 代理，如 Envoy 或 MOSN。</li>
+</ul>
+<p>接下来将分别解析下这两个容器。</p>
+<h2 id="init-容器解析">Init 容器解析</h2>
+<p>Istio 在 pod 中注入的 Init 容器名为 <code>istio-init</code>，我们在上面 Istio 注入完成后的 YAML 文件中看到了该容器的启动命令是：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">istio-iptables -p <span class="m">15001</span> -z <span class="m">15006</span> -u <span class="m">1337</span> -m REDIRECT -i <span class="s1">&#39;*&#39;</span> -x <span class="s2">&#34;&#34;</span> -b <span class="s1">&#39;*&#39;</span> -d 15090,15020
+</span></span></code></pre></div><p>我们再检查下该容器的 <a href="https://github.com/istio/istio/blob/master/pilot/docker/Dockerfile.proxyv2" target="_blank" rel="noopener">Dockerfile</a> 看看 <code>ENTRYPOINT</code> 是怎么确定启动时执行的命令。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-docker" data-lang="docker"><span class="line"><span class="cl"><span class="c"># 前面的内容省略</span><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="c"># The pilot-agent will bootstrap Envoy.</span><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="k">ENTRYPOINT</span> <span class="p">[</span><span class="s2">&#34;/usr/local/bin/pilot-agent&#34;</span><span class="p">]</span><span class="err">
+</span></span></span></code></pre></div><p>我们看到 <code>istio-init</code> 容器的入口是 <code>/usr/local/bin/istio-iptables</code> 命令行，该命令行工具的代码的位置在 Istio 源码仓库的 <a href="https://github.com/istio/istio/tree/master/tools/istio-iptables" target="_blank" rel="noopener">tools/istio-iptables</a> 目录。</p>
+<p>注意：在 Istio 1.1 版本时还是使用 <code>isito-iptables.sh</code> 命令行来操作 IPtables。</p>
+<h3 id="init-容器启动入口">Init 容器启动入口</h3>
+<p>Init 容器的启动入口是 <code>istio-iptables</code> 命令行，该命令行工具的用法如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ istio-iptables <span class="o">[</span>flags<span class="o">]</span>
+</span></span><span class="line"><span class="cl">  -p: 指定重定向所有 TCP 流量的 sidecar 端口（默认为 <span class="nv">$ENVOY_PORT</span> <span class="o">=</span> 15001）
+</span></span><span class="line"><span class="cl">  -m: 指定入站连接重定向到 sidecar 的模式，“REDIRECT” 或 “TPROXY”（默认为 <span class="nv">$ISTIO_INBOUND_INTERCEPTION_MODE</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">  -b: 逗号分隔的入站端口列表，其流量将重定向到 Envoy（可选）。使用通配符 “*” 表示重定向所有端口。为空时表示禁用所有入站重定向（默认为 <span class="nv">$ISTIO_INBOUND_PORTS</span>）
+</span></span><span class="line"><span class="cl">  -d: 指定要从重定向到 sidecar 中排除的入站端口列表（可选），以逗号格式分隔。使用通配符“*” 表示重定向所有入站流量（默认为 <span class="nv">$ISTIO_LOCAL_EXCLUDE_PORTS</span>）
+</span></span><span class="line"><span class="cl">  -o：逗号分隔的出站端口列表，不包括重定向到 Envoy 的端口。
+</span></span><span class="line"><span class="cl">  -i: 指定重定向到 sidecar 的 IP 地址范围（可选），以逗号分隔的 CIDR 格式列表。使用通配符 “*” 表示重定向所有出站流量。空列表将禁用所有出站重定向（默认为 <span class="nv">$ISTIO_SERVICE_CIDR</span>）
+</span></span><span class="line"><span class="cl">  -x: 指定将从重定向中排除的 IP 地址范围，以逗号分隔的 CIDR 格式列表。使用通配符 “*” 表示重定向所有出站流量（默认为 <span class="nv">$ISTIO_SERVICE_EXCLUDE_CIDR</span>）。
+</span></span><span class="line"><span class="cl">  -k：逗号分隔的虚拟接口列表，其入站流量（来自虚拟机的）将被视为出站流量。
+</span></span><span class="line"><span class="cl">  -g：指定不应用重定向的用户的 GID。<span class="o">(</span>默认值与 -u param 相同<span class="o">)</span>
+</span></span><span class="line"><span class="cl">  -u：指定不应用重定向的用户的 UID。通常情况下，这是代理容器的 UID（默认值是 1337，即 istio-proxy 的 UID）。
+</span></span><span class="line"><span class="cl">  -z: 所有进入 pod/VM 的 TCP 流量应被重定向到的端口（默认 <span class="nv">$INBOUND_CAPTURE_PORT</span> <span class="o">=</span> 15006）。
+</span></span></code></pre></div><p>以上传入的参数都会重新组装成 <a href="https://wangchujiang.com/linux-command/c/iptables.html" target="_blank" rel="noopener"><code>iptables</code> </a>规则，关于该命令的详细用法请访问 <a href="https://github.com/istio/istio/blob/master/tools/istio-iptables/pkg/cmd/root.go" target="_blank" rel="noopener">tools/istio-iptables/pkg/cmd/root.go</a>。</p>
+<p>该容器存在的意义就是让 sidecar 代理可以拦截所有的进出 pod 的流量，15090 端口（Mixer 使用）和 15092 端口（Ingress Gateway）除外的所有入站（inbound）流量重定向到 15006 端口（sidecar），再拦截应用容器的出站（outbound）流量经过 sidecar 处理（通过 15001 端口监听）后再出站。关于 Istio 中端口用途请参考 <a href="https://istio.io/latest/zh/docs/ops/deployment/requirements/" target="_blank" rel="noopener">Istio 官方文档</a>。</p>
+<p><strong>命令解析</strong></p>
+<p>这条启动命令的作用是：</p>
+<ul>
+<li>将应用容器的所有流量都转发到 sidecar 的 15006 端口。</li>
+<li>使用 <code>istio-proxy</code> 用户身份运行， UID 为 1337，即 sidecar 所处的用户空间，这也是 <code>istio-proxy</code> 容器默认使用的用户，见 YAML 配置中的 <code>runAsUser</code> 字段。</li>
+<li>使用默认的 <code>REDIRECT</code> 模式来重定向流量。</li>
+<li>将所有出站流量都重定向到 sidecar 代理（通过 15001 端口）。</li>
+</ul>
+<p>因为 Init 容器初始化完毕后就会自动终止，因为我们无法登陆到容器中查看 iptables 信息，但是 Init 容器初始化结果会保留到应用容器和 sidecar 容器中。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://istio.io/latest/zh/docs/setup/additional-setup/sidecar-injection/" target="_blank" rel="noopener">安装 sidecar - istio.io</a></li>
+<li><a href="http://localhost:1313/blog/sidecar-injection-iptables-and-traffic-routing/" target="_blank" rel="noopener">Istio 中的 Sidecar 注入、透明流量劫持及路由过程详解 - jimmysong.io</a></li>
+</ul>
+
+          </div>
+
+          
+
+
+
+          
+          
+          <div class="article-widget">
+            
+<div class="post-nav">
+  
+  
+  
+  <div class="post-nav-item">
+    <div class="meta-nav">上一页</div>
+    <a href="/docs/istio-handbook/concepts/sidecar-pattern/" rel="next">Sidecar 模式</a>
+  </div>
+  
+  
+  
+  <div class="post-nav-item">
+    <div class="meta-nav">下一页</div>
+    <a href="/docs/istio-handbook/concepts/transparent-traffic-hijacking/" rel="prev">Istio 中的透明流量劫持过程详解</a>
+  </div>
+  
+</div>
+
+          </div>
+          
+        </div>
+
+        <div class="body-footer">
+          <p>最近更新于 2022-05-19</p>
+
+          
+
+
+
+          
+
+
+
+
+          
+
+
+        </div>
+
+      </article>
+
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2022 jimmysong.io all right reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+
+    </main>
+  </div>
+</div>
+
+  </div>
+
+  <div class="page-footer">
+    
+    
+  </div>
+
+      
+
+    
+    <script src="/docs/js/vendor-bundle.min.53d67dc2cb1ebceb89d5e2aba2f86112.js"></script>
+
+    
+    
+    
+      
+
+      
+      
+
+      
+
+      
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+        
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/r.min.js" crossorigin="anonymous"></script>
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/latex.min.js" crossorigin="anonymous"></script>
+        
+      
+
+    
+
+    
+    
+    
+
+    
+    
+    <script src="https://cdn.jsdelivr.net/gh/bryanbraun/anchorjs@4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+    <script>
+      anchors.add();
+    </script>
+    
+
+    
+    
+    
+      
+      <script id="search-hit-fuse-template" type="text/x-template">
+        <div class="search-hit" id="summary-{{key}}">
+          <div class="search-hit-content">
+            <div class="search-hit-name">
+              <a href="{{relpermalink}}">{{title}}</a>
+              <div class="article-metadata search-hit-type">{{type}}</div>
+              <p class="search-hit-description">{{snippet}}</p>
+            </div>
+          </div>
+        </div>
+      </script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/krisk/Fuse@v3.2.1/dist/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/gh/julmot/mark.js@8.11.1/dist/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+      
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+      
+      
+      
+      
+      
+      
+      
+    
+
+    
+
+    
+    
+    
+    <script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+      
+    
+    
+    <script src="/docs/zh/js/wowchemy.min.0f418cf2259d1bfdb92011cb96f5bed5.js"></script>
+
+    
+    
+    
+    
+    
+    
+      
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <script src="/docs/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,1813 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+    
+  
+  <meta name="description" content="这一节中，我将为你介绍服务网格的架构，首先我们先来了解下服务" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://jimmysong.io/docs/istio-handbook/concepts/service-mesh-architectures/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/docs/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/docs/css/wowchemy.cc915e15a67bf89bb087a2c650f2b1f1.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-93485976-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+
+  function gtag() {
+      dataLayer.push(arguments);
+  }
+
+  function trackOutboundLink(url, target) {
+    gtag('event', 'click', {
+         'event_category': 'outbound',
+         'event_label': url,
+         'transport_type': 'beacon',
+         'event_callback': function () {
+           if (target !== '_blank') {
+             document.location = url;
+           }
+         }
+    });
+    console.debug("Outbound link clicked: " + url);
+  }
+
+  function onClickCallback(event) {
+    if ((event.target.tagName !== 'A') || (event.target.host === window.location.host)) {
+      return;
+    }
+    trackOutboundLink(event.target, event.target.getAttribute('target'));  
+  }
+
+  gtag('js', new Date());
+  gtag('config', 'UA-93485976-1', {});
+  gtag('set', {'cookie_flags': 'SameSite=None;Secure'});
+
+  
+  document.addEventListener('click', onClickCallback, false);
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?11f7d254cfa4e0ca44b175c66d379ecc";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/docs/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://jimmysong.io/docs/istio-handbook/concepts/service-mesh-architectures/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://jimmysong.io/docs/istio-handbook/concepts/service-mesh-architectures/" />
+  <meta property="og:title" content="服务网格架构 | 云原生资料库" />
+  <meta property="og:description" content="这一节中，我将为你介绍服务网格的架构，首先我们先来了解下服务" /><meta property="og:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" />
+    <meta property="twitter:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2022-05-18T00:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2022-05-19T00:11:14&#43;08:00">
+  
+
+  
+
+
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>服务网格架构 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="998587326c9704fc8bfea7ba7744d304" >
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/docs/js/wowchemy-init.min.62d6f8dfe8493f1c68557dde65bec362.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>搜索</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>主页</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/cloud-native"><span>云原生宝典</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#portfolio"><span>书目列表</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/event"><span>活动</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io/blog/" target="_blank" rel="noopener"><span>原创</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/translation"><span>翻译</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io/about/" target="_blank" rel="noopener"><span>关于</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+
+        
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/rootsongjc/docs/" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    
+
+
+
+
+<div class="container-fluid docs">
+  <div class="row flex-xl-nowrap">
+    <div class="col-12 col-md-3 col-xl-2 docs-sidebar">
+      <form class="docs-search d-flex align-items-center">
+  <button class="btn docs-toggle d-md-none p-0 mr-md-3 w-100" type="button" data-toggle="collapse" data-target="#docs-nav" aria-controls="docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    <div class="d-flex">
+      <span class="d-md-none pl-1 flex-grow-1 text-left overflow-hidden">
+        
+          概念原理
+        
+      </span>
+      <span><i class="fas fa-chevron-down"></i></span>
+    </div>
+  </button>
+
+  
+  <button class="form-control sidebar-search js-search d-none d-md-flex">
+    <i class="fas fa-search pr-2"></i>
+    <span class="sidebar-search-text">搜索...</span>
+    <span class="sidebar-search-shortcut">/</span>
+  </button>
+  
+</form>
+
+<nav class="collapse docs-links" id="docs-nav">
+  
+  
+  
+  
+  
+  
+
+  
+  
+    
+
+    
+      
+
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <ul class="nav docs-sidenav">
+        <li class=""><a href="/docs/istio-handbook/"><i class="fas fa-book pr-1"></i>Istio服务网格基础教程</a></li>
+    
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/intro/"><i class="fas fa-book-open pr-1"></i>服务网格概述</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/intro/what-is-service-mesh/">什么是服务网格？</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/intro/why-service-mesh/">为什么要使用服务网格？</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/intro/cloud-native-application-network/">云原生应用网络</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/concepts/"><i class="fas fa-book-open pr-1"></i>概念原理</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class="active"><a href="/docs/istio-handbook/concepts/service-mesh-architectures/">服务网格架构</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/service-mesh-patterns/">服务网格的实现模式</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/istio-intro/">Istio 简介</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/istio-architecture/">Istio 架构解析</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/sidecar-pattern/">Sidecar 模式</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/istio-sidecar-injector/">Sidecar 自动注入过程详解</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/transparent-traffic-hijacking/">Istio 中的透明流量劫持过程详解</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/sidecar-traffic-routing-deep-dive/">Istio 中的 Sidecar 的流量路由详解</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/what-is-istio/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/data-plane/"><i class="fas fa-book-open pr-1"></i>数据平面</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-terminology/">Envoy 中的基本术语</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-proxy-config-deep-dive/">Envoy 代理配置详解</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-xds-protocol/">xDS 协议解析</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-lds/">LDS（监听器发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-rds/">RDS（路由发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-cds/">CDS（集群发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-eds/">EDS（端点发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-sds/">SDS（秘钥发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-ads/">ADS（聚合发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/istio-sidecar-proxy-config/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/setup/"><i class="fas fa-book-open pr-1"></i>安装</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/setup/istio-installation/">安装 Istio</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/setup/getmesh/">GetMesh</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/setup/istio-observability-tool-kiali/">Kiali</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/setup/bookinfo-sample/">Bookinfo 示例</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/traffic-management/"><i class="fas fa-book-open pr-1"></i>流量管理</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/basic/">流量管理基础概念</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/gateway/">Gateway</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/basic-routing/">基本路由</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/subset-and-destinationrule/">Subset 和 DestinationRule</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/resiliency/">弹性</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/fault-injection/">错误注入</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/advanced-routing/">高级路由</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/seviceentry/">ServiceEntry</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/sidecar/">Sidecar</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/envoyfilter/">EnvoyFilter</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/config-networking/"><i class="fas fa-book-open pr-1"></i>流量管理配置</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/gateway/">Gateway</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/virtual-service/">VirtualService</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/destination-rule/">DestinationRule</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/workload-entry/">WorkloadEntry</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/workload-group/">WorkloadGroup</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/service-entry/">ServiceEntry</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/sidecar/">Sidecar</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/envoy-filter/">EnvoyFilter</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/proxy-config/">ProxyConfig</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/observability/"><i class="fas fa-book-open pr-1"></i>可观察性</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/observability/telemetry-api/">Telemetry API</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/observability/prometheus/">Prometheus</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/observability/grafana/">Grafana</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/observability/zipkin/">Zipkin</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/observability/kiali/">Kiali</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/security/"><i class="fas fa-book-open pr-1"></i>安全</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/security/authn/">认证</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/security/peer-and-request-authn/">对等认证和请求认证</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/security/mtls/">mTLS</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/security/authz/">授权</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/config-security/"><i class="fas fa-book-open pr-1"></i>安全配置</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/config-security/authorization-policy/">AuthorizationPolicy</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-security/request-authentication/">RequestAuthentication</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-security/peer-authentication/">PeerAuthentication</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-security/jwt/">JWTRule</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/advanced/"><i class="fas fa-book-open pr-1"></i>高级功能</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/advanced/multicluster-deployment/">多集群部署</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/advanced/vm/">虚拟机负载</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/troubleshooting/"><i class="fas fa-book-open pr-1"></i>问题排查</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/troubleshooting/envoy-basic/">Envoy 基础问题</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/troubleshooting/envoy-sample/">Envoy 示例</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/troubleshooting/checklist/">调试清单</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/troubleshooting/istio-dev-env/">Istio 开发环境配置</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/ecosystem/"><i class="fas fa-book-open pr-1"></i>Istio 生态</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/ecosystem/aeraki/">Aeraki</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/ecosystem/slime/">Slime</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/ecosystem/merbridge/">Merbridge</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/practice/"><i class="fas fa-book-open pr-1"></i>实战案例</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/create-cluster/">创建集群</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/online-boutique/">部署 Online Boutique 应用</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/observability/">部署可观察性工具</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/traffic-routing/">路由流量</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/fault-injection/">错误注入</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/resiliency/">弹性</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+      
+    
+
+    
+      </ul>
+    
+
+  
+</nav>
+
+    </div>
+
+    
+    
+    <div class="d-none d-xl-block col-xl-2 docs-toc">
+      
+
+      <ul class="nav toc-top">
+        <li><a href="#" id="back_to_top" class="docs-toc-title">目录</a></li>
+      </ul>
+
+      <nav id="TableOfContents">
+  <ul>
+    <li><a href="#服务网格的部署模式">服务网格的部署模式</a></li>
+    <li><a href="#控制平面">控制平面</a></li>
+    <li><a href="#数据平面">数据平面</a></li>
+  </ul>
+</nav>
+
+      
+    </div>
+    
+
+    <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 docs-content" role="main">
+
+      <article class="article">
+
+        <div class="docs-article-container">
+          
+
+          <h1>服务网格架构</h1>
+
+          <div class="article-style">
+            <p>这一节中，我将为你介绍服务网格的架构，首先我们先来了解下服务网格常用的四种部署模式，然后是其最基本的组成部分——控制平面和数据平面。</p>
+<h2 id="服务网格的部署模式">服务网格的部署模式</h2>
+<p>这四种模式分别是Sidecar 代理、节点共享代理、Service Account/节点共享代理、带有微代理的共享远程代理。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-服务网格的部署模式">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img src="../../images/service-mesh-deployment-models.png" alt="服务网格的部署模式" loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      服务网格的部署模式
+    </figcaption></figure>
+</p>
+<p>这几种架构模式的主要区别是代理所在的位置不同，模式一在每个应用程序旁运行一个代理，模式二在每个节点上运行一个代理，模式三在每个节点中，再根据 ServiceAccount 的数量，每个 ServiceAccount 运行一个代理，模式四在每个应用旁运行一个微代理，这个代理仅处理 mTLS ，而七层代理位于远程，这几种方式在安全性、隔离及运维开销上的对比如这个表格所示。</p>
+<table>
+<thead>
+<tr>
+<th><strong>模式</strong></th>
+<th><strong>内存开销</strong></th>
+<th><strong>安全性</strong></th>
+<th><strong>故障域</strong></th>
+<th><strong>运维</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Sidecar 代理</strong></td>
+<td>因为为每个 pod 都注入一个代理，所以开销最大。</td>
+<td>由于 sidecar 必须与工作负载一起部署，工作负载有可能绕过 sidecar。</td>
+<td>Pod 级别隔离，如果有代理出现故障，只影响到 Pod 中的工作负载。</td>
+<td>可以单独升级某个工作负载的 sidecar 而不影响其他工作负载。</td>
+</tr>
+<tr>
+<td><strong>节点共享代理</strong></td>
+<td>每个节点上只有一个代理，为该节点上的所有工作负载所共享，开销小。</td>
+<td>对加密内容和私钥的管理存在安全隐患。</td>
+<td>节点级别隔离，如果共享代理升级时出现版本冲突、配置冲突或扩展不兼容等问题，则可能会影响该节点上的所有工作负载。</td>
+<td>不需要考虑注入 Sidecar 的问题。</td>
+</tr>
+<tr>
+<td><strong>Service Account/节点共享代理</strong></td>
+<td>服务账户/身份下的所有工作负载都使用共享代理，开销小。</td>
+<td>工作负载和代理之间的连接的认证及安全性无法保障。</td>
+<td>节点和服务账号之间级别隔离，故障同“节点共享代理”。</td>
+<td>同“节点共享代理”。</td>
+</tr>
+<tr>
+<td><strong>带有微代理的共享远程代理</strong></td>
+<td>因为为每个 pod 都注入一个微代理，开销比较大。</td>
+<td>微代理专门处理 mTLS，不负责 L7 路由，可以保障安全性。</td>
+<td>当需要应用7层策略时，工作负载实例的流量会被重定向到L7代理上，若不需要，则可以直接绕过。该L7代理可以采用共享节点代理、每个服务账户代理，或者远程代理的方式运行。</td>
+<td>同“Sidecar 代理”。</td>
+</tr>
+</tbody>
+</table>
+<p>Istio 是目前最流行的服务网格的开源实现，它的架构目前来说有两种，一种是 Sidecar 模式，这也是 Istio 最传统的部署架构，另一种是 Proxyless 模式。这两种模式，我们将在下一节中介绍。</p>
+<p>下面我们将介绍服务网格的两个主要组成部分——控制平面和数据平面。</p>
+<h2 id="控制平面">控制平面</h2>
+<p>控制平面的特点：</p>
+<ul>
+<li>不直接解析数据包</li>
+<li>与控制平面中的代理通信，下发策略和配置</li>
+<li>负责网络行为的可视化</li>
+<li>通常提供 API 或者命令行工具可用于配置版本化管理，便于持续集成和部署</li>
+</ul>
+<h2 id="数据平面">数据平面</h2>
+<p>数据平面的特点：</p>
+<ul>
+<li>通常是按照无状态目标设计的，但实际上为了提高流量转发性能，需要缓存一些数据，因此无状态也是有争议的</li>
+<li>直接处理入站和出站数据包，转发、路由、健康检查、负载均衡、认证、鉴权、产生监控数据等</li>
+<li>对应用来说透明，即可以做到无感知部署</li>
+</ul>
+
+          </div>
+
+          
+
+
+
+          
+          
+          <div class="article-widget">
+            
+<div class="post-nav">
+  
+  
+  
+  <div class="post-nav-item">
+    <div class="meta-nav">下一页</div>
+    <a href="/docs/istio-handbook/concepts/service-mesh-patterns/" rel="prev">服务网格的实现模式</a>
+  </div>
+  
+</div>
+
+          </div>
+          
+        </div>
+
+        <div class="body-footer">
+          <p>最近更新于 2022-05-19</p>
+
+          
+
+
+
+          
+
+
+
+
+          
+
+
+        </div>
+
+      </article>
+
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2022 jimmysong.io all right reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+
+    </main>
+  </div>
+</div>
+
+  </div>
+
+  <div class="page-footer">
+    
+    
+  </div>
+
+      
+
+    
+    <script src="/docs/js/vendor-bundle.min.53d67dc2cb1ebceb89d5e2aba2f86112.js"></script>
+
+    
+    
+    
+      
+
+      
+      
+
+      
+
+      
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+        
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/r.min.js" crossorigin="anonymous"></script>
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/latex.min.js" crossorigin="anonymous"></script>
+        
+      
+
+    
+
+    
+    
+    
+
+    
+    
+    <script src="https://cdn.jsdelivr.net/gh/bryanbraun/anchorjs@4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+    <script>
+      anchors.add();
+    </script>
+    
+
+    
+    
+    
+      
+      <script id="search-hit-fuse-template" type="text/x-template">
+        <div class="search-hit" id="summary-{{key}}">
+          <div class="search-hit-content">
+            <div class="search-hit-name">
+              <a href="{{relpermalink}}">{{title}}</a>
+              <div class="article-metadata search-hit-type">{{type}}</div>
+              <p class="search-hit-description">{{snippet}}</p>
+            </div>
+          </div>
+        </div>
+      </script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/krisk/Fuse@v3.2.1/dist/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/gh/julmot/mark.js@8.11.1/dist/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+      
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+      
+      
+      
+      
+      
+      
+      
+    
+
+    
+
+    
+    
+    
+    <script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+      
+    
+    
+    <script src="/docs/zh/js/wowchemy.min.0f418cf2259d1bfdb92011cb96f5bed5.js"></script>
+
+    
+    
+    
+    
+    
+    
+      
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <script src="/docs/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+
+
+
+
+
+
+</body>
+</html>

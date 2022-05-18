@@ -1,0 +1,2056 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+    
+  
+  <meta name="description" content="Envoy sidecar 代理配置中包含以下四个部分： bootstrap：Envo" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://jimmysong.io/docs/istio-handbook/data-plane/envoy-proxy-config-deep-dive/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/docs/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/docs/css/wowchemy.cc915e15a67bf89bb087a2c650f2b1f1.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-93485976-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+
+  function gtag() {
+      dataLayer.push(arguments);
+  }
+
+  function trackOutboundLink(url, target) {
+    gtag('event', 'click', {
+         'event_category': 'outbound',
+         'event_label': url,
+         'transport_type': 'beacon',
+         'event_callback': function () {
+           if (target !== '_blank') {
+             document.location = url;
+           }
+         }
+    });
+    console.debug("Outbound link clicked: " + url);
+  }
+
+  function onClickCallback(event) {
+    if ((event.target.tagName !== 'A') || (event.target.host === window.location.host)) {
+      return;
+    }
+    trackOutboundLink(event.target, event.target.getAttribute('target'));  
+  }
+
+  gtag('js', new Date());
+  gtag('config', 'UA-93485976-1', {});
+  gtag('set', {'cookie_flags': 'SameSite=None;Secure'});
+
+  
+  document.addEventListener('click', onClickCallback, false);
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?11f7d254cfa4e0ca44b175c66d379ecc";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/docs/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://jimmysong.io/docs/istio-handbook/data-plane/envoy-proxy-config-deep-dive/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://jimmysong.io/docs/istio-handbook/data-plane/envoy-proxy-config-deep-dive/" />
+  <meta property="og:title" content="Envoy 代理配置详解 | 云原生资料库" />
+  <meta property="og:description" content="Envoy sidecar 代理配置中包含以下四个部分： bootstrap：Envo" /><meta property="og:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" />
+    <meta property="twitter:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2022-05-18T00:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2022-05-19T00:11:14&#43;08:00">
+  
+
+  
+
+
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>Envoy 代理配置详解 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="3e43ede9cec7b399968d8d614bbf4747" >
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/docs/js/wowchemy-init.min.62d6f8dfe8493f1c68557dde65bec362.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>搜索</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>主页</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/cloud-native"><span>云原生宝典</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#portfolio"><span>书目列表</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/event"><span>活动</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io/blog/" target="_blank" rel="noopener"><span>原创</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/translation"><span>翻译</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io/about/" target="_blank" rel="noopener"><span>关于</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+
+        
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/rootsongjc/docs/" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    
+
+
+
+
+<div class="container-fluid docs">
+  <div class="row flex-xl-nowrap">
+    <div class="col-12 col-md-3 col-xl-2 docs-sidebar">
+      <form class="docs-search d-flex align-items-center">
+  <button class="btn docs-toggle d-md-none p-0 mr-md-3 w-100" type="button" data-toggle="collapse" data-target="#docs-nav" aria-controls="docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    <div class="d-flex">
+      <span class="d-md-none pl-1 flex-grow-1 text-left overflow-hidden">
+        
+          数据平面
+        
+      </span>
+      <span><i class="fas fa-chevron-down"></i></span>
+    </div>
+  </button>
+
+  
+  <button class="form-control sidebar-search js-search d-none d-md-flex">
+    <i class="fas fa-search pr-2"></i>
+    <span class="sidebar-search-text">搜索...</span>
+    <span class="sidebar-search-shortcut">/</span>
+  </button>
+  
+</form>
+
+<nav class="collapse docs-links" id="docs-nav">
+  
+  
+  
+  
+  
+  
+
+  
+  
+    
+
+    
+      
+
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <ul class="nav docs-sidenav">
+        <li class=""><a href="/docs/istio-handbook/"><i class="fas fa-book pr-1"></i>Istio服务网格基础教程</a></li>
+    
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/intro/"><i class="fas fa-book-open pr-1"></i>服务网格概述</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/intro/what-is-service-mesh/">什么是服务网格？</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/intro/why-service-mesh/">为什么要使用服务网格？</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/intro/cloud-native-application-network/">云原生应用网络</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/concepts/"><i class="fas fa-book-open pr-1"></i>概念原理</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/service-mesh-architectures/">服务网格架构</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/service-mesh-patterns/">服务网格的实现模式</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/istio-intro/">Istio 简介</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/istio-architecture/">Istio 架构解析</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/sidecar-pattern/">Sidecar 模式</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/istio-sidecar-injector/">Sidecar 自动注入过程详解</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/transparent-traffic-hijacking/">Istio 中的透明流量劫持过程详解</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/sidecar-traffic-routing-deep-dive/">Istio 中的 Sidecar 的流量路由详解</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/concepts/what-is-istio/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/data-plane/"><i class="fas fa-book-open pr-1"></i>数据平面</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-terminology/">Envoy 中的基本术语</a></li>
+
+
+
+  <li class="active"><a href="/docs/istio-handbook/data-plane/envoy-proxy-config-deep-dive/">Envoy 代理配置详解</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-xds-protocol/">xDS 协议解析</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-lds/">LDS（监听器发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-rds/">RDS（路由发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-cds/">CDS（集群发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-eds/">EDS（端点发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-sds/">SDS（秘钥发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/envoy-ads/">ADS（聚合发现服务）</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/data-plane/istio-sidecar-proxy-config/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/setup/"><i class="fas fa-book-open pr-1"></i>安装</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/setup/istio-installation/">安装 Istio</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/setup/getmesh/">GetMesh</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/setup/istio-observability-tool-kiali/">Kiali</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/setup/bookinfo-sample/">Bookinfo 示例</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/traffic-management/"><i class="fas fa-book-open pr-1"></i>流量管理</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/basic/">流量管理基础概念</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/gateway/">Gateway</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/basic-routing/">基本路由</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/subset-and-destinationrule/">Subset 和 DestinationRule</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/resiliency/">弹性</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/fault-injection/">错误注入</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/advanced-routing/">高级路由</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/seviceentry/">ServiceEntry</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/sidecar/">Sidecar</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/traffic-management/envoyfilter/">EnvoyFilter</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/config-networking/"><i class="fas fa-book-open pr-1"></i>流量管理配置</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/gateway/">Gateway</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/virtual-service/">VirtualService</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/destination-rule/">DestinationRule</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/workload-entry/">WorkloadEntry</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/workload-group/">WorkloadGroup</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/service-entry/">ServiceEntry</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/sidecar/">Sidecar</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/envoy-filter/">EnvoyFilter</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-networking/proxy-config/">ProxyConfig</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/observability/"><i class="fas fa-book-open pr-1"></i>可观察性</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/observability/telemetry-api/">Telemetry API</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/observability/prometheus/">Prometheus</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/observability/grafana/">Grafana</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/observability/zipkin/">Zipkin</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/observability/kiali/">Kiali</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/security/"><i class="fas fa-book-open pr-1"></i>安全</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/security/authn/">认证</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/security/peer-and-request-authn/">对等认证和请求认证</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/security/mtls/">mTLS</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/security/authz/">授权</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/config-security/"><i class="fas fa-book-open pr-1"></i>安全配置</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/config-security/authorization-policy/">AuthorizationPolicy</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-security/request-authentication/">RequestAuthentication</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-security/peer-authentication/">PeerAuthentication</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/config-security/jwt/">JWTRule</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/advanced/"><i class="fas fa-book-open pr-1"></i>高级功能</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/advanced/multicluster-deployment/">多集群部署</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/advanced/vm/">虚拟机负载</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/troubleshooting/"><i class="fas fa-book-open pr-1"></i>问题排查</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/troubleshooting/envoy-basic/">Envoy 基础问题</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/troubleshooting/envoy-sample/">Envoy 示例</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/troubleshooting/checklist/">调试清单</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/troubleshooting/istio-dev-env/">Istio 开发环境配置</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/ecosystem/"><i class="fas fa-book-open pr-1"></i>Istio 生态</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/ecosystem/aeraki/">Aeraki</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/ecosystem/slime/">Slime</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/ecosystem/merbridge/">Merbridge</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/istio-handbook/practice/"><i class="fas fa-book-open pr-1"></i>实战案例</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/create-cluster/">创建集群</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/online-boutique/">部署 Online Boutique 应用</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/observability/">部署可观察性工具</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/traffic-routing/">路由流量</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/fault-injection/">错误注入</a></li>
+
+
+
+  <li class=""><a href="/docs/istio-handbook/practice/resiliency/">弹性</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+      
+    
+
+    
+      </ul>
+    
+
+  
+</nav>
+
+    </div>
+
+    
+    
+    <div class="d-none d-xl-block col-xl-2 docs-toc">
+      
+
+      <ul class="nav toc-top">
+        <li><a href="#" id="back_to_top" class="docs-toc-title">目录</a></li>
+      </ul>
+
+      <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#listener">Listener</a></li>
+        <li><a href="#cluster">Cluster</a></li>
+        <li><a href="#route">Route</a></li>
+      </ul>
+    </li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+
+      
+    </div>
+    
+
+    <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 docs-content" role="main">
+
+      <article class="article">
+
+        <div class="docs-article-container">
+          
+
+          <h1>Envoy 代理配置详解</h1>
+
+          <div class="article-style">
+            <p>Envoy sidecar 代理配置中包含以下四个部分：</p>
+<ul>
+<li><strong>bootstrap</strong>：Envoy proxy 启动时候加载的静态配置。</li>
+<li><strong>listeners</strong>：监听器配置，使用 LDS 下发。</li>
+<li><strong>clusters</strong>：集群配置，静态配置中包括 xds-grpc 和 zipkin 地址，动态配置使用  CDS 下发。</li>
+<li><strong>routes</strong>：路由配置，静态配置中包括了本地监听的服务的集群信息，其中引用了 cluster，动态配置使用 RDS 下发。</li>
+</ul>
+<p>每个部分中都包含静态配置与动态配置，其中 bootstrap 配置又是在集群启动的时候通过 sidecar 启动参数注入的，配置文件在 <code>/etc/istio/proxy/envoy-rev0.json</code>。</p>
+<p>Envoy 的配置 dump 出来后的结构如下图所示。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-envoy-配置">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img src="../../images/006tNbRwly1fy2x2zk1hhj30ee0h9jtg.jpg" alt="Envoy 配置" loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      Envoy 配置
+    </figcaption></figure>
+</p>
+<p>由于 bootstrap 中的配置是来自 Envoy 启动时加载的静态文件，主要配置了节点信息、tracing、admin 和统计信息收集等信息，这不是本文的重点，大家可以自行研究。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-bootstrap-配置">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img src="../../images/006tNbRwly1fy2xid761zj30c70ai0tj.jpg" alt="bootstrap 配置" loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      bootstrap 配置
+    </figcaption></figure>
+</p>
+<p>上图是 bootstrap 的配置信息。</p>
+<p>Bootstrap 是 Envoy 中配置的根本来源，Bootstrap 消息中有一个关键的概念，就是静态和动态资源的之间的区别。例如 Listener或 Cluster 这些资源既可以从静态资源配置中获得也可以从动态资源中配置的 LDS 或 CDS 之类的 xDS 服务获取。</p>
+<h3 id="listener">Listener</h3>
+<p>Listener 顾名思义，就是监听器，监听 IP 地址和端口，然后根据策略转发。</p>
+<p><strong>Listener 的特点</strong></p>
+<ul>
+<li>每个 Envoy 进程中可以有多个 Listener，Envoy 与 Listener 之间是一对多的关系。</li>
+<li>每个 Listener 中可以配置一条 filter 链表（filter_chains），Envoy 会根据 filter 顺序执行过滤。</li>
+<li>Listener 可以监听下游的端口，也可以接收来自其他 listener 的数据，形成链式处理。</li>
+<li>filter 是可扩展的。</li>
+<li>可以静态配置，也可以使用 LDS 动态配置。</li>
+<li>目前只能监听 TCP，UDP 还未支持。</li>
+</ul>
+<p><strong>Listener 的数据结构</strong></p>
+<p>Listener 的数据结构如下，除了 <code>name</code>、<code>address</code> 和 <code>filter_chains</code> 为必须配置之外，其他都为可选的。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;name&#34;</span><span class="p">:</span> <span class="s2">&#34;...&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;address&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;filter_chains&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;use_original_dst&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;per_connection_buffer_limit_bytes&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;metadata&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;drain_type&#34;</span><span class="p">:</span> <span class="s2">&#34;...&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;listener_filters&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;transparent&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;freebind&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;socket_options&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;tcp_fast_open_queue_length&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;bugfix_reverse_write_filter_order&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>下面是关于上述数据结构中的常用配置解析。</p>
+<ul>
+<li>
+<p><strong>name</strong>：该 listener 的 UUID，唯一限定名，默认60个字符，例如 <code>10.254.74.159_15011</code>，可以使用命令参数指定长度限制。</p>
+</li>
+<li>
+<p><strong>address</strong>：监听的逻辑/物理地址和端口号，例如</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="s2">&#34;address&#34;</span><span class="err">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">       <span class="nt">&#34;socket_address&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nt">&#34;address&#34;</span><span class="p">:</span> <span class="s2">&#34;10.254.74.159&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="nt">&#34;port_value&#34;</span><span class="p">:</span> <span class="mi">15011</span>
+</span></span><span class="line"><span class="cl">       <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div></li>
+<li>
+<p><strong>filter_chains</strong>：这是一个列表，Envoy 中内置了一些通用的 filter，每种 filter 都有特定的数据结构，Envoy 会根据该配置顺序执行 filter。</p>
+</li>
+<li>
+<p><strong>use_original_dst</strong>：这是一个布尔值，如果使用 iptables 重定向连接，则代理接收的端口可能与原始目的地址的端口不一样。当此标志设置为 true 时，Listener 将重定向的连接切换到与原始目的地址关联的 Listener。如果没有与原始目的地址关联的 Listener，则连接由接收它的 Listener 处理。默认为 false。注意：该参数将被废弃，请使用原始目的地址的 Listener filter 替代。该参数的主要用途是，Envoy 通过监听 15001 端口将应用的流量截取后再由其他 Listener 处理而不是直接转发出去。</p>
+</li>
+</ul>
+<h3 id="cluster">Cluster</h3>
+<p>Cluster 是指 Envoy 连接的一组逻辑相同的上游主机。Envoy 通过服务发现来发现 cluster 的成员。可以选择通过主动健康检查来确定集群成员的健康状态。Envoy 通过负载均衡策略决定将请求路由到 cluster 的哪个成员。</p>
+<p><strong>Cluster 的特点</strong></p>
+<ul>
+<li>一组逻辑上相同的主机构成一个 cluster。</li>
+<li>可以在 cluster 中定义各种负载均衡策略。</li>
+<li>新加入的 cluster 需要一个热身的过程才可以给路由引用，该过程是原子的，即在 cluster 热身之前对于 Envoy 及 Service Mesh 的其余部分来说是不可见的。</li>
+<li>可以通过多种方式来配置 cluster，例如静态类型、严格限定 DNS、逻辑 DNS、EDS 等。</li>
+</ul>
+<p><strong>Cluster 的数据结构</strong></p>
+<p>Cluster 的数据结构如下，除了 <code>name</code> 字段，其他都是可选的。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;name&#34;</span><span class="p">:</span> <span class="s2">&#34;...&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;alt_stat_name&#34;</span><span class="p">:</span> <span class="s2">&#34;...&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;type&#34;</span><span class="p">:</span> <span class="s2">&#34;...&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;eds_cluster_config&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;connect_timeout&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;per_connection_buffer_limit_bytes&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;lb_policy&#34;</span><span class="p">:</span> <span class="s2">&#34;...&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;hosts&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;load_assignment&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;health_checks&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;max_requests_per_connection&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;circuit_breakers&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;tls_context&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;common_http_protocol_options&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;http_protocol_options&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;http2_protocol_options&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;extension_protocol_options&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;dns_refresh_rate&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;dns_lookup_family&#34;</span><span class="p">:</span> <span class="s2">&#34;...&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;dns_resolvers&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;outlier_detection&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;cleanup_interval&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;upstream_bind_config&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;lb_subset_config&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;ring_hash_lb_config&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;original_dst_lb_config&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;least_request_lb_config&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;common_lb_config&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;transport_socket&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;metadata&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;protocol_selection&#34;</span><span class="p">:</span> <span class="s2">&#34;...&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;upstream_connection_options&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;close_connections_on_host_health_failure&#34;</span><span class="p">:</span> <span class="s2">&#34;...&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;drain_connections_on_host_removal&#34;</span><span class="p">:</span> <span class="s2">&#34;...&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>下面是关于上述数据结构中的常用配置解析。</p>
+<ul>
+<li><strong>name</strong>：如果你留意到作为 Sidecar 启动的 Envoy 的参数的会注意到 <code>--max-obj-name-len 189</code>，该选项用来用来指定 cluster 的名字，例如 <code>inbound|9080||ratings.default.svc.cluster.local</code>。该名字字符串由 <code>|</code> 分隔成四个部分，分别是 <code>inbound</code> 或 <code>outbound</code> 代表入向流量或出向流量、端口号、subcluster 名称、FQDN，其中 subcluster 名称将对应于 Istio <code>DestinationRule</code> 中配置的 <code>subnet</code>，如果是按照多版本按比例路由的话，该值可以是版本号。</li>
+<li><strong>type</strong>：即服务发现类型，支持的参数有 <code>STATIC</code>（缺省值）、<code>STRICT_DNS</code>、<code>LOGICAL_DNS</code>、<code>EDS</code>、<code>ORIGINAL_DST</code>。</li>
+<li><strong>hosts</strong>：这是个列表，配置负载均衡的 IP 地址和端口，只有使用了  <code>STATIC</code>、<code>STRICT_DNS</code>、<code>LOGICAL_DNS</code> 服务发现类型时才需要配置。</li>
+<li><strong>eds_cluster_config</strong>：如果使用 <code>EDS</code> 做服务发现，则需要配置该项目，其中包括的配置有 <code>service_name</code> 和 <code>ads</code>。</li>
+</ul>
+<h3 id="route">Route</h3>
+<p>我们在这里所说的路由指的是 HTTP 路由，这也使得 Envoy 可以用来处理网格边缘的流量。HTTP 路由转发是通过路由过滤器实现的。该过滤器的主要职能就是执行路由表中的指令。除了可以做重定向和转发，路由过滤器还需要处理重试、统计之类的任务。</p>
+<p><strong>HTTP 路由的特点</strong></p>
+<ul>
+<li>前缀和精确路径匹配规则。</li>
+<li>可跨越多个上游集群进行基于权重/百分比的路由。</li>
+<li>基于优先级的路由。</li>
+<li>基于哈希策略的路由。</li>
+</ul>
+<p><strong>Route 的数据结构</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;name&#34;</span><span class="p">:</span> <span class="s2">&#34;...&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;virtual_hosts&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;internal_only_headers&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;response_headers_to_add&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;response_headers_to_remove&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;request_headers_to_add&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;request_headers_to_remove&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;validate_clusters&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>下面是关于上述数据结构中的常用配置解析。</p>
+<ul>
+<li><strong>name</strong>：该名字跟 <code>envoy.http_connection_manager</code> filter 中的 <code>http_filters.rds.route_config_name</code> 一致，在 Istio Service Mesh 中为 Envoy 下发的配置中的 Route 是以监听的端口号作为名字，而同一个名字下面的 <code>virtual_hosts</code> 可以有多个值（数组形式）。</li>
+<li><strong>virtual_hosts</strong>：因为 <strong>VirtualHosts</strong> 是 Envoy 中引入的一个重要概念，我们在下文将详细说明 <code>virtual_hosts</code> 的数据结构。</li>
+<li><strong>validate_clusters</strong>：这是一个布尔值，用来设置开启使用 cluster manager 来检测路由表引用的 cluster 是否有效。如果是路由表是通过 <code>route_config</code> 静态配置的则该值默认设置为 true，如果是使用 RDS 动态配置的话，则该值默认设置为 false。</li>
+</ul>
+<h4 id="routevirtualhost">route.VirtualHost</h4>
+<p>VirtualHost 即上文中 Route 配置中的 <code>virtual_hosts</code>，VirtualHost 是路由配置中的顶级元素。每个虚拟主机都有一个逻辑名称以及一组根据传入请求的 host header 路由到它的域。这允许单个 Listener 为多个顶级域路径树提供服务。基于域选择了虚拟主机后 Envoy  就会处理路由以查看要路由到哪个上游集群或是否执行重定向。</p>
+<p><strong>VirtualHost 的数据结构</strong></p>
+<p>下面是 VirtualHost 的数据结构，除了 <code>name</code> 和 <code>domains</code> 是必须配置项外，其他皆为可选项。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;name&#34;</span><span class="p">:</span> <span class="s2">&#34;...&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;domains&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;routes&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;require_tls&#34;</span><span class="p">:</span> <span class="s2">&#34;...&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;virtual_clusters&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;rate_limits&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;request_headers_to_add&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;request_headers_to_remove&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;response_headers_to_add&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;response_headers_to_remove&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;cors&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;per_filter_config&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;include_request_attempt_count&#34;</span><span class="p">:</span> <span class="s2">&#34;...&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>下面是关于上述数据结构中的常用配置解析。</p>
+<ul>
+<li><strong>name</strong>：该 VirtualHost 的名字，一般是 FQDN 加端口，如 <code>details.default.svc.cluster.local:9080</code>。</li>
+<li><strong>domains</strong>：这是个用来匹配 VirtualHost 的域名（host/authority header）列表，也可以使用通配符，但是通配符不能匹配空字符，除了仅使用 <code>*</code> 作为 domains，注意列表中的值不能重复和存在交集，只要有一条 domain 被匹配上了，就会执行路由。Istio 会为该值配置所有地址解析形式，包括 IP 地址、FQDN 和短域名等。</li>
+<li><strong>routes</strong>：针对入口流量的有序路由列表，第一个匹配上的路由将被执行。我们在下文将详细说明 route 的数据结构。</li>
+</ul>
+<p>下面是一个实际的 VirtualHost 的例子，该配置来自 Bookinfo 应用的 details 应用的 Sidecar 服务。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;name&#34;</span><span class="p">:</span> <span class="s2">&#34;details.default.svc.cluster.local:9080&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;domains&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;details.default.svc.cluster.local&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;details.default.svc.cluster.local:9080&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;details&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;details:9080&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;details.default.svc.cluster&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;details.default.svc.cluster:9080&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;details.default.svc&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;details.default.svc:9080&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;details.default&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;details.default:9080&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;10.254.4.113&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;10.254.4.113:9080&#34;</span>
+</span></span><span class="line"><span class="cl">            <span class="p">],</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;routes&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">                <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                    <span class="nt">&#34;match&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                        <span class="nt">&#34;prefix&#34;</span><span class="p">:</span> <span class="s2">&#34;/&#34;</span>
+</span></span><span class="line"><span class="cl">                    <span class="p">},</span>
+</span></span><span class="line"><span class="cl">                    <span class="nt">&#34;route&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                        <span class="nt">&#34;cluster&#34;</span><span class="p">:</span> <span class="s2">&#34;outbound|9080||details.default.svc.cluster.local&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                        <span class="nt">&#34;timeout&#34;</span><span class="p">:</span> <span class="s2">&#34;0s&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                        <span class="nt">&#34;max_grpc_timeout&#34;</span><span class="p">:</span> <span class="s2">&#34;0s&#34;</span>
+</span></span><span class="line"><span class="cl">                    <span class="p">},</span>
+</span></span><span class="line"><span class="cl">                    <span class="nt">&#34;decorator&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                        <span class="nt">&#34;operation&#34;</span><span class="p">:</span> <span class="s2">&#34;details.default.svc.cluster.local:9080/*&#34;</span>
+</span></span><span class="line"><span class="cl">                    <span class="p">},</span>
+</span></span><span class="line"><span class="cl">                    <span class="nt">&#34;per_filter_config&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                        <span class="nt">&#34;mixer&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                            <span class="nt">&#34;forward_attributes&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                                <span class="nt">&#34;attributes&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                                    <span class="nt">&#34;destination.service.uid&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                                        <span class="nt">&#34;string_value&#34;</span><span class="p">:</span> <span class="s2">&#34;istio://default/services/details&#34;</span>
+</span></span><span class="line"><span class="cl">                                    <span class="p">},</span>
+</span></span><span class="line"><span class="cl">                                    <span class="nt">&#34;destination.service.host&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                                        <span class="nt">&#34;string_value&#34;</span><span class="p">:</span> <span class="s2">&#34;details.default.svc.cluster.local&#34;</span>
+</span></span><span class="line"><span class="cl">                                    <span class="p">},</span>
+</span></span><span class="line"><span class="cl">                                    <span class="nt">&#34;destination.service.namespace&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                                        <span class="nt">&#34;string_value&#34;</span><span class="p">:</span> <span class="s2">&#34;default&#34;</span>
+</span></span><span class="line"><span class="cl">                                    <span class="p">},</span>
+</span></span><span class="line"><span class="cl">                                    <span class="nt">&#34;destination.service.name&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                                        <span class="nt">&#34;string_value&#34;</span><span class="p">:</span> <span class="s2">&#34;details&#34;</span>
+</span></span><span class="line"><span class="cl">                                    <span class="p">},</span>
+</span></span><span class="line"><span class="cl">                                    <span class="nt">&#34;destination.service&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                                        <span class="nt">&#34;string_value&#34;</span><span class="p">:</span> <span class="s2">&#34;details.default.svc.cluster.local&#34;</span>
+</span></span><span class="line"><span class="cl">                                    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">                                <span class="p">}</span>
+</span></span><span class="line"><span class="cl">                            <span class="p">},</span>
+</span></span><span class="line"><span class="cl">                            <span class="nt">&#34;mixer_attributes&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                                <span class="nt">&#34;attributes&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                                    <span class="nt">&#34;destination.service.host&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                                        <span class="nt">&#34;string_value&#34;</span><span class="p">:</span> <span class="s2">&#34;details.default.svc.cluster.local&#34;</span>
+</span></span><span class="line"><span class="cl">                                    <span class="p">},</span>
+</span></span><span class="line"><span class="cl">                                    <span class="nt">&#34;destination.service.uid&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                                        <span class="nt">&#34;string_value&#34;</span><span class="p">:</span> <span class="s2">&#34;istio://default/services/details&#34;</span>
+</span></span><span class="line"><span class="cl">                                    <span class="p">},</span>
+</span></span><span class="line"><span class="cl">                                    <span class="nt">&#34;destination.service.name&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                                        <span class="nt">&#34;string_value&#34;</span><span class="p">:</span> <span class="s2">&#34;details&#34;</span>
+</span></span><span class="line"><span class="cl">                                    <span class="p">},</span>
+</span></span><span class="line"><span class="cl">                                    <span class="nt">&#34;destination.service.namespace&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                                        <span class="nt">&#34;string_value&#34;</span><span class="p">:</span> <span class="s2">&#34;default&#34;</span>
+</span></span><span class="line"><span class="cl">                                    <span class="p">},</span>
+</span></span><span class="line"><span class="cl">                                    <span class="nt">&#34;destination.service&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                                        <span class="nt">&#34;string_value&#34;</span><span class="p">:</span> <span class="s2">&#34;details.default.svc.cluster.local&#34;</span>
+</span></span><span class="line"><span class="cl">                                    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">                                <span class="p">}</span>
+</span></span><span class="line"><span class="cl">                            <span class="p">},</span>
+</span></span><span class="line"><span class="cl">                            <span class="nt">&#34;disable_check_calls&#34;</span><span class="p">:</span> <span class="kc">true</span>
+</span></span><span class="line"><span class="cl">                        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">                    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">                <span class="p">}</span>
+</span></span><span class="line"><span class="cl">            <span class="p">]</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span></code></pre></div><h4 id="routeroute">route.Route</h4>
+<p>路由既是如何匹配请求的规范，也是对下一步做什么的指示（例如，redirect、forward、rewrite等）。</p>
+<p><strong>route.Route 的数据结构</strong></p>
+<p>下面是是 route.Route 的数据结构，除了 <code>match</code> 之外其余都是可选的。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;match&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;route&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;redirect&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;direct_response&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;metadata&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;decorator&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;per_filter_config&#34;</span><span class="p">:</span> <span class="s2">&#34;{...}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;request_headers_to_add&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;request_headers_to_remove&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;response_headers_to_add&#34;</span><span class="p">:</span> <span class="p">[],</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;response_headers_to_remove&#34;</span><span class="p">:</span> <span class="p">[]</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>下面是关于上述数据结构中的常用配置解析。</p>
+<ul>
+<li><strong>match</strong>：路由匹配参数。例如 URL prefix（前缀）、path（URL 的完整路径）、regex（规则表达式）等。</li>
+<li><strong>route</strong>：这里面配置路由的行为，可以是 route、redirect 和 <code>direct_response</code>，不过这里面没有专门的一个配置项用来配置以上三种行为，而是根据实际填充的配置项来确定的。例如在此处添加 <code>cluster</code> 配置则暗示路由动作为”route“，表示将流量路由到该 cluster。</li>
+<li><strong>decorator</strong>：被匹配的路由的修饰符，表示被匹配的虚拟主机和 URL。该配置里有且只有一个必须配置的项 <code>operation</code>，例如 <code>details.default.svc.cluster.local:9080/*</code>。</li>
+<li><strong>per_filter_config</strong>：这是一个 map 类型，<code>per_filter_config</code> 字段可用于为 filter 提供特定路由的配置。Map 的 key 应与 filleter 名称匹配，例如用于 HTTP buffer filter 的 <code>envoy.buffer</code>。</li>
+</ul>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://cloudnative.to/envoy/" target="_blank" rel="noopener">Envoy 中文文档 - cloudnative.to</a></li>
+</ul>
+
+          </div>
+
+          
+
+
+
+          
+          
+          <div class="article-widget">
+            
+<div class="post-nav">
+  
+  
+  
+  <div class="post-nav-item">
+    <div class="meta-nav">上一页</div>
+    <a href="/docs/istio-handbook/data-plane/envoy-terminology/" rel="next">Envoy 中的基本术语</a>
+  </div>
+  
+  
+  
+  <div class="post-nav-item">
+    <div class="meta-nav">下一页</div>
+    <a href="/docs/istio-handbook/data-plane/envoy-xds-protocol/" rel="prev">xDS 协议解析</a>
+  </div>
+  
+</div>
+
+          </div>
+          
+        </div>
+
+        <div class="body-footer">
+          <p>最近更新于 2022-05-19</p>
+
+          
+
+
+
+          
+
+
+
+
+          
+
+
+        </div>
+
+      </article>
+
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2022 jimmysong.io all right reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+
+    </main>
+  </div>
+</div>
+
+  </div>
+
+  <div class="page-footer">
+    
+    
+  </div>
+
+      
+
+    
+    <script src="/docs/js/vendor-bundle.min.53d67dc2cb1ebceb89d5e2aba2f86112.js"></script>
+
+    
+    
+    
+      
+
+      
+      
+
+      
+
+      
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+        
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/r.min.js" crossorigin="anonymous"></script>
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/latex.min.js" crossorigin="anonymous"></script>
+        
+      
+
+    
+
+    
+    
+    
+
+    
+    
+    <script src="https://cdn.jsdelivr.net/gh/bryanbraun/anchorjs@4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+    <script>
+      anchors.add();
+    </script>
+    
+
+    
+    
+    
+      
+      <script id="search-hit-fuse-template" type="text/x-template">
+        <div class="search-hit" id="summary-{{key}}">
+          <div class="search-hit-content">
+            <div class="search-hit-name">
+              <a href="{{relpermalink}}">{{title}}</a>
+              <div class="article-metadata search-hit-type">{{type}}</div>
+              <p class="search-hit-description">{{snippet}}</p>
+            </div>
+          </div>
+        </div>
+      </script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/krisk/Fuse@v3.2.1/dist/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/gh/julmot/mark.js@8.11.1/dist/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+      
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+      
+      
+      
+      
+      
+      
+      
+    
+
+    
+
+    
+    
+    
+    <script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+      
+    
+    
+    <script src="/docs/zh/js/wowchemy.min.0f418cf2259d1bfdb92011cb96f5bed5.js"></script>
+
+    
+    
+    
+    
+    
+    
+      
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <script src="/docs/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+
+
+
+
+
+
+</body>
+</html>

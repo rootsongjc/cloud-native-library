@@ -1,0 +1,578 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>可观察性 | 云原生资料库</title>
+    <link>https://jimmysong.io/docs/istio-handbook/observability/</link>
+      <atom:link href="https://jimmysong.io/docs/istio-handbook/observability/index.xml" rel="self" type="application/rss+xml" />
+    <description>可观察性</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Wed, 18 May 2022 00:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png</url>
+      <title>可观察性</title>
+      <link>https://jimmysong.io/docs/istio-handbook/observability/</link>
+    </image>
+    
+    <item>
+      <title>Telemetry API</title>
+      <link>https://jimmysong.io/docs/istio-handbook/observability/telemetry-api/</link>
+      <pubDate>Wed, 18 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/istio-handbook/observability/telemetry-api/</guid>
+      <description>&lt;p&gt;Istio 1.11 引入了 &lt;a href=&#34;https://istio.io/latest/docs/tasks/observability/telemetry/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Telemetry API&lt;/a&gt;，并在 1.13 中进行了完善。使用该 API，你可以一站式的灵活地配置&lt;a href=&#34;https://istio.io/latest/docs/tasks/observability/metrics/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;指标&lt;/a&gt;、&lt;a href=&#34;https://istio.io/latest/docs/tasks/observability/logs/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;访问日志&lt;/a&gt;和&lt;a href=&#34;https://istio.io/latest/docs/tasks/observability/distributed-tracing/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;追踪&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;使用-api&#34;&gt;使用 API&lt;/h2&gt;
+&lt;p&gt;下面将向你介绍如何使用 Telemetry API。&lt;/p&gt;
+&lt;h3 id=&#34;范围继承和重写&#34;&gt;范围、继承和重写&lt;/h3&gt;
+&lt;p&gt;Telemetry API 资源从 Istio 配置中继承的顺序：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;根配置命名空间（例如：&lt;code&gt;istio-system&lt;/code&gt;）&lt;/li&gt;
+&lt;li&gt;本地命名空间（命名空间范围内的资源，没有工作负载 &lt;code&gt;selector&lt;/code&gt;）&lt;/li&gt;
+&lt;li&gt;工作负载（具有工作负载 &lt;code&gt;selector&lt;/code&gt; 的命名空间范围的资源）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;根配置命名空间（通常是 &lt;code&gt;istio-system&lt;/code&gt;）中的 Telemetry API 资源提供网格范围内的默认行为。根配置命名空间中的任何特定工作负载选择器将被忽略 / 拒绝。在根配置命名空间中定义多个网格范围的 Telemetry API 资源是无效的。&lt;/p&gt;
+&lt;p&gt;要想在某个特定的命名空间内覆盖网格范围的配置，可以通过在该命名空间中应用新的 Telemetry 资源（无需工作负载选择器）来实现。命名空间配置中指定的任何字段将完全覆盖父配置（根配置命名空间）中的字段。&lt;/p&gt;
+&lt;p&gt;要想覆盖特定工作负载的遥测配置，可以在其命名空间中应用带有工作负载选择器的新的 Telemetry 资源来实现。&lt;/p&gt;
+&lt;h3 id=&#34;工作负载选择&#34;&gt;工作负载选择&lt;/h3&gt;
+&lt;p&gt;命名空间内的单个工作负载是通过 &lt;code&gt;selector&lt;/code&gt; 选择的，该选择器允许基于标签选择工作负载。&lt;/p&gt;
+&lt;p&gt;让两个不同的 Telemetry 资源使用 &lt;code&gt;selector&lt;/code&gt; 选择同一个工作负载是无效的。同样，在一个命名空间中有两个不同的 Telemetry 资源而没有指定 &lt;code&gt;selector&lt;/code&gt; 也是无效的。&lt;/p&gt;
+&lt;h3 id=&#34;提供者选择&#34;&gt;提供者选择&lt;/h3&gt;
+&lt;p&gt;Telemetry API 使用提供者（Provider）的概念来表示要使用的协议或集成类型。提供者可以在 &lt;a href=&#34;https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;MeshConfig&lt;/code&gt;&lt;/a&gt; 中进行配置。&lt;/p&gt;
+&lt;p&gt;下面是一个 MeshConfig 中配置提供者的例子。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;data&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;mesh&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;|-&lt;/span&gt;&lt;span class=&#34;sd&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;      extensionProviders: # The following content defines two example tracing providers.
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;      - name: &amp;#34;localtrace&amp;#34;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;        zipkin:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;          service: &amp;#34;zipkin.istio-system.svc.cluster.local&amp;#34;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;          port: 9411
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;          maxTagLength: 56
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;      - name: &amp;#34;cloudtrace&amp;#34;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;        stackdriver:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;          maxTagLength: 256&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;      
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;为方便起见，Istio 在开箱时就配置了一些默认设置的提供者。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;提供者名称&lt;/th&gt;
+&lt;th&gt;功能&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;prometheus&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;指标&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;stackdriver&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;指标、追踪、日志记录&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;envoy&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;日志记录&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;此外，还可以设置一个默认的提供者，当 Telemetry 资源没有指定提供者时使用。&lt;/p&gt;
+&lt;h2 id=&#34;示例&#34;&gt;示例&lt;/h2&gt;
+&lt;p&gt;Telemetry API 资源继承自网格的根配置命名空间，通常是 &lt;code&gt;istio-system&lt;/code&gt;。要配置整个网格的行为，在根配置命名空间中添加一个新的（或编辑现有的）Telemetry 资源。&lt;/p&gt;
+&lt;p&gt;下面是一个使用上一节中提供者配置的例子。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;telemetry.istio.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Telemetry&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;mesh-default&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istio-system&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tracing&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;providers&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;localtrace&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;customTags&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;literal&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;bar&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;randomSamplingPercentage&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;100&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;这个配置覆盖了 &lt;code&gt;MeshConfig&lt;/code&gt; 的默认提供者，将 Mesh 默认设置为 &lt;code&gt;localtrace&lt;/code&gt; 提供者。它还设置了 Mesh 范围内的采样百分比为 100，并配置了一个标签，将其添加到所有追踪跨度中，名称为 &lt;code&gt;foo&lt;/code&gt;，值为 &lt;code&gt;bar&lt;/code&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;配置命名空间范围内的跟踪行为&#34;&gt;配置命名空间范围内的跟踪行为&lt;/h3&gt;
+&lt;p&gt;要为单个命名空间定制行为，请为所需的命名空间添加 Telemetry 资源。在命名空间资源中指定的任何字段将完全覆盖从配置层次中继承的字段配置。&lt;/p&gt;
+&lt;p&gt;例如：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;telemetry.istio.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Telemetry&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;namespace-override&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;myapp&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tracing&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;customTags&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;userId&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;header&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;userId&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;defaultValue&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;unknown&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当部署到一个具有先前 Mesh 范围范例配置的 Mesh 中时，这将导致 myapp 命名空间中的追踪行为，将追踪跨度发送到 localtrace 提供者，并以 100% 的速率随机选择请求进行追踪，但为每个跨度设置自定义标签，名称为 &lt;code&gt;userId&lt;/code&gt;，其值取自 &lt;code&gt;userId&lt;/code&gt; 请求头。重要的是，来自父配置的 &lt;code&gt;foo: bar&lt;/code&gt; 标签将不会在 myapp 命名空间中使用。自定义标签的行为完全覆盖了 &lt;code&gt;mesh-default.istio-system&lt;/code&gt; 资源中配置的行为。&lt;/p&gt;
+&lt;p&gt;注意：Telemetry 资源中的任何配置都会完全覆盖配置层次中其父资源的配置。这包括提供者的选择。&lt;/p&gt;
+&lt;h3 id=&#34;配置针对工作负载的行为&#34;&gt;配置针对工作负载的行为&lt;/h3&gt;
+&lt;p&gt;要为个别工作负载定制行为，请将遥测资源添加到所需的命名空间并使用 &lt;code&gt;selector&lt;/code&gt;。工作负载特定资源中指定的任何字段将完全覆盖配置层次中的继承字段配置。&lt;/p&gt;
+&lt;p&gt;例如：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;telemetry.istio.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Telemetry&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;workload-override&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;myapp&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;selector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;matchLabels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;service.istio.io/canonical-name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;frontend&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tracing&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;disableSpanReporting&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在这个例子中，对于 &lt;code&gt;myapp&lt;/code&gt; 命名空间中的 &lt;code&gt;frontend&lt;/code&gt; 工作负载，追踪功能将被禁用。Istio 仍将转发追踪头信息，但不会向配置的追踪提供者报告任何跨度。&lt;/p&gt;
+&lt;p&gt;注意：让两个带有工作负载选择器的 Telemetry 资源选择相同的工作负载是无效的。此时，行为是未定义的。&lt;/p&gt;
+&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://istio.io/latest/docs/tasks/observability/telemetry/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Telemetry API - istio.io&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://istio.io/latest/docs/reference/config/telemetry/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Telemetry configuration - istio.io&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Prometheus</title>
+      <link>https://jimmysong.io/docs/istio-handbook/observability/prometheus/</link>
+      <pubDate>Wed, 18 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/istio-handbook/observability/prometheus/</guid>
+      <description>&lt;p&gt;Prometheus 是一个开源的监控系统和时间序列数据库。Istio 使用 Prometheus 来记录指标，跟踪 Istio 和网格中的应用程序的健康状况。&lt;/p&gt;
+&lt;p&gt;要安装 Prometheus，我们可以使用 Istio 安装包中 &lt;code&gt;/samples/addons&lt;/code&gt; 文件夹中的示例安装。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl apply -f istio-1.9.0/samples/addons/prometheus.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;serviceaccount/prometheus created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;configmap/prometheus created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;clusterrole.rbac.authorization.k8s.io/prometheus created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;clusterrolebinding.rbac.authorization.k8s.io/prometheus created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;service/prometheus created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;deployment.apps/prometheus created
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;要打开 Prometheus 仪表板，我们可以使用 Istio CLI 中的 &lt;code&gt;dashboard&lt;/code&gt; 命令：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ istioctl dashboard prometheus
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;http://localhost:9090
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;现在我们可以在浏览器中打开 &lt;code&gt;http://localhost:9090&lt;/code&gt;，进入 Prometheus 仪表板，如下图所示。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-prometheus-dashboard&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/008i3skNly1gtbzzswso1j60dw0jkdgq02.jpg&#34; alt=&#34;Prometheus dashboard&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Prometheus dashboard
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h2 id=&#34;部署示例应用&#34;&gt;部署示例应用&lt;/h2&gt;
+&lt;p&gt;为了看到一些请求和流量，我们将部署一个 Nginx 实例：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl create deploy my-nginx --image&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;nginx
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;deployment.apps/my-nginx created
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;为了能够产生一些流量并访问 Nginx Pod，我们需要以某种方式让它被访问。&lt;/p&gt;
+&lt;p&gt;最简单的方法是将 Nginx 部署作为 Kubernetes LoadBalancer 服务公开：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl expose deployment my-nginx --type&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;LoadBalancer --name&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;my-nginx --port &lt;span class=&#34;m&#34;&gt;80&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;blockquote&gt;
+&lt;p&gt;注意：在课程的后面，我们将学习如何使用 Istio 资源并通过 Istio 的入口网关暴露服务。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;现在我们可以运行 &lt;code&gt;kubectl get services&lt;/code&gt;，获得 &lt;code&gt;my-nginx&lt;/code&gt; 服务的外部 IP 地址：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl get svc
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;NAME         TYPE           CLUSTER-IP   EXTERNAL-IP      PORT&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;S&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;        AGE
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubernetes   ClusterIP      10.48.0.1    &amp;lt;none&amp;gt;           443/TCP        73m
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;my-nginx     LoadBalancer   10.48.0.94   &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;IP HERE&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;   80:31191/TCP   4m6s
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;让我们把这个 IP 地址存储为一个环境变量，这样我们就可以在整个实验中使用它。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;export&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;NGINX_IP&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;kubectl get service my-nginx -o &lt;span class=&#34;nv&#34;&gt;jsonpath&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;{.status.loadBalancer.ingress[0].ip}&amp;#39;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;现在你可以对上述 IP 运行 &lt;code&gt;curl&lt;/code&gt;，你应该得到默认的 Nginx 页面。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ curl &lt;span class=&#34;nv&#34;&gt;$NGINX_IP&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;!DOCTYPE html&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;html&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;head&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;title&amp;gt;Welcome to nginx!&amp;lt;/title&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;style&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    body &lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        width: 35em&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        margin: &lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; auto&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        font-family: Tahoma, Verdana, Arial, sans-serif&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;o&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;/style&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;/head&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;body&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h1&amp;gt;Welcome to nginx!&amp;lt;/h1&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;p&amp;gt;If you see this page, the nginx web server is successfully installed and
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;working. Further configuration is required.&amp;lt;/p&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;p&amp;gt;For online documentation and support please refer to
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;a &lt;span class=&#34;nv&#34;&gt;href&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;http://nginx.org/&amp;#34;&lt;/span&gt;&amp;gt;nginx.org&amp;lt;/a&amp;gt;.&amp;lt;br/&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Commercial support is available at
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;a &lt;span class=&#34;nv&#34;&gt;href&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;http://nginx.com/&amp;#34;&lt;/span&gt;&amp;gt;nginx.com&amp;lt;/a&amp;gt;.&amp;lt;/p&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;p&amp;gt;&amp;lt;em&amp;gt;Thank you &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; using nginx.&amp;lt;/em&amp;gt;&amp;lt;/p&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;/body&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;/html&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;让我们向我们在开始时创建的 &lt;code&gt;$NGINX_IP&lt;/code&gt; 环境变量提出几个请求。然后，从 Prometheus UI 中，你可以搜索 Istio 的一个指标（例如 &lt;code&gt;istio_requests_total&lt;/code&gt;），以了解哪些数据点正在被收集。&lt;/p&gt;
+&lt;p&gt;下面是一个来自 Prometheus 用户界面的示例元素：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;istio_requests_total&lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;my-nginx&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;connection_security_policy&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;none&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;destination_app&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;my-nginx&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;destination_canonical_revision&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;latest&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;destination_canonical_service&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;my-nginx&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;destination_cluster&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;Kubernetes&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;destination_principal&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;unknown&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;destination_service&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;my-nginx.default.svc.cluster.local&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;destination_service_name&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;my-nginx&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;destination_service_namespace&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;default&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;destination_version&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;unknown&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;destination_workload&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;my-nginx&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;destination_workload_namespace&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;default&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;instance&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;10.92.4.4:15020&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;istio_io_rev&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;default&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;job&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;kubernetes-pods&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;kubernetes_namespace&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;default&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;kubernetes_pod_name&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;my-nginx-6b74b79f57-r59sf&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;pod_template_hash&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;6b74b79f57&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;reporter&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;destination&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;request_protocol&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;http&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;response_code&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;200&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;response_flags&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;-&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;security_istio_io_tlsMode&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;istio&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;service_istio_io_canonical_name&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;my-nginx&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;service_istio_io_canonical_revision&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;latest&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;source_app&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;unknown&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;source_canonical_revision&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;latest&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;source_canonical_service&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;unknown&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;source_cluster&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;unknown&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;source_principal&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;unknown&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;source_version&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;unknown&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;source_workload&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;unknown&amp;#34;&lt;/span&gt;, &lt;span class=&#34;nv&#34;&gt;source_workload_namespace&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;unknown&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;}&lt;/span&gt;	&lt;span class=&#34;m&#34;&gt;12&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    
+    <item>
+      <title>Grafana</title>
+      <link>https://jimmysong.io/docs/istio-handbook/observability/grafana/</link>
+      <pubDate>Wed, 18 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/istio-handbook/observability/grafana/</guid>
+      <description>&lt;p&gt;&lt;a href=&#34;https://grafana.com/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Grafana&lt;/a&gt; 是一个用于分析和监控的开放平台。Grafana 可以连接到各种数据源，并使用图形、表格、热图等将数据可视化。通过强大的查询语言，你可以定制现有的仪表盘并创建更高级的可视化。&lt;/p&gt;
+&lt;p&gt;通过 Grafana，我们可以监控 Istio 安装和服务网格中运行的应用程序的健康状况。&lt;/p&gt;
+&lt;p&gt;我们可以使用 &lt;code&gt;grafana.yaml&lt;/code&gt; 来部署带有预配置仪表盘的 Grafana 示例安装。该 YAML 文件在 Istio 安装包的 &lt;code&gt;/samples/addons&lt;/code&gt; 下。&lt;/p&gt;
+&lt;p&gt;确保在部署 Grafana 之前部署 Promeheus 插件，因为 Grafana 使用 Prometheus 作为其数据源。&lt;/p&gt;
+&lt;p&gt;运行下面的命令来部署 Grafana 和预配置的仪表盘：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl apply -f istio-1.9.0/samples/addons/grafana.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;serviceaccount/grafana created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;configmap/grafana created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;service/grafana created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;deployment.apps/grafana created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;configmap/istio-grafana-dashboards created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;configmap/istio-services-grafana-dashboards created
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;blockquote&gt;
+&lt;p&gt;我们不打算在生产中运行这个 Grafana，因为它没有经过性能或安全方面的优化。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Kubernetes 将 Grafana 部署在 &lt;code&gt;istio-system&lt;/code&gt; 命名空间。要访问 Grafana，我们可以使用 &lt;code&gt;istioctl dashboard&lt;/code&gt; 命令。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ istioctl dashboard grafana
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;http://localhost:3000
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;我们可以在浏览器中打开 &lt;code&gt;http://localhost:3000&lt;/code&gt;，进入 Grafana。然后，点击首页和 Istio 文件夹，查看已安装的仪表板，如下图所示。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-grafana-仪表板&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/008i3skNly1gsxzlwj8nhj60i50hoq3q02.jpg&#34; alt=&#34;Grafana 仪表板&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Grafana 仪表板
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;Istio Grafana 安装时预配置了以下仪表板：&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;1. Istio 控制平面仪表板&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;从 Istio 控制平面仪表板，我们可以监控 Istio 控制平面的健康和性能。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-istio-控制平面仪表板&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/008i3skNly1gsxzp9t40gj30vu0ss41r.jpg&#34; alt=&#34;Istio 控制平面仪表板&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Istio 控制平面仪表板
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;这个仪表板将向我们显示控制平面的资源使用情况（内存、CPU、磁盘、Go routines），以及关于 Pilot 、Envoy 和 Webhook 的信息。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;2. Istio 网格仪表板&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;网格仪表盘为我们提供了在网格中运行的所有服务的概览。仪表板包括全局请求量、成功率以及 4xx 和 5xx 响应的数量。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-istio-网格仪表板&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/008i3skNly1gsxztuxt4sj30su0rfgny.jpg&#34; alt=&#34;Istio 网格仪表板&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Istio 网格仪表板
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;3. Istio 性能仪表板&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;性能仪表盘向我们展示了 Istio 主要组件在稳定负载下的资源利用率。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-istio-性能仪表板&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/008i3skNly1gsxzvfrchmj30rw0um41m.jpg&#34; alt=&#34;Istio 性能仪表板&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Istio 性能仪表板
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;4. Istio 服务仪表板&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;服务仪表板允许我们在网格中查看关于我们服务的细节。&lt;/p&gt;
+&lt;p&gt;我们可以获得关于请求量、成功率、持续时间的信息，以及显示按来源和响应代码、持续时间和大小的传入请求的详细图表。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-istio-服务仪表板&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/008i3skNly1gsxzz72kwzj30rw0umq6r.jpg&#34; alt=&#34;Istio 服务仪表板&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Istio 服务仪表板
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;5. Istio Wasm 扩展仪表板&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Istio Wasm 扩展仪表板显示与 WebAssembly 模块有关的指标。从这个仪表板，我们可以监控活动的和创建的 Wasm 虚拟机，关于获取删除 Wasm 模块和代理资源使用的数据。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-istio-wasm-扩展仪表板&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/008i3skNly1gtcuxkthdpj60ua0u0mzk02.jpg&#34; alt=&#34;Istio Wasm 扩展仪表板&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Istio Wasm 扩展仪表板
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;6. Istio 工作负载仪表板&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;这个仪表板为我们提供了一个工作负载的详细指标分类。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-istio-工作负载仪表板&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/008i3skNly1gsy00w9qlxj30rw0umq65.jpg&#34; alt=&#34;Istio 工作负载仪表板&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Istio 工作负载仪表板
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Zipkin</title>
+      <link>https://jimmysong.io/docs/istio-handbook/observability/zipkin/</link>
+      <pubDate>Wed, 18 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/istio-handbook/observability/zipkin/</guid>
+      <description>&lt;p&gt;分布式追踪是一种监测微服务应用程序的方法。使用分布式追踪，我们可以在请求通过被监控系统的不同部分时追踪它们。&lt;/p&gt;
+&lt;p&gt;每当一个请求进入服务网格时，Envoy 都会生成一个唯一的请求 ID 和追踪信息，并将其作为 HTTP 头的一部分来存储。任何应用程序都可以将这些头信息转发给它所调用的其他服务，以便在系统中创建一个完整的追踪。&lt;/p&gt;
+&lt;p&gt;分布式追踪是一个跨度（span）的集合。当请求流经不同的系统组件时，每个组件都会贡献一个跨度。每个跨度都有一个名称，开始和结束的时间戳，一组称为标签（tag）和日志（log）的键值对，以及一个跨度上下文。&lt;/p&gt;
+&lt;p&gt;标签被应用于整个跨度，并用于查询和过滤。下面是我们在使用 Zipkin 时将看到的几个标签的例子。注意，其中有些是通用的，有些是 Istio 特有的。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;istio.mesh_id&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;istio.canonical_service&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;upstream_cluster&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;http.url&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;http.status_code&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;zone&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;单个跨度与识别跨度、父跨度、追踪 ID 的上下文头一起被发送到一个叫做采集器的组件。采集器对数据进行验证、索引和存储。&lt;/p&gt;
+&lt;p&gt;当请求流经 Envoy 代理时，Envoy 代理会自动发送各个跨度。请注意，Envoy 只能在边缘收集跨度。我们要负责在每个应用程序中生成任何额外的跨度，并确保我们在调用其他服务时转发追踪头信息。这样一来，各个跨度就可以正确地关联到一个单一的追踪中。&lt;/p&gt;
+&lt;h2 id=&#34;使用-zipkin-进行分布式追踪&#34;&gt;使用 Zipkin 进行分布式追踪&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;http://zipkin.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Zipkin&lt;/a&gt; 是一个分布式跟踪系统。我们可以轻松地监控服务网格中发生的分布式事务，发现任何性能或延迟问题。&lt;/p&gt;
+&lt;p&gt;为了让我们的服务参与分布式跟踪，我们需要在进行任何下游服务调用时传播服务的 HTTP 头信息。尽管所有的请求都要经过 Istio sidecar，但 Istio 没有办法将出站请求与产生这些请求的入站请求联系起来。通过在应用程序中传播相关的头信息可以帮助 Zipkin 将这些跟踪信息拼接起来。&lt;/p&gt;
+&lt;p&gt;Istio 依赖于 B3 跟踪头（以 &lt;code&gt;x-b3&lt;/code&gt; 开头的 header）和 Envoy 生成的请求 ID（&lt;code&gt;x-request-id&lt;/code&gt;）。B3 头信息用于跨服务边界的跟踪上下文传播。&lt;/p&gt;
+&lt;p&gt;以下是我们需要在我们的应用程序中对每个发出的请求进行传播的特定头文件名称：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;x-request-id
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;x-b3-traceid
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;x-b3-spanid
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;x-b3-parentspanid
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;x-b3-sampled
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;x-b3-flags
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;b3
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;blockquote&gt;
+&lt;p&gt;如果你使用 Lightstep，你还需要转发名为 &lt;code&gt;x-ot-span-context&lt;/code&gt; 的头。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;传播头信息最常见的方法是从传入的请求中复制它们，并将它们包含在所有从你的应用程序发出的请求中。&lt;/p&gt;
+&lt;p&gt;你用 Istio 服务网格得到的跟踪只在服务边界捕获。为了了解应用程序的行为并排除故障，你需要通过创建额外的跨度（span）来正确检测你的应用程序。&lt;/p&gt;
+&lt;p&gt;要安装 Zipkin，我们可以使用 addons 文件夹中的 &lt;code&gt;zipkin.yaml&lt;/code&gt; 文件。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl apply -f istio-1.9.0/samples/addons/extras/zipkin.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;deployment.apps/zipkin created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;service/tracing created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;service/zipkin created
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;我们可以通过运行 &lt;code&gt;getmesh istioctl dashboard zipkin&lt;/code&gt; 来打开 Zipkin 仪表板。在用户界面上，我们可以选择跟踪查询的标准。点击按钮，从下拉菜单中选择 &lt;code&gt;serviceName&lt;/code&gt;，然后选择 &lt;code&gt;customers.default&lt;/code&gt; service，点击搜索按钮（或按回车键），就可以搜索到 trace 信息。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-zipkin-dashboard&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/008i3skNly1gtcve3g0u9j60u011p78i02.jpg&#34; alt=&#34;Zipkin Dashboard&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Zipkin Dashboard
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;我们可以点击个别 trace 来深入挖掘不同的跨度。详细的视图将显示服务之间的调用时间，以及请求的细节，如方法、协议、状态码等。由于我们只有一个服务在运行（Nginx），所以你不会看到很多细节。稍后，我们将回到 Zipkin，更详细地探索这些 trace。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-zipkin-trace-详情&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/008i3skNly1gsy0uk0lr1j310r0u0ad6.jpg&#34; alt=&#34;Zipkin trace 详情&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Zipkin trace 详情
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Kiali</title>
+      <link>https://jimmysong.io/docs/istio-handbook/observability/kiali/</link>
+      <pubDate>Wed, 18 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/istio-handbook/observability/kiali/</guid>
+      <description>&lt;p&gt;&lt;a href=&#34;https://www.kiali.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kiali&lt;/a&gt; 是一个基于 Istio 的服务网格的管理控制台。它提供了仪表盘、可观察性，并让我们通过强大的配置和验证能力来操作网格。它通过推断流量拓扑来显示服务网格，并显示网格的健康状况。Kiali 提供了详细的指标，强大的验证，Grafana 访问，以及与 Jaeger 的分布式跟踪的强大集成。&lt;/p&gt;
+&lt;p&gt;要安装 Kiali，请使用 addons 文件夹中的 &lt;code&gt;kiali.yaml&lt;/code&gt; 文件：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl apply -f istio-1.9.0/samples/addons/kiali.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;customresourcedefinition.apiextensions.k8s.io/monitoringdashboards.monito
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;ring.kiali.io created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;serviceaccount/kiali created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;configmap/kiali created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;clusterrole.rbac.authorization.k8s.io/kiali-viewer created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;clusterrole.rbac.authorization.k8s.io/kiali created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;clusterrolebinding.rbac.authorization.k8s.io/kiali created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;service/kiali created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;deployment.apps/kiali created
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;注意，如果你看到任何错误，例如在版本 &lt;code&gt;monitoringkiali.io/v1alpha&lt;/code&gt; 中没有匹配的 &lt;code&gt;MonitoringDashboard&lt;/code&gt;，请再次重新运行 &lt;code&gt;kubectl apply&lt;/code&gt; 命令。问题是，在安装 CRD（自定义资源定义）和由该 CRD 定义的资源时，可能存在一个匹配条件。&lt;/p&gt;
+&lt;p&gt;我们可以用 &lt;code&gt;getmesh istioctl dashboard kiali&lt;/code&gt; 打开 Kiali。&lt;/p&gt;
+&lt;p&gt;Kiali 可以生成一个像下图这样的服务图。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-kiali-界面&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/008i3skNly1gsy0z4tsg2j60u010s76d02.jpg&#34; alt=&#34;Kiali Graph&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Kiali 界面
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;该图向我们展示了服务的拓扑结构，并将服务的通信方式可视化。它还显示了入站和出站的指标，以及通过连接 Jaeger 和 Grafana（如果安装了）的追踪。图中的颜色代表服务网格的健康状况。颜色为红色或橙色的节点可能需要注意。组件之间的边的颜色代表这些组件之间的请求的健康状况。节点形状表示组件的类型，如服务、工作负载或应用程序。&lt;/p&gt;
+&lt;p&gt;节点和边的健康状况会根据用户的偏好自动刷新。该图也可以暂停以检查一个特定的状态，或重放以重新检查一个特定的时期。&lt;/p&gt;
+&lt;p&gt;Kiali 提供创建、更新和删除 Istio 配置的操作，由向导驱动。我们可以配置请求路由、故障注入、流量转移和请求超时，所有这些都来自用户界面。如果我们有任何现有的 Istio 配置已经部署，Kiali 可以验证它并报告任何警告或错误。&lt;/p&gt;
+&lt;ul class=&#34;cta-group&#34;&gt;
+  
+  &lt;li&gt;
+    &lt;a href=&#34;../../security/&#34;  class=&#34;btn btn-primary px-3 py-3&#34;&gt;下一章&lt;/a&gt;
+  &lt;/li&gt;
+  
+  
+&lt;/ul&gt;
+
+</description>
+    </item>
+    
+  </channel>
+</rss>
