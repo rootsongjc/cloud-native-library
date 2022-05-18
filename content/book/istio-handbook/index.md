@@ -1,10 +1,10 @@
 ---
-title: Istio服务网格🔥
+title: Istio服务网格基础教程🔥
 summary: 云原生应用网络构建指南
 tags:
   - handbook
-date: 2022-04-04
-image_link: https://jimmysong.io/istio-handbook/
+date: 2022-05-18
+internal_link: /docs/istio-handbook/
 type: publication
 ---
 

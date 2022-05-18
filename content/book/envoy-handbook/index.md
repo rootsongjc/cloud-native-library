@@ -3,8 +3,8 @@ title: Envoy基础教程🔥
 summary: 从零开始学习Envoy网络代理
 tags:
   - handbook
-date: 2022-03-12
-image_link: https://jimmysong.io/envoy-handbook/
+date: 2022-05-18
+internal_link: /docs/envoy-handbook/
 type: publication
 ---
 
