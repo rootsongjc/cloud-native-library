@@ -4,7 +4,7 @@ summary: 专为 Kubernetes 而优化的 Java 解决方案
 tags:
   - printed
 date: 2021-03-31
-#external_link: https://item.jd.com/10028088987963.html
+publication: "[购买纸质书](https://item.jd.com/10028088987963.html)"
 type: publication
 ---
 

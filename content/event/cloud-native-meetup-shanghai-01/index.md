@@ -41,7 +41,7 @@ image:
 #    url: https://twitter.com/jimmysongio
 url_code: ''
 url_pdf: ''
-url_slides: 'https://github.com/cloudnativeto/academy/tree/master/meetup/01-beijing'
+url_slides: 'https://github.com/cloudnativeto/academy/tree/master/meetup/01-shanghai'
 url_video: ''
 
 # Markdown Slides (optional).

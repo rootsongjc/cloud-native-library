@@ -5,9 +5,10 @@ tags:
   - printed
 date: 2017-08-01
 type: publication
+publication: "[购买纸质书](https://item.m.jd.com/product/12123347.html)"
 ---
 
-![Cloud Native Go](cloud-native-go.jpg)
+{{< figure src="cloud-native-go.jpg" alt="封面"  caption="Cloud Native Go 图书封面" width="50%">}}
 
 - 本书作者：Kevin Hoffman & Dan Nemeth
 - 译者：宋净超、吴迎松、徐蓓、马超译

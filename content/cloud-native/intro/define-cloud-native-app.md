@@ -25,8 +25,6 @@ OAM 的规范中定义了以下对象，它们既是 OAM 规范中的基本术�
 - **ApplicationScope（应用作用域）**：用于将组件分组成具有共同特性的松散耦合的应用。
 - **ApplicationConfiguration（应用配置）**：描述 `Component` 的部署、`Trait` 和 `ApplicationScope`。
 
-OAM 规范中提供了一个使用以上对象定义云原生应用的[工作流示例](https://github.com/oam-dev/spec/blob/master/examples/workflow.md)。
-
 ## 关注点分离
 
 下图是不同角色对于该模型的关注点示意图。
