@@ -7,7 +7,7 @@ tags:
 date: 2019-10-21
 internal_link: cloud-native-infra
 type: publication
-publication: cloud-native-infra
+publication: "[点击阅读](/docs/cloud-native-infra/)"
 ---
 
 本书为 *Cloud Native Infrastructure* 中文版，作者 *Justin Garrison* 和 *Kris Nova* ，英文版发行于 2017 年 11 月，已可以在网上免费获得，本书是关于创建和管理基础架构，以适用于云原生应用全生命周期管理的模式和实践。
@@ -19,14 +19,6 @@ publication: cloud-native-infra
 - 了解部署和管理基础架构和应用程序的模式
 - 设计测试以证明您的基础架构可以按预期工作，即使在各种边缘情况下也是如此
 - 了解如何以策略即代码的方式保护基础架构
-
-### 使用方式
-
-您可以通过以下方式使用本书：
-
-- [GitHub](https://github.com/rootsongjc/cloud-native-infra)
-- [在线阅读](https://jimmysong.io/cloud-native-infra/)
-- [英文原版](https://www.oreilly.com/library/view/cloud-native-infrastructure/9781491984291/)
 
 ### 许可证
 
