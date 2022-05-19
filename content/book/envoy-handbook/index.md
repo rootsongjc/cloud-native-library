@@ -16,15 +16,6 @@ Envoy 基础教程，本手册梳理了 Envoy 基础知识，适用于初学者�
 
 本书为 [Tetrate](https://tetrate.io) 出品的《Envoy 基础教程》的文字内容，其配套的 8 节实验及 19 个测试，请访问 [Tetrate 学院](https://academy.tetrate.io/courses/envoy-fundamentals-zh)。
 
-## 如何阅读本书
-
-您可以使用以下方式阅读：
-
-- [在线阅读](https://jimmysong.io/envoy-handbook/)（建议）
-- [下载 PDF](https://github.com/rootsongjc/envoy-handbook/)
-
-注：PDF 非实时编译，内容可能落后于在线版本，建议在线阅读。
-
 ## 关于作者
 
 宋净超（Jimmy Song），CNCF Ambassador，[云原生社区](https://cloudnative.to)创始人，个人网站 [jimmysong.io](https://jimmysong.io)。

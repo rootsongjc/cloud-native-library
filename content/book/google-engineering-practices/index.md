@@ -5,7 +5,7 @@ tags:
   - ebook
   - translation
 date: 2019-09-30
-image_link: https://jimmysong.io/eng-practices/
+internal_link: /docs/eng-practices/
 type: publication
 ---
 
@@ -15,8 +15,8 @@ Google 有许多通用工程实践，几乎涵盖所有语言和项目。此文�
 
 Google 代码审查指南，实则两套指南：
 
-- [代码审查者指南](https://jimmysong.io/eng-practices/docs/review/reviewer)
-- [代码开发者指南](https://jimmysong.io/eng-practices/docs/review/developer)
+- 代码审查者指南
+- 代码开发者指南
 
 ### 译者序
 

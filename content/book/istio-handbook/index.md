@@ -19,13 +19,6 @@ type: publication
 - 迁移到 Istio 服务网格
 - 构建云原生应用网络
 
-## 如何阅读本书
-
-本书基于 Istio 1.11+ 版本编写，您可以通过以下地址参与到本书的编写或阅读本书：
-
-- [自行构建](https://github.com/rootsongjc/istio-handbook)
-- [在线浏览](https://jimmysong.io/istio-handbook/)（推荐）
-
 书中部分内容来自 Tetrate 出品的 [Istio 基础教程](https://academy.tetrate.io/courses/istio-fundamentals-zh)，请访问 [Tetrate 学院](https://academy.tetrate.io/)，解锁全部教程及测试，获得 Tetrate 认证的 Istio 认证。
 
 ## 致谢
