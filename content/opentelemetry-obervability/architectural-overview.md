@@ -35,7 +35,7 @@ OpenTelemetry 是一个**跨领域的关注点（cross-cutting concern）**，�
 
 OpenTelemetry 追踪系统是基于 OpenTracing 和 OpenCensus。这两个系统，以及流行的 Zipkin 和 Jaeger 项目，都是基于谷歌开发的 Dapper 追踪系统。OpenTelemetry 试图与所有这些基于 Dapper 的系统兼容。
 
-OpenTelemetry 追踪包括一个叫做 **链接（link）**的概念，它允许单独的追踪被组合成一个更大的图。这被用来连接事务和后台处理，以及观察大型异步系统，如 Kafka 和 AMQP。
+OpenTelemetry 追踪包括一个叫做 **链接（link）** 的概念，它允许单独的追踪被组合成一个更大的图。这被用来连接事务和后台处理，以及观察大型异步系统，如 Kafka 和 AMQP。
 
 ## 指标（Metric）
 

@@ -23,7 +23,7 @@ Kubernetes 命名空间是在同一集群内的多个个人、团队或应用程
 - `kube-public`（用于公共资源）
 - `default`（针对用户资源）
 
-用户 Pod 不应该放在 `kube-system` 或 `kube-public` 中，因为这些都是为集群服务保留的。可以用 YAML 文件，如**[附录 D：命名空间示例](../appendix/d/)**，可以用来创建新的命名空间。不同命名空间中的 Pod 和服务仍然可以相互通信，除非有额外的隔离措施，如网络策略。
+用户 Pod 不应该放在 `kube-system` 或 `kube-public` 中，因为这些都是为集群服务保留的。可以用 YAML 文件，如 **[附录 D：命名空间示例](../appendix/d/)** ，可以用来创建新的命名空间。不同命名空间中的 Pod 和服务仍然可以相互通信，除非有额外的隔离措施，如网络策略。
 
 ## 网络策略
 
@@ -35,7 +35,7 @@ Kubernetes 命名空间是在同一集群内的多个个人、团队或应用程
 
 ## 资源政策
 
-除了网络策略，`LimitRange` 和 `ResourceQuota` 是两个可以限制命名空间或节点的资源使用的策略。`LimitRange` 策略限制了特定命名空间内每个 Pod 或容器的单个资源，例如，通过强制执行最大计算和存储资源。每个命名空间只能创建一个 `LimitRange` 约束，如**[附录 F](../appendix/f/)** 的 `LimitRange` 示例中所示。Kubernetes 1.10 和更新版本默认支持 `LimitRange`。
+除了网络策略，`LimitRange` 和 `ResourceQuota` 是两个可以限制命名空间或节点的资源使用的策略。`LimitRange` 策略限制了特定命名空间内每个 Pod 或容器的单个资源，例如，通过强制执行最大计算和存储资源。每个命名空间只能创建一个 `LimitRange` 约束，如 **[附录 F](../appendix/f/)** 的 `LimitRange` 示例中所示。Kubernetes 1.10 和更新版本默认支持 `LimitRange`。
 
 与 `LimitRange` 策略不同的是，`ResourceQuotas` 是对整个命名空间的资源使用总量的限制，例如对 CPU 和内存使用总量的限制。如果用户试图创建一个违反 `LimitRange` 或 `ResourceQuota` 策略的 Pod，则 Pod 创建失败。[**附录 G**](../appendix/g/) 中显示了一个 `ResourceQuota` 策略的示例。
 
