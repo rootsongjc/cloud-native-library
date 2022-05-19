@@ -497,6 +497,567 @@
     </item>
     
     <item>
+      <title>告别 Sidecar——使用 eBPF 解锁内核级服务网格</title>
+      <link>https://jimmysong.io/docs/translation/ebpf-solve-service-mesh-sidecar/</link>
+      <pubDate>Thu, 09 Dec 2021 21:03:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/translation/ebpf-solve-service-mesh-sidecar/</guid>
+      <description>&lt;p&gt;译者注：本文作者是 Isovalent 联合创始人&amp;amp;CTO，原文标题 &lt;a href=&#34;https://isovalent.com/blog/post/2021-12-08-ebpf-servicemesh&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;How eBPF will solve Service Mesh - Goodbye Sidecars&lt;/a&gt;，作者回顾了Linux 内核的连接性，实现服务网格的几种模式，以及如何使用 eBPF 实现无 Sidecar 的服务网格。&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2 id=&#34;什么是服务网格&#34;&gt;什么是服务网格？&lt;/h2&gt;
+&lt;p&gt;随着分布式应用的引入，额外的可见性、连接性和安全性要求也浮出水面。应用程序组件通过不受信任的网络跨越云和集群边界进行通信，负载均衡、弹性变得至关重要，安全必须发展到发送者和接收者都可以验证彼此的身份的模式。在分布式应用的早期，这些要求是通过直接将所需的逻辑嵌入到应用中来解决的。服务网格将这些功能从应用程序中提取出来，作为基础设施的一部分提供给所有应用程序使用，因此不再需要修改每个应用程序。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-服务网格示意图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;服务网格示意图&#34; srcset=&#34;
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyna8jsj32e20sojtx_hu6485f23e60e2e8e9568294bae27898e8_104054_8698f632d2f6bd2d13968093c75d0a57.webp 400w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyna8jsj32e20sojtx_hu6485f23e60e2e8e9568294bae27898e8_104054_7ccad9cc60d4af9f3a79ee25730411ce.webp 760w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyna8jsj32e20sojtx_hu6485f23e60e2e8e9568294bae27898e8_104054_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyna8jsj32e20sojtx_hu6485f23e60e2e8e9568294bae27898e8_104054_8698f632d2f6bd2d13968093c75d0a57.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;253&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      服务网格示意图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;纵观今天服务网格的功能设置，可以总结为以下几点：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;弹性连接&lt;/strong&gt;：服务与服务之间的通信必须能够跨越边界，如云、集群和场所。通信必须是有弹性的和容错的。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;L7 流量管理&lt;/strong&gt;：负载均衡、速率限制和弹性必须是 L7 感知的（HTTP、REST、gRPC、WebSocket 等）。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;基于身份的安全&lt;/strong&gt;：依靠网络标识符来实现安全已经不够了，发送和接收服务都必须能够根据身份而不是网络标识符来验证对方。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;可观察性和跟踪&lt;/strong&gt;：追踪和指标形式的可观察性对于理解、监控和排除应用程序的稳定性、性能和可用性至关重要。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;透明&lt;/strong&gt;：该功能必须以透明的方式提供给应用程序，即不需要改变应用程序代码。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;在早期，服务网格的功能通常是以库的形式实现的，要求网格中的每个应用程序都要链接到以应用程序的语言框架编写的库。类似的事情也发生在互联网的早期：曾几何时，应用程序还需要运行自己的 TCP/IP 协议栈！正如我们将在这篇文章中讨论的那样，服务网格正在发展成为一种内核责任，就像网络堆栈一样。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-基于库的服务网格模型&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;基于库的服务网格模型&#34; srcset=&#34;
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyowb55j31pi0k076p_hu6485f23e60e2e8e9568294bae27898e8_99590_b6959dbf34a33344768fc560384a13ac.webp 400w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyowb55j31pi0k076p_hu6485f23e60e2e8e9568294bae27898e8_99590_a06ed52554d7eaf0205dac367f5b8e87.webp 760w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyowb55j31pi0k076p_hu6485f23e60e2e8e9568294bae27898e8_99590_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyowb55j31pi0k076p_hu6485f23e60e2e8e9568294bae27898e8_99590_b6959dbf34a33344768fc560384a13ac.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;247&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      基于库的服务网格模型
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;今天，服务网格通常使用一种叫做 sidecar 模型的架构来实现。这种架构将实现上述功能的代码封装到第四层代理中，服务间的流量被重定向到这个所谓的 sidecar 代理。它之所以被称为 “挎斗”，是因为每个应用程序都有一个代理，就像挎斗附着在摩托车上一样。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-基于-sidecar-的服务网格模型&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;基于 Sidecar 的服务网格模型&#34; srcset=&#34;
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyqsefhj31pe0moq5h_hu6485f23e60e2e8e9568294bae27898e8_104187_f7ccbefbb801fe00eda32bba825017a1.webp 400w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyqsefhj31pe0moq5h_hu6485f23e60e2e8e9568294bae27898e8_104187_2417ae65f785189b2c9b3f5d5bd778c1.webp 760w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyqsefhj31pe0moq5h_hu6485f23e60e2e8e9568294bae27898e8_104187_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyqsefhj31pe0moq5h_hu6485f23e60e2e8e9568294bae27898e8_104187_f7ccbefbb801fe00eda32bba825017a1.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;281&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      基于 Sidecar 的服务网格模型
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;这种架构的优点是，服务不再需要自己实现服务网格的功能。如果许多服务是用不同的语言编写部署的，或者如果你正在运行不可变的第三方应用程序，这就很有好处。&lt;/p&gt;
+&lt;p&gt;这种模式的缺点是有大量的代理，许多额外的网络连接，以及复杂的重定向逻辑，将网络流量输入代理。除此之外，在什么类型的网络流量可以被重定向到第四层代理上也有限制。代理（Proxy）在其能支持的网络协议方面是有限的。&lt;/p&gt;
+&lt;h2 id=&#34;连接性转移到内核中的历史&#34;&gt;连接性转移到内核中的历史&lt;/h2&gt;
+&lt;p&gt;几十年来，在应用程序之间提供安全可靠的连接一直是操作系统的责任。有些人可能还记得早期 Unix 和 Linux 时代的 &lt;a href=&#34;https://en.wikipedia.org/wiki/TCP_Wrappers&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;TCP 包装器&lt;/a&gt;和 tcpd。tcpd 允许用户在不修改应用程序的情况下透明地添加日志、访问控制、主机名验证和欺骗保护。它使用了 libwrap，而且，在一个有趣的平行于服务网格的故事中，这个库也是以前应用程序提供这些功能的链接对象。tcpd 所带来的是能够在不修改现有应用程序的情况下将这些功能透明地添加到现有应用程序中。最终，所有这些功能都进入了 Linux 本身，并以一种更有效、更强大的方式提供给所有应用程序。今天，这已经发展到了我们所知道的 iptables。&lt;/p&gt;
+&lt;p&gt;然而，iptables 显然不适合解决现代应用的连接性、安全性和可观察性要求，因为它只在网络层面上操作，对应用协议层缺乏任何了解。自然，阻力最小的路径是回到库模型，然后是 sidecar 模型。现在，我们正处于这样一个阶段：为了最佳的透明度、效率和安全性，在操作系统中原生地支持这种模式是有意义的。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-服务网格的进化&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;服务网格的进化&#34; srcset=&#34;
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7y8ybphhj31h30u041s_hu6485f23e60e2e8e9568294bae27898e8_131248_0e49b885a5d8058e66656bbfb77f3024.webp 400w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7y8ybphhj31h30u041s_hu6485f23e60e2e8e9568294bae27898e8_131248_871e8e56078e2f8d2d170e8cf6e0aa58.webp 760w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7y8ybphhj31h30u041s_hu6485f23e60e2e8e9568294bae27898e8_131248_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7y8ybphhj31h30u041s_hu6485f23e60e2e8e9568294bae27898e8_131248_0e49b885a5d8058e66656bbfb77f3024.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;429&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      服务网格的进化
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;在 tcpd 时代，曾经的连接记录现在是追踪。IP 层面的访问控制已经演变成应用协议层面的授权，例如使用 JWT。主机名验证已被更强大的认证所取代，如 mTLS。网络负载均衡已经扩展到 L7 流量管理。HTTP 重试是新的 TCP 重传。过去用黑洞路由解决的问题今天被称为断路。这些都不是根本性的新问题，但所需的环境和控制已经发生了变化。&lt;/p&gt;
+&lt;h2 id=&#34;扩展内核命名空间概念&#34;&gt;扩展内核命名空间概念&lt;/h2&gt;
+&lt;p&gt;Linux 内核已经有一个概念，可以共享共同的功能，并使其对系统上运行的许多应用程序可用。这个概念被称为命名空间（Namespace），它构成了我们今天所知的容器技术的基础。命名空间（内核的那种，不是 Kubernetes 的命名空间）存在于各种抽象中，包括文件系统、用户管理、挂载设备、进程、网络等。这就是允许单个容器呈现不同的文件系统视图、不同的用户集，以及允许多个容器绑定到单个主机上的同一网络端口。在 cgroups 的帮助下，这个概念得到了扩展，可以对 CPU、内存和网络等资源进行管理和优先排序。从云原生应用开发者的角度来看，cgroups 和资源被紧密地整合到我们所知的 &amp;ldquo;容器&amp;rdquo; 概念中。&lt;/p&gt;
+&lt;p&gt;符合逻辑的是，如果我们认为服务网格是操作系统的责任，那么它必须符合并整合命名空间和 cgroup 的概念。这看起来会是这样的。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-service-mesh-namespace&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;Service Mesh Namespace&#34; srcset=&#34;
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wypvr2zj31p20q0q75_hu3818cf23d00bafc73ec955949ff96cef_165657_0b4f2aeba8526e8de04d93ca7c65ed74.webp 400w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wypvr2zj31p20q0q75_hu3818cf23d00bafc73ec955949ff96cef_165657_a1b71240819d57b1f178864488358330.webp 760w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wypvr2zj31p20q0q75_hu3818cf23d00bafc73ec955949ff96cef_165657_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wypvr2zj31p20q0q75_hu3818cf23d00bafc73ec955949ff96cef_165657_0b4f2aeba8526e8de04d93ca7c65ed74.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;324&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Service Mesh Namespace
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;不出所料，这看起来非常自然，而且可能是大多数用户从简单的角度所期望的。应用程序保持不变，它们继续使用套接字进行通信，就像以前那样。理想的服务网格是作为 Linux 的一部分透明地提供的。它就在那里，就像今天的 TCP 一样。&lt;/p&gt;
+&lt;h3 id=&#34;注入-sidecar-的成本&#34;&gt;注入 Sidecar 的成本&lt;/h3&gt;
+&lt;p&gt;如果我们仔细研究一下 sidecar 模型，我们会发现它实际上是在试图模仿这种模型。应用程序继续使用套接字，一切都被塞进 Linux 内核的网络命名空间。然而，这比它看起来要复杂得多，需要许多额外的步骤来透明地注入 sidecar 代理。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-注入-sidecar-的成本&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;注入 Sidecar 的成本&#34; srcset=&#34;
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7y8nu479j31h30u041s_hu6485f23e60e2e8e9568294bae27898e8_131248_847fc4ec166d83ad0cc298e00f911b6a.webp 400w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7y8nu479j31h30u041s_hu6485f23e60e2e8e9568294bae27898e8_131248_a9df07945aba0b0019129964807deb93.webp 760w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7y8nu479j31h30u041s_hu6485f23e60e2e8e9568294bae27898e8_131248_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7y8nu479j31h30u041s_hu6485f23e60e2e8e9568294bae27898e8_131248_847fc4ec166d83ad0cc298e00f911b6a.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;429&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      注入 Sidecar 的成本
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;这种额外的复杂性在延迟和额外资源消耗方面付出了巨大的代价。早期的基准测试表明，这对延迟的影响高达 3-4 倍，而且所有代理都需要大量的额外内存。在这篇文章的后面，我们将研究这两点，因为我们将其与基于 eBPF 的模型进行比较。&lt;/p&gt;
+&lt;h2 id=&#34;用-ebpf-解锁内核服务网格&#34;&gt;用 eBPF 解锁内核服务网格&lt;/h2&gt;
+&lt;p&gt;为什么我们以前没有在内核中创建一个服务网格？有些人半开玩笑地说，kube-proxy 是最初的服务网格（见&lt;a href=&#34;https://www.youtube.com/watch?v=lUF88T16YqY&amp;amp;ab_channel=CloudNativeRejekts&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;我们已经构建了相当多的服务网格 - Tim Hockin, Google&lt;/a&gt;）。这句话是有一定道理的。Kube-proxy 是一个很好的例子，说明了 Linux 内核在依靠传统的基于网络的 iptables 功能实现服务网格时，可以达到多么接近。然而，这还不够，L7 上下文是缺失的。Kube-proxy 完全在网络数据包层面运作。现代应用需要 L7 流量管理、跟踪、认证和额外的可靠性保证。Kube-proxy 不能在网络层面上提供这些。&lt;/p&gt;
+&lt;p&gt;eBPF 改变了这个模式。它允许动态地扩展 Linux 内核的功能。我们一直在使用 eBPF 为 Cilium 建立一个高效的网络、安全和可观察性数据通路，并将其直接嵌入到 Linux 内核。应用这个相同的概念，我们也可以在内核层面上解决服务网格的要求。事实上，Cilium 已经实现了各种所需的概念，如基于身份的安全、L3-L7 可观察性和授权、加密和负载均衡。缺少的部分现在正在向 Cilium 涌来。在本博客的末尾，你会发现如何加入由 Cilium 社区推动的 Cilium 服务网格测试项目的细节。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-ebpf-服务网格架构&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;eBPF 服务网格架构&#34; srcset=&#34;
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyrufdyj31w90u0q6o_hu95fbdda1588b2cb70033d94862f03125_148213_242cf49ce50a46a6227b80ac57581596.webp 400w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyrufdyj31w90u0q6o_hu95fbdda1588b2cb70033d94862f03125_148213_e9d578b8cecafb87b52464e52af33848.webp 760w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyrufdyj31w90u0q6o_hu95fbdda1588b2cb70033d94862f03125_148213_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyrufdyj31w90u0q6o_hu95fbdda1588b2cb70033d94862f03125_148213_242cf49ce50a46a6227b80ac57581596.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;334&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      eBPF 服务网格架构
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;有人可能想知道为什么 Linux 内核社区不直接解决这些需求&lt;/strong&gt;。eBPF 有一个巨大的优势，eBPF 代码可以在运行时插入到现有的 Linux 内核中，类似于 Linux 内核模块，但与内核模块不同，它可以以安全和可移植的方式进行。这使得 eBPF 的实现能够随着服务网格社区的发展而继续发展。&lt;strong&gt;新的内核版本需要几年时间才能进入用户手中&lt;/strong&gt;。eBPF 是一项关键技术，它使 Linux 内核能够跟上快速发展的云原生技术栈。&lt;/p&gt;
+&lt;h2 id=&#34;无-sidecar-的基于-ebpf-的-l7-追踪和度量&#34;&gt;无 Sidecar 的基于 eBPF 的 L7 追踪和度量&lt;/h2&gt;
+&lt;p&gt;让我们看看 L7 追踪和指标可观察性，作为一个具体的例子，说明基于 eBPF 的服务网格对保持低延迟和提高观察性有巨大的影响。应用程序团队依靠应用程序的可见性和监控作为基本要求这些，这包括请求跟踪、HTTP 响应率和服务延迟信息等能力。然而，这种可观察性应该没有明显的成本（延迟、复杂性、资源…）。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-基于-ebpf-的可视性&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;基于 eBPF 的可视性&#34; srcset=&#34;
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wysxpr4j31ne0iugq1_hu62b90eeb5ee5534c340e669e97e0a510_173583_f5ae6a5325dc8e98a65230ef2cdb698d.webp 400w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wysxpr4j31ne0iugq1_hu62b90eeb5ee5534c340e669e97e0a510_173583_7c6e37711bde414eb340ad829e2fb56f.webp 760w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wysxpr4j31ne0iugq1_hu62b90eeb5ee5534c340e669e97e0a510_173583_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wysxpr4j31ne0iugq1_hu62b90eeb5ee5534c340e669e97e0a510_173583_f5ae6a5325dc8e98a65230ef2cdb698d.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;241&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      基于 eBPF 的可视性
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;在下面的基准测试中，我们可以看到早期的测量结果，即通过 eBPF 或 sidecar 方法实现 HTTP 可见性对延迟的影响。该设置是在两个不同节点上运行的两个 pod 之间通过固定数量的连接每秒稳定运行 10K 个 HTTP 请求，并测量请求的平均延时。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-基于-ebpf-的延迟基准测试-vs-基于-sidecar-的-l7-可视性&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;基于 eBPF 的延迟基准测试 vs 基于 Sidecar 的 L7 可视性&#34; srcset=&#34;
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyt6izdj31ns0rawfw_hu61d1337f5211a474b2cf5da3f2f69ed3_62404_061d886ef61599a4368a85f4642ecd11.webp 400w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyt6izdj31ns0rawfw_hu61d1337f5211a474b2cf5da3f2f69ed3_62404_af8db5d152499e3be34dcdcef9fa6e43.webp 760w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyt6izdj31ns0rawfw_hu61d1337f5211a474b2cf5da3f2f69ed3_62404_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyt6izdj31ns0rawfw_hu61d1337f5211a474b2cf5da3f2f69ed3_62404_061d886ef61599a4368a85f4642ecd11.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;347&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      基于 eBPF 的延迟基准测试 vs 基于 Sidecar 的 L7 可视性
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;我们故意不提这些测量中使用的具体代理，因为它并不重要。对于我们测试过的所有代理，结果几乎都是一样的。要明确的是，这不是关于 Envoy、Linkerd、Nginx 或其他代理是否更快。所提到的代理有差异，但与首先注入代理的成本相比，它们是微不足道的。&lt;strong&gt;几乎没有开销是来自代理本身的逻辑。开销是通过注入代理，将网络流量重定向到它，终止连接和启动新的连接而增加的。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;这些早期的测量结果表明，基于 eBPF 的内核方法是非常有前途的，可以实现完全透明的服务网格的愿望，而且没有明显的开销。&lt;/p&gt;
+&lt;h2 id=&#34;使用-ebpf-加速的-per-node-代理&#34;&gt;使用 eBPF 加速的 per-node 代理&lt;/h2&gt;
+&lt;p&gt;越来越多的用例可以用这种仅有 eBPF 的方法来覆盖，从而完全取消 L4 代理。有些用例，仍然需要代理。例如，当连接需要拼接时，当 TLS 终止被执行时，或对于某些形式的 HTTP 授权。&lt;/p&gt;
+&lt;p&gt;我们的 eBPF 服务网格工作将继续关注那些从性能角度可以获得最大收益的领域。如果你必须执行 TLS 终止，你可能不介意在流量流入集群时用代理终止一次连接。然而，你会更关心在每个连接的路径中注入两个代理的影响，以提取 HTTP 指标和跟踪数据。&lt;/p&gt;
+&lt;p&gt;当一个用例不能用纯 eBPF 的方法来实现时，网格可以回退到每个节点的代理模型，直接将代理与内核的套接字层结合起来。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-ebpf-per-node-proxy&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;eBPF per-node Proxy&#34; srcset=&#34;
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyvrfmfj31vq0u0q87_huc33bebe813fd43a8fe56eef115f9fbb4_204555_62d0c958911366c682a9bfc3936f8504.webp 400w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyvrfmfj31vq0u0q87_huc33bebe813fd43a8fe56eef115f9fbb4_204555_6f918f3a791f9e1add359ebdd6932d14.webp 760w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyvrfmfj31vq0u0q87_huc33bebe813fd43a8fe56eef115f9fbb4_204555_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyvrfmfj31vq0u0q87_huc33bebe813fd43a8fe56eef115f9fbb4_204555_62d0c958911366c682a9bfc3936f8504.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;337&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      eBPF per-node Proxy
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;eBPF 不依赖网络级的重定向，而是直接在套接字级别注入代理，保持路径短。在 Cilium 的案例中，正在使用 Envoy 代理，尽管从架构的角度来看，任何代理都可以被整合到这个模型。从概念上讲，这允许将 Linux 内核网络命名空间的概念直接扩展到 Envoy 监听器配置的概念，并将 Envoy 变成一个多用户代理。&lt;/p&gt;
+&lt;h2 id=&#34;sidecar-与-per-node-代理&#34;&gt;Sidecar 与 per-Node 代理&lt;/h2&gt;
+&lt;p&gt;即使需要代理，代理的成本也会根据部署的架构而有所不同。让我们来看看每个节点的代理模式与 sidecar 模式的比较。&lt;/p&gt;
+&lt;h3 id=&#34;每个连接的代理&#34;&gt;每个连接的代理&lt;/h3&gt;
+&lt;p&gt;所需的网络连接数将因是否有代理而不同。最简单的情况是无 sidecar 模式，这意味着网络连接的数量没有变化。一个单一的连接将为请求提供服务，eBPF 将提供服务网格功能，如跟踪或现有连接上的负载均衡。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-基于-ebpf-的模型&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;基于 eBPF 的模型&#34; srcset=&#34;
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyy16o4j32960kcwg9_hu6485f23e60e2e8e9568294bae27898e8_75684_e7abdef857f749e1da71f7e036064a17.webp 400w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyy16o4j32960kcwg9_hu6485f23e60e2e8e9568294bae27898e8_75684_ca0b4a28b32d4275c9a964bc89041965.webp 760w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyy16o4j32960kcwg9_hu6485f23e60e2e8e9568294bae27898e8_75684_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyy16o4j32960kcwg9_hu6485f23e60e2e8e9568294bae27898e8_75684_e7abdef857f749e1da71f7e036064a17.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;191&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      基于 eBPF 的模型
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;用 sidecar 模型提供同样的功能需要在连接中注入两次代理，这导致需要维护三个连接。这导致了开销的增加和所有额外的套接字缓冲区所需内存的倍增，表现为更高的服务间延迟。这就是我们之前在无 sidecar L7 可见性部分看到的 sidecar 开销。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-基于-sidecar-代理的模型&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;基于 Sidecar 代理的模型&#34; srcset=&#34;
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wz3o1f6j32860lego3_huf6a82c318c1d0879d8dbb2be4a3b19b1_101863_bee2a69eca8646cc0ca7f5dcf09414cb.webp 400w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wz3o1f6j32860lego3_huf6a82c318c1d0879d8dbb2be4a3b19b1_101863_d98aa97a7180ddb93b2cd137cdae1836.webp 760w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wz3o1f6j32860lego3_huf6a82c318c1d0879d8dbb2be4a3b19b1_101863_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wz3o1f6j32860lego3_huf6a82c318c1d0879d8dbb2be4a3b19b1_101863_bee2a69eca8646cc0ca7f5dcf09414cb.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;203&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      基于 Sidecar 代理的模型
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;切换到 per-node 的代理模式使我们能够摆脱其中一个代理，因为我们不再依赖在每个工作负载中运行一个 sidecar。比起不需要额外的连接，这还是不够理想，但比起总是需要两个额外的连接要好。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-per-node-代理模式&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;Per-node 代理模式&#34; srcset=&#34;
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyx2lulj32980o4dhz_hu6485f23e60e2e8e9568294bae27898e8_89504_8a54cca8228d7a6a3add627487a6d73b.webp 400w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyx2lulj32980o4dhz_hu6485f23e60e2e8e9568294bae27898e8_89504_14525a8ea5c80cfded1a8c70b85dae3d.webp 760w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyx2lulj32980o4dhz_hu6485f23e60e2e8e9568294bae27898e8_89504_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wyx2lulj32980o4dhz_hu6485f23e60e2e8e9568294bae27898e8_89504_8a54cca8228d7a6a3add627487a6d73b.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;225&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Per-node 代理模式
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;所需的代理总数&#34;&gt;所需的代理总数&lt;/h3&gt;
+&lt;p&gt;在每个工作负载中运行一个 sidecar 会导致大量的代理。即使每个单独的代理实例在其内存占用方面是相当优化的，但实例的数量之多将导致总的影响很大。此外，每个代理维护的数据结构，如路由和端点表，随着集群的增长而增长，所以集群越大，每个代理的内存消耗就越高。今天，一些服务网格试图通过将部分路由表推送给单个代理来解决这个问题，限制它们可以路由到哪里。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-代理数量&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;代理数量&#34; srcset=&#34;
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7y8synvej31z40oiq6n_hu6485f23e60e2e8e9568294bae27898e8_147190_e5e6f2c7d1de4f5108e2f0c65c63633b.webp 400w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7y8synvej31z40oiq6n_hu6485f23e60e2e8e9568294bae27898e8_147190_2648ed10ae21eaef48205e7b5665caec.webp 760w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7y8synvej31z40oiq6n_hu6485f23e60e2e8e9568294bae27898e8_147190_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7y8synvej31z40oiq6n_hu6485f23e60e2e8e9568294bae27898e8_147190_e5e6f2c7d1de4f5108e2f0c65c63633b.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;262&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      代理数量
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;让我们假设在一个 500 个节点的集群中，每一个节点有 30 个 pod，一个基于 sidecar 的架构将需要运行 15K 个代理。在每个代理消耗 70MB 内存的情况下（假设已经经过极致优化过的路由表），这仍然导致集群中所有 sidecar 消耗 1.5TB 的内存。在 per-node 模型中，假设每个代理的内存足迹相同，500 个代理将消耗不超过 34GB 的内存。&lt;/p&gt;
+&lt;h3 id=&#34;多租户&#34;&gt;多租户&lt;/h3&gt;
+&lt;p&gt;当我们从 sidecar 模型转向 per-node 模型时，代理将为多个应用程序提供连接。代理必须具有多租户感知。这与我们从使用单个虚拟机转向使用容器时发生的过渡完全相同。由于我们不再使用在每个虚拟机中运行的完全独立的操作系统副本，而开始与多个应用程序共享操作系统，Linux 必须具有多租户感知。这就是命名空间和 cgroup 存在的原因。如果没有它们，一个容器可能会消耗一个系统的所有资源，容器可能会以不受控制的方式访问对方的文件系统。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-envoy-namespace&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;Envoy Namespace&#34; srcset=&#34;
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7z3klyfhj31hx0u0djs_hu1685d2cc6375f0429462180152f17634_156084_0202d25a062eeb6c9bd0f4c364e01907.webp 400w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7z3klyfhj31hx0u0djs_hu1685d2cc6375f0429462180152f17634_156084_2f64eeb1fa64882906103c2cdc01534e.webp 760w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7z3klyfhj31hx0u0djs_hu1685d2cc6375f0429462180152f17634_156084_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7z3klyfhj31hx0u0djs_hu1685d2cc6375f0429462180152f17634_156084_0202d25a062eeb6c9bd0f4c364e01907.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;423&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Envoy Namespace
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;如果这在服务网格级别的网络资源上表现得完全一样，那不是很好吗？Envoy 已经有了命名空间的初步概念，它们被称为监听器。监听器可以携带单独的配置并独立运行。这将开启全新的可能性：突然间，我们可以很容易地控制资源消耗，建立公平的排队规则，并将可用的资源平等地分配给所有的应用程序，或者按照指定的规则分配。这可以而且应该与我们今天在 Kubernetes 中定义应用程序的 CPU 和内存约束的方式完全一样。如果你想了解这个话题，我曾在 EnvoyCon 上讲过这个问题（&lt;a href=&#34;https://www.youtube.com/watch?v=08opgZkdYIw&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy Namespace - 以更小的代价运维基于 Envoy 的服务网格，Thomas Graf，EnvoyCon 2019&lt;/a&gt;）。&lt;/p&gt;
+&lt;h2 id=&#34;想参与其中吗--加入-cilium-服务网格测试版&#34;&gt;想参与其中吗？- 加入 Cilium 服务网格测试版&lt;/h2&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-测试版&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;测试版&#34; srcset=&#34;
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wz1obexj327t0u0dkm_hu6485f23e60e2e8e9568294bae27898e8_186816_9579dd5154dfdfe8956fce6548befa07.webp 400w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wz1obexj327t0u0dkm_hu6485f23e60e2e8e9568294bae27898e8_186816_8b798598a3603599a1424b953b9574d1.webp 760w,
+               /docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wz1obexj327t0u0dkm_hu6485f23e60e2e8e9568294bae27898e8_186816_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/ebpf-solve-service-mesh-sidecar/008i3skNly1gx7wz1obexj327t0u0dkm_hu6485f23e60e2e8e9568294bae27898e8_186816_9579dd5154dfdfe8956fce6548befa07.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;286&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      测试版
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;伴随着即将发布的 Cilium 1.11 版本，Cilium 社区正在举办一个新的 Cilium Service Mesh 测试计划。它的特点是一个新的构建，将使以下功能可用。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;L7 流量管理和负载均衡（HTTP，gRPC，…）&lt;/li&gt;
+&lt;li&gt;跨集群、云和集群的拓扑感知路由&lt;/li&gt;
+&lt;li&gt;TLS 终止&lt;/li&gt;
+&lt;li&gt;通过 Envoy 配置的金丝雀发布、重试、速率限制、断路等&lt;/li&gt;
+&lt;li&gt;用 OpenTelemetry 和 Jaeger 集成进行追踪&lt;/li&gt;
+&lt;li&gt;内置 Kubernetes Ingress 支持&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;上述所有功能都可以在 &lt;a href=&#34;https://github.com/cilium/cilium&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;github.com/cilium/cilium&lt;/a&gt; 功能分支中找到。测试计划允许 Cilium 维护者直接与用户接触，了解他们的需求。要注册，你可以直接填写 &lt;a href=&#34;https://forms.gle/j9fwhAC6HnHRJQKeA&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这个表格&lt;/a&gt;，或者你可以在 Cilium 社区的&lt;a href=&#34;https://cilium.io/blog/2021/12/01/cilium-service-mesh-beta&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;公告&lt;/a&gt;中阅读更多关于该计划的信息。&lt;/p&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;eBPF 是提供本地和高效的服务网格实现的答案。它将把我们从 sidecar 模型中解放出来，并允许将现有的代理技术整合到现有的内核命名概念中，使它们成为我们每天都在使用的容器抽象的一部分。除此之外，eBPF 将能够卸载越来越多的目前由代理执行的功能，以进一步减少开销和复杂性。通过整合几乎任何现有的代理，该架构也允许与大多数现有的服务网格控制平面（Istio、SMI、Linkerd…）整合。这可以将 eBPF 的好处提供给广大的终端用户，同时将数据通路的效率和开销的讨论与控制平面方面相分离。&lt;/p&gt;
+&lt;p&gt;如果你有兴趣探索这个话题，我们很想听到你的意见。请随时通过 &lt;a href=&#34;https://twitter.com/tgraf__&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Twitter&lt;/a&gt; 或 &lt;a href=&#34;http://ebpf.io/slack&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;eBPF &amp;amp; Cilium Slack 联系我们&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;进一步阅读&#34;&gt;进一步阅读&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://jimmysong.io/docs/blog/how-ebpf-streamlines-the-service-mesh/&#34;&gt;eBPF 如何简化服务网格&lt;/a&gt;，Liz Rice，The New Stack&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://cilium.io/blog/2021/12/01/cilium-service-mesh-beta&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Cilium 服务网格测试计划&lt;/a&gt;，Cilium 社区&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://cilium.io/learn&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;了解更多关于 Cilium 的信息&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
       <title>Istio 1.12 引入 Wasm 插件配置 API 用于扩展 Istio 生态</title>
       <link>https://jimmysong.io/docs/translation/istio-wasm-extensions-and-ecosystem/</link>
       <pubDate>Wed, 24 Nov 2021 18:03:00 +0800</pubDate>
@@ -687,6 +1248,398 @@
 &lt;p&gt;在 Tetrate，我们正在努力改善开发者的体验，&lt;a href=&#34;https://github.com/tetratelabs/proxy-wasm-go-sdk/tree/main/examples&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;tetratelabs/proxy-wasm-golang-sdk&lt;/a&gt; 包含本教程使用的 Golang SDK 库。你可以找到更多的例子，如 http &lt;a href=&#34;https://github.com/tetratelabs/proxy-wasm-go-sdk/blob/main/examples/http_routing/main.go#L70-L80&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;头的操作&lt;/a&gt;、样例&lt;a href=&#34;https://github.com/tetratelabs/proxy-wasm-go-sdk/tree/main/examples/http_auth_random&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;授权&lt;/a&gt;、&lt;a href=&#34;https://github.com/tetratelabs/proxy-wasm-go-sdk/tree/main/examples/http_routing&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;改变路由&lt;/a&gt;行为等。&lt;/p&gt;
 &lt;p&gt;&lt;a href=&#34;https://istio.tetratelabs.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate Istio Distro&lt;/a&gt; 是安装、操作和升级 Istio 的最简单方法。&lt;/p&gt;
 &lt;p&gt;&lt;a href=&#34;https://www.tetrate.io/istio-wasm-workshop/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;报名参加 Tetrate 的 Istio Wasm 插件研讨会，向 Istio 中的 Wasm 插件的创造者学习&lt;/a&gt;。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>基于 gRPC 和 Istio 的无 sidecar 代理的服务网格</title>
+      <link>https://jimmysong.io/docs/translation/grpc-proxyless-service-mesh/</link>
+      <pubDate>Tue, 23 Nov 2021 10:03:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/translation/grpc-proxyless-service-mesh/</guid>
+      <description>&lt;p&gt;译者注：本文译自 Istio 官方博客，博客原标题 &lt;a href=&#34;https://istio.io/latest/blog/2021/proxyless-grpc/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;gRPC Proxyless Service Mesh&lt;/a&gt;，其实是 Istio 1.11 版本中支持的实验特性，可以直接将 gRPC 服务添加到 Istio 中，而不需要再向 Pod 中注入 Envoy 代理。本文中还给出了一个 Demo 性能测试数据，这种做法可以极大的提升应用性能，降低网络延迟。&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;Istio 使用一组发现 API（统称为 &lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/dynamic_configuration&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;xDS API&lt;/a&gt; 来动态配置其 Envoy sidecar 代理。这些 API 的目标是成为一个 &lt;a href=&#34;https://blog.envoyproxy.io/the-universal-data-plane-api-d15cec7a?gi=64aa2eea0283&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;通用的数据平面 API&lt;/a&gt;。gRPC 项目对 xDS API 有很好的支持，也就是说你可以管理 gRPC 工作负载，而不需要同时部署 Envoy sidecar。你可以在 &lt;a href=&#34;https://www.youtube.com/watch?v=cGJXkZ7jiDk&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Megan Yahya 的 KubeCon EU 2021 演讲&lt;/a&gt;中了解更多关于该集成的信息。关于 gRPC 支持的最新情况，可以在他们的&lt;a href=&#34;https://github.com/grpc/proposal/search?q=xds&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;提案&lt;/a&gt;中找到，还有实现状态。&lt;/p&gt;
+&lt;p&gt;Istio 1.11 增加了实验性支持，可以直接将 gRPC 服务添加到网格中。我们支持基本的服务发现，一些基于 VirtualService 的流量策略，以及双向 TLS。&lt;/p&gt;
+&lt;h2 id=&#34;支持的功能&#34;&gt;支持的功能&lt;/h2&gt;
+&lt;p&gt;与 Envoy 相比，目前 gRPC 内的 xDS API 的实现在某些方面是有限的。以下功能应该可以使用，尽管这不是一个详尽的列表，其他功能可能部分可用。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;基本的服务发现。你的 gRPC 服务可以接触到在网格中注册的其他 pod 和虚拟机。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;DestinationRule&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Subset&lt;/code&gt;：你的 gRPC 服务可以根据标签选择器将流量分割到不同的实例组。&lt;/li&gt;
+&lt;li&gt;目前唯一支持的 Istio &lt;code&gt;loadBalancer&lt;/code&gt; 是 &lt;code&gt;ROUND_ROBIN&lt;/code&gt;，&lt;code&gt;consistentHash&lt;/code&gt; 将在未来的 Istio 版本中加入（支持 gRPC）。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;tls&lt;/code&gt; 设置被限制为 &lt;code&gt;DISABLE&lt;/code&gt; 或 &lt;code&gt;ISTIO_MUTUAL&lt;/code&gt;。其他模式将被视为 &lt;code&gt;DISABLE&lt;/code&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;VirtualService&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;Header 匹配和 URI 匹配的格式为 &lt;code&gt;/ServiceName/RPCName&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;覆盖目标主机和子集。&lt;/li&gt;
+&lt;li&gt;加权的流量转移。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;PeerAuthentication&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;只支持 &lt;code&gt;DISABLE&lt;/code&gt; 和 &lt;code&gt;STRICT&lt;/code&gt;。其他模式将被视为 &lt;code&gt;DISABLE&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;在未来的版本中可能会有对 auto-mTLS 的支持。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;其他功能包括故障、重试、超时、镜像和重写规则，可能会在未来的版本中支持。其中一些功能正等待在 gRPC 中实现，而其他功能则需要在 Istio 中支持。gRPC 中 xDS 功能的状态可以&lt;a href=&#34;https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;在这里&lt;/a&gt;找到。Istio 的支持状况将存在于未来的官方文档中。&lt;/p&gt;
+&lt;p&gt;这个功能是&lt;a href=&#34;https://istio.io/latest/docs/releases/feature-stages/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;实验性的&lt;/a&gt;。标准的 Istio 功能将随着时间的推移和整体设计的改进而得到支持。&lt;/p&gt;
+&lt;h2 id=&#34;架构概述&#34;&gt;架构概述&lt;/h2&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-grpc服务如何与istiod通信的示意图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;gRPC服务如何与istiod通信的示意图&#34; srcset=&#34;
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp3lh9za5j311q0hm75n_huabc968057a906e61785a18796c8fab68_60668_856dcb93d4f2050c6da613426e172811.webp 400w,
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp3lh9za5j311q0hm75n_huabc968057a906e61785a18796c8fab68_60668_f3ee6fba86384313fdc69ee1246fa468.webp 760w,
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp3lh9za5j311q0hm75n_huabc968057a906e61785a18796c8fab68_60668_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp3lh9za5j311q0hm75n_huabc968057a906e61785a18796c8fab68_60668_856dcb93d4f2050c6da613426e172811.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;355&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      gRPC服务如何与istiod通信的示意图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;虽然不使用 proxy 进行数据面通信，但它仍然需要一个 agent 来进行初始化和与控制面的通信。首先，agent 在启动时生成一个&lt;a href=&#34;https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md#xdsclient-and-bootstrap-file&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;引导文件&lt;/a&gt;，与为 Envoy 生成引导文件的方式相同。这告诉 gRPC 库如何连接到 istiod，在哪里可以找到数据面通信的证书，以及向控制面发送什么元数据。接下来，agent 作为一个 xDS proxy，代表应用程序与 istiod 进行连接和认证。最后，agent 获取并轮换数据平面通信中使用的证书。&lt;/p&gt;
+&lt;h2 id=&#34;对应用程序代码的修改&#34;&gt;对应用程序代码的修改&lt;/h2&gt;
+&lt;p&gt;本节介绍了 gRPC 在 Go 中的 xDS 支持。其他语言也有类似的 API。&lt;/p&gt;
+&lt;p&gt;为了启用 gRPC 中的 xDS 功能，你的应用程序必须做一些必要的修改。你的 gRPC 版本应该至少是 1.39.0。&lt;/p&gt;
+&lt;h3 id=&#34;客户端&#34;&gt;客户端&lt;/h3&gt;
+&lt;p&gt;下面的导入将在 gRPC 中注册 xDS 解析器和均衡器。它应该被添加到你的主包或调用 &lt;code&gt;grpc.Dial&lt;/code&gt; 的同一个包中。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;_&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;google.golang.org/grpc/xds&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当创建一个 gRPC 连接时，URL 必须使用 &lt;code&gt;xds:///&lt;/code&gt; scheme。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;conn&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;grpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;DialContext&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ctx&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;xds:///foo.ns.svc.cluster.local:7070&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;此外，为了支持（m）TLS，必须向 &lt;code&gt;DialContext&lt;/code&gt; 传递一个特殊的 &lt;code&gt;TransportCredentials&lt;/code&gt; 选项。&lt;code&gt;FallbackCreds&lt;/code&gt; 允许我们在 istiod 不发送安全配置时成功。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;google.golang.org/grpc/credentials/xds&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;creds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;xds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;NewClientCredentials&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;xds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ClientOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;FallbackCreds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;insecure&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;NewCredentials&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;})&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// handle err
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;conn&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;grpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;DialContext&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;ctx&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;xds:///foo.ns.svc.cluster.local:7070&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;grpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;WithTransportCredentials&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;creds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;服务端&#34;&gt;服务端&lt;/h3&gt;
+&lt;p&gt;为了支持服务器端的配置，如 mTLS，必须做一些修改。&lt;/p&gt;
+&lt;p&gt;首先，我们使用一个特殊的构造函数来创建 &lt;code&gt;GRPCServer&lt;/code&gt;。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;google.golang.org/grpc/xds&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;server&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;xds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;NewGRPCServer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nf&#34;&gt;RegisterFooServer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;server&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;fooServerImpl&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果你的 &lt;code&gt;protoc&lt;/code&gt; 生成的 Go 代码已经过期，你可能需要重新生成，以便与 xDS 服务器兼容。你生成的 &lt;code&gt;RegisterFooServer&lt;/code&gt; 函数应该像下面这样。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;RegisterFooServer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;s&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;grpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ServiceRegistrar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;srv&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;FooServer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;s&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;RegisterService&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;FooServer_ServiceDesc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;srv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;最后，与客户端的变化一样，我们必须启用安全支持。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;creds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;xds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;NewServerCredentials&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;xdscreds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ServerOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;FallbackCreds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;insecure&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;NewCredentials&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()})&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// handle err
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;server&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;xds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;NewGRPCServer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;grpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Creds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;creds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;在你的-kubernetes-部署中&#34;&gt;在你的 Kubernetes 部署中&lt;/h3&gt;
+&lt;p&gt;假设你的应用代码是兼容的，Pod 只需要注释 &lt;code&gt;inject.istio.io/templates：grpc-agent&lt;/code&gt;。这增加了一个运行上述代理的 sidecar 容器，以及一些环境变量，gRPC 使用这些变量来寻找引导文件并启用某些功能。&lt;/p&gt;
+&lt;p&gt;对于 gRPC 服务端，你的 Pod 也应该用 &lt;code&gt;proxy.istio.io/config: &#39;{&amp;quot;holdApplicationUntilProxyStarts&amp;quot;: true}&#39;&lt;/code&gt; 来注释，以确保在你的 gRPC 服务端初始化之前，代理中的 xDS 代理和引导文件已经准备就绪。&lt;/p&gt;
+&lt;h2 id=&#34;例子&#34;&gt;例子&lt;/h2&gt;
+&lt;p&gt;在本指南中，你将部署 echo，一个已经支持服务器端和客户端无代理的 gRPC 的应用。通过这个应用程序，你可以尝试一些支持的流量策略，启用 mTLS。&lt;/p&gt;
+&lt;h3 id=&#34;先决条件&#34;&gt;先决条件&lt;/h3&gt;
+&lt;p&gt;本指南要求在进行之前&lt;a href=&#34;https://istio.io/latest/docs/setup/install/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;安装&lt;/a&gt; Istio（1.11+）控制平面。&lt;/p&gt;
+&lt;h3 id=&#34;部署应用程序&#34;&gt;部署应用程序&lt;/h3&gt;
+&lt;p&gt;创建一个支持注入的命名空间 &lt;code&gt;echo-grpc&lt;/code&gt;。接下来部署两个 &lt;code&gt;echo&lt;/code&gt; 应用程序的实例以及服务。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl create namespace echo-grpc
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl label namespace echo-grpc istio-injection&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;enabled
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl -n echo-grpc apply -f samples/grpc-echo/grpc-echo.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;确保两个 Pod 正在运行。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl -n echo-grpc get pods
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;NAME                       READY   STATUS    RESTARTS   AGE
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;echo-v1-69d6d96cb7-gpcpd   2/2     Running   &lt;span class=&#34;m&#34;&gt;0&lt;/span&gt;          58s
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;echo-v2-5c6cbf6dc7-dfhcb   2/2     Running   &lt;span class=&#34;m&#34;&gt;0&lt;/span&gt;          58s
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;测试-grpc-解析器&#34;&gt;测试 gRPC 解析器&lt;/h3&gt;
+&lt;p&gt;首先，将 17171 端口转发到其中一个 Pod 上。这个端口是一个非 xDS 支持的 gRPC 服务端，允许从端口转发的 Pod 发出请求。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl -n echo-grpc port-forward &lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;kubectl -n echo-grpc get pods -l &lt;span class=&#34;nv&#34;&gt;version&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;v1 -ojsonpath&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;{.items[0].metadata.name}&amp;#39;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;17171&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;&amp;amp;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;接下来，我们可以发送一批 5 个请求。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ grpcurl -plaintext -d &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;url&amp;#34;: &amp;#34;xds:///echo.echo-grpc.svc.cluster.local:7070&amp;#34;, &amp;#34;count&amp;#34;: 5}&amp;#39;&lt;/span&gt; :17171 proto.EchoTestService/ForwardEcho &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; jq -r &lt;span class=&#34;s1&#34;&gt;&amp;#39;.output | join(&amp;#34;&amp;#34;)&amp;#39;&lt;/span&gt;  &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep Hostname
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Handling connection &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;17171&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v1-7cf5b76586-bgn6t
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;1&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v2-cf97bd94d-qf628
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;2&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v1-7cf5b76586-bgn6t
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;3&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v2-cf97bd94d-qf628
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;4&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v1-7cf5b76586-bgn6t
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;你也可以使用类似 Kubernetes 名称解析的短名称。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ grpcurl -plaintext -d &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;url&amp;#34;: &amp;#34;xds:///echo:7070&amp;#34;}&amp;#39;&lt;/span&gt; :17171 proto.EchoTestService/ForwardEcho &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; jq -r &lt;span class=&#34;s1&#34;&gt;&amp;#39;.output | join
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s1&#34;&gt;(&amp;#34;&amp;#34;)&amp;#39;&lt;/span&gt;  &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep Hostname
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v1-7cf5b76586-ltr8q
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ grpcurl -plaintext -d &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;url&amp;#34;: &amp;#34;xds:///echo.echo-grpc:7070&amp;#34;}&amp;#39;&lt;/span&gt; :17171 proto.EchoTestService/ForwardEcho &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; jq -r
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;.output | join(&amp;#34;&amp;#34;)&amp;#39;&lt;/span&gt;  &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep Hostname
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v1-7cf5b76586-ltr8q
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ grpcurl -plaintext -d &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;url&amp;#34;: &amp;#34;xds:///echo.echo-grpc.svc:7070&amp;#34;}&amp;#39;&lt;/span&gt; :17171 proto.EchoTestService/ForwardEcho &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; jq -r
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;.output | join(&amp;#34;&amp;#34;)&amp;#39;&lt;/span&gt;  &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep Hostname
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v2-cf97bd94d-jt5mf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;用目的地规则创建子集&#34;&gt;用目的地规则创建子集&lt;/h3&gt;
+&lt;p&gt;首先，为每个版本的工作负载创建一个子集。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ cat &lt;span class=&#34;s&#34;&gt;&amp;lt;&amp;lt;EOF | kubectl apply -f -
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;apiVersion: networking.istio.io/v1alpha3
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;kind: DestinationRule
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;metadata:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  name: echo-versions
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  namespace: echo-grpc
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;spec:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  host: echo.echo-grpc.svc.cluster.local
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  subsets:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  - name: v1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;    labels:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;      version: v1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  - name: v2
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;    labels:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;      version: v2
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;EOF&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;流量转移&#34;&gt;流量转移&lt;/h3&gt;
+&lt;p&gt;使用上面定义的子集，你可以把 80% 的流量发送到一个特定的版本。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ cat &lt;span class=&#34;s&#34;&gt;&amp;lt;&amp;lt;EOF | kubectl apply -f -
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;apiVersion: networking.istio.io/v1beta1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;kind: VirtualService
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;metadata:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  name: echo-weights
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  namespace: echo-grpc
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;spec:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  hosts:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  - echo.echo-grpc.svc.cluster.local
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  http:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  - route:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;    - destination:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;        host: echo.echo-grpc.svc.cluster.local
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;        subset: v1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;      weight: 20
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;    - destination:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;        host: echo.echo-grpc.svc.cluster.local
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;        subset: v2
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;      weight: 80
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;EOF&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;现在，发送一组 10 个请求。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;grpcurl -plaintext -d &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;url&amp;#34;: &amp;#34;xds:///echo.echo-grpc.svc.cluster.local:7070&amp;#34;, &amp;#34;count&amp;#34;: 10}&amp;#39;&lt;/span&gt; :17171 proto.EchoTestService/ForwardEcho &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; jq -r &lt;span class=&#34;s1&#34;&gt;&amp;#39;.output | join(&amp;#34;&amp;#34;)&amp;#39;&lt;/span&gt;  &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep ServiceVersion
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;响应应主要包含 v2 响应。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-plain&#34; data-lang=&#34;plain&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[0 body] ServiceVersion=v2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[1 body] ServiceVersion=v2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[2 body] ServiceVersion=v1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[3 body] ServiceVersion=v2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[4 body] ServiceVersion=v1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[5 body] ServiceVersion=v2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[6 body] ServiceVersion=v2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[7 body] ServiceVersion=v2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[8 body] ServiceVersion=v2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[9 body] ServiceVersion=v2
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;启用-mtls&#34;&gt;启用 mTLS&lt;/h3&gt;
+&lt;p&gt;由于在 gRPC 中启用安全所需的应用程序本身的变化，Istio 的自动检测 mTLS 支持的传统方法是不可靠的。出于这个原因，初始版本需要在客户端和服务端上明确启用 mTLS。&lt;/p&gt;
+&lt;p&gt;要启用客户端的 mTLS，请应用带有 &lt;code&gt;tls&lt;/code&gt; 设置的 &lt;code&gt;DestinationRule&lt;/code&gt;。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ cat &lt;span class=&#34;s&#34;&gt;&amp;lt;&amp;lt;EOF | kubectl apply -f -
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;apiVersion: networking.istio.io/v1alpha3
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;kind: DestinationRule
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;metadata:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  name: echo-mtls
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  namespace: echo-grpc
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;spec:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  host: echo.echo-grpc.svc.cluster.local
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  trafficPolicy:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;    tls:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;      mode: ISTIO_MUTUAL
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;EOF&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;现在，试图调用尚未配置 mTLS 的服务器将会失败。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ grpcurl -plaintext -d &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;url&amp;#34;: &amp;#34;xds:///echo.echo-grpc.svc.cluster.local:7070&amp;#34;}&amp;#39;&lt;/span&gt; :17171 proto.EchoTestService/ForwardEcho &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; jq -r &lt;span class=&#34;s1&#34;&gt;&amp;#39;.output | join(&amp;#34;&amp;#34;)&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Handling connection &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;17171&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;ERROR:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Code: Unknown
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Message: 1/1 requests had errors&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; first error: rpc error: &lt;span class=&#34;nv&#34;&gt;code&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; Unavailable &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; all SubConns are in TransientFailure
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;为了启用服务器端的 mTLS，应用一个 &lt;code&gt;PeerAuthentication&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;以下策略对整个命名空间强制采用 STRICT mTLS。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ cat &lt;span class=&#34;s&#34;&gt;&amp;lt;&amp;lt;EOF | kubectl apply -f -
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;apiVersion: security.istio.io/v1beta1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;kind: PeerAuthentication
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;metadata:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  name: echo-mtls
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  namespace: echo-grpc
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;spec:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  mtls:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;    mode: STRICT
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;EOF&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;应用该政策后，请求将开始成功。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ grpcurl -plaintext -d &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;url&amp;#34;: &amp;#34;xds:///echo.echo-grpc.svc.cluster.local:7070&amp;#34;}&amp;#39;&lt;/span&gt; :17171 proto.EchoTestService/ForwardEcho &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; jq -r &lt;span class=&#34;s1&#34;&gt;&amp;#39;.output | join(&amp;#34;&amp;#34;)&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Handling connection &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;17171&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;0&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; grpcecho.Echo&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;xds:///echo.echo-grpc.svc.cluster.local:7070 map&lt;span class=&#34;o&#34;&gt;[]&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;0&lt;/span&gt;  5s &lt;span class=&#34;nb&#34;&gt;false&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;})&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; x-request-id&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Host&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo.echo-grpc.svc.cluster.local:7070
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; content-type&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;application/grpc
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; user-agent&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;grpc-go/1.39.1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;StatusCode&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;200&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;ServiceVersion&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;v1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;ServicePort&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;17070&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Cluster&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;IP&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;10.68.1.18
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;IstioVersion&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Echo&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v1-7cf5b76586-z5p8l
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;限制条件&#34;&gt;限制条件&lt;/h2&gt;
+&lt;p&gt;最初的版本有几个限制，可能会在未来的版本中修复。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;不支持自动 mTLS，也不支持许可模式。相反，我们需要在服务器上使用 &lt;code&gt;STRICT&lt;/code&gt;，在客户端使用 &lt;code&gt;ISTIO_MUTUAL&lt;/code&gt; 的明确 mTLS 配置。在迁移到 &lt;code&gt;STRICT&lt;/code&gt; 的过程中，可以使用 Envoy。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;grpc.Serve(listener)&lt;/code&gt; 或 &lt;code&gt;grpc.Dial(&amp;quot;xds://...&amp;quot;)&lt;/code&gt; 在 bootstrap 被写入或 xDS 代理准备好之前被调用会导致失败。 &lt;code&gt;holdApplicationUntilProxyStarts&lt;/code&gt; 可以用来解决这个问题，或者应用程序可以对这些失败更加稳健。&lt;/li&gt;
+&lt;li&gt;如果支持 xDS 的 gRPC 服务器使用 mTLS，那么你将需要确保你的健康检查可以绕过这个问题。要么使用一个单独的端口，要么你的健康检查客户端需要一种方法来获得适当的客户端证书。&lt;/li&gt;
+&lt;li&gt;gRPC 中 xDS 的实现与 Envoy 不一致。某些行为可能不同，某些功能可能缺失。&lt;a href=&#34;https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;gRPC 的功能状态&lt;/a&gt;提供了更多细节。请确保测试任何 Istio 配置是否真正适用于你的无代理的 gRPC 应用程序。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;性能&#34;&gt;性能&lt;/h2&gt;
+&lt;h3 id=&#34;实验设置&#34;&gt;实验设置&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;使用 Fortio，一个基于 Go 的负载测试应用程序
+&lt;ul&gt;
+&lt;li&gt;稍作修改，以支持 gRPC 的 XDS 功能 (PR)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;资源：
+&lt;ul&gt;
+&lt;li&gt;GKE 1.20 集群有 3 个 &lt;code&gt;e2-standard-16&lt;/code&gt; 节点（每个节点有 16 个 CPU+64GB 内存）&lt;/li&gt;
+&lt;li&gt;Fortio 客户端和服务器应用程序：1.5 vCPU，1000 MiB 内存&lt;/li&gt;
+&lt;li&gt;Sidecar（istio-agent 和可能的 Envoy 代理）：1 vCPU，512 MiB 内存&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;测试的工作负载类型：
+&lt;ul&gt;
+&lt;li&gt;基线：常规的 gRPC，没有使用 Envoy 代理或 Proxyless xDS&lt;/li&gt;
+&lt;li&gt;Envoy：标准的 istio-agent + Envoy proxy sidecar&lt;/li&gt;
+&lt;li&gt;无代理：使用 xDS gRPC 服务器实现的 gRPC 和客户端的 &lt;code&gt;xds:///&lt;/code&gt; 解析器。&lt;/li&gt;
+&lt;li&gt;通过 &lt;code&gt;PeerAuthentication&lt;/code&gt; 和 &lt;code&gt;DestinationRule&lt;/code&gt; 启用 / 停用 mTLS&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;延迟&#34;&gt;延迟&lt;/h3&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-p50延迟对比图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;P50延迟对比图&#34; srcset=&#34;
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp512szlvj31260rgq57_hu1f3dca8e47dac173545ad9b4a1f5b121_93948_3a074b471e14cb11fc2317c66746cc23.webp 400w,
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp512szlvj31260rgq57_hu1f3dca8e47dac173545ad9b4a1f5b121_93948_63de6d1be42f8a6ca221d6c31a184d0b.webp 760w,
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp512szlvj31260rgq57_hu1f3dca8e47dac173545ad9b4a1f5b121_93948_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp512szlvj31260rgq57_hu1f3dca8e47dac173545ad9b4a1f5b121_93948_3a074b471e14cb11fc2317c66746cc23.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;547&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      P50延迟对比图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-p99-延迟对比图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;P99延迟对比图&#34; srcset=&#34;
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp51zjxqaj312q0r2jtl_hu129e5f5b76937d444cc31a8e04e4a32d_91697_06e686b116988448b11cd59f07be69ce.webp 400w,
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp51zjxqaj312q0r2jtl_hu129e5f5b76937d444cc31a8e04e4a32d_91697_a9adb6bead390a716cbd17c76ed6ea7d.webp 760w,
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp51zjxqaj312q0r2jtl_hu129e5f5b76937d444cc31a8e04e4a32d_91697_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp51zjxqaj312q0r2jtl_hu129e5f5b76937d444cc31a8e04e4a32d_91697_06e686b116988448b11cd59f07be69ce.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;531&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      P99 延迟对比图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;在使用无代理的 gRPC 解析器时，延迟会有微小的增加。与 Envoy 相比，这是一个巨大的改进，仍然可以实现先进的流量管理功能和 mTLS。&lt;/p&gt;
+&lt;h3 id=&#34;istio-proxy-容器的资源使用情况&#34;&gt;istio-proxy 容器的资源使用情况&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;类别&lt;/th&gt;
+&lt;th&gt;客户端 mCPU&lt;/th&gt;
+&lt;th&gt;客户端内存 (MiB)&lt;/th&gt;
+&lt;th&gt;服务端 mCPU&lt;/th&gt;
+&lt;th&gt;服务端内存 (MiB)&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Envoy 明文&lt;/td&gt;
+&lt;td&gt;320.44&lt;/td&gt;
+&lt;td&gt;66.93&lt;/td&gt;
+&lt;td&gt;243.78&lt;/td&gt;
+&lt;td&gt;64.91&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Envoy mTLS&lt;/td&gt;
+&lt;td&gt;340.87&lt;/td&gt;
+&lt;td&gt;66.76&lt;/td&gt;
+&lt;td&gt;309.82&lt;/td&gt;
+&lt;td&gt;64.82&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;无代理明文&lt;/td&gt;
+&lt;td&gt;0.72&lt;/td&gt;
+&lt;td&gt;23.54&lt;/td&gt;
+&lt;td&gt;0.84&lt;/td&gt;
+&lt;td&gt;24.31&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;无代理 mTLS&lt;/td&gt;
+&lt;td&gt;0.73&lt;/td&gt;
+&lt;td&gt;25.05&lt;/td&gt;
+&lt;td&gt;0.78&lt;/td&gt;
+&lt;td&gt;25.43&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;尽管我们仍然需要一个代理，但代理使用的内存不到完整 vCPU 的 0.1%，而且只有 25 MiB，这还不到运行 Envoy 所需内存的一半。&lt;/p&gt;
+&lt;p&gt;这些指标不包括应用容器中 gRPC 的额外资源使用量，但有助于展示 istio-agent 在此模式下运行时的资源使用影响。&lt;/p&gt;
 </description>
     </item>
     

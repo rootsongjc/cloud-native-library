@@ -206,5 +206,397 @@
 </description>
     </item>
     
+    <item>
+      <title>基于 gRPC 和 Istio 的无 sidecar 代理的服务网格</title>
+      <link>https://jimmysong.io/docs/translation/grpc-proxyless-service-mesh/</link>
+      <pubDate>Tue, 23 Nov 2021 10:03:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/translation/grpc-proxyless-service-mesh/</guid>
+      <description>&lt;p&gt;译者注：本文译自 Istio 官方博客，博客原标题 &lt;a href=&#34;https://istio.io/latest/blog/2021/proxyless-grpc/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;gRPC Proxyless Service Mesh&lt;/a&gt;，其实是 Istio 1.11 版本中支持的实验特性，可以直接将 gRPC 服务添加到 Istio 中，而不需要再向 Pod 中注入 Envoy 代理。本文中还给出了一个 Demo 性能测试数据，这种做法可以极大的提升应用性能，降低网络延迟。&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;Istio 使用一组发现 API（统称为 &lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/dynamic_configuration&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;xDS API&lt;/a&gt; 来动态配置其 Envoy sidecar 代理。这些 API 的目标是成为一个 &lt;a href=&#34;https://blog.envoyproxy.io/the-universal-data-plane-api-d15cec7a?gi=64aa2eea0283&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;通用的数据平面 API&lt;/a&gt;。gRPC 项目对 xDS API 有很好的支持，也就是说你可以管理 gRPC 工作负载，而不需要同时部署 Envoy sidecar。你可以在 &lt;a href=&#34;https://www.youtube.com/watch?v=cGJXkZ7jiDk&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Megan Yahya 的 KubeCon EU 2021 演讲&lt;/a&gt;中了解更多关于该集成的信息。关于 gRPC 支持的最新情况，可以在他们的&lt;a href=&#34;https://github.com/grpc/proposal/search?q=xds&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;提案&lt;/a&gt;中找到，还有实现状态。&lt;/p&gt;
+&lt;p&gt;Istio 1.11 增加了实验性支持，可以直接将 gRPC 服务添加到网格中。我们支持基本的服务发现，一些基于 VirtualService 的流量策略，以及双向 TLS。&lt;/p&gt;
+&lt;h2 id=&#34;支持的功能&#34;&gt;支持的功能&lt;/h2&gt;
+&lt;p&gt;与 Envoy 相比，目前 gRPC 内的 xDS API 的实现在某些方面是有限的。以下功能应该可以使用，尽管这不是一个详尽的列表，其他功能可能部分可用。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;基本的服务发现。你的 gRPC 服务可以接触到在网格中注册的其他 pod 和虚拟机。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;DestinationRule&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Subset&lt;/code&gt;：你的 gRPC 服务可以根据标签选择器将流量分割到不同的实例组。&lt;/li&gt;
+&lt;li&gt;目前唯一支持的 Istio &lt;code&gt;loadBalancer&lt;/code&gt; 是 &lt;code&gt;ROUND_ROBIN&lt;/code&gt;，&lt;code&gt;consistentHash&lt;/code&gt; 将在未来的 Istio 版本中加入（支持 gRPC）。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;tls&lt;/code&gt; 设置被限制为 &lt;code&gt;DISABLE&lt;/code&gt; 或 &lt;code&gt;ISTIO_MUTUAL&lt;/code&gt;。其他模式将被视为 &lt;code&gt;DISABLE&lt;/code&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;VirtualService&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;Header 匹配和 URI 匹配的格式为 &lt;code&gt;/ServiceName/RPCName&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;覆盖目标主机和子集。&lt;/li&gt;
+&lt;li&gt;加权的流量转移。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;PeerAuthentication&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;只支持 &lt;code&gt;DISABLE&lt;/code&gt; 和 &lt;code&gt;STRICT&lt;/code&gt;。其他模式将被视为 &lt;code&gt;DISABLE&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;在未来的版本中可能会有对 auto-mTLS 的支持。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;其他功能包括故障、重试、超时、镜像和重写规则，可能会在未来的版本中支持。其中一些功能正等待在 gRPC 中实现，而其他功能则需要在 Istio 中支持。gRPC 中 xDS 功能的状态可以&lt;a href=&#34;https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;在这里&lt;/a&gt;找到。Istio 的支持状况将存在于未来的官方文档中。&lt;/p&gt;
+&lt;p&gt;这个功能是&lt;a href=&#34;https://istio.io/latest/docs/releases/feature-stages/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;实验性的&lt;/a&gt;。标准的 Istio 功能将随着时间的推移和整体设计的改进而得到支持。&lt;/p&gt;
+&lt;h2 id=&#34;架构概述&#34;&gt;架构概述&lt;/h2&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-grpc服务如何与istiod通信的示意图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;gRPC服务如何与istiod通信的示意图&#34; srcset=&#34;
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp3lh9za5j311q0hm75n_huabc968057a906e61785a18796c8fab68_60668_856dcb93d4f2050c6da613426e172811.webp 400w,
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp3lh9za5j311q0hm75n_huabc968057a906e61785a18796c8fab68_60668_f3ee6fba86384313fdc69ee1246fa468.webp 760w,
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp3lh9za5j311q0hm75n_huabc968057a906e61785a18796c8fab68_60668_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp3lh9za5j311q0hm75n_huabc968057a906e61785a18796c8fab68_60668_856dcb93d4f2050c6da613426e172811.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;355&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      gRPC服务如何与istiod通信的示意图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;虽然不使用 proxy 进行数据面通信，但它仍然需要一个 agent 来进行初始化和与控制面的通信。首先，agent 在启动时生成一个&lt;a href=&#34;https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md#xdsclient-and-bootstrap-file&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;引导文件&lt;/a&gt;，与为 Envoy 生成引导文件的方式相同。这告诉 gRPC 库如何连接到 istiod，在哪里可以找到数据面通信的证书，以及向控制面发送什么元数据。接下来，agent 作为一个 xDS proxy，代表应用程序与 istiod 进行连接和认证。最后，agent 获取并轮换数据平面通信中使用的证书。&lt;/p&gt;
+&lt;h2 id=&#34;对应用程序代码的修改&#34;&gt;对应用程序代码的修改&lt;/h2&gt;
+&lt;p&gt;本节介绍了 gRPC 在 Go 中的 xDS 支持。其他语言也有类似的 API。&lt;/p&gt;
+&lt;p&gt;为了启用 gRPC 中的 xDS 功能，你的应用程序必须做一些必要的修改。你的 gRPC 版本应该至少是 1.39.0。&lt;/p&gt;
+&lt;h3 id=&#34;客户端&#34;&gt;客户端&lt;/h3&gt;
+&lt;p&gt;下面的导入将在 gRPC 中注册 xDS 解析器和均衡器。它应该被添加到你的主包或调用 &lt;code&gt;grpc.Dial&lt;/code&gt; 的同一个包中。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;_&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;google.golang.org/grpc/xds&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当创建一个 gRPC 连接时，URL 必须使用 &lt;code&gt;xds:///&lt;/code&gt; scheme。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;conn&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;grpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;DialContext&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ctx&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;xds:///foo.ns.svc.cluster.local:7070&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;此外，为了支持（m）TLS，必须向 &lt;code&gt;DialContext&lt;/code&gt; 传递一个特殊的 &lt;code&gt;TransportCredentials&lt;/code&gt; 选项。&lt;code&gt;FallbackCreds&lt;/code&gt; 允许我们在 istiod 不发送安全配置时成功。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;google.golang.org/grpc/credentials/xds&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;creds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;xds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;NewClientCredentials&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;xds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ClientOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;FallbackCreds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;insecure&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;NewCredentials&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;})&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// handle err
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;conn&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;grpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;DialContext&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;ctx&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;xds:///foo.ns.svc.cluster.local:7070&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;grpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;WithTransportCredentials&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;creds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;服务端&#34;&gt;服务端&lt;/h3&gt;
+&lt;p&gt;为了支持服务器端的配置，如 mTLS，必须做一些修改。&lt;/p&gt;
+&lt;p&gt;首先，我们使用一个特殊的构造函数来创建 &lt;code&gt;GRPCServer&lt;/code&gt;。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;google.golang.org/grpc/xds&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;server&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;xds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;NewGRPCServer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nf&#34;&gt;RegisterFooServer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;server&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;fooServerImpl&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果你的 &lt;code&gt;protoc&lt;/code&gt; 生成的 Go 代码已经过期，你可能需要重新生成，以便与 xDS 服务器兼容。你生成的 &lt;code&gt;RegisterFooServer&lt;/code&gt; 函数应该像下面这样。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;RegisterFooServer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;s&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;grpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ServiceRegistrar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;srv&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;FooServer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;s&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;RegisterService&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;FooServer_ServiceDesc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;srv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;最后，与客户端的变化一样，我们必须启用安全支持。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;creds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;xds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;NewServerCredentials&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;xdscreds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ServerOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;FallbackCreds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;insecure&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;NewCredentials&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()})&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// handle err
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;server&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;xds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;NewGRPCServer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;grpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Creds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;creds&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;在你的-kubernetes-部署中&#34;&gt;在你的 Kubernetes 部署中&lt;/h3&gt;
+&lt;p&gt;假设你的应用代码是兼容的，Pod 只需要注释 &lt;code&gt;inject.istio.io/templates：grpc-agent&lt;/code&gt;。这增加了一个运行上述代理的 sidecar 容器，以及一些环境变量，gRPC 使用这些变量来寻找引导文件并启用某些功能。&lt;/p&gt;
+&lt;p&gt;对于 gRPC 服务端，你的 Pod 也应该用 &lt;code&gt;proxy.istio.io/config: &#39;{&amp;quot;holdApplicationUntilProxyStarts&amp;quot;: true}&#39;&lt;/code&gt; 来注释，以确保在你的 gRPC 服务端初始化之前，代理中的 xDS 代理和引导文件已经准备就绪。&lt;/p&gt;
+&lt;h2 id=&#34;例子&#34;&gt;例子&lt;/h2&gt;
+&lt;p&gt;在本指南中，你将部署 echo，一个已经支持服务器端和客户端无代理的 gRPC 的应用。通过这个应用程序，你可以尝试一些支持的流量策略，启用 mTLS。&lt;/p&gt;
+&lt;h3 id=&#34;先决条件&#34;&gt;先决条件&lt;/h3&gt;
+&lt;p&gt;本指南要求在进行之前&lt;a href=&#34;https://istio.io/latest/docs/setup/install/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;安装&lt;/a&gt; Istio（1.11+）控制平面。&lt;/p&gt;
+&lt;h3 id=&#34;部署应用程序&#34;&gt;部署应用程序&lt;/h3&gt;
+&lt;p&gt;创建一个支持注入的命名空间 &lt;code&gt;echo-grpc&lt;/code&gt;。接下来部署两个 &lt;code&gt;echo&lt;/code&gt; 应用程序的实例以及服务。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl create namespace echo-grpc
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl label namespace echo-grpc istio-injection&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;enabled
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl -n echo-grpc apply -f samples/grpc-echo/grpc-echo.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;确保两个 Pod 正在运行。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl -n echo-grpc get pods
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;NAME                       READY   STATUS    RESTARTS   AGE
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;echo-v1-69d6d96cb7-gpcpd   2/2     Running   &lt;span class=&#34;m&#34;&gt;0&lt;/span&gt;          58s
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;echo-v2-5c6cbf6dc7-dfhcb   2/2     Running   &lt;span class=&#34;m&#34;&gt;0&lt;/span&gt;          58s
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;测试-grpc-解析器&#34;&gt;测试 gRPC 解析器&lt;/h3&gt;
+&lt;p&gt;首先，将 17171 端口转发到其中一个 Pod 上。这个端口是一个非 xDS 支持的 gRPC 服务端，允许从端口转发的 Pod 发出请求。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl -n echo-grpc port-forward &lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;kubectl -n echo-grpc get pods -l &lt;span class=&#34;nv&#34;&gt;version&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;v1 -ojsonpath&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;{.items[0].metadata.name}&amp;#39;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;17171&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;&amp;amp;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;接下来，我们可以发送一批 5 个请求。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ grpcurl -plaintext -d &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;url&amp;#34;: &amp;#34;xds:///echo.echo-grpc.svc.cluster.local:7070&amp;#34;, &amp;#34;count&amp;#34;: 5}&amp;#39;&lt;/span&gt; :17171 proto.EchoTestService/ForwardEcho &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; jq -r &lt;span class=&#34;s1&#34;&gt;&amp;#39;.output | join(&amp;#34;&amp;#34;)&amp;#39;&lt;/span&gt;  &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep Hostname
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Handling connection &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;17171&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v1-7cf5b76586-bgn6t
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;1&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v2-cf97bd94d-qf628
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;2&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v1-7cf5b76586-bgn6t
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;3&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v2-cf97bd94d-qf628
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;4&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v1-7cf5b76586-bgn6t
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;你也可以使用类似 Kubernetes 名称解析的短名称。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ grpcurl -plaintext -d &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;url&amp;#34;: &amp;#34;xds:///echo:7070&amp;#34;}&amp;#39;&lt;/span&gt; :17171 proto.EchoTestService/ForwardEcho &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; jq -r &lt;span class=&#34;s1&#34;&gt;&amp;#39;.output | join
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s1&#34;&gt;(&amp;#34;&amp;#34;)&amp;#39;&lt;/span&gt;  &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep Hostname
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v1-7cf5b76586-ltr8q
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ grpcurl -plaintext -d &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;url&amp;#34;: &amp;#34;xds:///echo.echo-grpc:7070&amp;#34;}&amp;#39;&lt;/span&gt; :17171 proto.EchoTestService/ForwardEcho &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; jq -r
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;.output | join(&amp;#34;&amp;#34;)&amp;#39;&lt;/span&gt;  &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep Hostname
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v1-7cf5b76586-ltr8q
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ grpcurl -plaintext -d &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;url&amp;#34;: &amp;#34;xds:///echo.echo-grpc.svc:7070&amp;#34;}&amp;#39;&lt;/span&gt; :17171 proto.EchoTestService/ForwardEcho &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; jq -r
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;.output | join(&amp;#34;&amp;#34;)&amp;#39;&lt;/span&gt;  &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep Hostname
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v2-cf97bd94d-jt5mf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;用目的地规则创建子集&#34;&gt;用目的地规则创建子集&lt;/h3&gt;
+&lt;p&gt;首先，为每个版本的工作负载创建一个子集。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ cat &lt;span class=&#34;s&#34;&gt;&amp;lt;&amp;lt;EOF | kubectl apply -f -
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;apiVersion: networking.istio.io/v1alpha3
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;kind: DestinationRule
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;metadata:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  name: echo-versions
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  namespace: echo-grpc
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;spec:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  host: echo.echo-grpc.svc.cluster.local
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  subsets:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  - name: v1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;    labels:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;      version: v1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  - name: v2
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;    labels:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;      version: v2
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;EOF&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;流量转移&#34;&gt;流量转移&lt;/h3&gt;
+&lt;p&gt;使用上面定义的子集，你可以把 80% 的流量发送到一个特定的版本。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ cat &lt;span class=&#34;s&#34;&gt;&amp;lt;&amp;lt;EOF | kubectl apply -f -
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;apiVersion: networking.istio.io/v1beta1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;kind: VirtualService
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;metadata:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  name: echo-weights
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  namespace: echo-grpc
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;spec:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  hosts:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  - echo.echo-grpc.svc.cluster.local
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  http:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  - route:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;    - destination:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;        host: echo.echo-grpc.svc.cluster.local
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;        subset: v1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;      weight: 20
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;    - destination:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;        host: echo.echo-grpc.svc.cluster.local
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;        subset: v2
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;      weight: 80
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;EOF&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;现在，发送一组 10 个请求。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;grpcurl -plaintext -d &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;url&amp;#34;: &amp;#34;xds:///echo.echo-grpc.svc.cluster.local:7070&amp;#34;, &amp;#34;count&amp;#34;: 10}&amp;#39;&lt;/span&gt; :17171 proto.EchoTestService/ForwardEcho &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; jq -r &lt;span class=&#34;s1&#34;&gt;&amp;#39;.output | join(&amp;#34;&amp;#34;)&amp;#39;&lt;/span&gt;  &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep ServiceVersion
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;响应应主要包含 v2 响应。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-plain&#34; data-lang=&#34;plain&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[0 body] ServiceVersion=v2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[1 body] ServiceVersion=v2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[2 body] ServiceVersion=v1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[3 body] ServiceVersion=v2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[4 body] ServiceVersion=v1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[5 body] ServiceVersion=v2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[6 body] ServiceVersion=v2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[7 body] ServiceVersion=v2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[8 body] ServiceVersion=v2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;[9 body] ServiceVersion=v2
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;启用-mtls&#34;&gt;启用 mTLS&lt;/h3&gt;
+&lt;p&gt;由于在 gRPC 中启用安全所需的应用程序本身的变化，Istio 的自动检测 mTLS 支持的传统方法是不可靠的。出于这个原因，初始版本需要在客户端和服务端上明确启用 mTLS。&lt;/p&gt;
+&lt;p&gt;要启用客户端的 mTLS，请应用带有 &lt;code&gt;tls&lt;/code&gt; 设置的 &lt;code&gt;DestinationRule&lt;/code&gt;。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ cat &lt;span class=&#34;s&#34;&gt;&amp;lt;&amp;lt;EOF | kubectl apply -f -
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;apiVersion: networking.istio.io/v1alpha3
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;kind: DestinationRule
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;metadata:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  name: echo-mtls
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  namespace: echo-grpc
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;spec:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  host: echo.echo-grpc.svc.cluster.local
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  trafficPolicy:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;    tls:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;      mode: ISTIO_MUTUAL
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;EOF&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;现在，试图调用尚未配置 mTLS 的服务器将会失败。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ grpcurl -plaintext -d &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;url&amp;#34;: &amp;#34;xds:///echo.echo-grpc.svc.cluster.local:7070&amp;#34;}&amp;#39;&lt;/span&gt; :17171 proto.EchoTestService/ForwardEcho &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; jq -r &lt;span class=&#34;s1&#34;&gt;&amp;#39;.output | join(&amp;#34;&amp;#34;)&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Handling connection &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;17171&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;ERROR:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Code: Unknown
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Message: 1/1 requests had errors&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; first error: rpc error: &lt;span class=&#34;nv&#34;&gt;code&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; Unavailable &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; all SubConns are in TransientFailure
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;为了启用服务器端的 mTLS，应用一个 &lt;code&gt;PeerAuthentication&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;以下策略对整个命名空间强制采用 STRICT mTLS。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ cat &lt;span class=&#34;s&#34;&gt;&amp;lt;&amp;lt;EOF | kubectl apply -f -
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;apiVersion: security.istio.io/v1beta1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;kind: PeerAuthentication
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;metadata:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  name: echo-mtls
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  namespace: echo-grpc
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;spec:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  mtls:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;    mode: STRICT
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;EOF&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;应用该政策后，请求将开始成功。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ grpcurl -plaintext -d &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;url&amp;#34;: &amp;#34;xds:///echo.echo-grpc.svc.cluster.local:7070&amp;#34;}&amp;#39;&lt;/span&gt; :17171 proto.EchoTestService/ForwardEcho &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; jq -r &lt;span class=&#34;s1&#34;&gt;&amp;#39;.output | join(&amp;#34;&amp;#34;)&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Handling connection &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;17171&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;0&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; grpcecho.Echo&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;xds:///echo.echo-grpc.svc.cluster.local:7070 map&lt;span class=&#34;o&#34;&gt;[]&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;0&lt;/span&gt;  5s &lt;span class=&#34;nb&#34;&gt;false&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;})&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; x-request-id&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Host&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo.echo-grpc.svc.cluster.local:7070
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; content-type&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;application/grpc
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; user-agent&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;grpc-go/1.39.1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;StatusCode&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;200&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;ServiceVersion&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;v1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;ServicePort&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;17070&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Cluster&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;IP&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;10.68.1.18
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;IstioVersion&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Echo&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; body&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;Hostname&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;echo-v1-7cf5b76586-z5p8l
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;限制条件&#34;&gt;限制条件&lt;/h2&gt;
+&lt;p&gt;最初的版本有几个限制，可能会在未来的版本中修复。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;不支持自动 mTLS，也不支持许可模式。相反，我们需要在服务器上使用 &lt;code&gt;STRICT&lt;/code&gt;，在客户端使用 &lt;code&gt;ISTIO_MUTUAL&lt;/code&gt; 的明确 mTLS 配置。在迁移到 &lt;code&gt;STRICT&lt;/code&gt; 的过程中，可以使用 Envoy。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;grpc.Serve(listener)&lt;/code&gt; 或 &lt;code&gt;grpc.Dial(&amp;quot;xds://...&amp;quot;)&lt;/code&gt; 在 bootstrap 被写入或 xDS 代理准备好之前被调用会导致失败。 &lt;code&gt;holdApplicationUntilProxyStarts&lt;/code&gt; 可以用来解决这个问题，或者应用程序可以对这些失败更加稳健。&lt;/li&gt;
+&lt;li&gt;如果支持 xDS 的 gRPC 服务器使用 mTLS，那么你将需要确保你的健康检查可以绕过这个问题。要么使用一个单独的端口，要么你的健康检查客户端需要一种方法来获得适当的客户端证书。&lt;/li&gt;
+&lt;li&gt;gRPC 中 xDS 的实现与 Envoy 不一致。某些行为可能不同，某些功能可能缺失。&lt;a href=&#34;https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;gRPC 的功能状态&lt;/a&gt;提供了更多细节。请确保测试任何 Istio 配置是否真正适用于你的无代理的 gRPC 应用程序。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;性能&#34;&gt;性能&lt;/h2&gt;
+&lt;h3 id=&#34;实验设置&#34;&gt;实验设置&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;使用 Fortio，一个基于 Go 的负载测试应用程序
+&lt;ul&gt;
+&lt;li&gt;稍作修改，以支持 gRPC 的 XDS 功能 (PR)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;资源：
+&lt;ul&gt;
+&lt;li&gt;GKE 1.20 集群有 3 个 &lt;code&gt;e2-standard-16&lt;/code&gt; 节点（每个节点有 16 个 CPU+64GB 内存）&lt;/li&gt;
+&lt;li&gt;Fortio 客户端和服务器应用程序：1.5 vCPU，1000 MiB 内存&lt;/li&gt;
+&lt;li&gt;Sidecar（istio-agent 和可能的 Envoy 代理）：1 vCPU，512 MiB 内存&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;测试的工作负载类型：
+&lt;ul&gt;
+&lt;li&gt;基线：常规的 gRPC，没有使用 Envoy 代理或 Proxyless xDS&lt;/li&gt;
+&lt;li&gt;Envoy：标准的 istio-agent + Envoy proxy sidecar&lt;/li&gt;
+&lt;li&gt;无代理：使用 xDS gRPC 服务器实现的 gRPC 和客户端的 &lt;code&gt;xds:///&lt;/code&gt; 解析器。&lt;/li&gt;
+&lt;li&gt;通过 &lt;code&gt;PeerAuthentication&lt;/code&gt; 和 &lt;code&gt;DestinationRule&lt;/code&gt; 启用 / 停用 mTLS&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;延迟&#34;&gt;延迟&lt;/h3&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-p50延迟对比图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;P50延迟对比图&#34; srcset=&#34;
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp512szlvj31260rgq57_hu1f3dca8e47dac173545ad9b4a1f5b121_93948_3a074b471e14cb11fc2317c66746cc23.webp 400w,
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp512szlvj31260rgq57_hu1f3dca8e47dac173545ad9b4a1f5b121_93948_63de6d1be42f8a6ca221d6c31a184d0b.webp 760w,
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp512szlvj31260rgq57_hu1f3dca8e47dac173545ad9b4a1f5b121_93948_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp512szlvj31260rgq57_hu1f3dca8e47dac173545ad9b4a1f5b121_93948_3a074b471e14cb11fc2317c66746cc23.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;547&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      P50延迟对比图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-p99-延迟对比图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;P99延迟对比图&#34; srcset=&#34;
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp51zjxqaj312q0r2jtl_hu129e5f5b76937d444cc31a8e04e4a32d_91697_06e686b116988448b11cd59f07be69ce.webp 400w,
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp51zjxqaj312q0r2jtl_hu129e5f5b76937d444cc31a8e04e4a32d_91697_a9adb6bead390a716cbd17c76ed6ea7d.webp 760w,
+               /docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp51zjxqaj312q0r2jtl_hu129e5f5b76937d444cc31a8e04e4a32d_91697_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://jimmysong.io/docs/docs/translation/grpc-proxyless-service-mesh/008i3skNly1gwp51zjxqaj312q0r2jtl_hu129e5f5b76937d444cc31a8e04e4a32d_91697_06e686b116988448b11cd59f07be69ce.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;531&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      P99 延迟对比图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;在使用无代理的 gRPC 解析器时，延迟会有微小的增加。与 Envoy 相比，这是一个巨大的改进，仍然可以实现先进的流量管理功能和 mTLS。&lt;/p&gt;
+&lt;h3 id=&#34;istio-proxy-容器的资源使用情况&#34;&gt;istio-proxy 容器的资源使用情况&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;类别&lt;/th&gt;
+&lt;th&gt;客户端 mCPU&lt;/th&gt;
+&lt;th&gt;客户端内存 (MiB)&lt;/th&gt;
+&lt;th&gt;服务端 mCPU&lt;/th&gt;
+&lt;th&gt;服务端内存 (MiB)&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Envoy 明文&lt;/td&gt;
+&lt;td&gt;320.44&lt;/td&gt;
+&lt;td&gt;66.93&lt;/td&gt;
+&lt;td&gt;243.78&lt;/td&gt;
+&lt;td&gt;64.91&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Envoy mTLS&lt;/td&gt;
+&lt;td&gt;340.87&lt;/td&gt;
+&lt;td&gt;66.76&lt;/td&gt;
+&lt;td&gt;309.82&lt;/td&gt;
+&lt;td&gt;64.82&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;无代理明文&lt;/td&gt;
+&lt;td&gt;0.72&lt;/td&gt;
+&lt;td&gt;23.54&lt;/td&gt;
+&lt;td&gt;0.84&lt;/td&gt;
+&lt;td&gt;24.31&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;无代理 mTLS&lt;/td&gt;
+&lt;td&gt;0.73&lt;/td&gt;
+&lt;td&gt;25.05&lt;/td&gt;
+&lt;td&gt;0.78&lt;/td&gt;
+&lt;td&gt;25.43&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;尽管我们仍然需要一个代理，但代理使用的内存不到完整 vCPU 的 0.1%，而且只有 25 MiB，这还不到运行 Envoy 所需内存的一半。&lt;/p&gt;
+&lt;p&gt;这些指标不包括应用容器中 gRPC 的额外资源使用量，但有助于展示 istio-agent 在此模式下运行时的资源使用影响。&lt;/p&gt;
+</description>
+    </item>
+    
   </channel>
 </rss>
