@@ -6,6 +6,8 @@ tags:
 date: 2022-05-18
 internal_link: /docs/istio-handbook/
 type: publication
+publication_types: "5"
+publication: "[点击阅读](/docs/istio-handbook/)"
 ---
 
 ## 关于本书
