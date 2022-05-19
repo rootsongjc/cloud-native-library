@@ -12,4 +12,6 @@ view: 3
 header:
   caption: ''
   image: ''
+cascade:
+  commentable: true
 ---

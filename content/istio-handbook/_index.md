@@ -7,6 +7,8 @@ icon_pack: fas
 title: Istio 基础教程
 date: '2022-05-18T00:00:00+08:00'
 type: book # Do not modify.
+cascade:
+  commentable: true
 ---
 
 [Istio](https://istio.io) 是由 Google、IBM、Lyft 等共同开源的 Service Mesh（服务网格）框架，于2017 年开源。

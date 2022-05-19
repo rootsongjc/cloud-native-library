@@ -7,6 +7,8 @@ icon_pack: fas
 title: 云原生宝典
 date: '2022-05-03T00:00:00Z'
 type: book # Do not modify.
+cascade:
+  commentable: true
 ---
 
 欢迎来到云原生宝典——你的一站式云原生知识库。

@@ -7,6 +7,8 @@ icon_pack: fas
 title: OpenTelemetry 可观测性的未来
 date: '2022-05-03T00:00:00Z'
 type: book # Do not modify.
+cascade:
+  commentable: true
 ---
 
 本报告译自 O'Reilly 出品的 [The Future of Observablity with OpeTelemetry](https://www.oreilly.com/library/view/the-future-of/9781098118433/)，作者 Ted Young，译者 [Jimmy Song](https://jimmysong.io)。
