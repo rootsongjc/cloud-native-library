@@ -15,7 +15,7 @@ type: book
 
 ## 原理
 
-在 [Istio 中的透明流量劫持详解](../concepts/transparent-traffic-hijacking.md)中，我们谈到 Istio 默认使用 IPtables 拦截数据平面中的流量到 Envoy 代理，这种拦截方式通用性最强。因为 Pod 中所有的 inbound 和 outbound 流量都会先通过 Envoy 代理，尤其是 Pod 接收的流量，都要先通过 IPtables 将流量劫持到 Envoy 代理后再发往 Pod 中的应用容器的端口。
+在 [Istio 中的透明流量劫持详解](../../concepts/transparent-traffic-hijacking/)中，我们谈到 Istio 默认使用 IPtables 拦截数据平面中的流量到 Envoy 代理，这种拦截方式通用性最强。因为 Pod 中所有的 inbound 和 outbound 流量都会先通过 Envoy 代理，尤其是 Pod 接收的流量，都要先通过 IPtables 将流量劫持到 Envoy 代理后再发往 Pod 中的应用容器的端口。
 
 ![使用 IPtables 劫持流量发到当前 Pod 的应用端口](../../images/to-localhost.png "使用 IPtables 劫持流量发到当前 Pod 的应用端口")
 
