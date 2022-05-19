@@ -1,12 +1,13 @@
 ---
 title: 云原生基础架构
-summary: 专为 Kubernetes 而优化的 Java 解决方案
+summary: 第一本云原生书籍
 tags:
   - ebook
   - translation
 date: 2019-10-21
-image_link: https://jimmysong.io/cloud-native-infra/
+internal_link: cloud-native-infra
 type: publication
+publication: cloud-native-infra
 ---
 
 本书为 *Cloud Native Infrastructure* 中文版，作者 *Justin Garrison* 和 *Kris Nova* ，英文版发行于 2017 年 11 月，已可以在网上免费获得，本书是关于创建和管理基础架构，以适用于云原生应用全生命周期管理的模式和实践。
