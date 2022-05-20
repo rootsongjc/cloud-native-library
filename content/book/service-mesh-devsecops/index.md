@@ -5,8 +5,9 @@ tags:
   - ebook
   - translation
 date: 2022-03-14
-image_link: https://jimmysong.io/service-mesh-devsecops/
+internal_link: service-mesh-devsecops
 type: publication
+publication: "[点击阅读](/docs/service-mesh-devsecops/)"
 ---
 
 本书译自美国国家标准标准与技术研究院（NIST）Special Publication 800-204C。

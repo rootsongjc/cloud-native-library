@@ -1,0 +1,47 @@
+# 目录
+
+## 文前
+
+- [前言](_index.md)
+- [声明](preface.md)
+- [执行摘要](executive-summary.md)
+
+## 第一章
+
+- [1. 简介](intro/_index.md)
+- [1.1 范围](intro/scope.md)
+- [1.2 相关的 DevSecOps 倡议](intro/related-devsecops-initiatives.md)
+- [1.3 目标受众](intro/target-audience.md)
+- [1.4  与其他 NIST 指导文件的关系](intro/relationship-to-other-nist-guidance-documents.md)
+- [1.5 本文件的组织](intro/organization-of-this-document.md)
+
+## 第二章
+
+- [2. 实施 DevSecOps 原语的参考平台](reference-platform/_index.md)
+- [2.1 容器编排和资源管理平台](reference-platform/container-orchestration-and-resource-management-platform.md)
+- [2.2 服务网格架构](reference-platform/service-mesh-software-architecture.md)
+
+## 第三章
+
+- [3. DevSecOps 组织准备、关键基本要素和实施](devsecops/_index.md)
+- [3.1 组织对 DevSecOps 的准备情况](devsecops/organizational-preparedness-for-devsecops.md)
+- [3.2 DevSecOps 平台](devsecops/devsecops-platform.md)
+- [3.3 DevSecOps 关键原语和实施任务](devsecops/key-primitives-and-implementation-tasks.md)
+
+## 第四章
+
+- [4. 为参考平台实施 DevSecOps 原语](implement/_index.md)
+- [4.1 代码类型和参考平台组件的描述](implement/description-of-code-types-and-reference-platform-components.md)
+- [4.2 应用程序代码和应用服务代码的 CI/CD 管道](implement/ci-cd-pipeline-for-application-code-and-application-services-code.md)
+- [4.3 基础设施即代码的 CI/CD 管道](implement/ci-cd-pipeline-for-infrastructure-as-code.md)
+- [4.4 策略即代码的 CI/CD 管道](implement/ci-cd-pipeline-for-policy-as-code.md)
+- [4.5 可观察性即代码的 CI/CD 管道](implement/ci-cd-pipeline-for-observability-as-code.md)
+- [4.6 确保 CI/CD 管道的安全](implement/securing-the-ci-cd-pipeline.md)
+- [4.7 CI/CD 管道中的工作流模型](implement/workflow-models-in-ci-cd-pipelines.md)
+- [4.8 安全测试 —— 所有代码类型的 CI/CD 管道的共同要求](implement/security-testing-common-requirement-for-ci-cd-pipelines-for-all-code-types.md)
+- [4.9 DevSecOps 原语对服务网格中应用安全的好处](implement/benefits-of-devsecops-primitives-to-application-security-in-the-service-mesh.md)
+- [4.10 利用 DevSecOps 进行持续授权操作（C-ATO）](implement/leveraging-devsecops-for-continuous-authorization-to-operate-c-ato.md)
+
+## 第五章
+
+- [5. 摘要和结论](summary-and-conclusion/_index.md)
