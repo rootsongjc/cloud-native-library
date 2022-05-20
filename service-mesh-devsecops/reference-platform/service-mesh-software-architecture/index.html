@@ -1,0 +1,1434 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+    
+  
+  <meta name="description" content="在看了基于微服务的应用所需的各种应用服务后，考虑一下提供这些服务的服务网格的架构。服务网格由两个主要部分组成：控制平面和数据平面。 2.2.1 控制平面 控制平面有几个组件。虽然服务网格的数据面主要由作为容器运行在" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://jimmysong.io/docs/service-mesh-devsecops/reference-platform/service-mesh-software-architecture/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/docs/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/docs/css/wowchemy.9af3f91a05e05d2d107110e52885ed06.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-93485976-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+
+  function gtag() {
+      dataLayer.push(arguments);
+  }
+
+  function trackOutboundLink(url, target) {
+    gtag('event', 'click', {
+         'event_category': 'outbound',
+         'event_label': url,
+         'transport_type': 'beacon',
+         'event_callback': function () {
+           if (target !== '_blank') {
+             document.location = url;
+           }
+         }
+    });
+    console.debug("Outbound link clicked: " + url);
+  }
+
+  function onClickCallback(event) {
+    if ((event.target.tagName !== 'A') || (event.target.host === window.location.host)) {
+      return;
+    }
+    trackOutboundLink(event.target, event.target.getAttribute('target'));  
+  }
+
+  gtag('js', new Date());
+  gtag('config', 'UA-93485976-1', {});
+  gtag('set', {'cookie_flags': 'SameSite=None;Secure'});
+
+  
+  document.addEventListener('click', onClickCallback, false);
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?11f7d254cfa4e0ca44b175c66d379ecc";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/docs/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://jimmysong.io/docs/service-mesh-devsecops/reference-platform/service-mesh-software-architecture/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://jimmysong.io/docs/service-mesh-devsecops/reference-platform/service-mesh-software-architecture/" />
+  <meta property="og:title" content="2.2 服务网格架构 | 云原生资料库" />
+  <meta property="og:description" content="在看了基于微服务的应用所需的各种应用服务后，考虑一下提供这些服务的服务网格的架构。服务网格由两个主要部分组成：控制平面和数据平面。 2.2.1 控制平面 控制平面有几个组件。虽然服务网格的数据面主要由作为容器运行在" /><meta property="og:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" />
+    <meta property="twitter:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2022-05-18T00:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2022-05-20T09:49:29&#43;08:00">
+  
+
+  
+
+
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>2.2 服务网格架构 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="f6b1fcef9d8d5d47367748738bcf7b81" >
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/docs/js/wowchemy-init.min.14a0ed61c6dbd594b9c75193b25be179.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>搜索</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>主页</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/cloud-native"><span>云原生宝典</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#portfolio"><span>书目列表</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/event"><span>活动</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io/blog/" target="_blank" rel="noopener"><span>原创</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/translation"><span>翻译</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io/about/" target="_blank" rel="noopener"><span>关于</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+
+        
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/rootsongjc/docs/" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    
+
+
+
+
+<div class="container-fluid docs">
+  <div class="row flex-xl-nowrap">
+    <div class="col-12 col-md-3 col-xl-2 docs-sidebar">
+      <form class="docs-search d-flex align-items-center">
+  <button class="btn docs-toggle d-md-none p-0 mr-md-3 w-100" type="button" data-toggle="collapse" data-target="#docs-nav" aria-controls="docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    <div class="d-flex">
+      <span class="d-md-none pl-1 flex-grow-1 text-left overflow-hidden">
+        
+          第二章：实施 DevSecOps 原语的参考平台
+        
+      </span>
+      <span><i class="fas fa-chevron-down"></i></span>
+    </div>
+  </button>
+
+  
+  <button class="form-control sidebar-search js-search d-none d-md-flex">
+    <i class="fas fa-search pr-2"></i>
+    <span class="sidebar-search-text">搜索...</span>
+    <span class="sidebar-search-shortcut">/</span>
+  </button>
+  
+</form>
+
+<nav class="collapse docs-links" id="docs-nav">
+  
+  
+  
+  
+  
+  
+
+  
+  
+    
+
+    
+      
+
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <ul class="nav docs-sidenav">
+        <li class=""><a href="/docs/service-mesh-devsecops/"><i class="fas fa-book pr-1"></i>利用服务网格为基于微服务的应用程序实施 DevSecOps</a></li>
+    
+      
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/preface/">声明</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/executive-summary/">执行摘要</a></li>
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/service-mesh-devsecops/intro/">第一章：简介</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/intro/scope/">1.1 范围</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/intro/related-devsecops-initiatives/">1.2 相关的 DevSecOps 倡议</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/intro/target-audience/">1.3 目标受众</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/intro/relationship-to-other-nist-guidance-documents/">1.4 与其他 NIST 指导文件的关系</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/intro/organization-of-this-document/">1.5 本文件的组织</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/intro/reference-platform-for-the-implementation-of-devsecops-primitives/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/service-mesh-devsecops/reference-platform/">第二章：实施 DevSecOps 原语的参考平台</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/reference-platform/container-orchestration-and-resource-management-platform/">2.1 容器编排和资源管理平台</a></li>
+
+
+
+  <li class="active"><a href="/docs/service-mesh-devsecops/reference-platform/service-mesh-software-architecture/">2.2 服务网格架构</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/service-mesh-devsecops/devsecops/">第三章：DevSecOps 组织准备、关键基本要素和实施</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/devsecops/organizational-preparedness-for-devsecops/">3.1 组织对 DevSecOps 的准备情况</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/devsecops/devsecops-platform/">3.2 DevSecOps 平台</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/devsecops/key-primitives-and-implementation-tasks/">3.3 DevSecOps 关键原语和实施任务</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/service-mesh-devsecops/implement/">第四章：为参考平台实施 DevSecOps 原语</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/implement/description-of-code-types-and-reference-platform-components/">4.1 代码类型和参考平台组件的描述</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/implement/ci-cd-pipeline-for-application-code-and-application-services-code/">4.2 应用程序代码和应用服务代码的 CI/CD 管道</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/implement/ci-cd-pipeline-for-infrastructure-as-code/">4.3 基础设施即代码的 CI/CD 管道</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/implement/ci-cd-pipeline-for-policy-as-code/">4.4 策略即代码的 CI/CD 管道</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/implement/ci-cd-pipeline-for-observability-as-code/">4.5 可观察性即代码的 CI/CD 管道</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/implement/securing-the-ci-cd-pipeline/">4.6 确保 CI/CD 管道的安全</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/implement/workflow-models-in-ci-cd-pipelines/">4.7 CI/CD 管道中的工作流模型</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/implement/security-testing-common-requirement-for-ci-cd-pipelines-for-all-code-types/">4.8 安全测试——所有代码类型的 CI/CD 管道的共同要求</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/implement/benefits-of-devsecops-primitives-to-application-security-in-the-service-mesh/">4.9 DevSecOps 原语对服务网格中应用安全的好处</a></li>
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/implement/leveraging-devsecops-for-continuous-authorization-to-operate-c-ato/">4.10 利用 DevSecOps 进行持续授权操作（C-ATO）</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+        <a class="docs-toc-link " href="/docs/service-mesh-devsecops/summary-and-conclusion/">第五章：摘要和结论</a>
+    
+
+    
+      </div>
+    
+
+
+
+  <li class=""><a href="/docs/service-mesh-devsecops/summary/"></a></li>
+
+      
+    
+
+    
+      </ul>
+    
+
+  
+</nav>
+
+    </div>
+
+    
+    
+    <div class="d-none d-xl-block col-xl-2 docs-toc">
+      
+
+      <ul class="nav toc-top">
+        <li><a href="#" id="back_to_top" class="docs-toc-title">目录</a></li>
+      </ul>
+
+      <nav id="TableOfContents">
+  <ul>
+    <li><a href="#221-控制平面">2.2.1 控制平面</a></li>
+    <li><a href="#222-数据平面">2.2.2 数据平面</a></li>
+  </ul>
+</nav>
+
+      
+    </div>
+    
+
+    <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 docs-content" role="main">
+
+      <article class="article">
+
+        <div class="docs-article-container">
+          
+            
+  <nav class="d-none d-md-flex" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      
+  
+    
+  
+    
+  
+    
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/">
+        
+          首页
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/service-mesh-devsecops/">
+        
+          利用服务网格为基于微服务的应用程序实施 DevSecOps
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/service-mesh-devsecops/reference-platform/">
+        
+          第二章：实施 DevSecOps 原语的参考平台
+        
+      </a>
+    </li>
+  
+
+      <li class="breadcrumb-item active" aria-current="page">
+        2.2 服务网格架构
+      </li>
+    </ol>
+  </nav>
+
+
+
+
+          
+
+          <h1>2.2 服务网格架构</h1>
+
+          <div class="article-style">
+            <p>在看了基于微服务的应用所需的各种应用服务后，考虑一下提供这些服务的服务网格的架构。服务网格由两个主要部分组成：控制平面和数据平面。</p>
+<h2 id="221-控制平面">2.2.1 控制平面</h2>
+<p>控制平面有几个组件。虽然服务网格的数据面主要由作为容器运行在与应用容器相同的 Pod 中的代理组成，但控制面组件在它们自己的 Pod、节点和相关集群中运行。以下是控制平面的 <a href="https://medium.com/avmconsulting-blog/managing-microservices-with-istio-service-mesh-in-kubernetes-36e1fda81757" target="_blank" rel="noopener">各种功能</a>：</p>
+<ol>
+<li>Envoy sidecar 代理的服务发现和配置</li>
+<li>自动化的密钥和证书管理</li>
+<li>用于策略定义和收集遥测数据的 API</li>
+<li>服务网格组件的配置摄取</li>
+<li>管理一个到服务网格的入站连接（入站网关）</li>
+<li>管理来自服务网格的出站连接（出口网关）</li>
+<li>将 sidecar 代理注入那些托管应用程序微服务容器的 Pod、节点或命名空间中</li>
+</ol>
+<p>总的来说，控制平面帮助管理员用配置数据填充数据平面组件，这些数据是由控制平面的策略产生的。上述功能 3 的策略可能包括网络路由策略、负载均衡策略、蓝绿部署的策略、金丝雀部署、超时、重试和断路能力。这后三项被统称为网络基础设施服务的弹性能力的特殊名称。最后要说的是与安全相关的策略（例如，认证和授权策略、TLS 建立策略等）。这些策略规则由一个模块解析，该模块将其转换为配置参数，供执行这些策略的数据平面代理中的可执行程序使用。</p>
+<h2 id="222-数据平面">2.2.2 数据平面</h2>
+<p>数据平面组件执行三种不同的功能：</p>
+<ol>
+<li>安全的网络功能</li>
+<li>策略执行功能</li>
+<li>可观察性功能</li>
+</ol>
+<p>执行上述三种功能的数据平面的主要组件被称为 sidecar 代理。这个七层代理运行在与它执行代理功能的微服务相同的网络命名空间（在这个平台上，就是同一个 Pod）。每个微服务都有一个代理，以确保来自微服务的请求不会绕过其相关的代理，每个代理都作为容器运行在与应用微服务相同的 Pod 中。两个容器都有相同的 IP 地址，并共享相同的 IP 表规则。这使得代理完全控制了 Pod，并 <a href="https://medium.com/avmconsulting-blog/managing-microservices-with-istio-service-mesh-in-kubernetes-36e1fda81757" target="_blank" rel="noopener">处理所有通过它的流量</a>。</p>
+<p>第一类功能（安全网络）包括与微服务之间的实际路由或消息通信有关的所有功能。属于这一类的功能是服务发现、建立安全（TLS）会话、为每个微服务及其相关请求建立网络路径和路由规则、验证每个请求（来自服务或用户）以及授权请求。</p>
+<p>以建立双向 TLS 会话为例，发起通信会话的代理将与服务网格的控制平面中的模块进行交互，以检查是否需要通过链加密流量并与后端或目标 Pod 建立双向 TLS。使用双向 TLS 启用这个功能需要每个 Pod 有一个证书（即有效的凭证）。由于一个规模较大的微服务应用程序（由许多微服务组成）可能需要数百个 Pod（即使没有通过多个实例对单个微服务进行横向扩展），这可能涉及到管理数百个生命周期短暂的证书。这反过来又要求每个微服务有一个强大的身份，服务网格要有一个访问管理器、一个证书存储和一个证书验证能力。此外，为了支持认证策略，还需要识别和认证两个通信的 Pod 的机制。</p>
+<p>其他类型的代理包括拦截客户端调用到应用程序的第一个入口点（第一个被调用的微服务）的 <a href="https://medium.com/swlh/kong-api-gateway-zero-to-production-5b8431495ee" target="_blank" rel="noopener">入口代理</a> 和处理微服务对驻扎在平台集群外的应用模块的请求的出口代理。</p>
+<p>数据平面执行的第二类功能是通过代理中的配置参数执行控制平面中定义的策略（策略执行服务）。一个例子是使用作为微服务请求一部分的 JWT 令牌中的信息来验证调用服务。另一个例子是使用驻留在代理本身的代码或通过连接到外部授权服务，为每个请求执行访问控制策略。</p>
+<p>服务代理与应用服务容器联合执行的第三类功能是收集遥测数据，这有助于监测服务的健康和状态，将与服务相关的日志传输到控制平面中的日志聚合模块，并将必要的数据附加到应用请求头，以方便追踪与特定应用事务相关的所有请求。应用响应由代理机构以返回代码、响应描述或检索数据的形式传达给其相关的调用服务。</p>
+<p>服务网格是容器编排平台感知的，与 API 服务器互动，该服务器为安装在各种平台工件（如 Pod、节点、命名空间）中的应用服务提供一个窗口，监测它是否有新的微服务，并自动将 sidecar 容器注入包含这些新微服务的 Pod。一旦服务网格插入 sidecar 代理容器，运维和安全团队就可以对流量执行策略，并帮助保护和运维应用程序。这些团队还可以配置对微服务应用的监控，而不干扰应用的运作。</p>
+<p>基础设施、策略执行和可观察性服务的配置可以使用作为 DevSecOps 管道一部分的声明性代码来自动化。虽然开发团队应该全面了解其代码部署的安全和管理细节，但上述服务的自动化为他们提供了更多的时间来集中精力进行高效的开发范式，如代码模块化和结构化。</p>
+<ul class="cta-group">
+  
+  <li>
+    <a href="../../devsecops/"  class="btn btn-primary px-3 py-3">下一章</a>
+  </li>
+  
+  
+</ul>
+
+
+          </div>
+
+          
+
+
+
+          
+          
+          <div class="article-widget">
+            
+<div class="post-nav">
+  
+  
+  
+  <div class="post-nav-item">
+    <div class="meta-nav">上一页</div>
+    <a href="/docs/service-mesh-devsecops/reference-platform/container-orchestration-and-resource-management-platform/" rel="next">2.1 容器编排和资源管理平台</a>
+  </div>
+  
+  
+</div>
+
+          </div>
+          
+        </div>
+
+        <div class="body-footer">
+          <p>最近更新于 2022-05-20</p>
+
+          
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/docs//edit/master/content/service-mesh-devsecops/reference-platform/service-mesh-software-architecture.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+          
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments">
+    <script src="https://giscus.app/client.js"
+        data-repo="rootsongjc/docs"
+        data-repo-id="MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg="
+        data-category="Announcements"
+        data-category-id="DIC_kwDODMrxWM4CPL7J"
+        data-mapping="pathname"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="light"
+        data-lang="zh-CN"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </section>
+  
+
+
+
+          
+
+
+        </div>
+
+      </article>
+
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2022 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+
+    </main>
+  </div>
+</div>
+
+  </div>
+
+  <div class="page-footer">
+    
+    
+  </div>
+
+      
+
+    
+    <script src="/docs/js/vendor-bundle.min.53d67dc2cb1ebceb89d5e2aba2f86112.js"></script>
+
+    
+    
+    
+      
+
+      
+      
+
+      
+
+      
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+        
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/r.min.js" crossorigin="anonymous"></script>
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/latex.min.js" crossorigin="anonymous"></script>
+        
+      
+
+    
+
+    
+    
+    
+
+    
+    
+    <script src="https://cdn.jsdelivr.net/gh/bryanbraun/anchorjs@4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+    <script>
+      anchors.add();
+    </script>
+    
+
+    
+    
+    
+      
+      <script id="search-hit-fuse-template" type="text/x-template">
+        <div class="search-hit" id="summary-{{key}}">
+          <div class="search-hit-content">
+            <div class="search-hit-name">
+              <a href="{{relpermalink}}">{{title}}</a>
+              <div class="article-metadata search-hit-type">{{type}}</div>
+              <p class="search-hit-description">{{snippet}}</p>
+            </div>
+          </div>
+        </div>
+      </script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/krisk/Fuse@v3.2.1/dist/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/gh/julmot/mark.js@8.11.1/dist/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+      
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+      
+      
+      
+      
+      
+      
+      
+    
+
+    
+
+    
+    
+    
+    <script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+      
+    
+    
+    <script src="/docs/zh/js/wowchemy.min.0f418cf2259d1bfdb92011cb96f5bed5.js"></script>
+
+    
+    
+    
+    
+    
+    
+      
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <script src="/docs/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>第四章：为参考平台实施 DevSecOps 原语 | 云原生资料库</title>
+    <link>https://jimmysong.io/docs/service-mesh-devsecops/implement/</link>
+      <atom:link href="https://jimmysong.io/docs/service-mesh-devsecops/implement/index.xml" rel="self" type="application/rss+xml" />
+    <description>第四章：为参考平台实施 DevSecOps 原语</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Wed, 18 May 2022 00:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png</url>
+      <title>第四章：为参考平台实施 DevSecOps 原语</title>
+      <link>https://jimmysong.io/docs/service-mesh-devsecops/implement/</link>
+    </image>
+    
+    <item>
+      <title>4.1 代码类型和参考平台组件的描述</title>
+      <link>https://jimmysong.io/docs/service-mesh-devsecops/implement/description-of-code-types-and-reference-platform-components/</link>
+      <pubDate>Wed, 18 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/service-mesh-devsecops/implement/description-of-code-types-and-reference-platform-components/</guid>
+      <description>&lt;p&gt;对上述五类代码（即应用、应用服务、基础设施、策略和监控）的简要描述如下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;应用程序代码和应用服务代码：前者包含一组特定业务事务的数据和应用逻辑，而后者包含所有服务的代码，如网络连接、负载均衡和网络弹性。&lt;/li&gt;
+&lt;li&gt;基础设施即代码（IaC）：用于提供和配置基础设施资源的代码，它以可重复和一致的方式承载 &lt;a href=&#34;https://searchitoperations.techtarget.com/feature/Understand-the-role-of-infrastructure-as-code-in-DevOps?utm_campaign=20210809_The&amp;#43;next&amp;#43;DevSecOps&amp;#43;challenge%3A&amp;#43;People&amp;amp;utm_medium=EM&amp;amp;utm_source=NLN&amp;amp;track=NL-1841&amp;amp;ad=939963&amp;amp;asrc=EM_NLN_174809933&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;应用程序的部署&lt;/a&gt;。这种代码是用一种声明性语言编写的，当执行时，为正在部署的应用程序提供和配置基础设施。这种类型的代码就像在应用程序的微服务中发现的任何其他代码，只是它提供的是基础设施服务（例如，配置服务器）而不是事务服务（例如，在线零售应用程序的支付处理）。&lt;/li&gt;
+&lt;li&gt;策略即代码：描述了许多策略，包括安全策略，作为 &lt;a href=&#34;https://www.magalix.com/blog/introducing-policy-as-code-the-open-policy-agent-opa&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;可执行模块&lt;/a&gt;。一个例子是授权策略，它的代码包含了策略（如允许、拒绝等）和适用领域（如 RESTAPI 的方法，GET、PUT 等，路径等动词或工件）这段代码可以用特殊用途的策略语言（如 Rego）或常规应用中使用的语言（如 Go）编写。这段代码可能与 IaC 的配置代码有一些重合。然而，对于实施与特定于应用领域的关键安全服务相关的策略，需要一个单独的策略作为代码，驻留在参考平台的策略执行点（PEP）中。&lt;/li&gt;
+&lt;li&gt;可观察性即代码：推断系统内部状态的能力，并对系统内何时以及更重要的是为何发生错误提供可操作的洞察力。它是一种全栈式的可观察性，包括监测和分析，并对应用程序和承载它们的系统的整体性能提供关键的洞察力。在参考平台的背景下，可观察性即代码是指在代理中创建机构的那部分代码，并为从微服务应用中收集三种类型的数据（即日志、跟踪和遥测）&lt;a href=&#34;https://searchitoperations.techtarget.com/tip/Tackle-Kubernetes-observability-with-the-right-metrics?track=NL-1841&amp;amp;ad=938191&amp;amp;asrc=EM_NLN_153034984&amp;amp;utm_medium=EM&amp;amp;utm_source=NLN&amp;amp;utm_campaign=20210322_DevSecOps&amp;#43;leaves&amp;#43;Excel&amp;#43;in&amp;#43;the&amp;#43;dust&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;创建功能&lt;/a&gt;。这类代码还向外部工具提供或传输数据（例如，日志聚合工具，它聚合来自单个微服务的日志数据，为瓶颈服务提供跟踪数据分析，从遥测数据生成反映应用健康状况的指标等）。以下描述了对作为代码的可观察性所实现的三种功能：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ol&gt;
+&lt;li&gt;日志捕获详细的错误信息，以及用于故障排除的调试日志和堆栈跟踪。&lt;/li&gt;
+&lt;li&gt;追踪应用程序的请求，因为它们通过多个微服务来完成一项事务，以确定分布式或基于微服务的生态系统中的问题或性能瓶颈。&lt;/li&gt;
+&lt;li&gt;监测，或称度量，收集遥测从应用程序和服务中收集数据。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;每种代码类型都有相关的 CI/CD 管道，并在第 4.2 到 4.5 节中进行了描述。应用服务代码、基础设施即代码、策略即代码和可观察性即代码类型之间可能存在重叠。&lt;/p&gt;
+&lt;p&gt;托管这五种代码类型的参考平台的组成成分是：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;业务功能组件（由几个微服务模块组成，每个模块通常作为一个容器实现），体现了应用逻辑（例如，与数据交互，执行事务等），从而形成应用代码。&lt;/li&gt;
+&lt;li&gt;基础设施组件（包含计算机、网络和存储资源），其成员可以使用基础设施即代码进行配置。&lt;/li&gt;
+&lt;li&gt;服务网格组件（通过控制面模块和服务代理的组合实现），提供应用服务，执行策略（例如，认证和授权），并包含应用服务代码和策略作为代码。&lt;/li&gt;
+&lt;li&gt;监测组件（参与确定表明应用程序健康状况的参数的模块），执行功能（例如，日志聚合、生成指标、生成仪表板的显示等）并包含作为代码的可观察性。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;策略和可观察性代码类型在服务网格中的分布情况如下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;代理组件（入口、sidecar 和出口）。这些组件容纳了与会话建立、路由、认证和授权功能有关的编码策略。&lt;/li&gt;
+&lt;li&gt;服务网格的控制平面。这里面有一些代码，用于转发来自服务的遥测信息，并由代理发送至专门的监控工具，认证证书的生成和维护，更新代理机构中的策略，监控服务协调平台中的整体配置，以生成新的代理，并删除与停用的微服务相关的过时代理。&lt;/li&gt;
+&lt;li&gt;外部模块。这些内部模块在应用和企业层面执行专门的功能（例如，如集中授权或权利服务器、集中记录器、通过仪表板监测 / 提醒服务器状态等），并建立一个全面的应用状态视图。这些模块由来自代理或控制平面的代码调用。&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>4.2 应用程序代码和应用服务代码的 CI/CD 管道</title>
+      <link>https://jimmysong.io/docs/service-mesh-devsecops/implement/ci-cd-pipeline-for-application-code-and-application-services-code/</link>
+      <pubDate>Wed, 18 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/service-mesh-devsecops/implement/ci-cd-pipeline-for-application-code-and-application-services-code/</guid>
+      <description>&lt;p&gt;应用程序代码和应用服务代码驻留在容器编排和资源管理平台中，而实现与之相关的工作流程的 CI/CD 软件通常驻留在同一平台中。应使用第 4.6 节所述的步骤对该管道进行保护，该管道控制下的应用程序代码应接受第 4.8 节所述的安全测试。此外，应用程序所在的调度平台本身应使用运行时安全工具（如 &lt;a href=&#34;https://betterprogramming.pub/kubernetes-security-with-falco-2eb060d3ae7d&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Falco&lt;/a&gt;）进行保护，该工具可以实时读取操作系统内核日志、容器日志和平台日志，并根据威胁检测规则引擎对其进行处理，以提醒用户注意恶意行为（例如，创建有特权的容器、未经授权的用户读取敏感文件等）。它们通常有一套默认（预定义）的规则，可以在上面添加自定义规则。在平台上安装它们，可以为集群中的每个节点启动代理，这些代理可以监控在该节点的各个 Pod 中运行的容器。这种类型的工具的优点是，它补充了现有平台的本地安全措施，如访问控制模型和 Pod 安全策略，通过实际检测它们的发生来 &lt;a href=&#34;https://searchitoperations.techtarget.com/tip/Terraform-cheat-sheet-Notable-commands-HCL-and-more?utm_campaign=20210726_Infrastructure&amp;#43;as&amp;#43;code&amp;#43;still&amp;#43;a&amp;#43;big&amp;#43;security&amp;#43;buzz&amp;amp;utm_medium=EM&amp;amp;utm_source=NLN&amp;amp;track=NL-1841&amp;amp;ad=939808&amp;amp;asrc=EM_NLN_172629823&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;防止漏洞&lt;/a&gt;。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>4.3 基础设施即代码的 CI/CD 管道</title>
+      <link>https://jimmysong.io/docs/service-mesh-devsecops/implement/ci-cd-pipeline-for-infrastructure-as-code/</link>
+      <pubDate>Wed, 18 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/service-mesh-devsecops/implement/ci-cd-pipeline-for-infrastructure-as-code/</guid>
+      <description>&lt;p&gt;为应用程序分配基础设施的传统方法包括最初用配置参数和持续的任务配置计算和网络资源，如补丁管理（如操作系统和库），建立符合合规法规（如数据隐私），并进行漂移（当前配置不再提供预期的操作状态）纠正。&lt;/p&gt;
+&lt;p&gt;基础设施即代码（IaC）是一种声明式的代码，它对计算机指令进行编码，这些指令封装了通过服务的管理 API 在公共云服务或私有数据中心部署虚拟基础设施所需的 &lt;a href=&#34;https://searchitoperations.techtarget.com/tip/Terraform-cheat-sheet-Notable-commands-HCL-and-more?utm_campaign=20210726_Infrastructure&amp;#43;as&amp;#43;code&amp;#43;still&amp;#43;a&amp;#43;big&amp;#43;security&amp;#43;buzz&amp;amp;utm_medium=EM&amp;amp;utm_source=NLN&amp;amp;track=NL-1841&amp;amp;ad=939808&amp;amp;asrc=EM_NLN_172629823&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;参数&lt;/a&gt;。换句话说，基础设施是以声明式的方式定义的，并使用用于应用程序代码的相同的源代码控制工具（如 GitOps）进行版本控制。根据特定的 IaC 工具，这种语言可以是脚本语言（如 JavaScript、Python、TypeScript 等）或专有配置语言（如 HCL），可能与标准化语言（如 JSON）兼容也可能不兼容。基本指令包括告诉系统如何配置和管理 &lt;a href=&#34;https://medium.com/4th-coffee/on-devops-8-infrastructure-as-code-introduction-best-practices-and-choosing-the-right-tool-2c8f46d1f34&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;基础设施&lt;/a&gt;（无论是单个计算实例还是完整的服务器，如物理服务器或虚拟机）、容器、存储、网络连接、连接拓扑和负载均衡器。在某些情况下，基础设施可能是短暂的，基础设施的寿命（无论是不可变的还是可变的）不需要继续配置管理。配置可以与应用程序代码的单个提交相联系，使用的工具可以将应用程序代码和基础设施代码以一种合乎逻辑、富有表现力、为开发和运维团队所熟悉的方式连接起来，其中应用程序代码越来越多地定义了云应用的基础设施资源 &lt;a href=&#34;https://cdn2.hubspot.net/hubfs/4429525/Content/Pulumi-Delivering-CNI-as-Code.pdf&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;要求&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;因此，IaC 涉及编码所有的软件部署任务（分配服务器的类型，如裸机、虚拟机或容器，服务器的资源内容）和这些服务器及其网络的配置。包含这种代码类型的软件也被称为资源管理器或部署管理器。换句话说，IaC 软件可以自动管理整个 IT 基础设施的生命周期（资源的配置和取消配置），并实现一个可编程的基础设施。将这种软件作为 CI/CD 管道的一部分进行整合，不仅可以实现敏捷的部署和维护，还可以实现安全和满足性能需求的强大应用平台。&lt;/p&gt;
+&lt;h2 id=&#34;431-对-iac-的保护&#34;&gt;4.3.1 对 IaC 的保护&lt;/h2&gt;
+&lt;p&gt;当基础设施是 IaC 中的代码时，它可能包括有可能成为漏洞的 bug 和疏忽，因此，就像在应用程序代码中一样被利用。因此，保护 IaC 就是保护基础设施的定义和最终的部署环境。任何一段 IaC 在进入 GitOps 并被合并之前，都必须进行潜在漏洞的扫描。&lt;/p&gt;
+&lt;p&gt;此外，只有当有一个有条不紊的漂移管理过程时，才能获得安全应用平台的保证。只有当 IaC 中定义的架构是部署环境中实际存在的架构时，才能获得这种保证，因为这种等同性可能会被通过控制台或 CLI 进行的无意或有意的更改所改变，从而绕过 IaC。确保这种对等性必须在部署后立即进行，并在运行期间定期进行，因为对架构的任何改变都可能导致引入安全设计缺陷，并可能需要对 IaC 进行修改。&lt;/p&gt;
+&lt;h2 id=&#34;432-配置和基础设施之间的区别&#34;&gt;4.3.2 配置和基础设施之间的区别&lt;/h2&gt;
+&lt;p&gt;基础设施经常与 &lt;a href=&#34;https://cdn2.hubspot.net/hubfs/4429525/Content/Pulumi-Delivering-CNI-as-Code.pdf&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;配置&lt;/a&gt; 相混淆，后者将计算机系统、软件、依赖关系和设置维持在一个理想的、一致的状态。例如，将一台新购买的服务器放到机架上，并将其连接到交换机上，使其与现有网络相连（或启动一个新的虚拟机并为其分配网络接口），属于基础设施的定义。相反，在服务器启动后，安装 HTTPS 服务器并对其进行配置属于配置管理。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>4.4 策略即代码的 CI/CD 管道</title>
+      <link>https://jimmysong.io/docs/service-mesh-devsecops/implement/ci-cd-pipeline-for-policy-as-code/</link>
+      <pubDate>Wed, 18 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/service-mesh-devsecops/implement/ci-cd-pipeline-for-policy-as-code/</guid>
+      <description>&lt;p&gt;策略即代码涉及编纂所有策略，并作为 CI/CD 管道的一部分运行，使其成为应用程序运行时的一个组成部分。策略类别的例子包括授权策略、网络策略和实现工件策略（例如，容器策略）。典型的
+策略即代码软件的策略管理能力可能带有一套预定义的策略类别和策略，也支持通过提供策略模板定义新的策略类别和 &lt;a href=&#34;https://www.datadoghq.com/blog/log-patterns/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;相关策略&lt;/a&gt;。策略即代码所要求的尽职调查是，它应该提供保护，防止与应用环境（包括基础设施）相关的所有已知威胁，只有当该代码被定期扫描和更新，以应对与应用类别（如网络应用）和托管基础设施相关的威胁，才能确保这一点。下面的表 1 中给出了一些策略类别和相关策略的例子。&lt;/p&gt;
+&lt;p&gt;表 1：策略类别和策略实例&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;策略类别&lt;/th&gt;
+&lt;th&gt;策略示例&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;网络策略和零信任策略&lt;/td&gt;
+&lt;td&gt;- 封锁指定端口 - 指定入口主机名称 - 一般来说，所有的网络访问控制策略&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;实施工件策略（例如，容器策略）&lt;/td&gt;
+&lt;td&gt;- 对服务器进行加固，对基础镜像进行漏洞扫描 - 确保容器不以 root 身份运行 - 阻止容器的权限升级&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;存储策略&lt;/td&gt;
+&lt;td&gt;- 设置持久性卷大小 - 设置持久性卷回收策略&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;访问控制策略&lt;/td&gt;
+&lt;td&gt;- 确保策略涵盖所有数据对象 - 确保策略涵盖管理和应用访问的所有角色 - 确保数据保护策略涵盖静态数据、传输中数据和使用中数据 - 确保所有类型的策略不存在冲突&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;供应链策略&lt;/td&gt;
+&lt;td&gt;- 只允许经批准的容器注册表 - 只允许经认证的库&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;审计和问责策略&lt;/td&gt;
+&lt;td&gt;- 确保有与审计和问责职能相关的策略&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;在策略即代码软件中定义的策略可以转化为应用基础设施运行时配置参数中的以下内容：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;强化策略的可执行性（例如，服务代理中的 WASM）。&lt;/li&gt;
+&lt;li&gt;用于调用外部策略决策模块的触发器（例如，调用外部授权服务器，根据对与当前访问请求相关的访问控制策略的评估，做出允许 / 拒绝的决定）。&lt;/li&gt;
+&lt;li&gt;它还可能影响 IaC，以确保在部署环境中提供适当的资源，以执行安全、隐私和合规要求。&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>4.5 可观察性即代码的 CI/CD 管道</title>
+      <link>https://jimmysong.io/docs/service-mesh-devsecops/implement/ci-cd-pipeline-for-observability-as-code/</link>
+      <pubDate>Wed, 18 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/service-mesh-devsecops/implement/ci-cd-pipeline-for-observability-as-code/</guid>
+      <description>&lt;p&gt;可观察性即代码在应用程序的每个服务组件中部署一个监控代理，以收集三种类型的数据（在第 4.1 节中描述），将它们发送到专门的工具，将它们关联起来，进行分析，并在仪表板上显示分析后的综合数据，以呈现整个应用程序级别的情况。这种综合数据的一个例子是日志模式，它提供了一个日志数据的视图，该视图是在使用一些标准（例如，一个服务或一个事件）对日志数据进行过滤后呈现的。数据根据共同的模式（例如，基于时间戳或 IP 地址范围）被分组，以方便解释。不寻常的发生被识别出来，然后这些发现可以被用来指导和加速 &lt;a href=&#34;https://www.datadoghq.com/blog/log-patterns/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;进一步的调查&lt;/a&gt;。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>4.6 确保 CI/CD 管道的安全</title>
+      <link>https://jimmysong.io/docs/service-mesh-devsecops/implement/securing-the-ci-cd-pipeline/</link>
+      <pubDate>Wed, 18 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/service-mesh-devsecops/implement/securing-the-ci-cd-pipeline/</guid>
+      <description>&lt;p&gt;无论代码类型如何，CI/CD 管道都有一些共同的实施问题需要解决。确保流程安全涉及到为操作构建任务分配角色。自动化工具（例如，Git Secrets）可用于此目的。为保证 CI/CD 管道的安全，以下安全任务应被视为最低限度：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;强化托管代码和工件库的服务器。&lt;/li&gt;
+&lt;li&gt;确保用于访问存储库的凭证，如授权令牌和生成拉动请求的凭证。&lt;/li&gt;
+&lt;li&gt;控制谁可以在容器镜像注册处签入和签出，因为它们是 CI 管道产生的工件的存储处，是 CI 和 CD 管道之间的桥梁。&lt;/li&gt;
+&lt;li&gt;记录所有的代码和构建更新活动。&lt;/li&gt;
+&lt;li&gt;如果在 CI 管道中构建或测试失败 —— 向开发人员发送构建报告并停止进一步的管道任务。配置代码库自动阻止来自 CD 管道的所有拉取请求。&lt;/li&gt;
+&lt;li&gt;如果审计失败，将构建报告发送给安全团队，并停止进一步的管道任务。&lt;/li&gt;
+&lt;li&gt;确保开发人员只能访问应用程序代码，而不能访问五种管道代码类型中的任何一种。&lt;/li&gt;
+&lt;li&gt;在构建和发布过程中，在每个需要的 CI/CD 阶段签署发布工件（最好是多方签署）。&lt;/li&gt;
+&lt;li&gt;在生产发布期间，验证所有需要的签名（用多个阶段的密钥生成），以确保没有人绕过管道。&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>4.7 CI/CD 管道中的工作流模型</title>
+      <link>https://jimmysong.io/docs/service-mesh-devsecops/implement/workflow-models-in-ci-cd-pipelines/</link>
+      <pubDate>Wed, 18 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/service-mesh-devsecops/implement/workflow-models-in-ci-cd-pipelines/</guid>
+      <description>&lt;p&gt;下一个常见问题涉及工作流模型。所有的 CI/CD 管道都可以有两种类型的工作流程模型，这取决于作为管道一部分部署的自动化工具。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;基于推的模式&lt;/li&gt;
+&lt;li&gt;基于拉的模式&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;在支持基于推模式的 CI/CD 工具中，在管道的一个阶段或阶段所做的改变会触发后续阶段或阶段的改变。例如，通过一系列的编码脚本，CI 系统中的新构建会触发管道中 CD 部分的变化，从而改变部署基础设施（如 Kubernetes 集群）。使用 CI 系统作为部署变化的基础，其安全方面的缺点是有可能将凭证暴露在部署环境之外，尽管已尽最大努力确保 CI 脚本的安全，因为 CI 脚本是在部署基础设施的信任域之外运行的。由于 CD 工具拥有生产系统的 key，基于推送的模式就变得不安全了。&lt;/p&gt;
+&lt;p&gt;在基于拉的工作流程模型中，与部署环境有关的运维（例如 Kubernetes 运维、Flux、ArgoCD）一旦观察到有新镜像被推送到注册表，就会从环境内部拉动新镜像。新镜像被从注册表中拉出，部署清单被自动更新，新镜像被部署在环境（如集群）中。因此，实际的部署基础设施状态与 Git 部署库中声明性描述的状态实现了衔接。此外，部署环境凭证（例如集群凭证）不会暴露在生产环境之外。因此，强烈建议采用基于拉的模式，即通常使用 GitOps 仓库来存储源代码和构建。&lt;/p&gt;
+&lt;h2 id=&#34;471-gitsops-的-cicd-工作流程模型--基于拉的模型&#34;&gt;4.7.1 GitsOps 的 CI/CD 工作流程模型 —— 基于拉的模型&lt;/h2&gt;
+&lt;p&gt;GitOps 工作流模型是对 CI/CD 管道的改进（针对管道的交付部分），它使用了基于拉的工作流模型，而不是许多 CI/CD 工具支持的基于推的模型。在这个模型中，流水线的 CI 部分没有变化，因为 CI 引擎（如 Jenkins、GitLab CI）仍然用于为修改后的代码创建构建。&lt;/p&gt;
+&lt;p&gt;回归测试，以及与相关存储库中的主要源代码集成 / 合并，尽管它不用于在管道中触发持续交付（直接推送更新）。&lt;/p&gt;
+&lt;p&gt;相反，一个单独的 GitOps Operator 根据主干代码的更新来管理部署。&lt;/p&gt;
+&lt;p&gt;Operator（例如，Flux、ArgoCD）是一个由协调平台管理的行为体，可以继承集群的配置、安全和可用性。使用这种行为体可以提高安全性，因为在集群内部的代理会监听它被允许访问的所有代码和镜像仓库的更新，并将镜像和配置更新拉入集群。代理使用的拉方式具有以下安全特性：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;只执行协调平台中定义的授权策略所允许的操作；信任与集群共享，不单独管理。&lt;/li&gt;
+&lt;li&gt;与所有协调平台对象进行原生绑定，并了解操作是否已经完成或需要重试。&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>4.8 安全测试——所有代码类型的 CI/CD 管道的共同要求</title>
+      <link>https://jimmysong.io/docs/service-mesh-devsecops/implement/security-testing-common-requirement-for-ci-cd-pipelines-for-all-code-types/</link>
+      <pubDate>Wed, 18 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/service-mesh-devsecops/implement/security-testing-common-requirement-for-ci-cd-pipelines-for-all-code-types/</guid>
+      <description>&lt;p&gt;最后一个常见的问题是安全测试。无论代码类型是什么（例如，应用服务、Iac、Pac 或可观察性），基于微服务的基础设施的 DevSecOps 的 CI/CD 管道与服务网格应包括由自动化工具或作为服务提供的应用安全测试（AST）。这些工具会分析和测试应用程序的安全漏洞。根据 Gartner 的说法，有 &lt;a href=&#34;https://www.gartner.com/doc/reprints?id=1-262TXQZV&amp;amp;ct=210518&amp;amp;st=sb&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;四种&lt;/a&gt; 主要的 AST 技术：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;静态 AST（SAST）工具：分析应用程序的源码、字节码或二进制代码的安全漏洞，通常在编程和 / 或测试软件生命周期（SLC）阶段。具体来说，这项技术涉及到在提交中查看应用程序并分析其依赖关系的 &lt;a href=&#34;https://sdtimes.com/test/a-guide-to-automated-testing-providers/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;技术&lt;/a&gt;。如果任何依赖关系包含问题或已知的安全漏洞，提交将被标记为不安全的，不允许继续部署。这也可以包括在代码中找到应该被删除的硬编码密码 / 秘密。&lt;/li&gt;
+&lt;li&gt;动态 AST（DAST）工具：在测试或运行阶段，分析应用程序的动态运行状态。它们模拟针对应用程序（通常是支持网络的应用程序、服务和 API）的攻击，分析应用程序的反应，并确定它是否有漏洞。特别是，DAST 工具比 SAST 更进一步，在 CI 工作中启动生产环境的副本，以扫描所产生的容器和 &lt;a href=&#34;https://sdtimes.com/test/a-guide-to-automated-testing-providers/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;可执行文件&lt;/a&gt;。动态方面有助于系统捕捉在启动时正在加载的依赖关系，例如那些不会被 SAST 捕捉的依赖关系。&lt;/li&gt;
+&lt;li&gt;交互式 AST（IAST）工具：将 DAST 的元素与被测试的应用程序的仪器相结合。它们通常作为测试运行环境中的一个代理来实现（例如，对 Java 虚拟机或.NET CLR 进行检测），观察操作或识别攻击漏洞。&lt;/li&gt;
+&lt;li&gt;软件组成分析（SCA）工具：用于识别应用程序中使用的开源和第三方组件、其已知的安全漏洞以及典型的对抗性许可限制。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;481-ast-工具的功能和覆盖要求&#34;&gt;4.8.1 AST 工具的功能和覆盖要求&lt;/h2&gt;
+&lt;p&gt;一般来说，测试工具（包括特定类别的 AST 工具）应该满足的总体指标是&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;通过识别安全、隐私和合规性方面的差距，提高应用程序的发布质量。&lt;/li&gt;
+&lt;li&gt;与开发人员已经在使用的工具整合。&lt;/li&gt;
+&lt;li&gt;要尽可能少的测试工具，但提供必要的风险覆盖。&lt;/li&gt;
+&lt;li&gt;API 和微服务层面的低级单元测试应该有足够的可见性来确定覆盖率。&lt;/li&gt;
+&lt;li&gt;包括更高层次的 UI/UX 和系统测试。&lt;/li&gt;
+&lt;li&gt;具备深入的代码分析能力，以检测运行时的缺陷。&lt;/li&gt;
+&lt;li&gt;提高发布的速度。&lt;/li&gt;
+&lt;li&gt;要有成本效益。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;特别是对 AST 工具的功能要求包括进行以下类型的扫描：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;漏洞扫描。探测应用程序的安全弱点，这些弱点可能会使它们受到攻击。&lt;/li&gt;
+&lt;li&gt;容器镜像扫描。分析容器镜像的内容和构建过程，以检测安全问题、漏洞或缺陷做法（例如，硬编码密码 / 秘密）。&lt;/li&gt;
+&lt;li&gt;监管 / 合规性扫描。评估对特定合规要求的遵守情况。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;每当源代码库中的代码被修改时，都要进行漏洞扫描，以确保当前的修订版不包含任何有漏洞的 &lt;a href=&#34;https://circleci.com/blog/security-best-practices-for-ci-cd/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;依赖&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;AST 工具和 / 或服务的理想特征，以及行为分析的技术：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;分析源码、字节码或二进制代码&lt;/li&gt;
+&lt;li&gt;观察应用程序的行为，以确定引入安全漏洞的编码、设计、打包、部署和运行时条件。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;作为 CI/CD 管道任务的一部分，扫描应用程序代码的安全漏洞和错误配置应涉及以下工件：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;容器镜像应被扫描以发现漏洞。&lt;/li&gt;
+&lt;li&gt;在容器从基础镜像（如上所述进行扫描）构建之后，应该对容器的文件系统进行漏洞和错误配置的扫描。&lt;/li&gt;
+&lt;li&gt;应该对 Git 存储库（包含应用程序源代码）进行扫描，以发现漏洞和错误配置。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;容器镜像包括操作系统包（如 Alpine、UBI、RHEL、CentOS 等）和特定语言包（如 Bundler、Composer、npm、yarn 等）。&lt;/p&gt;
+&lt;p&gt;对基础设施即代码进行安全漏洞扫描，通过防止这些漏洞进入生产，减少了操作工作量，尽管它不能取代对运行时安全的检查，因为漂移的风险始终存在。然而，必须对架构的所有部署后（运行时）变化（由于漂移）的原因进行分析，并通过向 IaC 推送适当的更新来解决，从而使其成为管道的一部分，并在后续部署中不再出现。这种方法有利于使用运行时检查来补救安全设计缺陷。&lt;/p&gt;
+&lt;p&gt;基础设施即代码的文件可以在下面找到：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;容器编排平台本身，以促进部署（例如，Kubernetes YAML 基础设施即代码文件）。&lt;/li&gt;
+&lt;li&gt;作为 CI/CD 管道软件的一部分而发现的专用基础设施即代码文件（例如，HashiCorp Terraform 基础设施即代码文件，AWS CloudFormation 基础设施即代码文件）。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;应用服务代码、策略即代码和可观察性即代码文件可以在专门的应用服务组件（如服务网格）的数据平面和控制平面组件中找到，并且应该对安全漏洞（如授权策略的信息泄露）和错误配置进行扫描。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>4.9 DevSecOps 原语对服务网格中应用安全的好处</title>
+      <link>https://jimmysong.io/docs/service-mesh-devsecops/implement/benefits-of-devsecops-primitives-to-application-security-in-the-service-mesh/</link>
+      <pubDate>Wed, 18 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/service-mesh-devsecops/implement/benefits-of-devsecops-primitives-to-application-security-in-the-service-mesh/</guid>
+      <description>&lt;p&gt;DevSecOps 的好处包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;各个 IT 团队之间，特别是开发人员、运维和安全团队以及其他利益相关者之间更好的沟通和协作。导致 &lt;a href=&#34;https://whatis.techtarget.com/feature/Top-30-DevOps-interview-questions-and-answers?utm_campaign=20210712_New&amp;#43;Kubernetes&amp;#43;use&amp;#43;case%253A&amp;#43;Hacking&amp;amp;utm_medium=EM&amp;amp;utm_source=NLN&amp;amp;track=NL-1841&amp;amp;ad=939635&amp;amp;asrc=EM_NLN_170130891&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;更好的生产力&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;简化软件开发、交付和部署过程 —— 由于自动化，停机时间减少，发布时间加快，基础设施和运维成本降低，效率提高。&lt;/li&gt;
+&lt;li&gt;通过实施零信任来减少攻击面，这也限制了横向移动，从而防止攻击升级。具有现代行为预防能力的持续监控进一步促进了这一点。&lt;/li&gt;
+&lt;li&gt;安全优势。通过对每个请求的验证监控、警报和反馈机制来提高安全性，因为可观察性是代码。这些将在以下段落中详细描述。具体的能力包括：
+&lt;ul&gt;
+&lt;li&gt;a.  运行时：杀死恶意容器。&lt;/li&gt;
+&lt;li&gt;b.  反馈：由于一个错误的程序更新了代码并重新触发了管道，所以反馈到了正确的存储库。&lt;/li&gt;
+&lt;li&gt;c.  监测新的和终止的服务，并调整相关服务（如服务代理）。&lt;/li&gt;
+&lt;li&gt;d.  启用安全断言。不可绕过 —— 通过在同一空间执行的代理、安全会话、强大的认证和授权以及安全的状态转换。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;启用持续授权操作（C-ATO），在本节末尾详细描述。
+对每个请求的验证和上述的反馈机制将在下面进一步描述：&lt;/li&gt;
+&lt;li&gt;每个请求的验证。来自用户或客户端应用程序（服务）的每个请求都要经过验证和授权（使用 OPA 或任何外部授权引擎或 &lt;a href=&#34;https://medium.com/cloudlego/kubernetes-admission-controllers-request-interceptors-47a9b12c5303&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;接纳控制器&lt;/a&gt; 等机制，它们是平台的组成部分）。授权引擎提供特定于应用域的策略执行，而接纳控制器则提供与特定平台的端点对象（如 Pod、部署、命名空间）相关的平台特定策略。具体来说，接纳控制器会进行突变和验证。突变的接纳控制器解析每个请求，并在将其向下转发之前对请求进行修改（突变）。一个例子是为没有被用户在请求中设置的规格设置默认值，以确保在集群上运行的工作负载是统一的，并遵循集群管理员定义的特定标准。另一个例子是为 Pod 添加特定的资源限制（如果资源限制没有为该 Pod 设置），然后向下转发（如果请求中没有这个字段，通过添加这个字段来突变请求）。通过这样做，集群中的所有 Pod 将始终有一个根据规范设置的资源限制，除非明确说明。验证接纳控制器会拒绝那些不遵循特定规范的请求。例如，没有一个 Pod 请求可以将安全上下文设置为以根用户身份运行。&lt;/li&gt;
+&lt;li&gt;反馈机制：
+&lt;ul&gt;
+&lt;li&gt;一些在运行时发现的问题的补救措施可能需要在源代码中处理或修复。应该有一个流程，针对正确的代码库自动打开一个问题，以修复问题并重新触发 DevSecOps 管道。&lt;/li&gt;
+&lt;li&gt;向应用程序托管平台提供反馈回路（例如，杀死包含恶意容器的 Pod 的通知）。&lt;/li&gt;
+&lt;li&gt;通过监控应用程序的配置，提供主动的动态安全（例如，监控引入到应用程序的新荚 / 容器，并生成和注入代理以照顾其安全通信需求）。&lt;/li&gt;
+&lt;li&gt;启用关于应用程序的几个安全断言：不可绕过（即在所有使用场景下始终执行的策略）、整个应用程序代码的受信任和不受信任部分、没有凭证和特权泄漏、受信任的通信路径和安全状态转换。&lt;/li&gt;
+&lt;li&gt;启用关于性能参数的断言（例如，网络弹性参数，如在故障、冗余和可恢复性功能下继续运行）。&lt;/li&gt;
+&lt;li&gt;总的来说，更快地吸收反馈意见，使软件得到更快的改进。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>4.10 利用 DevSecOps 进行持续授权操作（C-ATO）</title>
+      <link>https://jimmysong.io/docs/service-mesh-devsecops/implement/leveraging-devsecops-for-continuous-authorization-to-operate-c-ato/</link>
+      <pubDate>Wed, 18 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://jimmysong.io/docs/service-mesh-devsecops/implement/leveraging-devsecops-for-continuous-authorization-to-operate-c-ato/</guid>
+      <description>&lt;p&gt;在参考平台中，整个应用系统的运行状态或执行状态是由于基础设施代码（例如，用于服务间通信的网络路由、资源配置代码）、策略代码（例如，指定认证和授权策略的代码）和会话管理代码（例如，建立 mTLS 会话的代码、生成 JWT 令牌的代码）的执行的组合，这些代码由可观察性作为代码的执行所揭示。服务网格的可观察性代码在运行期间将基础设施、策略和会话管理代码的执行输出转发给各种监控工具，这些工具产生适用的指标和日志聚合工具以及追踪工具，这些工具又将其输出转发给集中式仪表板。作为这些工具输出的组成部分的分析，使系统管理员能够获得整个应用系统运行时状态的综合全局视图。正是通过持续监控和零信任设计功能实现的 DevSecOps 平台的运行时性能，为云原生应用提供了所有必要的安全保障。&lt;/p&gt;
+&lt;p&gt;在 DevSecOps 管道中，实现持续 ATO 的活动是：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;检查合规的代码。可以检查以下代码是否符合《风险管理框架》的规定&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;(a) IaC：生成网络路线，资源配置
+(b) 策略即代码：对 AuthN 和 AuthZ 策略进行编码
+(c) 会话管理代码：mTLS 会话，JWT 令牌
+(d) 可观察性代码&lt;/p&gt;
+&lt;p&gt;具体的风险评估功能包括生成可操作的任务的能力，指定代码级别的指导，以及用于验证合规性的测试计划。此外，风险评估工具可以为仪表盘中显示的所有工件提供完整的可追溯性，以及持续 ATO 所需的报告能力。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;显示运行时状态的仪表板。通过触发新管道的过程，提供修复安全和性能瓶颈问题（影响可用性）所需的警报和反馈。此外，仪表盘生成工具有一些功能，使系统管理员能够分析宏观层面的特征，以及根据不断发展的系统和消费者对应用程序运行环境的需求，动态地改变要显示的工件的构成。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ul class=&#34;cta-group&#34;&gt;
+  
+  &lt;li&gt;
+    &lt;a href=&#34;../../summary-and-conclusion/&#34;  class=&#34;btn btn-primary px-3 py-3&#34;&gt;下一章&lt;/a&gt;
+  &lt;/li&gt;
+  
+  
+&lt;/ul&gt;
+
+</description>
+    </item>
+    
+  </channel>
+</rss>
