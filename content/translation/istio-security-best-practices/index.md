@@ -1,11 +1,15 @@
 ---
 title: "Istio 安全最佳实践"
 summary: "本文列举了 Istio 安全的最佳实践。"
-author: ["Istio 社区"]
+authors: ["Istio 社区"]
 categories: ["Istio"]
 tags: ["Istio","安全"]
 date: 2021-08-02T13:05:42+08:00
-link: https://istio.io/latest/docs/ops/best-practices/security/
+links:
+  - icon: globe
+    icon_pack: fa
+    name: 原文
+    url: https://istio.io/latest/docs/ops/best-practices/security/
 ---
 
 本文译自 Istio 官方博客 [Security Best Practices](https://istio.io/latest/docs/ops/best-practices/security/)。

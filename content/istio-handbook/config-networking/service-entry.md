@@ -251,7 +251,7 @@ spec:
       http: 7080
 ```
 
-有了`HTTP_PROXY=http://localhost/`，从应用程序到 `http://foo.bar.com` 的调用将在上面指定的三个域中进行负均衡。换句话说，对 `http://foo.bar.com/baz` 的调用将被转译成 `http://uk.foo.bar.com/baz`。
+有了`HTTP_PROXY=http://localhost/`，从应用程序到 `http://foo.bar.com` 的调用将在上面指定的三个域中进行负载均衡。换句话说，对 `http://foo.bar.com/baz` 的调用将被转译成 `http://uk.foo.bar.com/baz`。
 
 下面的例子说明了包含主题（subject）替代名称的 `ServiceEntry` 的用法，其格式符合 [SPIFFE 标准](https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md)。
 
