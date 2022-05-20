@@ -1,11 +1,12 @@
 ---
 title: 迁移到云原生应用架构
-summary: 第一本介绍云原生的出版物
+summary: 第一本介绍云原生的电子书
 tags:
   - ebook
   - translation
 date: 2017-07-11
-image_link: https://jimmysong.io/migrating-to-cloud-native-application-architectures/
+internal_link: migrating-to-cloud-native-application-architectures
+publication: "[点击阅读](/docs/migrating-to-cloud-native-application-architectures/)"
 type: publication
 ---
 
