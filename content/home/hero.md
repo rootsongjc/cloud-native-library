@@ -10,7 +10,7 @@ design:
     gradient_end: '#2b94c3'
     text_color_light: true
 cta:
-  url: "#portfolio"
+  url: "#books"
   label: 选择图书
   icon_pack: fas
   icon: book-open
