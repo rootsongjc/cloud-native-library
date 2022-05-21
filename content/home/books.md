@@ -11,7 +11,7 @@ headless: true
 weight: 30
 
 title: '书目列表'
-subtitle: '开源电子书&出版物'
+subtitle: '开源电子书 & 出版物'
 
 content:
   # Page type to display. E.g. project.
@@ -38,8 +38,9 @@ content:
       tag: 翻译电子书
 
 design:
-  columns: '1'
-  view: masonry
+  columns: '2'
+  view: 4
   flip_alt_rows: false
   background-color: rgb(247, 247, 247);
+  justify-content: center;
 ---

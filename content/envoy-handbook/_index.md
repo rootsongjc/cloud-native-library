@@ -9,6 +9,7 @@ date: '2022-05-18T00:00:00+08:00'
 type: book # Do not modify.
 cascade:
   commentable: true
+  level: 1
 ---
 
 本手册梳理了 Envoy 基础知识，适用于初学者，帮你快速掌握 Envoy 代理。

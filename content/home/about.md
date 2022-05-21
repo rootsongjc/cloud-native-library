@@ -27,7 +27,7 @@ experience:
 
       * 应用 [Wowchemy 主题](https://wowchemy.com/)
 
-      * 新增翻译版块               
+      * 新增[翻译](translation)版块               
 design:
   columns: "2"
   view: list
