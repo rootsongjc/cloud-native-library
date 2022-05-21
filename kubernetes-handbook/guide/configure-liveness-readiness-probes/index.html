@@ -1,0 +1,1913 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+    
+  
+  <meta name="description" content="当你使用 Kubernetes 的时候，有没有遇到过 Pod 在启动后一会就挂掉然后又重新启动这样的恶性循环？你有没有想过 Kubernetes 是如何检测 pod 是否还存活？虽然容器已经启动，但是 Kubernetes 如何知道容器的进程是否准备好对外提供服务了呢？让我们通过 Kubernetes" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://jimmysong.io/docs/kubernetes-handbook/guide/configure-liveness-readiness-probes/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/docs/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/docs/css/wowchemy.9614cee70b2ec5c87466ccccc1657e16.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-93485976-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+
+  function gtag() {
+      dataLayer.push(arguments);
+  }
+
+  function trackOutboundLink(url, target) {
+    gtag('event', 'click', {
+         'event_category': 'outbound',
+         'event_label': url,
+         'transport_type': 'beacon',
+         'event_callback': function () {
+           if (target !== '_blank') {
+             document.location = url;
+           }
+         }
+    });
+    console.debug("Outbound link clicked: " + url);
+  }
+
+  function onClickCallback(event) {
+    if ((event.target.tagName !== 'A') || (event.target.host === window.location.host)) {
+      return;
+    }
+    trackOutboundLink(event.target, event.target.getAttribute('target'));  
+  }
+
+  gtag('js', new Date());
+  gtag('config', 'UA-93485976-1', {});
+  gtag('set', {'cookie_flags': 'SameSite=None;Secure'});
+
+  
+  document.addEventListener('click', onClickCallback, false);
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?11f7d254cfa4e0ca44b175c66d379ecc";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/docs/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://jimmysong.io/docs/kubernetes-handbook/guide/configure-liveness-readiness-probes/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://jimmysong.io/docs/kubernetes-handbook/guide/configure-liveness-readiness-probes/" />
+  <meta property="og:title" content="配置 Pod 的 liveness 和 readiness 探针 | 云原生资料库" />
+  <meta property="og:description" content="当你使用 Kubernetes 的时候，有没有遇到过 Pod 在启动后一会就挂掉然后又重新启动这样的恶性循环？你有没有想过 Kubernetes 是如何检测 pod 是否还存活？虽然容器已经启动，但是 Kubernetes 如何知道容器的进程是否准备好对外提供服务了呢？让我们通过 Kubernetes" /><meta property="og:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" />
+    <meta property="twitter:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2022-05-21T00:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2022-05-21T21:23:05&#43;08:00">
+  
+
+  
+
+
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>配置 Pod 的 liveness 和 readiness 探针 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="2272a8053f42de28720db317d2dae7bd" >
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/docs/js/wowchemy-init.min.14a0ed61c6dbd594b9c75193b25be179.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>搜索</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#books"><span>书目列表</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/translation"><span>翻译</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/event"><span>活动</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io/blog/" target="_blank" rel="noopener"><span>原创</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#tag-cloud"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>主站</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+
+        
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/rootsongjc/docs/" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    
+
+
+
+
+<div class="container-fluid docs">
+  <div class="row flex-xl-nowrap">
+    <div class="col-12 col-md-3 col-xl-2 docs-sidebar">
+      <form class="docs-search d-flex align-items-center">
+  <button class="btn docs-toggle d-md-none p-0 mr-md-3 w-100" type="button" data-toggle="collapse" data-target="#docs-nav" aria-controls="docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    <div class="d-flex">
+      <span class="d-md-none pl-1 flex-grow-1 text-left overflow-hidden">
+        
+          使用指南
+        
+      </span>
+      <span><i class="fas fa-chevron-down"></i></span>
+    </div>
+  </button>
+
+  
+  <button class="form-control sidebar-search js-search d-none d-md-flex">
+    <i class="fas fa-search pr-2"></i>
+    <span class="sidebar-search-text">搜索...</span>
+    <span class="sidebar-search-shortcut">/</span>
+  </button>
+  
+</form>
+
+<nav class="collapse docs-links" id="docs-nav">
+  
+  
+  
+  
+  
+  
+
+  
+  
+    
+
+    
+      
+
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <ul class="nav docs-sidenav">
+        <li class=""><a href="/docs/kubernetes-handbook/"><i class="fas fa-book pr-1"></i>Kubernetes 基础教程</a></li>
+    
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+          <a class="docs-menu-lv1 docs-toc-link " href="/docs/kubernetes-handbook/concepts/"><i class="fas fa-book-open pr-1"></i>概念原理</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/architecture/">Kubernetes 架构</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/concepts/">Kubernetes 的设计理念</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/etcd/">Etcd 解析</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/open-interfaces/">开放接口</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/cri/">容器运行时接口（CRI）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/cni/">容器网络接口（CNI）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/csi/">容器存储接口（CSI）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/objects/">Kubernetes 中的资源对象</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/pod-state-and-lifecycle/">Pod 状态与生命周期管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-overview/">Pod 概览</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod/">Pod 解析</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/init-containers/">Init 容器</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pause-container/">Pause 容器</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-security-policy/">Pod 安全策略</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-lifecycle/">Pod 的生命周期</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-hook/">Pod hook</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-preset/">Pod Preset</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-disruption-budget/">Pod 中断与 PDB（Pod 中断预算）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/cluster/">集群资源管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/node/">Node</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/namespace/">Namespace</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/label/">Label</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/annotation/">Annotation</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/taint-and-toleration/">Taint 和 Toleration（污点和容忍）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/garbage-collection/">垃圾收集</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/controllers/">控制器</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/deployment/">Deployment</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/statefulset/">StatefulSet</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/daemonset/">DaemonSet</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/replicaset/">ReplicationController 和 ReplicaSet</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/job/">Job</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/cronjob/">CronJob</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/horizontal-pod-autoscaling/">Horizontal Pod Autoscaling</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/custom-metrics-hpa/">自定义指标 HPA</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/admission-controller/">准入控制器（Admission Controller）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/service-discovery/">服务发现与路由</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/service/">Service</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/topology-aware-routing/">拓扑感知路由</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/ingress/">Ingress</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/gateway/">Gateway</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/authentication-and-permission/">身份与权限认证</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/serviceaccount/">ServiceAccount</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/rbac/">基于角色的访问控制（RBAC）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/network-policy/">NetworkPolicy</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/spiffe/">SPIFFE</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/spire/">SPIRE</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/networking/">网络</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/flannel/">扁平网络 Flannel</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/calico/">非 Overlay 扁平网络 Calico</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/cilium/">基于 eBPF 的网络 Cilium</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/cilium-concepts/">Cilium 架构设计与概念解析</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/storage/">存储</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/secret/">Secret</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/configmap/">ConfigMap</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/configmap-hot-update/">ConfigMap 的热更新</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/volume/">Volume</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/persistent-volume/">持久化卷（Persistent Volume）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/storageclass/">Storage Class</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/local-persistent-storage/">本地持久化存储</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/extension/">扩展集群</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/custom-resource/">使用自定义资源扩展 API</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/crd/">使用 CRD 扩展 Kubernetes API</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/aggregated-api-server/">Aggregated API Server</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/apiservice/">APIService</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/service-catalog/">服务目录（Service Catalog）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/multicluster/">多集群管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/multi-cluster-services-api/">多集群服务 API（Multi-Cluster Services API）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/federation/">集群联邦（Cluster Federation）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/scheduling/">资源调度</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/qos/">服务质量等级（QoS）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/kubeadm/"></a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/service-api-overview/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+          <a class="docs-menu-lv1 docs-toc-link " href="/docs/kubernetes-handbook/guide/"><i class="fas fa-book-open pr-1"></i>使用指南</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/resource-configuration/">资源对象配置</a></li>
+
+
+
+  <li class="active"><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/configure-liveness-readiness-probes/">配置 Pod 的 liveness 和 readiness 探针</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/configure-pod-service-account/">配置 Pod 的 Service Account</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/secret-configuration/">Secret 配置</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/resource-quota-management/">管理 namespace 中的资源配额</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/command-usage/">命令使用</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/docker-cli-to-kubectl/">Docker 用户过渡到 kubectl 命令行指南</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/using-kubectl/">Kubectl 命令概览</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubectl-cheatsheet/">kubectl 命令技巧大全</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/using-etcdctl-to-access-kubernetes-data/">使用 etcdctl 访问 Kubernetes 数据</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/cluster-security-management/">集群安全性管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/managing-tls-in-a-cluster/">管理集群中的 TLS</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubelet-authentication-authorization/">Kublet 的认证授权</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/tls-bootstrapping/">TLS Bootstrap</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/ip-masq-agent/">IP 伪装代理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubectl-user-authentication-authorization/">创建用户认证授权的 kubeconfig 文件</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/auth-with-kubeconfig-or-token/">使用 kubeconfig 或 token 进行用户身份认证</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/authentication/">Kubernetes 中的用户与身份认证授权</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubernetes-security-best-practice/">Kubernetes 集群安全性配置最佳实践</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/access-kubernetes-cluster/">访问 Kubernetes 集群</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/access-cluster/">访问集群</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/authenticate-across-clusters-kubeconfig/">使用 kubeconfig 文件配置跨集群认证</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/connecting-to-applications-port-forward/">通过端口转发访问集群中的应用程序</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/service-access-application-cluster/">使用 service 访问群集中的应用程序</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/accessing-kubernetes-pods-from-outside-of-the-cluster/">从外部访问 Kubernetes 中的 Pod</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubernetes-desktop-client/">Lens - Kubernetes IDE</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubernator-kubernetes-ui/">Kubernator - 更底层的 Kubernetes UI</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/application-development-deployment-flow/">在 Kubernetes 中开发部署应用</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/deploy-applications-in-kubernetes/">适用于 Kubernetes 的应用开发部署流程</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/migrating-hadoop-yarn-to-kubernetes/">迁移传统应用到 Kubernetes 步骤详解——以 Hadoop YARN 为例</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/using-statefulset/">使用StatefulSet部署有状态应用</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/cabin-mobile-dashboard-for-kubernetes/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+          <a class="docs-menu-lv1 docs-toc-link " href="/docs/kubernetes-handbook/develop/"><i class="fas fa-book-open pr-1"></i>开发指南</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/sigs-and-working-group/">SIG 和工作组</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/developing-environment/">配置 Kubernetes 开发环境</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/testing/">测试 Kubernetes</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/client-go-sample/">client-go 示例</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/operator/">Operator</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/develop/operator-sdk/">Operator SDK</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/kubebuilder/">Kubebuilder</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/develop/kubebuilder-example/">使用 kubebuilder 创建 operator 示例</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/advance-developer/">高级开发指南</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/contribute/">参与 Kubernetes 社区贡献</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/minikube/">Minikube</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+      
+    
+
+    
+      </ul>
+    
+
+  
+</nav>
+
+    </div>
+
+    
+    
+    <div class="d-none d-xl-block col-xl-2 docs-toc">
+      
+
+      <ul class="nav toc-top">
+        <li><a href="#" id="back_to_top" class="docs-toc-title">目录</a></li>
+      </ul>
+
+      <nav id="TableOfContents">
+  <ul>
+    <li><a href="#定义-liveness-命令">定义 liveness 命令</a></li>
+    <li><a href="#定义一个-liveness-http-请求">定义一个 liveness HTTP 请求</a></li>
+    <li><a href="#定义-tcp-liveness-探针">定义 TCP liveness 探针</a></li>
+    <li><a href="#使用命名的端口">使用命名的端口</a></li>
+    <li><a href="#定义-readiness-探针">定义 readiness 探针</a></li>
+    <li><a href="#配置-probe">配置 Probe</a></li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+
+      
+    </div>
+    
+
+    <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 docs-content" role="main">
+
+      <article class="article">
+
+        <div class="docs-article-container">
+          
+            
+  <nav class="d-none d-md-flex" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      
+  
+    
+  
+    
+  
+    
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/">
+        
+          首页
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/kubernetes-handbook/">
+        
+          Kubernetes 基础教程
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/kubernetes-handbook/guide/">
+        
+          使用指南
+        
+      </a>
+    </li>
+  
+
+      <li class="breadcrumb-item active" aria-current="page">
+        配置 Pod 的 liveness 和 readiness 探针
+      </li>
+    </ol>
+  </nav>
+
+
+
+
+          
+
+          <h1>配置 Pod 的 liveness 和 readiness 探针</h1>
+
+          <div class="article-style">
+            <p>当你使用 Kubernetes 的时候，有没有遇到过 Pod 在启动后一会就挂掉然后又重新启动这样的恶性循环？你有没有想过 Kubernetes 是如何检测 pod 是否还存活？虽然容器已经启动，但是 Kubernetes 如何知道容器的进程是否准备好对外提供服务了呢？让我们通过 Kubernetes 官网的这篇文章 <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/" target="_blank" rel="noopener">Configure Liveness and Readiness Probes</a>，来一探究竟。</p>
+<p>本文将展示如何配置容器的存活和可读性探针。</p>
+<p>Kubelet 使用 liveness probe（存活探针）来确定何时重启容器。例如，当应用程序处于运行状态但无法做进一步操作，liveness 探针将捕获到 deadlock，重启处于该状态下的容器，使应用程序在存在 bug 的情况下依然能够继续运行下去（谁的程序还没几个 bug 呢）。</p>
+<p>Kubelet 使用 readiness probe（就绪探针）来确定容器是否已经就绪可以接受流量。只有当 Pod 中的容器都处于就绪状态时 kubelet 才会认定该 Pod 处于就绪状态。该信号的作用是控制哪些 Pod 应该作为 service 的后端。如果 Pod 处于非就绪状态，那么它们将会被从 service 的 load balancer 中移除。</p>
+<h2 id="定义-liveness-命令">定义 liveness 命令</h2>
+<p>许多长时间运行的应用程序最终会转换到 broken 状态，除非重新启动，否则无法恢复。Kubernetes 提供了 liveness probe 来检测和补救这种情况。</p>
+<p>在本次练习将基于 <code>gcr.io/google_containers/busybox</code> 镜像创建运行一个容器的 Pod。以下是 Pod 的配置文件 <code>exec-liveness.yaml</code>：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Pod</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">test</span><span class="p">:</span><span class="w"> </span><span class="l">liveness</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">liveness-exec</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">liveness</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">args</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="l">/bin/sh</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- -<span class="l">c</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="l">touch /tmp/healthy; sleep 30; rm -rf /tmp/healthy; sleep 600</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">gcr.io/google_containers/busybox</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">livenessProbe</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">exec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">command</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">cat</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">/tmp/healthy</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">initialDelaySeconds</span><span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span></span></span></code></pre></div><p>该配置文件给 Pod 配置了一个容器。<code>periodSeconds</code> 规定 kubelet 要每隔 5 秒执行一次 liveness probe。 <code>initialDelaySeconds</code> 告诉 kubelet 在第一次执行 probe 之前要的等待 5 秒钟。探针检测命令是在容器中执行 <code>cat /tmp/healthy</code> 命令。如果命令执行成功，将返回 0，kubelet 就会认为该容器是活着的并且很健康。如果返回非 0 值，kubelet 就会杀掉这个容器并重启它。</p>
+<p>容器启动时，执行该命令：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">/bin/sh -c <span class="s2">&#34;touch /tmp/healthy; sleep 30; rm -rf /tmp/healthy; sleep 600&#34;</span>
+</span></span></code></pre></div><p>在容器生命的最初 30 秒内有一个 <code>/tmp/healthy</code> 文件，在这 30 秒内 <code>cat /tmp/healthy</code> 命令会返回一个成功的返回码。30 秒后， <code>cat /tmp/healthy</code> 将返回失败的返回码。</p>
+<p>创建 Pod：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl create -f https://k8s.io/docs/tasks/configure-pod-container/exec-liveness.yaml
+</span></span></code></pre></div><p>在 30 秒内，查看 Pod 的 event：</p>
+<pre tabindex="0"><code>kubectl describe pod liveness-exec
+</code></pre><p>结果显示没有失败的 liveness probe：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">FirstSeen    LastSeen    Count   From            SubobjectPath           Type        Reason      Message
+</span></span><span class="line"><span class="cl">--------- --------    -----   ----            -------------           --------    ------      -------
+</span></span><span class="line"><span class="cl">24s       24s     <span class="m">1</span>   <span class="o">{</span>default-scheduler <span class="o">}</span>                    Normal      Scheduled   Successfully assigned liveness-exec to worker0
+</span></span><span class="line"><span class="cl">23s       23s     <span class="m">1</span>   <span class="o">{</span>kubelet worker0<span class="o">}</span>   spec.containers<span class="o">{</span>liveness<span class="o">}</span>   Normal      Pulling     pulling image <span class="s2">&#34;gcr.io/google_containers/busybox&#34;</span>
+</span></span><span class="line"><span class="cl">23s       23s     <span class="m">1</span>   <span class="o">{</span>kubelet worker0<span class="o">}</span>   spec.containers<span class="o">{</span>liveness<span class="o">}</span>   Normal      Pulled      Successfully pulled image <span class="s2">&#34;gcr.io/google_containers/busybox&#34;</span>
+</span></span><span class="line"><span class="cl">23s       23s     <span class="m">1</span>   <span class="o">{</span>kubelet worker0<span class="o">}</span>   spec.containers<span class="o">{</span>liveness<span class="o">}</span>   Normal      Created     Created container with docker id 86849c15382e<span class="p">;</span> Security:<span class="o">[</span><span class="nv">seccomp</span><span class="o">=</span>unconfined<span class="o">]</span>
+</span></span><span class="line"><span class="cl">23s       23s     <span class="m">1</span>   <span class="o">{</span>kubelet worker0<span class="o">}</span>   spec.containers<span class="o">{</span>liveness<span class="o">}</span>   Normal      Started     Started container with docker id 86849c15382e
+</span></span></code></pre></div><p>启动 35 秒后，再次查看 pod 的 event：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl describe pod liveness-exec
+</span></span></code></pre></div><p>在最下面有一条信息显示 liveness probe 失败，容器被删掉并重新创建。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">FirstSeen LastSeen    Count   From            SubobjectPath           Type        Reason      Message
+</span></span><span class="line"><span class="cl">--------- --------    -----   ----            -------------           --------    ------      -------
+</span></span><span class="line"><span class="cl">37s       37s     <span class="m">1</span>   <span class="o">{</span>default-scheduler <span class="o">}</span>                    Normal      Scheduled   Successfully assigned liveness-exec to worker0
+</span></span><span class="line"><span class="cl">36s       36s     <span class="m">1</span>   <span class="o">{</span>kubelet worker0<span class="o">}</span>   spec.containers<span class="o">{</span>liveness<span class="o">}</span>   Normal      Pulling     pulling image <span class="s2">&#34;gcr.io/google_containers/busybox&#34;</span>
+</span></span><span class="line"><span class="cl">36s       36s     <span class="m">1</span>   <span class="o">{</span>kubelet worker0<span class="o">}</span>   spec.containers<span class="o">{</span>liveness<span class="o">}</span>   Normal      Pulled      Successfully pulled image <span class="s2">&#34;gcr.io/google_containers/busybox&#34;</span>
+</span></span><span class="line"><span class="cl">36s       36s     <span class="m">1</span>   <span class="o">{</span>kubelet worker0<span class="o">}</span>   spec.containers<span class="o">{</span>liveness<span class="o">}</span>   Normal      Created     Created container with docker id 86849c15382e<span class="p">;</span> Security:<span class="o">[</span><span class="nv">seccomp</span><span class="o">=</span>unconfined<span class="o">]</span>
+</span></span><span class="line"><span class="cl">36s       36s     <span class="m">1</span>   <span class="o">{</span>kubelet worker0<span class="o">}</span>   spec.containers<span class="o">{</span>liveness<span class="o">}</span>   Normal      Started     Started container with docker id 86849c15382e
+</span></span><span class="line"><span class="cl">2s        2s      <span class="m">1</span>   <span class="o">{</span>kubelet worker0<span class="o">}</span>   spec.containers<span class="o">{</span>liveness<span class="o">}</span>   Warning     Unhealthy   Liveness probe failed: cat: can<span class="s1">&#39;t open &#39;</span>/tmp/healthy<span class="err">&#39;</span>: No such file or directory
+</span></span></code></pre></div><p>再等 30 秒，确认容器已经重启：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl get pod liveness-exec
+</span></span></code></pre></div><p>从输出结果来 <code>RESTARTS</code> 值加 1 了。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">NAME            READY     STATUS    RESTARTS   AGE
+</span></span><span class="line"><span class="cl">liveness-exec   1/1       Running   <span class="m">1</span>          1m
+</span></span></code></pre></div><h2 id="定义一个-liveness-http-请求">定义一个 liveness HTTP 请求</h2>
+<p>我们还可以使用 HTTP GET 请求作为 liveness probe。下面是一个基于 <code>gcr.io/google_containers/liveness</code> 镜像运行了一个容器的 Pod 的例子 <code>http-liveness.yaml</code>：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Pod</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">test</span><span class="p">:</span><span class="w"> </span><span class="l">liveness</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">liveness-http</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">liveness</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">args</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="l">/server</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">gcr.io/google_containers/liveness</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">livenessProbe</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">httpGet</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l">/healthz</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">httpHeaders</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">X-Custom-Header</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l">Awesome</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">initialDelaySeconds</span><span class="p">:</span><span class="w"> </span><span class="m">3</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="m">3</span><span class="w">
+</span></span></span></code></pre></div><p>该配置文件只定义了一个容器，<code>livenessProbe</code> 指定 kubelet 需要每隔 3 秒执行一次 liveness probe。<code>initialDelaySeconds</code> 指定 kubelet 在该执行第一次探测之前需要等待 3 秒钟。该探针将向容器中的 server 的 8080 端口发送一个 HTTP GET 请求。如果 server 的 <code>/healthz</code> 路径的 handler 返回一个成功的返回码，kubelet 就会认定该容器是活着的并且很健康。如果返回失败的返回码，kubelet 将杀掉该容器并重启它。</p>
+<p>任何大于 200 小于 400 的返回码都会认定是成功的返回码。其他返回码都会被认为是失败的返回码。</p>
+<p>最开始的 10 秒该容器是活着的， <code>/healthz</code> handler 返回 200 的状态码。这之后将返回 500 的返回码。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="nx">http</span><span class="p">.</span><span class="nf">HandleFunc</span><span class="p">(</span><span class="s">&#34;/healthz&#34;</span><span class="p">,</span> <span class="kd">func</span><span class="p">(</span><span class="nx">w</span> <span class="nx">http</span><span class="p">.</span><span class="nx">ResponseWriter</span><span class="p">,</span> <span class="nx">r</span> <span class="o">*</span><span class="nx">http</span><span class="p">.</span><span class="nx">Request</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">duration</span> <span class="o">:=</span> <span class="nx">time</span><span class="p">.</span><span class="nf">Now</span><span class="p">().</span><span class="nf">Sub</span><span class="p">(</span><span class="nx">started</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">duration</span><span class="p">.</span><span class="nf">Seconds</span><span class="p">()</span> <span class="p">&gt;</span> <span class="mi">10</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">w</span><span class="p">.</span><span class="nf">WriteHeader</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">w</span><span class="p">.</span><span class="nf">Write</span><span class="p">([]</span><span class="nb">byte</span><span class="p">(</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Sprintf</span><span class="p">(</span><span class="s">&#34;error: %v&#34;</span><span class="p">,</span> <span class="nx">duration</span><span class="p">.</span><span class="nf">Seconds</span><span class="p">())))</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">w</span><span class="p">.</span><span class="nf">WriteHeader</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">w</span><span class="p">.</span><span class="nf">Write</span><span class="p">([]</span><span class="nb">byte</span><span class="p">(</span><span class="s">&#34;ok&#34;</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">})</span>
+</span></span></code></pre></div><p>容器启动 3 秒后，kubelet 开始执行健康检查。第一次健康监测会成功，但是 10 秒后，健康检查将失败，kubelet 将杀掉和重启容器。</p>
+<p>创建一个 Pod 来测试一下 HTTP liveness 检测：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl create -f https://k8s.io/docs/tasks/configure-pod-container/http-liveness.yaml
+</span></span></code></pre></div><p>After 10 seconds, view Pod events to verify that liveness probes have failed and the Container has been restarted:</p>
+<p>10 秒后，查看 Pod 的 event，确认 liveness probe 失败并重启了容器。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl describe pod liveness-http
+</span></span></code></pre></div><h2 id="定义-tcp-liveness-探针">定义 TCP liveness 探针</h2>
+<p>第三种 liveness probe 使用 TCP Socket。 使用此配置，kubelet 将尝试在指定端口上打开容器的套接字。 如果可以建立连接，容器被认为是健康的，如果不能就认为是失败的。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Pod</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">goproxy</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">goproxy</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">goproxy</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">gcr.io/google_containers/goproxy:0.1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">readinessProbe</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">tcpSocket</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">initialDelaySeconds</span><span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="m">10</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">livenessProbe</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">tcpSocket</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">initialDelaySeconds</span><span class="p">:</span><span class="w"> </span><span class="m">15</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="m">20</span><span class="w">
+</span></span></span></code></pre></div><p>如您所见，TCP 检查的配置与 HTTP 检查非常相似。 此示例同时使用了 readiness 和 liveness probe。 容器启动后 5 秒钟，kubelet 将发送第一个 readiness probe。 这将尝试连接到端口 8080 上的 goproxy 容器。如果探测成功，则该 pod 将被标记为就绪。Kubelet 将每隔 10 秒钟执行一次该检查。</p>
+<p>除了 readiness probe 之外，该配置还包括 liveness probe。 容器启动 15 秒后，kubelet 将运行第一个 liveness probe。 就像 readiness probe 一样，这将尝试连接到 goproxy 容器上的 8080 端口。如果 liveness probe 失败，容器将重新启动。</p>
+<h2 id="使用命名的端口">使用命名的端口</h2>
+<p>可以使用命名的 ContainerPort 作为 HTTP 或 TCP liveness 检查：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">liveness-port</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">hostPort</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">livenessProbe</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">httpGet</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l">/healthz</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l">liveness-port</span><span class="w">
+</span></span></span></code></pre></div><h2 id="定义-readiness-探针">定义 readiness 探针</h2>
+<p>有时，应用程序暂时无法对外部流量提供服务。 例如，应用程序可能需要在启动期间加载大量数据或配置文件。 在这种情况下，你不想杀死应用程序，但你也不想发送请求。 Kubernetes 提供了 readiness probe 来检测和减轻这些情况。 Pod 中的容器可以报告自己还没有准备，不能处理 Kubernetes 服务发送过来的流量。</p>
+<p>Readiness probe 的配置跟 liveness probe 很像。唯一的不同是使用 <code>readinessProbe</code> 而不是 <code>livenessProbe</code>。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">readinessProbe</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">exec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="l">cat</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="l">/tmp/healthy</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">initialDelaySeconds</span><span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span></span></span></code></pre></div><p>Readiness probe 的 HTTP 和 TCP 的探测器配置跟 liveness probe 一样。</p>
+<p>Readiness 和 livenss probe 可以并行用于同一容器。 使用两者可以确保流量无法到达未准备好的容器，并且容器在失败时重新启动。</p>
+<h2 id="配置-probe">配置 Probe</h2>
+<p>Probe 中有很多精确和详细的配置，通过它们你能准确的控制 liveness 和 readiness 检查：</p>
+<ul>
+<li><code>initialDelaySeconds</code>：容器启动后第一次执行探测是需要等待多少秒。</li>
+<li><code>periodSeconds</code>：执行探测的频率。默认是 10 秒，最小 1 秒。</li>
+<li><code>timeoutSeconds</code>：探测超时时间。默认 1 秒，最小 1 秒。</li>
+<li><code>successThreshold</code>：探测失败后，最少连续探测成功多少次才被认定为成功。默认是 1。对于 liveness 必须是 1。最小值是 1。</li>
+<li><code>failureThreshold</code>：探测成功后，最少连续探测失败多少次才被认定为失败。默认是 3。最小值是 1。</li>
+</ul>
+<p>HTTP probe 中可以给 <code>httpGet</code> 设置其他配置项：</p>
+<ul>
+<li><code>host</code>：连接的主机名，默认连接到 pod 的 IP。你可能想在 http header 中设置 &ldquo;Host&rdquo; 而不是使用 IP。</li>
+<li><code>scheme</code>：连接使用的 schema，默认 HTTP。</li>
+<li><code>path</code>: 访问的 HTTP server 的 path。</li>
+<li><code>httpHeaders</code>：自定义请求的 header。HTTP 运行重复的 header。</li>
+<li><code>port</code>：访问的容器的端口名字或者端口号。端口号必须介于 1 和 65535 之间。</li>
+</ul>
+<p>对于 HTTP 探测器，kubelet 向指定的路径和端口发送 HTTP 请求以执行检查。 Kubelet 将 probe 发送到容器的 IP 地址，除非地址被 <code>httpGet</code> 中的可选 <code>host</code> 字段覆盖。 在大多数情况下，你不想设置主机字段。 有一种情况下你可以设置它。 假设容器在 127.0.0.1 上侦听，并且 Pod 的 <code>hostNetwork</code> 字段为 true。 然后，在 <code>httpGet</code> 下的 <code>host</code> 应该设置为 127.0.0.1。 如果你的 pod 依赖于虚拟主机，这可能是更常见的情况，你不应该是用 <code>host</code>，而是应该在 <code>httpHeaders</code> 中设置 <code>Host</code> 头。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes" target="_blank" rel="noopener">Container Probes - kubernetes.io</a></li>
+</ul>
+
+          </div>
+
+          
+
+
+
+          
+          
+          <div class="article-widget">
+            
+<div class="post-nav">
+  
+  
+  
+  <div class="post-nav-item">
+    <div class="meta-nav">上一页</div>
+    <a href="/docs/kubernetes-handbook/guide/resource-configuration/" rel="next">资源对象配置</a>
+  </div>
+  
+  
+  
+  <div class="post-nav-item">
+    <div class="meta-nav">下一页</div>
+    <a href="/docs/kubernetes-handbook/guide/configure-pod-service-account/" rel="prev">配置 Pod 的 Service Account</a>
+  </div>
+  
+</div>
+
+          </div>
+          
+        </div>
+
+        <div class="body-footer">
+          <p>最近更新于 2022-05-21</p>
+
+          
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/docs//edit/master/content/kubernetes-handbook/guide/configure-liveness-readiness-probes.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+          
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments">
+    <script src="https://giscus.app/client.js"
+        data-repo="rootsongjc/docs"
+        data-repo-id="MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg="
+        data-category="Announcements"
+        data-category-id="DIC_kwDODMrxWM4CPL7J"
+        data-mapping="pathname"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="light"
+        data-lang="zh-CN"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </section>
+  
+
+
+
+          
+
+
+        </div>
+
+      </article>
+
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2022 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+
+    </main>
+  </div>
+</div>
+
+  </div>
+
+  <div class="page-footer">
+    
+    
+  </div>
+
+      
+
+    
+    <script src="/docs/js/vendor-bundle.min.53d67dc2cb1ebceb89d5e2aba2f86112.js"></script>
+
+    
+    
+    
+      
+
+      
+      
+
+      
+
+      
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+        
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/r.min.js" crossorigin="anonymous"></script>
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/latex.min.js" crossorigin="anonymous"></script>
+        
+      
+
+    
+
+    
+    
+    
+
+    
+    
+    <script src="https://cdn.jsdelivr.net/gh/bryanbraun/anchorjs@4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+    <script>
+      anchors.add();
+    </script>
+    
+
+    
+    
+    
+      
+      <script id="search-hit-fuse-template" type="text/x-template">
+        <div class="search-hit" id="summary-{{key}}">
+          <div class="search-hit-content">
+            <div class="search-hit-name">
+              <a href="{{relpermalink}}">{{title}}</a>
+              <div class="article-metadata search-hit-type">{{type}}</div>
+              <p class="search-hit-description">{{snippet}}</p>
+            </div>
+          </div>
+        </div>
+      </script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/krisk/Fuse@v3.2.1/dist/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/gh/julmot/mark.js@8.11.1/dist/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+      
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+      
+      
+      
+      
+      
+      
+      
+    
+
+    
+
+    
+    
+    
+    <script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+      
+    
+    
+    <script src="/docs/zh/js/wowchemy.min.0f418cf2259d1bfdb92011cb96f5bed5.js"></script>
+
+    
+    
+    
+    
+    
+    
+      
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <script src="/docs/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+
+
+
+
+
+
+</body>
+</html>

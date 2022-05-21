@@ -1,0 +1,1789 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+    
+  
+  <meta name="description" content="Kubernetes 中不仅支持 CPU、内存为指标的 HPA，还支持自定义指标的 HPA，例如 QPS。 本文中使用的 YAML 文件见 manifests/HPA。 设置自定义指标 Kubernetes1.6 在 Kubernetes1.6 集群中配置自定义指标的 HPA 的说明已废弃。 在设置定义指标 HPA" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://jimmysong.io/docs/kubernetes-handbook/concepts/custom-metrics-hpa/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/docs/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/docs/css/wowchemy.9614cee70b2ec5c87466ccccc1657e16.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-93485976-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+
+  function gtag() {
+      dataLayer.push(arguments);
+  }
+
+  function trackOutboundLink(url, target) {
+    gtag('event', 'click', {
+         'event_category': 'outbound',
+         'event_label': url,
+         'transport_type': 'beacon',
+         'event_callback': function () {
+           if (target !== '_blank') {
+             document.location = url;
+           }
+         }
+    });
+    console.debug("Outbound link clicked: " + url);
+  }
+
+  function onClickCallback(event) {
+    if ((event.target.tagName !== 'A') || (event.target.host === window.location.host)) {
+      return;
+    }
+    trackOutboundLink(event.target, event.target.getAttribute('target'));  
+  }
+
+  gtag('js', new Date());
+  gtag('config', 'UA-93485976-1', {});
+  gtag('set', {'cookie_flags': 'SameSite=None;Secure'});
+
+  
+  document.addEventListener('click', onClickCallback, false);
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?11f7d254cfa4e0ca44b175c66d379ecc";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/docs/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://jimmysong.io/docs/kubernetes-handbook/concepts/custom-metrics-hpa/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://jimmysong.io/docs/kubernetes-handbook/concepts/custom-metrics-hpa/" />
+  <meta property="og:title" content="自定义指标 HPA | 云原生资料库" />
+  <meta property="og:description" content="Kubernetes 中不仅支持 CPU、内存为指标的 HPA，还支持自定义指标的 HPA，例如 QPS。 本文中使用的 YAML 文件见 manifests/HPA。 设置自定义指标 Kubernetes1.6 在 Kubernetes1.6 集群中配置自定义指标的 HPA 的说明已废弃。 在设置定义指标 HPA" /><meta property="og:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" />
+    <meta property="twitter:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2022-05-21T00:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2022-05-21T21:23:05&#43;08:00">
+  
+
+  
+
+
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>自定义指标 HPA | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="79c548d44e0df87f91ee848fbc660881" >
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/docs/js/wowchemy-init.min.14a0ed61c6dbd594b9c75193b25be179.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>搜索</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#books"><span>书目列表</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/translation"><span>翻译</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/event"><span>活动</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io/blog/" target="_blank" rel="noopener"><span>原创</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#tag-cloud"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>主站</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+
+        
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/rootsongjc/docs/" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    
+
+
+
+
+<div class="container-fluid docs">
+  <div class="row flex-xl-nowrap">
+    <div class="col-12 col-md-3 col-xl-2 docs-sidebar">
+      <form class="docs-search d-flex align-items-center">
+  <button class="btn docs-toggle d-md-none p-0 mr-md-3 w-100" type="button" data-toggle="collapse" data-target="#docs-nav" aria-controls="docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    <div class="d-flex">
+      <span class="d-md-none pl-1 flex-grow-1 text-left overflow-hidden">
+        
+          概念原理
+        
+      </span>
+      <span><i class="fas fa-chevron-down"></i></span>
+    </div>
+  </button>
+
+  
+  <button class="form-control sidebar-search js-search d-none d-md-flex">
+    <i class="fas fa-search pr-2"></i>
+    <span class="sidebar-search-text">搜索...</span>
+    <span class="sidebar-search-shortcut">/</span>
+  </button>
+  
+</form>
+
+<nav class="collapse docs-links" id="docs-nav">
+  
+  
+  
+  
+  
+  
+
+  
+  
+    
+
+    
+      
+
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <ul class="nav docs-sidenav">
+        <li class=""><a href="/docs/kubernetes-handbook/"><i class="fas fa-book pr-1"></i>Kubernetes 基础教程</a></li>
+    
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+          <a class="docs-menu-lv1 docs-toc-link " href="/docs/kubernetes-handbook/concepts/"><i class="fas fa-book-open pr-1"></i>概念原理</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/architecture/">Kubernetes 架构</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/concepts/">Kubernetes 的设计理念</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/etcd/">Etcd 解析</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/open-interfaces/">开放接口</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/cri/">容器运行时接口（CRI）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/cni/">容器网络接口（CNI）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/csi/">容器存储接口（CSI）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/objects/">Kubernetes 中的资源对象</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/pod-state-and-lifecycle/">Pod 状态与生命周期管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-overview/">Pod 概览</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod/">Pod 解析</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/init-containers/">Init 容器</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pause-container/">Pause 容器</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-security-policy/">Pod 安全策略</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-lifecycle/">Pod 的生命周期</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-hook/">Pod hook</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-preset/">Pod Preset</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-disruption-budget/">Pod 中断与 PDB（Pod 中断预算）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/cluster/">集群资源管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/node/">Node</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/namespace/">Namespace</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/label/">Label</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/annotation/">Annotation</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/taint-and-toleration/">Taint 和 Toleration（污点和容忍）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/garbage-collection/">垃圾收集</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/controllers/">控制器</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/deployment/">Deployment</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/statefulset/">StatefulSet</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/daemonset/">DaemonSet</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/replicaset/">ReplicationController 和 ReplicaSet</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/job/">Job</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/cronjob/">CronJob</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/horizontal-pod-autoscaling/">Horizontal Pod Autoscaling</a></li>
+
+
+
+  <li class="active"><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/custom-metrics-hpa/">自定义指标 HPA</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/admission-controller/">准入控制器（Admission Controller）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/service-discovery/">服务发现与路由</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/service/">Service</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/topology-aware-routing/">拓扑感知路由</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/ingress/">Ingress</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/gateway/">Gateway</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/authentication-and-permission/">身份与权限认证</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/serviceaccount/">ServiceAccount</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/rbac/">基于角色的访问控制（RBAC）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/network-policy/">NetworkPolicy</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/spiffe/">SPIFFE</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/spire/">SPIRE</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/networking/">网络</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/flannel/">扁平网络 Flannel</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/calico/">非 Overlay 扁平网络 Calico</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/cilium/">基于 eBPF 的网络 Cilium</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/cilium-concepts/">Cilium 架构设计与概念解析</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/storage/">存储</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/secret/">Secret</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/configmap/">ConfigMap</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/configmap-hot-update/">ConfigMap 的热更新</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/volume/">Volume</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/persistent-volume/">持久化卷（Persistent Volume）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/storageclass/">Storage Class</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/local-persistent-storage/">本地持久化存储</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/extension/">扩展集群</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/custom-resource/">使用自定义资源扩展 API</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/crd/">使用 CRD 扩展 Kubernetes API</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/aggregated-api-server/">Aggregated API Server</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/apiservice/">APIService</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/service-catalog/">服务目录（Service Catalog）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/multicluster/">多集群管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/multi-cluster-services-api/">多集群服务 API（Multi-Cluster Services API）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/federation/">集群联邦（Cluster Federation）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/scheduling/">资源调度</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/qos/">服务质量等级（QoS）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/kubeadm/"></a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/service-api-overview/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+          <a class="docs-menu-lv1 docs-toc-link " href="/docs/kubernetes-handbook/guide/"><i class="fas fa-book-open pr-1"></i>使用指南</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/resource-configuration/">资源对象配置</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/configure-liveness-readiness-probes/">配置 Pod 的 liveness 和 readiness 探针</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/configure-pod-service-account/">配置 Pod 的 Service Account</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/secret-configuration/">Secret 配置</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/resource-quota-management/">管理 namespace 中的资源配额</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/command-usage/">命令使用</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/docker-cli-to-kubectl/">Docker 用户过渡到 kubectl 命令行指南</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/using-kubectl/">Kubectl 命令概览</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubectl-cheatsheet/">kubectl 命令技巧大全</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/using-etcdctl-to-access-kubernetes-data/">使用 etcdctl 访问 Kubernetes 数据</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/cluster-security-management/">集群安全性管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/managing-tls-in-a-cluster/">管理集群中的 TLS</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubelet-authentication-authorization/">Kublet 的认证授权</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/tls-bootstrapping/">TLS Bootstrap</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/ip-masq-agent/">IP 伪装代理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubectl-user-authentication-authorization/">创建用户认证授权的 kubeconfig 文件</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/auth-with-kubeconfig-or-token/">使用 kubeconfig 或 token 进行用户身份认证</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/authentication/">Kubernetes 中的用户与身份认证授权</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubernetes-security-best-practice/">Kubernetes 集群安全性配置最佳实践</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/access-kubernetes-cluster/">访问 Kubernetes 集群</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/access-cluster/">访问集群</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/authenticate-across-clusters-kubeconfig/">使用 kubeconfig 文件配置跨集群认证</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/connecting-to-applications-port-forward/">通过端口转发访问集群中的应用程序</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/service-access-application-cluster/">使用 service 访问群集中的应用程序</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/accessing-kubernetes-pods-from-outside-of-the-cluster/">从外部访问 Kubernetes 中的 Pod</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubernetes-desktop-client/">Lens - Kubernetes IDE</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubernator-kubernetes-ui/">Kubernator - 更底层的 Kubernetes UI</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/application-development-deployment-flow/">在 Kubernetes 中开发部署应用</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/deploy-applications-in-kubernetes/">适用于 Kubernetes 的应用开发部署流程</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/migrating-hadoop-yarn-to-kubernetes/">迁移传统应用到 Kubernetes 步骤详解——以 Hadoop YARN 为例</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/using-statefulset/">使用StatefulSet部署有状态应用</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/cabin-mobile-dashboard-for-kubernetes/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+          <a class="docs-menu-lv1 docs-toc-link " href="/docs/kubernetes-handbook/develop/"><i class="fas fa-book-open pr-1"></i>开发指南</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/sigs-and-working-group/">SIG 和工作组</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/developing-environment/">配置 Kubernetes 开发环境</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/testing/">测试 Kubernetes</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/client-go-sample/">client-go 示例</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/operator/">Operator</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/develop/operator-sdk/">Operator SDK</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/kubebuilder/">Kubebuilder</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/develop/kubebuilder-example/">使用 kubebuilder 创建 operator 示例</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/advance-developer/">高级开发指南</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/contribute/">参与 Kubernetes 社区贡献</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/minikube/">Minikube</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+      
+    
+
+    
+      </ul>
+    
+
+  
+</nav>
+
+    </div>
+
+    
+    
+    <div class="d-none d-xl-block col-xl-2 docs-toc">
+      
+
+      <ul class="nav toc-top">
+        <li><a href="#" id="back_to_top" class="docs-toc-title">目录</a></li>
+      </ul>
+
+      <nav id="TableOfContents">
+  <ul>
+    <li><a href="#设置自定义指标">设置自定义指标</a></li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+
+      
+    </div>
+    
+
+    <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 docs-content" role="main">
+
+      <article class="article">
+
+        <div class="docs-article-container">
+          
+            
+  <nav class="d-none d-md-flex" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      
+  
+    
+  
+    
+  
+    
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/">
+        
+          首页
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/kubernetes-handbook/">
+        
+          Kubernetes 基础教程
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/kubernetes-handbook/concepts/">
+        
+          概念原理
+        
+      </a>
+    </li>
+  
+
+      <li class="breadcrumb-item active" aria-current="page">
+        自定义指标 HPA
+      </li>
+    </ol>
+  </nav>
+
+
+
+
+          
+
+          <h1>自定义指标 HPA</h1>
+
+          <div class="article-style">
+            <p>Kubernetes 中不仅支持 CPU、内存为指标的 HPA，还支持自定义指标的 HPA，例如 QPS。</p>
+<p>本文中使用的 YAML 文件见 <a href="https://github.com/rootsongjc/kubernetes-handbook/tree/master/manifests/HPA" target="_blank" rel="noopener">manifests/HPA</a>。</p>
+<h2 id="设置自定义指标">设置自定义指标</h2>
+<p><strong>Kubernetes1.6</strong></p>
+<blockquote>
+<p>在 Kubernetes1.6 集群中配置自定义指标的 HPA 的说明已废弃。</p>
+</blockquote>
+<p>在设置定义指标 HPA 之前需要先进行如下配置：</p>
+<ul>
+<li>
+<p>将 heapster 的启动参数 <code>--api-server</code> 设置为 true</p>
+</li>
+<li>
+<p>启用 custom metric API</p>
+</li>
+<li>
+<p>将 kube-controller-manager 的启动参数中 <code>--horizontal-pod-autoscaler-use-rest-clients</code> 设置为 true，并指定 <code>--master</code> 为 API server 地址，如 <code>--master=http://172.20.0.113:8080</code></p>
+</li>
+</ul>
+<p>在 Kubernetes1.5 以前很容易设置，参考 <a href="https://medium.com/@marko.luksa/kubernetes-autoscaling-based-on-custom-metrics-without-using-a-host-port-b783ed6241ac" target="_blank" rel="noopener">1.6 以前版本的 kubernetes 中开启自定义 HPA</a>，而在 1.6 中因为取消了原来的 annotation 方式设置 custom metric，只能通过 API server 和 kube-aggregator 来获取 custom metric，因为只有两种方式来设置了，一是直接通过 API server 获取 heapster 的 metrics，二是部署 <a href="https://github.com/kubernetes/kube-aggregator" target="_blank" rel="noopener">kube-aggragator</a> 来实现。</p>
+<p>我们将在 Kubernetes1.8 版本的 Kubernetes 中，使用聚合的 API server 来实现自定义指标的 HPA。</p>
+<p><strong>Kuberentes1.7+</strong></p>
+<p>确认您的 Kubernetes 版本在 1.7 或以上，修改以下配置：</p>
+<ul>
+<li>将 kube-controller-manager 的启动参数中 <code>--horizontal-pod-autoscaler-use-rest-clients</code> 设置为 true，并指定 <code>--master</code> 为 API server 地址，如 <code>--master=http://172.20.0.113:8080</code></li>
+<li>修改 kube-apiserver 的配置文件 apiserver，增加一条配置 <code>--requestheader-client-ca-file=/etc/kubernetes/ssl/ca.pem --requestheader-allowed-names=aggregator --requestheader-extra-headers-prefix=X-Remote-Extra- --requestheader-group-headers=X-Remote-Group --requestheader-username-headers=X-Remote-User --proxy-client-cert-file=/etc/kubernetes/ssl/kubernetes.pem --proxy-client-key-file=/etc/kubernetes/ssl/kubernetes-key.pem</code>，用来配置 aggregator 的 CA 证书。</li>
+</ul>
+<p>已经内置了 <code>apiregistration.k8s.io/v1beta1</code> API，可以直接定义 APIService，如：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apiregistration.k8s.io/v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">APIService</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">v1.custom-metrics.metrics.k8s.io</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">insecureSkipTLSVerify</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l">custom-metrics.metrics.k8s.io</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">groupPriorityMinimum</span><span class="p">:</span><span class="w"> </span><span class="m">1000</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">versionPriority</span><span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">service</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">api</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">custom-metrics</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l">v1alpha1</span><span class="w">
+</span></span></span></code></pre></div><p><strong>部署 Prometheus</strong></p>
+<p>使用 <a href="https://github.com/rootsongjc/kubernetes-handbook/blob/master/manifests/HPA/prometheus-operator.yaml" target="_blank" rel="noopener">prometheus-operator.yaml</a> 文件部署 Prometheus operator。</p>
+<p><strong>注意：</strong> 将镜像修改为你自己的镜像仓库地址。</p>
+<p>这产生一个自定义的 API，可以通过浏览器访问，还可以使用下面的命令可以检查该 API：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ kubectl get --raw<span class="o">=</span>apis/custom-metrics.metrics.k8s.io/v1alpha1
+</span></span><span class="line"><span class="cl"><span class="o">{</span><span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;APIResourceList&#34;</span>,<span class="s2">&#34;apiVersion&#34;</span>:<span class="s2">&#34;v1&#34;</span>,<span class="s2">&#34;groupVersion&#34;</span>:<span class="s2">&#34;custom-metrics.metrics.k8s.io/v1alpha1&#34;</span>,<span class="s2">&#34;resources&#34;</span>:<span class="o">[{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;jobs.batch/http_requests&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:true,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;namespaces/http_requests&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:false,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;jobs.batch/up&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:true,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;pods/up&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:true,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;services/scrape_samples_scraped&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:true,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;namespaces/scrape_samples_scraped&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:false,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;pods/scrape_duration_seconds&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:true,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;services/scrape_duration_seconds&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:true,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;pods/http_requests&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:true,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;pods/scrape_samples_post_metric_relabeling&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:true,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;jobs.batch/scrape_samples_scraped&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:true,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;jobs.batch/scrape_duration_seconds&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:true,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;namespaces/scrape_duration_seconds&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:false,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;namespaces/scrape_samples_post_metric_relabeling&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:false,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;services/scrape_samples_post_metric_relabeling&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:true,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;services/up&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:true,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;pods/scrape_samples_scraped&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:true,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;services/http_requests&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:true,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;jobs.batch/scrape_samples_post_metric_relabeling&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:true,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}</span>,<span class="o">{</span><span class="s2">&#34;name&#34;</span>:<span class="s2">&#34;namespaces/up&#34;</span>,<span class="s2">&#34;singularName&#34;</span>:<span class="s2">&#34;&#34;</span>,<span class="s2">&#34;namespaced&#34;</span>:false,<span class="s2">&#34;kind&#34;</span>:<span class="s2">&#34;MetricValueList&#34;</span>,<span class="s2">&#34;verbs&#34;</span>:<span class="o">[</span><span class="s2">&#34;get&#34;</span><span class="o">]}]}</span>
+</span></span></code></pre></div><h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://medium.com/@marko.luksa/kubernetes-autoscaling-based-on-custom-metrics-without-using-a-host-port-b783ed6241ac" target="_blank" rel="noopener">1.6 以前版本的 kubernetes 中开启自定义 HPA - medium.com</a></li>
+<li><a href="https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/" target="_blank" rel="noopener">Horizontal Pod Autoscaler Walkthrough - kubernetes.io</a></li>
+<li><a href="https://blog.openshift.com/kubernetes-1-8-now-custom-metrics/" target="_blank" rel="noopener">Kubernetes 1.8: Now with 100% Daily Value of Custom Metrics - blog.openshift.com</a></li>
+<li><a href="https://github.com/kubernetes/features/issues/117" target="_blank" rel="noopener">Arbitrary/Custom Metrics in the Horizontal Pod Autoscaler#117 - github.com</a></li>
+</ul>
+
+          </div>
+
+          
+
+
+
+          
+          
+          <div class="article-widget">
+            
+<div class="post-nav">
+  
+  
+  
+  <div class="post-nav-item">
+    <div class="meta-nav">上一页</div>
+    <a href="/docs/kubernetes-handbook/concepts/horizontal-pod-autoscaling/" rel="next">Horizontal Pod Autoscaling</a>
+  </div>
+  
+  
+  
+  <div class="post-nav-item">
+    <div class="meta-nav">下一页</div>
+    <a href="/docs/kubernetes-handbook/concepts/admission-controller/" rel="prev">准入控制器（Admission Controller）</a>
+  </div>
+  
+</div>
+
+          </div>
+          
+        </div>
+
+        <div class="body-footer">
+          <p>最近更新于 2022-05-21</p>
+
+          
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/docs//edit/master/content/kubernetes-handbook/concepts/custom-metrics-hpa.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+          
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments">
+    <script src="https://giscus.app/client.js"
+        data-repo="rootsongjc/docs"
+        data-repo-id="MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg="
+        data-category="Announcements"
+        data-category-id="DIC_kwDODMrxWM4CPL7J"
+        data-mapping="pathname"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="light"
+        data-lang="zh-CN"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </section>
+  
+
+
+
+          
+
+
+        </div>
+
+      </article>
+
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2022 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+
+    </main>
+  </div>
+</div>
+
+  </div>
+
+  <div class="page-footer">
+    
+    
+  </div>
+
+      
+
+    
+    <script src="/docs/js/vendor-bundle.min.53d67dc2cb1ebceb89d5e2aba2f86112.js"></script>
+
+    
+    
+    
+      
+
+      
+      
+
+      
+
+      
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+        
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/r.min.js" crossorigin="anonymous"></script>
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/latex.min.js" crossorigin="anonymous"></script>
+        
+      
+
+    
+
+    
+    
+    
+
+    
+    
+    <script src="https://cdn.jsdelivr.net/gh/bryanbraun/anchorjs@4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+    <script>
+      anchors.add();
+    </script>
+    
+
+    
+    
+    
+      
+      <script id="search-hit-fuse-template" type="text/x-template">
+        <div class="search-hit" id="summary-{{key}}">
+          <div class="search-hit-content">
+            <div class="search-hit-name">
+              <a href="{{relpermalink}}">{{title}}</a>
+              <div class="article-metadata search-hit-type">{{type}}</div>
+              <p class="search-hit-description">{{snippet}}</p>
+            </div>
+          </div>
+        </div>
+      </script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/krisk/Fuse@v3.2.1/dist/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/gh/julmot/mark.js@8.11.1/dist/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+      
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+      
+      
+      
+      
+      
+      
+      
+    
+
+    
+
+    
+    
+    
+    <script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+      
+    
+    
+    <script src="/docs/zh/js/wowchemy.min.0f418cf2259d1bfdb92011cb96f5bed5.js"></script>
+
+    
+    
+    
+    
+    
+    
+      
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <script src="/docs/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+
+
+
+
+
+
+</body>
+</html>

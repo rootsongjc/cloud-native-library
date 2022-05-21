@@ -1,0 +1,2254 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+    
+  
+  <meta name="description" content="在安装集群的时候我们在 master 节点上生成了一堆证书、token，还在 kubelet 的配置中用到了 bootstrap token，安装各种应用时，为了能够与 API server 通信创建了各种 service account，在 Dashboard 中使用了 kubeconfig 或 token 登陆，那么这些都属于什么认证" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://jimmysong.io/docs/kubernetes-handbook/guide/authentication/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/docs/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/docs/css/wowchemy.9614cee70b2ec5c87466ccccc1657e16.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-93485976-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+
+  function gtag() {
+      dataLayer.push(arguments);
+  }
+
+  function trackOutboundLink(url, target) {
+    gtag('event', 'click', {
+         'event_category': 'outbound',
+         'event_label': url,
+         'transport_type': 'beacon',
+         'event_callback': function () {
+           if (target !== '_blank') {
+             document.location = url;
+           }
+         }
+    });
+    console.debug("Outbound link clicked: " + url);
+  }
+
+  function onClickCallback(event) {
+    if ((event.target.tagName !== 'A') || (event.target.host === window.location.host)) {
+      return;
+    }
+    trackOutboundLink(event.target, event.target.getAttribute('target'));  
+  }
+
+  gtag('js', new Date());
+  gtag('config', 'UA-93485976-1', {});
+  gtag('set', {'cookie_flags': 'SameSite=None;Secure'});
+
+  
+  document.addEventListener('click', onClickCallback, false);
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?11f7d254cfa4e0ca44b175c66d379ecc";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/docs/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://jimmysong.io/docs/kubernetes-handbook/guide/authentication/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://jimmysong.io/docs/kubernetes-handbook/guide/authentication/" />
+  <meta property="og:title" content="Kubernetes 中的用户与身份认证授权 | 云原生资料库" />
+  <meta property="og:description" content="在安装集群的时候我们在 master 节点上生成了一堆证书、token，还在 kubelet 的配置中用到了 bootstrap token，安装各种应用时，为了能够与 API server 通信创建了各种 service account，在 Dashboard 中使用了 kubeconfig 或 token 登陆，那么这些都属于什么认证" /><meta property="og:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" />
+    <meta property="twitter:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2022-05-21T00:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2022-05-21T21:23:05&#43;08:00">
+  
+
+  
+
+
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>Kubernetes 中的用户与身份认证授权 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="b0162a8fee67059787623e1179dbed48" >
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/docs/js/wowchemy-init.min.14a0ed61c6dbd594b9c75193b25be179.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>搜索</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#books"><span>书目列表</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/translation"><span>翻译</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/event"><span>活动</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io/blog/" target="_blank" rel="noopener"><span>原创</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#tag-cloud"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>主站</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+
+        
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/rootsongjc/docs/" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    
+
+
+
+
+<div class="container-fluid docs">
+  <div class="row flex-xl-nowrap">
+    <div class="col-12 col-md-3 col-xl-2 docs-sidebar">
+      <form class="docs-search d-flex align-items-center">
+  <button class="btn docs-toggle d-md-none p-0 mr-md-3 w-100" type="button" data-toggle="collapse" data-target="#docs-nav" aria-controls="docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    <div class="d-flex">
+      <span class="d-md-none pl-1 flex-grow-1 text-left overflow-hidden">
+        
+          使用指南
+        
+      </span>
+      <span><i class="fas fa-chevron-down"></i></span>
+    </div>
+  </button>
+
+  
+  <button class="form-control sidebar-search js-search d-none d-md-flex">
+    <i class="fas fa-search pr-2"></i>
+    <span class="sidebar-search-text">搜索...</span>
+    <span class="sidebar-search-shortcut">/</span>
+  </button>
+  
+</form>
+
+<nav class="collapse docs-links" id="docs-nav">
+  
+  
+  
+  
+  
+  
+
+  
+  
+    
+
+    
+      
+
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <ul class="nav docs-sidenav">
+        <li class=""><a href="/docs/kubernetes-handbook/"><i class="fas fa-book pr-1"></i>Kubernetes 基础教程</a></li>
+    
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+          <a class="docs-menu-lv1 docs-toc-link " href="/docs/kubernetes-handbook/concepts/"><i class="fas fa-book-open pr-1"></i>概念原理</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/architecture/">Kubernetes 架构</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/concepts/">Kubernetes 的设计理念</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/etcd/">Etcd 解析</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/open-interfaces/">开放接口</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/cri/">容器运行时接口（CRI）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/cni/">容器网络接口（CNI）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/csi/">容器存储接口（CSI）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/objects/">Kubernetes 中的资源对象</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/pod-state-and-lifecycle/">Pod 状态与生命周期管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-overview/">Pod 概览</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod/">Pod 解析</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/init-containers/">Init 容器</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pause-container/">Pause 容器</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-security-policy/">Pod 安全策略</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-lifecycle/">Pod 的生命周期</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-hook/">Pod hook</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-preset/">Pod Preset</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-disruption-budget/">Pod 中断与 PDB（Pod 中断预算）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/cluster/">集群资源管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/node/">Node</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/namespace/">Namespace</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/label/">Label</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/annotation/">Annotation</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/taint-and-toleration/">Taint 和 Toleration（污点和容忍）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/garbage-collection/">垃圾收集</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/controllers/">控制器</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/deployment/">Deployment</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/statefulset/">StatefulSet</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/daemonset/">DaemonSet</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/replicaset/">ReplicationController 和 ReplicaSet</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/job/">Job</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/cronjob/">CronJob</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/horizontal-pod-autoscaling/">Horizontal Pod Autoscaling</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/custom-metrics-hpa/">自定义指标 HPA</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/admission-controller/">准入控制器（Admission Controller）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/service-discovery/">服务发现与路由</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/service/">Service</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/topology-aware-routing/">拓扑感知路由</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/ingress/">Ingress</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/gateway/">Gateway</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/authentication-and-permission/">身份与权限认证</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/serviceaccount/">ServiceAccount</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/rbac/">基于角色的访问控制（RBAC）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/network-policy/">NetworkPolicy</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/spiffe/">SPIFFE</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/spire/">SPIRE</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/networking/">网络</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/flannel/">扁平网络 Flannel</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/calico/">非 Overlay 扁平网络 Calico</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/cilium/">基于 eBPF 的网络 Cilium</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/cilium-concepts/">Cilium 架构设计与概念解析</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/storage/">存储</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/secret/">Secret</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/configmap/">ConfigMap</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/configmap-hot-update/">ConfigMap 的热更新</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/volume/">Volume</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/persistent-volume/">持久化卷（Persistent Volume）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/storageclass/">Storage Class</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/local-persistent-storage/">本地持久化存储</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/extension/">扩展集群</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/custom-resource/">使用自定义资源扩展 API</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/crd/">使用 CRD 扩展 Kubernetes API</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/aggregated-api-server/">Aggregated API Server</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/apiservice/">APIService</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/service-catalog/">服务目录（Service Catalog）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/multicluster/">多集群管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/multi-cluster-services-api/">多集群服务 API（Multi-Cluster Services API）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/federation/">集群联邦（Cluster Federation）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/scheduling/">资源调度</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/qos/">服务质量等级（QoS）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/kubeadm/"></a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/service-api-overview/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+          <a class="docs-menu-lv1 docs-toc-link " href="/docs/kubernetes-handbook/guide/"><i class="fas fa-book-open pr-1"></i>使用指南</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/resource-configuration/">资源对象配置</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/configure-liveness-readiness-probes/">配置 Pod 的 liveness 和 readiness 探针</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/configure-pod-service-account/">配置 Pod 的 Service Account</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/secret-configuration/">Secret 配置</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/resource-quota-management/">管理 namespace 中的资源配额</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/command-usage/">命令使用</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/docker-cli-to-kubectl/">Docker 用户过渡到 kubectl 命令行指南</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/using-kubectl/">Kubectl 命令概览</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubectl-cheatsheet/">kubectl 命令技巧大全</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/using-etcdctl-to-access-kubernetes-data/">使用 etcdctl 访问 Kubernetes 数据</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/cluster-security-management/">集群安全性管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/managing-tls-in-a-cluster/">管理集群中的 TLS</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubelet-authentication-authorization/">Kublet 的认证授权</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/tls-bootstrapping/">TLS Bootstrap</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/ip-masq-agent/">IP 伪装代理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubectl-user-authentication-authorization/">创建用户认证授权的 kubeconfig 文件</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/auth-with-kubeconfig-or-token/">使用 kubeconfig 或 token 进行用户身份认证</a></li>
+
+
+
+  <li class="active"><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/authentication/">Kubernetes 中的用户与身份认证授权</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubernetes-security-best-practice/">Kubernetes 集群安全性配置最佳实践</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/access-kubernetes-cluster/">访问 Kubernetes 集群</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/access-cluster/">访问集群</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/authenticate-across-clusters-kubeconfig/">使用 kubeconfig 文件配置跨集群认证</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/connecting-to-applications-port-forward/">通过端口转发访问集群中的应用程序</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/service-access-application-cluster/">使用 service 访问群集中的应用程序</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/accessing-kubernetes-pods-from-outside-of-the-cluster/">从外部访问 Kubernetes 中的 Pod</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubernetes-desktop-client/">Lens - Kubernetes IDE</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubernator-kubernetes-ui/">Kubernator - 更底层的 Kubernetes UI</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/application-development-deployment-flow/">在 Kubernetes 中开发部署应用</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/deploy-applications-in-kubernetes/">适用于 Kubernetes 的应用开发部署流程</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/migrating-hadoop-yarn-to-kubernetes/">迁移传统应用到 Kubernetes 步骤详解——以 Hadoop YARN 为例</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/using-statefulset/">使用StatefulSet部署有状态应用</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/cabin-mobile-dashboard-for-kubernetes/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+          <a class="docs-menu-lv1 docs-toc-link " href="/docs/kubernetes-handbook/develop/"><i class="fas fa-book-open pr-1"></i>开发指南</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/sigs-and-working-group/">SIG 和工作组</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/developing-environment/">配置 Kubernetes 开发环境</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/testing/">测试 Kubernetes</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/client-go-sample/">client-go 示例</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/operator/">Operator</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/develop/operator-sdk/">Operator SDK</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/kubebuilder/">Kubebuilder</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/develop/kubebuilder-example/">使用 kubebuilder 创建 operator 示例</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/advance-developer/">高级开发指南</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/contribute/">参与 Kubernetes 社区贡献</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/minikube/">Minikube</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+      
+    
+
+    
+      </ul>
+    
+
+  
+</nav>
+
+    </div>
+
+    
+    
+    <div class="d-none d-xl-block col-xl-2 docs-toc">
+      
+
+      <ul class="nav toc-top">
+        <li><a href="#" id="back_to_top" class="docs-toc-title">目录</a></li>
+      </ul>
+
+      <nav id="TableOfContents">
+  <ul>
+    <li><a href="#认识-kubernetes-中的用户">认识 Kubernetes 中的用户</a></li>
+    <li><a href="#认证策略">认证策略</a>
+      <ul>
+        <li><a href="#x509-客户端证书">X509 客户端证书</a></li>
+        <li><a href="#静态-token-文件">静态 Token 文件</a></li>
+        <li><a href="#bootstrap-token">Bootstrap Token</a></li>
+        <li><a href="#静态密码文件">静态密码文件</a></li>
+        <li><a href="#service-account-token">Service Account Token</a></li>
+        <li><a href="#openid-connect-token">OpenID Connect Token</a></li>
+        <li><a href="#webhook-token-认证">Webhook Token 认证</a></li>
+        <li><a href="#认证代理">认证代理</a></li>
+        <li><a href="#keystone-密码">Keystone 密码</a></li>
+      </ul>
+    </li>
+    <li><a href="#匿名请求">匿名请求</a></li>
+    <li><a href="#用户模拟">用户模拟</a></li>
+    <li><a href="#附录">附录</a>
+      <ul>
+        <li><a href="#创建证书">创建证书</a></li>
+      </ul>
+    </li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+
+      
+    </div>
+    
+
+    <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 docs-content" role="main">
+
+      <article class="article">
+
+        <div class="docs-article-container">
+          
+            
+  <nav class="d-none d-md-flex" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      
+  
+    
+  
+    
+  
+    
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/">
+        
+          首页
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/kubernetes-handbook/">
+        
+          Kubernetes 基础教程
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/kubernetes-handbook/guide/">
+        
+          使用指南
+        
+      </a>
+    </li>
+  
+
+      <li class="breadcrumb-item active" aria-current="page">
+        Kubernetes 中的用户与身份认证授权
+      </li>
+    </ol>
+  </nav>
+
+
+
+
+          
+
+          <h1>Kubernetes 中的用户与身份认证授权</h1>
+
+          <div class="article-style">
+            <p>在安装集群的时候我们在 master 节点上生成了一堆证书、token，还在 kubelet 的配置中用到了 bootstrap token，安装各种应用时，为了能够与 API server 通信创建了各种 service account，在 Dashboard 中使用了 kubeconfig 或 token 登陆，那么这些都属于什么认证方式？如何区分用户的？我特地翻译了下这篇官方文档，想你看了之后你将找到答案。</p>
+<p>重点查看 bearer token 和 HTTP 认证中的 token 使用，我们已经有所应用，如 <a href="auth-with-kubeconfig-or-token.md">使用kubeconfig或token进行用户身份认证</a>。</p>
+<h2 id="认识-kubernetes-中的用户">认识 Kubernetes 中的用户</h2>
+<p>Kubernetes 集群中包含两类用户：一类是由 Kubernetes 管理的 service account，另一类是普通用户。</p>
+<p>普通用户被假定为由外部独立服务管理。管理员分发私钥，用户存储（如 Keystone 或 Google 帐户），甚至包含用户名和密码列表的文件。在这方面，<em>Kubernetes 没有代表普通用户帐户的对象</em>。无法通过 API 调用的方式向集群中添加普通用户。</p>
+<p>相对的，service account 是由 Kubernetes API 管理的帐户。它们都绑定到了特定的 namespace，并由 API server 自动创建，或者通过 API 调用手动创建。Service account 关联了一套凭证，存储在 <code>Secret</code>，这些凭证同时被挂载到 pod 中，从而允许 pod 与 kubernetes API 之间的调用。</p>
+<p>API 请求被绑定到普通用户或 serivce account 上，或者作为匿名请求对待。这意味着集群内部或外部的每个进程，无论从在工作站上输入 <code>kubectl</code> 的人类用户到节点上的 <code>kubelet</code>，到控制平面的成员，都必须在向 API Server 发出请求时进行身份验证，或者被视为匿名用户。</p>
+<h2 id="认证策略">认证策略</h2>
+<p>Kubernetes 使用客户端证书、bearer token、身份验证代理或者 HTTP 基本身份验证等身份认证插件来对 API 请求进行身份验证。当有 HTTP 请求发送到 API server 时，插件会尝试将以下属性关联到请求上：</p>
+<ul>
+<li>用户名：标识最终用户的字符串。常用值可能是 <code>kube-admin</code> 或 <code>jane@example.com</code>。</li>
+<li>UID：标识最终用户的字符串，比用户名更加一致且唯一。</li>
+<li>组：一组将用户和常规用户组相关联的字符串。</li>
+<li>额外字段：包含其他有用认证信息的字符串列表的映射。</li>
+</ul>
+<p>所有的值对于认证系统都是不透明的，只有 <a href="https://kubernetes.io/docs/admin/authorization/" target="_blank" rel="noopener">授权人</a> 才能解释这些值的重要含义。</p>
+<p>您可以一次性启用多种身份验证方式。通常使用至少以下两种认证方式：</p>
+<ul>
+<li>服务帐户的 service account token</li>
+<li>至少一种其他的用户认证的方式</li>
+</ul>
+<p>当启用了多个认证模块时，第一个认证模块成功认证后将短路请求，不会进行第二个模块的认证。API server 不会保证认证的顺序。</p>
+<p><code>system:authenticated</code> 组包含在所有已验证用户的组列表中。</p>
+<p>与其他身份验证协议（LDAP、SAML、Kerberos、x509 方案等）的集成可以使用身份验证代理或身份验证 webhook来实现。</p>
+<h3 id="x509-客户端证书">X509 客户端证书</h3>
+<p>通过将 <code>--client-ca-file=SOMEFILE</code> 选项传递给 API server 来启用客户端证书认证。引用的文件必须包含一个或多个证书颁发机构，用于验证提交给 API server 的客户端证书。如果客户端证书已提交并验证，则使用 subject 的 Common Name（CN）作为请求的用户名。从 Kubernetes 1.4开始，客户端证书还可以使用证书的 organization 字段来指示用户的组成员身份。要为用户包含多个组成员身份，请在证书中包含多个 organization 字段。</p>
+<p>例如，使用 <code>openssl</code> 命令工具生成用于签名认证请求的证书：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">openssl req -new -key jbeda.pem -out jbeda-csr.pem -subj <span class="s2">&#34;/CN=jbeda/O=app1/O=app2&#34;</span>
+</span></span></code></pre></div><p>这将为一个用户名为 ”jbeda“ 的 CSR，属于两个组“app1”和“app2”。</p>
+<h3 id="静态-token-文件">静态 Token 文件</h3>
+<p>当在命令行上指定 <code>--token-auth-file=SOMEFILE</code> 选项时，API server 从文件读取 bearer token。目前，token 会无限期地持续下去，并且不重新启动 API server 的话就无法更改令牌列表。</p>
+<p>token 文件是一个 csv 文件，每行至少包含三列：token、用户名、用户 uid，其次是可选的组名。请注意，如果您有多个组，则该列必须使用双引号。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-ini" data-lang="ini"><span class="line"><span class="cl"><span class="na">token,user,uid,&#34;group1,group2,group3&#34;</span>
+</span></span></code></pre></div><h4 id="在请求中放置-bearer-token">在请求中放置 Bearer Token</h4>
+<p>当使用来自 http 客户端的 bearer token 时，API server 期望 <code>Authorization</code> header 中包含 <code>Bearer token</code> 的值。Bearer token 必须是一个字符串序列，只需使用 HTTP 的编码和引用功能就可以将其放入到 HTTP header 中。例如：如果 bearer token 是 <code>31ada4fd-adec-460c-809a-9e56ceb75269</code>，那么它将出现在 HTTP header 中，如下所示：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-http" data-lang="http"><span class="line"><span class="cl"><span class="err">Authorization: Bearer 31ada4fd-adec-460c-809a-9e56ceb75269
+</span></span></span></code></pre></div><h3 id="bootstrap-token">Bootstrap Token</h3>
+<p>该功能仍处于 <strong>alpha</strong> 版本。</p>
+<p>为了简化新集群的初始化引导过程，Kubernetes 中包含了一个名为 <em>Bootstrap Token</em> 的动态管理的 bearer token。这些 token 使用 Secret 存储在 <code>kube-system</code> namespace 中，在那里它们可以被动态管理和创建。Controller Manager 中包含了一个 TokenCleaner 控制器，用于在 bootstrap token 过期时删除将其删除。</p>
+<p>这些 token 的形式是 <code>[a-z0-9]{6}.[a-z0-9]{16}</code>。第一部分是 Token ID，第二部分是 Token Secret。您在 HTTP header 中指定的 token 如下所示：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-http" data-lang="http"><span class="line"><span class="cl"><span class="err">Authorization: Bearer 781292.db7bc3a58fc5f07e
+</span></span></span></code></pre></div><p>在 API server 的启动参数中加上  <code>--experimental-bootstrap-token-auth</code> 标志以启用 Bootstrap Token Authenticator。您必须通过 Controller Manager 上的 <code>--controllers</code> 标志启用 TokenCleaner 控制器，如 <code>--controllers=*,tokencleaner</code>。如果您使用它来引导集群， <code>kubeadm</code> 会为您完成。</p>
+<p>认证者认证为 <code>system:bootstrap:&lt;Token ID&gt;</code> 。被包含在 <code>system:bootstrappers</code> 组中。命名和组是有意限制用户使用过去的 bootstap token。可以使用用户名和组（<code>kubeadm</code> 使用）来制定适当的授权策略以支持引导集群。</p>
+<p>有关 Bootstrap Token 身份验证器和控制器的更深入的文档，以及如何使用 <code>kubeadm</code> 管理这些令牌，请参阅 <a href="https://kubernetes.io/docs/admin/bootstrap-tokens/" target="_blank" rel="noopener">Bootstrap Token</a>。</p>
+<h3 id="静态密码文件">静态密码文件</h3>
+<p>通过将 <code>--basic-auth-file=SOMEFILE</code> 选项传递给 API server 来启用基本身份验证。目前，基本身份验证凭证将无限期地保留，并且密码在不重新启动API服务器的情况下无法更改。请注意，为了方便起见，目前支持基本身份验证，而上述模式更安全更容易使用。</p>
+<p>基本身份认证是一个 csv 文件，至少包含3列：密码、用户名和用户 ID。在 Kubernetes 1.6 和更高版本中，可以指定包含以逗号分隔的组名称的可选第四列。如果您有多个组，则必须将第四列值用双引号（“）括起来，请参阅以下示例：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-ini" data-lang="ini"><span class="line"><span class="cl"><span class="na">password,user,uid,&#34;group1,group2,group3&#34;</span>
+</span></span></code></pre></div><p>当使用来自 HTTP 客户端的基本身份验证时，API server 需要<code> Authorization</code> header 中包含 <code>Basic BASE64ENCODED(USER:PASSWORD)</code> 的值。</p>
+<h3 id="service-account-token">Service Account Token</h3>
+<p>Service account 是一个自动启用的验证器，它使用签名的 bearer token 来验证请求。该插件包括两个可选的标志：</p>
+<ul>
+<li><code>--service-account-key-file</code>  一个包含签名 bearer token 的 PEM 编码文件。如果未指定，将使用 API server 的 TLS 私钥。</li>
+<li><code>--service-account-lookup</code> 如果启用，从 API 中删除掉的 token 将被撤销。</li>
+</ul>
+<p>Service account 通常 API server 自动创建，并通过 <code>ServiceAccount</code> <a href="https://kubernetes.io/docs/admin/admission-controllers/" target="_blank" rel="noopener">注入控制器</a> 关联到集群中运行的 Pod 上。Bearer token 挂载到 pod 中众所周知的位置，并允许集群进程与 API server 通信。 帐户可以使用 <code>PodSpec</code> 的 <code>serviceAccountName</code> 字段显式地与Pod关联。</p>
+<p>注意： <code>serviceAccountName</code> 通常被省略，因为这会自动生成。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1beta2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Deployment</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">nginx-deployment</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">default</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">replicas</span><span class="p">:</span><span class="w"> </span><span class="m">3</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">template</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c"># ...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">nginx</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">nginx:1.7.9</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">serviceAccountName</span><span class="p">:</span><span class="w"> </span><span class="l">bob-the-bot</span><span class="w">
+</span></span></span></code></pre></div><p>Service account bearer token 在集群外使用也是完全有效的，并且可以用于为希望与 Kubernetes 通信的长期运行作业创建身份。要手动创建 service account，只需要使用 <code>kubectl create serviceaccount (NAME)</code> 命令。这将在当前的 namespace 和相关连的 secret 中创建一个 service account。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ kubectl create serviceaccount jenkins
+</span></span><span class="line"><span class="cl">serviceaccount <span class="s2">&#34;jenkins&#34;</span> created
+</span></span><span class="line"><span class="cl">$ kubectl get serviceaccounts jenkins -o yaml
+</span></span><span class="line"><span class="cl">apiVersion: v1
+</span></span><span class="line"><span class="cl">kind: ServiceAccount
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  <span class="c1"># ...</span>
+</span></span><span class="line"><span class="cl">secrets:
+</span></span><span class="line"><span class="cl">- name: jenkins-token-1yvwg
+</span></span></code></pre></div><p>创建出的 secret 中拥有 API server 的公共 CA 和前面的 JSON Web Token（JWT）。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ kubectl get secret jenkins-token-1yvwg -o yaml
+</span></span><span class="line"><span class="cl">apiVersion: v1
+</span></span><span class="line"><span class="cl">data:
+</span></span><span class="line"><span class="cl">  ca.crt: <span class="o">(</span>APISERVER<span class="err">&#39;</span>S CA BASE64 ENCODED<span class="o">)</span>
+</span></span><span class="line"><span class="cl">  namespace: <span class="nv">ZGVmYXVsdA</span><span class="o">==</span>
+</span></span><span class="line"><span class="cl">  token: <span class="o">(</span>BEARER TOKEN BASE64 ENCODED<span class="o">)</span>
+</span></span><span class="line"><span class="cl">kind: Secret
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  <span class="c1"># ...</span>
+</span></span><span class="line"><span class="cl">type: kubernetes.io/service-account-token
+</span></span></code></pre></div><p>注意：所有值是基于 base64 编码的，因为 secret 总是基于 base64 编码。</p>
+<p>经过签名的 JWT 可以用作 bearer token 与给定的 service account 进行身份验证。请参阅上面关于如何在请求中放置 bearer token。通常情况下，这些 secret 被挂载到 pod 中，以便对集群内的 API server 进行访问，但也可以从集群外访问。</p>
+<p>Service account 验证时用户名 <code>system:serviceaccount:(NAMESPACE):(SERVICEACCOUNT)</code>，被指定到组 <code>system:serviceaccounts</code> 和 <code>system:serviceaccounts:(NAMESPACE)</code>。</p>
+<p>注意：由于 service account 的 token 存储在 secret 中，所以具有对这些 secret 的读取权限的任何用户都可以作为 service account 进行身份验证。授予 service account 权限和读取 secret 功能时要谨慎。</p>
+<h3 id="openid-connect-token">OpenID Connect Token</h3>
+<p><a href="https://openid.net/connect/" target="_blank" rel="noopener">OpenID Connect</a> 是由 OAuth2 供应商提供的 OAuth2，特别是 Azure Active Directory、Salesforce 和 Google。对 OAuth2 协议的主要扩展是返回一个称作 <a href="https://openid.net/specs/openid-connect-core-1_0.html#IDToken" target="_blank" rel="noopener">ID Token</a> 的格外字段。该 token 是一个 JSON Web Token (JWT) ，有服务器签名，具有众所周知的字段，如用户的电子邮件。</p>
+<p>为了识别用户，认证者使用 OAuth2 <a href="https://openid.net/specs/openid-connect-core-1_0.html#TokenResponse" target="_blank" rel="noopener">token 响应</a> 中的 <code>id_token</code>（而不是 <code>access_token</code>）作为 bearer token。请参阅上面的关于将 token 置于请求中。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-kubernetes-openid-connect-flow">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img src="../../images/kubernetes-oidc-login.jpg" alt="Kubernetes OpenID Connect Flow" loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      Kubernetes OpenID Connect Flow
+    </figcaption></figure>
+</p>
+<ol>
+<li>登陆到您的身份提供商</li>
+<li>您的身份提供商将为您提供一个 <code>access_token</code>，一个 <code>id_token</code> 和一个 <code>refresh_token</code></li>
+<li>当使用 <code>kubectl</code> 时，使用 <code>--token</code> 标志和  <code>id_token</code> ，或者直接加入到您的 <code>kubeconfig</code> 文件中</li>
+<li><code>kubectl</code> 在调用 API server 时将 <code>id_token</code> 置于 HTTP header 中</li>
+<li>API server 将通过检查配置中指定的证书来确保 JWT 签名有效</li>
+<li>检查以确保 <code>id_token</code> 没有过期</li>
+<li>确保用户已授权</li>
+<li>授权 API server 后向 <code>kubectl</code></li>
+<li><code>kubectl</code> 向用户提供反馈</li>
+</ol>
+<p>由于所有需要验证您身份的数据都在 <code>id_token</code> 中，Kubernetes 不需要向身份提供商 “phone home”。在每个请求都是无状态的模型中，这为认证提供了非常可扩展的解决方案。它确实提供了一些挑战：</p>
+<ol>
+<li>Kubernetes 没有 ”web 接口“ 来出发验证进程。没有浏览器或界面来收集凭据，这就是为什么您需要首先认证您的身份提供商。</li>
+<li><code>id_token</code> 无法撤销，就像一个证书，所以它应该是短暂的（只有几分钟），所以每隔几分钟就得到一个新的令牌是非常烦人的。</li>
+<li>没有使用 <code>kubectl proxy</code> 命令或注入 <code>id_token</code> 的反向代理，无法简单地对 Kubernetes dashboard 进行身份验证。</li>
+</ol>
+<h4 id="配置-api-server">配置 API Server</h4>
+<p>要启用该插件，需要在 API server 中配置如下标志：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>描述</th>
+<th>示例</th>
+<th>是否必需</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--oidc-issuer-url</code></td>
+<td>允许 API server 发现公共签名密钥的提供者的 URL。只接受使用 <code>https://</code> 的方案。通常是提供商的 URL 地址，不包含路径，例如“<a href="https://accounts.google.com" target="_blank" rel="noopener">https://accounts.google.com</a>” 或者 “<a href="https://login.salesforce.com" target="_blank" rel="noopener">https://login.salesforce.com</a>”。这个 URL 应该指向下面的 .well-known/openid-configuration</td>
+<td>如果发现 URL 是 <code>https://accounts.google.com/.well-known/openid-configuration</code>，值应该是<code>https://accounts.google.com</code></td>
+<td>是</td>
+</tr>
+<tr>
+<td><code>--oidc-client-id</code></td>
+<td>所有的 token 必须为其颁发的客户端 ID</td>
+<td>kubernetes</td>
+<td>是</td>
+</tr>
+<tr>
+<td><code>--oidc-username-claim</code></td>
+<td>JWT声明使用的用户名。默认情况下，<code>sub</code> 是最终用户的唯一标识符。管理员可以选择其他声明，如<code> email</code> 或 <code>name</code>，具体取决于他们的提供者。不过，<code>email</code> 以外的其他声明将以发行者的 URL 作为前缀，以防止与其他插件命名冲突。</td>
+<td>sub</td>
+<td>否</td>
+</tr>
+<tr>
+<td><code>--oidc-groups-claim</code></td>
+<td>JWT声明使用的用户组。如果生命存在，它必须是一个字符串数组。</td>
+<td>groups</td>
+<td>否</td>
+</tr>
+<tr>
+<td><code>--oidc-ca-file</code></td>
+<td>用来签名您的身份提供商的网络 CA 证书的路径。默认为主机的跟 CA。</td>
+<td><code>/etc/kubernetes/ssl/kc-ca.pem</code></td>
+<td>否</td>
+</tr>
+</tbody>
+</table>
+<p>如果为 <code>--oidc-username-claim</code> 选择了除 <code>email</code> 以外的其他声明，则该值将以 <code>--oidc-issuer-url</code> 作为前缀，以防止与现有 Kubernetes 名称（例如 <code>system:users</code>）冲突。例如，如果提供商网址是 <a href="https://accounts.google.com" target="_blank" rel="noopener">https://accounts.google.com</a>，而用户名声明映射到 <code>jane</code>，则插件会将用户身份验证为：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-http" data-lang="http"><span class="line"><span class="cl"><span class="err">https://accounts.google.com#jane
+</span></span></span></code></pre></div><p>重要的是，API server 不是 OAuth2 客户端，而只能配置为信任单个发行者。这允许使用 Google 等公共提供者，而不必信任第三方发行的凭据。希望利用多个 OAuth 客户端的管理员应该探索支持 <code>azp</code>（授权方）声明的提供者，这是允许一个客户端代表另一个客户端发放令牌的机制。</p>
+<p>Kubernetes不提供 OpenID Connect 身份提供商。您可以使用现有的公共 OpenID Connect 标识提供程序（例如Google 或 <a href="http://connect2id.com/products/nimbus-oauth-openid-connect-sdk/openid-connect-providers" target="_blank" rel="noopener">其他</a>）。或者，您可以运行自己的身份提供程序，例如 CoreOS <a href="https://github.com/coreos/dex" target="_blank" rel="noopener">dex</a>、<a href="https://github.com/keycloak/keycloak" target="_blank" rel="noopener">Keycloak</a>、CloudFoundry <a href="https://github.com/cloudfoundry/uaa" target="_blank" rel="noopener">UAA</a> 或 Tremolo Security 的 <a href="https://github.com/tremolosecurity/openunison" target="_blank" rel="noopener">OpenUnison</a>。</p>
+<p>对于身份提供商能够适用于 Kubernetes，必须满足如下条件：Kubernetes it must:</p>
+<ol>
+<li>支持 <a href="https://openid.net/specs/openid-connect-discovery-1_0.html" target="_blank" rel="noopener">OpenID connect 发现</a>；不必是全部。</li>
+<li>使用非过时密码在TLS中运行</li>
+<li>拥有 CA 签名证书（即使 CA 不是商业 CA 或自签名）</li>
+</ol>
+<p>有关上述要求3的说明，需要 CA 签名证书。如果您部署自己的身份提供商（而不是像 Google 或 Microsoft 之类的云提供商），则必须让您的身份提供商的 Web 服务器证书由 CA 标志设置为 TRUE 的证书签名，即使是自签名的。这是由于 GoLang 的 TLS 客户端实现对证书验证的标准非常严格。如果您没有 <code>CA</code>，可以使用 <code>CoreOS</code> 团队的 <a href="https://github.com/coreos/dex/blob/1ee5920c54f5926d6468d2607c728b71cfe98092/examples/k8s/gencert.sh" target="_blank" rel="noopener">这个脚本</a> 创建一个简单的 CA 和一个签名的证书和密钥对。</p>
+<p>针对特定系统的安装说明：</p>
+<ul>
+<li><a href="https://apigee.com/about/blog/engineering/kubernetes-authentication-enterprise" target="_blank" rel="noopener">UAA</a></li>
+<li><a href="https://speakerdeck.com/ericchiang/kubernetes-access-control-with-dex" target="_blank" rel="noopener">Dex</a></li>
+<li><a href="https://github.com/TremoloSecurity/openunison-qs-kubernetes" target="_blank" rel="noopener">OpenUnison</a></li>
+</ul>
+<h4 id="使用-kubectl">使用 kubectl</h4>
+<h5 id="选项-1---oidc-身份验证器">选项 1 - OIDC 身份验证器</h5>
+<p>第一个选项是使用 <code>oidc</code> 身份验证器。此身份验证程序将您的 <code>id_token</code>、<code>refresh_token</code> 和您的 OIDC <code>client_secret</code> 自动刷新您的 token。一旦您对身份提供者进行了身份验证：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl config set-credentials USER_NAME <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>   --auth-provider<span class="o">=</span>oidc <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>   --auth-provider-arg<span class="o">=</span>idp-issuer-url<span class="o">=(</span> issuer url <span class="o">)</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>   --auth-provider-arg<span class="o">=</span>client-id<span class="o">=(</span> your client id <span class="o">)</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>   --auth-provider-arg<span class="o">=</span>client-secret<span class="o">=(</span> your client secret <span class="o">)</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>   --auth-provider-arg<span class="o">=</span>refresh-token<span class="o">=(</span> your refresh token <span class="o">)</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>   --auth-provider-arg<span class="o">=</span>idp-certificate-authority<span class="o">=(</span> path to your ca certificate <span class="o">)</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>   --auth-provider-arg<span class="o">=</span>id-token<span class="o">=(</span> your id_token <span class="o">)</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>   --auth-provider-arg<span class="o">=</span>extra-scopes<span class="o">=(</span> comma separated list of scopes to add to <span class="s2">&#34;openid email profile&#34;</span>, optional <span class="o">)</span>
+</span></span></code></pre></div><p>例如，在向身份提供者进行身份验证之后运行以下命令：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl config set-credentials mmosley  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>        --auth-provider<span class="o">=</span>oidc  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>        --auth-provider-arg<span class="o">=</span>idp-issuer-url<span class="o">=</span>https://oidcidp.tremolo.lan:8443/auth/idp/OidcIdP  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>        --auth-provider-arg<span class="o">=</span>client-id<span class="o">=</span>kubernetes  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>        --auth-provider-arg<span class="o">=</span>client-secret<span class="o">=</span>1db158f6-177d-4d9c-8a8b-d36869918ec5  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>        --auth-provider-arg<span class="o">=</span>refresh-token<span class="o">=</span>q1bKLFOyUiosTfawzA93TzZIDzH2TNa2SMm0zEiPKTUwME6BkEo6Sql5yUWVBSWpKUGphaWpxSVAfekBOZbBhaEW+VlFUeVRGcluyVF5JT4+haZmPsluFoFu5XkpXk5BXqHega4GAXlF+ma+vmYpFcHe5eZR+slBFpZKtQA<span class="o">=</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>        --auth-provider-arg<span class="o">=</span>idp-certificate-authority<span class="o">=</span>/root/ca.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>        --auth-provider-arg<span class="o">=</span>extra-scopes<span class="o">=</span>groups <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>        --auth-provider-arg<span class="o">=</span>id-token<span class="o">=</span>eyJraWQiOiJDTj1vaWRjaWRwLnRyZW1vbG8ubGFuLCBPVT1EZW1vLCBPPVRybWVvbG8gU2VjdXJpdHksIEw9QXJsaW5ndG9uLCBTVD1WaXJnaW5pYSwgQz1VUy1DTj1rdWJlLWNhLTEyMDIxNDc5MjEwMzYwNzMyMTUyIiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJodHRwczovL29pZGNpZHAudHJlbW9sby5sYW46ODQ0My9hdXRoL2lkcC9PaWRjSWRQIiwiYXVkIjoia3ViZXJuZXRlcyIsImV4cCI6MTQ4MzU0OTUxMSwianRpIjoiMm96US15TXdFcHV4WDlHZUhQdy1hZyIsImlhdCI6MTQ4MzU0OTQ1MSwibmJmIjoxNDgzNTQ5MzMxLCJzdWIiOiI0YWViMzdiYS1iNjQ1LTQ4ZmQtYWIzMC0xYTAxZWU0MWUyMTgifQ.w6p4J_6qQ1HzTG9nrEOrubxIMb9K5hzcMPxc9IxPx2K4xO9l-oFiUw93daH3m5pluP6K7eOE6txBuRVfEcpJSwlelsOsW8gb8VJcnzMS9EnZpeA0tW_p-mnkFc3VcfyXuhe5R3G7aa5d8uHv70yJ9Y3-UhjiN9EhpMdfPAoEB9fYKKkJRzF7utTTIPGrSaSU6d2pcpfYKaxIwePzEkT4DfcQthoZdy9ucNvvLoi1DIC-UocFD8HLs8LYKEqSxQvOcvnThbObJ9af71EwmuE21fO5KzMW20KtAeget1gnldOosPtz1G5EwvaQ401-RPQzPGMVBld0_zMCAwZttJ4knw
+</span></span></code></pre></div><p>将产生下面的配置：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">users</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">mmosley</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">user</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">auth-provider</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">config</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">client-id</span><span class="p">:</span><span class="w"> </span><span class="l">kubernetes</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">client-secret</span><span class="p">:</span><span class="w"> </span><span class="l">1db158f6-177d-4d9c-8a8b-d36869918ec5</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">extra-scopes</span><span class="p">:</span><span class="w"> </span><span class="l">groups</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">id-token</span><span class="p">:</span><span class="w"> </span><span class="l">eyJraWQiOiJDTj1vaWRjaWRwLnRyZW1vbG8ubGFuLCBPVT1EZW1vLCBPPVRybWVvbG8gU2VjdXJpdHksIEw9QXJsaW5ndG9uLCBTVD1WaXJnaW5pYSwgQz1VUy1DTj1rdWJlLWNhLTEyMDIxNDc5MjEwMzYwNzMyMTUyIiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJodHRwczovL29pZGNpZHAudHJlbW9sby5sYW46ODQ0My9hdXRoL2lkcC9PaWRjSWRQIiwiYXVkIjoia3ViZXJuZXRlcyIsImV4cCI6MTQ4MzU0OTUxMSwianRpIjoiMm96US15TXdFcHV4WDlHZUhQdy1hZyIsImlhdCI6MTQ4MzU0OTQ1MSwibmJmIjoxNDgzNTQ5MzMxLCJzdWIiOiI0YWViMzdiYS1iNjQ1LTQ4ZmQtYWIzMC0xYTAxZWU0MWUyMTgifQ.w6p4J_6qQ1HzTG9nrEOrubxIMb9K5hzcMPxc9IxPx2K4xO9l-oFiUw93daH3m5pluP6K7eOE6txBuRVfEcpJSwlelsOsW8gb8VJcnzMS9EnZpeA0tW_p-mnkFc3VcfyXuhe5R3G7aa5d8uHv70yJ9Y3-UhjiN9EhpMdfPAoEB9fYKKkJRzF7utTTIPGrSaSU6d2pcpfYKaxIwePzEkT4DfcQthoZdy9ucNvvLoi1DIC-UocFD8HLs8LYKEqSxQvOcvnThbObJ9af71EwmuE21fO5KzMW20KtAeget1gnldOosPtz1G5EwvaQ401-RPQzPGMVBld0_zMCAwZttJ4knw</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">idp-certificate-authority</span><span class="p">:</span><span class="w"> </span><span class="l">/root/ca.pem</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">idp-issuer-url</span><span class="p">:</span><span class="w"> </span><span class="l">https://oidcidp.tremolo.lan:8443/auth/idp/OidcIdP</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">refresh-token</span><span class="p">:</span><span class="w"> </span><span class="l">q1bKLFOyUiosTfawzA93TzZIDzH2TNa2SMm0zEiPKTUwME6BkEo6Sql5yUWVBSWpKUGphaWpxSVAfekBOZbBhaEW+VlFUeVRGcluyVF5JT4+haZmPsluFoFu5XkpXk5BXq</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">oidc</span><span class="w">
+</span></span></span></code></pre></div><p>一旦您的 <code>id_token</code> 过期，<code>kubectl</code> 将使用 <code>refresh_token</code> 刷新 <code>id_token</code>，然后在 <code>kube/.config</code> 文件的<code>client_secret</code> 中存储 <code>id_token</code> 的值和<code>refresh_token</code> 的新值。</p>
+<h5 id="选项-2---使用---token-选项">选项 2 - 使用 <code>--token</code> 选项</h5>
+<p>可以在 <code>kubectl</code> 命令的 <code>--token</code> 选项中传入 token。简单的拷贝和复制 <code>id_token</code> 到该选项中：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl --token<span class="o">=</span>eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJodHRwczovL21sYi50cmVtb2xvLmxhbjo4MDQzL2F1dGgvaWRwL29pZGMiLCJhdWQiOiJrdWJlcm5ldGVzIiwiZXhwIjoxNDc0NTk2NjY5LCJqdGkiOiI2RDUzNXoxUEpFNjJOR3QxaWVyYm9RIiwiaWF0IjoxNDc0NTk2MzY5LCJuYmYiOjE0NzQ1OTYyNDksInN1YiI6Im13aW5kdSIsInVzZXJfcm9sZSI6WyJ1c2VycyIsIm5ldy1uYW1lc3BhY2Utdmlld2VyIl0sImVtYWlsIjoibXdpbmR1QG5vbW9yZWplZGkuY29tIn0.f2As579n9VNoaKzoF-dOQGmXkFKf1FMyNV0-va_B63jn-_n9LGSCca_6IVMP8pO-Zb4KvRqGyTP0r3HkHxYy5c81AnIh8ijarruczl-TK_yF5akjSTHFZD-0gRzlevBDiH8Q79NAr-ky0P4iIXS8lY9Vnjch5MF74Zx0c3alKJHJUnnpjIACByfF2SCaYzbWFMUNat-K1PaUk5-ujMBG7yYnr95xD-63n8CO8teGUAAEMx6zRjzfhnhbzX-ajwZLGwGUBT4WqjMs70-6a7_8gZmLZb2az1cZynkFRj2BaCkVT3A2RrjeEwZEtGXlMqKJ1_I2ulrOVsYx01_yD35-rw get nodes
+</span></span></code></pre></div><h3 id="webhook-token-认证">Webhook Token 认证</h3>
+<p>Webhook 认证是用来认证 bearer token 的 hook。</p>
+<ul>
+<li><code>--authentication-token-webhook-config-file</code> 是一个用来描述如何访问远程 webhook 服务的 kubeconfig 文件。</li>
+<li><code>--authentication-token-webhook-cache-ttl</code> 缓存身份验证策略的时间。默认为两分钟。</li>
+</ul>
+<p>配置文件使用 <a href="https://kubernetes.io/docs/concepts/cluster-administration/authenticate-across-clusters-kubeconfig/" target="_blank" rel="noopener">kubeconfig</a> 文件格式。文件中的 ”user“ 指的是 API server 的 webhook，”clusters“ 是指远程服务。见下面的例子：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="c"># clusters refers to the remote service.</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">clusters</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">name-of-remote-authn-service</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">cluster</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">certificate-authority</span><span class="p">:</span><span class="w"> </span><span class="l">/path/to/ca.pem        </span><span class="w"> </span><span class="c"># CA for verifying the remote service.</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">server</span><span class="p">:</span><span class="w"> </span><span class="l">https://authn.example.com/authenticate</span><span class="w"> </span><span class="c"># URL of remote service to query. Must use &#39;https&#39;.</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c"># users refers to the API server&#39;s webhook configuration.</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">users</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">name-of-api-server</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">user</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">client-certificate</span><span class="p">:</span><span class="w"> </span><span class="l">/path/to/cert.pem</span><span class="w"> </span><span class="c"># cert for the webhook plugin to use</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">client-key</span><span class="p">:</span><span class="w"> </span><span class="l">/path/to/key.pem         </span><span class="w"> </span><span class="c"># key matching the cert</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c"># kubeconfig files require a context. Provide one for the API server.</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">current-context</span><span class="p">:</span><span class="w"> </span><span class="l">webhook</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">contexts</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>- <span class="nt">context</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">cluster</span><span class="p">:</span><span class="w"> </span><span class="l">name-of-remote-authn-service</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="l">name-of-api-sever</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">webhook</span><span class="w">
+</span></span></span></code></pre></div><p>当客户端尝试使用 bearer token 与API server 进行认证是，如上论述，认证 webhook 用饱含该 token 的对象查询远程服务。Kubernetes 不会挑战缺少该 header 的请求。</p>
+<p>请注意，webhook API对象与其他 Kubernetes API 对象具有相同的 <a href="https://kubernetes.io/docs/concepts/overview/kubernetes-api/" target="_blank" rel="noopener">版本控制兼容性规则</a>。实现者应该意识到 Beta 对象的宽松兼容性承诺，并检查请求的 “apiVersion” 字段以确保正确的反序列化。此外，API server 必须启用 <code>authentication.k8s.io/v1beta1</code> API 扩展组（<code>--runtime config =authentication.k8s.io/v1beta1=true</code>）。</p>
+<p>The request body will be of the following format:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;apiVersion&#34;</span><span class="p">:</span> <span class="s2">&#34;authentication.k8s.io/v1beta1&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;kind&#34;</span><span class="p">:</span> <span class="s2">&#34;TokenReview&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;spec&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;token&#34;</span><span class="p">:</span> <span class="s2">&#34;(BEARERTOKEN)&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>预计远程服务将填写请求的 <code>status</code> 字段以指示登录成功。响应主体的 <code>spec</code> 字段被忽略，可以省略。成功验证后的 bearer token 将返回：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;apiVersion&#34;</span><span class="p">:</span> <span class="s2">&#34;authentication.k8s.io/v1beta1&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;kind&#34;</span><span class="p">:</span> <span class="s2">&#34;TokenReview&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;status&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;authenticated&#34;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;user&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="nt">&#34;username&#34;</span><span class="p">:</span> <span class="s2">&#34;janedoe@example.com&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">      <span class="nt">&#34;uid&#34;</span><span class="p">:</span> <span class="s2">&#34;42&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">      <span class="nt">&#34;groups&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;developers&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;qa&#34;</span>
+</span></span><span class="line"><span class="cl">      <span class="p">],</span>
+</span></span><span class="line"><span class="cl">      <span class="nt">&#34;extra&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nt">&#34;extrafield1&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">          <span class="s2">&#34;extravalue1&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">          <span class="s2">&#34;extravalue2&#34;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">]</span>
+</span></span><span class="line"><span class="cl">      <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>未成功的请求将返回：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;apiVersion&#34;</span><span class="p">:</span> <span class="s2">&#34;authentication.k8s.io/v1beta1&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;kind&#34;</span><span class="p">:</span> <span class="s2">&#34;TokenReview&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">&#34;status&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;authenticated&#34;</span><span class="p">:</span> <span class="kc">false</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>HTTP状态代码可以用来提供额外的错误上下文。</p>
+<h3 id="认证代理">认证代理</h3>
+<p>可以配置 API server 从请求 header 的值中识别用户，例如 <code>X-Remote-User</code>。这样的设计是用来与请求 header 值的验证代理结合使用。</p>
+<ul>
+<li><code>--requestheader-username-headers</code> 必需，大小写敏感。按 header 名称和顺序检查用户标识。包含值的第一个 header 将被作为用户名。</li>
+<li><code>--requestheader-group-headers</code> 1.6 以上版本。可选。大小写敏感。建议为 “X-Remote-Group”。按 header 名称和顺序检查用户组。所有指定的 header 中的所有值都将作为组名。</li>
+<li><code>--requestheader-extra-headers-prefix</code> 1.6 以上版本。可选，大小写敏感。建议为 “X-Remote-Extra-”。标题前缀可用于查找有关用户的额外信息（通常由配置的授权插件使用）。以任何指定的前缀开头的 header 都会删除前缀，header 名称的其余部分将成为额外的键值，而 header 值则是额外的值。</li>
+</ul>
+<p>例如下面的配置：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">--requestheader-username-headers<span class="o">=</span>X-Remote-User
+</span></span><span class="line"><span class="cl">--requestheader-group-headers<span class="o">=</span>X-Remote-Group
+</span></span><span class="line"><span class="cl">--requestheader-extra-headers-prefix<span class="o">=</span>X-Remote-Extra-
+</span></span></code></pre></div><p>该请求：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-http" data-lang="http"><span class="line"><span class="cl"><span class="nf">GET</span> <span class="nn">/</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+</span></span><span class="line"><span class="cl"><span class="n">X-Remote-User</span><span class="o">:</span> <span class="l">fido</span>
+</span></span><span class="line"><span class="cl"><span class="n">X-Remote-Group</span><span class="o">:</span> <span class="l">dogs</span>
+</span></span><span class="line"><span class="cl"><span class="n">X-Remote-Group</span><span class="o">:</span> <span class="l">dachshunds</span>
+</span></span><span class="line"><span class="cl"><span class="n">X-Remote-Extra-Scopes</span><span class="o">:</span> <span class="l">openid</span>
+</span></span><span class="line"><span class="cl"><span class="n">X-Remote-Extra-Scopes</span><span class="o">:</span> <span class="l">profile</span>
+</span></span></code></pre></div><p>将产生如下的用户信息：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">fido</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">groups</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>- <span class="l">dogs</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>- <span class="l">dachshunds</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">extra</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">scopes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="l">openid</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="l">profile</span><span class="w">
+</span></span></span></code></pre></div><p>为了防止 header 欺骗，验证代理需要在验证请求 header 之前向 API server 提供有效的客户端证书，以对照指定的 CA 进行验证。</p>
+<ul>
+<li><code>--requestheader-client-ca-file</code> 必需。PEM 编码的证书包。在检查用户名的请求 header 之前，必须针对指定文件中的证书颁发机构提交并验证有效的客户端证书。</li>
+<li><code>--requestheader-allowed-names</code> 可选。Common Name （cn）列表。如果设置了，则在检查用户名的请求 header 之前， 必须提供指定列表中 Common Name（cn）的有效客户端证书。如果为空，则允许使用任何 Common Name。</li>
+</ul>
+<h3 id="keystone-密码">Keystone 密码</h3>
+<p>通过在启动过程中将 <code>--experimental-keystone-url=&lt;AuthURL&gt;</code> 选项传递给 API server 来启用 Keystone 认证。该插件在 <code>plugin/pkg/auth/authenticator/password/keystone/keystone.go</code> 中实现，目前使用基本身份验证通过用户名和密码验证用户。</p>
+<p>如果您为 Keystone 服务器配置了自签名证书，则在启动 Kubernetes API server 时可能需要设置 <code>--experimental-keystone-ca-file=SOMEFILE</code> 选项。如果您设置了该选项，Keystone 服务器的证书将由<code>experimental-keystone-ca-file</code> 中的某个权威机构验证。否则，证书由主机的根证书颁发机构验证。</p>
+<p>有关如何使用 keystone 来管理项目和用户的详细信息，请参阅 <a href="http://docs.openstack.org/developer/keystone/" target="_blank" rel="noopener">Keystone 文档</a>。请注意，这个插件仍处于试验阶段，正在积极开发之中，并可能在后续版本中进行更改。</p>
+<p>请参考 <a href="https://github.com/kubernetes/kubernetes/pull/11798#issuecomment-129655212" target="_blank" rel="noopener">讨论</a>、<a href="https://github.com/kubernetes/kubernetes/issues/11626" target="_blank" rel="noopener">蓝图</a> 和 <a href="https://github.com/kubernetes/kubernetes/pull/25536" target="_blank" rel="noopener">提出的改变</a> 获取更多信息。</p>
+<h2 id="匿名请求">匿名请求</h2>
+<p>启用时，未被其他已配置身份验证方法拒绝的请求将被视为匿名请求，并给予 <code>system:anonymous</code> 的用户名和<code> system:unuthenticated</code> 的组名。</p>
+<p>例如，在配置了令牌认证和启用了匿名访问的服务器上，提供无效的 bearer token 的请求将收到 <code>401 Unauthorized</code> 错误。提供 bearer token 的请求将被视为匿名请求。</p>
+<p>在 1.5.1 - 1.5.x 版本中，默认情况下命名访问是被禁用的，可以通过传递 <code>--anonymous-auth=false</code> 选项给 API server 来启用。</p>
+<p>在 1.6+ 版本中，如果使用 <code>AlwaysAllow</code> 以外的授权模式，则默认启用匿名访问，并且可以通过将 <code>--anonymous-auth=false</code>选项传递给API服务器来禁用。从 1.6 开始，ABAC 和 RBAC 授权人需要明确授权 <code>system:annoymous</code> 或 <code>system:unauthenticated</code> 组，因此授予对 <code>*</code> 用户或 <code>*</code> 组访问权的传统策略规则不包括匿名用户。</p>
+<h2 id="用户模拟">用户模拟</h2>
+<p>用户可以通过模拟 header 充当另一个用户。该请求会覆盖请求认证的用户信息。例如，管理员可以使用此功能通过暂时模拟其他用户并查看请求是否被拒绝来调试授权策略。</p>
+<p>模拟请求首先认证为请求用户，然后切换到模拟的用户信息。</p>
+<ul>
+<li>用户使用他们的凭证_和_模拟 header 进行 API 调用。</li>
+<li>API server 认证用户</li>
+<li>API server 确保经过身份验证的用户具有模拟权限。</li>
+<li>请求用户的信息被替换为模拟值</li>
+<li>请求被评估，授权作用于模拟的用户信息。</li>
+</ul>
+<p>以下 HTTP header 可用户执行模拟请求：</p>
+<ul>
+<li><code>Impersonate-User</code>：充当的用户名</li>
+<li><code>Impersonate-Group</code>：作为组名。可以多次使用来设置多个组。可选的，需要 “Impersonate-User”</li>
+<li><code>Impersonate-Extra-( extra name )</code>：用于将额外字段与用户关联的动态 header。可选。需要 “Impersonate-User”</li>
+</ul>
+<p>一组示例 header：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-http" data-lang="http"><span class="line"><span class="cl"><span class="err">Impersonate-User: jane.doe@example.com
+</span></span></span><span class="line"><span class="cl"><span class="err">Impersonate-Group: developers
+</span></span></span><span class="line"><span class="cl"><span class="err">Impersonate-Group: admins
+</span></span></span><span class="line"><span class="cl"><span class="err">Impersonate-Extra-dn: cn=jane,ou=engineers,dc=example,dc=com
+</span></span></span><span class="line"><span class="cl"><span class="err">Impersonate-Extra-scopes: view
+</span></span></span><span class="line"><span class="cl"><span class="err">Impersonate-Extra-scopes: development
+</span></span></span></code></pre></div><p>当使用 <code>kubectl</code> 的 <code>--as</code> 标志来配置 <code>Impersonate-User</code> header 时，可以使用 <code>--as-group</code> 标志来配置 <code>Impersonate-Group</code> header。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ kubectl drain mynode
+</span></span><span class="line"><span class="cl">Error from server <span class="o">(</span>Forbidden<span class="o">)</span>: User <span class="s2">&#34;clark&#34;</span> cannot get nodes at the cluster scope. <span class="o">(</span>get nodes mynode<span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">$ kubectl drain mynode --as<span class="o">=</span>superman --as-group<span class="o">=</span>system:masters
+</span></span><span class="line"><span class="cl">node <span class="s2">&#34;mynode&#34;</span> cordoned
+</span></span><span class="line"><span class="cl">node <span class="s2">&#34;mynode&#34;</span> draine
+</span></span></code></pre></div><p>为模仿用户、组或设置额外字段，模拟用户必须能够对正在模拟的属性的种类（“用户”，“组”等）执行“模拟”动词。对于启用了 RBAC 授权插件的集群，以下 ClusterRole 包含设置用户和组模拟 header 所需的规则：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">rbac.authorization.k8s.io/v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ClusterRole</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">impersonator</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">rules</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>- <span class="nt">apiGroups</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;&#34;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">resources</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;users&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;groups&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;serviceaccounts&#34;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">verbs</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;impersonate&#34;</span><span class="p">]</span><span class="w">
+</span></span></span></code></pre></div><p>额外的字段被评估为资源 “userextras” 的子资源。为了允许用户使用额外字段 “scope” 的模拟 header，应授予用户以下角色：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">rbac.authorization.k8s.io/v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ClusterRole</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">scopes-impersonator</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c"># Can set &#34;Impersonate-Extra-scopes&#34; header.</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>- <span class="nt">apiGroups</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;authentication.k8s.io&#34;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">resources</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;userextras/scopes&#34;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">verbs</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;impersonate&#34;</span><span class="p">]</span><span class="w">
+</span></span></span></code></pre></div><p>模拟 header 的可用值可以通过设置 <code>resourceNames</code> 可以使用的资源来限制。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">rbac.authorization.k8s.io/v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ClusterRole</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">limited-impersonator</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">rules</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c"># Can impersonate the user &#34;jane.doe@example.com&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>- <span class="nt">apiGroups</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;&#34;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">resources</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;users&#34;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">verbs</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;impersonate&#34;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">resourceNames</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;jane.doe@example.com&#34;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c"># Can impersonate the groups &#34;developers&#34; and &#34;admins&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>- <span class="nt">apiGroups</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;&#34;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">resources</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;groups&#34;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>- <span class="nt">verbs</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;impersonate&#34;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">resourceNames</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;developers&#34;</span><span class="p">,</span><span class="s2">&#34;admins&#34;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c"># Can impersonate the extras field &#34;scopes&#34; with the values &#34;view&#34; and &#34;development&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>- <span class="nt">apiGroups</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;authentication.k8s.io&#34;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">resources</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;userextras/scopes&#34;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">verbs</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;impersonate&#34;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">resourceNames</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;view&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;development&#34;</span><span class="p">]</span><span class="w">
+</span></span></span></code></pre></div><h2 id="附录">附录</h2>
+<h3 id="创建证书">创建证书</h3>
+<p>使用客户端证书进行身份验证时，可以使用现有的部署脚本或通过 <code>easyrsa</code> 或 <code>openssl</code> 手动生成证书。</p>
+<h4 id="使用已有的部署脚本">使用已有的部署脚本</h4>
+<p><strong>已有的部署脚本</strong> 在 <code>cluster/saltbase/salt/generate-cert/make-ca-cert.sh</code>。</p>
+<p>执行该脚本时需要传递两个参数。第一个参数是 API server 的 IP地址。第二个参数是 IP 形式的主题备用名称列表： <code>IP:&lt;ip-address&gt;</code> 或 <code>DNS:&lt;dns-name&gt;</code>。</p>
+<p>该脚本将生成三个文件： <code>ca.crt</code>、<code>server.crt</code> 和 <code>server.key</code>。</p>
+<p>最后，将一下参数添加到 API server 的启动参数中：</p>
+<ul>
+<li><code>--client-ca-file=/srv/kubernetes/ca.crt</code></li>
+<li><code>--tls-cert-file=/srv/kubernetes/server.crt</code></li>
+<li><code>--tls-private-key-file=/srv/kubernetes/server.key</code></li>
+</ul>
+<h4 id="easyrsa">easyrsa</h4>
+<p><strong>easyrsa</strong> 可以用来手动为集群生成证书。</p>
+<ol>
+<li>
+<p>下载，解压，并初始化修补版本的easyrsa3。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -L -O https://storage.googleapis.com/kubernetes-release/easy-rsa/easy-rsa.tar.gz
+</span></span><span class="line"><span class="cl">tar xzf easy-rsa.tar.gz
+</span></span><span class="line"><span class="cl"><span class="nb">cd</span> easy-rsa-master/easyrsa3
+</span></span><span class="line"><span class="cl">./easyrsa init-pki
+</span></span></code></pre></div></li>
+<li>
+<p>生成 CA（使用 <code>--batch</code> 设置为自动模式。使用 <code>--req-cn</code> 设置默认的 CN）</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">./easyrsa --batch <span class="s2">&#34;--req-cn=</span><span class="si">${</span><span class="nv">MASTER_IP</span><span class="si">}</span><span class="s2">@`date +%s`&#34;</span> build-ca nopass
+</span></span></code></pre></div></li>
+<li>
+<p>生成服务器证书和密钥。（build-server-full [文件名]：生成一个键值对，在本地为客户端和服务器签名。）</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">./easyrsa --subject-alt-name<span class="o">=</span><span class="s2">&#34;IP:</span><span class="si">${</span><span class="nv">MASTER_IP</span><span class="si">}</span><span class="s2">&#34;</span> build-server-full server nopass
+</span></span></code></pre></div></li>
+<li>
+<p>复制 <code>pki/ca.crt</code>, <code>pki/issued/server.crt</code> 和 <code>pki/private/server.key</code> 到您的目录下。</p>
+</li>
+<li>
+<p>将以下参数添加到 API server 的启动参数中：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">--client-ca-file<span class="o">=</span>/yourdirectory/ca.crt
+</span></span><span class="line"><span class="cl">--tls-cert-file<span class="o">=</span>/yourdirectory/server.crt
+</span></span><span class="line"><span class="cl">--tls-private-key-file<span class="o">=</span>/yourdirectory/server.key
+</span></span></code></pre></div></li>
+</ol>
+<h4 id="openssl">openssl</h4>
+<p><strong>openssl</strong> 可以用来手动为集群生成证书。</p>
+<ol>
+<li>
+<p>生成一个 2048 bit 的 ca.key：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">openssl genrsa -out ca.key <span class="m">2048</span>
+</span></span></code></pre></div></li>
+<li>
+<p>根据 ca.key 生成一个 ca.crt（使用 -days 设置证书的有效时间）：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">openssl req -x509 -new -nodes -key ca.key -subj <span class="s2">&#34;/CN=</span><span class="si">${</span><span class="nv">MASTER_IP</span><span class="si">}</span><span class="s2">&#34;</span> -days <span class="m">10000</span> -out ca.crt
+</span></span></code></pre></div></li>
+<li>
+<p>生成一个 2048 bit 的 server.key：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">openssl genrsa -out server.key <span class="m">2048</span>
+</span></span></code></pre></div></li>
+<li>
+<p>根据 server.key 生成一个 server.csr：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">openssl req -new -key server.key -subj <span class="s2">&#34;/CN=</span><span class="si">${</span><span class="nv">MASTER_IP</span><span class="si">}</span><span class="s2">&#34;</span> -out server.csr
+</span></span></code></pre></div></li>
+<li>
+<p>根据 ca.key、ca.crt 和 server.csr 生成 server.crt：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days <span class="m">10000</span>
+</span></span></code></pre></div></li>
+<li>
+<p>查看证书：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">openssl x509  -noout -text -in ./server.crt
+</span></span></code></pre></div></li>
+</ol>
+<p>最后，不要忘了向 API server 的启动参数中增加配置。</p>
+<h4 id="认证-api">认证 API</h4>
+<p>您可以使用 <code>certificates.k8s.io</code> API将 x509 证书配置为用于身份验证，如 <a href="https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster" target="_blank" rel="noopener">此处</a> 所述。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/authentication/" target="_blank" rel="noopener">Authenticating - kubernetes.io</a></li>
+</ul>
+
+          </div>
+
+          
+
+
+
+          
+          
+          <div class="article-widget">
+            
+<div class="post-nav">
+  
+  
+  
+  <div class="post-nav-item">
+    <div class="meta-nav">上一页</div>
+    <a href="/docs/kubernetes-handbook/guide/auth-with-kubeconfig-or-token/" rel="next">使用 kubeconfig 或 token 进行用户身份认证</a>
+  </div>
+  
+  
+  
+  <div class="post-nav-item">
+    <div class="meta-nav">下一页</div>
+    <a href="/docs/kubernetes-handbook/guide/kubernetes-security-best-practice/" rel="prev">Kubernetes 集群安全性配置最佳实践</a>
+  </div>
+  
+</div>
+
+          </div>
+          
+        </div>
+
+        <div class="body-footer">
+          <p>最近更新于 2022-05-21</p>
+
+          
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/docs//edit/master/content/kubernetes-handbook/guide/authentication.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+          
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments">
+    <script src="https://giscus.app/client.js"
+        data-repo="rootsongjc/docs"
+        data-repo-id="MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg="
+        data-category="Announcements"
+        data-category-id="DIC_kwDODMrxWM4CPL7J"
+        data-mapping="pathname"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="light"
+        data-lang="zh-CN"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </section>
+  
+
+
+
+          
+
+
+        </div>
+
+      </article>
+
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2022 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+
+    </main>
+  </div>
+</div>
+
+  </div>
+
+  <div class="page-footer">
+    
+    
+  </div>
+
+      
+
+    
+    <script src="/docs/js/vendor-bundle.min.53d67dc2cb1ebceb89d5e2aba2f86112.js"></script>
+
+    
+    
+    
+      
+
+      
+      
+
+      
+
+      
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+        
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/r.min.js" crossorigin="anonymous"></script>
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/latex.min.js" crossorigin="anonymous"></script>
+        
+      
+
+    
+
+    
+    
+    
+
+    
+    
+    <script src="https://cdn.jsdelivr.net/gh/bryanbraun/anchorjs@4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+    <script>
+      anchors.add();
+    </script>
+    
+
+    
+    
+    
+      
+      <script id="search-hit-fuse-template" type="text/x-template">
+        <div class="search-hit" id="summary-{{key}}">
+          <div class="search-hit-content">
+            <div class="search-hit-name">
+              <a href="{{relpermalink}}">{{title}}</a>
+              <div class="article-metadata search-hit-type">{{type}}</div>
+              <p class="search-hit-description">{{snippet}}</p>
+            </div>
+          </div>
+        </div>
+      </script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/krisk/Fuse@v3.2.1/dist/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/gh/julmot/mark.js@8.11.1/dist/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+      
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+      
+      
+      
+      
+      
+      
+      
+    
+
+    
+
+    
+    
+    
+    <script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+      
+    
+    
+    <script src="/docs/zh/js/wowchemy.min.0f418cf2259d1bfdb92011cb96f5bed5.js"></script>
+
+    
+    
+    
+    
+    
+    
+      
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <script src="/docs/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+
+
+
+
+
+
+</body>
+</html>

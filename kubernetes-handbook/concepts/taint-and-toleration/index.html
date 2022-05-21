@@ -1,0 +1,1776 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+    
+  
+  <meta name="description" content="Taint（污点）和 Toleration（容忍）可以作用于 node 和 pod 上，其目的是优化 pod 在集群间的调度，这跟节点亲和性类似，只不过它们作用的方式相反，具有 taint 的 node 和 pod 是互斥关系，而具有节点亲和性关系的 node 和 pod 是" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://jimmysong.io/docs/kubernetes-handbook/concepts/taint-and-toleration/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/docs/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/docs/css/wowchemy.9614cee70b2ec5c87466ccccc1657e16.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-93485976-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+
+  function gtag() {
+      dataLayer.push(arguments);
+  }
+
+  function trackOutboundLink(url, target) {
+    gtag('event', 'click', {
+         'event_category': 'outbound',
+         'event_label': url,
+         'transport_type': 'beacon',
+         'event_callback': function () {
+           if (target !== '_blank') {
+             document.location = url;
+           }
+         }
+    });
+    console.debug("Outbound link clicked: " + url);
+  }
+
+  function onClickCallback(event) {
+    if ((event.target.tagName !== 'A') || (event.target.host === window.location.host)) {
+      return;
+    }
+    trackOutboundLink(event.target, event.target.getAttribute('target'));  
+  }
+
+  gtag('js', new Date());
+  gtag('config', 'UA-93485976-1', {});
+  gtag('set', {'cookie_flags': 'SameSite=None;Secure'});
+
+  
+  document.addEventListener('click', onClickCallback, false);
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?11f7d254cfa4e0ca44b175c66d379ecc";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/docs/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://jimmysong.io/docs/kubernetes-handbook/concepts/taint-and-toleration/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://jimmysong.io/docs/kubernetes-handbook/concepts/taint-and-toleration/" />
+  <meta property="og:title" content="Taint 和 Toleration（污点和容忍） | 云原生资料库" />
+  <meta property="og:description" content="Taint（污点）和 Toleration（容忍）可以作用于 node 和 pod 上，其目的是优化 pod 在集群间的调度，这跟节点亲和性类似，只不过它们作用的方式相反，具有 taint 的 node 和 pod 是互斥关系，而具有节点亲和性关系的 node 和 pod 是" /><meta property="og:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" />
+    <meta property="twitter:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2022-05-21T00:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2022-05-21T21:23:05&#43;08:00">
+  
+
+  
+
+
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>Taint 和 Toleration（污点和容忍） | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="71457acc18d1c58904870a989435e6e8" >
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/docs/js/wowchemy-init.min.14a0ed61c6dbd594b9c75193b25be179.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>搜索</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#books"><span>书目列表</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/translation"><span>翻译</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/event"><span>活动</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io/blog/" target="_blank" rel="noopener"><span>原创</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#tag-cloud"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>主站</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+
+        
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/rootsongjc/docs/" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    
+
+
+
+
+<div class="container-fluid docs">
+  <div class="row flex-xl-nowrap">
+    <div class="col-12 col-md-3 col-xl-2 docs-sidebar">
+      <form class="docs-search d-flex align-items-center">
+  <button class="btn docs-toggle d-md-none p-0 mr-md-3 w-100" type="button" data-toggle="collapse" data-target="#docs-nav" aria-controls="docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    <div class="d-flex">
+      <span class="d-md-none pl-1 flex-grow-1 text-left overflow-hidden">
+        
+          概念原理
+        
+      </span>
+      <span><i class="fas fa-chevron-down"></i></span>
+    </div>
+  </button>
+
+  
+  <button class="form-control sidebar-search js-search d-none d-md-flex">
+    <i class="fas fa-search pr-2"></i>
+    <span class="sidebar-search-text">搜索...</span>
+    <span class="sidebar-search-shortcut">/</span>
+  </button>
+  
+</form>
+
+<nav class="collapse docs-links" id="docs-nav">
+  
+  
+  
+  
+  
+  
+
+  
+  
+    
+
+    
+      
+
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <ul class="nav docs-sidenav">
+        <li class=""><a href="/docs/kubernetes-handbook/"><i class="fas fa-book pr-1"></i>Kubernetes 基础教程</a></li>
+    
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+          <a class="docs-menu-lv1 docs-toc-link " href="/docs/kubernetes-handbook/concepts/"><i class="fas fa-book-open pr-1"></i>概念原理</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/architecture/">Kubernetes 架构</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/concepts/">Kubernetes 的设计理念</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/etcd/">Etcd 解析</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/open-interfaces/">开放接口</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/cri/">容器运行时接口（CRI）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/cni/">容器网络接口（CNI）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/csi/">容器存储接口（CSI）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/objects/">Kubernetes 中的资源对象</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/pod-state-and-lifecycle/">Pod 状态与生命周期管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-overview/">Pod 概览</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod/">Pod 解析</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/init-containers/">Init 容器</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pause-container/">Pause 容器</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-security-policy/">Pod 安全策略</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-lifecycle/">Pod 的生命周期</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-hook/">Pod hook</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-preset/">Pod Preset</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-disruption-budget/">Pod 中断与 PDB（Pod 中断预算）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/cluster/">集群资源管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/node/">Node</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/namespace/">Namespace</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/label/">Label</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/annotation/">Annotation</a></li>
+
+
+
+  <li class="active"><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/taint-and-toleration/">Taint 和 Toleration（污点和容忍）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/garbage-collection/">垃圾收集</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/controllers/">控制器</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/deployment/">Deployment</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/statefulset/">StatefulSet</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/daemonset/">DaemonSet</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/replicaset/">ReplicationController 和 ReplicaSet</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/job/">Job</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/cronjob/">CronJob</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/horizontal-pod-autoscaling/">Horizontal Pod Autoscaling</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/custom-metrics-hpa/">自定义指标 HPA</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/admission-controller/">准入控制器（Admission Controller）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/service-discovery/">服务发现与路由</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/service/">Service</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/topology-aware-routing/">拓扑感知路由</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/ingress/">Ingress</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/gateway/">Gateway</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/authentication-and-permission/">身份与权限认证</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/serviceaccount/">ServiceAccount</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/rbac/">基于角色的访问控制（RBAC）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/network-policy/">NetworkPolicy</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/spiffe/">SPIFFE</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/spire/">SPIRE</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/networking/">网络</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/flannel/">扁平网络 Flannel</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/calico/">非 Overlay 扁平网络 Calico</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/cilium/">基于 eBPF 的网络 Cilium</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/cilium-concepts/">Cilium 架构设计与概念解析</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/storage/">存储</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/secret/">Secret</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/configmap/">ConfigMap</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/configmap-hot-update/">ConfigMap 的热更新</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/volume/">Volume</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/persistent-volume/">持久化卷（Persistent Volume）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/storageclass/">Storage Class</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/local-persistent-storage/">本地持久化存储</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/extension/">扩展集群</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/custom-resource/">使用自定义资源扩展 API</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/crd/">使用 CRD 扩展 Kubernetes API</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/aggregated-api-server/">Aggregated API Server</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/apiservice/">APIService</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/service-catalog/">服务目录（Service Catalog）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/multicluster/">多集群管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/multi-cluster-services-api/">多集群服务 API（Multi-Cluster Services API）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/federation/">集群联邦（Cluster Federation）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/scheduling/">资源调度</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/qos/">服务质量等级（QoS）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/kubeadm/"></a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/service-api-overview/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+          <a class="docs-menu-lv1 docs-toc-link " href="/docs/kubernetes-handbook/guide/"><i class="fas fa-book-open pr-1"></i>使用指南</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/resource-configuration/">资源对象配置</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/configure-liveness-readiness-probes/">配置 Pod 的 liveness 和 readiness 探针</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/configure-pod-service-account/">配置 Pod 的 Service Account</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/secret-configuration/">Secret 配置</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/resource-quota-management/">管理 namespace 中的资源配额</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/command-usage/">命令使用</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/docker-cli-to-kubectl/">Docker 用户过渡到 kubectl 命令行指南</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/using-kubectl/">Kubectl 命令概览</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubectl-cheatsheet/">kubectl 命令技巧大全</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/using-etcdctl-to-access-kubernetes-data/">使用 etcdctl 访问 Kubernetes 数据</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/cluster-security-management/">集群安全性管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/managing-tls-in-a-cluster/">管理集群中的 TLS</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubelet-authentication-authorization/">Kublet 的认证授权</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/tls-bootstrapping/">TLS Bootstrap</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/ip-masq-agent/">IP 伪装代理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubectl-user-authentication-authorization/">创建用户认证授权的 kubeconfig 文件</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/auth-with-kubeconfig-or-token/">使用 kubeconfig 或 token 进行用户身份认证</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/authentication/">Kubernetes 中的用户与身份认证授权</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubernetes-security-best-practice/">Kubernetes 集群安全性配置最佳实践</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/access-kubernetes-cluster/">访问 Kubernetes 集群</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/access-cluster/">访问集群</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/authenticate-across-clusters-kubeconfig/">使用 kubeconfig 文件配置跨集群认证</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/connecting-to-applications-port-forward/">通过端口转发访问集群中的应用程序</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/service-access-application-cluster/">使用 service 访问群集中的应用程序</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/accessing-kubernetes-pods-from-outside-of-the-cluster/">从外部访问 Kubernetes 中的 Pod</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubernetes-desktop-client/">Lens - Kubernetes IDE</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubernator-kubernetes-ui/">Kubernator - 更底层的 Kubernetes UI</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/application-development-deployment-flow/">在 Kubernetes 中开发部署应用</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/deploy-applications-in-kubernetes/">适用于 Kubernetes 的应用开发部署流程</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/migrating-hadoop-yarn-to-kubernetes/">迁移传统应用到 Kubernetes 步骤详解——以 Hadoop YARN 为例</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/using-statefulset/">使用StatefulSet部署有状态应用</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/cabin-mobile-dashboard-for-kubernetes/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+          <a class="docs-menu-lv1 docs-toc-link " href="/docs/kubernetes-handbook/develop/"><i class="fas fa-book-open pr-1"></i>开发指南</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/sigs-and-working-group/">SIG 和工作组</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/developing-environment/">配置 Kubernetes 开发环境</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/testing/">测试 Kubernetes</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/client-go-sample/">client-go 示例</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/operator/">Operator</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/develop/operator-sdk/">Operator SDK</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/kubebuilder/">Kubebuilder</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/develop/kubebuilder-example/">使用 kubebuilder 创建 operator 示例</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/advance-developer/">高级开发指南</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/contribute/">参与 Kubernetes 社区贡献</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/minikube/">Minikube</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+      
+    
+
+    
+      </ul>
+    
+
+  
+</nav>
+
+    </div>
+
+    
+    
+    <div class="d-none d-xl-block col-xl-2 docs-toc">
+      
+
+      <ul class="nav toc-top">
+        <li><a href="#" id="back_to_top" class="docs-toc-title">目录</a></li>
+      </ul>
+
+      <nav id="TableOfContents">
+  <ul>
+    <li><a href="#示例">示例</a></li>
+    <li><a href="#为-node-设置-taint">为 node 设置 taint</a></li>
+    <li><a href="#为-pod-设置-toleration">为 pod 设置 toleration</a></li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+
+      
+    </div>
+    
+
+    <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 docs-content" role="main">
+
+      <article class="article">
+
+        <div class="docs-article-container">
+          
+            
+  <nav class="d-none d-md-flex" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      
+  
+    
+  
+    
+  
+    
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/">
+        
+          首页
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/kubernetes-handbook/">
+        
+          Kubernetes 基础教程
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/kubernetes-handbook/concepts/">
+        
+          概念原理
+        
+      </a>
+    </li>
+  
+
+      <li class="breadcrumb-item active" aria-current="page">
+        Taint 和 Toleration（污点和容忍）
+      </li>
+    </ol>
+  </nav>
+
+
+
+
+          
+
+          <h1>Taint 和 Toleration（污点和容忍）</h1>
+
+          <div class="article-style">
+            <p>Taint（污点）和 Toleration（容忍）可以作用于 node 和 pod 上，其目的是优化 pod 在集群间的调度，这跟节点亲和性类似，只不过它们作用的方式相反，具有 taint 的 node 和 pod 是互斥关系，而具有节点亲和性关系的 node 和 pod 是相吸的。另外还有可以给 node 节点设置 label，通过给 pod 设置 <code>nodeSelector</code> 将 pod 调度到具有匹配标签的节点上。</p>
+<p>Taint 和 toleration 相互配合，可以用来避免 pod 被分配到不合适的节点上。每个节点上都可以应用<strong>一个或多个</strong> taint ，这表示对于那些不能容忍这些 taint 的 pod，是不会被该节点接受的。如果将 toleration 应用于 pod 上，则表示这些 pod 可以（但不要求）被调度到具有相应 taint 的节点上。</p>
+<h2 id="示例">示例</h2>
+<p>以下分别以为 node 设置 taint 和为 pod 设置 toleration 为例。</p>
+<h2 id="为-node-设置-taint">为 node 设置 taint</h2>
+<p>为 node1 设置 taint：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl taint nodes node1 <span class="nv">key1</span><span class="o">=</span>value1:NoSchedule
+</span></span><span class="line"><span class="cl">kubectl taint nodes node1 <span class="nv">key1</span><span class="o">=</span>value1:NoExecute
+</span></span><span class="line"><span class="cl">kubectl taint nodes node1 <span class="nv">key2</span><span class="o">=</span>value2:NoSchedule
+</span></span></code></pre></div><p>删除上面的 taint：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl taint nodes node1 key1:NoSchedule-
+</span></span><span class="line"><span class="cl">kubectl taint nodes node1 key1:NoExecute-
+</span></span><span class="line"><span class="cl">kubectl taint nodes node1 key2:NoSchedule-
+</span></span></code></pre></div><p>查看 node1 上的 taint：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl describe nodes node1
+</span></span></code></pre></div><h2 id="为-pod-设置-toleration">为 pod 设置 toleration</h2>
+<p>只要在 pod 的 spec 中设置 tolerations 字段即可，可以有多个 <code>key</code>，如下所示：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">tolerations</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>- <span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;key1&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">operator</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;Equal&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;value1&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">effect</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;NoSchedule&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>- <span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;key1&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">operator</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;Equal&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;value1&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">effect</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;NoExecute&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>- <span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;node.alpha.kubernetes.io/unreachable&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">operator</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;Exists&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">effect</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;NoExecute&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">tolerationSeconds</span><span class="p">:</span><span class="w"> </span><span class="m">6000</span><span class="w">
+</span></span></span></code></pre></div><ul>
+<li><code>value</code> 的值可以为 <code>NoSchedule</code>、<code> PreferNoSchedule</code> 或 <code>NoExecute</code>。</li>
+<li><code>tolerationSeconds</code> 是当 pod 需要被驱逐时，可以继续在 node 上运行的时间。</li>
+</ul>
+<p>详细使用方法请参考<a href="https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/" target="_blank" rel="noopener">官方文档</a>。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/" target="_blank" rel="noopener">Taints and Tolerations - kuberentes.io</a></li>
+</ul>
+
+          </div>
+
+          
+
+
+
+          
+          
+          <div class="article-widget">
+            
+<div class="post-nav">
+  
+  
+  
+  <div class="post-nav-item">
+    <div class="meta-nav">上一页</div>
+    <a href="/docs/kubernetes-handbook/concepts/annotation/" rel="next">Annotation</a>
+  </div>
+  
+  
+  
+  <div class="post-nav-item">
+    <div class="meta-nav">下一页</div>
+    <a href="/docs/kubernetes-handbook/concepts/garbage-collection/" rel="prev">垃圾收集</a>
+  </div>
+  
+</div>
+
+          </div>
+          
+        </div>
+
+        <div class="body-footer">
+          <p>最近更新于 2022-05-21</p>
+
+          
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/docs//edit/master/content/kubernetes-handbook/concepts/taint-and-toleration.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+          
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments">
+    <script src="https://giscus.app/client.js"
+        data-repo="rootsongjc/docs"
+        data-repo-id="MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg="
+        data-category="Announcements"
+        data-category-id="DIC_kwDODMrxWM4CPL7J"
+        data-mapping="pathname"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="light"
+        data-lang="zh-CN"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </section>
+  
+
+
+
+          
+
+
+        </div>
+
+      </article>
+
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2022 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+
+    </main>
+  </div>
+</div>
+
+  </div>
+
+  <div class="page-footer">
+    
+    
+  </div>
+
+      
+
+    
+    <script src="/docs/js/vendor-bundle.min.53d67dc2cb1ebceb89d5e2aba2f86112.js"></script>
+
+    
+    
+    
+      
+
+      
+      
+
+      
+
+      
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+        
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/r.min.js" crossorigin="anonymous"></script>
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/latex.min.js" crossorigin="anonymous"></script>
+        
+      
+
+    
+
+    
+    
+    
+
+    
+    
+    <script src="https://cdn.jsdelivr.net/gh/bryanbraun/anchorjs@4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+    <script>
+      anchors.add();
+    </script>
+    
+
+    
+    
+    
+      
+      <script id="search-hit-fuse-template" type="text/x-template">
+        <div class="search-hit" id="summary-{{key}}">
+          <div class="search-hit-content">
+            <div class="search-hit-name">
+              <a href="{{relpermalink}}">{{title}}</a>
+              <div class="article-metadata search-hit-type">{{type}}</div>
+              <p class="search-hit-description">{{snippet}}</p>
+            </div>
+          </div>
+        </div>
+      </script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/krisk/Fuse@v3.2.1/dist/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/gh/julmot/mark.js@8.11.1/dist/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+      
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+      
+      
+      
+      
+      
+      
+      
+    
+
+    
+
+    
+    
+    
+    <script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+      
+    
+    
+    <script src="/docs/zh/js/wowchemy.min.0f418cf2259d1bfdb92011cb96f5bed5.js"></script>
+
+    
+    
+    
+    
+    
+    
+      
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <script src="/docs/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+
+
+
+
+
+
+</body>
+</html>

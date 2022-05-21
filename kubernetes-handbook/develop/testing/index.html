@@ -1,0 +1,1866 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+    
+  
+  <meta name="description" content="这篇文章将指导你如何测试 Kubernetes。 单元测试 单元测试仅依赖于源代码，是测试代码逻辑是否符合预期的最简单方法。 运行所有的单元测试 make test 仅测试指定的 package # 单个package make test WHAT=./pkg/api # 多个package" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://jimmysong.io/docs/kubernetes-handbook/develop/testing/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/docs/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/docs/css/wowchemy.9614cee70b2ec5c87466ccccc1657e16.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-93485976-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+
+  function gtag() {
+      dataLayer.push(arguments);
+  }
+
+  function trackOutboundLink(url, target) {
+    gtag('event', 'click', {
+         'event_category': 'outbound',
+         'event_label': url,
+         'transport_type': 'beacon',
+         'event_callback': function () {
+           if (target !== '_blank') {
+             document.location = url;
+           }
+         }
+    });
+    console.debug("Outbound link clicked: " + url);
+  }
+
+  function onClickCallback(event) {
+    if ((event.target.tagName !== 'A') || (event.target.host === window.location.host)) {
+      return;
+    }
+    trackOutboundLink(event.target, event.target.getAttribute('target'));  
+  }
+
+  gtag('js', new Date());
+  gtag('config', 'UA-93485976-1', {});
+  gtag('set', {'cookie_flags': 'SameSite=None;Secure'});
+
+  
+  document.addEventListener('click', onClickCallback, false);
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?11f7d254cfa4e0ca44b175c66d379ecc";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/docs/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/docs/media/icon_huc60681cad53fc5796da6bd70b4f37fff_9644_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://jimmysong.io/docs/kubernetes-handbook/develop/testing/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://jimmysong.io/docs/kubernetes-handbook/develop/testing/" />
+  <meta property="og:title" content="测试 Kubernetes | 云原生资料库" />
+  <meta property="og:description" content="这篇文章将指导你如何测试 Kubernetes。 单元测试 单元测试仅依赖于源代码，是测试代码逻辑是否符合预期的最简单方法。 运行所有的单元测试 make test 仅测试指定的 package # 单个package make test WHAT=./pkg/api # 多个package" /><meta property="og:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" />
+    <meta property="twitter:image" content="https://jimmysong.io/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_300x300_fit_lanczos_3.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2022-05-21T00:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2022-05-21T21:23:05&#43;08:00">
+  
+
+  
+
+
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>测试 Kubernetes | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="41df6ddd3931c7b1ecb5c27759ed9246" >
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/docs/js/wowchemy-init.min.14a0ed61c6dbd594b9c75193b25be179.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>搜索</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/docs/"><img src="/docs/media/logo_hu217dae2ad2bcd8acb156327d70759d70_15430_0x70_resize_lanczos_3.png" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#books"><span>书目列表</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/translation"><span>翻译</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/event"><span>活动</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io/blog/" target="_blank" rel="noopener"><span>原创</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#tag-cloud"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/docs/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>主站</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+
+        
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/rootsongjc/docs/" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    
+
+
+
+
+<div class="container-fluid docs">
+  <div class="row flex-xl-nowrap">
+    <div class="col-12 col-md-3 col-xl-2 docs-sidebar">
+      <form class="docs-search d-flex align-items-center">
+  <button class="btn docs-toggle d-md-none p-0 mr-md-3 w-100" type="button" data-toggle="collapse" data-target="#docs-nav" aria-controls="docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    <div class="d-flex">
+      <span class="d-md-none pl-1 flex-grow-1 text-left overflow-hidden">
+        
+          开发指南
+        
+      </span>
+      <span><i class="fas fa-chevron-down"></i></span>
+    </div>
+  </button>
+
+  
+  <button class="form-control sidebar-search js-search d-none d-md-flex">
+    <i class="fas fa-search pr-2"></i>
+    <span class="sidebar-search-text">搜索...</span>
+    <span class="sidebar-search-shortcut">/</span>
+  </button>
+  
+</form>
+
+<nav class="collapse docs-links" id="docs-nav">
+  
+  
+  
+  
+  
+  
+
+  
+  
+    
+
+    
+      
+
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <ul class="nav docs-sidenav">
+        <li class=""><a href="/docs/kubernetes-handbook/"><i class="fas fa-book pr-1"></i>Kubernetes 基础教程</a></li>
+    
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+          <a class="docs-menu-lv1 docs-toc-link " href="/docs/kubernetes-handbook/concepts/"><i class="fas fa-book-open pr-1"></i>概念原理</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/architecture/">Kubernetes 架构</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/concepts/">Kubernetes 的设计理念</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/etcd/">Etcd 解析</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/open-interfaces/">开放接口</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/cri/">容器运行时接口（CRI）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/cni/">容器网络接口（CNI）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/csi/">容器存储接口（CSI）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/objects/">Kubernetes 中的资源对象</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/pod-state-and-lifecycle/">Pod 状态与生命周期管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-overview/">Pod 概览</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod/">Pod 解析</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/init-containers/">Init 容器</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pause-container/">Pause 容器</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-security-policy/">Pod 安全策略</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-lifecycle/">Pod 的生命周期</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-hook/">Pod hook</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-preset/">Pod Preset</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/pod-disruption-budget/">Pod 中断与 PDB（Pod 中断预算）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/cluster/">集群资源管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/node/">Node</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/namespace/">Namespace</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/label/">Label</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/annotation/">Annotation</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/taint-and-toleration/">Taint 和 Toleration（污点和容忍）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/garbage-collection/">垃圾收集</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/controllers/">控制器</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/deployment/">Deployment</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/statefulset/">StatefulSet</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/daemonset/">DaemonSet</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/replicaset/">ReplicationController 和 ReplicaSet</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/job/">Job</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/cronjob/">CronJob</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/horizontal-pod-autoscaling/">Horizontal Pod Autoscaling</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/custom-metrics-hpa/">自定义指标 HPA</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/admission-controller/">准入控制器（Admission Controller）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/service-discovery/">服务发现与路由</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/service/">Service</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/topology-aware-routing/">拓扑感知路由</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/ingress/">Ingress</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/gateway/">Gateway</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/authentication-and-permission/">身份与权限认证</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/serviceaccount/">ServiceAccount</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/rbac/">基于角色的访问控制（RBAC）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/network-policy/">NetworkPolicy</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/spiffe/">SPIFFE</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/spire/">SPIRE</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/networking/">网络</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/flannel/">扁平网络 Flannel</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/calico/">非 Overlay 扁平网络 Calico</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/cilium/">基于 eBPF 的网络 Cilium</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/cilium-concepts/">Cilium 架构设计与概念解析</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/storage/">存储</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/secret/">Secret</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/configmap/">ConfigMap</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv3" href="/docs/kubernetes-handbook/concepts/configmap-hot-update/">ConfigMap 的热更新</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/volume/">Volume</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/persistent-volume/">持久化卷（Persistent Volume）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/storageclass/">Storage Class</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/local-persistent-storage/">本地持久化存储</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/extension/">扩展集群</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/custom-resource/">使用自定义资源扩展 API</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/crd/">使用 CRD 扩展 Kubernetes API</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/aggregated-api-server/">Aggregated API Server</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/apiservice/">APIService</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/service-catalog/">服务目录（Service Catalog）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/multicluster/">多集群管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/multi-cluster-services-api/">多集群服务 API（Multi-Cluster Services API）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/federation/">集群联邦（Cluster Federation）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/scheduling/">资源调度</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/qos/">服务质量等级（QoS）</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/kubeadm/"></a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/concepts/service-api-overview/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+          <a class="docs-menu-lv1 docs-toc-link " href="/docs/kubernetes-handbook/guide/"><i class="fas fa-book-open pr-1"></i>使用指南</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/resource-configuration/">资源对象配置</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/configure-liveness-readiness-probes/">配置 Pod 的 liveness 和 readiness 探针</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/configure-pod-service-account/">配置 Pod 的 Service Account</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/secret-configuration/">Secret 配置</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/resource-quota-management/">管理 namespace 中的资源配额</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/command-usage/">命令使用</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/docker-cli-to-kubectl/">Docker 用户过渡到 kubectl 命令行指南</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/using-kubectl/">Kubectl 命令概览</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubectl-cheatsheet/">kubectl 命令技巧大全</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/using-etcdctl-to-access-kubernetes-data/">使用 etcdctl 访问 Kubernetes 数据</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/cluster-security-management/">集群安全性管理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/managing-tls-in-a-cluster/">管理集群中的 TLS</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubelet-authentication-authorization/">Kublet 的认证授权</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/tls-bootstrapping/">TLS Bootstrap</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/ip-masq-agent/">IP 伪装代理</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubectl-user-authentication-authorization/">创建用户认证授权的 kubeconfig 文件</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/auth-with-kubeconfig-or-token/">使用 kubeconfig 或 token 进行用户身份认证</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/authentication/">Kubernetes 中的用户与身份认证授权</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubernetes-security-best-practice/">Kubernetes 集群安全性配置最佳实践</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/access-kubernetes-cluster/">访问 Kubernetes 集群</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/access-cluster/">访问集群</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/authenticate-across-clusters-kubeconfig/">使用 kubeconfig 文件配置跨集群认证</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/connecting-to-applications-port-forward/">通过端口转发访问集群中的应用程序</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/service-access-application-cluster/">使用 service 访问群集中的应用程序</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/accessing-kubernetes-pods-from-outside-of-the-cluster/">从外部访问 Kubernetes 中的 Pod</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubernetes-desktop-client/">Lens - Kubernetes IDE</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/kubernator-kubernetes-ui/">Kubernator - 更底层的 Kubernetes UI</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/application-development-deployment-flow/">在 Kubernetes 中开发部署应用</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/deploy-applications-in-kubernetes/">适用于 Kubernetes 的应用开发部署流程</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/migrating-hadoop-yarn-to-kubernetes/">迁移传统应用到 Kubernetes 步骤详解——以 Hadoop YARN 为例</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/guide/using-statefulset/">使用StatefulSet部署有状态应用</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/guide/cabin-mobile-dashboard-for-kubernetes/"></a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <div class="docs-toc-item">
+          <a class="docs-menu-lv1 docs-toc-link " href="/docs/kubernetes-handbook/develop/"><i class="fas fa-book-open pr-1"></i>开发指南</a>
+    
+      
+        <ul class="nav docs-sidenav">
+      
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/sigs-and-working-group/">SIG 和工作组</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/developing-environment/">配置 Kubernetes 开发环境</a></li>
+
+
+
+  <li class="active"><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/testing/">测试 Kubernetes</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/client-go-sample/">client-go 示例</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/operator/">Operator</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/develop/operator-sdk/">Operator SDK</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/kubebuilder/">Kubebuilder</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/develop/kubebuilder-example/">使用 kubebuilder 创建 operator 示例</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/advance-developer/">高级开发指南</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/contribute/">参与 Kubernetes 社区贡献</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv1" href="/docs/kubernetes-handbook/develop/minikube/">Minikube</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+      
+    
+
+    
+      </ul>
+    
+
+  
+</nav>
+
+    </div>
+
+    
+    
+    <div class="d-none d-xl-block col-xl-2 docs-toc">
+      
+
+      <ul class="nav toc-top">
+        <li><a href="#" id="back_to_top" class="docs-toc-title">目录</a></li>
+      </ul>
+
+      <nav id="TableOfContents">
+  <ul>
+    <li><a href="#单元测试">单元测试</a></li>
+    <li><a href="#benchmark-测试">Benchmark 测试</a></li>
+    <li><a href="#集成测试">集成测试</a></li>
+    <li><a href="#end-to-end-e2e-测试">End to end (e2e) 测试</a></li>
+    <li><a href="#fedaration-e2e-测试">Fedaration e2e 测试</a></li>
+    <li><a href="#node-e2e-测试">Node e2e 测试</a></li>
+    <li><a href="#补充说明">补充说明</a></li>
+    <li><a href="#kubernetes-测试工具集-test-infra">kubernetes 测试工具集 test-infra</a></li>
+    <li><a href="#参考文档">参考文档</a></li>
+  </ul>
+</nav>
+
+      
+    </div>
+    
+
+    <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 docs-content" role="main">
+
+      <article class="article">
+
+        <div class="docs-article-container">
+          
+            
+  <nav class="d-none d-md-flex" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      
+  
+    
+  
+    
+  
+    
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/">
+        
+          首页
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/kubernetes-handbook/">
+        
+          Kubernetes 基础教程
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/docs/kubernetes-handbook/develop/">
+        
+          开发指南
+        
+      </a>
+    </li>
+  
+
+      <li class="breadcrumb-item active" aria-current="page">
+        测试 Kubernetes
+      </li>
+    </ol>
+  </nav>
+
+
+
+
+          
+
+          <h1>测试 Kubernetes</h1>
+
+          <div class="article-style">
+            <p>这篇文章将指导你如何测试 Kubernetes。</p>
+<h2 id="单元测试">单元测试</h2>
+<p>单元测试仅依赖于源代码，是测试代码逻辑是否符合预期的最简单方法。</p>
+<p><strong>运行所有的单元测试</strong></p>
+<pre tabindex="0"><code>make test
+</code></pre><p><strong>仅测试指定的 package</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl"><span class="c1"># 单个package</span>
+</span></span><span class="line"><span class="cl">make <span class="nb">test</span> <span class="nv">WHAT</span><span class="o">=</span>./pkg/api
+</span></span><span class="line"><span class="cl"><span class="c1"># 多个packages</span>
+</span></span><span class="line"><span class="cl">make <span class="nb">test</span> <span class="nv">WHAT</span><span class="o">=</span>./pkg/<span class="o">{</span>api,kubelet<span class="o">}</span> 
+</span></span></code></pre></div><p>或者，也可以直接用 <code>go test</code></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">go <span class="nb">test</span> -v k8s.io/kubernetes/pkg/kubelet
+</span></span></code></pre></div><p><strong>仅测试指定 package 的某个测试 case</strong></p>
+<pre tabindex="0"><code># Runs TestValidatePod in pkg/api/validation with the verbose flag set
+make test WHAT=./pkg/api/validation KUBE_GOFLAGS=&#34;-v&#34; KUBE_TEST_ARGS=&#39;-run ^TestValidatePod$&#39;
+
+# Runs tests that match the regex ValidatePod|ValidateConfigMap in pkg/api/validation
+make test WHAT=./pkg/api/validation KUBE_GOFLAGS=&#34;-v&#34; KUBE_TEST_ARGS=&#34;-run ValidatePod\|ValidateConfigMap$&#34;
+</code></pre><p>或者直接用 <code>go test</code></p>
+<pre tabindex="0"><code>go test -v k8s.io/kubernetes/pkg/api/validation -run ^TestValidatePod$
+</code></pre><p><strong>并行测试</strong></p>
+<p>并行测试是 root out flakes 的一种有效方法：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl"><span class="c1"># Have 2 workers run all tests 5 times each (10 total iterations).</span>
+</span></span><span class="line"><span class="cl">make <span class="nb">test</span> <span class="nv">PARALLEL</span><span class="o">=</span><span class="m">2</span> <span class="nv">ITERATION</span><span class="o">=</span><span class="m">5</span>
+</span></span></code></pre></div><p><strong>生成测试报告</strong></p>
+<pre tabindex="0"><code>make test KUBE_COVER=y
+</code></pre><h2 id="benchmark-测试">Benchmark 测试</h2>
+<pre tabindex="0"><code>go test ./pkg/apiserver -benchmem -run=XXX -bench=BenchmarkWatch
+</code></pre><h2 id="集成测试">集成测试</h2>
+<p>Kubernetes 集成测试需要安装 etcd（只要安装即可，不需要启动），比如</p>
+<pre tabindex="0"><code>hack/install-etcd.sh  # Installs in ./third_party/etcd
+echo export PATH=&#34;\$PATH:$(pwd)/third_party/etcd&#34; &gt;&gt; ~/.profile  # Add to PATH
+</code></pre><p>集成测试会在需要的时候自动启动 etcd 和 kubernetes 服务，并运行 <a href="https://github.com/kubernetes/kubernetes/tree/master/test/integration" target="_blank" rel="noopener">test/integration</a> 里面的测试。</p>
+<p><strong>运行所有集成测试</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">make test-integration  <span class="c1"># Run all integration tests.</span>
+</span></span></code></pre></div><p><strong>指定集成测试用例</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl"><span class="c1"># Run integration test TestPodUpdateActiveDeadlineSeconds with the verbose flag set.</span>
+</span></span><span class="line"><span class="cl">make test-integration <span class="nv">KUBE_GOFLAGS</span><span class="o">=</span><span class="s2">&#34;-v&#34;</span> <span class="nv">KUBE_TEST_ARGS</span><span class="o">=</span><span class="s2">&#34;-run ^TestPodUpdateActiveDeadlineSeconds</span>$<span class="s2">&#34;</span>
+</span></span></code></pre></div><h2 id="end-to-end-e2e-测试">End to end (e2e) 测试</h2>
+<p>End to end (e2e) 测试模拟用户行为操作 Kubernetes，用来保证 Kubernetes 服务或集群的行为完全符合设计预期。</p>
+<p>在开启 e2e 测试之前，需要先编译测试文件，并设置 KUBERNETES_PROVIDER（默认为 gce）：</p>
+<pre tabindex="0"><code>make WHAT=&#39;test/e2e/e2e.test&#39;
+make ginkgo
+export KUBERNETES_PROVIDER=local
+</code></pre><p><strong>启动 cluster，测试，最后停止 cluster</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl"><span class="c1"># build Kubernetes, up a cluster, run tests, and tear everything down</span>
+</span></span><span class="line"><span class="cl">go run hack/e2e.go -- -v --build --up --test --down
+</span></span></code></pre></div><p><strong>仅测试指定的用例</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">go run hack/e2e.go -v -test --test_args<span class="o">=</span><span class="s1">&#39;--ginkgo.focus=Kubectl\sclient\s\[k8s\.io\]\sKubectl\srolling\-update\sshould\ssupport\srolling\-update\sto\ssame\simage\s\[Conformance\]$&#39;</span>
+</span></span></code></pre></div><p><strong>略过测试用例</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">go run hack/e2e.go -- -v --test --test_args<span class="o">=</span><span class="s2">&#34;--ginkgo.skip=Pods.*env
+</span></span></span></code></pre></div><p><strong>并行测试</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl"><span class="c1"># Run tests in parallel, skip any that must be run serially</span>
+</span></span><span class="line"><span class="cl"><span class="nv">GINKGO_PARALLEL</span><span class="o">=</span>y go run hack/e2e.go --v --test --test_args<span class="o">=</span><span class="s2">&#34;--ginkgo.skip=\[Serial\]&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Run tests in parallel, skip any that must be run serially and keep the test namespace if test failed</span>
+</span></span><span class="line"><span class="cl"><span class="nv">GINKGO_PARALLEL</span><span class="o">=</span>y go run hack/e2e.go --v --test --test_args<span class="o">=</span><span class="s2">&#34;--ginkgo.skip=\[Serial\] --delete-namespace-on-failure=false&#34;</span>
+</span></span></code></pre></div><p><strong>清理测试</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">go run hack/e2e.go -- -v --down
+</span></span></code></pre></div><p><strong>有用的 <code>-ctl</code></strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl"><span class="c1"># -ctl can be used to quickly call kubectl against your e2e cluster. Useful for</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># cleaning up after a failed test or viewing logs. Use -v to avoid suppressing</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># kubectl output.</span>
+</span></span><span class="line"><span class="cl">go run hack/e2e.go -- -v -ctl<span class="o">=</span><span class="s1">&#39;get events&#39;</span>
+</span></span><span class="line"><span class="cl">go run hack/e2e.go -- -v -ctl<span class="o">=</span><span class="s1">&#39;delete pod foobar&#39;</span>
+</span></span></code></pre></div><h2 id="fedaration-e2e-测试">Fedaration e2e 测试</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">FEDERATION</span><span class="o">=</span><span class="nb">true</span>
+</span></span><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">E2E_ZONES</span><span class="o">=</span><span class="s2">&#34;us-central1-a us-central1-b us-central1-f&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># or export FEDERATION_PUSH_REPO_BASE=&#34;quay.io/colin_hom&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">FEDERATION_PUSH_REPO_BASE</span><span class="o">=</span><span class="s2">&#34;gcr.io/</span><span class="si">${</span><span class="nv">GCE_PROJECT_NAME</span><span class="si">}</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># build container images</span>
+</span></span><span class="line"><span class="cl"><span class="nv">KUBE_RELEASE_RUN_TESTS</span><span class="o">=</span>n <span class="nv">KUBE_FASTBUILD</span><span class="o">=</span><span class="nb">true</span> go run hack/e2e.go -- -v -build
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># push the federation container images</span>
+</span></span><span class="line"><span class="cl">build/push-federation-images.sh
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Deploy federation control plane</span>
+</span></span><span class="line"><span class="cl">go run hack/e2e.go -- -v --up
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Finally, run the tests</span>
+</span></span><span class="line"><span class="cl">go run hack/e2e.go -- -v --test --test_args<span class="o">=</span><span class="s2">&#34;--ginkgo.focus=\[Feature:Federation\]&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Don&#39;t forget to teardown everything down</span>
+</span></span><span class="line"><span class="cl">go run hack/e2e.go -- -v --down
+</span></span></code></pre></div><p>可以用 <code>cluster/log-dump.sh &lt;directory&gt;</code> 方便的下载相关日志，帮助排查测试中碰到的问题。</p>
+<h2 id="node-e2e-测试">Node e2e 测试</h2>
+<p>Node e2e 仅测试 Kubelet 的相关功能，可以在本地或者集群中测试</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">KUBERNETES_PROVIDER</span><span class="o">=</span><span class="nb">local</span>
+</span></span><span class="line"><span class="cl">make test-e2e-node <span class="nv">FOCUS</span><span class="o">=</span><span class="s2">&#34;InitContainer&#34;</span>
+</span></span><span class="line"><span class="cl">make test_e2e_node <span class="nv">TEST_ARGS</span><span class="o">=</span><span class="s2">&#34;--experimental-cgroups-per-qos=true&#34;</span>
+</span></span></code></pre></div><h2 id="补充说明">补充说明</h2>
+<p>借助 kubectl 的模版可以方便获取想要的数据，比如查询某个 container 的镜像的方法为</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">kubectl get pods nginx-4263166205-ggst4 -o template <span class="s1">&#39;--template={{if (exists . &#34;status&#34; &#34;containerStatuses&#34;)}}{{range .status.containerStatuses}}{{if eq .name &#34;nginx&#34;}}{{.image}}{{end}}{{end}}{{end}}&#39;</span>
+</span></span></code></pre></div><h2 id="kubernetes-测试工具集-test-infra">kubernetes 测试工具集 test-infra</h2>
+<p><a href="https://github.com/kubernetes/test-infra" target="_blank" rel="noopener">test-infra</a> 是由 kubernetes 官方开源的测试框架，其中包括了 Kubernetes 测试工具集和测试结果展示。下图展示了 test-infra 的架构：</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-test-infra架构图图片来自官方github">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img src="../../images/kubernetes-test-architecture.jpg" alt="test-infra架构图（图片来自官方GitHub）" loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      test-infra架构图（图片来自官方GitHub）
+    </figcaption></figure>
+</p>
+<p>该测试框架主要是真多 Google 公有云做的，支持 kubernetes1.6 以上版本的测试。详见 <a href="https://github.com/kubernetes/test-infra" target="_blank" rel="noopener">https://github.com/kubernetes/test-infra</a>。</p>
+<h2 id="参考文档">参考文档</h2>
+<ul>
+<li><a href="https://github.com/kubernetes/test-infra" target="_blank" rel="noopener">https://github.com/kubernetes/test-infra</a></li>
+</ul>
+
+          </div>
+
+          
+
+
+
+          
+          
+          <div class="article-widget">
+            
+<div class="post-nav">
+  
+  
+  
+  <div class="post-nav-item">
+    <div class="meta-nav">上一页</div>
+    <a href="/docs/kubernetes-handbook/develop/developing-environment/" rel="next">配置 Kubernetes 开发环境</a>
+  </div>
+  
+  
+  
+  <div class="post-nav-item">
+    <div class="meta-nav">下一页</div>
+    <a href="/docs/kubernetes-handbook/develop/client-go-sample/" rel="prev">client-go 示例</a>
+  </div>
+  
+</div>
+
+          </div>
+          
+        </div>
+
+        <div class="body-footer">
+          <p>最近更新于 2022-05-21</p>
+
+          
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/docs//edit/master/content/kubernetes-handbook/develop/testing.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+          
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments">
+    <script src="https://giscus.app/client.js"
+        data-repo="rootsongjc/docs"
+        data-repo-id="MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg="
+        data-category="Announcements"
+        data-category-id="DIC_kwDODMrxWM4CPL7J"
+        data-mapping="pathname"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="light"
+        data-lang="zh-CN"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </section>
+  
+
+
+
+          
+
+
+        </div>
+
+      </article>
+
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2022 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+
+    </main>
+  </div>
+</div>
+
+  </div>
+
+  <div class="page-footer">
+    
+    
+  </div>
+
+      
+
+    
+    <script src="/docs/js/vendor-bundle.min.53d67dc2cb1ebceb89d5e2aba2f86112.js"></script>
+
+    
+    
+    
+      
+
+      
+      
+
+      
+
+      
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+        
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/r.min.js" crossorigin="anonymous"></script>
+        
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.1/build/languages/latex.min.js" crossorigin="anonymous"></script>
+        
+      
+
+    
+
+    
+    
+    
+
+    
+    
+    <script src="https://cdn.jsdelivr.net/gh/bryanbraun/anchorjs@4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+    <script>
+      anchors.add();
+    </script>
+    
+
+    
+    
+    
+      
+      <script id="search-hit-fuse-template" type="text/x-template">
+        <div class="search-hit" id="summary-{{key}}">
+          <div class="search-hit-content">
+            <div class="search-hit-name">
+              <a href="{{relpermalink}}">{{title}}</a>
+              <div class="article-metadata search-hit-type">{{type}}</div>
+              <p class="search-hit-description">{{snippet}}</p>
+            </div>
+          </div>
+        </div>
+      </script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/krisk/Fuse@v3.2.1/dist/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/gh/julmot/mark.js@8.11.1/dist/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+      
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+      
+      
+      
+      
+      
+      
+      
+    
+
+    
+
+    
+    
+    
+    <script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+      
+    
+    
+    <script src="/docs/zh/js/wowchemy.min.0f418cf2259d1bfdb92011cb96f5bed5.js"></script>
+
+    
+    
+    
+    
+    
+    
+      
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <script src="/docs/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+
+
+
+
+
+
+</body>
+</html>
