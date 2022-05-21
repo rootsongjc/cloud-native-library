@@ -2,12 +2,11 @@
 title: 谷歌工程实践
 summary: 谷歌代码审查实践指南
 tags:
-  - ebook
-  - translation
+  - 翻译电子书
+  - 翻译
 date: 2019-09-30
 internal_link: /docs/eng-practices/
 type: publication
-publicaiton_types: "5"
 publication: "[点击阅读](/docs/eng-practices/)"
 ---
 

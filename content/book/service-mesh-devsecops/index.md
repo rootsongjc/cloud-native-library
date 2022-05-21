@@ -2,8 +2,8 @@
 title: 利用服务网格实施微服务的DevSecOps
 summary: NIST特别发布
 tags:
-  - ebook
-  - translation
+  - 翻译电子书
+  - 翻译
 date: 2022-03-14
 internal_link: service-mesh-devsecops
 type: publication

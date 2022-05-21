@@ -1,12 +1,12 @@
 ---
-title: Envoy基础教程🔥
+title: Envoy基础教程
 summary: 从零开始学习Envoy网络代理
 tags:
-  - handbook
+  - Handbook系列
 date: 2022-05-18
+featured: true
 internal_link: /docs/envoy-handbook/
 type: publication
-publicaiton_types: "5"
 publication: "[点击阅读](/docs/envoy-handbook/)"
 ---
 

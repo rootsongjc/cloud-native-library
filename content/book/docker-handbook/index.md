@@ -2,7 +2,7 @@
 title: Docker指南
 summary: Docker容器化实战手册
 tags:
-  - handbook
+  - Handbook系列
 date: 2017-10-11
 image_link: https://jimmysong.io/docker-handbook/
 type: publication

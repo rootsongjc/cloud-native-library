@@ -2,16 +2,16 @@
 # A section created with the Portfolio widget.
 # This section displays content from `content/project/`.
 # See https://wowchemy.com/docs/widget/portfolio/
-widget: portfolio
+widget: tag_cloud
 
 # This file represents a page section.
 headless: true
 
 # Order that this section appears on the page.
-weight: 30
+weight: 60
 
-title: '书目列表'
-subtitle: '开源电子书&出版物'
+title: '标签云'
+subtitle: '云原生资料库分类'
 
 content:
   # Page type to display. E.g. project.
@@ -31,15 +31,17 @@ content:
     - name: All
       tag: '*'
     - name: Handbook系列
-      tag: Handbook系列
+      tag: handbook
     - name: 出版物
-      tag: 出版物
-    - name: 翻译电子书
-      tag: 翻译电子书
+      tag: printed
+    - name: 电子书
+      tag: ebook
+    - name: 翻译
+      tag: translation
 
 design:
   columns: '1'
   view: masonry
-  flip_alt_rows: false
   background-color: rgb(247, 247, 247);
+  flip_alt_rows: false
 ---

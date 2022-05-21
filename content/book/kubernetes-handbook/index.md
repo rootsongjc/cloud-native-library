@@ -1,8 +1,9 @@
 ---
-title: Kubernetes中文指南🔥
+title: Kubernetes中文指南
+featured: true
 summary: 云原生应用架构实战手册
 tags:
-  - handbook
+  - Handbook系列
 date: 2022-03-09
 image_link: https://jimmysong.io/kubernetes-handbook/
 type: publication

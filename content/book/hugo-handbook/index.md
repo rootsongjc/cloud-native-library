@@ -2,7 +2,7 @@
 title: Hugo实战手册
 summary: 静态网站构建指南
 tags:
-  - handbook
+  - Handbook系列
 date: 2017-10-10
 image_link: https://jimmysong.io/hugo-handbook/
 type: publication

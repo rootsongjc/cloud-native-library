@@ -10,13 +10,13 @@ design:
     gradient_end: '#2b94c3'
     text_color_light: true
 cta:
-  url: cloud-native/
-  label: 开始阅读
+  url: "#portfolio"
+  label: 选择图书
   icon_pack: fas
   icon: book-open
 cta_alt:
-  url: "#portfolio"
-  label: 所有书目
+  url: "translation"
+  label: 译文
 ---
 
 搜罗整理笔者自 2017 年以来的发布的云原生资料，涵盖容器、Kubernetes、服务网格、开源布道等。在这里，你可以一站式了解学习云原生知识！ 

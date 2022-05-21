@@ -26,7 +26,7 @@ image:
   preview_only: false
 
 authors: ["Ariane van der Steldt","Radha Kumari"]
-tags: ["Enovy","slcak","haproxy","WebSockets"]
+tags: ["Envoy","slcak","haproxy","WebSockets"]
 categories: ["Envoy"]
 links:
   - icon: globe

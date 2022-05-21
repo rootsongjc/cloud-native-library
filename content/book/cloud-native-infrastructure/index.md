@@ -2,8 +2,8 @@
 title: 云原生基础架构
 summary: 第一本云原生书籍
 tags:
-  - ebook
-  - translation
+  - 翻译电子书
+  - 翻译
 date: 2019-10-21
 internal_link: cloud-native-infra
 type: publication

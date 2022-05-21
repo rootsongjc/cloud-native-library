@@ -2,7 +2,8 @@
 title: Quarkus实战
 summary: 专为 Kubernetes 而优化的 Java 解决方案
 tags:
-  - printed
+  - 出版物
+  - 翻译
 date: 2021-03-31
 publication: "[购买纸质书](https://item.jd.com/10028088987963.html)"
 type: publication

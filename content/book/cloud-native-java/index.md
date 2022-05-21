@@ -2,7 +2,8 @@
 title: 云原生Java
 summary: 张若飞、宋净超 译
 tags:
-  - printed
+  - 出版物
+  - 翻译
 date: 2018-07-01
 publication: "[购买纸质书](https://item.jd.com/12365097.html)"
 type: publication

@@ -2,7 +2,8 @@
 title: 云原生模式
 summary: 张若飞、宋净超 译
 tags:
-  - printed
+  - 出版物
+  - 翻译
 date: 2020-08-09
 publication:  "[购买纸质书](https://item.jd.com/12704245.html)"
 type: publication

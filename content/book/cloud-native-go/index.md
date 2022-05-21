@@ -2,7 +2,8 @@
 title: Cloud Native Go
 summary: 宋净超、吴迎松、徐蓓、马超译
 tags:
-  - printed
+  - 出版物
+  - 翻译
 date: 2017-08-01
 type: publication
 publication: "[购买纸质书](https://item.m.jd.com/product/12123347.html)"

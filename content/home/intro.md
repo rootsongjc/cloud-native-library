@@ -1,7 +1,7 @@
 ---
 widget: featurette
 headless: true
-weight: 30
+weight: 20
 title: 内容涵盖
 subtitle: 一站式云原生知识库
 feature:

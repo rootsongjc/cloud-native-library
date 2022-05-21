@@ -2,7 +2,7 @@
 title: Serverless实战
 summary: 无服务器架构实践手册
 tags:
-  - handbook
+  - Handbook系列
 date: 2019-10-21
 image_link: https://jimmysong.io/serverless-handbook/
 type: publication
