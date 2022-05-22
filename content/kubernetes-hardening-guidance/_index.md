@@ -23,4 +23,4 @@ cascade:
 
 欢迎加入[云原生社区](https://cloudnative.to/)可观测性讨论组（微信群）参与讨论交流，加入前请先填写[入群申请问卷](https://wj.qq.com/s2/5479026/bf82)后联系 [Jimmy Song](https://jimmysong.io/contact/) 入群。
 
-{{< cta cta_text="开始阅读" cta_link="foreword" >}}
+{{< cta cta_text="开始阅读" cta_link="notices-and-hitory" >}}

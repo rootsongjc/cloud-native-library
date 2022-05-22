@@ -8,8 +8,6 @@ level: 3
 
 Kubernetes 中不仅支持 CPU、内存为指标的 HPA，还支持自定义指标的 HPA，例如 QPS。
 
-本文中使用的 YAML 文件见 [manifests/HPA](https://github.com/rootsongjc/kubernetes-handbook/tree/master/manifests/HPA)。
-
 ## 设置自定义指标
 
 **Kubernetes1.6**
