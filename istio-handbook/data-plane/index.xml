@@ -363,9 +363,9 @@
       <link>https://jimmysong.io/docs/istio-handbook/data-plane/envoy-xds-protocol/</link>
       <pubDate>Wed, 18 May 2022 00:00:00 +0800</pubDate>
       <guid>https://jimmysong.io/docs/istio-handbook/data-plane/envoy-xds-protocol/</guid>
-      <description>&lt;p&gt;Envoy 通过查询文件或管理服务器来动态发现资源。概括地讲，对应的发现服务及其相应的 API 被称作 &lt;em&gt;xDS&lt;/em&gt;。Envoy 通过订阅（&lt;em&gt;subscription&lt;/em&gt;）方式来获取资源，如监控指定路径下的文件、启动 gRPC 流或轮询 REST-JSON URL。后两种方式会发送 &lt;code&gt;DiscoveryRequest&lt;/code&gt; 请求消息，发现的对应资源则包含在响应消息 &lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/discovery.proto#discoveryresponse&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;DiscoveryResponse&lt;/code&gt;&lt;/a&gt; 中。下面，我们将具体讨论每种订阅类型。&lt;/p&gt;
+      <description>&lt;p&gt;Envoy 通过查询文件或管理服务器来动态发现资源。概括地讲，对应的发现服务及其相应的 API 被称作 &lt;em&gt;xDS&lt;/em&gt;。Envoy 通过订阅（&lt;em&gt;subscription&lt;/em&gt;）方式来获取资源，如监控指定路径下的文件、启动 gRPC 流或轮询 REST-JSON URL。后两种方式会发送 &lt;code&gt;DiscoveryRequest&lt;/code&gt; 请求消息，发现的对应资源则包含在响应消息 &lt;code&gt;DiscoveryResponse&lt;/code&gt; 中。下面，我们将具体讨论每种订阅类型。&lt;/p&gt;
 &lt;h2 id=&#34;文件订阅&#34;&gt;文件订阅&lt;/h2&gt;
-&lt;p&gt;发现动态资源的最简单方式就是将其保存于文件，并将路径配置在 &lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/core/config_source.proto#core-configsource&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;ConfigSource&lt;/a&gt; 中的 &lt;code&gt;path&lt;/code&gt; 参数中。Envoy 使用 &lt;code&gt;inotify&lt;/code&gt;（Mac OS X 上为 &lt;code&gt;kqueue&lt;/code&gt;）来监控文件的变化，在文件被更新时，Envoy 读取保存的 &lt;code&gt;DiscoveryResponse&lt;/code&gt; 数据进行解析，数据格式可以为二进制 protobuf、JSON、YAML 和协议文本等。&lt;/p&gt;
+&lt;p&gt;发现动态资源的最简单方式就是将其保存于文件，并将路径配置在 &lt;code&gt;ConfigSource&lt;/code&gt; 中的 &lt;code&gt;path&lt;/code&gt; 参数中。Envoy 使用 &lt;code&gt;inotify&lt;/code&gt;（Mac OS X 上为 &lt;code&gt;kqueue&lt;/code&gt;）来监控文件的变化，在文件被更新时，Envoy 读取保存的 &lt;code&gt;DiscoveryResponse&lt;/code&gt; 数据进行解析，数据格式可以为二进制 protobuf、JSON、YAML 和协议文本等。&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;译者注：core.ConfigSource 配置格式如下：&lt;/p&gt;
 &lt;/blockquote&gt;
@@ -377,7 +377,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;文件订阅方式可提供统计数据和日志信息，但是缺少 ACK/NACK 更新的机制。如果更新的配置被拒绝，xDS API 则继续使用最后一个的有效配置。&lt;/p&gt;
 &lt;h2 id=&#34;grpc-流式订阅&#34;&gt;gRPC 流式订阅&lt;/h2&gt;
 &lt;h3 id=&#34;单资源类型发现&#34;&gt;单资源类型发现&lt;/h3&gt;
-&lt;p&gt;每个 xDS API 可以单独配置 &lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/core/config_source.proto#core-apiconfigsource&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;ApiConfigSource&lt;/code&gt;&lt;/a&gt;，指向对应的上游管理服务器的集群地址。每个 xDS 资源类型会启动一个独立的双向 gRPC 流，可能对应不同的管理服务器。API 交付方式采用最终一致性。可以参考后续聚合服务发现（ADS） 章节来了解必要的显式控制序列。&lt;/p&gt;
+&lt;p&gt;每个 xDS API 可以单独配置 &lt;code&gt;ApiConfigSource&lt;/code&gt;，指向对应的上游管理服务器的集群地址。每个 xDS 资源类型会启动一个独立的双向 gRPC 流，可能对应不同的管理服务器。API 交付方式采用最终一致性。可以参考后续聚合服务发现（ADS） 章节来了解必要的显式控制序列。&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;译者注：core.ApiConfigSource 配置格式如下：&lt;/p&gt;
 &lt;/blockquote&gt;
@@ -693,7 +693,7 @@
 &lt;li&gt;xDS 服务器可以增量更新客户端上的资源。这支持 xDS 资源可伸缩性的目标。管理服务器只需交付更改的单个集群，而不是在修改单个集群时交付所有上万个集群。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;xDS 增量会话始终位于 gRPC 双向流的上下文中。这允许 xDS 服务器能够跟踪到连接的 xDS 客户端的状态。xDS REST 版本不支持增量。&lt;/p&gt;
-&lt;p&gt;在增量 xDS 中，nonce 字段是必需的，用于匹配  &lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/discovery.proto#discoveryrequest&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;IncrementalDiscoveryResponse&lt;/code&gt;&lt;/a&gt; 关联的 ACK 或 NACK &lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/discovery.proto#discoveryrequest&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;IncrementalDiscoveryRequest&lt;/code&gt;&lt;/a&gt;。可选地，存在响应消息级别的 system_version_info，但仅用于调试目的。&lt;/p&gt;
+&lt;p&gt;在增量 xDS 中，nonce 字段是必需的，用于匹配  &lt;code&gt;IncrementalDiscoveryResponse&lt;/code&gt; 关联的 ACK 或 NACK &lt;code&gt;IncrementalDiscoveryRequest&lt;/code&gt;。可选地，存在响应消息级别的 system_version_info，但仅用于调试目的。&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;IncrementalDiscoveryRequest&lt;/code&gt; 可在以下 3 种情况下发送：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;xDS 双向 gRPC 流的初始消息。&lt;/li&gt;

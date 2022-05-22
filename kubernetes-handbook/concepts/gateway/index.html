@@ -364,7 +364,7 @@
         content="2022-05-21T00:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2022-05-22T10:15:22&#43;08:00">
+    <meta property="article:modified_time" content="2022-05-22T13:01:09&#43;08:00">
   
 
   
@@ -1550,7 +1550,7 @@
 <h3 id="gatewayclass">GatewayClass</h3>
 <p><code>GatewayClass</code> 定义了一组共享共同配置和行为的 Gateway，每个 <code>GatewayClass</code> 由一个控制器处理，但控制器可以处理多个 <code>GatewayClass</code>。</p>
 <p><code>GatewayClass</code> 是一个集群范围的资源。必须至少定义一个 <code>GatewayClass</code>，<code>Gateway</code> 才能够生效。实现 Gateway API 的控制器通过关联的 <code>GatewayClass</code> 资源来实现，用户可以在自己的 <code>Gateway</code> 中引用该资源。</p>
-<p>这类似于 <code>Ingress</code> 的 <a href="https://github.com/kubernetes/enhancements/blob/master/keps/sig-network/20190125-ingress-api-group.md#ingress-class" target="_blank" rel="noopener"><code>IngressClass</code></a> 和 <code>PersistentVolumes</code> 的 <a href="https://kubernetes.io/docs/concepts/storage/storage-classes/" target="_blank" rel="noopener"><code>StorageClass</code></a>。在 <code>Ingress</code> v1beta1 中，最接近 <code>GatewayClass</code> 的是 <code>ingress-class</code> 注解，而在 IngressV1 中，最接近的类似物是 <code>IngressClass</code> 对象。</p>
+<p>这类似于 <code>Ingress</code> 的 <code>IngressClass</code>] 和 <code>PersistentVolumes</code> 的 <a href="https://kubernetes.io/docs/concepts/storage/storage-classes/" target="_blank" rel="noopener"><code>StorageClass</code></a>。在 <code>Ingress</code> v1beta1 中，最接近 <code>GatewayClass</code> 的是 <code>ingress-class</code> 注解，而在 IngressV1 中，最接近的类似物是 <code>IngressClass</code> 对象。</p>
 <h3 id="gateway">Gateway</h3>
 <p><code>Gateway</code> 描述了如何将流量翻译到集群内的服务。也就是说，它定义了一个方法，将流量从不了解 Kubernetes 的地方翻译到了解 Kubernetes 的地方。例如，由云负载均衡器、集群内代理或外部硬件负载均衡器发送到 Kubernetes 服务的流量。虽然许多用例的客户端流量源自集群的 &ldquo;外部&rdquo;，但这并不强求。</p>
 <p><code>Gateway</code> 定义了对实现 <code>GatewayClass</code> 配置和行为合同的特定负载均衡器配置的请求。该资源可以由运维人员直接创建，也可以由处理 <code>GatewayClass</code> 的控制器创建。</p>
@@ -1561,7 +1561,7 @@
 <p><code>HTTPRoute</code> 和 <code>TCPRoute</code> 是目前唯一已定义的 <code>Route</code> 对象。未来可能会添加其他特定协议的 <code>Route</code> 对象。</p>
 <h3 id="backendpolicy">BackendPolicy</h3>
 <p><code>BackendPolicy</code> 提供了一种配置 <code>Gateway</code> 和后端之间连接的方法。在这个 API 中，后端是指路由可以转发流量的任何资源。后端的一个常见例子是 <code>Service</code>。这个级别的配置目前仅限于 TLS，但将来会扩展到支持更高级的策略，如健康检查。</p>
-<p>一些后端配置可能会根据针对后端的 <code>Route</code> 而有所不同。在这些情况下，配置字段将放在 <code>Route</code> 上，而不是 <code>BackendPolicy</code> 上。有关该资源未来可能配置的更多信息，请参考相关的 <a href="https://github.com/kubernetes-sigs/gateway-apis/issues/196" target="_blank" rel="noopener">GitHub issue</a>。</p>
+<p>一些后端配置可能会根据针对后端的 <code>Route</code> 而有所不同。在这些情况下，配置字段将放在 <code>Route</code> 上，而不是 <code>BackendPolicy</code> 上。</p>
 <h3 id="路由绑定">路由绑定</h3>
 <p>当 <code>Route</code> 绑定到 <code>Gateway</code> 时，代表应用在 <code>Gateway</code> 上的配置，配置了底层的负载均衡器或代理。哪些 <code>Route</code> 如何绑定到 <code>Gateway</code> 是由资源本身控制的。<code>Route</code> 和 <code>Gateway</code> 资源具有内置的控制，以允许或限制它们之间如何相互选择。这对于强制执行组织政策以确定 <code>Route</code> 如何暴露以及在哪些 <code>Gateway</code> 上暴露非常有用。看下下面的例子。</p>
 <p>一个 Kubernetes 集群管理员在 <code>Infra</code> 命名空间中部署了一个名为 <code>shared-gw</code> 的 <code>Gateway</code>，供不同的应用团队使用，以便将其应用暴露在集群之外。团队 A 和团队 B（分别在命名空间 &ldquo;A&rdquo; 和 &ldquo;B&rdquo; 中）将他们的 <code>Route</code> 绑定到这个 <code>Gateway</code>。它们互不相识，只要它们的 <code>Route</code> 规则互不冲突，就可以继续隔离运行。团队 C 有特殊的网络需求（可能是性能、安全或关键性），他们需要一个专门的 <code>Gateway</code> 来代理他们的应用到集群外。团队 C 在 &ldquo;C&rdquo; 命名空间中部署了自己的 <code>Gateway</code> <code>specialive-gw</code>，该 Gateway 只能由 &ldquo;C&rdquo; 命名空间中的应用使用。</p>
