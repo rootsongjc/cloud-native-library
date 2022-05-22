@@ -3,7 +3,8 @@ widget: hero
 headless: true
 weight: 10
 title: 云原生资料库
-hero_media: library.png
+#hero_media: library.png
+hero_media: book.svg
 design:
   background:
     gradient_start: '#0a55a7'
