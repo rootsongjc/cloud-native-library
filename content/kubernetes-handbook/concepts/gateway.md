@@ -83,7 +83,7 @@ Gateway API 的资源模型中，主要有三种类型的对象：
 
 `GatewayClass` 是一个集群范围的资源。必须至少定义一个 `GatewayClass`，`Gateway` 才能够生效。实现 Gateway API 的控制器通过关联的 `GatewayClass` 资源来实现，用户可以在自己的 `Gateway` 中引用该资源。
 
-这类似于 `Ingress` 的 [`IngressClass`](https://github.com/kubernetes/enhancements/blob/master/keps/sig-network/20190125-ingress-api-group.md#ingress-class) 和 `PersistentVolumes` 的 [`StorageClass`](https://kubernetes.io/docs/concepts/storage/storage-classes/)。在 `Ingress` v1beta1 中，最接近 `GatewayClass` 的是 `ingress-class` 注解，而在 IngressV1 中，最接近的类似物是 `IngressClass` 对象。
+这类似于 `Ingress` 的 `IngressClass`] 和 `PersistentVolumes` 的 [`StorageClass`](https://kubernetes.io/docs/concepts/storage/storage-classes/)。在 `Ingress` v1beta1 中，最接近 `GatewayClass` 的是 `ingress-class` 注解，而在 IngressV1 中，最接近的类似物是 `IngressClass` 对象。
 
 ### Gateway
 
@@ -105,7 +105,7 @@ Gateway API 的资源模型中，主要有三种类型的对象：
 
 `BackendPolicy` 提供了一种配置 `Gateway` 和后端之间连接的方法。在这个 API 中，后端是指路由可以转发流量的任何资源。后端的一个常见例子是 `Service`。这个级别的配置目前仅限于 TLS，但将来会扩展到支持更高级的策略，如健康检查。
 
-一些后端配置可能会根据针对后端的 `Route` 而有所不同。在这些情况下，配置字段将放在 `Route` 上，而不是 `BackendPolicy` 上。有关该资源未来可能配置的更多信息，请参考相关的 [GitHub issue](https://github.com/kubernetes-sigs/gateway-apis/issues/196)。
+一些后端配置可能会根据针对后端的 `Route` 而有所不同。在这些情况下，配置字段将放在 `Route` 上，而不是 `BackendPolicy` 上。
 
 ### 路由绑定
 
