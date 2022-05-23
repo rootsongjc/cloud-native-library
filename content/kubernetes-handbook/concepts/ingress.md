@@ -6,7 +6,7 @@ type: book
 level: 2
 ---
 
-Ingress 是从 Kubernetes 集群外部访问集群内部服务的入口，这篇文章部分译自 Kubernetes 官方文档 [Ingress Resource](https://kubernetes.io/docs/concepts/services-networking/ingress/)，后面的章节会讲到使用 [Traefik](https://github.com/containous/traefik) 来做 Ingress controller，文章末尾给出了几个相关链接。
+Ingress 是从 Kubernetes 集群外部访问集群内部服务的入口，是将 Kubernetes 集群内部服务暴露到外界的几种方式之一。本文将为你详细介绍 Ingress 资源对象。
 
 **术语**
 
