@@ -32,10 +32,8 @@ links:
   - icon: medium
     icon_pack: fab
     name: 原文
-    url: https://blog.envoyproxy.io/introducing-envoy-gateway-ad385cc59532
+    url: https://blog.envoyproxy.io/introducing-envoy-gateway-ad385cc5953
 ---
-
-## Envoy Gateway 简介
 
 今天，我们很高兴地宣布 [Envoy Gateway](https://github.com/envoyproxy/gateway) 成为 Envoy 代理家族的新成员，该项目旨在大幅降低将 Envoy 作为 API 网关的使用门槛。
 
