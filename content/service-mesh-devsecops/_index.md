@@ -14,6 +14,10 @@ cascade:
 
 {{< figure src="images/cover.jpg" alt="封面" caption="《利用服务网格为基于微服务的应用程序实施 DevSecOps》封面" width="50%" >}}
 
+## 本书大纲
+
+{{< list_children show_summary="false">}}
+
 ## 关于本书
 
 作者：Ramaswamy Chandramouli

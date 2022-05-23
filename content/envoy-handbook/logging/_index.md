@@ -13,4 +13,8 @@ icon_pack: fas
 
 在本章结束时，你将了解 Envoy 中存在哪些日志选项，包括如何对日志进行结构化和过滤，以及它们可以被写到哪里。
 
+## 本章大纲
+
+{{< list_children show_summary="false">}}
+
 {{< cta cta_text="阅读本章" cta_link="access-logging" >}}

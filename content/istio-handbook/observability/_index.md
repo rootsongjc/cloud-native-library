@@ -71,4 +71,8 @@ Istio 也会发射控制平面指标，可以帮助监控 Istio 的控制平面�
 
 控制平面指标包括冲突的入站/出站监听器的数量、没有实例的集群数量、被拒绝或被忽略的配置等指标。
 
+## 本章大纲
+
+{{< list_children show_summary="false">}}
+
 {{< cta cta_text="阅读本章" cta_link="telemetry-api" >}}

@@ -11,4 +11,8 @@ icon_pack: fas
 
 在本章结束时，你将了解静态和动态配置之间的区别。
 
+## 本章大纲
+
+{{< list_children show_summary="false">}}
+
 {{< cta cta_text="阅读本章" cta_link="dynamic-configuration" >}}

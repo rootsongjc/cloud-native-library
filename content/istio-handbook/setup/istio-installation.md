@@ -5,6 +5,10 @@ date: '2022-05-18T00:00:00+08:00'
 type: book
 ---
 
+{{% callout warning %}}
+Istio 官方已不再推荐使用 Operator 来安装 Istio，建议你使用 istioctl 命令或者 Helm 来安装。
+{{% /callout %}}
+
 要安装 Istio，我们需要一个运行中的 Kubernetes 集群实例。所有的云供应商都有一个管理的 Kubernetes 集群提供，我们可以用它来安装 Istio 服务网格。
 
 我们也可以在你的电脑上使用以下平台之一在本地运行一个 Kubernetes集群。

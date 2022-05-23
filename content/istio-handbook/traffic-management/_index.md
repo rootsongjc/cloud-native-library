@@ -20,4 +20,8 @@ icon-pack: fas
 - **显式地向网格中注册服务**：显示地引入 Service Mesh 内部或外部的服务，纳入服务网格管理。由 `ServiceEntry` 实现。
 - **控制网格边缘的南北向流量**：为了管理进入 Istio service mesh 的南北向入口流量，需要创建 `Gateway` 对象并与 `VirtualService` 绑定。
 
+## 本章大纲
+
+{{< list_children show_summary="false">}}
+
 {{< cta cta_text="阅读本章" cta_link="basic" >}}

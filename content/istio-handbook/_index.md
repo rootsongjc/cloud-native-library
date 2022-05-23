@@ -12,6 +12,10 @@ cascade:
   level: 1
 ---
 
+{{% callout 注意 %}}
+本文内容基于 Istio 1.11 或更新版本。
+{{% /callout %}}
+
 [Istio](https://istio.io) 是由 Google、IBM、Lyft 等共同开源的 Service Mesh（服务网格）框架，于2017 年开源。
 
 {{< figure src="images/cover.jpg" alt="封面" caption="《Istio 基础教程》封面" width="50%" >}}
@@ -28,6 +32,10 @@ cascade:
 - 构建云原生应用网络
 
 书中部分内容来自 Tetrate 出品的 [Istio 基础教程](https://academy.tetrate.io/courses/istio-fundamentals-zh)，请访问 [Tetrate 学院](https://academy.tetrate.io/)，解锁全部教程及测试，获得 Tetrate 认证的 Istio 认证。
+
+## 本书大纲
+
+{{< list_children show_summary="false">}}
 
 ## 关于作者
 

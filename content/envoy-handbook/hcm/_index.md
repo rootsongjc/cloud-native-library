@@ -11,4 +11,8 @@ icon_pack: fas
 
 在本章结束时，你将对 HCM 过滤器有一个很好的理解，以及如何路由和拆分 HTTP 流量，操纵 Header 等等。
 
+## 本章大纲
+
+{{< list_children show_summary="false">}}
+
 {{< cta cta_text="阅读本章" cta_link="introduction" >}}

@@ -35,14 +35,12 @@ icon_pack: fas
 - 基于API的协作：发布和版本化的API，允许在云原生应用架构中的服务之间进行交互
 - 抗压性：根据压力变强的系统
 
-**关于作者**
+## 本章大纲
+
+{{< list_children show_summary="false">}}
+
+## 关于作者
 
 Matt Stine，Pivotal的技术产品经理，拥有15年企业IT和众多业务领域的经验。Matt 强调精益/敏捷方法、DevOps、架构模式和编程范例，他正在探究使用技术组合帮助企业IT部门能够像初创公司一样工作。
-
-**Migrating to Cloud-Native Application Architectures**
-
-by Matt Stine
-
-Copyright © 2015 O’Reilly Media. All rights reserved.
 
 {{< cta cta_text="开始阅读" cta_link="the-rise-of-cloud-native" >}}

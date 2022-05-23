@@ -22,6 +22,12 @@ cascade:
 - 设计测试以证明您的基础架构可以按预期工作，即使在各种边缘情况下也是如此
 - 了解如何以策略即代码的方式保护基础架构
 
+## 本书大纲
+
+{{< list_children show_summary="false">}}
+
 ## 免责声明
 
 本书英文版版权属于 O’Reilly，中文版版权归属于机械工业出版，基于[署名-非商业性使用-相同方式共享 4.0（CC BY-NC-SA 4.0）](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)分享，本书为云原生爱好者翻译，仅可用于学习和交流目的，请勿私自印制贩卖，如有需要请[购买纸质书](https://item.jd.com/12432007.html)。
+
+{{< cta cta_text="开始阅读" cta_link="foreword" >}}

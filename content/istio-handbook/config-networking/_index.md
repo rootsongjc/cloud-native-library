@@ -7,6 +7,10 @@ icon: book-open
 icon-pack: fas
 ---
 
-流量管理配置一节描述如何配置 Istio 服务网格中与流量管理相关的一些资源对象。
+流量管理配置章节描述如何配置 Istio 服务网格中与流量管理相关的一些资源对象。
+
+## 本章大纲
+
+{{< list_children show_summary="false">}}
 
 {{< cta cta_text="阅读本章" cta_link="gateway" >}}

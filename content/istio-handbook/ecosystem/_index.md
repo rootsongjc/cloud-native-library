@@ -33,16 +33,8 @@ Istio 服务网格自 2017 年 5 月开源以来，已围绕其周边诞生了�
 1. 开源时间以 GitHub 仓库创建时间为准
 2. Star 数量统计截止时间为 2021年11月11 日
 
-## 参考
+## 本章大纲
 
-- [Building Ambassador, an Open Source API Gateway on Kubernetes and Envoy - blog.ambassador.io](https://medium.com/@datawire/building-ambassador-an-open-source-api-gateway-on-kubernetes-and-envoy-33637a9fa6f8)
-- [蚂蚁开源多运行时项目 Layotto 简介 - cloudnative.to](https://cloudnative.to/blog/mosn-layotto-intro/)
-- [Slime：让 Istio 服务网格变得更加高效与智能 - cloudnative.to](https://cloudnative.to/blog/netease-slime/)
-- [使用 Aeraki 在 Isito 中支持 Dubbo、 Thrift、 Redis，以及任何七层协议 - cloudnative.to](https://cloudnative.to/blog/istiocon-layer7-traffic)
-- [Apache APISIX 的全流量 API 网关统筹集群流量 - cloudnative.to](https://cloudnative.to/blog/full-traffic-api-gateway-based-on-apache-apisix/)
-- [GetMesh 官网 - istio.tetratelabs.io](https://istio.tetratelabs.io/zh/)
-- [MOSN 官网 - mosn.io](https://mosn.io)
-- [Istio 官网 - istio.io](https://istio.io)
-- [Envoy 官网 - envoyproxy.io](https://envoyproxy.io)
+{{< list_children show_summary="false">}}
 
 {{< cta cta_text="阅读本章" cta_link="aeraki" >}}

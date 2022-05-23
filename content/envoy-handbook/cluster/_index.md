@@ -11,4 +11,8 @@ icon_pack: fas
 
 在本章结束时，你将了解集群和端点是如何工作的，以及如何配置负载均衡策略、异常点检测和断路。
 
+## 本章大纲
+
+{{< list_children show_summary="false">}}
+
 {{< cta cta_text="阅读本章" cta_link="service-discovery" >}}

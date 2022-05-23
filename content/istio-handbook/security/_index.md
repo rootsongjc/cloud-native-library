@@ -16,4 +16,8 @@ icon-pack: fas
 - Envoy 代理扩展：管理遥测和审计
 - 配置 API 服务器：分发认证、授权策略和安全命名信息
 
+## 本章大纲
+
+{{< list_children show_summary="false">}}
+
 {{< cta cta_text="阅读本章" cta_link="authn" >}}

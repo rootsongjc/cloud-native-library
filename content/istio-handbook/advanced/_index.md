@@ -18,4 +18,8 @@ icon-pack: fas
 
 上述模式的任何组合都是可能的，然而，并非所有的模式都有意义。在本章中，我们将重点讨论涉及多个集群的场景。
 
+## 本章大纲
+
+{{< list_children show_summary="false">}}
+
 {{< cta cta_text="阅读本章" cta_link="multicluster-deployment" >}}

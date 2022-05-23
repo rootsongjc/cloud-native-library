@@ -145,9 +145,14 @@ static_resources:
 curl https://func-e.io/install.sh | sudo bash -s -- -b /usr/local/bin
 ```
 
-现在我们用我们创建的配置运行 Envoy。
+现在用我们创建的配置运行 Envoy。
+
+{{% callout 注意 %}}
+下面的命令基于 Envoy 1.20 版本，对于 Envoy 1.22 或更新版本会有兼容性问题，见[此 Issue](https://github.com/rootsongjc/docs/issues/9)。
+{{% /callout %}}
 
 ```sh
+fucc-e use 1.20
 func-e run -c envoy-direct-response.yaml
 ```
 

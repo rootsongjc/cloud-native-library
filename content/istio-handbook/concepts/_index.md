@@ -14,4 +14,8 @@ icon-pack: fas
 - stio 中的主要部署模式——Sidecar 模式
 - 透明流量拦截——Istio 的核心设计思想
 
+## 本章大纲
+
+{{< list_children show_summary="false">}}
+
 {{< cta cta_text="阅读本章" cta_link="service-mesh-architectures" >}}

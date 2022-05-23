@@ -11,4 +11,8 @@ icon_pack: fas
 
 在本章结束时，你将了解如何启用管理接口以及我们可以通过它执行的不同任务。
 
+## 本章大纲
+
+{{< list_children show_summary="false">}}
+
 {{< cta cta_text="阅读本章" cta_link="enabling-admin-interface" >}}

@@ -14,4 +14,8 @@ icon-pack: fas
 - PeerAuthentication
 - JWTRule
 
+## 本章大纲
+
+{{< list_children show_summary="false">}}
+
 {{< cta cta_text="阅读本章" cta_link="authorization-policy" >}}
