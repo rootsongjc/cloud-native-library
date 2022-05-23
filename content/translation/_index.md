@@ -1,5 +1,5 @@
 ---
-title: 翻译
+title: 译文
 cms_exclude: true
 
 # View.

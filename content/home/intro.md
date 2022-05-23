@@ -8,13 +8,13 @@ feature:
   - icon: book-open
     icon_pack: fas
     name: 开源电子书
-    description: Handbook实战系列电子书
+    description: Handbook 系列基础教程及电子书
   - icon: book
     icon_pack: fas
     name: 出版物
-    description: Jimmy参与翻译著作的出版物。
+    description: Jimmy 参与编著的出版物
   - icon: language
     icon_pack: fas
     name: 译文
-    description: 云原生领域优秀电子书翻译。
+    description: 云原生领域优秀博客翻译
 ---
