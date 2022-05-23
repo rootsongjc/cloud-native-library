@@ -6,6 +6,8 @@ date: '2022-05-18T00:00:00+08:00'
 type: book
 icon: book
 icon_pack: fas
+cascade:
+  commentable: true
 ---
 
 本书是 [Migrating to Cloud Native Application Architectures](https://tanzu.vmware.com/content/ebooks/migrating-to-cloud-native-application-architectures) 的中文版，本书英文版发布于 2015 年 2 月，中文版由 [Jimmy Song](https://jimmysong.io) 翻译，发布于 2017 年 7 月。
