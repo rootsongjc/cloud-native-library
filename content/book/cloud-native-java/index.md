@@ -3,18 +3,12 @@ title: 云原生Java
 summary: 张若飞、宋净超 译
 tags:
   - 出版物
-  - 翻译
 date: 2018-07-01
 publication: "[购买纸质书](https://item.jd.com/12365097.html)"
 type: publication
 ---
 
 {{< figure src="cloud-native-java.jpg" alt="封面"  caption="云原生 Java  图书封面" width="50%">}}
-
-这是我翻译的第三本云原生相关技术书籍，前两本分别是：
-
-- [Cloud Native Go 中文版](/docs/book/cloud-native-go/)
-- [Cloud Native Python 中文版](/docs/book/cloud-native-python/)
 
 ![Jimmy Song with Josh Long](jimmy-song-with-josh-long.jpg)
 

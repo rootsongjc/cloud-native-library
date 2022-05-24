@@ -5,7 +5,7 @@ authors: ["Liam Byrne"]
 categories: ["Service Mesh"]
 tags: ["wasm","istio","envoy"]
 # Date published
-date: '2022-05-13T13:00:00T+08:00'
+date: '2022-05-13T13:00:00+08:00'
 
 # Date updated
 lastmod: '2022-05-13T21:12:00+08:00'

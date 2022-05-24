@@ -3,7 +3,6 @@ title: 未来架构——从服务化到云原生
 summary: 张亮、吴晟、敖小剑、宋净超 著
 tags:
   - 出版物
-  - 原创
 date: 2019-04-01
 #external_link: https://item.jd.com/12498217.html
 type: publication

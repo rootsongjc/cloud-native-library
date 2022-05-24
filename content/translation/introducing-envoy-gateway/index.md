@@ -6,7 +6,7 @@ summary: 今天，我们很高兴地宣布 Envoy Gateway 成为 Envoy 代理家�
 projects: [""]
 
 # Date published
-date: '2022-05-16T13:00:00T+08:00'
+date: '2022-05-16T13:00:00+08:00'
 
 # Date updated
 lastmod: '2022-05-16T21:12:00+08:00'

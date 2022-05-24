@@ -3,7 +3,6 @@ title: OpenTelemetry可观察性指南
 summary: 利用格式化数据从根本上改变可观察性实践
 tags:
   - 翻译电子书
-  - 翻译
 date: 2022-05-06
 internal_link: /docs/opentelemetry-obervability/
 type: publication

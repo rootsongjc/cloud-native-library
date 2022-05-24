@@ -3,7 +3,6 @@ title: Kubernetes加固指南
 summary: NSA 和 CISA 联合出品
 tags:
   - 翻译电子书
-  - 翻译
 date: 2021-08-08
 internal_link: /docs/kubernetes-hardening-guidance/
 type: publication

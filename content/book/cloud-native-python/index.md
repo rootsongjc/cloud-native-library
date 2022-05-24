@@ -3,7 +3,6 @@ title: Python云原生
 summary: 构建应对海量用户数据的高可扩展Web应用
 tags:
   - 出版物
-  - 翻译
 date: 2018-07-01
 publication: "[购买纸质书](https://item.jd.com/12365097.html)"
 type: publication

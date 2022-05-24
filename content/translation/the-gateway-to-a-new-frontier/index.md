@@ -6,7 +6,7 @@ summary: 在我们看来，由于Envoy的设计、功能设置、安装基础和
 projects: [""]
 
 # Date published
-date: '2022-05-17T11:00:00T+08:00'
+date: '2022-05-17T11:00:00+08:00'
 
 # Date updated
 lastmod: '2022-05-17T11:12:00+08:00'
