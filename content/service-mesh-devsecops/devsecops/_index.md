@@ -13,4 +13,8 @@ DevSecOps 在早期就将安全纳入了软件工程流程。它将安全流程�
 -   开发安全运维平台
 -   开发安全运维的基本构件或关键原语
 
+## 本章大纲
+
+{{< list_children show_summary="false">}}
+
 {{< cta cta_text="开始阅读" cta_link="organizational-preparedness-for-devsecops" >}}

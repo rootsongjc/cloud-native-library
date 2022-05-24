@@ -23,4 +23,8 @@ type: book
 
 本节还将考虑 DevSecOps 的整体优势，并在第 4.9 节和第 4.10 节分别介绍参考平台的具体优势和利用 DevSecOps 进行持续授权操作（C-ATO）的能力。
 
+## 本章大纲
+
+{{< list_children show_summary="false">}}
+
 {{< cta cta_text="开始阅读" cta_link="description-of-code-types-and-reference-platform-components" >}}

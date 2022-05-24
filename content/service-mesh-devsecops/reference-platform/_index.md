@@ -10,4 +10,8 @@ type: book
 -   一个容器编排和资源管理平台，容纳了应用程序代码和大部分的服务网格代码
 -   服务网格的软件架构
 
+## 本章大纲
+
+{{< list_children show_summary="false">}}
+
 {{< cta cta_text="开始阅读" cta_link="container-orchestration-and-resource-management-platform" >}}
