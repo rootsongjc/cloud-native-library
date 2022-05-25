@@ -21,15 +21,17 @@ experience:
     date_start: '2022-05-01'
     date_end: ''
     description: >-
-      * 将 [jimmysong.io 主站](https://jimmysong.io)上的图书、Gitbook 迁移而来，原有的 Gitbook 停止维护
+      * 将 [jimmysong.io 主站](https://jimmysong.io)上的图书迁移至本站📚
 
-      * 使用 Hugo 重新构建
+      * 使用 Hugo 重新构建🔨
 
-      * 增加 [Giscuz](https://giscus.app/) 评论模块
+      * 增加 [Giscus](https://giscus.app/) 评论模块📝
 
       * 应用 [Wowchemy 主题](https://wowchemy.com/)
 
-      * 新增[翻译](translation)版块
+      * 新增[译文](translation)版块
+    
+      * 内建全文搜索功能 🔍
 design:
   columns: "2"
   view: list

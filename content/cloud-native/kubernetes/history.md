@@ -3,8 +3,7 @@ title: Kubernetes 的历史
 linktitle: Kubernetes 的历史
 type: book
 date: '2022-05-03T00:00:00+01:00'
-# Prev/next pager order (if `docs_section_pager` enabled in `params.toml`)
-weight: 1
+weight: 20
 ---
 
 众所周知，[Kubernetes](http://kubernetes.io) 是 Google 于 2014 年 6 月基于其内部使用的 [Borg](https://research.google.com/pubs/pub43438.html) 系统开源出来的容器编排调度引擎。其实从 2000 年开始，Google 就开始基于容器研发三个容器管理系统，分别是 Borg、Omega 和 Kubernetes。这篇由 Google 工程师 Brendan Burns、Brian Grant、David Oppenheimer、Eric Brewer 和 John Wilkes 几人在 2016 年发表的[《Borg, Omega, and Kubernetes》](https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/44843.pdf)论文里，阐述了 Google 从 Borg 到 Kubernetes 这个旅程中所获得知识和经验教训。
