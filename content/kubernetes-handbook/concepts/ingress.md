@@ -13,7 +13,7 @@ Ingress 是从 Kubernetes 集群外部访问集群内部服务的入口，是将
 在本篇文章中你将会看到一些在其他地方被交叉使用的术语，为了防止产生歧义，我们首先来澄清下。
 
 - 节点：Kubernetes 集群中的一台物理机或者虚拟机。
-- 集群：位于 Internet 防火墙后的节点，这是 kubernetes 管理的主要计算资源。
+- 集群：位于 Internet 防火墙后的节点，这是 Kubernetes 管理的主要计算资源。
 - 边界路由器：为集群强制执行防火墙策略的路由器。 这可能是由云提供商或物理硬件管理的网关。
 - 集群网络：一组逻辑或物理链接，可根据 Kubernetes [网络模型](https://kubernetes.io/docs/admin/networking/) 实现群集内的通信。 集群网络的实现包括 Overlay 模型的 [flannel](https://github.com/coreos/flannel#flannel) 和基于 SDN 的 OVS。
 - 服务：使用标签选择器标识一组 pod 成为的 Kubernetes [服务](https://kubernetes.io/docs/user-guide/services/)。 除非另有说明，否则服务假定在集群网络内仅可通过虚拟 IP 访问。
@@ -45,10 +45,9 @@ Ingress 是授权入站连接到达集群服务的规则集合。
 
 在使用 Ingress 资源之前，有必要先了解下面几件事情。
 
-- Ingress 资源对象在 Kubernetes 1.1 之前还没有。
 - 你需要一个 `Ingress Controller` 来实现 `Ingress`，单纯的创建一个 `Ingress` 没有任何意义。
 - GCE/GKE 会在 master 节点上部署一个 ingress controller。你可以在一个 pod 中部署任意个自定义的 ingress controller。你必须正确地注解每个 ingress，比如运行多个 ingress controller 和关闭 glbc。
-- 在非 GCE/GKE 的环境中，你需要在 pod 中 部署一个 controller，例如 [Nginx Ingress Controller](https://github.com/kubernetes/ingress-nginx/blob/master/README.md)。
+- 在非 GCE/GKE 的环境中，你需要在 pod 中部署一个 controller，例如 [Nginx Ingress Controller](https://github.com/kubernetes/ingress-nginx/blob/master/README.md)。
 
 ## Ingress 资源
 
@@ -83,23 +82,50 @@ Ingress 是授权入站连接到达集群服务的规则集合。
 
 **全局参数**：为了简单起见，Ingress 示例中没有全局参数，请参阅资源完整定义的 [API 参考](https://releases.k8s.io/master/staging/src/k8s.io/api/extensions/v1beta1/types.go)。 在所有请求都不能跟 spec 中的 path 匹配的情况下，请求被发送到 Ingress controller 的默认后端，可以指定全局缺省 backend。
 
-## Ingress controller
+## IngressClass
 
-为了使 Ingress 正常工作，集群中必须运行 Ingress controller。 这与其他类型的控制器不同，其他类型的控制器通常作为 `kube-controller-manager` 二进制文件的一部分运行，在集群启动时自动启动。 你需要选择最适合自己集群的 Ingress controller 或者自己实现一个。
-- Kubernetes 当前支持并维护 [GCE](https://github.com/kubernetes/ingress-gce/blob/master/README.md) 和 [nginx](https://github.com/kubernetes/ingress-nginx/blob/master/README.md) 两种 controller
-- F5（公司）[支持并维护](https://support.f5.com/csp/article/K86859508) [F5 BIG-IP Controller for Kubernetes](http://clouddocs.f5.com/products/connectors/k8s-bigip-ctlr/latest)
-- [Kong](https://konghq.com/) 同时支持并维护 [社区版](https://discuss.konghq.com/c/kubernetes) 与 [企业版](https://konghq.com/api-customer-success/) 的 [Kong Ingress Controller for Kubernetes](https://konghq.com/blog/kubernetes-ingress-controller-for-kong/)
-- [Traefik](https://github.com/containous/traefik) 是功能齐全的 ingress controller（[Let’s Encrypt](https://letsencrypt.org/), secrets, http2, websocket…）, Containous 也对其提供商业支持。
-- [Istio](https://istio.io) 使用 CRD Gateway 来 [控制 Ingress 流量](https://istio.io/docs/tasks/traffic-management/ingress/)。
+Ingress 可以由不同的控制器实现，通常使用不同的配置。 每个 Ingress 应当指定一个类，也就是一个对 IngressClass 资源的引用。 IngressClass 资源包含额外的配置，其中包括应当实现该类的控制器名称。下面是一个 IngressClass 示例。
 
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: external-lb
+spec:
+  controller: example.com/ingress-controller
+  parameters:
+    apiGroup: k8s.example.com
+    kind: IngressParameters
+    name: external-lb
+```
 
-## 在你开始前
+IngressClass 中的 `.spec.parameters` 字段可用于引用其他资源以提供额外的相关配置。
 
-以下文档描述了 Ingress 资源中公开的一组跨平台功能。 理想情况下，所有的 Ingress controller 都应该符合这个规范，但是我们还没有实现。 GCE 和 Nginx 控制器的文档分别在 [这里](https://github.com/kubernetes/ingress-gce/blob/master/README.md) 和 [这里](https://github.com/kubernetes/ingress-nginx/blob/master/README.md)。如果您使用 F5 BIG-IP controller，请参看 [这里](http://clouddocs.f5.com/containers/latest/kubernetes/kctlr-k8s-ingress-ctlr.html)。
+参数（`parameters`）的具体类型取决于你在 `.spec.controller` 字段中指定的 Ingress 控制器。
 
-**确保您查看控制器特定的文档，以便您了解每个文档的注意事项。**
+### IngressClass 的作用域
+
+IngressClass 的作用域取决于你的 Ingress 控制器，可以使用集群范围也可以是某个命名空间。
+
+IngressClass 的默认作用于是集群级别，关于 IngressClass 作用域的详细使用说明请见 [Ingress 文档](https://kubernetes.io/docs/concepts/services-networking/ingress/#ingressclass)。
+
+### 默认 IngressClass
+
+你可以将一个特定的 IngressClass 标记为集群默认 IngressClass。 将一个 IngressClass 资源的 `ingressclass.kubernetes.io/is-default-class` 注解设置为 `true` 将确保新的未指定 `ingressClassName` 字段的 Ingress 能够分配为这个默认的 IngressClass。集群中最多只能有一个 IngressClass 被标记为默认。
+
+### `kubernetes.io/ingress.class` 注解
+
+在 Kubernetes 1.18 版本引入 IngressClass 资源和 `ingressClassName` 字段之前，Ingress 类是通过 Ingress 中的一个 `kubernetes.io/ingress.class` 注解来指定的。 这个注解从未被正式定义过，但是得到了 [Ingress 控制器](../ingress-controller/)的广泛支持。
+
+ `ingressClassName` 配置项是该注解的替代品，但并不完全等价。 该注解通常用于引用实现该 Ingress 的控制器的名称，而这个新的字段则是对一个包含额外 Ingress 配置的 IngressClass 资源的引用，包括 Ingress 控制器的名称。
 
 ## Ingress 类型
+
+以下文档描述了 Ingress 资源中公开的一组跨平台功能。 理想情况下，所有的 Ingress controller 都应该符合这个规范，但是目前还没有实现。
+
+{{% callout 注意 %}}
+确保您查看控制器特定的文档，以便您了解每个文档的注意事项。
+{{% /callout %}}
 
 ### 单 Service Ingress
 

@@ -13,4 +13,5 @@ image:
 # Optional header image (relative to `static/media/` folder).
 cascade:
   commentable: true
+  show_related: true
 ---
