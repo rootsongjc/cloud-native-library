@@ -53,9 +53,13 @@
   
   
   
+    
+    
+    
+  
   
 
-  
+  <meta name="author" content="Jimmy Song" />
 
   
   
@@ -364,7 +368,7 @@
         content="2022-05-21T00:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2022-05-25T10:30:38&#43;08:00">
+    <meta property="article:modified_time" content="2022-05-25T16:47:47&#43;08:00">
   
 
   
@@ -739,6 +743,29 @@
 
         
         
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://jimmysong.io" data-toggle="tooltip" data-placement="bottom" title="主页" target="_blank" rel="noopener" aria-label="主页">
+                <i class="fas fa-home" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://jimmysong.io/contact/" data-toggle="tooltip" data-placement="bottom" title="加我微信" target="_blank" rel="noopener" aria-label="加我微信">
+                <i class="fab fa-weixin" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://twitter.com/jimmysongio" data-toggle="tooltip" data-placement="bottom" title="在 Twitter 上关注我" target="_blank" rel="noopener" aria-label="在 Twitter 上关注我">
+                <i class="fab fa-twitter" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+        
 
         
         
@@ -981,6 +1008,10 @@
 
 
   <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/cronjob/">CronJob</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv2" href="/docs/kubernetes-handbook/concepts/ingress-controller/">Ingress 控制器</a></li>
 
 
 
@@ -1403,8 +1434,13 @@
     <li><a href="#什么是-ingress">什么是 Ingress？</a></li>
     <li><a href="#先决条件">先决条件</a></li>
     <li><a href="#ingress-资源">Ingress 资源</a></li>
-    <li><a href="#ingress-controller">Ingress controller</a></li>
-    <li><a href="#在你开始前">在你开始前</a></li>
+    <li><a href="#ingressclass">IngressClass</a>
+      <ul>
+        <li><a href="#ingressclass-的作用域">IngressClass 的作用域</a></li>
+        <li><a href="#默认-ingressclass">默认 IngressClass</a></li>
+        <li><a href="#kubernetesioingressclass-注解"><code>kubernetes.io/ingress.class</code> 注解</a></li>
+      </ul>
+    </li>
     <li><a href="#ingress-类型">Ingress 类型</a>
       <ul>
         <li><a href="#单-service-ingress">单 Service Ingress</a></li>
@@ -1489,7 +1525,7 @@
 <p>在本篇文章中你将会看到一些在其他地方被交叉使用的术语，为了防止产生歧义，我们首先来澄清下。</p>
 <ul>
 <li>节点：Kubernetes 集群中的一台物理机或者虚拟机。</li>
-<li>集群：位于 Internet 防火墙后的节点，这是 kubernetes 管理的主要计算资源。</li>
+<li>集群：位于 Internet 防火墙后的节点，这是 Kubernetes 管理的主要计算资源。</li>
 <li>边界路由器：为集群强制执行防火墙策略的路由器。 这可能是由云提供商或物理硬件管理的网关。</li>
 <li>集群网络：一组逻辑或物理链接，可根据 Kubernetes <a href="https://kubernetes.io/docs/admin/networking/" target="_blank" rel="noopener">网络模型</a> 实现群集内的通信。 集群网络的实现包括 Overlay 模型的 <a href="https://github.com/coreos/flannel#flannel" target="_blank" rel="noopener">flannel</a> 和基于 SDN 的 OVS。</li>
 <li>服务：使用标签选择器标识一组 pod 成为的 Kubernetes <a href="https://kubernetes.io/docs/user-guide/services/" target="_blank" rel="noopener">服务</a>。 除非另有说明，否则服务假定在集群网络内仅可通过虚拟 IP 访问。</li>
@@ -1510,10 +1546,9 @@
 <h2 id="先决条件">先决条件</h2>
 <p>在使用 Ingress 资源之前，有必要先了解下面几件事情。</p>
 <ul>
-<li>Ingress 资源对象在 Kubernetes 1.1 之前还没有。</li>
 <li>你需要一个 <code>Ingress Controller</code> 来实现 <code>Ingress</code>，单纯的创建一个 <code>Ingress</code> 没有任何意义。</li>
 <li>GCE/GKE 会在 master 节点上部署一个 ingress controller。你可以在一个 pod 中部署任意个自定义的 ingress controller。你必须正确地注解每个 ingress，比如运行多个 ingress controller 和关闭 glbc。</li>
-<li>在非 GCE/GKE 的环境中，你需要在 pod 中 部署一个 controller，例如 <a href="https://github.com/kubernetes/ingress-nginx/blob/master/README.md" target="_blank" rel="noopener">Nginx Ingress Controller</a>。</li>
+<li>在非 GCE/GKE 的环境中，你需要在 pod 中部署一个 controller，例如 <a href="https://github.com/kubernetes/ingress-nginx/blob/master/README.md" target="_blank" rel="noopener">Nginx Ingress Controller</a>。</li>
 </ul>
 <h2 id="ingress-资源">Ingress 资源</h2>
 <p>最简化的 Ingress 配置如下。</p>
@@ -1536,19 +1571,35 @@
 <p><strong>8-9 行</strong>：每条 http 规则包含以下信息：一个 <code>host</code> 配置项（比如 for.bar.com，在这个例子中默认是 *），<code>path</code> 列表（比如：/testpath），每个 path 都关联一个 <code>backend</code>(比如 test:80)。在 loadbalancer 将流量转发到 backend 之前，所有的入站请求都要先匹配 host 和 path。</p>
 <p><strong>10-12 行</strong>：正如 <a href="https://kubernetes.io/docs/user-guide/services" target="_blank" rel="noopener">services doc</a> 中描述的那样，backend 是一个 <code>service:port</code> 的组合。Ingress 的流量被转发到它所匹配的 backend。</p>
 <p><strong>全局参数</strong>：为了简单起见，Ingress 示例中没有全局参数，请参阅资源完整定义的 <a href="https://releases.k8s.io/master/staging/src/k8s.io/api/extensions/v1beta1/types.go" target="_blank" rel="noopener">API 参考</a>。 在所有请求都不能跟 spec 中的 path 匹配的情况下，请求被发送到 Ingress controller 的默认后端，可以指定全局缺省 backend。</p>
-<h2 id="ingress-controller">Ingress controller</h2>
-<p>为了使 Ingress 正常工作，集群中必须运行 Ingress controller。 这与其他类型的控制器不同，其他类型的控制器通常作为 <code>kube-controller-manager</code> 二进制文件的一部分运行，在集群启动时自动启动。 你需要选择最适合自己集群的 Ingress controller 或者自己实现一个。</p>
-<ul>
-<li>Kubernetes 当前支持并维护 <a href="https://github.com/kubernetes/ingress-gce/blob/master/README.md" target="_blank" rel="noopener">GCE</a> 和 <a href="https://github.com/kubernetes/ingress-nginx/blob/master/README.md" target="_blank" rel="noopener">nginx</a> 两种 controller</li>
-<li>F5（公司）<a href="https://support.f5.com/csp/article/K86859508" target="_blank" rel="noopener">支持并维护</a> <a href="http://clouddocs.f5.com/products/connectors/k8s-bigip-ctlr/latest" target="_blank" rel="noopener">F5 BIG-IP Controller for Kubernetes</a></li>
-<li><a href="https://konghq.com/" target="_blank" rel="noopener">Kong</a> 同时支持并维护 <a href="https://discuss.konghq.com/c/kubernetes" target="_blank" rel="noopener">社区版</a> 与 <a href="https://konghq.com/api-customer-success/" target="_blank" rel="noopener">企业版</a> 的 <a href="https://konghq.com/blog/kubernetes-ingress-controller-for-kong/" target="_blank" rel="noopener">Kong Ingress Controller for Kubernetes</a></li>
-<li><a href="https://github.com/containous/traefik" target="_blank" rel="noopener">Traefik</a> 是功能齐全的 ingress controller（<a href="https://letsencrypt.org/" target="_blank" rel="noopener">Let’s Encrypt</a>, secrets, http2, websocket…）, Containous 也对其提供商业支持。</li>
-<li><a href="https://istio.io" target="_blank" rel="noopener">Istio</a> 使用 CRD Gateway 来 <a href="https://istio.io/docs/tasks/traffic-management/ingress/" target="_blank" rel="noopener">控制 Ingress 流量</a>。</li>
-</ul>
-<h2 id="在你开始前">在你开始前</h2>
-<p>以下文档描述了 Ingress 资源中公开的一组跨平台功能。 理想情况下，所有的 Ingress controller 都应该符合这个规范，但是我们还没有实现。 GCE 和 Nginx 控制器的文档分别在 <a href="https://github.com/kubernetes/ingress-gce/blob/master/README.md" target="_blank" rel="noopener">这里</a> 和 <a href="https://github.com/kubernetes/ingress-nginx/blob/master/README.md" target="_blank" rel="noopener">这里</a>。如果您使用 F5 BIG-IP controller，请参看 <a href="http://clouddocs.f5.com/containers/latest/kubernetes/kctlr-k8s-ingress-ctlr.html" target="_blank" rel="noopener">这里</a>。</p>
-<p><strong>确保您查看控制器特定的文档，以便您了解每个文档的注意事项。</strong></p>
+<h2 id="ingressclass">IngressClass</h2>
+<p>Ingress 可以由不同的控制器实现，通常使用不同的配置。 每个 Ingress 应当指定一个类，也就是一个对 IngressClass 资源的引用。 IngressClass 资源包含额外的配置，其中包括应当实现该类的控制器名称。下面是一个 IngressClass 示例。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">networking.k8s.io/v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">IngressClass</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">external-lb</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">controller</span><span class="p">:</span><span class="w"> </span><span class="l">example.com/ingress-controller</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">parameters</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">apiGroup</span><span class="p">:</span><span class="w"> </span><span class="l">k8s.example.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">IngressParameters</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">external-lb</span><span class="w">
+</span></span></span></code></pre></div><p>IngressClass 中的 <code>.spec.parameters</code> 字段可用于引用其他资源以提供额外的相关配置。</p>
+<p>参数（<code>parameters</code>）的具体类型取决于你在 <code>.spec.controller</code> 字段中指定的 Ingress 控制器。</p>
+<h3 id="ingressclass-的作用域">IngressClass 的作用域</h3>
+<p>IngressClass 的作用域取决于你的 Ingress 控制器，可以使用集群范围也可以是某个命名空间。</p>
+<p>IngressClass 的默认作用于是集群级别，关于 IngressClass 作用域的详细使用说明请见 <a href="https://kubernetes.io/docs/concepts/services-networking/ingress/#ingressclass" target="_blank" rel="noopener">Ingress 文档</a>。</p>
+<h3 id="默认-ingressclass">默认 IngressClass</h3>
+<p>你可以将一个特定的 IngressClass 标记为集群默认 IngressClass。 将一个 IngressClass 资源的 <code>ingressclass.kubernetes.io/is-default-class</code> 注解设置为 <code>true</code> 将确保新的未指定 <code>ingressClassName</code> 字段的 Ingress 能够分配为这个默认的 IngressClass。集群中最多只能有一个 IngressClass 被标记为默认。</p>
+<h3 id="kubernetesioingressclass-注解"><code>kubernetes.io/ingress.class</code> 注解</h3>
+<p>在 Kubernetes 1.18 版本引入 IngressClass 资源和 <code>ingressClassName</code> 字段之前，Ingress 类是通过 Ingress 中的一个 <code>kubernetes.io/ingress.class</code> 注解来指定的。 这个注解从未被正式定义过，但是得到了 <a href="../ingress-controller/">Ingress 控制器</a>的广泛支持。</p>
+<p><code>ingressClassName</code> 配置项是该注解的替代品，但并不完全等价。 该注解通常用于引用实现该 Ingress 的控制器的名称，而这个新的字段则是对一个包含额外 Ingress 配置的 IngressClass 资源的引用，包括 Ingress 控制器的名称。</p>
 <h2 id="ingress-类型">Ingress 类型</h2>
+<p>以下文档描述了 Ingress 资源中公开的一组跨平台功能。 理想情况下，所有的 Ingress controller 都应该符合这个规范，但是目前还没有实现。</p>
+<div class="alert alert-注意">
+  <div>
+    确保您查看控制器特定的文档，以便您了解每个文档的注意事项。
+  </div>
+</div>
 <h3 id="单-service-ingress">单 Service Ingress</h3>
 <p>Kubernetes 中已经存在一些概念可以暴露单个 service（查看 <a href="https://kubernetes.io/docs/concepts/services-networking/ingress/#alternatives" target="_blank" rel="noopener">替代方案</a>），但是你仍然可以通过 Ingress 来实现，通过指定一个没有 rule 的默认 backend 的方式。</p>
 <p>ingress.yaml 定义文件：</p>
