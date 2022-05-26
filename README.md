@@ -2,7 +2,7 @@
 
 搜罗整理自 2017 年以来的云原生资料，涵盖容器、Kubernetes、服务网格、开源布道。在这里，你可以一站式了解学习云原生知识！
 
-资料库地址：<https://jimmysong.io/docs/>
+资料库地址：<https://lib.jimmysong.io>
 
 内容涵盖：
 

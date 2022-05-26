@@ -44,13 +44,13 @@ social:
     icon_pack: fab
     link: 'https://jimmysong.io/contact/'
     display:
-      header: true
+      header: false
     label: "加我微信"
   - icon: twitter
     icon_pack: fab
     link: https://twitter.com/jimmysongio
     display:
-      header: true
+      header: false
     label: "在 Twitter 上关注我"
   - icon: github
     icon_pack: fab
