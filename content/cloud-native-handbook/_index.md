@@ -1,19 +1,19 @@
 ---
-linktitle: 云原生宝典
-summary: 一站式云原生知识库
+linktitle: 云原生导览
+summary: 云原生技术体系导览
 weight: 1
 icon: book-open
 icon_pack: fas
-title: 云原生宝典
+title: 云原生导览
 date: '2022-05-03T00:00:00Z'
 type: book # Do not modify.
 cascade:
   commentable: true
 ---
 
-欢迎阅读云原生宝典——一站式云原生知识库。
+欢迎来到云原生导览——一站式了解云原生技术体系。
 
-## 本书大纲
+## 导览图
 
 {{< list_children show_summary="false">}}
 
