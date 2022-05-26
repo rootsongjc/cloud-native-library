@@ -7,7 +7,7 @@ tags:
 date: 2017-10-10
 internal_link: /hugo-handbook/
 type: publication
-publication: "[点击阅读](/docs/hugo-handbook/)"
+publication: "[点击阅读](https://jimmysong.io/hugo-handbook/)"
 ---
 
 本手册将指导你如何使用 [Hugo](https://gohugo.io/) 构建静态网站用于个人博客或者项目展示。

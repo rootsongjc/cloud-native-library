@@ -4,10 +4,10 @@ summary: 云原生应用网络构建指南
 tags:
   - Handbook系列
 date: 2019-05-18
-internal_link: /docs/istio-handbook/
+internal_link: istio-handbook
 type: publication
 featured: true
-publication: "[点击阅读](/docs/istio-handbook/)"
+publication: "[点击阅读](istio-handbook)"
 ---
 
 ## 关于本书

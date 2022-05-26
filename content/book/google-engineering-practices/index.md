@@ -4,9 +4,9 @@ summary: 谷歌代码审查实践指南
 tags:
   - 翻译电子书
 date: 2019-09-30
-internal_link: /docs/eng-practices/
+internal_link: eng-practices
 type: publication
-publication: "[点击阅读](/docs/eng-practices/)"
+publication: "[点击阅读](eng-practices)"
 ---
 
 Google 有许多通用工程实践，几乎涵盖所有语言和项目。此文档为长期积累的最佳实践，是集体经验的结晶。我们尽可能地将其公之于众，您的组织和开源项目也会从中受益。

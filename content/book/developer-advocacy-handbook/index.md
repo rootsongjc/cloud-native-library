@@ -6,7 +6,7 @@ tags:
 date: 2022-03-24
 image_link: https://jimmysong.io/developer-advocacy-handbook/
 type: publication
-publication: "[点击阅读](/developer-advocacy-handbook/)"
+publication: "[点击阅读](https://jimmysong.io/developer-advocacy-handbook/)"
 ---
 
 本书译自 [The Developer Advocacy Handbook](https://developer-advocacy.com/)，副标题「开发者布道师的自我修养」为译者自拟。
