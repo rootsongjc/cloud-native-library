@@ -9,7 +9,6 @@ date: '2022-05-18T00:00:00+08:00'
 type: book # Do not modify.
 cascade:
   commentable: true
-  level: 1
 ---
 
 {{% callout 注意 %}}
