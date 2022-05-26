@@ -13,7 +13,7 @@ type: book
 
 局部速率限制可以在监听器层面或虚拟主机或路由层面进行全局配置，就像全局速率限制一样。我们还可以在同一配置中结合全局和局部速率限制。
 
-`token_bucket` 指定了过滤器处理的请求所使用的配置。它包括桶可以容纳的最大令牌数量（`max_tokens`），每次填充的令牌数量（`tokens_per_refill`）以及填充间隔（`fill_interval`）。
+`token_bucket` 指定了过滤器处理的请求所使用的配置。它包括桶可以容纳的最大令牌数量（`max_tokens`），每次填充的令牌数量（`tokens_per_fill`）以及填充间隔（`fill_interval`）。
 
 下面是一个最多可以容纳 5000 个令牌的桶的配置实例。每隔 30 秒，向桶中添加 100 个令牌。桶中的令牌容量永远不会超过 5000。
 
@@ -84,7 +84,7 @@ response_headers_to_add:
 http_filters:
 - name: envoy.filters.http.local_ratelimit
   typed_config:
-    "@type": type.googleapis.com/envoy.extensions. filters.http.local_ratelimit.v3.LocalRateLimit
+    "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
     stat_prefix: http_local_rate_limiter
     token_bucket:
       max_tokens: 10000
@@ -113,17 +113,17 @@ route_config:
         envoy.filters.http.local_ratelimit:
           "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
           token_bucket:
-              max_tokens: 10000
-              tokens_per_fill: 1000
-              fill_interval: 1s
-            filter_enabled:
-              default_value:
-                numerator: 100
-                denominator: HUNDRED
-            filter_enforced:
-              default_value:
-                numerator: 100
-                denominator: HUNDRED
+            max_tokens: 10000
+            tokens_per_fill: 1000
+            fill_interval: 1s
+          filter_enabled:
+            default_value:
+              numerator: 100
+              denominator: HUNDRED
+          filter_enforced:
+            default_value:
+              numerator: 100
+              denominator: HUNDRED
 http_filters:
 - name: envoy.filters.http.local_ratelimit
   typed_config:

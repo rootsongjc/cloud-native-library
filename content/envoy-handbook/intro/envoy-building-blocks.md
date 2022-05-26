@@ -152,7 +152,7 @@ curl https://func-e.io/install.sh | sudo bash -s -- -b /usr/local/bin
 {{% /callout %}}
 
 ```sh
-fucc-e use 1.20
+func-e use 1.20
 func-e run -c envoy-direct-response.yaml
 ```
 
