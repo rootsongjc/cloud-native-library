@@ -15,4 +15,5 @@ cascade:
   commentable: true
   show_related: true
   type: post
+  section_pager: true
 ---
