@@ -30,8 +30,10 @@ experience:
       * 应用 [Wowchemy 主题](https://wowchemy.com/)
 
       * 新增[译文](translation)版块
-    
+
       * 内建全文搜索功能 🔍
+    
+      * 启用子域名 `lib.jimmysong.io` 🌏
 design:
   columns: "2"
   view: list
