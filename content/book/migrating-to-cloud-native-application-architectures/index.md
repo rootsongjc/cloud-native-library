@@ -5,7 +5,7 @@ tags:
   - 翻译电子书
 date: 2017-07-11
 internal_link: migrating-to-cloud-native-application-architectures
-publication: "[点击阅读](migrating-to-cloud-native-application-architectures)"
+publication: "[点击阅读](/migrating-to-cloud-native-application-architectures)"
 type: publication
 ---
 

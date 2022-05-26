@@ -7,7 +7,7 @@ date: 2019-05-18
 internal_link: istio-handbook
 type: publication
 featured: true
-publication: "[点击阅读](istio-handbook)"
+publication: "[点击阅读](/istio-handbook)"
 ---
 
 ## 关于本书

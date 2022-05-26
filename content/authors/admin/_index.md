@@ -1,12 +1,12 @@
 ---
 # Display name
-title: Jimmy Song
+title: 宋净超（Jimmy Song）
 
 # Is this the primary user of the site?
 superuser: true
 
 # Role/position/tagline
-role: Developer Advocate at Tetrate/Founder of Cloud Native Community(China)
+role: Tetrate 布道师/云原生社区（中国）创始人
 
 # Organizations/Affiliations to show in About widget
 organizations:
@@ -16,7 +16,7 @@ organizations:
     url: https://cncf.io
 
 # Short bio (displayed in user profile at end of posts)
-bio: It's me.
+bio: 云原生资料库主编
 # Interests to show in About widget
 interests:
   - Cloud Native
