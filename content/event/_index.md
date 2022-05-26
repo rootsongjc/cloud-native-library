@@ -14,4 +14,5 @@ header:
   image: ''
 cascade:
   commentable: true
+  type: event
 ---
