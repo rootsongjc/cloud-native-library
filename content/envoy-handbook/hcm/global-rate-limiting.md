@@ -192,11 +192,11 @@ descriptors:
 
 |收到的请求| 生成的描述符|速率限制 |解释|
 | ------------------------------------ | ------------------------------------------------------------ | --------------- | ------------------------------------------------------------ |
-|`GET /users` |`("generic_key": "users")`| `20 req/min` 键 users` 与配置中的第一层相匹配。由于配置中的第二层（`header_match`）没有包括在描述符中，所以使用了 `user` 键的速率限制。 ||
-|`POST /users` |`("generic_key": "users"), ("header_match": "post_request")` |`10 req/min` |发送的描述符和 `header_match` 一样匹配`用户`，所以使用 `header_match描述符`下的速率限制。|
-|`GET /api`| `("generic_key": "api")` |无速率限制 |我们只有 `api描述符`的第一级匹配。然而，并没有配置速率限制。为了执行速率限制，我们需要第二级描述符，这些描述符只有在传入的请求中存在 Header`dev` 时才会被设置。|
-|`GET /api`</br>`dev: true`|`("generic_key": "api"), ("dev_request": "true")` `10 req/second`| 列表中的第二个描述符与配置中的第二层相匹配（即我们匹配 `api`，然后也匹配 `dev_request：true`）。||
-|`GET /api`</br>`dev: false`|`("generic_key": "api"), ("dev_request": "false")`| `5req/second`| 列表中的第二个描述符与配置中的第二层相匹配（即我们匹配 `api`，然后也匹配 `dev_request：true`）。|
+|`GET /users` |`("generic_key": "users")`| `20 req/min` | 键 `users` 与配置中的第一层相匹配。由于配置中的第二层（`header_match`）没有包括在描述符中，所以使用了 `users` 键的速率限制。 |
+|`POST /users` |`("generic_key": "users"), ("header_match": "post_request")` |`10 req/min` |发送的描述符和 `header_match` 一样匹配 `users`，所以使用 `header_match` 描述符下的速率限制。|
+|`GET /api`| `("generic_key": "api")` |无速率限制 |我们只有 `api描述符`的第一级匹配。然而，并没有配置速率限制。为了执行速率限制，我们需要第二级描述符，这些描述符只有在传入的请求中存在 Header `dev` 时才会被设置。|
+|`GET /api`</br>`dev: true`|`("generic_key": "api"), ("dev_request": "true")` | `10 req/second`| 列表中的第二个描述符与配置中的第二层相匹配（即我们匹配 `api`，然后也匹配 `dev_request：true`）。|
+|`GET /api`</br>`dev: false`|`("generic_key": "api"), ("dev_request": "false")`| `5 req/second`| 列表中的第二个描述符与配置中的第二层相匹配（即我们匹配 `api`，然后也匹配 `dev_request：true`）。|
 |`GET /api`</br>`dev: hello`|`("generic_key": "api"), ("dev_request": "hello")` |无速率限制 |列表中的第二个描述符与配置中的任何二级描述符都不匹配。|
 
 除了我们在上面的例子中使用的动作外，下表显示了我们可以用来创建描述符的其他动作。
