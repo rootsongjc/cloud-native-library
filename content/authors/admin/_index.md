@@ -12,16 +12,12 @@ role: Tetrate 布道师/云原生社区（中国）创始人
 organizations:
   - name: Cloud Native Community
     url: https://cloudnative.to/
-  - name: CNCF
-    url: https://cncf.io
 
 # Short bio (displayed in user profile at end of posts)
 bio: 云原生资料库主编
 # Interests to show in About widget
 interests:
-  - Cloud Native
-  - Kubernetes
-  - Istio
+
 
 # Education to show in About widget
 # education:
@@ -52,12 +48,7 @@ social:
     display:
       header: false
     label: "在 Twitter 上关注我"
-  - icon: github
-    icon_pack: fab
-    link: https://github.com/rootsongjc/
-  - icon: linkedin
-    icon_pack: fab
-    link: https://www.linkedin.com/jimmysongio
+
 
 # Link to a PDF of your resume/CV.
 # To use: copy your resume to `static/uploads/resume.pdf`, enable `ai` icons in `params.toml`,
