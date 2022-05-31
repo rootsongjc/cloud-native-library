@@ -43,7 +43,7 @@ Tobs 是 Kubernetes 的可观察性技术栈，是一个可以用来[在几分�
 
 要了解 OpenTelemetry 是如何做到这一点的，我们首先需要熟悉 [OpenTelemetry Operator](https://github.com/open-telemetry/opentelemetry-operator)。OpenTelemetry Operator 是一个实现 [Kubernetes Operator 模式](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)的应用程序，与 Kubernetes 集群中的两个 CustomResourceDefinitions（CRD）互动。
 
-![图示说明OpenTelemetry Opertator如何与Kubernetes互动](otel-operator-kubernetes.jpg "图示说明 OpenTelemetry Opertator 如何与 Kubernetes互动")
+![图示说明 OpenTelemetry Operator 如何与 Kubernetes 互动](otel-operator-kubernetes.jpg "图示说明 OpenTelemetry Opertator 如何与 Kubernetes互动")
 
 [基于 CustomResourceDefinitions（CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)）实例的变化，Operator 为我们管理以下两点：
 
