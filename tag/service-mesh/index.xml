@@ -56,7 +56,7 @@
 &lt;li&gt;&lt;strong&gt;弹性连接&lt;/strong&gt;：服务与服务之间的通信必须能够跨越边界，如云、集群和场所。通信必须是有弹性的和容错的。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;L7 流量管理&lt;/strong&gt;：负载均衡、速率限制和弹性必须是 L7 感知的（HTTP、REST、gRPC、WebSocket 等）。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;基于身份的安全&lt;/strong&gt;：依靠网络标识符来实现安全已经不够了，发送和接收服务都必须能够根据身份而不是网络标识符来验证对方。&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;可观察性和跟踪&lt;/strong&gt;：追踪和指标形式的可观察性对于理解、监控和排除应用程序的稳定性、性能和可用性至关重要。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;可观测性和跟踪&lt;/strong&gt;：追踪和指标形式的可观测性对于理解、监控和排除应用程序的稳定性、性能和可用性至关重要。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;透明&lt;/strong&gt;：该功能必须以透明的方式提供给应用程序，即不需要改变应用程序代码。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;在早期，服务网格的功能通常是以库的形式实现的，要求网格中的每个应用程序都要链接到以应用程序的语言框架编写的库。类似的事情也发生在互联网的早期：曾几何时，应用程序还需要运行自己的 TCP/IP 协议栈！正如我们将在这篇文章中讨论的那样，服务网格正在发展成为一种内核责任，就像网络堆栈一样。&lt;/p&gt;
@@ -125,7 +125,7 @@
 &lt;p&gt;这种模式的缺点是有大量的代理，许多额外的网络连接，以及复杂的重定向逻辑，将网络流量输入代理。除此之外，在什么类型的网络流量可以被重定向到第四层代理上也有限制。代理（Proxy）在其能支持的网络协议方面是有限的。&lt;/p&gt;
 &lt;h2 id=&#34;连接性转移到内核中的历史&#34;&gt;连接性转移到内核中的历史&lt;/h2&gt;
 &lt;p&gt;几十年来，在应用程序之间提供安全可靠的连接一直是操作系统的责任。有些人可能还记得早期 Unix 和 Linux 时代的 &lt;a href=&#34;https://en.wikipedia.org/wiki/TCP_Wrappers&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;TCP 包装器&lt;/a&gt;和 tcpd。tcpd 允许用户在不修改应用程序的情况下透明地添加日志、访问控制、主机名验证和欺骗保护。它使用了 libwrap，而且，在一个有趣的平行于服务网格的故事中，这个库也是以前应用程序提供这些功能的链接对象。tcpd 所带来的是能够在不修改现有应用程序的情况下将这些功能透明地添加到现有应用程序中。最终，所有这些功能都进入了 Linux 本身，并以一种更有效、更强大的方式提供给所有应用程序。今天，这已经发展到了我们所知道的 iptables。&lt;/p&gt;
-&lt;p&gt;然而，iptables 显然不适合解决现代应用的连接性、安全性和可观察性要求，因为它只在网络层面上操作，对应用协议层缺乏任何了解。自然，阻力最小的路径是回到库模型，然后是 sidecar 模型。现在，我们正处于这样一个阶段：为了最佳的透明度、效率和安全性，在操作系统中原生地支持这种模式是有意义的。&lt;/p&gt;
+&lt;p&gt;然而，iptables 显然不适合解决现代应用的连接性、安全性和可观测性要求，因为它只在网络层面上操作，对应用协议层缺乏任何了解。自然，阻力最小的路径是回到库模型，然后是 sidecar 模型。现在，我们正处于这样一个阶段：为了最佳的透明度、效率和安全性，在操作系统中原生地支持这种模式是有意义的。&lt;/p&gt;
 &lt;p&gt;
 
 
@@ -226,7 +226,7 @@
 &lt;p&gt;这种额外的复杂性在延迟和额外资源消耗方面付出了巨大的代价。早期的基准测试表明，这对延迟的影响高达 3-4 倍，而且所有代理都需要大量的额外内存。在这篇文章的后面，我们将研究这两点，因为我们将其与基于 eBPF 的模型进行比较。&lt;/p&gt;
 &lt;h2 id=&#34;用-ebpf-解锁内核服务网格&#34;&gt;用 eBPF 解锁内核服务网格&lt;/h2&gt;
 &lt;p&gt;为什么我们以前没有在内核中创建一个服务网格？有些人半开玩笑地说，kube-proxy 是最初的服务网格（见&lt;a href=&#34;https://www.youtube.com/watch?v=lUF88T16YqY&amp;amp;ab_channel=CloudNativeRejekts&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;我们已经构建了相当多的服务网格 - Tim Hockin, Google&lt;/a&gt;）。这句话是有一定道理的。Kube-proxy 是一个很好的例子，说明了 Linux 内核在依靠传统的基于网络的 iptables 功能实现服务网格时，可以达到多么接近。然而，这还不够，L7 上下文是缺失的。Kube-proxy 完全在网络数据包层面运作。现代应用需要 L7 流量管理、跟踪、认证和额外的可靠性保证。Kube-proxy 不能在网络层面上提供这些。&lt;/p&gt;
-&lt;p&gt;eBPF 改变了这个模式。它允许动态地扩展 Linux 内核的功能。我们一直在使用 eBPF 为 Cilium 建立一个高效的网络、安全和可观察性数据通路，并将其直接嵌入到 Linux 内核。应用这个相同的概念，我们也可以在内核层面上解决服务网格的要求。事实上，Cilium 已经实现了各种所需的概念，如基于身份的安全、L3-L7 可观察性和授权、加密和负载均衡。缺少的部分现在正在向 Cilium 涌来。在本博客的末尾，你会发现如何加入由 Cilium 社区推动的 Cilium 服务网格测试项目的细节。&lt;/p&gt;
+&lt;p&gt;eBPF 改变了这个模式。它允许动态地扩展 Linux 内核的功能。我们一直在使用 eBPF 为 Cilium 建立一个高效的网络、安全和可观测性数据通路，并将其直接嵌入到 Linux 内核。应用这个相同的概念，我们也可以在内核层面上解决服务网格的要求。事实上，Cilium 已经实现了各种所需的概念，如基于身份的安全、L3-L7 可观测性和授权、加密和负载均衡。缺少的部分现在正在向 Cilium 涌来。在本博客的末尾，你会发现如何加入由 Cilium 社区推动的 Cilium 服务网格测试项目的细节。&lt;/p&gt;
 &lt;p&gt;
 
 
@@ -259,7 +259,7 @@
 &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;有人可能想知道为什么 Linux 内核社区不直接解决这些需求&lt;/strong&gt;。eBPF 有一个巨大的优势，eBPF 代码可以在运行时插入到现有的 Linux 内核中，类似于 Linux 内核模块，但与内核模块不同，它可以以安全和可移植的方式进行。这使得 eBPF 的实现能够随着服务网格社区的发展而继续发展。&lt;strong&gt;新的内核版本需要几年时间才能进入用户手中&lt;/strong&gt;。eBPF 是一项关键技术，它使 Linux 内核能够跟上快速发展的云原生技术栈。&lt;/p&gt;
 &lt;h2 id=&#34;无-sidecar-的基于-ebpf-的-l7-追踪和度量&#34;&gt;无 Sidecar 的基于 eBPF 的 L7 追踪和度量&lt;/h2&gt;
-&lt;p&gt;让我们看看 L7 追踪和指标可观察性，作为一个具体的例子，说明基于 eBPF 的服务网格对保持低延迟和提高观察性有巨大的影响。应用程序团队依靠应用程序的可见性和监控作为基本要求这些，这包括请求跟踪、HTTP 响应率和服务延迟信息等能力。然而，这种可观察性应该没有明显的成本（延迟、复杂性、资源…）。&lt;/p&gt;
+&lt;p&gt;让我们看看 L7 追踪和指标可观测性，作为一个具体的例子，说明基于 eBPF 的服务网格对保持低延迟和提高观察性有巨大的影响。应用程序团队依靠应用程序的可见性和监控作为基本要求这些，这包括请求跟踪、HTTP 响应率和服务延迟信息等能力。然而，这种可观测性应该没有明显的成本（延迟、复杂性、资源…）。&lt;/p&gt;
 &lt;p&gt;
 
 
@@ -970,7 +970,7 @@
       <link>https://lib.jimmysong.io/translation/how-ebpf-streamlines-the-service-mesh/</link>
       <pubDate>Wed, 27 Oct 2021 13:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/translation/how-ebpf-streamlines-the-service-mesh/</guid>
-      <description>&lt;p&gt;今天有几个服务网格的产品和项目，承诺简化应用微服务之间的连接，同时提供额外的功能，如安全连接、可观察性和流量管理。但正如我们在过去几年中反复看到的那样，对服务网格的兴奋已经被对&lt;a href=&#34;https://nowei.github.io/projects/svc_mesh_measurement_final_report.pdf&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;额外的&lt;/a&gt;&lt;a href=&#34;https://engineering.hellofresh.com/everything-we-learned-running-istio-in-production-part-2-ff4c26844bfb&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;复杂性&lt;/a&gt;和&lt;a href=&#34;https://pklinker.medium.com/performance-impacts-of-an-istio-service-mesh-63957a0000b&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;开销的&lt;/a&gt;实际&lt;a href=&#34;https://medium.com/geekculture/watch-out-for-this-istio-proxy-sidecar-memory-pitfall-8dbd99ea7e9d&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;担忧所抑制&lt;/a&gt;。让我们来探讨一下 &lt;a href=&#34;https://ebpf.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;eBPF&lt;/a&gt; 是如何让我们精简&lt;a href=&#34;https://thenewstack.io/category/service-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;服务网格&lt;/a&gt;，使服务网格的数据平面更有效率，更容易部署。&lt;/p&gt;
+      <description>&lt;p&gt;今天有几个服务网格的产品和项目，承诺简化应用微服务之间的连接，同时提供额外的功能，如安全连接、可观测性和流量管理。但正如我们在过去几年中反复看到的那样，对服务网格的兴奋已经被对&lt;a href=&#34;https://nowei.github.io/projects/svc_mesh_measurement_final_report.pdf&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;额外的&lt;/a&gt;&lt;a href=&#34;https://engineering.hellofresh.com/everything-we-learned-running-istio-in-production-part-2-ff4c26844bfb&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;复杂性&lt;/a&gt;和&lt;a href=&#34;https://pklinker.medium.com/performance-impacts-of-an-istio-service-mesh-63957a0000b&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;开销的&lt;/a&gt;实际&lt;a href=&#34;https://medium.com/geekculture/watch-out-for-this-istio-proxy-sidecar-memory-pitfall-8dbd99ea7e9d&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;担忧所抑制&lt;/a&gt;。让我们来探讨一下 &lt;a href=&#34;https://ebpf.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;eBPF&lt;/a&gt; 是如何让我们精简&lt;a href=&#34;https://thenewstack.io/category/service-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;服务网格&lt;/a&gt;，使服务网格的数据平面更有效率，更容易部署。&lt;/p&gt;
 &lt;h2 id=&#34;sidecar-问题&#34;&gt;Sidecar 问题&lt;/h2&gt;
 &lt;p&gt;今天的 Kubernetes 服务网格解决方案要求你在每一个应用 pod 上添加一个代理 sidecar 容器，如 &lt;a href=&#34;https://www.envoyproxy.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy&lt;/a&gt; 或 &lt;a href=&#34;https://linkerd.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Linkerd-proxy&lt;/a&gt;。这是正确的：即使在一个非常小的环境中，比如说有 20 个服务，每个服务运行五个 pod，分布在三个节点上，你也有 100 个代理容器。无论代理的实现多么小和有效，这种纯粹的重复都会耗费资源。&lt;/p&gt;
 &lt;p&gt;每个代理使用的内存与它需要能够通信的服务数量有关。Pranay Singhal 写了他配置 Istio 的&lt;a href=&#34;https://medium.com/geekculture/watch-out-for-this-istio-proxy-sidecar-memory-pitfall-8dbd99ea7e9d&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;经验&lt;/a&gt;，将每个代理的消耗从 1GB 左右减少到更合理的 60-70MB。但是，即使在我们的小环境中，在三个节点上有 100 个代理，这种优化配置仍然需要每个节点 2GB 左右。&lt;/p&gt;
@@ -1038,7 +1038,7 @@
       每台主机一个内核
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
-&lt;p&gt;这就是为什么 eBPF 对于 Kubernetes 中的任何一种 instrumentation 来说都是如此令人兴奋的技术 —— 你只需要在每个节点上添加一次 instrumentation ，所有的应用程序 pod 都会被覆盖。无论你是在寻求可观察性、安全性还是网络，由 eBPF 驱动的解决方案都可以在不需要 sidecar 的情况下对应用进行检测。&lt;/p&gt;
+&lt;p&gt;这就是为什么 eBPF 对于 Kubernetes 中的任何一种 instrumentation 来说都是如此令人兴奋的技术 —— 你只需要在每个节点上添加一次 instrumentation ，所有的应用程序 pod 都会被覆盖。无论你是在寻求可观测性、安全性还是网络，由 eBPF 驱动的解决方案都可以在不需要 sidecar 的情况下对应用进行检测。&lt;/p&gt;
 &lt;p&gt;基于 eBPF 的 &lt;a href=&#34;http://cilium.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Cilium&lt;/a&gt; 项目（最近 &lt;a href=&#34;https://www.cncf.io/blog/2021/10/13/cilium-joins-cncf-as-an-incubating-project/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;以孵化级别加入云计算基金会&lt;/a&gt;）将这种 “无 sidecar&amp;quot; 模式带到了服务网格的世界。除了传统的 sidecar 模型，Cilium 还支持每个节点使用一个 Envoy 代理实例运行服务网格的数据平面。使用我们前面的例子，这就把代理实例的数量从 100 个减少到只有 3 个。&lt;/p&gt;
 &lt;p&gt;
 
@@ -1133,7 +1133,7 @@
 &lt;li&gt;探索服务网格扩展领域的创新，包括：增强身份管理，以确保微服务连接的安全性，包括自定义证书授权插件，自适应路由功能，以提高服务的可用性和可扩展性，以及增强 sidecar 代理。&lt;/li&gt;
 &lt;li&gt;了解操作方面即将出现的情况，如配置多集群功能和将 Kubernetes 工作负载连接到托管在虚拟机基础设施上的服务器，以及管理多集群服务网格中所有功能和 API 的开发者门户。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;在过去的几年里，服务网格技术有了长足的发展。服务网格在各组织采用云原生技术方面发挥着重要作用。通过提供四种主要能力 —— 连接性、可靠性、可观察性和安全性，服务网格已经成为 IT 组织的技术和基础设施现代化工作的核心组成部分。服务网格使开发和运维团队能够在基础设施层面实现这些能力，因此，当涉及到跨领域的非功能需求时，应用团队不需要重新发明轮子。&lt;/p&gt;
+&lt;p&gt;在过去的几年里，服务网格技术有了长足的发展。服务网格在各组织采用云原生技术方面发挥着重要作用。通过提供四种主要能力 —— 连接性、可靠性、可观测性和安全性，服务网格已经成为 IT 组织的技术和基础设施现代化工作的核心组成部分。服务网格使开发和运维团队能够在基础设施层面实现这些能力，因此，当涉及到跨领域的非功能需求时，应用团队不需要重新发明轮子。&lt;/p&gt;
 &lt;p&gt;自本文&lt;a href=&#34;https://www.infoq.com/articles/service-mesh-ultimate-guide/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;第一版&lt;/a&gt;于 2020 年 2 月发表以来，服务网格技术经历了重大创新，在不断发展的服务网格领域出现了一些新的架构趋势、技术能力和服务网格项目。&lt;/p&gt;
 &lt;p&gt;在过去的一年里，服务网格产品的发展远远超过了原有的 Kubernetes 解决方案，没有托管在 Kubernetes 平台上的应用无法利用服务网格。并非所有的组织都将其所有的业务和 IT 应用程序过渡到 Kubernetes 云平台。因此，自服务网格诞生以来，一直需要这项技术在不同的 IT 基础设施环境中工作。&lt;/p&gt;
 &lt;p&gt;随着微服务架构的不断采用，应用系统在云供应商、基础设施（Kubernetes、虚拟机、裸机服务器）、地域，甚至在服务网格集成环境中要管理的工作负载类型方面，都已实现解耦和分布式。&lt;/p&gt;
@@ -1152,7 +1152,7 @@
 &lt;li&gt;外部化服务通信配置，包括外部服务的网络位置、安全凭证和服务质量目标。&lt;/li&gt;
 &lt;li&gt;提供对其他服务的被动和主动监测。&lt;/li&gt;
 &lt;li&gt;在整个分布式系统中分布式地执行策略。&lt;/li&gt;
-&lt;li&gt;提供可观察性的默认值，并使相关数据的收集标准化。
+&lt;li&gt;提供可观测性的默认值，并使相关数据的收集标准化。
 &lt;ul&gt;
 &lt;li&gt;启用请求记录&lt;/li&gt;
 &lt;li&gt;配置分布式追踪&lt;/li&gt;
@@ -1172,7 +1172,7 @@
 &lt;li&gt;提供按请求的路由（例如，影子流量、故障注入和调试重新路由）。&lt;/li&gt;
 &lt;li&gt;增加基线可靠性，如健康检查、超时 / 截止日期、断路和重试（预算）。&lt;/li&gt;
 &lt;li&gt;通过透明的双向传输级安全（TLS）和访问控制列表（ACL）等策略，提高安全性&lt;/li&gt;
-&lt;li&gt;提供额外的可观察性和监测，如顶线指标（请求量、成功率和延迟），支持分布式追踪，以及 &amp;ldquo;挖掘&amp;rdquo; 和检查实时服务间通信的能力。&lt;/li&gt;
+&lt;li&gt;提供额外的可观测性和监测，如顶线指标（请求量、成功率和延迟），支持分布式追踪，以及 &amp;ldquo;挖掘&amp;rdquo; 和检查实时服务间通信的能力。&lt;/li&gt;
 &lt;li&gt;使得平台团队能够配置 &amp;quot; 理智的默认值”，以保护系统免受不良通信的影响。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;服务网格的能力可分为以下四个方面：&lt;/p&gt;
@@ -1180,7 +1180,7 @@
 &lt;li&gt;连接性&lt;/li&gt;
 &lt;li&gt;可靠性&lt;/li&gt;
 &lt;li&gt;安全性&lt;/li&gt;
-&lt;li&gt;可观察性&lt;/li&gt;
+&lt;li&gt;可观测性&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;让我们看看服务网格技术在这些领域都能提供哪些功能。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;连接性&lt;/strong&gt;&lt;/p&gt;
@@ -1204,7 +1204,7 @@
 &lt;li&gt;用户授权（RBAC）&lt;/li&gt;
 &lt;li&gt;加密&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;&lt;strong&gt;可观察性&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;可观测性&lt;/strong&gt;&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;监测&lt;/li&gt;
 &lt;li&gt;遥测、仪表、计量&lt;/li&gt;
@@ -1255,8 +1255,8 @@
 &lt;p&gt;服务网格中使用的代理通常是 “应用层 &amp;quot; 感知的（在 OSI 网络堆栈的第 7 层运行）。这意味着流量路由决策和指标的标记可以利用 HTTP 头或其他应用层协议元数据。&lt;/p&gt;
 &lt;h3 id=&#34;服务间通信可靠性&#34;&gt;服务间通信可靠性&lt;/h3&gt;
 &lt;p&gt;服务网格支持跨领域的可靠性要求的实施和执行，如请求重试、超时、速率限制和断路。服务网格经常被用来补偿（或封装）处理&lt;a href=&#34;https://en.wikipedia.org/wiki/Fallacies_of_distributed_computing&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;分布式计算的八个谬误&lt;/a&gt;。应该注意的是，服务网格只能提供 wire-level 的可靠性支持（如重试 HTTP 请求），最终服务应该对相关的业务影响负责，如避免多个（非幂等的）HTTP POST 请求。&lt;/p&gt;
-&lt;h3 id=&#34;流量的可观察性&#34;&gt;流量的可观察性&lt;/h3&gt;
-&lt;p&gt;由于服务网格处于系统内处理的每个请求的关键路径上，它还可以提供额外的 “可观察性”，例如请求的分布式追踪、HTTP 错误代码的频率以及全局和服务间的延迟。虽然在企业领域是一个被过度使用的短语，但服务网格经常被提议作为一种方法来捕获所有必要的数据，以实现整个系统内流量的统一界面视图。&lt;/p&gt;
+&lt;h3 id=&#34;流量的可观测性&#34;&gt;流量的可观测性&lt;/h3&gt;
+&lt;p&gt;由于服务网格处于系统内处理的每个请求的关键路径上，它还可以提供额外的 “可观测性”，例如请求的分布式追踪、HTTP 错误代码的频率以及全局和服务间的延迟。虽然在企业领域是一个被过度使用的短语，但服务网格经常被提议作为一种方法来捕获所有必要的数据，以实现整个系统内流量的统一界面视图。&lt;/p&gt;
 &lt;h3 id=&#34;通信安全&#34;&gt;通信安全&lt;/h3&gt;
 &lt;p&gt;服务网格还支持跨领域安全要求的实施和执行，如提供服务身份（通过 x509 证书），实现应用级服务 / 网络分割（例如，“服务 A&amp;quot; 可以与 “服务 B “通信，但不能与 “服务 C “通信），确保所有通信都经过加密（通过 TLS），并确保存在有效的用户级身份令牌或 “&lt;a href=&#34;https://qconsf.com/sf2019/presentation/user-device-identity-microservices-netflix-scale&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;护照&lt;/a&gt; &amp;ldquo;。&lt;/p&gt;
 &lt;h2 id=&#34;反模式&#34;&gt;反模式&lt;/h2&gt;
@@ -1365,7 +1365,7 @@
 &lt;p&gt;像 &lt;a href=&#34;https://konghq.com/blog/multi-cluster-multi-cloud-service-meshes-with-cncfs-kuma-and-envoy/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kuma&lt;/a&gt; 和 &lt;a href=&#34;https://www.tetrate.io/tetrate-service-bridge/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate Service Bridge&lt;/a&gt; 这样的技术支持多网格控制平面，以使业务应用在多集群和多云服务网格环境中工作。这些解决方案抽象出跨多个区域的服务网格策略的同步以及跨这些区域的服务连接（和服务发现）。&lt;/p&gt;
 &lt;p&gt;多集群服务网格技术的另一个新趋势是需要从边缘计算层（物联网设备）到网格层的应用 / 服务连接。&lt;/p&gt;
 &lt;h3 id=&#34;媒体服务网格&#34;&gt;媒体服务网格&lt;/h3&gt;
-&lt;p&gt;思科系统公司开发的&lt;a href=&#34;https://www.ciscotechblog.com/blog/introducing-media-streaming-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;媒体流网格（Media Streaming Mesh）&lt;/a&gt;或媒体服务网格，用于协调实时应用程序，如多人游戏、多方视频会议或在 Kubernetes 云平台上使用服务网格技术的 CCTV 流。这些应用正越来越多地从单体应用转向微服务架构。服务网格可以通过提供负载均衡、加密和可观察性等功能来帮助应用程序。&lt;/p&gt;
+&lt;p&gt;思科系统公司开发的&lt;a href=&#34;https://www.ciscotechblog.com/blog/introducing-media-streaming-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;媒体流网格（Media Streaming Mesh）&lt;/a&gt;或媒体服务网格，用于协调实时应用程序，如多人游戏、多方视频会议或在 Kubernetes 云平台上使用服务网格技术的 CCTV 流。这些应用正越来越多地从单体应用转向微服务架构。服务网格可以通过提供负载均衡、加密和可观测性等功能来帮助应用程序。&lt;/p&gt;
 &lt;h3 id=&#34;混沌网格&#34;&gt;混沌网格&lt;/h3&gt;
 &lt;p&gt;&lt;a href=&#34;https://chaos-mesh.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Chaos Mesh&lt;/a&gt; 是 &lt;a href=&#34;https://community.cncf.io/chaos-mesh-community/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CNCF 托管的项目&lt;/a&gt;，是一个开源的、云原生的混沌工程平台，用于托管在 Kubernetes 上的应用程序。虽然不是直接的服务网格实现，但 Chaos Mesh 通过协调应用程序中的故障注入行为来实现混沌工程实验。故障注入是服务网格技术的一个关键能力。&lt;/p&gt;
 &lt;p&gt;Chaos Mesh 隐藏了底层的实现细节，因此应用开发者可以专注于实际的混沌实验。Chaos Mesh &lt;a href=&#34;https://chaos-mesh.org/blog/chaos-mesh-q&amp;amp;a/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;可以和服务网格一起使用&lt;/a&gt;。请看这个&lt;a href=&#34;https://github.com/sergioarmgpl/operating-systems-usac-course/blob/master/lang/en/projects/project1v3/project1.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;用例&lt;/a&gt;，该团队如何使用 Linkerd 和 Chaos Mesh 来为他们的项目进行混沌实验。&lt;/p&gt;
@@ -1378,7 +1378,7 @@
 &lt;li&gt;以 SRE 为重点的工具，包括服务水平目标（SLO）、工作负荷黄金指标跟踪和变更跟踪&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h3 id=&#34;网络服务网格nsm&#34;&gt;网络服务网格（NSM）&lt;/h3&gt;
-&lt;p&gt;网络服务网格（&lt;a href=&#34;https://networkservicemesh.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;NSM&lt;/a&gt;）是云原生计算基金会的另一个沙盒项目，提供了一个混合的、多云的 IP 服务网格。NSM 实现了网络服务连接、安全和可观察性等功能，这些都是服务网格的核心特征。NSM 与现有的容器网络接口（&lt;a href=&#34;https://github.com/containernetworking/cni&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CNI&lt;/a&gt;）实现协同工作。&lt;/p&gt;
+&lt;p&gt;网络服务网格（&lt;a href=&#34;https://networkservicemesh.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;NSM&lt;/a&gt;）是云原生计算基金会的另一个沙盒项目，提供了一个混合的、多云的 IP 服务网格。NSM 实现了网络服务连接、安全和可观测性等功能，这些都是服务网格的核心特征。NSM 与现有的容器网络接口（&lt;a href=&#34;https://github.com/containernetworking/cni&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CNI&lt;/a&gt;）实现协同工作。&lt;/p&gt;
 &lt;h3 id=&#34;服务网格扩展&#34;&gt;服务网格扩展&lt;/h3&gt;
 &lt;p&gt;服务网格扩展是另一个已经看到很多创新的领域。服务网格扩展的一些发展包括：&lt;/p&gt;
 &lt;ul&gt;

@@ -56,7 +56,7 @@
 &lt;li&gt;&lt;strong&gt;弹性连接&lt;/strong&gt;：服务与服务之间的通信必须能够跨越边界，如云、集群和场所。通信必须是有弹性的和容错的。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;L7 流量管理&lt;/strong&gt;：负载均衡、速率限制和弹性必须是 L7 感知的（HTTP、REST、gRPC、WebSocket 等）。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;基于身份的安全&lt;/strong&gt;：依靠网络标识符来实现安全已经不够了，发送和接收服务都必须能够根据身份而不是网络标识符来验证对方。&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;可观察性和跟踪&lt;/strong&gt;：追踪和指标形式的可观察性对于理解、监控和排除应用程序的稳定性、性能和可用性至关重要。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;可观测性和跟踪&lt;/strong&gt;：追踪和指标形式的可观测性对于理解、监控和排除应用程序的稳定性、性能和可用性至关重要。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;透明&lt;/strong&gt;：该功能必须以透明的方式提供给应用程序，即不需要改变应用程序代码。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;在早期，服务网格的功能通常是以库的形式实现的，要求网格中的每个应用程序都要链接到以应用程序的语言框架编写的库。类似的事情也发生在互联网的早期：曾几何时，应用程序还需要运行自己的 TCP/IP 协议栈！正如我们将在这篇文章中讨论的那样，服务网格正在发展成为一种内核责任，就像网络堆栈一样。&lt;/p&gt;
@@ -125,7 +125,7 @@
 &lt;p&gt;这种模式的缺点是有大量的代理，许多额外的网络连接，以及复杂的重定向逻辑，将网络流量输入代理。除此之外，在什么类型的网络流量可以被重定向到第四层代理上也有限制。代理（Proxy）在其能支持的网络协议方面是有限的。&lt;/p&gt;
 &lt;h2 id=&#34;连接性转移到内核中的历史&#34;&gt;连接性转移到内核中的历史&lt;/h2&gt;
 &lt;p&gt;几十年来，在应用程序之间提供安全可靠的连接一直是操作系统的责任。有些人可能还记得早期 Unix 和 Linux 时代的 &lt;a href=&#34;https://en.wikipedia.org/wiki/TCP_Wrappers&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;TCP 包装器&lt;/a&gt;和 tcpd。tcpd 允许用户在不修改应用程序的情况下透明地添加日志、访问控制、主机名验证和欺骗保护。它使用了 libwrap，而且，在一个有趣的平行于服务网格的故事中，这个库也是以前应用程序提供这些功能的链接对象。tcpd 所带来的是能够在不修改现有应用程序的情况下将这些功能透明地添加到现有应用程序中。最终，所有这些功能都进入了 Linux 本身，并以一种更有效、更强大的方式提供给所有应用程序。今天，这已经发展到了我们所知道的 iptables。&lt;/p&gt;
-&lt;p&gt;然而，iptables 显然不适合解决现代应用的连接性、安全性和可观察性要求，因为它只在网络层面上操作，对应用协议层缺乏任何了解。自然，阻力最小的路径是回到库模型，然后是 sidecar 模型。现在，我们正处于这样一个阶段：为了最佳的透明度、效率和安全性，在操作系统中原生地支持这种模式是有意义的。&lt;/p&gt;
+&lt;p&gt;然而，iptables 显然不适合解决现代应用的连接性、安全性和可观测性要求，因为它只在网络层面上操作，对应用协议层缺乏任何了解。自然，阻力最小的路径是回到库模型，然后是 sidecar 模型。现在，我们正处于这样一个阶段：为了最佳的透明度、效率和安全性，在操作系统中原生地支持这种模式是有意义的。&lt;/p&gt;
 &lt;p&gt;
 
 
@@ -226,7 +226,7 @@
 &lt;p&gt;这种额外的复杂性在延迟和额外资源消耗方面付出了巨大的代价。早期的基准测试表明，这对延迟的影响高达 3-4 倍，而且所有代理都需要大量的额外内存。在这篇文章的后面，我们将研究这两点，因为我们将其与基于 eBPF 的模型进行比较。&lt;/p&gt;
 &lt;h2 id=&#34;用-ebpf-解锁内核服务网格&#34;&gt;用 eBPF 解锁内核服务网格&lt;/h2&gt;
 &lt;p&gt;为什么我们以前没有在内核中创建一个服务网格？有些人半开玩笑地说，kube-proxy 是最初的服务网格（见&lt;a href=&#34;https://www.youtube.com/watch?v=lUF88T16YqY&amp;amp;ab_channel=CloudNativeRejekts&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;我们已经构建了相当多的服务网格 - Tim Hockin, Google&lt;/a&gt;）。这句话是有一定道理的。Kube-proxy 是一个很好的例子，说明了 Linux 内核在依靠传统的基于网络的 iptables 功能实现服务网格时，可以达到多么接近。然而，这还不够，L7 上下文是缺失的。Kube-proxy 完全在网络数据包层面运作。现代应用需要 L7 流量管理、跟踪、认证和额外的可靠性保证。Kube-proxy 不能在网络层面上提供这些。&lt;/p&gt;
-&lt;p&gt;eBPF 改变了这个模式。它允许动态地扩展 Linux 内核的功能。我们一直在使用 eBPF 为 Cilium 建立一个高效的网络、安全和可观察性数据通路，并将其直接嵌入到 Linux 内核。应用这个相同的概念，我们也可以在内核层面上解决服务网格的要求。事实上，Cilium 已经实现了各种所需的概念，如基于身份的安全、L3-L7 可观察性和授权、加密和负载均衡。缺少的部分现在正在向 Cilium 涌来。在本博客的末尾，你会发现如何加入由 Cilium 社区推动的 Cilium 服务网格测试项目的细节。&lt;/p&gt;
+&lt;p&gt;eBPF 改变了这个模式。它允许动态地扩展 Linux 内核的功能。我们一直在使用 eBPF 为 Cilium 建立一个高效的网络、安全和可观测性数据通路，并将其直接嵌入到 Linux 内核。应用这个相同的概念，我们也可以在内核层面上解决服务网格的要求。事实上，Cilium 已经实现了各种所需的概念，如基于身份的安全、L3-L7 可观测性和授权、加密和负载均衡。缺少的部分现在正在向 Cilium 涌来。在本博客的末尾，你会发现如何加入由 Cilium 社区推动的 Cilium 服务网格测试项目的细节。&lt;/p&gt;
 &lt;p&gt;
 
 
@@ -259,7 +259,7 @@
 &lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;有人可能想知道为什么 Linux 内核社区不直接解决这些需求&lt;/strong&gt;。eBPF 有一个巨大的优势，eBPF 代码可以在运行时插入到现有的 Linux 内核中，类似于 Linux 内核模块，但与内核模块不同，它可以以安全和可移植的方式进行。这使得 eBPF 的实现能够随着服务网格社区的发展而继续发展。&lt;strong&gt;新的内核版本需要几年时间才能进入用户手中&lt;/strong&gt;。eBPF 是一项关键技术，它使 Linux 内核能够跟上快速发展的云原生技术栈。&lt;/p&gt;
 &lt;h2 id=&#34;无-sidecar-的基于-ebpf-的-l7-追踪和度量&#34;&gt;无 Sidecar 的基于 eBPF 的 L7 追踪和度量&lt;/h2&gt;
-&lt;p&gt;让我们看看 L7 追踪和指标可观察性，作为一个具体的例子，说明基于 eBPF 的服务网格对保持低延迟和提高观察性有巨大的影响。应用程序团队依靠应用程序的可见性和监控作为基本要求这些，这包括请求跟踪、HTTP 响应率和服务延迟信息等能力。然而，这种可观察性应该没有明显的成本（延迟、复杂性、资源…）。&lt;/p&gt;
+&lt;p&gt;让我们看看 L7 追踪和指标可观测性，作为一个具体的例子，说明基于 eBPF 的服务网格对保持低延迟和提高观察性有巨大的影响。应用程序团队依靠应用程序的可见性和监控作为基本要求这些，这包括请求跟踪、HTTP 响应率和服务延迟信息等能力。然而，这种可观测性应该没有明显的成本（延迟、复杂性、资源…）。&lt;/p&gt;
 &lt;p&gt;
 
 
@@ -578,7 +578,7 @@
       <link>https://lib.jimmysong.io/translation/how-ebpf-streamlines-the-service-mesh/</link>
       <pubDate>Wed, 27 Oct 2021 13:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/translation/how-ebpf-streamlines-the-service-mesh/</guid>
-      <description>&lt;p&gt;今天有几个服务网格的产品和项目，承诺简化应用微服务之间的连接，同时提供额外的功能，如安全连接、可观察性和流量管理。但正如我们在过去几年中反复看到的那样，对服务网格的兴奋已经被对&lt;a href=&#34;https://nowei.github.io/projects/svc_mesh_measurement_final_report.pdf&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;额外的&lt;/a&gt;&lt;a href=&#34;https://engineering.hellofresh.com/everything-we-learned-running-istio-in-production-part-2-ff4c26844bfb&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;复杂性&lt;/a&gt;和&lt;a href=&#34;https://pklinker.medium.com/performance-impacts-of-an-istio-service-mesh-63957a0000b&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;开销的&lt;/a&gt;实际&lt;a href=&#34;https://medium.com/geekculture/watch-out-for-this-istio-proxy-sidecar-memory-pitfall-8dbd99ea7e9d&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;担忧所抑制&lt;/a&gt;。让我们来探讨一下 &lt;a href=&#34;https://ebpf.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;eBPF&lt;/a&gt; 是如何让我们精简&lt;a href=&#34;https://thenewstack.io/category/service-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;服务网格&lt;/a&gt;，使服务网格的数据平面更有效率，更容易部署。&lt;/p&gt;
+      <description>&lt;p&gt;今天有几个服务网格的产品和项目，承诺简化应用微服务之间的连接，同时提供额外的功能，如安全连接、可观测性和流量管理。但正如我们在过去几年中反复看到的那样，对服务网格的兴奋已经被对&lt;a href=&#34;https://nowei.github.io/projects/svc_mesh_measurement_final_report.pdf&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;额外的&lt;/a&gt;&lt;a href=&#34;https://engineering.hellofresh.com/everything-we-learned-running-istio-in-production-part-2-ff4c26844bfb&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;复杂性&lt;/a&gt;和&lt;a href=&#34;https://pklinker.medium.com/performance-impacts-of-an-istio-service-mesh-63957a0000b&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;开销的&lt;/a&gt;实际&lt;a href=&#34;https://medium.com/geekculture/watch-out-for-this-istio-proxy-sidecar-memory-pitfall-8dbd99ea7e9d&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;担忧所抑制&lt;/a&gt;。让我们来探讨一下 &lt;a href=&#34;https://ebpf.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;eBPF&lt;/a&gt; 是如何让我们精简&lt;a href=&#34;https://thenewstack.io/category/service-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;服务网格&lt;/a&gt;，使服务网格的数据平面更有效率，更容易部署。&lt;/p&gt;
 &lt;h2 id=&#34;sidecar-问题&#34;&gt;Sidecar 问题&lt;/h2&gt;
 &lt;p&gt;今天的 Kubernetes 服务网格解决方案要求你在每一个应用 pod 上添加一个代理 sidecar 容器，如 &lt;a href=&#34;https://www.envoyproxy.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy&lt;/a&gt; 或 &lt;a href=&#34;https://linkerd.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Linkerd-proxy&lt;/a&gt;。这是正确的：即使在一个非常小的环境中，比如说有 20 个服务，每个服务运行五个 pod，分布在三个节点上，你也有 100 个代理容器。无论代理的实现多么小和有效，这种纯粹的重复都会耗费资源。&lt;/p&gt;
 &lt;p&gt;每个代理使用的内存与它需要能够通信的服务数量有关。Pranay Singhal 写了他配置 Istio 的&lt;a href=&#34;https://medium.com/geekculture/watch-out-for-this-istio-proxy-sidecar-memory-pitfall-8dbd99ea7e9d&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;经验&lt;/a&gt;，将每个代理的消耗从 1GB 左右减少到更合理的 60-70MB。但是，即使在我们的小环境中，在三个节点上有 100 个代理，这种优化配置仍然需要每个节点 2GB 左右。&lt;/p&gt;
@@ -646,7 +646,7 @@
       每台主机一个内核
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
-&lt;p&gt;这就是为什么 eBPF 对于 Kubernetes 中的任何一种 instrumentation 来说都是如此令人兴奋的技术 —— 你只需要在每个节点上添加一次 instrumentation ，所有的应用程序 pod 都会被覆盖。无论你是在寻求可观察性、安全性还是网络，由 eBPF 驱动的解决方案都可以在不需要 sidecar 的情况下对应用进行检测。&lt;/p&gt;
+&lt;p&gt;这就是为什么 eBPF 对于 Kubernetes 中的任何一种 instrumentation 来说都是如此令人兴奋的技术 —— 你只需要在每个节点上添加一次 instrumentation ，所有的应用程序 pod 都会被覆盖。无论你是在寻求可观测性、安全性还是网络，由 eBPF 驱动的解决方案都可以在不需要 sidecar 的情况下对应用进行检测。&lt;/p&gt;
 &lt;p&gt;基于 eBPF 的 &lt;a href=&#34;http://cilium.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Cilium&lt;/a&gt; 项目（最近 &lt;a href=&#34;https://www.cncf.io/blog/2021/10/13/cilium-joins-cncf-as-an-incubating-project/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;以孵化级别加入云计算基金会&lt;/a&gt;）将这种 “无 sidecar&amp;quot; 模式带到了服务网格的世界。除了传统的 sidecar 模型，Cilium 还支持每个节点使用一个 Envoy 代理实例运行服务网格的数据平面。使用我们前面的例子，这就把代理实例的数量从 100 个减少到只有 3 个。&lt;/p&gt;
 &lt;p&gt;
 
