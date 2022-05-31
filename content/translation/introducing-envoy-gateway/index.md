@@ -39,9 +39,9 @@ links:
 
 ## 历史
 
-Envoy [在 2016 年秋天开源](https://medium.com/lyft-engineering/announcing-envoy-c-l7-proxy-and-communication-bus-92520b6c8191)，令我们惊讶的是，它很快就引领了整个行业。用户被这个项目的许多不同方面所吸引，包括它的包容性社区、可扩展性、API 驱动的配置模型、强大的可观察性输出和越来越广泛的功能集。
+Envoy [在 2016 年秋天开源](https://medium.com/lyft-engineering/announcing-envoy-c-l7-proxy-and-communication-bus-92520b6c8191)，令我们惊讶的是，它很快就引领了整个行业。用户被这个项目的许多不同方面所吸引，包括它的包容性社区、可扩展性、API 驱动的配置模型、强大的可观测性输出和越来越广泛的功能集。
 
-尽管在其早期历史中，Envoy 成为了**服务网格**的代名词，但它在 Lyft 的首次使用实际上是作为 API 网关 / 边缘代理，提供深入的可观察性输出，帮助 Lyft 从单体架构迁移到微服务架构。
+尽管在其早期历史中，Envoy 成为了**服务网格**的代名词，但它在 Lyft 的首次使用实际上是作为 API 网关 / 边缘代理，提供深入的可观测性输出，帮助 Lyft 从单体架构迁移到微服务架构。
 
 在过去的 5 年多时间里，我们看到 Envoy 被大量的终端用户采用，既可以作为 API 网关，也可以作为服务网格中的 sidecar 代理。同时，我们看到围绕 Envoy 出现了一个庞大的供应商生态系统，在开源和专有领域提供了大量的解决方案。Envoy 的供应商生态系统对项目的成功至关重要；如果没有对所有在 Envoy 上兼职或全职工作的员工的资助，这个项目肯定不会有今天的成就。
 
@@ -64,7 +64,7 @@ Envoy Gateway 项目的诞生是出于这样的信念：将 Envoy 作为 API 网
 
 - 为网关用例提供简化的 API。该 API 将是带有一些 Envoy 特定扩展的 [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/)。之所以选择这个 API，是因为在 Kubernetes 上作为 Ingress Controller 部署是该项目最初的重点，而且该 API 得到了业界的广泛认可。
 - 开箱即用，让用户能够尽可能快地启动和运行。这包括提供控制器资源、控制平面资源、代理实例等的生命周期管理功能。
-- 可扩展的 API 平面。虽然该项目将致力于使常见的 API 网关功能开箱即用（例如，速率限制、认证、[Let’s Encrypt](https://letsencrypt.org/) 集成等），但供应商将能够提供所有 API 的 SaaS 版本，提供额外的 API 和增值功能，如 WAF、增强的可观察性、混乱工程等。
+- 可扩展的 API 平面。虽然该项目将致力于使常见的 API 网关功能开箱即用（例如，速率限制、认证、[Let’s Encrypt](https://letsencrypt.org/) 集成等），但供应商将能够提供所有 API 的 SaaS 版本，提供额外的 API 和增值功能，如 WAF、增强的可观测性、混乱工程等。
 - 高质量的文档和入门指南。我们对 Envoy Gateway 的主要目标是使最常见的网关用例对普通用户来说可以信手拈来。
 
 关于 API，我们认为导致混乱的主要是在针对高级用例时，在其他项目中有效地重新实现 Envoy 的 [xDS](https://www.envoyproxy.io/docs/envoy/latest/api-docs/xds_protocol) API。这种模式导致用户不得不学习多个复杂的 API（最终转化为 xDS），才能完成工作。因此，Envoy Gateway 致力于 "硬性规定"，即 Kubernetes Gateway API（以及该 API 中任何允许的扩展）是**唯一**被支持的额外 API。更高级的用例将由 "xDS 模式" 提供服务，其中现有的 API 资源将为最终用户自动翻译，然后他们可以切换到直接利用 xDS API。这将导致一个更清晰的主 API，同时为那些可能超越主 API 的表达能力并希望通过 xDS 利用 Envoy 的全部功能的组织提供了路径。

@@ -15,7 +15,7 @@ links:
     url: https://thenewstack.io/how-ebpf-streamlines-the-service-mesh
 ---
 
-今天有几个服务网格的产品和项目，承诺简化应用微服务之间的连接，同时提供额外的功能，如安全连接、可观察性和流量管理。但正如我们在过去几年中反复看到的那样，对服务网格的兴奋已经被对[额外的](https://nowei.github.io/projects/svc_mesh_measurement_final_report.pdf)[复杂性](https://engineering.hellofresh.com/everything-we-learned-running-istio-in-production-part-2-ff4c26844bfb)和[开销的](https://pklinker.medium.com/performance-impacts-of-an-istio-service-mesh-63957a0000b)实际[担忧所抑制](https://medium.com/geekculture/watch-out-for-this-istio-proxy-sidecar-memory-pitfall-8dbd99ea7e9d)。让我们来探讨一下 [eBPF](https://ebpf.io/) 是如何让我们精简[服务网格](https://thenewstack.io/category/service-mesh/)，使服务网格的数据平面更有效率，更容易部署。
+今天有几个服务网格的产品和项目，承诺简化应用微服务之间的连接，同时提供额外的功能，如安全连接、可观测性和流量管理。但正如我们在过去几年中反复看到的那样，对服务网格的兴奋已经被对[额外的](https://nowei.github.io/projects/svc_mesh_measurement_final_report.pdf)[复杂性](https://engineering.hellofresh.com/everything-we-learned-running-istio-in-production-part-2-ff4c26844bfb)和[开销的](https://pklinker.medium.com/performance-impacts-of-an-istio-service-mesh-63957a0000b)实际[担忧所抑制](https://medium.com/geekculture/watch-out-for-this-istio-proxy-sidecar-memory-pitfall-8dbd99ea7e9d)。让我们来探讨一下 [eBPF](https://ebpf.io/) 是如何让我们精简[服务网格](https://thenewstack.io/category/service-mesh/)，使服务网格的数据平面更有效率，更容易部署。
 
 ## Sidecar 问题
 
@@ -35,7 +35,7 @@ links:
 
 ![每台主机一个内核](008i3skNly1gvtp6c8mn9j31ea0u0n0t.jpg "每台主机一个内核") 
 
-这就是为什么 eBPF 对于 Kubernetes 中的任何一种 instrumentation 来说都是如此令人兴奋的技术 —— 你只需要在每个节点上添加一次 instrumentation ，所有的应用程序 pod 都会被覆盖。无论你是在寻求可观察性、安全性还是网络，由 eBPF 驱动的解决方案都可以在不需要 sidecar 的情况下对应用进行检测。
+这就是为什么 eBPF 对于 Kubernetes 中的任何一种 instrumentation 来说都是如此令人兴奋的技术 —— 你只需要在每个节点上添加一次 instrumentation ，所有的应用程序 pod 都会被覆盖。无论你是在寻求可观测性、安全性还是网络，由 eBPF 驱动的解决方案都可以在不需要 sidecar 的情况下对应用进行检测。
 
 基于 eBPF 的 [Cilium](http://cilium.io/) 项目（最近 [以孵化级别加入云计算基金会](https://www.cncf.io/blog/2021/10/13/cilium-joins-cncf-as-an-incubating-project/)）将这种 “无 sidecar" 模式带到了服务网格的世界。除了传统的 sidecar 模型，Cilium 还支持每个节点使用一个 Envoy 代理实例运行服务网格的数据平面。使用我们前面的例子，这就把代理实例的数量从 100 个减少到只有 3 个。
 

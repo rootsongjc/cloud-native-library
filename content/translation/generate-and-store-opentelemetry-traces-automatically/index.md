@@ -1,13 +1,13 @@
 ---
-title: 一键开启 Kubernetes 可观察性——如何自动生成和存储 OpenTelemetry 追踪
+title: 一键开启 Kubernetes 可观测性——如何自动生成和存储 OpenTelemetry 追踪
 summary: 首先，我们将解释一下如何在 Kubernetes 自动生成和存储 OpenTelemetry 追踪，剖析 OpenTelemetry Operator 在内部的真正作用。接下来，我们将通过一个例子演示如何将其直接付诸实践。
 date: '2022-05-30T11:00:00+08:00'
 lastmod: '2022-05-30T11:12:00+08:00'
 draft: false
 featured: false
 authors: ["James Blackwood-Sewell"]
-tags: ["tobs","可观察性","Kubernetes"]
-categories: ["可观察性"]
+tags: ["tobs","可观测性","Kubernetes"]
+categories: ["可观测性"]
 links:
   - icon: globe
     icon_pack: fa
@@ -15,25 +15,25 @@ links:
     url: https://timescale.com/blog/generate-and-store-opentelemetry-traces-automatically
 ---
 
-OpenTelemetry 追踪包含了理解分布式系统和排除故障的信息宝库 —— 但你的服务必须首先被指标化，以发射 OpenTelemetry 追踪来实现这一价值。然后，这些追踪信息需要被发送到一个可观察的后端，使你能够获得关于这些数据的任意问题的答案。可观察性是一个分析问题。
+OpenTelemetry 追踪包含了理解分布式系统和排除故障的信息宝库 —— 但你的服务必须首先被指标化，以发射 OpenTelemetry 追踪来实现这一价值。然后，这些追踪信息需要被发送到一个可观察的后端，使你能够获得关于这些数据的任意问题的答案。可观测性是一个分析问题。
 
-本周早些时候，我们部分解决了这个问题，宣布[在 Promscale 中普遍提供 OpenTelemetry 追踪支持](https://www.timescale.com/blog/observability-powered-by-sql-understand-your-systems-like-never-before-with-opentelemetry-traces-and-postgresql/)，将由 SQL 驱动的可观察性带给所有开发者。随着对分析语言 ——SQL 的全面支持，我们解决了分析的问题。但我们仍然需要解决第一部分的问题：测量。
+本周早些时候，我们部分解决了这个问题，宣布[在 Promscale 中普遍提供 OpenTelemetry 追踪支持](https://www.timescale.com/blog/observability-powered-by-sql-understand-your-systems-like-never-before-with-opentelemetry-traces-and-postgresql/)，将由 SQL 驱动的可观测性带给所有开发者。随着对分析语言 ——SQL 的全面支持，我们解决了分析的问题。但我们仍然需要解决第一部分的问题：测量。
 
-为了让你的服务发出追踪数据，你必须手动添加 OpenTelemetry 测量工具到代码中。而且你必须针对所有服务和你使用的所有框架来做，否则你将无法看到每个请求的执行情况。你还需要部署 OpenTelemetry 收集器来接收所有新的追踪，处理它们，批处理它们，并最终将它们发送到你的可观察性后端。这需要花费大量的时间和精力。
+为了让你的服务发出追踪数据，你必须手动添加 OpenTelemetry 测量工具到代码中。而且你必须针对所有服务和你使用的所有框架来做，否则你将无法看到每个请求的执行情况。你还需要部署 OpenTelemetry 收集器来接收所有新的追踪，处理它们，批处理它们，并最终将它们发送到你的可观测性后端。这需要花费大量的时间和精力。
 
-如果你不需要做所有这些手工工作，并且可以在几分钟内而不是几小时甚至几天内启动和运行呢？如果你还能建立一个完整的可观察性技术栈并自动连接所有的组件呢？如果我告诉你，你可以用一个命令完成所有这些工作呢？
+如果你不需要做所有这些手工工作，并且可以在几分钟内而不是几小时甚至几天内启动和运行呢？如果你还能建立一个完整的可观测性技术栈并自动连接所有的组件呢？如果我告诉你，你可以用一个命令完成所有这些工作呢？
 
 我不是疯子。我只是一个 [Tobs](https://docs.timescale.com/promscale/latest/tobs/) 用户😎。
 
-Tobs 是 Kubernetes 的可观察性技术栈，是一个可以用来[在几分钟内在 Kubernetes 集群中部署一个完整的可观察性技术栈](https://www.timescale.com/blog/introducing-tobs-deploy-a-full-observability-suite-for-kubernetes-in-two-minutes/)的工具。该栈包括 OpenTelemetry Operator、OpenTelemetry Collector、Promscale 和 Grafana。它还部署了其他几个工具，如 Prometheus，以收集 Kubernetes 集群的指标，并将其发送到 Promscale。[在我们的最新版本中](https://github.com/timescale/tobs/releases/tag/0.10.1)，tobs 包括支持通过 OpenTelemetry Operator 用 OpenTelemetry 追踪自动检测你的 Python、Java 和 Node.js 服务。
+Tobs 是 Kubernetes 的可观测性技术栈，是一个可以用来[在几分钟内在 Kubernetes 集群中部署一个完整的可观测性技术栈](https://www.timescale.com/blog/introducing-tobs-deploy-a-full-observability-suite-for-kubernetes-in-two-minutes/)的工具。该栈包括 OpenTelemetry Operator、OpenTelemetry Collector、Promscale 和 Grafana。它还部署了其他几个工具，如 Prometheus，以收集 Kubernetes 集群的指标，并将其发送到 Promscale。[在我们的最新版本中](https://github.com/timescale/tobs/releases/tag/0.10.1)，tobs 包括支持通过 OpenTelemetry Operator 用 OpenTelemetry 追踪自动检测你的 Python、Java 和 Node.js 服务。
 
 是的，你没看错：自动！你不需要改变服务中的任何一行代码，就可以让它们被检测出来。锦上添花的是什么？你可以通过执行 helm 命令来部署一切。
 
-有了 tobs，你可以安装你的可观察性技术栈，只需几步就能搞定你的 OpenTelemetry 指标化的第一层。告别繁琐的配置工作，因为你的框架会自己检测。
+有了 tobs，你可以安装你的可观测性技术栈，只需几步就能搞定你的 OpenTelemetry 指标化的第一层。告别繁琐的配置工作，因为你的框架会自己检测。
 
 如果你想了解如何做到这一点，请继续阅读本博文。首先，我们将解释一切是如何运作的，剖析 OpenTelemetry Operator 在内部的真正作用。接下来，我们将通过一个例子演示如何将其直接付诸实践。
 
-- 我们将通过 tobs 在我们的 Kubernetes 集群中安装一个完整的可观察性技术栈。
+- 我们将通过 tobs 在我们的 Kubernetes 集群中安装一个完整的可观测性技术栈。
 - 我们将部署一个云原生 Python 应用程序。
 - 我们将检查我们的应用程序是如何被 OpenTelemetry 追踪器自动检测到的，这要归功于 tobs 和 OpenTelemetry Operator 所做的魔术🪄。
 
@@ -268,6 +268,6 @@ OpenTelemetry 追踪从未像现在这样方便。[如果你的微服务是用 O
 - [通过 Helm 在你的 Kubernetes 集群中安装 tobs](https://github.com/timescale/tobs/blob/master/chart/README.md#install)(请注意，你必须使用 Helm 来安装 tobs，才能使这个最新版本发挥作用，而不是使用 CLI)。
 - 在部署之前，给你想收集追踪数据的微服务 pods 添加[注解](https://github.com/open-telemetry/opentelemetry-operator#opentelemetry-auto-instrumentation-injection)（例如 `instrumentation.opentelemetry.io/inject-python: "true"`）。
 
-你的微服务将自动被 OpenTelemetry 追踪器检测，你的追踪器将自动存储在 Promscale 中，Promscale 是建立在 PostgreSQL 和 TimescaleDB 上的统一的指标和追踪器的可观察性后端。
+你的微服务将自动被 OpenTelemetry 追踪器检测，你的追踪器将自动存储在 Promscale 中，Promscale 是建立在 PostgreSQL 和 TimescaleDB 上的统一的指标和追踪器的可观测性后端。
 
 通过 [Promscale 预先建立的 APM 仪表盘](https://docs.timescale.com/promscale/latest/visualize-data/apm-experience/)，你将立即了解到你的系统性能如何，并且你将能够[使用 SQL 查询你的追踪](https://www.timescale.com/blog/observability-powered-by-sql-understand-your-systems-like-never-before-with-opentelemetry-traces-and-postgresql/)。

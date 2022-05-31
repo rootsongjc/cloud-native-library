@@ -58,7 +58,7 @@ CI/CD 管道的工作流程如下图 1 所示。
 
 涉及的 [关键任务](https://aws.amazon.com/getting-started/hands-on/create-continuous-delivery-pipeline/?trk=gs_card) 是：
 
-1.  确保 DevSecOps 平台中的所有单个组件（管道软件、SDLC 软件、代码库、可观察性工具等）都可用。
+1.  确保 DevSecOps 平台中的所有单个组件（管道软件、SDLC 软件、代码库、可观测性工具等）都可用。
 2.  通过认证、验证或定制测试，确保这些组件的安全。
 3.  将 CI 和 CD 工具与 SDLC 工具整合起来 —— 访问令牌、调用脚本、管道定义。
 4.  根据部署环境（即内部或云端的应用程序托管平台），在 IaC 工具（与 GitOps）中设置配置细节

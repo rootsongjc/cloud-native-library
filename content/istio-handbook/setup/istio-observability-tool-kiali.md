@@ -1,12 +1,12 @@
 ---
 weight: 30
-title: 安装可观察性工具 Kiali
+title: 安装可观测性工具 Kiali
 linktitle: Kiali
 date: '2022-05-18T00:00:00+08:00'
 type: book
 ---
 
-Istio 中有个 [issue #9066](https://github.com/istio/istio/issues/9066) 要求将 Istio 中默认使用的 Service Graph 替换成 [Kiali](https://www.kiali.io)。Kiali 最初是由 Red Hat 开源的，用于解决 Service Mesh 中可观察性即微服务的可视性问题。目前已获得 Istio 社区的官方支持。
+Istio 中有个 [issue #9066](https://github.com/istio/istio/issues/9066) 要求将 Istio 中默认使用的 Service Graph 替换成 [Kiali](https://www.kiali.io)。Kiali 最初是由 Red Hat 开源的，用于解决 Service Mesh 中可观测性即微服务的可视性问题。目前已获得 Istio 社区的官方支持。
 
 ## 关于 Kiali
 
@@ -46,7 +46,7 @@ external_services:
 
 ## Kiali 中的基本概念
 
-在了解 Kiali 如何提供 Service Mesh 中微服务可观察性之前，我们需要先了解下 Kiali 如何划分监控类别的。
+在了解 Kiali 如何提供 Service Mesh 中微服务可观测性之前，我们需要先了解下 Kiali 如何划分监控类别的。
 
 - **Application**：使用运行的工作负载，必须使用 Istio 的将 Label 标记为 `app` 才算。注意，如果一个应用有多个版本，只要 `app` 标签的值相同就是属于同一个应用。
 - **Deployment**：即 Kubernetes 中的 Deployment。

@@ -13,7 +13,7 @@ cascade:
 
 本报告译自 O'Reilly 出品的 [The Future of Observablity with OpeTelemetry](https://www.oreilly.com/library/view/the-future-of/9781098118433/)，作者 Ted Young，译者 [Jimmy Song](https://jimmysong.io)。
 
-{{< figure src="images/cover.jpg" alt="封面" caption="《OpenTelemetry 可观察性的未来》封面" width="50%" >}}
+{{< figure src="images/cover.jpg" alt="封面" caption="《OpenTelemetry 可观测性的未来》封面" width="50%" >}}
 
 ## 关于本书
 

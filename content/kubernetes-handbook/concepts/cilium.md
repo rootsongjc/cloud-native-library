@@ -30,7 +30,7 @@ Cilium 为 Linux 容器框架（如 [**Docker**](https://www.docker.com/) 和 [*
 
 ## Hubble 是什么？
 
-Hubble 是一个完全分布式的网络和安全可观察性平台。它建立在 Cilium 和 eBPF 之上，以完全透明的方式实现对服务的通信和行为以及网络基础设施的深度可见性（visibility）。
+Hubble 是一个完全分布式的网络和安全可观测性平台。它建立在 Cilium 和 eBPF 之上，以完全透明的方式实现对服务的通信和行为以及网络基础设施的深度可见性（visibility）。
 
 通过建立在 Cilium 之上，Hubble 可以利用 eBPF 实现可见性。依靠 eBPF，所有的可见性都是可编程的，并允许采用一种动态方法，最大限度地减少开销，同时按照用户的要求提供深入和详细的可见性。Hubble 的创建和专门设计是为了最好地利用 eBPF 的能力。
 

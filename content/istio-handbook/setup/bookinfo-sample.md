@@ -48,7 +48,7 @@ $ istioctl create -n default -f yaml/istio-bookinfo/bookinfo-gateway.yaml
 从图中可以看出 Istio 整体架构的特点：
 
 - 模块化：很多模块可以选择性的开启，如负责证书管理的 `istio-citadel` 默认就没有启用
-- 可定制化：可观察性的组件可以定制化和替换
+- 可定制化：可观测性的组件可以定制化和替换
 
 ## 参考
 

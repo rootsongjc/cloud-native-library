@@ -1,11 +1,11 @@
 ---
 weight: 30
-title: 部署可观察性工具
+title: 部署可观测性工具
 date: '2022-05-18T00:00:00+08:00'
 type: book
 ---
 
-接下来，我们将部署可观察性、分布式追踪、数据可视化工具：
+接下来，我们将部署可观测性、分布式追踪、数据可视化工具：
 
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.10/samples/addons/prometheus.yaml
