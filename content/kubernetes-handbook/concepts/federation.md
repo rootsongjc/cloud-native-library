@@ -161,7 +161,7 @@ Kubernetes Cluster Federation 又名 KubeFed 或 Federation v2，v2 架构在 Fe
 
 用来定义哪些 Kubernetes 集群要被联邦。可通过 kubefedctl join/unjoin 来加入/删除集群，当成功加入时，会建立一个 KubeFedCluster 组件来储存集群相关信息，如 API Endpoint、CA Bundle 等。这些信息会被用在 KubeFed Controller 存取不同 Kubernetes 集群上，以确保能够建立 Kubernetes API 资源，示意图如下所示。
 
-![KubeFed 基础架构](../images/sync-controller.png)
+![KubeFed 基础架构](../../images/sync-controller.png "KubeFed 基础架构")
 
 在 Federation 中，会区分 Host 与 Member 两种类型集群。
 
