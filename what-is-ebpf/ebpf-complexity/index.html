@@ -1,0 +1,1257 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="宋净超（Jimmy Song）" />
+
+  
+  
+  
+    
+  
+  <meta name="description" content="现在你已经看到了 eBPF 编程的例子，了解到它是如何工作的。虽然基础示例使得 eBPF 看起来相对简单，但也有一些复杂的地方使得 eBPF 编程充满挑战。 长期以来，有个问题使得编写和发布 eBPF 程序相对困难，那就是内核兼容性。 跨内核的" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://lib.jimmysong.io/what-is-ebpf/ebpf-complexity/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/css/wowchemy.f105d866ef8801694106f556ad4c9d33.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MP490FS739"></script>
+
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', "G-MP490FS739");
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2a4b7f65b1839466beaa48d633aa60c1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://lib.jimmysong.io/what-is-ebpf/ebpf-complexity/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary_large_image" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://lib.jimmysong.io/what-is-ebpf/ebpf-complexity/" />
+  <meta property="og:title" content="第四章：eBPF 的复杂性 | 云原生资料库" />
+  <meta property="og:description" content="现在你已经看到了 eBPF 编程的例子，了解到它是如何工作的。虽然基础示例使得 eBPF 看起来相对简单，但也有一些复杂的地方使得 eBPF 编程充满挑战。 长期以来，有个问题使得编写和发布 eBPF 程序相对困难，那就是内核兼容性。 跨内核的" /><meta property="og:image" content="https://lib.jimmysong.io/media/sharing.png" />
+    <meta property="twitter:image" content="https://lib.jimmysong.io/media/sharing.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2022-06-02T12:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2022-06-03T18:21:30&#43;08:00">
+  
+
+  
+
+
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>第四章：eBPF 的复杂性 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="919ace53c74a169f4e14ad662edc1da3" >
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/js/wowchemy-init.min.14a0ed61c6dbd594b9c75193b25be179.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>搜索</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/">云原生资料库</a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/">云原生资料库</a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#books"><span>书目列表</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/translation"><span>译文</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/event"><span>活动</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#tags"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#feed"><span>更新</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>Jimmy Song</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://jimmysong.io" data-toggle="tooltip" data-placement="bottom" title="主页" target="_blank" rel="noopener" aria-label="主页">
+                <i class="fas fa-home" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+        
+
+        
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/rootsongjc/cloud-native-library/" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    
+
+
+
+
+<div class="container-fluid docs">
+  <div class="row flex-xl-nowrap">
+    <div class="col-12 col-md-3 col-xl-2 docs-sidebar">
+      <form class="docs-search d-flex align-items-center">
+  <button class="btn docs-toggle d-md-none p-0 mr-md-3 w-100" type="button" data-toggle="collapse" data-target="#docs-nav" aria-controls="docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    <div class="d-flex">
+      <span class="d-md-none pl-1 flex-grow-1 text-left overflow-hidden">
+        
+          什么是 eBPF？
+        
+      </span>
+      <span><i class="fas fa-chevron-down"></i></span>
+    </div>
+  </button>
+
+  
+  <button class="form-control sidebar-search js-search d-none d-md-flex">
+    <i class="fas fa-search pr-2"></i>
+    <span class="sidebar-search-text">搜索...</span>
+    <span class="sidebar-search-shortcut">/</span>
+  </button>
+  
+</form>
+
+<nav class="collapse docs-links" id="docs-nav">
+  
+  
+  
+  
+  
+  
+
+  
+  
+    
+
+    
+      
+
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <ul class="nav docs-sidenav">
+        <li class=""><a href="/what-is-ebpf/"><i class="fas fa-book pr-1"></i>什么是 eBPF？</a></li>
+    
+      
+
+
+  <li class=""><a class="docs-menu-lv&lt;nil&gt;" href="/what-is-ebpf/introduction/">第一章：eBPF 简介</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv&lt;nil&gt;" href="/what-is-ebpf/changing-the-kernel-is-hard/">第二章：修改内核很困难</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv&lt;nil&gt;" href="/what-is-ebpf/ebpf-programs/">第三章：eBPF 程序</a></li>
+
+
+
+  <li class="active"><a class="docs-menu-lv&lt;nil&gt;" href="/what-is-ebpf/ebpf-complexity/">第四章：eBPF 的复杂性</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv&lt;nil&gt;" href="/what-is-ebpf/ebpf-in-cloud-native-environments/">第五章：云原生环境中的 eBPF</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv&lt;nil&gt;" href="/what-is-ebpf/ebpf-tools/">第六章：eBPF 工具</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv&lt;nil&gt;" href="/what-is-ebpf/conclusion/">第七章：结论</a></li>
+
+      
+    
+
+    
+      </ul>
+    
+
+  
+</nav>
+
+    </div>
+
+    
+    
+    <div class="d-none d-xl-block col-xl-2 docs-toc">
+      
+
+      <ul class="nav toc-top">
+        <li><a href="#" id="back_to_top" class="docs-toc-title">目录</a></li>
+      </ul>
+
+      <nav id="TableOfContents">
+  <ul>
+    <li><a href="#跨内核的可移植性">跨内核的可移植性</a>
+      <ul>
+        <li><a href="#bcc-对可移植性的处理方法">BCC 对可移植性的处理方法</a></li>
+        <li><a href="#co-re">CO-RE</a></li>
+      </ul>
+    </li>
+    <li><a href="#linux-内核知识">Linux 内核知识</a></li>
+    <li><a href="#编排多个-ebpf-程序">编排多个 eBPF 程序</a></li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+
+      
+      
+      <div class="subscribe-module col-12">
+    <img src="/img/wechat.webp" alt="image" title="Jimmy Song的微信公众号"/>
+    <p class="text-center">关注几米宋</p>
+</div>
+
+      
+    </div>
+    
+
+    <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 docs-content" role="main">
+
+      <article class="article">
+
+        <div class="docs-article-container">
+          
+            
+  <nav class="d-none d-md-flex" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      
+  
+    
+  
+    
+  
+
+    <li class="breadcrumb-item">
+      <a href="/">
+        
+          首页
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/what-is-ebpf/">
+        
+          什么是 eBPF？
+        
+      </a>
+    </li>
+  
+
+      <li class="breadcrumb-item active" aria-current="page">
+        第四章：eBPF 的复杂性
+      </li>
+    </ol>
+  </nav>
+
+
+
+
+          
+
+          <h1>第四章：eBPF 的复杂性</h1>
+
+          <div class="article-style">
+            <p>现在你已经看到了 eBPF 编程的例子，了解到它是如何工作的。虽然基础示例使得 eBPF 看起来相对简单，但也有一些复杂的地方使得 eBPF 编程充满挑战。</p>
+<p>长期以来，有个问题使得编写和发布 eBPF 程序相对困难，那就是内核兼容性。</p>
+<h2 id="跨内核的可移植性">跨内核的可移植性</h2>
+<p>eBPF 程序可以访问内核数据结构，而这些结构可能在不同的内核版本中发生变化。这些结构本身被定义在头文件中，构成了 Linux 源代码的一部分。在过去编译 eBPF 程序时，必须基于你想运行这些程序的内核兼容的头文件集。</p>
+<h3 id="bcc-对可移植性的处理方法">BCC 对可移植性的处理方法</h3>
+<p>为了解决跨内核的可移植性问题，BCC <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>（BPF 编译器集合，BPF Compiler Collection）项目采取了在运行时编译 eBPF 代码的方法，在目标机器上就地进行。这意味着编译工具链需要安装到每个你想让代码运行 <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> 的目标机器上，而且你必须在工具启动之前等待编译完成，而且文件系统上必须有内核头文件（实际上并不总是这样）。这就引出了 BPF CO-RE。</p>
+<h3 id="co-re">CO-RE</h3>
+<p>CO-RE（Compile Once, Run Everyone，编译一次，到处运行）方法由以下元素组成。</p>
+<p><strong>BTF（BPF Type Format）</strong></p>
+<p>这是一种用于表达数据结构和函数签名布局的格式。现代 Linux 内核支持 BTF，因此你可以从运行中的系统中生成一个名为 <code>vmlinux.h</code> 的头文件，其中包含一个 BPF 程序可能需要的关于内核的所有数据结构信息。</p>
+<p><strong>libbpf，BPF 库</strong></p>
+<p>libbpf 一方面提供了加载 eBPF 程序和映射到内核的功能，另一方面也在可移植性方面也起着重要的作用：它依靠 BTF 信息来调整 eBPF 代码，以弥补其编译时的数据结构与目标机器上的数据结构之间的差异。</p>
+<p><strong>编译器支持</strong></p>
+<p>clang 编译器得到了增强，因此当它编译 eBPF 程序时，它包括所谓的 BTF 重定位（relocation），这使得 libbpf 在加载 BPF 程序和映射到内核时知道要调整什么。</p>
+<p><strong>可选的 BPF 骨架</strong></p>
+<p>使用 <code>bpftool gen skeleton</code> 可以从编译的 BPF 对象文件中自动生成一个骨架，其中包含用户空间代码可以方便调用的函数，以管理 BPF 程序的生命周期 —— 将它们加载到内核，附加到事件等等。这些函数是更高层次的抽象，对开发者来说比直接使用 libbpf 更方便。</p>
+<p>关于 CO-RE 的更详细的解释，请阅读 Andrii Nakryiko 的出色 <a href="https://nakryiko.com/posts/bpf-portability-and-co-re/" target="_blank" rel="noopener">描述</a>。</p>
+<p>自 5.4 版本 <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup> 以来，<code>vmlinux</code> 文件形式的 BTF 信息已经包含在 Linux 内核中，但 libbpf 可以利用的原始 BTF 数据也可以为旧内核生成。在 <a href="https://github.com/aquasecurity/btfhub" target="_blank" rel="noopener">BTF Hub</a> 上有关于如何生成 BTF 文件的信息，以及用于各种 Linux 发行版的文件档案。</p>
+<p>BPF CO-RE 方法使得 eBPF 程序更易于在任意 Linux 发行版上运行 —— 或者至少在新 Linux 发行版上支持任意 eBPF 能力。但这并不能使 eBPF 更优雅：它本质上仍然是内核编程。</p>
+<h2 id="linux-内核知识">Linux 内核知识</h2>
+<p>很快就会发现，为了编写更高级的工具，你需要一些关于 Linux 内核的领域知识。你需要了解你可以访问的数据结构，取决于你的 eBPF 代码被调用的环境。不是所有应用程序的开发者都有解析网络数据包、访问套接字缓冲区或处理系统调用参数的经验。</p>
+<p>内核将如何对你 eBPF 代码的行为做出反应？正如你在 <a href="../changing-the-kernel-is-hard">第二章</a> 中了解到的，内核由数百万行代码组成。它的文档可能是稀少的，所以你可能会发现自己不得不阅读内核的源代码来弄清楚某些东西是如何工作的。</p>
+<p>你还需要弄清楚你的 eBPF 代码应该附加到哪些事件。由于可以将 <code>kprobe</code> 附加到整个内核的任何函数入口点，这可能不是一个简单的决定。在某些情况下，这可能很明确 —— 例如，如果你想访问一个传入的网络数据包，那么适当的网络接口上的 XDP 钩子是一个明显的选择。如果你想提供对特定内核事件的可观测性，在内核代码中找到合适的点可能并不难。</p>
+<p>但在其他情况下，选择可能不那么明显。例如，简单地使用 <code>kprobes</code> 来钩住构成内核系统调用接口的函数的工具，可能会被名为 <code>time-of-check</code> 到 <code>time-of-use</code>（TOCTTOU）的安全漏洞所影响。攻击者有一个小的机会窗口，他们可以在 eBPF 代码读取参数后，但在参数被复制到内核内存之前，改变系统调用的参数。在 DEF CON 29 <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup> 上，Rex Guo 和 Junyuan Zeng 做了一个关于这个问题的 <a href="https://www.youtube.com/watch?v=yaAdM8pWKG8&amp;ab_channel=DEFCONConference" target="_blank" rel="noopener">出色演讲</a>。一些被最广泛使用的 eBPF 工具是以相当天真的方式编写的，极易受到这种攻击。这不是一个简单的漏洞，而且有办法减轻这些攻击，但如果你正在保护高度敏感的数据，对抗复杂的、有动机的对手，请深入了解你使用的工具是否可能受到影响。</p>
+<p>你已经看到了 BPF CO-RE 是如何使 eBPF 程序在不同的内核版本上工作的，但它只考虑到了数据结构布局的变化，而没有考虑到内核行为的更大变化。例如，如果你想把一个 eBPF 程序附加到内核中的一个特定的函数或 tracepoint 上，你可能需要一个 B 计划，如果该函数或 tracepoint 在不同的内核版本中不存在，该怎么做。</p>
+<h2 id="编排多个-ebpf-程序">编排多个 eBPF 程序</h2>
+<p>当前有很多基于 eBPF 的工具提供了一套可观测能力，通过将 eBPF 程序与一组内核事件挂钩来实现。其中大部分是由 Brendan Gregg 和其他人在 BCC 和 <code>bpftrace</code> 工具中所做的工作而开创的。很多工具（通常是商业的）可能会提供更漂亮的图形和用户界面，但他们还是在这些 eBPF 程序的基础上实现的。</p>
+<p>当你想写代码来编排不同类型的事件之间的交互时，事情就变得相当复杂了。举个例子，Cilium 通过内核的网络堆栈 <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup> 在不同的点上观察到网络数据包，基于来自 Kubernetes CNI（容器网络接口）关于 Kubernetes pod 的信息，对流量进行操作。构建这个系统需要 Cilium 开发人员深入了解内核如何处理网络流量，以及用户空间的 <strong>pod</strong> 和 <strong>容器</strong> 概念如何映射到内核概念，如 cgroups 和命 namespace。在实践中，一些 Cilium 的维护者也是内核的开发者，他们致力于增强 eBPF 和网络支持；因此，他们拥有这些知识。</p>
+<p>底线是，尽管 eBPF 提供了一个极其有效和强大的平台来连接到内核，但对于没有大量内核经验的普通开发者来说，这并不容易。如果你对 eBPF 编程感兴趣，我非常鼓励你把它作为练习来学习；在这个领域积累经验可能是非常有价值的，因为它在未来几年内一定会成为受欢迎的专业技能。但实际上，大多数组织不太可能在内部建立许多定制的 eBPF 工具，而是利用专业 eBPF 社区的项目和产品。</p>
+<p>让我们继续思考为什么这些基于 eBPF 的项目和产品在云原生环境中如此强大。</p>
+<h2 id="参考">参考</h2>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>你可以在 <a href="https://github.com/iovisor/bcc" target="_blank" rel="noopener">GitHub 页面</a> 上找到 BCC。&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p>一些项目采取了将 eBPF 源和所需工具链打包成一个容器镜像的方法。这避免了安装工具链的复杂性和任何随之而来的依赖管理，但这仍意味着编译步骤在目标机器上运行。&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:3">
+<p>更多信息见 Andrii Nakryiko 的 IO Visor <a href="https://lists.iovisor.org/g/iovisor-dev/message/1966" target="_blank" rel="noopener">帖子</a>。&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:4">
+<p>Rex Guo and Junyuan Zeng, &ldquo;Phantom Attack: 逃离系统调用监控，&quot;（DEF CON，2021 年 8 月 5-8 日）。&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:5">
+<p><a href="https://docs.cilium.io/en/stable/concepts/ebpf/intro/" target="_blank" rel="noopener">Cilium 文档</a>描述了 eBPF 程序如何附加到不同的网络能力钩子，组合起来以实现复杂的网络能力。&#160;<a href="#fnref:5" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
+
+          </div>
+
+          
+
+
+
+          
+          
+          <div class="article-widget">
+            
+<div class="container-xl">
+<div class="row post-nav">
+  
+  
+  
+  <div class="col-6 post-nav-item">
+    <div class="meta-nav">上一页</div>
+    <a href="/what-is-ebpf/ebpf-programs/" rel="next">第三章：eBPF 程序</a>
+  </div>
+  
+  
+  
+  <div class="col-6 post-nav-item">
+    <div class="meta-nav">下一页</div>
+    <a href="/what-is-ebpf/ebpf-in-cloud-native-environments/" rel="prev">第五章：云原生环境中的 eBPF</a>
+  </div>
+  
+</div>
+</div>
+
+          </div>
+          
+        </div>
+
+        <div class="body-footer">
+          <p>最近更新于 2022-06-03</p>
+
+          
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/cloud-native-library//edit/master/content/what-is-ebpf/ebpf-complexity.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+          
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments" class="mb-3">
+    <script src="https://giscus.app/client.js"
+        data-repo="rootsongjc/cloud-native-library"
+        data-repo-id="MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg="
+        data-category="Announcements"
+        data-category-id="DIC_kwDODMrxWM4CPL7J"
+        data-mapping="pathname"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="light"
+        data-lang="zh-CN"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </section>
+  
+
+
+
+          
+
+
+        </div>
+
+      </article>
+
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2022 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+
+    </main>
+  </div>
+</div>
+
+  </div>
+
+  <div class="page-footer">
+    
+    
+  </div>
+
+      
+
+    
+    <script src="/js/vendor-bundle.min.53d67dc2cb1ebceb89d5e2aba2f86112.js"></script>
+
+    
+    
+    
+      
+
+      
+      
+
+      
+
+      
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+        
+        
+      
+
+    
+
+    
+    
+    
+
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+    <script>
+      anchors.add();
+    </script>
+    
+
+    
+    
+    
+      
+      <script id="search-hit-fuse-template" type="text/x-template">
+        <div class="search-hit" id="summary-{{key}}">
+          <div class="search-hit-content">
+            <div class="search-hit-name">
+              <a href="{{relpermalink}}">{{title}}</a>
+              <div class="article-metadata search-hit-type">{{type}}</div>
+              <p class="search-hit-description">{{snippet}}</p>
+            </div>
+          </div>
+        </div>
+      </script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script>
+      
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+      
+      
+      
+      
+      
+      
+      
+    
+
+    
+
+    
+    
+    
+    <script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+      
+    
+    
+    <script src="/zh/js/wowchemy.min.d29a6fc876b457837294a96644b02d4f.js"></script>
+
+    
+    
+    
+    
+    
+    
+      
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <script src="/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+
+
+
+
+
+
+</body>
+</html>

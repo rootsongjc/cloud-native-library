@@ -1,0 +1,1432 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="宋净超（Jimmy Song）" />
+
+  
+  
+  
+    
+  
+  <meta name="description" content="在这一章中，让我们来谈谈编写 eBPF 代码。我们需要考虑在内核中运行的 eBPF 程序本身，以及与之交互的用户空间代码。 内核和用户空间代码 首先，你可以用什么编程语言来编写 eBPF 程序？ 内核接受字节码形式的 eBPF 程序 1。人工编写这" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://lib.jimmysong.io/what-is-ebpf/ebpf-programs/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/css/wowchemy.f105d866ef8801694106f556ad4c9d33.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MP490FS739"></script>
+
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', "G-MP490FS739");
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2a4b7f65b1839466beaa48d633aa60c1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://lib.jimmysong.io/what-is-ebpf/ebpf-programs/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary_large_image" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://lib.jimmysong.io/what-is-ebpf/ebpf-programs/" />
+  <meta property="og:title" content="第三章：eBPF 程序 | 云原生资料库" />
+  <meta property="og:description" content="在这一章中，让我们来谈谈编写 eBPF 代码。我们需要考虑在内核中运行的 eBPF 程序本身，以及与之交互的用户空间代码。 内核和用户空间代码 首先，你可以用什么编程语言来编写 eBPF 程序？ 内核接受字节码形式的 eBPF 程序 1。人工编写这" /><meta property="og:image" content="https://lib.jimmysong.io/media/sharing.png" />
+    <meta property="twitter:image" content="https://lib.jimmysong.io/media/sharing.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2022-06-02T12:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2022-06-03T18:21:30&#43;08:00">
+  
+
+  
+
+
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>第三章：eBPF 程序 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="37aff517f23b6e68dd289bce789da763" >
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/js/wowchemy-init.min.14a0ed61c6dbd594b9c75193b25be179.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>搜索</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/">云原生资料库</a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/">云原生资料库</a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#books"><span>书目列表</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/translation"><span>译文</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/event"><span>活动</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#tags"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#feed"><span>更新</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>Jimmy Song</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://jimmysong.io" data-toggle="tooltip" data-placement="bottom" title="主页" target="_blank" rel="noopener" aria-label="主页">
+                <i class="fas fa-home" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+        
+
+        
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/rootsongjc/cloud-native-library/" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    
+
+
+
+
+<div class="container-fluid docs">
+  <div class="row flex-xl-nowrap">
+    <div class="col-12 col-md-3 col-xl-2 docs-sidebar">
+      <form class="docs-search d-flex align-items-center">
+  <button class="btn docs-toggle d-md-none p-0 mr-md-3 w-100" type="button" data-toggle="collapse" data-target="#docs-nav" aria-controls="docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    <div class="d-flex">
+      <span class="d-md-none pl-1 flex-grow-1 text-left overflow-hidden">
+        
+          什么是 eBPF？
+        
+      </span>
+      <span><i class="fas fa-chevron-down"></i></span>
+    </div>
+  </button>
+
+  
+  <button class="form-control sidebar-search js-search d-none d-md-flex">
+    <i class="fas fa-search pr-2"></i>
+    <span class="sidebar-search-text">搜索...</span>
+    <span class="sidebar-search-shortcut">/</span>
+  </button>
+  
+</form>
+
+<nav class="collapse docs-links" id="docs-nav">
+  
+  
+  
+  
+  
+  
+
+  
+  
+    
+
+    
+      
+
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <ul class="nav docs-sidenav">
+        <li class=""><a href="/what-is-ebpf/"><i class="fas fa-book pr-1"></i>什么是 eBPF？</a></li>
+    
+      
+
+
+  <li class=""><a class="docs-menu-lv&lt;nil&gt;" href="/what-is-ebpf/introduction/">第一章：eBPF 简介</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv&lt;nil&gt;" href="/what-is-ebpf/changing-the-kernel-is-hard/">第二章：修改内核很困难</a></li>
+
+
+
+  <li class="active"><a class="docs-menu-lv&lt;nil&gt;" href="/what-is-ebpf/ebpf-programs/">第三章：eBPF 程序</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv&lt;nil&gt;" href="/what-is-ebpf/ebpf-complexity/">第四章：eBPF 的复杂性</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv&lt;nil&gt;" href="/what-is-ebpf/ebpf-in-cloud-native-environments/">第五章：云原生环境中的 eBPF</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv&lt;nil&gt;" href="/what-is-ebpf/ebpf-tools/">第六章：eBPF 工具</a></li>
+
+
+
+  <li class=""><a class="docs-menu-lv&lt;nil&gt;" href="/what-is-ebpf/conclusion/">第七章：结论</a></li>
+
+      
+    
+
+    
+      </ul>
+    
+
+  
+</nav>
+
+    </div>
+
+    
+    
+    <div class="d-none d-xl-block col-xl-2 docs-toc">
+      
+
+      <ul class="nav toc-top">
+        <li><a href="#" id="back_to_top" class="docs-toc-title">目录</a></li>
+      </ul>
+
+      <nav id="TableOfContents">
+  <ul>
+    <li><a href="#内核和用户空间代码">内核和用户空间代码</a></li>
+    <li><a href="#附属于事件的自定义程序">附属于事件的自定义程序</a>
+      <ul>
+        <li><a href="#从函数中进入或退出">从函数中进入或退出</a></li>
+        <li><a href="#tracepoints">Tracepoints</a></li>
+        <li><a href="#perf-事件">Perf 事件</a></li>
+        <li><a href="#linux-安全模块接口">Linux 安全模块接口</a></li>
+        <li><a href="#网络接口express-data-path">网络接口——eXpress Data Path</a></li>
+        <li><a href="#套接字和其他网络钩子">套接字和其他网络钩子</a></li>
+      </ul>
+    </li>
+    <li><a href="#ebpf-map">eBPF Map</a></li>
+    <li><a href="#opensnoop-示例">Opensnoop 示例</a>
+      <ul>
+        <li><a href="#opensnoop-ebpf-代码">Opensnoop eBPF 代码</a></li>
+        <li><a href="#libbpf-tools-makefile">libbpf-tools Makefile</a></li>
+        <li><a href="#opensnoop-用户空间代码">Opensnoop 用户空间代码</a></li>
+      </ul>
+    </li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+
+      
+      
+      <div class="subscribe-module col-12">
+    <img src="/img/wechat.webp" alt="image" title="Jimmy Song的微信公众号"/>
+    <p class="text-center">关注几米宋</p>
+</div>
+
+      
+    </div>
+    
+
+    <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 docs-content" role="main">
+
+      <article class="article">
+
+        <div class="docs-article-container">
+          
+            
+  <nav class="d-none d-md-flex" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      
+  
+    
+  
+    
+  
+
+    <li class="breadcrumb-item">
+      <a href="/">
+        
+          首页
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/what-is-ebpf/">
+        
+          什么是 eBPF？
+        
+      </a>
+    </li>
+  
+
+      <li class="breadcrumb-item active" aria-current="page">
+        第三章：eBPF 程序
+      </li>
+    </ol>
+  </nav>
+
+
+
+
+          
+
+          <h1>第三章：eBPF 程序</h1>
+
+          <div class="article-style">
+            <p>在这一章中，让我们来谈谈编写 eBPF 代码。我们需要考虑在内核中运行的 eBPF 程序本身，以及与之交互的用户空间代码。</p>
+<h2 id="内核和用户空间代码">内核和用户空间代码</h2>
+<p>首先，你可以用什么编程语言来编写 eBPF 程序？</p>
+<p>内核接受字节码形式的 eBPF 程序 <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>。人工编写这种字节码是可能的，就像用汇编语言写应用程序代码一样——但对人类来说，使用一种可以被编译（即自动翻译）为字节码的高级语言通常更实用。</p>
+<p>由于一些原因，eBPF 程序不能用任意的高级语言编写。首先，语言编译器需要支持发出内核所期望的 eBPF 字节码格式。其次，许多编译语言都有运行时特性——例如 Go 的内存管理和垃圾回收，使它们不适合。在撰写本文时，编写 eBPF 程序的唯一选择是 C（用 clang/llvm 编译）和最新的 Rust。迄今为止，绝大多数的 eBPF 代码都是用 C 语言发布的，考虑到它是 Linux 内核的语言，这是有道理的。</p>
+<p>至少，用户空间的程序需要加载到内核中，并将其附加到正确的事件中。有一些实用程序，如 bpftool，可以帮助我们解决这个问题，但这些都是低级别的工具，假定你有丰富的 eBPF 知识，它们是为 eBPF 专家设计的，而不是普通用户。在大多数基于 eBPF 的工具中，有一个用户空间的应用程序，负责将 eBPF 程序加载到内核中，传入任何配置参数，并以用户友好的方式显示 eBPF 程序收集的信息。</p>
+<p>至少在理论上，eBPF 工具的用户空间部分可以用任何语言编写，但在实践中，有一些库只支持相当少的语言。其中包括 C、Go、Rust 和 Python。这种语言的选择更加复杂，因为并不是所有的语言都有支持 libbpf 的库，libbpf 已经成为使 eBPF 程序在不同版本的内核中可移植的流行选择。(我们将在 <a href="../ebpf-complexity">第四章</a> 中讨论 libbpf）。</p>
+<h2 id="附属于事件的自定义程序">附属于事件的自定义程序</h2>
+<p>eBPF 程序本身通常是用 C 或 Rust 编写的，并编入一个对象文件 <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>。这是一个标准的 ELF（可执行和可链接格式，Executable and Linkable Format）文件，可以用像 <strong>readelf</strong> 这样的工具来检查，它包含程序字节码和任何映射的定义（我们很快就会讨论）。如 <a href="#figure-f-3-1">图 3-1</a> 所示，如果在前一章中提到的验证器允许的话，用户空间程序会读取这个文件并将其加载到内核中。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-f-3-1">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img src="../images/f-3-1.jpg" alt="图 3-1" loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      图 3-1. 用户空间应用程序使用 bpf() 系统调用从 ELF 文件中加载 eBPF 程序到内核中
+    </figcaption></figure>
+<p>eBPF 程序加载到内核中时必须被附加到事件上。每当事件发生，相关的 eBPF 程序就会运行。有一个非常广泛的事件，你可以将程序附加到其中；我不会涵盖所有的事件，但以下是一些更常用的选项。</p>
+<h3 id="从函数中进入或退出">从函数中进入或退出</h3>
+<p>你可以附加一个 eBPF 程序，在内核函数进入或退出时被触发。当前的许多 eBPF 例子都使用了 <code>kprobes</code>（附加到一个内核函数入口点）和 <code>kretprobes</code>（函数退出）的机制。在最新的内核版本中，有一个更有效的替代方法，叫做 <code>fentry/fexit</code> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>。</p>
+<p>请注意，你不能保证在一个内核版本中定义的所有函数一定会在未来的版本中可用，除非它们是稳定 API 的一部分，如 syscall 接口。</p>
+<p>你也可以用 <code>uprobes</code> 和 <code>uretprobes</code> 将 eBPF 程序附加到用户空间函数上。</p>
+<h3 id="tracepoints">Tracepoints</h3>
+<p>你也可以将 eBPF 程序附加到内核内定义的 <code>tracepoints</code> <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup>。通过在 <code>/sys/kernel/debug/tracing/events</code> 下查找机器上的事件。</p>
+<h3 id="perf-事件">Perf 事件</h3>
+<p>Perf <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup> 是一个收集性能数据的子系统。你可以将 eBPF 程序挂到所有收集 perf 数据的地方，这可以通过在你的机器上运行 perf list 来确定。</p>
+<h3 id="linux-安全模块接口">Linux 安全模块接口</h3>
+<p>LSM 接口在内核允许某些操作之前检查安全策略。你可能见过 AppArmor 或 SELinux，利用了这个接口。通过 eBPF，你可以将自定义程序附加到相同的检查点上，从而实现灵活、动态的安全策略和一些运行时安全工具的新方法。</p>
+<h3 id="网络接口express-data-path">网络接口——eXpress Data Path</h3>
+<p>eXpress Data Path（XDP）允许将 eBPF 程序附加到网络接口上，这样一来，每当收到一个数据包就会触发 eBPF 程序。它可以检查甚至修改数据包，程序的退出代码可以告诉内核如何处理该数据包：传递、放弃或重定向。这可以构成一些非常有效的网络功能 <sup id="fnref:6"><a href="#fn:6" class="footnote-ref" role="doc-noteref">6</a></sup> 的基础。</p>
+<h3 id="套接字和其他网络钩子">套接字和其他网络钩子</h3>
+<p>当应用程序在网络套接字上打开或执行其他操作时，以及当消息被发送或接收时，你可以附加运行 eBPF 程序。在内核的网络堆栈中也有称为 <strong>流量控制（traffic control）</strong> 或 <strong>tc</strong> 的 钩子，eBPF 程序可以在初始数据包处理后运行。</p>
+<p>一些功能可以单独用 eBPF 程序实现，但在许多情况下，我们希望 eBPF 代码能从用户空间的应用程序接收信息，或将数据传递给用户空间的应用程序。允许数据在 eBPF 程序和用户空间之间，或在不同的 eBPF 程序之间传递的机制被称为 <strong>map</strong>。</p>
+<h2 id="ebpf-map">eBPF Map</h2>
+<p>map 的开发是 eBPF 缩略语中的 <strong>e</strong> 代表 <strong>extended</strong> 重要区别之一。</p>
+<p>map 是与 eBPF 程序一起定义的数据结构体。有各种不同类型的 map ，但它们本质上都是键值存储。eBPF 程序可以读取和写入 map，用户空间代码也可以。map 的常见用途包括：</p>
+<ul>
+<li>eBPF 程序写入关于事件的指标和其他数据，供用户空间代码以后检索。</li>
+<li>用户空间代码编写配置信息，供 eBPF 程序读取并作出相应的行为。</li>
+<li>eBPF 程序将数据写入 map ，供另一个 eBPF 程序以后检索，允许跨多个内核事件的信息协调。</li>
+</ul>
+<p>如果内核和用户空间的代码都要访问同一个映射，它们需要对存储在该映射中的数据结构体有一个共同的理解。这可以通过在用户空间和内核代码中加入定义这些数据结构体的头文件来实现，但是如果这些代码不是用相同的语言编写的，作者将需要仔细创建逐个字节兼容的结构体定义。</p>
+<p>我们已经讨论了 eBPF 工具的主要组成部分：在内核中运行的 eBPF 程序，加载和与这些程序交互的用户空间代码，以及允许程序共享数据的 map 。为了更具体化，让我们看一个例子。</p>
+<h2 id="opensnoop-示例">Opensnoop 示例</h2>
+<p>在 eBPF 程序的例子中，我选择了 <code>opennoop</code>，一个可以显示任何进程所打开的文件的工具。这个工具的原始版本是 Brendan Gregg 最初在 <a href="https://github.com/iovisor/bcc/blob/master/tools/opensnoop.py" target="_blank" rel="noopener">BCC 项目</a>中编写的许多 BPF 工具之一，你可以在 GitHub 上找到。它后来被重写为 <code>libbpf</code>（你将在下一章见到它），在这个例子中，我使用 <code>libbpf-tools</code> 目录下的较新版本。</p>
+<p>当你运行 <code>opensnoop</code> 时，你将看到的输出在很大程度上取决于当时在虚拟机上发生了什么，但它应该看起来像这样。</p>
+<pre tabindex="0"><code>PID    COMM	FD	ERR	PATH
+93965  cat	3	0	/etc/ld.so.cache
+93965  cat	3	0	/lib/x86_64-linux-gnu/libc.so.6
+93965  cat	3	0	/usr/lib/locale/locale-archive
+93965  cat	3	0	/usr/share/locale/locale.alias
+...
+</code></pre><p>每一行输出表示一个进程打开（或试图打开）一个文件。这些列显示了进程的 ID，运行的命令，文件描述符，错误代码的指示，以及被打开的文件的路径。</p>
+<p>Opensnoop 的工作方式是将 eBPF 程序附加到 <code>open()</code> 和 <code>openat()</code> 系统调用上，所有应用程序都必须通过这些调用来要求内核打开文件。让我们深入了解一下这是如何实现的。为了简洁起见，我们将不看每一行代码，但我希望这足以让你了解它是如何工作的（如果你对这么深的内容不感兴趣的话，请跳到下一章！）。</p>
+<h3 id="opensnoop-ebpf-代码">Opensnoop eBPF 代码</h3>
+<p>eBPF 代码是用 C 语言编写的，在 <code>opensnoop.bpf.c</code> 文件中。在这个文件的开头，你可以看到两个 eBPF map 的定义 —— <code>start</code> 和 <code>events</code>：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_HASH</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">10240</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">__type</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">u32</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">__type</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="k">struct</span> <span class="n">args_t</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="n">start</span> <span class="n">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_PERF_EVENT_ARRAY</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">__uint</span><span class="p">(</span><span class="n">key_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">u32</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">        <span class="n">__uint</span><span class="p">(</span><span class="n">value_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">u32</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="n">events</span> <span class="n">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+</span></span></code></pre></div><p>当 ELF 对象文件被创建时，它包含了每个 map 和每个要加载到内核的程序的部分，<code>SEC()</code> 宏定义了这些部分。</p>
+<p>当我们研究这个程序的时候，你会看到，在系统调用被处理的时候，开始 map 被用来临时存储系统调用的参数 —— 包括被打开的文件的名称。<code>events</code> map <sup id="fnref:7"><a href="#fn:7" class="footnote-ref" role="doc-noteref">7</a></sup> 用于将事件信息从内核中的 eBPF 代码传递给用户空间的可执行程序。如 <a href="#figure-f-3-2">图 3-2</a> 所示。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-f-3-2">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img src="../images/f-3-2.jpg" alt="图 3-2" loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      图 3-2. 调用 open() 触发 eBPF 程序，将数据存储在 opensnoop 的 eBPF map 中
+    </figcaption></figure>
+<p>在 <code>opensnoop.bpf.c</code> 文件的后面，你会发现两个极其相似的函数：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">SEC</span><span class="p">(</span><span class="s">&#34;tracepoint/syscalls/sys_enter_open&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="n">tracepoint__syscalls__sys_enter_open</span><span class="p">(</span><span class="k">struct</span>         <span class="n">trace_event_raw_sys_enter</span><span class="o">*</span> <span class="n">ctx</span><span class="p">)</span>
+</span></span></code></pre></div><p>和</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">SEC</span><span class="p">(</span><span class="s">&#34;tracepoint/syscalls/sys_enter_openat&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="n">tracepoint__syscalls__sys_enter_openat</span><span class="p">(</span><span class="k">struct</span>
+</span></span><span class="line"><span class="cl">    <span class="n">trace_event_raw_sys_enter</span><span class="o">*</span> <span class="n">ctx</span><span class="p">)</span>
+</span></span></code></pre></div><p>有两个不同的系统调用用于打开文件 <sup id="fnref:8"><a href="#fn:8" class="footnote-ref" role="doc-noteref">8</a></sup>：<code>openat()</code> 和
+<code>open()</code>。它们是相同的，除了 <code>openat()</code> 有一个额外的参数是目录文件描述符，而且要打开的文件的路径名是相对于该目录而言的。同样，除了处理参数上的差异，opennoop 中的两个函数也是相同的。</p>
+<p>正如你所看到的，它们都需要一个参数，即一个指向名为 <code>trace_event_raw_sys_enter</code> 结构体的指针。你可以在你运行的特定内核生成的 <code>vmlinux</code> 头文件中找到这个结构体的定义。编写 eBPF 程序之道包括找出每个程序接收的结构体作为其上下文，以及如何访问其中的信息。</p>
+<p>这两个函数使用一个 BPF 辅助函数来检索调用这个 syscall 的进程 ID：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">u64</span> <span class="n">id</span> <span class="o">=</span> <span class="n">bpf_get_current_pid_tgid</span><span class="p">();</span>
+</span></span></code></pre></div><p>这段代码得到了文件名和传递给系统调用的标志，并把它们放在一个叫做 <code>args</code> 的结构体中：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">args</span><span class="p">.</span><span class="n">fname</span> <span class="o">=</span> <span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">ctx</span><span class="o">-&gt;</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>            
+</span></span><span class="line"><span class="cl"><span class="n">args</span><span class="p">.</span><span class="n">flags</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">ctx</span><span class="o">-&gt;</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+</span></span></code></pre></div><p>这个结构体被写入 <code>start</code> map 中，使用当前程序 ID 作为键。</p>
+<p>这就是 eBPF 程序在进入 syscall 时所做的一切。但在 <code>opensnoop.bpf.c</code> 中定义了另一对 eBPF 程序，当系统调用退出时被触发。</p>
+<p>这个程序和它的双胞胎 <code>openat()</code> 在函数 <code>trace_exit()</code> 中共享代码。你有没有注意到，所有被 eBPF 程序调用的函数的前缀都是 <code>static __always_inline</code>？这迫使编译器将这些函数的指令放在内联中，因为在旧的内核中，BPF 程序不允许跳转到一个单独的函数。新的内核和 LLVM 版本可以支持非内联的函数调用，但这是一种安全的方式，可以确保 BPF 验证器满意（现在还有一个 BPF 尾部调用的概念，即执行从一个 BPF 程序跳转到另一个程序。你可以在 <a href="https://docs.cilium.io/en/v1.10/bpf/#bpf-to-bpf-calls" target="_blank" rel="noopener">eBPF 文档</a>中阅读更多关于 BPF 函数调用和尾部调用的内容）。</p>
+<p><code>trace_exit()</code> 函数创建一个空的事件结构体：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">event</span> <span class="n">event</span> <span class="o">=</span> <span class="p">{};</span>
+</span></span></code></pre></div><p>该结构体将用即将结束的 <code>open/openat</code> 系统调用的信息填充，并通过 <code>events</code> map 发送到用户空间。</p>
+<p>在 <code>start</code> 哈希 map 中应该有一个与当前进程 ID 相对应的条目：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">ap</span> <span class="o">=</span> <span class="n">bpf_map_lookup_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">start</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pid</span><span class="p">);</span>
+</span></span></code></pre></div><p>这里有先前在调用 <code>sys_enter_open(at)</code> 时写入的关于文件名和标志的信息。标志字段是一个直接存储在结构体中的整数，所以直接从结构体中读取它是可以的：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">event</span><span class="p">.</span><span class="n">flags</span> <span class="o">=</span> <span class="n">ap</span><span class="o">-&gt;</span><span class="n">flags</span><span class="p">;</span>
+</span></span></code></pre></div><p>相反，文件名被写入用户空间内存的一些字节中，验证者需要确定这个 eBPF 程序从内存的那个位置读取这个字节数是安全的。这是用另一个辅助函数 <code>bpf_probe_read_user_str()</code> 完成的：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">bpf_probe_read_user_str</span><span class="p">(</span><span class="o">&amp;</span><span class="n">event</span><span class="p">.</span><span class="n">fname</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">event</span><span class="p">.</span><span class="n">fname</span><span class="p">),</span> <span class="n">ap</span><span class="o">-&gt;</span><span class="n">fname</span><span class="p">);</span>
+</span></span></code></pre></div><p>当前的命令名称（即进行 <code>open(at)</code> 系统调用的可执行文件的名称）也被复制到事件结构体中，使用另一个 BPF 辅助函数：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">bpf_get_current_comm</span><span class="p">(</span><span class="o">&amp;</span><span class="n">event</span><span class="p">.</span><span class="n">comm</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">event</span><span class="p">.</span><span class="n">comm</span><span class="p">));</span>
+</span></span></code></pre></div><p>事件结构体被写入 <code>events</code> perf buffer map 中：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">bpf_perf_event_output</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">events</span><span class="p">,</span> <span class="n">BPF_F_CURRENT_CPU</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">event</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">event</span><span class="p">));</span>
+</span></span></code></pre></div><p>用户空间的代码从这个 map 中读取事件信息。在我们讨论这个问题之前，让我们简单看看 Makefile。</p>
+<h3 id="libbpf-tools-makefile">libbpf-tools Makefile</h3>
+<p>当你构建 eBPF 代码时，你得到一个包含 eBPF 程序和 map 的二进制定义的对象文件。你还需要一个额外的用户空间可执行文件，它将把这些程序和 map 加载到内核中，作为用户 <sup id="fnref:9"><a href="#fn:9" class="footnote-ref" role="doc-noteref">9</a></sup> 的接口。我们看看如何构建 <code>opensnoop</code> 的 Makefile，看看它是如何创建 eBPF 对象文件和可执行文件的。</p>
+<p>Makefile 由一组规则组成，这些规则的语法可能有点不透明，所以如果你不熟悉 Makefile，也不特别关心这些细节，请随意跳过这一节。</p>
+<p>我们正在看的 opensnoop 的例子是一大批示例工具的其中之一，它们都是用 Makefile 构建的，你可以在 <code>libbpf-tools</code> 目录中找到。在这个文件中，并不是所有的东西都特别有意义，但有几个规则我想强调一下。第一条规则是使用 <code>bpf.c</code> 文件并使用 clang 编译器来创建一个 BPF 目标对象文件。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-makefile" data-lang="makefile"><span class="line"><span class="cl"><span class="nf">$(OUTPUT)/%.bpf.o</span><span class="o">:</span> %.<span class="n">bpf</span>.<span class="n">c</span> <span class="k">$(</span><span class="nv">LIBBPF_OBJ</span><span class="k">)</span> <span class="k">$(</span><span class="nv">wildcard</span> %.<span class="nv">h</span><span class="k">)</span> <span class="k">$(</span><span class="nv">AR</span>.. 
+</span></span><span class="line"><span class="cl"><span class="k">$(</span><span class="nv">call</span> <span class="nv">msg</span>,<span class="nv">BPF</span>,<span class="k">$</span>@<span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">$(</span><span class="nv">Q</span><span class="k">)$(</span><span class="nv">CLANG</span><span class="k">)</span> <span class="k">$(</span><span class="nv">CFLAGS</span><span class="k">)</span> -<span class="nv">target</span> <span class="nv">bpf</span> -<span class="nv">D__TARGET_ARCH_</span><span class="k">$(</span><span class="nv">ARCH</span><span class="k">)</span> \
+</span></span><span class="line"><span class="cl">              -<span class="nv">I</span><span class="k">$(</span><span class="nv">ARCH</span><span class="k">)</span>/ <span class="k">$(</span><span class="nv">INCLUDES</span><span class="k">)</span> -<span class="nv">c</span> <span class="k">$(</span><span class="nv">filter</span> %.<span class="nv">c</span>,<span class="k">$</span>^<span class="k">)</span> -<span class="nv">o</span> <span class="k">$</span>@ &amp;&amp; \
+</span></span><span class="line"><span class="cl"><span class="k">$(</span><span class="nv">LLVM_STRIP</span><span class="k">)</span> -<span class="nv">g</span> <span class="k">$</span>@
+</span></span></code></pre></div><p>因此，<code>opensnoop.bpf.c</code> 被编译成 <code>\$(OUTPUT)/open snoop.bpf.o</code>。这个对象文件包含将被加载到内核的 eBPF 程序和 map。</p>
+<p>另一条规则使用 <code>bpftool gen skeleton</code>，从该 <code>bpf.o</code> 对象文件中包含的 map 和程序定义中创建一个骨架头文件：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-makefile" data-lang="makefile"><span class="line"><span class="cl"><span class="nf">$(OUTPUT)/%.skel.h</span><span class="o">:</span> <span class="k">$(</span><span class="nv">OUTPUT</span><span class="k">)</span>/%.<span class="n">bpf</span>.<span class="n">o</span> <span class="p">|</span> <span class="k">$(</span><span class="nv">OUTPUT</span><span class="k">)</span> 
+</span></span><span class="line"><span class="cl"><span class="k">$(</span><span class="nv">call</span> <span class="nv">msg</span>,<span class="nv">GEN</span>-<span class="nv">SKEL</span>,<span class="k">$</span>@<span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">$(</span><span class="nv">Q</span><span class="k">)$(</span><span class="nv">BPFTOOL</span><span class="k">)</span> <span class="err">gen</span> <span class="err">skeleton</span> <span class="k">$&lt;</span> <span class="err">&gt;</span> <span class="k">$@</span>
+</span></span></code></pre></div><p><code>opensnoop.c</code> 用户空间代码包括这个 <code>opensnoop.skel.h</code> 头文件，以获得它与内核中的 eBPF 程序共享的 map 的定义。这使得用户空间和内核代码能够了解存储在这些 map 中的数据结构体的布局。</p>
+<p>下面的规则将用户空间的代码 <code>opensnoop.c</code> 的编译成为 <code>$(OUTPUT)/opensnoop.o</code> 的二进制对象：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-makefile" data-lang="makefile"><span class="line"><span class="cl"><span class="nf">$(OUTPUT)/%.o</span><span class="o">:</span> %.<span class="n">c</span> <span class="k">$(</span><span class="nv">wildcard</span> %.<span class="nv">h</span><span class="k">)</span> <span class="k">$(</span><span class="nv">LIBBPF_OBJ</span><span class="k">)</span> <span class="p">|</span> <span class="k">$(</span><span class="nv">OUTPUT</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">$(</span><span class="nv">call</span> <span class="nv">msg</span>,<span class="nv">CC</span>,<span class="k">$</span>@<span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">$(</span><span class="nv">Q</span><span class="k">)$(</span><span class="nv">CC</span><span class="k">)</span> <span class="k">$(</span><span class="nv">CFLAGS</span><span class="k">)</span> <span class="k">$(</span><span class="nv">INCLUDES</span><span class="k">)</span> <span class="err">-c</span> <span class="k">$(</span><span class="nv">filter</span> %.<span class="nv">c</span>,<span class="k">$</span>^<span class="k">)</span> <span class="err">-o</span> <span class="k">$@</span>
+</span></span></code></pre></div><p>最后，有一条规则是使用 <code>cc</code> 将用户空间的应用对象（在我们的例子中是 <code>opensnoop.o</code>）链接成一组可执行文件：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-makefile" data-lang="makefile"><span class="line"><span class="cl"><span class="nf">$(APPS)</span><span class="o">:</span> %: <span class="k">$(</span><span class="nv">OUTPUT</span><span class="k">)</span>/%.<span class="n">o</span> <span class="k">$(</span><span class="nv">LIBBPF_OBJ</span><span class="k">)</span> <span class="k">$(</span><span class="nv">COMMON_OBJ</span><span class="k">)</span> <span class="p">|</span> <span class="k">$(</span><span class="nv">OUT</span>... 
+</span></span><span class="line"><span class="cl"><span class="k">$(</span><span class="nv">call</span> <span class="nv">msg</span>,<span class="nv">BINARY</span>,<span class="k">$</span>@<span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">$(</span><span class="nv">Q</span><span class="k">)$(</span><span class="nv">CC</span><span class="k">)</span> <span class="k">$(</span><span class="nv">CFLAGS</span><span class="k">)</span> <span class="k">$</span>^ <span class="k">$(</span><span class="nv">LDFLAGS</span><span class="k">)</span> -<span class="nv">lelf</span> -<span class="nv">lz</span> -<span class="nv">o</span> <span class="k">$</span>@
+</span></span></code></pre></div><p>现在你已经看到 eBPF 和用户空间程序分别是如何生成的，让我们看看用户空间的代码。</p>
+<h3 id="opensnoop-用户空间代码">Opensnoop 用户空间代码</h3>
+<p>如前所述，与 eBPF 代码交互的用户空间代码几乎可以用任何编程语言编写。我们在本节讨论的例子是用 C 语言写的，但如果你有兴趣，你可以把它与用 Python 写的原始 BCC 版本相比较，你可以在 <a href="https://github.com/iovisor/bcc/blob/master/tools/opensnoop.py" target="_blank" rel="noopener">bcc/tools</a> 中找到。</p>
+<p>用户空间的代码在 <code>opensnoop.c</code> 文件中。文件的前半部分有 <code>#include</code> 指令（其中之一是自动生成的 <code>opensnoop.skel.h</code> 文件），各种定义，以及处理不同命令行选项的代码，我们在此不再赘述。我们还将略过 <code>print_event()</code> 等函数，该函数将一个事件的信息显示到屏幕上。从 eBPF 的角度来看，所有有趣的代码都在 <code>main()</code> 函数中。</p>
+<p>你会看到像 <code>opennoop_bpf__open()</code>、<code>open snoop_bpf__load()</code> 和 <code>opensnoop_bpf__attach()</code> 这样的函数。这些都是在由 <code>bpftool gen skeleton</code> <sup id="fnref:10"><a href="#fn:10" class="footnote-ref" role="doc-noteref">10</a></sup>  自动生成的代码中定义的。这个自动生成的代码处理所有在 eBPF 对象文件中定义的单个 eBPF 程序、map 和附着点。</p>
+<p>opennoop 启动和运行后，它的工作就是监听 <code>events</code> 的 perf
+buffer，并将每个事件中包含的信息写到屏幕上。首先，它打开与 perf buffer 相关的文件描述符，并将 <code>handle_event()</code> 设置为新事件到来时要调用的函数：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">pb</span> <span class="o">=</span> <span class="n">perf_buffer__new</span><span class="p">(</span><span class="n">bpf_map__fd</span><span class="p">(</span><span class="n">obj</span><span class="o">-&gt;</span><span class="n">maps</span><span class="p">.</span><span class="n">events</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">	<span class="n">PERF_BUFFER_PAGES</span><span class="p">,</span> <span class="n">handle_event</span><span class="p">,</span> <span class="n">handle_lost_events</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">	<span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span></span></code></pre></div><p>然后它对缓冲区事件进行轮询，直到达到一个时间限制，或者用户中断程序：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">while</span> <span class="p">(</span><span class="o">!</span><span class="n">exiting</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="n">err</span> <span class="o">=</span> <span class="n">perf_buffer__poll</span><span class="p">(</span><span class="n">pb</span><span class="p">,</span> <span class="n">PERF_POLL_TIMEOUT_MS</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">...</span> <span class="p">}</span>
+</span></span></code></pre></div><p>传递给 <code>handle_event()</code> 的数据参数指向 eBPF 程序为该事件写进 map 的事件结构体。</p>
+<p>用户空间的代码可以检索这些信息，将其格式化并写出来给用户看。</p>
+<p>正如你所看到的，opensnoop 注册了 eBPF 程序，每当有应用程序进行 <code>open()</code> 或 <code>openat()</code> 系统调用时都会被调用。这些运行在内核中的 eBPF 程序收集有关该系统调用的上下文信息 —— 可执行文件名和进程 ID—— 以及被打开的文件的信息。这些信息被写进一个 map ，用户空间可以从中读取并显示给用户。</p>
+<p>你会在 <code>libbpf-tools</code> 目录中找到几十个这样的 eBPF 工具的例子，每个例子通常都是一个系统调用，或者是一系列相关的系统调用，如 <code>open()</code> 和 <code>openat()</code>。</p>
+<p>系统调用是一个稳定的内核接口，它提供了一个非常强大的方式来观察（虚拟）机器上正在发生的事情。但是，不要以为 eBPF 编程只能用于拦截系统调用。还有很多其他的固定接口，包括 LSM 和网络堆栈中的各种点，eBPF 可以连接到这些接口。如果你愿意承担内核版本变更的风险，eBPF 程序可以附加的范围是绝对宽广的。</p>
+<h2 id="参考">参考</h2>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>见 <a href="https://oreil.ly/4MMPL" target="_blank" rel="noopener">BPF 指令集文档</a>。&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p>也可以跳过对象文件，使用 bpf() 系统调用直接将字节码加载到内核。&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:3">
+<p><code>entry/fexit</code> 在 Alexei Starovoitov 的文章中描述：《引入 BPF Trampoline》（LWN.net，2019 年 11 月 14 日）。&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:4">
+<p>Oracle Linux 博客，《Taming Tracepoints in the Linux Kernel》，作者 Matt Keenan，2020 年 3 月 9 日发布。&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:5">
+<p>Brendan Gregg 的网站是一个关于 <a href="https://www.brendangregg.com/perf.html" target="_blank" rel="noopener">perf events</a>的良好信息来源。&#160;<a href="#fnref:5" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:6">
+<p>如果你有兴趣看到这方面的具体例子，你可以看一下我在 2021 年 eBPF 峰会上的<a href="https://www.youtube.com/watch?v=L3_AOFSNKK8&amp;ab_channel=eBPF%26CiliumCommunity" target="_blank" rel="noopener">演讲</a>，我在几分钟内实现了一个非常基本的负载均衡器，以此来说明我们如何使用 eBPF 来改变内核处理网络数据包的方式。&#160;<a href="#fnref:6" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:7">
+<p>在写这篇文章的时候，这段代码使用的是事件映射的 perf 缓冲器。如果你今天为最近的内核编写这段代码，你会从一个 <a href="https://nakryiko.com/posts/bpf-ringbuf/#bpf-ringbuf-vs-bpf-perfbuf" target="_blank" rel="noopener">ring buffer</a> 中获得更好的性能，这是一个更新的替代方案。&#160;<a href="#fnref:7" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:8">
+<p>在一些内核中，你还会发现 <code>openat2()</code>，但这个版本的 opensnoop 没有处理这个问题，至少在写作本文时是这样的。&#160;<a href="#fnref:8" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:9">
+<p>你可以使用一个通用的工具，如 bpftool，它可以读取 BPF 对象文件并对其进行操作，但这需要用户知道关于加载什么以及将程序附加到什么事件的细节。对于大多数应用来说，编写一个特定的工具来为最终用户简化这一点是有意义的。&#160;<a href="#fnref:9" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:10">
+<p>见 Andrii Nakryiko 描述 BPF 骨架代码生成的<a href="https://lwn.net/Articles/806328/" target="_blank" rel="noopener">帖子</a>。&#160;<a href="#fnref:10" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
+
+          </div>
+
+          
+
+
+
+          
+          
+          <div class="article-widget">
+            
+<div class="container-xl">
+<div class="row post-nav">
+  
+  
+  
+  <div class="col-6 post-nav-item">
+    <div class="meta-nav">上一页</div>
+    <a href="/what-is-ebpf/changing-the-kernel-is-hard/" rel="next">第二章：修改内核很困难</a>
+  </div>
+  
+  
+  
+  <div class="col-6 post-nav-item">
+    <div class="meta-nav">下一页</div>
+    <a href="/what-is-ebpf/ebpf-complexity/" rel="prev">第四章：eBPF 的复杂性</a>
+  </div>
+  
+</div>
+</div>
+
+          </div>
+          
+        </div>
+
+        <div class="body-footer">
+          <p>最近更新于 2022-06-03</p>
+
+          
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/cloud-native-library//edit/master/content/what-is-ebpf/ebpf-programs.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+          
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments" class="mb-3">
+    <script src="https://giscus.app/client.js"
+        data-repo="rootsongjc/cloud-native-library"
+        data-repo-id="MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg="
+        data-category="Announcements"
+        data-category-id="DIC_kwDODMrxWM4CPL7J"
+        data-mapping="pathname"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="light"
+        data-lang="zh-CN"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </section>
+  
+
+
+
+          
+
+
+        </div>
+
+      </article>
+
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2022 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+
+    </main>
+  </div>
+</div>
+
+  </div>
+
+  <div class="page-footer">
+    
+    
+  </div>
+
+      
+
+    
+    <script src="/js/vendor-bundle.min.53d67dc2cb1ebceb89d5e2aba2f86112.js"></script>
+
+    
+    
+    
+      
+
+      
+      
+
+      
+
+      
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+        
+        
+      
+
+    
+
+    
+    
+    
+
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+    <script>
+      anchors.add();
+    </script>
+    
+
+    
+    
+    
+      
+      <script id="search-hit-fuse-template" type="text/x-template">
+        <div class="search-hit" id="summary-{{key}}">
+          <div class="search-hit-content">
+            <div class="search-hit-name">
+              <a href="{{relpermalink}}">{{title}}</a>
+              <div class="article-metadata search-hit-type">{{type}}</div>
+              <p class="search-hit-description">{{snippet}}</p>
+            </div>
+          </div>
+        </div>
+      </script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script>
+      
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+      
+      
+      
+      
+      
+      
+      
+    
+
+    
+
+    
+    
+    
+    <script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+      
+    
+    
+    <script src="/zh/js/wowchemy.min.d29a6fc876b457837294a96644b02d4f.js"></script>
+
+    
+    
+    
+    
+    
+    
+      
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <script src="/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+
+
+
+
+
+
+</body>
+</html>
