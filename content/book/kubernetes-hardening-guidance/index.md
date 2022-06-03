@@ -1,5 +1,5 @@
 ---
-title: Kubernetes加固指南
+title: Kubernetes 加固指南
 summary: NSA 和 CISA 联合出品
 tags:
   - 翻译电子书

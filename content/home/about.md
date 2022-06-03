@@ -6,7 +6,7 @@ title: '关于云原生资料库'
 subtitle: "更新时间线"
 # Date format
 #   Refer to https://wowchemy.com/docs/customization/#date-format
-date_format: 2006 年 1 月
+date_format: 2006 年 1 月 2 日
 
 # Experiences.
 #   Add/remove as many `experience` blocks below as you like.
@@ -19,7 +19,7 @@ experience:
     company_url: 'https://jimmysong.io'
     location: ''
     date_start: '2022-05-01'
-    date_end: ''
+    date_end: '2022-05-31'
     description: >-
       * 将 [jimmysong.io 主站](https://jimmysong.io)上的图书迁移至本站📚
 
@@ -34,6 +34,7 @@ experience:
       * 内建全文搜索功能 🔍
     
       * 启用子域名 `lib.jimmysong.io` 🌏
+
 design:
   columns: "2"
   view: list

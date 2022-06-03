@@ -1,6 +1,6 @@
 ---
-title: 利用服务网格实施微服务的DevSecOps
-summary: NIST特别发布
+title: 利用服务网格实施微服务的 DevSecOps
+summary: NIST 特别发布
 tags:
   - 翻译电子书
 date: 2022-03-14

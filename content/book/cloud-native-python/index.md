@@ -1,5 +1,5 @@
 ---
-title: Python云原生
+title: Python 云原生
 summary: 构建应对海量用户数据的高可扩展Web应用
 tags:
   - 出版物

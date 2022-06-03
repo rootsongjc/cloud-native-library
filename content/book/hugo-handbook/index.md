@@ -1,5 +1,5 @@
 ---
-title: Hugo实战手册
+title: Hugo 实战手册
 summary: 静态网站构建指南
 draft: true
 tags:

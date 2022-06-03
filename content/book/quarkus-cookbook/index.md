@@ -1,5 +1,5 @@
 ---
-title: Quarkus实战
+title: Quarkus 实战
 summary: 专为 Kubernetes 而优化的 Java 解决方案
 tags:
   - 出版物

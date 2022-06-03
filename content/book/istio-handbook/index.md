@@ -1,5 +1,5 @@
 ---
-title: Istio基础教程
+title: Istio 基础教程
 summary: 云原生应用网络构建指南
 tags:
   - Handbook系列

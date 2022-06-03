@@ -1,5 +1,5 @@
 ---
-title: OpenTelemetry可观测性指南
+title: OpenTelemetry 可观测性指南
 summary: 利用格式化数据从根本上改变可观测性实践
 tags:
   - 翻译电子书
