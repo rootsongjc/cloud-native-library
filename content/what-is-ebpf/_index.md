@@ -10,7 +10,7 @@ cascade:
   commentable: true
 ---
 
-《什么是 eBPF？——新一代网络、安全和可观测性工具介绍》译自 O'Reilly 发行的报告 “What is eBPF”，作者是 Liz Rice，由 JImmy Song 翻译，英文原版可以在 [O'Reilly 网站](https://www.oreilly.com/library/view/what-is-ebpf/9781492097266/)上获取。
+《什么是 eBPF —— 新一代网络、安全和可观测性工具介绍》译自 O'Reilly 发布的报告 “What is eBPF”，作者是 Liz Rice，由 JImmy Song 翻译，英文原版可以在 [O'Reilly 网站](https://www.oreilly.com/library/view/what-is-ebpf/9781492097266/)上获取。
 
 {{< figure src="images/cover.jpg" alt="封面" caption="《什么是 eBPF》中文版封面" width="50%" >}}
 
