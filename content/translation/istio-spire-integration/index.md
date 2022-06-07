@@ -192,7 +192,7 @@ $ kubectl apply -f @samples/security/spire/spire-quickstart.yaml
    /opt/spire/bin/spire-server entry create \
        -spiffeID spiffe://example.org/ns/istio-system/sa/istio-ingressgateway-service-account \
        -parentID spiffe://example.org/ns/spire/sa/spire-agent \
-       -selector k8s🈂️istio-ingressgateway-service-account \
+       -selector k8s:sa:istio-ingressgateway-service-account \
        -selector k8s:ns:istio-system \
        -selector k8s:pod-uid:$INGRESS_POD_UID \
        -dns $INGRESS_POD \
@@ -206,7 +206,7 @@ $ kubectl apply -f @samples/security/spire/spire-quickstart.yaml
    TTL              : default
    Selector         : k8s:ns:istio-system
    Selector         : k8s:pod-uid:63c2bbf5-a8b1-4b1f-ad64-f62ad2a69807
-   Selector         : k8s🈂️istio-ingressgateway-service-account
+   Selector         : k8s:sa:istio-ingressgateway-service-account
    DNS name         : istio-ingressgateway.istio-system.svc
    DNS name         : istio-ingressgateway-5b45864fd4-lgrxs
    ```
