@@ -3,7 +3,7 @@ widget: pages
 headless: true
 title: 最近更新
 subtitle: ''
-weight: "65"
+weight: "60"
 content:
   filters:
     tag: ''

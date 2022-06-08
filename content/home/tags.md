@@ -8,7 +8,7 @@ widget: tag_cloud
 headless: true
 
 # Order that this section appears on the page.
-weight: 60
+weight: 65
 
 title: '标签云'
 subtitle: '云原生资料库分类'

@@ -139,13 +139,13 @@ $ kubectl apply -f @samples/security/spire/spire-quickstart.yaml
 
 本节介绍在 SPIRE 服务器中注册工作负载的可用选项。
 
-### 选项 1：使用 SPIRE 工作负载注册机自动登记
+### 选项 1：使用 SPIRE 工作负载注册器自动登记
 
 通过将 [SPIRE Kubernetes Workload Registrar](https://github.com/spiffe/spire/tree/main/support/k8s/k8s-workload-registrar) 与 SPIRE 服务器一起部署，每创建一个新的 pod，就会自动注册新的条目。
 
 请参阅” [验证身份是否为工作负载创建](https://istio.io/latest/docs/ops/integrations/spire/#verifying-that-identities-were-created-for-workloads) "，以检查已发布的身份。
 
-请注意，在[快速启动](https://istio.io/latest/docs/ops/integrations/spire/#option-1:-quick-start)部分使用了 `SPIRE工作负载注册机`。
+请注意，在[快速启动](https://istio.io/latest/docs/ops/integrations/spire/#option-1:-quick-start)部分使用了 `SPIRE工作负载注册器`。
 
 ### 选项 2：手动注册
 
@@ -363,7 +363,7 @@ SPIRE Agent 可以被配置为通过 Envoy SDS API 向 Envoy 推送联合身份�
 
 ### 创建联合注册条目
 
-如果使用 SPIRE Kubernetes 工作负载注册机，通过向服务部署规范添加 pod 注释 `spiffe.io/federatesWith`，指定你希望 pod 与之联合的信任域，为工作负载创建联合条目：
+如果使用 SPIRE Kubernetes 工作负载注册器，通过向服务部署规范添加 pod 注释 `spiffe.io/federatesWith`，指定你希望 pod 与之联合的信任域，为工作负载创建联合条目：
 
 ```yaml
 podAnnotations:
