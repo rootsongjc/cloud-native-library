@@ -30,14 +30,14 @@ jimmy@instance-1:~$ ip link show
 
 ```sh
 # 捕获所有来自外部的80端口的流量并将其重定向到10000端口
-sudo iptables -t nat -A PREROUTING -i ens4 -p tcp --dport 80 -j REDIRECT --to port 10000
+sudo iptables -t nat -A PREROUTING -i ens4 -p tcp --dport 80 -j REDIRECT --to-ports 10000
 ```
 
 最后，我们将运行另一条 iptables to 命令，防止从虚拟机发出请求时出现路由循环。设置这个规则将允许我们从虚拟机上运行 `curl tetrate.io`，并且仍然被重定向到 10000 端口。
 
 ```sh
 # 使我们能够从同一个实例中运行curl（即防止路由循环）。
-sudo iptables -t nat -A OUTPUT -p tcp -m owner !--uid-owner root --dport 80 --j REDIRECT --to port 10000
+sudo iptables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner root --dport 80 --j REDIRECT --to-ports 10000
 ```
 
 在修改了 iptables 规则后，我们可以创建以下 Envoy 配置。
