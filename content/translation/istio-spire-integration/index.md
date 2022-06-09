@@ -37,7 +37,7 @@ links:
 Istio 提供了一个基本的安装示例，以快速启动和运行 SPIRE。
 
 ```bash
-$ kubectl apply -f @samples/security/spire/spire-quickstart.yaml
+$ kubectl apply -f samples/security/spire/spire-quickstart.yaml
 ```
 
 这将把 SPIRE 部署到你的集群中，同时还有两个额外的组件：[SPIFFE CSI 驱动](https://github.com/spiffe/spiffe-csi) —— 用于与整个节点的其他 pod 共享 SPIRE Agent 的 UNIX 域套接字，以及 [SPIRE Kubernetes 工作负载注册器](https://github.com/spiffe/spire/tree/main/support/k8s/k8s-workload-registrar)，这是一个在 Kubernetes 内执行自动工作负载注册的促进器。参见[安装 Istio](https://istio.io/latest/docs/ops/integrations/spire/#install-istio) 以配置 Istio 并与 SPIFFE CSI 驱动集成。
@@ -121,7 +121,7 @@ $ kubectl apply -f @samples/security/spire/spire-quickstart.yaml
    ```
    这将与 Ingress Gateway 和将被注入工作负载 pod 的 sidecars 共享 `spiffe-csi-driver`，允许它们访问 SPIRE Agent 的 UNIX 域套接字。
    
-1. 使用 [sidecar 注入](https://istio.io/latest/docs/setup/additional-setup/sidecar-injection)，将 `istio-proxy` 容器注入到网格内的 pod 中。关于如何将自定义定义的 `spire` 模板应用到 `istio-proxy` 中的信息，请参见[自定义模板](https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/#custom-templates-experimental)。这使得 CSI 驱动能够在 sidecar 上安装 UDS。
+1. 使用 [sidecar 注入](https://istio.io/latest/docs/setup/additional-setup/sidecar-injection)，将 `istio-proxy` 容器注入到网格内的 pod 中。关于如何将自定义的 `spire` 模板应用到 `istio-proxy` 中的信息，请参见[自定义模板](https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/#custom-templates-experimental)。这使得 CSI 驱动能够在 sidecar 上安装 UDS。
 
    检查 Ingress-gateway pod 状态。
 

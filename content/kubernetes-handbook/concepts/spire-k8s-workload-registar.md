@@ -188,11 +188,11 @@ Selector      : k8s:pod-name:example-workload-98b6b79fd-jnv5m
 
 #### Webhook 模式安全注意事项
 
-注册器默认对客户端进行身份验证。这是注册器整体安全性的一个非常重要的方面，因为注册器可用于提供对 SPIRE 服务器 API 的间接访问，尽管范围有限。除非你完全了解风险，否则不建议跳过客户端验证（通过 `insecure_skip_client_verification` 配置）》
+注册器默认对客户端进行身份验证。这是注册器整体安全性的一个非常重要的方面，因为注册器可用于提供对 SPIRE 服务器 API 的间接访问，尽管范围有限。除非你完全了解风险，否则不建议跳过客户端验证（通过 `insecure_skip_client_verification` 配置）。
 
 #### 从 webhook 迁移
 
-需要将 k8s ValidatingWebhookConfiguration 移除，否则 pod 可能无法准入。如果你使用默认配置，则可以通过以下方式完成：
+需要移除 k8s `ValidatingWebhookConfiguration`，否则 pod 可能无法准入。如果你使用默认配置，则可以通过以下方式完成：
 
 ```bash
 kubectl validatingwebhookconfiguration delete k8s-workload-registrar-webhook
@@ -210,13 +210,13 @@ kubectl validatingwebhookconfiguration delete k8s-workload-registrar-webhook
 
 `webhook` 模式使用验证准入 Webhook 在准入时捕获 pod 创建 / 删除事件。它是注册器实现中的第一个，但存在以下问题：
 
-- StatefulSets 的 add 和 delete 之间的竞争条件会经常导致 StatefulSets 没有条目；
-- webhook 的不可用要么必须完全阻止准入，要么你最终会得到没有条目的 pod；
-- Spire 服务器错误必须完全阻止准入，否则你最终会得到没有条目的 pod；
-- 当 webhook/spire-server 不可用时，它不会清理删除的 pod 的遗留条目；
+- StatefulSet 的 add 和 delete 之间的竞争条件会经常导致 StatefulSet 没有条目；
+- Webhook 的不可用要么必须完全阻止准入，要么你最终会得到没有条目的 pod；
+- SPIRE 服务器错误必须完全阻止准入，否则你最终会得到没有条目的 pod；
+- 当 `webhook/spire-server` 不可用时，它不会清理删除的 pod 的遗留条目；
 - 条目不是单个节点的父节点，所有 SVID 都被泛洪到集群中的所有代理，这严重限制了可扩展性。因此，强烈建议不要使用 `webhook` 模式，但出于向后兼容的原因，它仍然是默认设置。
 
-`reconcile` 模式和 `crd` 模式都使用协调控制器而不是 webhook。`reconcile` 模式和启用了 pod_controller 的 `crd` 模式具有与 webhook 类似的自动工作负载创建功能，但它们不会遭受相同的竞争条件，能够从注册器故障中恢复（并在之后清理），并且两者都还确保为 Pod 自动创建的条目仅限于适当的节点，以防止 SVID 泛滥。以这种方式使用时，`reconcile` 创建新条目可能比 `crd` 模式稍快，并且需要较少的配置。
+`reconcile` 模式和 `crd` 模式都使用协调控制器而不是 webhook。`reconcile` 模式和启用了 `pod_controller` 的 `crd` 模式具有与 webhook 类似的自动工作负载创建功能，但它们不会遭受相同的竞争条件，能够从注册器故障中恢复（并在之后清理），并且两者都还确保为 Pod 自动创建的条目仅限于适当的节点，以防止 SVID 泛滥。以这种方式使用时，`reconcile` 创建新条目可能比 `crd` 模式稍快，并且需要较少的配置。
 
 `crd` 模式还提供了一个命名空间的 SpiffeID 自定义资源。这些资源供注册器内部使用，但也可以手动创建以允许创建任意 Spire 条目。如果你打算直接管理 SpiffeID 自定义资源，那么强烈建议你在运行控制器时启用 `crd` 模式的 webhook。
 
