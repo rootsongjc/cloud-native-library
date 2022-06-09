@@ -339,7 +339,7 @@
         content="2022-06-08T16:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2022-06-09T11:57:50&#43;08:00">
+    <meta property="article:modified_time" content="2022-06-09T20:46:14&#43;08:00">
   
 
   
@@ -1824,9 +1824,9 @@ Selector      : k8s:pod-name:example-workload-98b6b79fd-jnv5m
 <li><code>AdmissionConfiguration</code> 描述 API 服务器可以在哪里找到包含 <code>Config</code>。该文件通过 <code>--admission-control-config-file</code> 标志传递给 API 服务器。</li>
 </ul>
 <h4 id="webhook-模式安全注意事项">Webhook 模式安全注意事项</h4>
-<p>注册器默认对客户端进行身份验证。这是注册器整体安全性的一个非常重要的方面，因为注册器可用于提供对 SPIRE 服务器 API 的间接访问，尽管范围有限。除非你完全了解风险，否则不建议跳过客户端验证（通过 <code>insecure_skip_client_verification</code> 配置）》</p>
+<p>注册器默认对客户端进行身份验证。这是注册器整体安全性的一个非常重要的方面，因为注册器可用于提供对 SPIRE 服务器 API 的间接访问，尽管范围有限。除非你完全了解风险，否则不建议跳过客户端验证（通过 <code>insecure_skip_client_verification</code> 配置）。</p>
 <h4 id="从-webhook-迁移">从 webhook 迁移</h4>
-<p>需要将 k8s ValidatingWebhookConfiguration 移除，否则 pod 可能无法准入。如果你使用默认配置，则可以通过以下方式完成：</p>
+<p>需要移除 k8s <code>ValidatingWebhookConfiguration</code>，否则 pod 可能无法准入。如果你使用默认配置，则可以通过以下方式完成：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl validatingwebhookconfiguration delete k8s-workload-registrar-webhook
 </span></span></code></pre></div><h2 id="dns-名称">DNS 名称</h2>
 <p><code>reconcile</code> 和 <code>crd</code> 模式都提供了将 DNS 名称添加到 pod 的注册条目的能力。它们目前对应该添加哪些名称有不同的想法，<code>reconcile</code> 添加可用于访问 pod 的所有可能名称（通过服务或直接），并将 <code>crd</code> 模式限制为 <code>&lt;service&gt;.&lt;namespace&gt;.svc</code> 。该功能默认为关闭 <code>reconcile</code> 模式和打开 <code>crd</code> 模式。</p>
@@ -1838,13 +1838,13 @@ Selector      : k8s:pod-name:example-workload-98b6b79fd-jnv5m
 <h2 id="模式之间的差异">模式之间的差异</h2>
 <p><code>webhook</code> 模式使用验证准入 Webhook 在准入时捕获 pod 创建 / 删除事件。它是注册器实现中的第一个，但存在以下问题：</p>
 <ul>
-<li>StatefulSets 的 add 和 delete 之间的竞争条件会经常导致 StatefulSets 没有条目；</li>
-<li>webhook 的不可用要么必须完全阻止准入，要么你最终会得到没有条目的 pod；</li>
-<li>Spire 服务器错误必须完全阻止准入，否则你最终会得到没有条目的 pod；</li>
-<li>当 webhook/spire-server 不可用时，它不会清理删除的 pod 的遗留条目；</li>
+<li>StatefulSet 的 add 和 delete 之间的竞争条件会经常导致 StatefulSet 没有条目；</li>
+<li>Webhook 的不可用要么必须完全阻止准入，要么你最终会得到没有条目的 pod；</li>
+<li>SPIRE 服务器错误必须完全阻止准入，否则你最终会得到没有条目的 pod；</li>
+<li>当 <code>webhook/spire-server</code> 不可用时，它不会清理删除的 pod 的遗留条目；</li>
 <li>条目不是单个节点的父节点，所有 SVID 都被泛洪到集群中的所有代理，这严重限制了可扩展性。因此，强烈建议不要使用 <code>webhook</code> 模式，但出于向后兼容的原因，它仍然是默认设置。</li>
 </ul>
-<p><code>reconcile</code> 模式和 <code>crd</code> 模式都使用协调控制器而不是 webhook。<code>reconcile</code> 模式和启用了 pod_controller 的 <code>crd</code> 模式具有与 webhook 类似的自动工作负载创建功能，但它们不会遭受相同的竞争条件，能够从注册器故障中恢复（并在之后清理），并且两者都还确保为 Pod 自动创建的条目仅限于适当的节点，以防止 SVID 泛滥。以这种方式使用时，<code>reconcile</code> 创建新条目可能比 <code>crd</code> 模式稍快，并且需要较少的配置。</p>
+<p><code>reconcile</code> 模式和 <code>crd</code> 模式都使用协调控制器而不是 webhook。<code>reconcile</code> 模式和启用了 <code>pod_controller</code> 的 <code>crd</code> 模式具有与 webhook 类似的自动工作负载创建功能，但它们不会遭受相同的竞争条件，能够从注册器故障中恢复（并在之后清理），并且两者都还确保为 Pod 自动创建的条目仅限于适当的节点，以防止 SVID 泛滥。以这种方式使用时，<code>reconcile</code> 创建新条目可能比 <code>crd</code> 模式稍快，并且需要较少的配置。</p>
 <p><code>crd</code> 模式还提供了一个命名空间的 SpiffeID 自定义资源。这些资源供注册器内部使用，但也可以手动创建以允许创建任意 Spire 条目。如果你打算直接管理 SpiffeID 自定义资源，那么强烈建议你在运行控制器时启用 <code>crd</code> 模式的 webhook。</p>
 <h3 id="平台支持">平台支持</h3>
 <p>该工具仅支持 UNIX 系统。</p>
