@@ -14,9 +14,9 @@ type: book
 ```sh
 $ mkdir certs && cd certs
 
-$ openssl req -nodes -new -x509 -keyout www_hello_com.key -out www_hello_com.cert -subj "/C=US/ST=Washington/L=Seattle/O=Hello LLC/OU=Org/CNwww.hello.com"
+$ openssl req -nodes -new -x509 -keyout www_hello_com.key -out www_hello_com.cert -subj "/C=US/ST=Washington/L=Seattle/O=Hello LLC/OU=Org/CN=www.hello.com"
 
-$ openssl req -nodes -new -x509 -keyout www_example_com.key -out www_example_com.cert -subj "/C=US/ST=Washington/L=Seattle/O=Example LLC/OU=Org/CN www.example.com"
+$ openssl req -nodes -new -x509 -keyout www_example_com.key -out www_example_com.cert -subj "/C=US/ST=Washington/L=Seattle/O=Example LLC/OU=Org/CN=www.example.com"
 ```
 
 对于每个通用名称，我们最终会有两个文件：私钥和证书（例如，`www_example_com.key` 和 `www_example_com.cert`）。
@@ -66,7 +66,7 @@ $ openssl req -nodes -new -x509 -keyout www_example_com.key -out www_example_com
           ...
 ```
 
-你可以在 `5-lab-2-tls_match.yaml` 文件中找到完整的配置，用 `func-e run -c 5-lab-2-tls_match.yaml` 运行它。由于我们将只使用 `openssl` 进行连接，我们不需要集群端点的运行。
+你可以在 `5-lab-2-tls_match.yaml` 文件中找到完整的配置，由于需要绑定443端口(`privileged port`)，所以使用 `sudo func-e run -c 5-lab-2-tls_match.yaml` 运行它。由于我们将只使用 `openssl` 进行连接，我们不需要集群端点的运行。
 
 为了检查 SNI 匹配是否正常工作，我们可以使用 `openssl` 并连接到提供服务器名称的 Envoy 监听器。例如：
 
