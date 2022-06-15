@@ -114,7 +114,7 @@ SPIRE 要求每个代理在首次连接到服务器时进行身份验证和自�
 - AWS 上的 EC2 实例（使用 EC2 实例身份文档）
 - Microsoft Azure 上的 VM（使用 Azure 托管服务标识）
 - Google Cloud Platform 上的 Google Compute Engine 实例（使用 GCE 实例身份令牌）
-- 作为 Kubernetes 集群成员的节点（使用 Kubernetes 服务帐户令牌）
+- 作为 Kubernetes 集群成员的节点（使用 Kubernetes 服务账户令牌）
 
 对于没有平台可以直接识别节点的情况，SPIRE 包括用于证明的节点证明器：
 

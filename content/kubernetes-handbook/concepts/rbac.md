@@ -56,7 +56,7 @@ rules:
 
 ### RoleBinding 与 ClusterRoleBinding
 
-角色绑定将一个角色中定义的各种权限授予一个或者一组用户。 角色绑定包含了一组相关主体（即 subject, 包括用户 ——User、用户组 ——Group、或者服务账户 ——Service Account）以及对被授予角色的引用。 在命名空间中可以通过 `RoleBinding` 对象授予权限，而集群范围的权限授予则通过 `ClusterRoleBinding` 对象完成。
+角色绑定将一个角色中定义的各种权限授予一个或者一组用户。 角色绑定包含了一组相关主体（即 subject，包括用户 ——User、用户组 ——Group、或者服务账户 ——Service Account）以及对被授予角色的引用。 在命名空间中可以通过 `RoleBinding` 对象授予权限，而集群范围的权限授予则通过 `ClusterRoleBinding` 对象完成。
 
 `RoleBinding` 可以引用在同一命名空间内定义的 `Role` 对象。 下面示例中定义的 `RoleBinding` 对象在”default” 命名空间中将”pod-reader” 角色授予用户”jane”。 这一授权将允许用户”jane” 从”default” 命名空间中读取 pod。
 
@@ -262,9 +262,11 @@ subjects:
 - kind: Group
   name: system:serviceaccounts:qa
   apiGroup: rbac.authorization.k8s.io
-​```在集群中的所有服务账户：
+```
 
-​```yaml
+在集群中的所有服务账户：
+
+```yaml
 subjects:
 - kind: Group
   name: system:serviceaccounts
@@ -278,9 +280,11 @@ subjects:
 - kind: Group
   name: system:authenticated
   apiGroup: rbac.authorization.k8s.io
-​```所有未认证的用户（version 1.5+）：
+```
 
-​```yaml
+所有未认证的用户（version 1.5+）：
+
+```yaml
 subjects:
 - kind: Group
   name: system:unauthenticated
@@ -469,9 +473,9 @@ subjects:
 
 ## 服务账户（Service Account）权限
 
-默认的 RBAC 策略将授予控制平面组件（control-plane component）、节点（node）和控制器（controller）一组范围受限的权限， 但对于”kube-system” 命名空间以外的服务账户，则 * 不授予任何权限 *（超出授予所有认证用户的发现权限）。
+默认的 RBAC 策略将授予控制平面组件（control-plane component）、节点（node）和控制器（controller）一组范围受限的权限， 但对于”kube-system” 命名空间以外的服务账户，则 **不授予任何权限**（超出授予所有认证用户的发现权限）。
 
-这一点允许您根据需要向特定服务账号授予特定权限。 细粒度的角色绑定将提供更好的安全性，但需要更多精力管理。 更粗粒度的授权可能授予服务账号不需要的 API 访问权限（甚至导致潜在授权扩散），但更易于管理。
+这一点允许您根据需要向特定服务账户授予特定权限。 细粒度的角色绑定将提供更好的安全性，但需要更多精力管理。 更粗粒度的授权可能授予服务账户不需要的 API 访问权限（甚至导致潜在授权扩散），但更易于管理。
 
 从最安全到最不安全可以排序以下方法：
 
@@ -488,13 +492,13 @@ subjects:
      --namespace=my-namespace
    ```
 
-2. 在某一命名空间中授予”default” 服务账号一个角色
+2. 在某一命名空间中授予”default” 服务账户一个角色
 
-   如果一个应用程序没有在其 pod 规范中指定 `serviceAccountName`，它将默认使用”default” 服务账号。
+   如果一个应用程序没有在其 pod 规范中指定 `serviceAccountName`，它将默认使用”default” 服务账户。
 
-   注意：授予”default” 服务账号的权限将可用于命名空间内任何没有指定 `serviceAccountName` 的 pod。
+   注意：授予”default” 服务账户的权限将可用于命名空间内任何没有指定 `serviceAccountName` 的 pod。
 
-   下面的例子将在”my-namespace” 命名空间内授予”default” 服务账号只读权限：
+   下面的例子将在”my-namespace” 命名空间内授予”default” 服务账户只读权限：
 
    ```bash
    kubectl create rolebinding default-view \
@@ -503,7 +507,7 @@ subjects:
      --namespace=my-namespace
    ```
 
-   目前，许多 [加载项（addon）](https://kubernetes.io/docs/concepts/cluster-administration/addons/) 作为”kube-system” 命名空间中的”default” 服务帐户运行。 要允许这些加载项使用超级用户访问权限，请将 cluster-admin 权限授予”kube-system” 命名空间中的”default” 服务帐户。 注意：启用上述操作意味着”kube-system” 命名空间将包含允许超级用户访问 API 的秘钥。
+   目前，许多 [加载项（addon）](https://kubernetes.io/docs/concepts/cluster-administration/addons/) 作为”kube-system” 命名空间中的”default” 服务账户运行。 要允许这些加载项使用超级用户访问权限，请将 cluster-admin 权限授予”kube-system” 命名空间中的”default” 服务账户。 注意：启用上述操作意味着”kube-system” 命名空间将包含允许超级用户访问 API 的秘钥。
 
    ```bash
    kubectl create clusterrolebinding add-on-cluster-admin \
@@ -511,7 +515,7 @@ subjects:
      --serviceaccount=kube-system:default
    ```
 
-3. 为命名空间中所有的服务账号授予角色
+3. 为命名空间中所有的服务账户授予角色
 
    如果您希望命名空间内的所有应用程序都拥有同一个角色，无论它们使用什么服务账户，您可以为该命名空间的服务账户用户组授予角色。
 
@@ -526,7 +530,7 @@ subjects:
 
 4. 对集群范围内的所有服务账户授予一个受限角色（不鼓励）
 
-   如果您不想管理每个命名空间的权限，则可以将集群范围角色授予所有服务帐户。
+   如果您不想管理每个命名空间的权限，则可以将集群范围角色授予所有服务账户。
 
    下面的例子将所有命名空间中的只读权限授予集群中的所有服务账户：
 
@@ -536,7 +540,7 @@ subjects:
      --group=system:serviceaccounts
    ```
 
-5. 授予超级用户访问权限给集群范围内的所有服务帐户（强烈不鼓励）
+5. 授予超级用户访问权限给集群范围内的所有服务账户（强烈不鼓励）
 
    如果您根本不关心权限分块，您可以对所有服务账户授予超级用户访问权限。
 
@@ -550,7 +554,7 @@ subjects:
 
 ## 从版本 1.5 升级
 
-在 Kubernetes 1.6 之前，许多部署使用非常宽泛的 ABAC 策略，包括授予对所有服务帐户的完整 API 访问权限。
+在 Kubernetes 1.6 之前，许多部署使用非常宽泛的 ABAC 策略，包括授予对所有服务账户的完整 API 访问权限。
 
 默认的 RBAC 策略将授予控制平面组件（control-plane components）、节点（nodes）和控制器（controller）一组范围受限的权限， 但对于”kube-system” 命名空间以外的服务账户，则 *不授予任何权限*（超出授予所有认证用户的发现权限）。
 
@@ -564,13 +568,13 @@ subjects:
 
 RBAC 授权器将尝试首先授权请求。如果 RBAC 授权器拒绝 API 请求，则 ABAC 授权器将被运行。这意味着 RBAC 策略 *或者* ABAC 策略所允许的任何请求都是可通过的。
 
-当以日志级别为 2 或更高（`--v = 2`）运行时，您可以在 API Server 日志中看到 RBAC 拒绝请求信息（以 `RBAC DENY:` 为前缀）。 您可以使用该信息来确定哪些角色需要授予哪些用户，用户组或服务帐户。 一旦 [授予服务帐户角色](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#service-account-permissions)，并且服务器日志中没有 RBAC 拒绝消息的工作负载正在运行，您可以删除 ABAC 授权器。
+当以日志级别为 2 或更高（`--v = 2`）运行时，您可以在 API Server 日志中看到 RBAC 拒绝请求信息（以 `RBAC DENY:` 为前缀）。 您可以使用该信息来确定哪些角色需要授予哪些用户，用户组或服务账户。 一旦 [授予服务账户角色](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#service-account-permissions)，并且服务器日志中没有 RBAC 拒绝消息的工作负载正在运行，您可以删除 ABAC 授权器。
 
 ### 宽泛的 RBAC 权限
 
 您可以使用 RBAC 角色绑定来复制一个宽泛的策略。
 
-**警告：以下政策略允许所有服务帐户作为集群管理员。 运行在容器中的任何应用程序都会自动接收服务帐户凭据，并且可以对 API 执行任何操作，包括查看 secret 和修改权限。 因此，并不推荐使用这种策略。**
+**警告：以下政策略允许所有服务账户作为集群管理员。 运行在容器中的任何应用程序都会自动接收服务账户凭据，并且可以对 API 执行任何操作，包括查看 secret 和修改权限。 因此，并不推荐使用这种策略。**
 
 ```bash
 kubectl create clusterrolebinding permissive-binding \
