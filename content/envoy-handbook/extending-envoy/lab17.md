@@ -94,7 +94,7 @@ func (ctx *httpHeaders) OnHttpStreamDone() {
 }
 ```
 
-将上述内容保存在一个名为 `main.go的`文件中。
+将上述内容保存在一个名为 `main.go` 的文件中。
 
 让我们建立过滤器，检查是否一切正常。
 
@@ -102,7 +102,7 @@ func (ctx *httpHeaders) OnHttpStreamDone() {
 tinygo build -o main.wasm -scheduler=none -target=wasi main.go
 ```
 
-构建命令应该成功运行并生成一个名为 `main.wasm的`文件。
+构建命令应该成功运行并生成一个名为 `main.wasm` 的文件。
 
 我们将使用 `func-e` 来运行一个本地 Envoy 实例来测试我们构建的扩展。
 
@@ -363,7 +363,7 @@ $ curl -v localhost:10000
 
 ## 添加一个指标
 
-让我们添加另一个功能 —— 计数器，每次有一个叫 `hello的`请求头被设置时都会增加。
+让我们添加另一个功能 —— 计数器，每次有一个叫 `hello` 的请求头被设置时都会增加。
 
 首先，让我们更新 `pluginContext` 以包括 `helloHeaderCounter`。
 
@@ -387,7 +387,7 @@ func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
 }
 ```
 
-由于我们要检查传入的请求头以决定是否增加计数器，我们需要将 `helloHeaderCounter也`添加到 `httpHeaders` 结构中。
+由于我们要检查传入的请求头以决定是否增加计数器，我们需要将 `helloHeaderCounter` 也添加到 `httpHeaders` 结构中。
 
 ```go
 type httpHeaders struct {
@@ -410,7 +410,7 @@ func (ctx *pluginContext) NewHttpContext(contextID uint32) types.HttpContext {
 }
 ```
 
-现在，我们已经将 `helloHeaderCounter` 一直输送到 `httpHeaders中`，我们可以在 `OnHttpRequestHeaders` 函数中使用它。
+现在，我们已经将 `helloHeaderCounter` 一直输送到 `httpHeaders` 中，我们可以在 `OnHttpRequestHeaders` 函数中使用它。
 
 ```go
 func (ctx *httpHeaders) OnHttpRequestHeaders(numHeaders int, endOfStream bool) types.action {
@@ -424,11 +424,11 @@ func (ctx *httpHeaders) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 
   ctx.helloHeaderCounter.Increment(1)
   proxywasm.LogInfo("hello_header_counter incremented")
-  返回 types.ActionContinue
+  return types.ActionContinue
 }
 ```
 
-在这里，我们要检查 \"hello" 请求头是否被定义（注意，我们并不关心头的值），如果它被定义，我们就在计数器实例上调用 `Increment` 函数。否则，我们将忽略它，如果我们从 `GetHttpRequestHeader` 调用中得到一个错误，则返回 `ActionContinue。`
+在这里，我们要检查 "hello" 请求头是否被定义（注意，我们并不关心头的值），如果它被定义，我们就在计数器实例上调用 `Increment` 函数。否则，我们将忽略它，如果我们从 `GetHttpRequestHeader` 调用中得到一个错误，则返回 `ActionContinue。`
 
 让我们再次重建这个扩展。
 
