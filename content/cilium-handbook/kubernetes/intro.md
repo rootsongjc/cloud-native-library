@@ -11,9 +11,9 @@ type: book
 在 Kubernetes 集群中运行 Cilium 时提供以下功能：
 
 - [CNI](https://docs.cilium.io/en/stable/glossary/#term-cni) 插件支持，为 [pod 连接](https://docs.cilium.io/en/stable/concepts/kubernetes/intro/#pod-connectivity) 提供 [联网](https://docs.cilium.io/en/stable/concepts/networking/#multi-host-networking)。
-- [NetworkPolicy](https://docs.cilium.io/en/stable/concepts/kubernetes/policy/#networkpolicy) 资源的基于身份的实现，用于隔离 L3 和 L4 网络  [pod](https://docs.cilium.io/en/stable/glossary/#term-pod) 的连接。
-- 以 `CustomResourceDefinition` 形式对 NetworkPolicy 的扩展，扩展策略控制以添加：
-  - 针对以下应用协议的入口和出口执行 L7 策略：
+- [NetworkPolicy](https://docs.cilium.io/en/stable/concepts/kubernetes/policy/#networkpolicy) 资源的基于身份的实现，用于隔离三层和四层网络  [pod](https://docs.cilium.io/en/stable/glossary/#term-pod) 的连接。
+- 以 `CustomResourceDefinition` 形式对 `NetworkPolicy` 的扩展，扩展策略控制以添加：
+  - 针对以下应用协议的入口和出口执行七层策略：
     - HTTP
     - Kafka
   - 对 CIDR 的出口支持以保护对外部服务的访问

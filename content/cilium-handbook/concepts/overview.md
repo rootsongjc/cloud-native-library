@@ -55,11 +55,11 @@ CNI 插件（`cilium-cni`）由 Kubernetes 在一个节点上调度或终止 pod
 
 **服务器**
 
-Hubble 服务器在每个节点上运行，从 Cilium 检索基于 eBPF 的可见性。它被嵌入到 Cilium 代理中，以实现高性能和低开销。它提供一个 gRPC 服务来检索流量和 Prometheus 指标。
+Hubble 服务器在每个节点上运行，从 Cilium 检索基于 eBPF 的可视性。它被嵌入到 Cilium 代理中，以实现高性能和低开销。它提供一个 gRPC 服务来检索流量和 Prometheus 指标。
 
 **中继器**
 
-中继器（`hubble-relay`）是一个独立的组件，它知道所有正在运行的 Hubble 服务器，并通过连接它们各自的 gRPC API 和提供代表集群中所有服务器的 API，提供集群范围内的可见性。
+中继器（`hubble-relay`）是一个独立的组件，它知道所有正在运行的 Hubble 服务器，并通过连接它们各自的 gRPC API 和提供代表集群中所有服务器的 API，提供集群范围内的可视性。
 
 **客户端（CLI）**
 
@@ -67,7 +67,7 @@ Hubble CLI（`hubble`）是一个命令行工具，能够连接到 `hubble-relay
 
 **图形用户界面（GUI）**
 
-图形用户界面（`hubble-ui`）利用基于中继的可见性，提供一个图形化的服务依赖性和连接图。
+图形用户界面（`hubble-ui`）利用基于中继的可视性，提供一个图形化的服务依赖性和连接图。
 
 **eBPF**
 

@@ -40,7 +40,7 @@ Masquerading:   BPF (ip-masq-agent)   [eth0, eth1]  10.0.0.0/16
 
 从上面的输出可以看出，程序正在 `eth0` 和 `eth1` 设备上运行。
 
-基于 eBPF 的伪装可以伪装以下 IPv4 L4 协议的数据包：
+基于 eBPF 的伪装可以伪装以下 IPv4 四层协议的数据包：
 
 - TCP
 - UDP

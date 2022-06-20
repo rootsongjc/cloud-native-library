@@ -7,8 +7,8 @@ type: book
 
 如果你在 Kubernetes 上运行 Cilium，你可以从 Kubernetes 为你分发的策略中受益。在这种模式下，Kubernetes 负责在所有节点上分发策略，Cilium 会自动应用这些策略。三种格式可用于使用 Kubernetes 本地配置网络策略：
 
-- 在撰写本文时，标准的 [NetworkPolicy](https://docs.cilium.io/en/stable/concepts/kubernetes/policy/#networkpolicy) 资源支持指定 L3/L4 入口策略，并带有标记为 beta 的有限出口支持。
-- 扩展的 [CiliumNetworkPolicy](https://docs.cilium.io/en/stable/concepts/kubernetes/policy/#ciliumnetworkpolicy) 格式可用作 [CustomResourceDefinition](https://docs.cilium.io/en/stable/glossary/#term-customresourcedefinition) 支持入口和出口的 L3 - L7 层策略规范。
+- 在撰写本文时，标准的 [NetworkPolicy](https://docs.cilium.io/en/stable/concepts/kubernetes/policy/#networkpolicy) 资源支持指定三层/四层入口策略，并带有标记为 beta 的有限出口支持。
+- 扩展的 [CiliumNetworkPolicy](https://docs.cilium.io/en/stable/concepts/kubernetes/policy/#ciliumnetworkpolicy) 格式可用作 [CustomResourceDefinition](https://docs.cilium.io/en/stable/glossary/#term-customresourcedefinition) 支持入口和出口的三层到七层层策略规范。
 - `CiliumClusterwideNetworkPolicy` 格式，[它](https://docs.cilium.io/en/stable/concepts/kubernetes/policy/#ciliumclusterwidenetworkpolicy)是集群范围的[CustomResourceDefinition](https://docs.cilium.io/en/stable/glossary/#term-customresourcedefinition)，用于指定由 Cilium 强制执行的集群范围的策略。规范与 [CiliumNetworkPolicy](https://docs.cilium.io/en/stable/concepts/kubernetes/policy/#ciliumnetworkpolicy) 相同，没有指定命名空间。
 
 Cilium 支持同时运行多个策略类型。但是，在同时使用多种策略类型时应谨慎，因为理解跨多种策略类型的完整允许流量集可能会令人困惑。如果不注意，这可能会导致意外的策略允许行为。
@@ -65,11 +65,11 @@ type CiliumNetworkPolicy struct {
 
 - Status
 
-  提供有关策略是否已成功应用的可见性。
+  提供有关策略是否已成功应用的可视性。
 
 ## 例子
 
-有关示例策略的详细列表，请参阅 [L3 示例](https://docs.cilium.io/en/stable/policy/language/#policy-examples)、[L4 示例](https://docs.cilium.io/en/stable/policy/language/#l4-policy)和 [L7](https://docs.cilium.io/en/stable/policy/language/#l7-policy) 示例。
+有关示例策略的详细列表，请参阅 [三层示例](https://docs.cilium.io/en/stable/policy/language/#policy-examples)、[四层示例](https://docs.cilium.io/en/stable/policy/language/#l4-policy)和 [七层](https://docs.cilium.io/en/stable/policy/language/#l7-policy) 示例。
 
 [CiliumClusterwideNetworkPolicy](https://docs.cilium.io/en/stable/concepts/kubernetes/policy/#ciliumclusterwidenetworkpolicy) 类似于 [CiliumNetworkPolicy](https://docs.cilium.io/en/stable/concepts/kubernetes/policy/#ciliumnetworkpolicy)，除了
 
