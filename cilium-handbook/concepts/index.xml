@@ -74,13 +74,13 @@
 &lt;p&gt;CNI 插件（&lt;code&gt;cilium-cni&lt;/code&gt;）由 Kubernetes 在一个节点上调度或终止 pod 时调用。它与节点的 Cilium API 交互，以触发必要的数据通路配置，为 pod 提供网络、负载均衡和网络策略。&lt;/p&gt;
 &lt;h2 id=&#34;hubble&#34;&gt;Hubble&lt;/h2&gt;
 &lt;p&gt;&lt;strong&gt;服务器&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;Hubble 服务器在每个节点上运行，从 Cilium 检索基于 eBPF 的可见性。它被嵌入到 Cilium 代理中，以实现高性能和低开销。它提供一个 gRPC 服务来检索流量和 Prometheus 指标。&lt;/p&gt;
+&lt;p&gt;Hubble 服务器在每个节点上运行，从 Cilium 检索基于 eBPF 的可视性。它被嵌入到 Cilium 代理中，以实现高性能和低开销。它提供一个 gRPC 服务来检索流量和 Prometheus 指标。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;中继器&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;中继器（&lt;code&gt;hubble-relay&lt;/code&gt;）是一个独立的组件，它知道所有正在运行的 Hubble 服务器，并通过连接它们各自的 gRPC API 和提供代表集群中所有服务器的 API，提供集群范围内的可见性。&lt;/p&gt;
+&lt;p&gt;中继器（&lt;code&gt;hubble-relay&lt;/code&gt;）是一个独立的组件，它知道所有正在运行的 Hubble 服务器，并通过连接它们各自的 gRPC API 和提供代表集群中所有服务器的 API，提供集群范围内的可视性。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;客户端（CLI）&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;Hubble CLI（&lt;code&gt;hubble&lt;/code&gt;）是一个命令行工具，能够连接到 &lt;code&gt;hubble-relay&lt;/code&gt; 的 gRPC API 或本地服务器来检索流量事件。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;图形用户界面（GUI）&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;图形用户界面（&lt;code&gt;hubble-ui&lt;/code&gt;）利用基于中继的可见性，提供一个图形化的服务依赖性和连接图。&lt;/p&gt;
+&lt;p&gt;图形用户界面（&lt;code&gt;hubble-ui&lt;/code&gt;）利用基于中继的可视性，提供一个图形化的服务依赖性和连接图。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;eBPF&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;eBPF 是一个 Linux 内核字节码解释器，最初是用来过滤网络数据包的，例如 tcpdump 和 socket 过滤器。此后，它被扩展为额外的数据结构，如 hashtable 和数组，以及额外的动作，以支持数据包的处理、转发、封装等。内核验证器确保 eBPF 程序安全运行，JIT 编译器将字节码转换为 CPU 架构的特定指令，以提高本地执行效率。eBPF 程序可以在内核的各种钩点上运行，如传入和传出数据包。&lt;/p&gt;
 &lt;p&gt;eBPF 继续发展，并在每个新的 Linux 版本中获得额外的功能。Cilium 利用 eBPF 来执行核心数据通路过滤、处理、监控和重定向，并要求 eBPF 的功能在任何 Linux 内核 4.8.0 或更新的版本中。基于 4.8.x 已经宣布终结，4.9.x 已经被提名为稳定版本，我们建议至少运行内核 4.9.17（截至本文撰写时，当前最新的稳定 Linux 内核是 4.10.x）。&lt;/p&gt;
@@ -354,9 +354,9 @@
       <link>https://lib.jimmysong.io/cilium-handbook/concepts/observability/</link>
       <pubDate>Fri, 17 Jun 2022 12:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/cilium-handbook/concepts/observability/</guid>
-      <description>&lt;p&gt;可观测性由 Hubble 提供，它可以以完全透明的方式深入了解服务的通信和行为以及网络基础设施。&lt;a href=&#34;../clustermesh/&#34;&gt;Hubble 能够在多集群（集群网格）&lt;/a&gt; 场景中提供节点级别、集群级别甚至跨集群的可见性。有关 Hubble 的介绍以及它与 Cilium 的关系，请阅读 &lt;a href=&#34;../../intro/&#34;&gt;Cilium 和 Hubble 简介&lt;/a&gt;部分。&lt;/p&gt;
-&lt;p&gt;默认情况下，Hubble API 的范围仅限于 Cilium 代理运行的每个单独节点。换句话说，网络可见性仅提供给本地 Cilium 代理观察到的流量。在这种情况下，与 Hubble API 交互的唯一方法是使用 Hubble CLI（&lt;code&gt;hubble&lt;/code&gt;）查询通过本地 Unix Domain Socket 提供的 Hubble API。Hubble CLI 二进制文件默认安装在 Cilium 代理 pod 上。&lt;/p&gt;
-&lt;p&gt;部署 Hubble Relay 后，Hubble 提供完整的网络可见性。在这种情况下，Hubble Relay 服务提供了一个 Hubble API，它在 ClusterMesh 场景中涵盖整个集群甚至多个集群。可以通过将 Hubble CLI（&lt;code&gt;hubble&lt;/code&gt;）指向 Hubble Relay 服务或通过 Hubble UI 访问 Hubble 数据。Hubble UI 是一个 Web 界面，可以自动发现 L3/L4 甚至 L7 层的服务依赖图，允许用户友好的可视化和过滤数据流作为服务图。&lt;/p&gt;
+      <description>&lt;p&gt;可观测性由 Hubble 提供，它可以以完全透明的方式深入了解服务的通信和行为以及网络基础设施。&lt;a href=&#34;../clustermesh/&#34;&gt;Hubble 能够在多集群（集群网格）&lt;/a&gt; 场景中提供节点级别、集群级别甚至跨集群的可视性。有关 Hubble 的介绍以及它与 Cilium 的关系，请阅读 &lt;a href=&#34;../../intro/&#34;&gt;Cilium 和 Hubble 简介&lt;/a&gt;部分。&lt;/p&gt;
+&lt;p&gt;默认情况下，Hubble API 的范围仅限于 Cilium 代理运行的每个单独节点。换句话说，网络可视性仅提供给本地 Cilium 代理观察到的流量。在这种情况下，与 Hubble API 交互的唯一方法是使用 Hubble CLI（&lt;code&gt;hubble&lt;/code&gt;）查询通过本地 Unix Domain Socket 提供的 Hubble API。Hubble CLI 二进制文件默认安装在 Cilium 代理 pod 上。&lt;/p&gt;
+&lt;p&gt;部署 Hubble Relay 后，Hubble 提供完整的网络可视性。在这种情况下，Hubble Relay 服务提供了一个 Hubble API，它在 ClusterMesh 场景中涵盖整个集群甚至多个集群。可以通过将 Hubble CLI（&lt;code&gt;hubble&lt;/code&gt;）指向 Hubble Relay 服务或通过 Hubble UI 访问 Hubble 数据。Hubble UI 是一个 Web 界面，可以自动发现三层/四层甚至七层的服务依赖图，允许用户友好的可视化和过滤数据流作为服务图。&lt;/p&gt;
 &lt;ul class=&#34;cta-group&#34;&gt;
   
   &lt;li&gt;
