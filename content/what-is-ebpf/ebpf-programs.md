@@ -92,7 +92,7 @@ Opensnoop 的工作方式是将 eBPF 程序附加到 `open()` 和 `openat()` 系
 
 ### Opensnoop eBPF 代码
 
-eBPF 代码是用 C 语言编写的，在 `opensnoop.bpf.c` 文件中。在这个文件的开头，你可以看到两个 eBPF map 的定义 —— `start` 和 `events`：
+eBPF 代码是用 C 语言编写的，在 [`opensnoop.bpf.c`](https://github.com/iovisor/bcc/blob/master/libbpf-tools/opensnoop.bpf.c) 文件中。在这个文件的开头，你可以看到两个 eBPF map 的定义 —— `start` 和 `events`：
 
 ```c
 struct {
@@ -110,7 +110,7 @@ struct {
 
 当 ELF 对象文件被创建时，它包含了每个 map 和每个要加载到内核的程序的部分，`SEC()` 宏定义了这些部分。
 
-当我们研究这个程序的时候，你会看到，在系统调用被处理的时候，开始 map 被用来临时存储系统调用的参数 —— 包括被打开的文件的名称。`events` map [^7] 用于将事件信息从内核中的 eBPF 代码传递给用户空间的可执行程序。如 [图 3-2](#figure-f-3-2) 所示。
+当我们研究这个程序的时候，你会看到，在系统调用被处理的时候，`start` map 被用来临时存储系统调用的参数 —— 包括被打开的文件的名称。`events` map [^7] 用于将事件信息从内核中的 eBPF 代码传递给用户空间的可执行程序。如 [图 3-2](#figure-f-3-2) 所示。
 
 {{<figure title="图 3-2. 调用 open() 触发 eBPF 程序，将数据存储在 opensnoop 的 eBPF map 中" src="../images/f-3-2.jpg" alt="图 3-2" id="f-3-2" >}}
 
