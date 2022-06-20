@@ -11,9 +11,9 @@ cascade:
   commentable: true
 ---
 
-{{% callout 注意 %}}
+{{<callout warning>}}
 本书内容基于 Envoy 1.20 版本，部分命令在更新版本中可能遇到兼容性问题。
-{{% /callout %}}
+{{</callout>}}
 
 本手册梳理了 Envoy 基础知识，适用于初学者，帮你快速掌握 Envoy 代理。
 

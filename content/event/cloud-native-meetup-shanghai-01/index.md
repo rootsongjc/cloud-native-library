@@ -59,11 +59,9 @@ slides: ''
 projects: []
 ---
 
-{{% callout note %}}
-
+{{<callout note>}}
 演讲幻灯片及视频回放请点击页面上方的按钮。
-
-{{% /callout %}}
+{{</callout>}}
 
 ## 开场演讲
 

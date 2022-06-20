@@ -22,9 +22,9 @@ weight: 1
 | 网络安全 | IPtables        | NetworkPolicy             |
 | 权限     | 用户、文件权限  | ServiceAccount、RBAC      |
 
-{{% callout 注意 %}}
+{{<callout note>}}
 我们不能说 Linux 就是 POSIX，只能说 Linux 是 UNIX 兼容的。
-{{% /callout %}}
+{{</callout>}}
 
 ## 参考
 

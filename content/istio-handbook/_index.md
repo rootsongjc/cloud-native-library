@@ -11,9 +11,9 @@ cascade:
   commentable: true
 ---
 
-{{% callout 注意 %}}
+{{<callout note>}}
 本文内容基于 Istio 1.11 或更新版本。
-{{% /callout %}}
+{{</callout>}}
 
 [Istio](https://istio.io) 是由 Google、IBM、Lyft 等共同开源的 Service Mesh（服务网格）框架，于2017 年开源。
 
