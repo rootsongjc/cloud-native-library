@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Cilium 概念 | 云原生资料库</title>
+    <link>https://lib.jimmysong.io/cilium-handbook/concepts/</link>
+      <atom:link href="https://lib.jimmysong.io/cilium-handbook/concepts/index.xml" rel="self" type="application/rss+xml" />
+    <description>Cilium 概念</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Tue, 07 Jun 2022 12:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://lib.jimmysong.io/media/sharing.png</url>
+      <title>Cilium 概念</title>
+      <link>https://lib.jimmysong.io/cilium-handbook/concepts/</link>
+    </image>
+    
+    <item>
+      <title>组件概览</title>
+      <link>https://lib.jimmysong.io/cilium-handbook/concepts/overview/</link>
+      <pubDate>Tue, 07 Jun 2022 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/cilium-handbook/concepts/overview/</guid>
+      <description>&lt;p&gt;本文将为你介绍 Cilium 和 Hubble 部署中包含的组件。&lt;/p&gt;
+&lt;p&gt;Cilium 包含以下组件：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;代理&lt;/li&gt;
+&lt;li&gt;客户端&lt;/li&gt;
+&lt;li&gt;Operator&lt;/li&gt;
+&lt;li&gt;CNI 插件&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Hubble 包含以下组件：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;服务器&lt;/li&gt;
+&lt;li&gt;中继器&lt;/li&gt;
+&lt;li&gt;客户端&lt;/li&gt;
+&lt;li&gt;图形用户界面&lt;/li&gt;
+&lt;li&gt;eBPF&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;另外你还需要一个数据库来存储代理的状态。&lt;/p&gt;
+&lt;p&gt;下图展示的 Cilium 部署的组件。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-cilium-组件示意图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/cilium-arch.png&#34; alt=&#34;Cilium 组件示意图&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Cilium 组件示意图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h2 id=&#34;cilium&#34;&gt;Cilium&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;代理&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Cilium 代理（&lt;code&gt;cilium-agent&lt;/code&gt;）在集群的每个节点上运行。在高层次上，代理接受通过 Kubernetes 或 API 的配置，描述网络、服务负载均衡、网络策略、可视性和监控要求。&lt;/p&gt;
+&lt;p&gt;Cilium 代理监听来自编排系统（如 Kubernetes）的事件，以了解容器或工作负载的启动和停止时间。它管理 eBPF 程序，Linux 内核用它来控制这些容器的所有网络访问。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;客户端（CLI）&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Cilium CLI 客户端（&lt;code&gt;cilium&lt;/code&gt;）是一个命令行工具，与 Cilium 代理一起安装。它与运行在同一节点上的 Cilium 代理的 REST API 互动。CLI 允许检查本地代理的状态。它还提供工具，直接访问 eBPF map 以验证其状态。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Operator&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Cilium Operator 负责管理集群中的职责，这些职责在逻辑上应该是为整个集群处理一次，而不是为集群中的每个节点处理一次。Cilium Operator 不在任何转发或网络策略决定的关键路径上。如果 Operator 暂时不可用，集群一般会继续运作。然而，根据配置的不同，Operator 的可用性失败可能导致：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;IP 地址管理（IPAM）的延迟，因此，如果 Operator 需要分配新的 IP 地址，那么新工作负载的调度也会延迟&lt;/li&gt;
+&lt;li&gt;未能更新 kvstore 的心跳密钥，这将导致代理宣布 kvstore 不健康并重新启动。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;CNI 插件&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;CNI 插件（&lt;code&gt;cilium-cni&lt;/code&gt;）由 Kubernetes 在一个节点上调度或终止 pod 时调用。它与节点的 Cilium API 交互，以触发必要的数据通路配置，为 pod 提供网络、负载均衡和网络策略。&lt;/p&gt;
+&lt;h2 id=&#34;hubble&#34;&gt;Hubble&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;服务器&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Hubble 服务器在每个节点上运行，从 Cilium 检索基于 eBPF 的可见性。它被嵌入到 Cilium 代理中，以实现高性能和低开销。它提供一个 gRPC 服务来检索流量和 Prometheus 指标。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;中继器&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;中继器（&lt;code&gt;hubble-relay&lt;/code&gt;）是一个独立的组件，它知道所有正在运行的 Hubble 服务器，并通过连接它们各自的 gRPC API 和提供代表集群中所有服务器的 API，提供集群范围内的可见性。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;客户端（CLI）&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Hubble CLI（&lt;code&gt;hubble&lt;/code&gt;）是一个命令行工具，能够连接到 &lt;code&gt;hubble-relay&lt;/code&gt; 的 gRPC API 或本地服务器来检索流量事件。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;图形用户界面（GUI）&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;图形用户界面（&lt;code&gt;hubble-ui&lt;/code&gt;）利用基于中继的可见性，提供一个图形化的服务依赖性和连接图。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;eBPF&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;eBPF 是一个 Linux 内核字节码解释器，最初是用来过滤网络数据包的，例如 tcpdump 和 socket 过滤器。此后，它被扩展为额外的数据结构，如 hashtable 和数组，以及额外的动作，以支持数据包的处理、转发、封装等。内核验证器确保 eBPF 程序安全运行，JIT 编译器将字节码转换为 CPU 架构的特定指令，以提高本地执行效率。eBPF 程序可以在内核的各种钩点上运行，如传入和传出数据包。&lt;/p&gt;
+&lt;p&gt;eBPF 继续发展，并在每个新的 Linux 版本中获得额外的功能。Cilium 利用 eBPF 来执行核心数据通路过滤、处理、监控和重定向，并要求 eBPF 的功能在任何 Linux 内核 4.8.0 或更新的版本中。基于 4.8.x 已经宣布终结，4.9.x 已经被提名为稳定版本，我们建议至少运行内核 4.9.17（截至本文撰写时，当前最新的稳定 Linux 内核是 4.10.x）。&lt;/p&gt;
+&lt;p&gt;Cilium 能够探测到 Linux 内核的可用功能，并在探测到时自动利用更多的最新功能。&lt;/p&gt;
+&lt;h2 id=&#34;数据存储&#34;&gt;数据存储&lt;/h2&gt;
+&lt;p&gt;Cilium 需要一个数据存储来传播代理之间的状态。它支持以下数据存储：&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Kubernetes CRD（默认）&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;存储任何数据和传播状态的默认选择是使用 Kubernetes 自定义资源定义（CRD）。CRD 由 Kubernetes 提供，用于集群组件通过 Kubernetes 资源表示配置和状态。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;键值存储&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;在 Cilium 的默认配置中配置的 Kubernetes CRD 可以满足状态存储和传播的所有要求。键值存储可以选择作为一种优化，以提高集群的可扩展性，因为直接使用键值存储的变化通知和存储要求更有效率。&lt;/p&gt;
+&lt;p&gt;目前支持的键值存储是：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/etcd-io/etcd&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;etcd&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+  &lt;div class=&#34;alert-title&#34;&gt;
+      &lt;p&gt;提示&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    可以直接利用 Kubernetes 的 etcd 集群或维护一个专门的 etcd 集群。
+  &lt;/div&gt;
+&lt;/div&gt;
+
+</description>
+    </item>
+    
+    <item>
+      <title>Cilium 术语说明</title>
+      <link>https://lib.jimmysong.io/cilium-handbook/concepts/terminology/</link>
+      <pubDate>Fri, 17 Jun 2022 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/cilium-handbook/concepts/terminology/</guid>
+      <description>&lt;h2 id=&#34;labels&#34;&gt;标签&lt;/h2&gt;
+&lt;p&gt;标签（Label）是一种通用的、灵活的和高度可扩展的方式，可以用来处理大量资源，因为我们可以用它来对事物任意分组和创建集合。每当需要描述、解决或选择某物时，它都是基于标签完成的：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;#endpoints&#34;&gt;端点&lt;/a&gt; 被分配了从容器运行时、编排系统或其他来源派生的标签。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;../../policy/&#34;&gt;网络策略&lt;/a&gt; 根据标签选择允许通信的 &lt;a href=&#34;#endpoints&#34;&gt;端点对&lt;/a&gt;，策略本身也由标签标识。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;what-is-a-label&#34;&gt;什么是标签？&lt;/h3&gt;
+&lt;p&gt;标签是一对由 &lt;code&gt;key&lt;/code&gt; 和 &lt;code&gt;value&lt;/code&gt; 组成的字符串。可以将标签格式化为具有 &lt;code&gt;key=value&lt;/code&gt; 的单个字符串。&lt;code&gt;key&lt;/code&gt; 部分是强制性的，并且必须是唯一的。这通常是通过使用反向域名概念来实现的，例如 &lt;code&gt;io.cilium.mykey=myvalue&lt;/code&gt;。&lt;code&gt;value&lt;/code&gt; 部分是可选的，可以省略，例如 &lt;code&gt;io.cilium.mykey&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;键名通常应由字符集组成 &lt;code&gt;[a-z0-9-.]&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;当使用标签选择资源时，键和值都必须匹配，例如，当一个策略应该应用于所有带有标签 &lt;code&gt;my.corp.foo&lt;/code&gt; 的端点时，标签 &lt;code&gt;my.corp.foo=bar&lt;/code&gt; 不会与该选择器匹配。&lt;/p&gt;
+&lt;h3 id=&#34;label-source&#34;&gt;标签来源&lt;/h3&gt;
+&lt;p&gt;标签可以来自各种来源。例如，&lt;a href=&#34;#endpoint&#34;&gt;端点&lt;/a&gt; 将通过本地容器运行时派生与容器关联的标签，以及与 Kubernetes 提供的 pod 关联的标签。由于这两个标签命名空间彼此不知道，这可能会导致标签键冲突。&lt;/p&gt;
+&lt;p&gt;为了解决这种潜在的冲突，Cilium 在导入标签时为所有标签键添加前缀 &lt;code&gt;source:&lt;/code&gt; 以指示标签的来源，例如 &lt;code&gt;k8s:role=frontend&lt;/code&gt;、&lt;code&gt;container:user=joe&lt;/code&gt;、&lt;code&gt;k8s:role=backend&lt;/code&gt;。这意味着当您使用 &lt;code&gt;docker run [...] -l foo=bar&lt;/code&gt; 运行 Docker 容器时，标签 &lt;code&gt;container:foo=bar&lt;/code&gt; 将出现在代表容器的 Cilium 端点上。类似地，以 &lt;code&gt;foo: bar&lt;/code&gt; 标签启动的 Kubernetes pod 将由与标签关联的 Cilium 端点表示 。为每个潜在来源分配一个唯一名称。当前支持以下标签源：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;container:&lt;/code&gt; 对于从本地容器运行时派生的标签&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;k8s:&lt;/code&gt; 对于从 Kubernetes 派生的标签&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;reserved:&lt;/code&gt; 有关特殊保留标签，请参阅 &lt;a href=&#34;#reserved-labels&#34;&gt;特殊标识&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;unspec:&lt;/code&gt; 对于未指定来源的标签&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;当使用标签来识别其他资源时，可以包含源以将标签匹配限制为特定类型。如果未提供源，则标签源默认为 &lt;code&gt;any:&lt;/code&gt;，将匹配所有标签，无论其来源如何。如果提供了来源，则选择和匹配标签的来源需要匹配。&lt;/p&gt;
+&lt;h2 id=&#34;endpoints&#34;&gt;端点&lt;/h2&gt;
+&lt;p&gt;Cilium 通过分配 IP 地址使应用程序容器在网络上可用。多个应用容器可以共享同一个 IP 地址；此模型的一个典型示例是 Kubernetes Pod。所有共享公共地址的应用程序容器都在 Cilium 所指的端点中分组在一起。&lt;/p&gt;
+&lt;p&gt;分配单独的 IP 地址允许每个端点使用整个四层端口范围。这实质上允许在同一个集群节点上运行的多个应用程序容器都绑定到众所周知的端口，例如 &lt;code&gt;80&lt;/code&gt; 不会引起任何冲突。&lt;/p&gt;
+&lt;p&gt;Cilium 的默认行为是为每个端点分配 IPv6 和 IPv4 地址。但是，可以将此行为配置为仅使用该 &lt;code&gt;--enable-ipv4=false&lt;/code&gt; 选项分配 IPv6 地址。如果同时分配了 IPv6 和 IPv4 地址，则任一地址都可用于到达端点。相同的行为将适用于策略规则、负载均衡等。&lt;/p&gt;
+&lt;h3 id=&#34;identification&#34;&gt;身份识别&lt;/h3&gt;
+&lt;p&gt;出于识别目的，Cilium 为集群节点上的所有端点分配一个内部端点 ID。端点 ID 在单个集群节点的上下文中是唯一的。&lt;/p&gt;
+&lt;h3 id=&#34;endpoint-metadata&#34;&gt;端点元数据&lt;/h3&gt;
+&lt;p&gt;端点自动从与端点关联的应用程序容器中派生元数据。然后可以使用元数据来识别端点，以实现安全 / 策略、负载均衡和路由目的。&lt;/p&gt;
+&lt;p&gt;元数据的来源取决于使用的编排系统和容器运行时。当前支持以下元数据检索机制：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;系统&lt;/th&gt;
+&lt;th&gt;描述&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Kubernetes&lt;/td&gt;
+&lt;td&gt;Pod 标签（通过 Kubernetes API）&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;containerd（Docker）&lt;/td&gt;
+&lt;td&gt;容器标签（通过 Docker API）&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;元数据以 &lt;a href=&#34;#labels&#34;&gt;标签&lt;/a&gt; 的形式附加到端点。&lt;/p&gt;
+&lt;p&gt;以下示例启动一个带有标签的容器，该标签 &lt;code&gt;app=benchmark&lt;/code&gt; 随后与端点相关联。标签带有前缀， &lt;code&gt;container:&lt;/code&gt; 表示标签是从容器运行时派生的。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ docker run --net cilium -d -l &lt;span class=&#34;nv&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;benchmark tgraf/netperf
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;aaff7190f47d071325e7af06577f672beff64ccc91d2b53c42262635c063cf1c
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$  cilium endpoint list
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;ENDPOINT   POLICY        IDENTITY   LABELS &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;source:key &lt;span class=&#34;o&#34;&gt;[=&lt;/span&gt;value&lt;span class=&#34;o&#34;&gt;])&lt;/span&gt;   IPv6                   IPv4            STATUS
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;           ENFORCEMENT
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;m&#34;&gt;62006&lt;/span&gt;      Disabled      &lt;span class=&#34;m&#34;&gt;257&lt;/span&gt;        container:app&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;benchmark       f00d::a00:20f:0:f236   10.15.116.202   ready
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;一个端点可以有来自多个源的元数据。例如使用 containerd 作为容器运行时的 Kubernetes 集群。端点将派生 Kubernetes pod 标签（以&lt;code&gt;k8s:&lt;/code&gt;源前缀为前缀）和容器标签（以&lt;code&gt;container:&lt;/code&gt; 源前缀为前缀）。&lt;/p&gt;
+&lt;h2 id=&#34;identity&#34;&gt;身份&lt;/h2&gt;
+&lt;p&gt;所有 &lt;a href=&#34;#endpoints&#34;&gt;端点&lt;/a&gt; 都分配了一个身份。身份用于端点之间的基本连接。在传统的网络术语中，这运行在三层。&lt;/p&gt;
+&lt;p&gt;身份由 &lt;a href=&#34;#labels&#34;&gt;标签&lt;/a&gt; 标识，并被赋予一个集群范围的唯一标识符。端点被分配与端点的 &lt;a href=&#34;#security-relevant-labels&#34;&gt;安全相关标签&lt;/a&gt; 匹配的身份，即共享同一组 &lt;a href=&#34;#security-relevant-labels&#34;&gt;安全相关标签&lt;/a&gt; 的所有端点将共享相同的身份。此概念允许将策略实施扩展到大量端点，因为随着应用程序的扩展，许多单独的端点通常会共享同一组安全 &lt;a href=&#34;#labels&#34;&gt;标签&lt;/a&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;what-is-an-identity&#34;&gt;什么是身份？&lt;/h3&gt;
+&lt;p&gt;端点的身份是基于与派生到 &lt;a href=&#34;#endpoint&#34;&gt;端点&lt;/a&gt; 的 pod 或容器关联的 &lt;a href=&#34;#labels&#34;&gt;标签&lt;/a&gt; 派生的。当一个 pod 或容器启动时，Cilium 会根据容器运行时收到的事件创建一个 &lt;a href=&#34;#endpoint&#34;&gt;端点&lt;/a&gt; 来代表网络上的 pod 或容器。下一步，Cilium 将解析 &lt;a href=&#34;#endpoint&#34;&gt;端点&lt;/a&gt; 创建的身份。每当 Pod 或容器的 &lt;a href=&#34;#labels&#34;&gt;标签&lt;/a&gt; 发生变化时，都会重新确认身份并根据需要自动修改。&lt;/p&gt;
+&lt;h3 id=&#34;security-relevant-labels&#34;&gt;安全相关标签&lt;/h3&gt;
+&lt;p&gt;在派生 &lt;a href=&#34;#identity&#34;&gt;身份&lt;/a&gt; 时，并非所有与容器或 pod 关联的 &lt;a href=&#34;#labels&#34;&gt;标签&lt;/a&gt; 都有意义。标签可用于存储元数据，例如容器启动时的时间戳。Cilium 需要知道哪些标签是有意义的，知道在推导身份时需要考虑哪些标签。为此，用户需要指定有意义标签的字符串前缀列表。标准行为是包含所有以 &lt;code&gt;id&lt;/code&gt; 为前缀开头的标签， 例如，&lt;code&gt;id.service1&lt;/code&gt;、&lt;code&gt;id.service2&lt;/code&gt;、&lt;code&gt;id.groupA.service44&lt;/code&gt;。启动代理时可以指定有意义的标签前缀列表。&lt;/p&gt;
+&lt;h3 id=&#34;special-identities&#34;&gt;特殊身份&lt;/h3&gt;
+&lt;p&gt;Cilium 管理的所有端点都将被分配一个身份。为了允许与不由 Cilium 管理的网络端点进行通信，存在特殊的身份来表示它们。特殊保留标识以 &lt;code&gt;reserved:&lt;/code&gt; 字符串为前缀。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;身份&lt;/th&gt;
+&lt;th&gt;数字 ID&lt;/th&gt;
+&lt;th&gt;描述&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;reserved:unknown&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;0&lt;/td&gt;
+&lt;td&gt;无法推导出身份。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;reserved:host&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;td&gt;本地主机。源自或指定到本地主机 IP 之一的任何流量。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;reserved:world&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;2&lt;/td&gt;
+&lt;td&gt;集群外的任何网络端点。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;reserved:unmanaged&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;3&lt;/td&gt;
+&lt;td&gt;不受 Cilium 管理的端点，例如在安装 Cilium 之前启动的 Kubernetes pod。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;reserved:health&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;4&lt;/td&gt;
+&lt;td&gt;这是 Cilium 代理生成的健康检查流量。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;reserved:init&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;5&lt;/td&gt;
+&lt;td&gt;尚未解析身份的端点被分配了初始身份。这代表了一个端点的阶段，在该阶段中，派生安全身份所需的一些元数据仍然缺失。这通常是引导阶段的情况。仅当端点的标签在创建时未知时才分配初始化标识。Docker 插件可能就是这种情况。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;reserved:remote-node&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;6&lt;/td&gt;
+&lt;td&gt;所有远程集群主机的集合。源自或指定到任何连接集群中任何主机的 IP 之一的任何流量，而不是本地节点。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;reserved:kube-apiserver&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;7&lt;/td&gt;
+&lt;td&gt;具有为 kube-apiserver 运行的后端的远程节点。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+  &lt;div class=&#34;alert-title&#34;&gt;
+      &lt;p&gt;提示&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    Cilium 曾经在 &lt;code&gt;reserved:host&lt;/code&gt; 身份中同时包含本地和所有远程主机。除非使用最近的默认 ConfigMap，否则这仍然是默认选项。可以通过 &lt;code&gt;enable-remote-node-identity&lt;/code&gt; 选项启用远程节点身份。
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;h3 id=&#34;知名身份&#34;&gt;知名身份&lt;/h3&gt;
+&lt;p&gt;以下是 Cilium 自动识别的知名身份列表，Cilium 将分发安全身份，而无需联系任何外部依赖项，例如 kvstore。这样做的目的是允许引导 Cilium 并通过集群中的策略强制实现网络连接，以实现基本服务，而无需任何依赖项。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;部署&lt;/th&gt;
+&lt;th&gt;命名空间&lt;/th&gt;
+&lt;th&gt;服务账户&lt;/th&gt;
+&lt;th&gt;集群名称&lt;/th&gt;
+&lt;th&gt;数字 ID&lt;/th&gt;
+&lt;th&gt;标签&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;kube-dns&lt;/td&gt;
+&lt;td&gt;kube-system&lt;/td&gt;
+&lt;td&gt;kube-dns&lt;/td&gt;
+&lt;td&gt;cilium-cluster&lt;/td&gt;
+&lt;td&gt;102&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;k8s-app=kube-dns&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;kube-dns（EKS）&lt;/td&gt;
+&lt;td&gt;kube-system&lt;/td&gt;
+&lt;td&gt;kube-dns&lt;/td&gt;
+&lt;td&gt;cilium-cluster&lt;/td&gt;
+&lt;td&gt;103&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;k8s-app=kube-dns&lt;/code&gt;,&lt;code&gt;eks.amazonaws.com/component=kube-dns&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;core-dns&lt;/td&gt;
+&lt;td&gt;kube-system&lt;/td&gt;
+&lt;td&gt;coredns&lt;/td&gt;
+&lt;td&gt;cilium-cluster&lt;/td&gt;
+&lt;td&gt;104&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;k8s-app=kube-dns&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;core-dns（EKS）&lt;/td&gt;
+&lt;td&gt;kube-system&lt;/td&gt;
+&lt;td&gt;coredns&lt;/td&gt;
+&lt;td&gt;cilium-cluster&lt;/td&gt;
+&lt;td&gt;106&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;k8s-app=kube-dns&lt;/code&gt;,&lt;code&gt;eks.amazonaws.com/component=coredns&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;cilium-operator&lt;/td&gt;
+&lt;td&gt;cilium-namspace&lt;/td&gt;
+&lt;td&gt;cilium-operator&lt;/td&gt;
+&lt;td&gt;cilium-cluster&lt;/td&gt;
+&lt;td&gt;105&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;name=cilium-operator&lt;/code&gt;,&lt;code&gt;io.cilium/app=operator&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;div class=&#34;alert alert-&#34;&gt;
+  &lt;div class=&#34;alert-title&#34;&gt;
+      &lt;p&gt;&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    如果 &lt;code&gt;cilium-cluster&lt;/code&gt; 未定义该 &lt;code&gt;cluster-name&lt;/code&gt; 选项，则默认值将设置为  &lt;code&gt;default&lt;/code&gt;。
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;h3 id=&#34;dentity-management-in-the-cluster&#34;&gt;集群中的身份管理&lt;/h3&gt;
+&lt;p&gt;身份在整个集群中都是有效的，这意味着如果在多个集群节点上启动了多个 pod 或容器，如果它们共享身份相关标签，那么它们都将解析并共享同一个身份。这需要集群节点之间的协调。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-集群中的身份管理示意图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/identity_store.png&#34; alt=&#34;集群中的身份管理示意图&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      集群中的身份管理示意图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;解析端点身份的操作是在分布式键值存储的帮助下执行的，如果之前没有看到以下值，则允许以生成新的唯一标识符的形式执行原子操作。这允许每个集群节点创建与身份相关的标签子集，然后查询键值存储以派生身份。根据之前是否查询过这组标签，要么创建一个新的身份，要么返回初始查询的身份。&lt;/p&gt;
+&lt;h2 id=&#34;node&#34;&gt;节点&lt;/h2&gt;
+&lt;p&gt;Cilium 将节点称为集群的单个成员。每个节点都必须运行 &lt;code&gt;cilium-agent&lt;/code&gt; 并且将以自主的方式运行。为了简单和规模化，在不同节点上运行的 Cilium 代理之间的状态同步保持在最低限度。它仅通过键值存储或数据包元数据发生。&lt;/p&gt;
+&lt;h3 id=&#34;node-address&#34;&gt;节点地址&lt;/h3&gt;
+&lt;p&gt;Cilium 会自动检测节点的 IPv4 和 IPv6 地址。当 &lt;code&gt;cilium-agent&lt;/code&gt; 启动时打印出检测到的节点地址：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;na&#34;&gt;Local node-name: worker0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;na&#34;&gt;Node-IPv6: f00d::ac10:14:0:1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;na&#34;&gt;External-Node IPv4: 172.16.0.20&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;na&#34;&gt;Internal-Node IPv4: 10.200.28.238&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    
+    <item>
+      <title>多集群（集群网格）</title>
+      <link>https://lib.jimmysong.io/cilium-handbook/concepts/clustermesh/</link>
+      <pubDate>Fri, 17 Jun 2022 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/cilium-handbook/concepts/clustermesh/</guid>
+      <description>&lt;p&gt;集群网格将网络数据路径扩展到多个集群。它允许所有连接集群中的端点进行通信，同时提供完整的策略执行。负载均衡可通过 Kubernetes 注解获得。&lt;/p&gt;
+&lt;p&gt;有关如何&lt;a href=&#34;https://docs.cilium.io/en/stable/gettingstarted/clustermesh/clustermesh/#gs-clustermesh&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;设置集群网格&lt;/a&gt;的说明，请参阅设置集群网格。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>可观测性</title>
+      <link>https://lib.jimmysong.io/cilium-handbook/concepts/observability/</link>
+      <pubDate>Fri, 17 Jun 2022 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/cilium-handbook/concepts/observability/</guid>
+      <description>&lt;p&gt;可观测性由 Hubble 提供，它可以以完全透明的方式深入了解服务的通信和行为以及网络基础设施。&lt;a href=&#34;../clustermesh/&#34;&gt;Hubble 能够在多集群（集群网格）&lt;/a&gt; 场景中提供节点级别、集群级别甚至跨集群的可见性。有关 Hubble 的介绍以及它与 Cilium 的关系，请阅读 &lt;a href=&#34;../../intro/&#34;&gt;Cilium 和 Hubble 简介&lt;/a&gt;部分。&lt;/p&gt;
+&lt;p&gt;默认情况下，Hubble API 的范围仅限于 Cilium 代理运行的每个单独节点。换句话说，网络可见性仅提供给本地 Cilium 代理观察到的流量。在这种情况下，与 Hubble API 交互的唯一方法是使用 Hubble CLI（&lt;code&gt;hubble&lt;/code&gt;）查询通过本地 Unix Domain Socket 提供的 Hubble API。Hubble CLI 二进制文件默认安装在 Cilium 代理 pod 上。&lt;/p&gt;
+&lt;p&gt;部署 Hubble Relay 后，Hubble 提供完整的网络可见性。在这种情况下，Hubble Relay 服务提供了一个 Hubble API，它在 ClusterMesh 场景中涵盖整个集群甚至多个集群。可以通过将 Hubble CLI（&lt;code&gt;hubble&lt;/code&gt;）指向 Hubble Relay 服务或通过 Hubble UI 访问 Hubble 数据。Hubble UI 是一个 Web 界面，可以自动发现 L3/L4 甚至 L7 层的服务依赖图，允许用户友好的可视化和过滤数据流作为服务图。&lt;/p&gt;
+&lt;ul class=&#34;cta-group&#34;&gt;
+  
+  &lt;li&gt;
+    &lt;a href=&#34;../networking&#34;  class=&#34;btn btn-primary px-3 py-3&#34;&gt;下一章&lt;/a&gt;
+  &lt;/li&gt;
+  
+  
+&lt;/ul&gt;
+
+</description>
+    </item>
+    
+  </channel>
+</rss>
