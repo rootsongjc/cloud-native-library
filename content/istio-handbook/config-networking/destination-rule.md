@@ -85,7 +85,7 @@ DestinationRule 资源的顶级配置项如下：
 
 - `subsets`：一个或多个命名的集合，代表一个服务的单独版本。流量策略可以在子集级别被覆盖。
 
-- `exportTo`：`DestinationRule` 被导出的命名空间的列表。DestinationRule 的解析是在命名空间级别中进行的。导出的 DestinationRule 被包含在其他命名空间的服务的解析层次中。该功能为服务所有者和网格管理员提供了一种机制，以控制 DestinationRule 在命名空间边界的可见性。
+- `exportTo`：`DestinationRule` 被导出的命名空间的列表。DestinationRule 的解析是在命名空间级别中进行的。导出的 DestinationRule 被包含在其他命名空间的服务的解析层次中。该功能为服务所有者和网格管理员提供了一种机制，以控制 DestinationRule 在命名空间边界的可视性。
 
   如果没有指定命名空间，那么默认情况下，DestinationRule 会被输出到所有命名空间。
 
@@ -138,7 +138,7 @@ spec:
   - name: v1
     labels:
       version: v1 #所有具有该标签的 Pod 被划分为该子集
-  exportTo: #指定DestinationRule 的可见性
+  exportTo: #指定DestinationRule 的可视性
     - "*" #*表示对所有命名空间可见，此为默认值；"."表示仅对当前命名空间可见
 ```
 

@@ -90,7 +90,7 @@ VirtualService 资源的顶级配置项如下：
 
 - `tcp`：一个不透明的 TCP 流量的路由规则的有序列表。TCP 路由将被应用于任何不是 HTTP 或 TLS 端口。匹配传入请求的第一个规则被使用。
 
-- `exportTo`：`VirtualService` 被导出的命名空间的列表。导出的 VirtualService 可以被定义在其它命名空间中的 sidecar 和 Gateway 使用。该功能为服务所有者和网格管理员提供了一种机制，以控制 VirtualService 在命名空间边界的可见性。
+- `exportTo`：`VirtualService` 被导出的命名空间的列表。导出的 VirtualService 可以被定义在其它命名空间中的 sidecar 和 Gateway 使用。该功能为服务所有者和网格管理员提供了一种机制，以控制 VirtualService 在命名空间边界的可视性。
 
   如果没有指定命名空间，那么默认情况下，VirtualService 会被输出到所有命名空间。
 
@@ -127,7 +127,7 @@ spec:
     clientCertificate: /etc/certs/myclientcert.pem
     privateKey: /etc/certs/client_private_key.pem
     caCertificates: /etc/certs/rootcacerts.pem
-  exportTo: #指定 VirtualService 的可见性
+  exportTo: #指定 VirtualService 的可视性
     - "*" #*表示对所有命名空间可见，此为默认值；"."表示仅对当前命名空间可见
 ```
 

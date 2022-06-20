@@ -111,7 +111,7 @@ spec:
 
 带有 TLS 匹配的 VirtualService 是为了覆盖默认的 SNI 匹配。在没有 VirtualService 的情况下，流量将被转发到维基百科的域。
 
-下面的例子演示了专用出口（egress）网关的使用，所有外部服务流量都通过该网关转发。`exportTo` 字段允许控制服务声明对网格中其他命名空间的可见性。默认情况下，服务会被输出到所有命名空间。下面的例子限制了对当前命名空间的可见性，用 `.` 表示，所以它不能被其他命名空间使用。
+下面的例子演示了专用出口（egress）网关的使用，所有外部服务流量都通过该网关转发。`exportTo` 字段允许控制服务声明对网格中其他命名空间的可视性。默认情况下，服务会被输出到所有命名空间。下面的例子限制了对当前命名空间的可视性，用 `.` 表示，所以它不能被其他命名空间使用。
 
 ```yaml
 apiVersion: networking.istio.io/v1alpha3
@@ -355,7 +355,7 @@ ServiceEntry 资源的顶级配置项如下：
 
 - `workloadSelector`：仅适用于`MESH_INTERNAL`服务。只能指定`endpoints`或`workloadSelector`中的一个。根据标签选择一个或多个Kubernetes pod或VM工作负载（使用`WorkloadEntry`指定）。代表虚拟机的`WorkloadEntry`对象应与`ServiceEntry`定义在同一命名空间。
 
-- `exportTo`：字符串数组类型。服务被导出的命名空间的列表。导出服务允许它被定义在其他命名空间中的 sidecar、 Gateway 和 VirtualService 使用。该功能为服务所有者和网格管理员提供了一种机制，以控制 ServiceEntry 在命名空间边界的可见性。
+- `exportTo`：字符串数组类型。服务被导出的命名空间的列表。导出服务允许它被定义在其他命名空间中的 sidecar、 Gateway 和 VirtualService 使用。该功能为服务所有者和网格管理员提供了一种机制，以控制 ServiceEntry 在命名空间边界的可视性。
 
   如果没有指定命名空间，那么默认情况下，服务会被输出到所有命名空间。
 
