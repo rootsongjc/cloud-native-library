@@ -1,6 +1,6 @@
 ---
 title: 宋净超
-bio: Tetrate 布道师、云原生社区创始人
+role: Tetrate 布道师、云原生社区创始人
 social:
   - icon: home
     icon_pack: fas
@@ -27,5 +27,3 @@ social:
     icon_pack: fab
     link: https://www.linkedin.com/jimmysongio
 ---
-
-宋净超是本站作者，[Tetrate](https://tetrate.io) 布道师，云原生社区创始人。

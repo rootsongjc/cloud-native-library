@@ -1,7 +1,7 @@
 ---
 title: "Istio 安全最佳实践"
 summary: "本文列举了 Istio 安全的最佳实践。"
-authors: ["Istio 社区"]
+authors: ["Istio"]
 categories: ["Istio"]
 tags: ["Istio","安全"]
 date: 2021-08-02T13:05:42+08:00

@@ -1,7 +1,7 @@
 ---
 title: "基于 gRPC 和 Istio 的无 sidecar 代理的服务网格"
 description: "本文介绍了 Istio 对 gRPC 的无代理服务网格功能的支持。"
-author: ["Steven Landow"]
+authors: ["Steven Landow"]
 categories: ["Istio"]
 tags: ["Istio","grpc","service mesh"]
 date: 2021-11-23T10:03:00+08:00
