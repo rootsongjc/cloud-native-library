@@ -6,8 +6,8 @@ tags:
 date: 2021-08-08
 internal_link: kubernetes-hardening-guidance
 type: publication
-publicaiton_types: "5"
-publication: "[点击阅读](/kubernetes-hardening-guidance)"
+publication_link: "/kubernetes-hardening-guidance"
+publication_type: "ebook"
 ---
 
 近日美国国家安全局（NSA）和网络安全与基础设施安全署（CISA）发布了一份网络安全技术报告 *Kubernetes Hardening Guidance*（[查看英文原版 PDF](https://media.defense.gov/2021/Aug/03/2002820425/-1/-1/1/CTR_KUBERNETES%20HARDENING%20GUIDANCE.PDF)）。

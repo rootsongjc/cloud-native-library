@@ -4,8 +4,9 @@ summary: 构建应对海量用户数据的高可扩展Web应用
 tags:
   - 出版物
 date: 2018-07-01
-publication: "[购买纸质书](https://item.jd.com/12365097.html)"
+publication_link: "https://item.jd.com/12365097.html"
 type: publication
+publication_type: "physical"
 ---
 
 {{< figure src="cloud-native-python.jpg" alt="封面"  caption="《Python云原生》图书封面" width="50%">}}

@@ -4,8 +4,9 @@ summary: 专为 Kubernetes 而优化的 Java 解决方案
 tags:
   - 出版物
 date: 2021-03-31
-publication: "[购买纸质书](https://item.jd.com/10028088987963.html)"
+publication_link: "https://item.jd.com/10028088987963.html"
 type: publication
+publication_type: "physical"
 ---
 
 2021 年 3 月，《Quarkus 实战——专为 Kubernetes 而优化的 Java 解决方案》，已经由机械工业出版社出版上市，可点击查看详情[购买](https://item.jd.com/10028088987963.html)，下面是本书封面及封底。

@@ -7,6 +7,8 @@ tags:
 date: 2019-10-21
 image_link: https://jimmysong.io/serverless-handbook/
 type: publication
+publication_type: "external"
+publication_link: "https://jimmysong.io/serverless-handbook/"
 ---
 
 Serverless（无服务器架构）是指服务端逻辑由开发者实现，应用运行在无状态的计算容器中，由事件触发，完全被第三方管理，其业务层面的状态则存储在数据库或其他介质中。

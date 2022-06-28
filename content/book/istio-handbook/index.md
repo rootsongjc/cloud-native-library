@@ -3,11 +3,12 @@ title: Istio 基础教程
 summary: 云原生应用网络构建指南
 tags:
   - Handbook系列
-date: 2019-05-18
+date: 2022-05-18
 internal_link: istio-handbook
 type: publication
 featured: true
-publication: "[点击阅读](/istio-handbook)"
+publication_type: "ebook"
+publication_link: "/istio-handbook"
 ---
 
 ## 关于本书

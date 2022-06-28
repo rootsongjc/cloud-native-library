@@ -6,7 +6,8 @@ tags:
 date: 2022-06-01
 internal_link: what-is-ebpf
 type: publication
-publication: "[点击阅读](/what-is-ebpf)"
+publication_link: "/what-is-ebpf"
+publication_type: "ebook"
 ---
 
 ### 关于本书

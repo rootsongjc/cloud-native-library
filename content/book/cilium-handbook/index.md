@@ -7,7 +7,8 @@ date: 2022-06-20
 featured: false
 internal_link: cilium-handbook
 type: publication
-publication: "[点击阅读](/cilium-handbook)"
+publication_link: "/cilium-handbook"
+publication_type: "ebook"
 ---
 
 Cilium 中文指南，节选译自 Cilium 官方文档。

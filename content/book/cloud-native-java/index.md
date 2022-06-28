@@ -4,8 +4,9 @@ summary: 张若飞、宋净超 译
 tags:
   - 出版物
 date: 2018-07-01
-publication: "[购买纸质书](https://item.jd.com/12365097.html)"
+publication_link: "https://item.jd.com/30525511852.html"
 type: publication
+publication_type: "physical"
 ---
 
 {{< figure src="cloud-native-java.jpg" alt="封面"  caption="云原生 Java  图书封面" width="50%">}}

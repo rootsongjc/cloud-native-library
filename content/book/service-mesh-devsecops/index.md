@@ -6,7 +6,8 @@ tags:
 date: 2022-03-14
 internal_link: service-mesh-devsecops
 type: publication
-publication: "[点击阅读](/service-mesh-devsecops)"
+publication_link: "/service-mesh-devsecops"
+publication_type: "ebook"
 ---
 
 本书译自美国国家标准标准与技术研究院（NIST）Special Publication 800-204C。

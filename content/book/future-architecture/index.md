@@ -6,7 +6,8 @@ tags:
 date: 2019-04-01
 #external_link: https://item.jd.com/12498217.html
 type: publication
-publication: "[购买纸质书](https://item.jd.com/12498217.html)"
+publication_link: "https://item.jd.com/12498217.html"
+publication_type: "physical"
 ---
 
 {{< figure src="future-architecture.jpg" alt="封面"  caption="《未来架构》图书封面" width="50%">}}

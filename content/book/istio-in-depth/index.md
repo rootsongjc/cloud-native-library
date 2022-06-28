@@ -5,7 +5,8 @@ tags:
   - 出版物
 date: 2022-06-01
 type: publication
-publication: "[购买纸质书](https://item.jd.com/13200745.html)"
+publication_link: "https://item.jd.com/13200745.html"
+publication_type: "physical"
 ---
 
 {{< figure src="istio-book.jpg" alt="封面"  caption="《深入理解 Istio —— 云原生服务网格进阶实战》" width="100%">}}

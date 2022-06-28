@@ -7,7 +7,8 @@ date: 2022-05-18
 featured: true
 internal_link: envoy-handbook
 type: publication
-publication: "[点击阅读](/envoy-handbook)"
+publication_link: "/envoy-handbook"
+publication_type: "ebook"
 ---
 
 Envoy 基础教程，本手册梳理了 Envoy 基础知识，适用于初学者，帮你快速掌握 Envoy 代理。

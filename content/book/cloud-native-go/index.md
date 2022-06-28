@@ -5,7 +5,8 @@ tags:
   - 出版物
 date: 2017-08-01
 type: publication
-publication: "[购买纸质书](https://item.m.jd.com/product/12123347.html)"
+publication_type: "physical"
+publication_link: "https://item.m.jd.com/product/12123347.html"
 ---
 
 {{< figure src="cloud-native-go.jpg" alt="封面"  caption="Cloud Native Go 图书封面" width="50%">}}

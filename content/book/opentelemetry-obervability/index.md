@@ -6,8 +6,8 @@ tags:
 date: 2022-05-06
 internal_link: docs/opentelemetry-obervability
 type: publication
-publicaiton_types: "5"
-publication: "[点击阅读](/opentelemetry-obervability)"
+publication: "/opentelemetry-obervability"
+publication_type: "ebook"
 ---
 
 本报告译自 O'Reilly 出品的 [The Future of Observablity with OpeTelemetry](https://www.oreilly.com/library/view/the-future-of/9781098118433/)，作者 Ted Young，译者 [Jimmy Song](https://jimmysong.io)。
