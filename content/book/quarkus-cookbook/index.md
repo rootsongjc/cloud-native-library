@@ -7,9 +7,14 @@ date: 2021-03-31
 publication_link: "https://item.jd.com/10028088987963.html"
 type: publication
 publication_type: "physical"
+links:
+  - icon: shopping-cart
+    icon_pack: fa
+    name: 购买
+    url: https://item.jd.com/10028088987963.html
 ---
 
-2021 年 3 月，《Quarkus 实战——专为 Kubernetes 而优化的 Java 解决方案》，已经由机械工业出版社出版上市，可点击查看详情[购买](https://item.jd.com/10028088987963.html)，下面是本书封面及封底。
+《Quarkus 实战——专为 Kubernetes 而优化的 Java 解决方案》，Alex Soto Bueno、Jason Porter 著，张晓宇、刘岩、宋净超译，机械工业出版社出版，2021 年 3 月。
 
 ![Quarkus cookbook 实战](quarkus-cookbook.jpg)
 
@@ -26,5 +31,3 @@ Quarkus 是一款有别于传统 Java 架构的新技术框架，它是建立在
 在整个翻译过程中，我们得到华章出版社和李忠明编辑的全力帮助，在此表示衷心感谢。
 
 最后，感谢大家有缘阅读到此书，希望我们三人的绵薄之力可以帮助到崇尚云原生技术的你，在 Quarkus 的技术道路上，能够享受到和我们一样的欣喜。
-
-译者：张晓宇、刘岩、宋净超

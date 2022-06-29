@@ -7,7 +7,14 @@ date: 2017-08-01
 type: publication
 publication_type: "physical"
 publication_link: "https://item.m.jd.com/product/12123347.html"
+links:
+  - icon: shopping-cart
+    icon_pack: fa
+    name: 购买
+    url: "https://item.m.jd.com/product/12123347.html"
 ---
+
+《Cloud Native Go》，Kevin Hoffman 著，宋净超、吴迎松、徐蓓、马超译，电子工业出版社出版，2017 年 8 月。
 
 {{< figure src="cloud-native-go.jpg" alt="封面"  caption="Cloud Native Go 图书封面" width="50%">}}
 

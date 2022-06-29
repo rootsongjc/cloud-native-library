@@ -7,7 +7,14 @@ date: 2018-07-01
 publication_link: "https://item.jd.com/12365097.html"
 type: publication
 publication_type: "physical"
+links:
+  - icon: shopping-cart
+    icon_pack: fa
+    name: 购买
+    url: "https://item.jd.com/12365097.html"
 ---
+
+《Python 云原生》，Marish Sethi 著，宋净超译，电子工业出版社出版，2018 年 7 月。
 
 {{< figure src="cloud-native-python.jpg" alt="封面"  caption="《Python云原生》图书封面" width="50%">}}
 

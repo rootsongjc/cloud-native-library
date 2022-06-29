@@ -8,7 +8,14 @@ date: 2019-04-01
 type: publication
 publication_link: "https://item.jd.com/12498217.html"
 publication_type: "physical"
+links:
+  - icon: shopping-cart
+    icon_pack: fa
+    name: 购买
+    url: "https://item.jd.com/12498217.html"
 ---
+
+《未来架构 —— 从服务化到云原生》，张亮、吴晟、敖小剑、宋净超著，电子工业出版社出版，2019 年 4 月。
 
 {{< figure src="future-architecture.jpg" alt="封面"  caption="《未来架构》图书封面" width="50%">}}
 

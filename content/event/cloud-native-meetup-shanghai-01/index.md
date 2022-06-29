@@ -69,7 +69,7 @@ projects: []
 
 公司：Tetrate
 
-讲师介绍：Tetrate 云原生布道师，云原生社区创始人，CNCF Ambassador，作家和摄影师，热衷于开源和分享。
+讲师介绍：Tetrate 布道师，云原生社区创始人，CNCF Ambassador。
 
 ## Kubernetes 在 UCloud 内部的应用
 

@@ -7,7 +7,14 @@ date: 2020-08-09
 publication_link: "https://item.jd.com/12704245.html"
 type: publication
 publication_type: "physical"
+links:
+  - icon: shopping-cart
+    icon_pack: fa
+    name: 购买
+    url: "https://item.jd.com/12704245.html"
 ---
+
+《云原生模式》，Cornelia Davis 著，张若飞、宋净超译，电子工业出版社出版，2020 年 8 月。
 
 {{< figure src="cloud-native-patterns.jpg" alt="封面"  caption="《云原生模式》 图书封面" width="50%">}}
 

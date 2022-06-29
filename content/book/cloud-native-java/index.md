@@ -7,7 +7,14 @@ date: 2018-07-01
 publication_link: "https://item.jd.com/30525511852.html"
 type: publication
 publication_type: "physical"
+links:
+  - icon: shopping-cart
+    icon_pack: fa
+    name: 购买
+    url: "https://item.jd.com/30525511852.html"
 ---
+
+《云原生 Java》，Josh Long 著，张若飞、宋净超译，电子工业出版社出版，2017 年 7 月。
 
 {{< figure src="cloud-native-java.jpg" alt="封面"  caption="云原生 Java  图书封面" width="50%">}}
 
