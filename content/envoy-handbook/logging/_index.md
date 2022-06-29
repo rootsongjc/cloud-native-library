@@ -3,8 +3,6 @@ weight: 6
 title: 日志
 date: '2022-05-18T00:00:00+08:00'
 type: book
-icon: book-open
-icon_pack: fas
 ---
 
 在日志章节中，我们将学习 Envoy 中不同类型的日志和方法。

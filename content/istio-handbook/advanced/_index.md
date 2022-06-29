@@ -3,8 +3,6 @@ weight: 100
 title: 高级功能
 date: '2022-05-18T00:00:00+08:00'
 type: book
-icon: book-open
-icon-pack: fas
 ---
 
 在本章中，我们将了解在多个集群上安装 Istio 的不同方法，以及如何将运行在虚拟机上的工作负载纳入服务网格。

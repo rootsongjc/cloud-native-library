@@ -4,9 +4,9 @@ summary: 利用格式化数据从根本上改变可观测性实践
 tags:
   - 翻译电子书
 date: 2022-05-06
-internal_link: docs/opentelemetry-obervability
+internal_link: /opentelemetry-obervability
 type: publication
-publication: "/opentelemetry-obervability"
+publication_link: "/opentelemetry-obervability"
 publication_type: "ebook"
 ---
 

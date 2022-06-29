@@ -3,8 +3,6 @@ weight: 50
 title: 流量管理
 date: '2022-05-18T00:00:00+08:00'
 type: book
-icon: book-open
-icon-pack: fas
 ---
 
 在本章中，我们将开始使用 Istio 服务网格在服务之间进行流量路由。我们将学习如何设置一个 Ingress 资源以允许流量进入我们的集群，以及一个 Egress 资源以使流量流出集群。

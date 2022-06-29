@@ -3,8 +3,6 @@ weight: 130
 title: 实战案例
 date: '2022-05-18T00:00:00+08:00'
 type: book
-icon: book-open
-icon-pack: fas
 ---
 
 在本章中，我们将部署名为 [Online Boutique](https://github.com/GoogleCloudPlatform/microservices-demo) 的微服务演示应用程序，并尝试不同的Istio功能。

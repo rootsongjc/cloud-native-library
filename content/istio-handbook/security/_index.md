@@ -3,8 +3,6 @@ weight: 80
 title: 安全
 date: '2022-05-18T00:00:00+08:00'
 type: book
-icon: book-open
-icon-pack: fas
 ---
 
 在本章中，我们将学习 Istio 的安全功能。具体来说，就是认证和授权策略、安全命名和身份。

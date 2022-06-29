@@ -3,8 +3,6 @@ weight: 2
 title: HTTP 连接管理器
 date: '2022-05-18T00:00:00+08:00'
 type: book
-icon: book-open
-icon_pack: fas
 ---
 
 在 HCM 章节中，我们将对 HTTP 连接管理器过滤器进行扩展。我们将学习过滤器的排序，以及 HTTP 路由和匹配如何工作。我们将向你展示如何分割流量、操作 Header 信息、配置超时、实现重试、请求镜像和速率限制。

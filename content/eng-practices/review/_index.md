@@ -2,8 +2,6 @@
 weight: 1
 title: 代码审查指南
 type: book
-icon: book-open
-icon-pack: fas
 ---
 
 ## 简介 {#intro}

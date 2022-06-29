@@ -3,8 +3,6 @@ weight: 70
 title: 可观测性
 date: '2022-05-18T00:00:00+08:00'
 type: book
-icon: book-open
-icon-pack: fas
 ---
 
 在本章中，我们将学习一些监控（Prometheus）、追踪（Zipkin）和数据可视化工具（Grafana）。

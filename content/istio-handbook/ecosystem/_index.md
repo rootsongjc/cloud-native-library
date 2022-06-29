@@ -3,8 +3,6 @@ weight: 120
 title: Istio 生态
 date: '2022-05-18T00:00:00+08:00'
 type: book
-icon: book-open
-icon-pack: fas
 ---
 
 Istio 服务网格自 2017 年 5 月开源以来，已围绕其周边诞生了诸多开源项目，这些项目有的是对 Istio 本身的扩展，有的是可以与 Istio 集成，还有的是 Istio 周边的开源工具。

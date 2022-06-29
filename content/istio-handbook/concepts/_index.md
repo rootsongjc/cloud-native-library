@@ -3,8 +3,6 @@ weight: 20
 title: 概念原理
 date: '2022-05-18T00:00:00+08:00'
 type: book
-icon: book-open
-icon-pack: fas
 ---
 
 在这一章中，你将了解：

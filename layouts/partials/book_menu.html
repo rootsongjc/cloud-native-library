@@ -35,16 +35,22 @@
 
     {{ if $first }}
       <ul class="nav docs-sidenav">
-        <li class="{{ if and .File $current_node.File | and (eq .File.UniqueID $current_node.File.UniqueID) }}active{{ end }}"><a href="{{ .RelPermalink }}">{{ safeHTML $icon }}{{ .LinkTitle | default .Title }}</a></li>
+          <li class="level{{.Params.level}}{{ if and .File $current_node.File | and (eq .File.UniqueID $current_node.File.UniqueID) }}active{{ end }}"><a href="{{ .RelPermalink }}">{{ safeHTML $icon }}{{ .LinkTitle | default .Title }}</a></li>
     {{else}}
-      <div class="docs-toc-item">
-          <a class="{{ print "docs-menu-lv" .Params.level | default "docs-mene-lv1"}} docs-toc-link {{ if and .File $current_node.File | and (eq .File.UniqueID $current_node.File.UniqueID) }} active{{ end }}" href="{{ .RelPermalink }}">{{ safeHTML $icon }}{{ .LinkTitle | default .Title }}</a>
+    {{ .Scratch.Set "navId" (print "id" (md5 .Permalink)) }}
+    {{- $page_count := (add (len .Pages) (len .Sections)) -}}
+    <div class="docs-toc-item has-child">
+    {{ if ne $page_count 0 }}
+    {{ $caret_id := (print "caret-" (.Scratch.Get "navId")) }}
+    <a class="nav-toogle d-inline level{{.Params.level}}" aria-hidden="false" data-toggle="collapse" href="#{{ .Scratch.Get "navId" }}" aria-expanded="false" aria-controls="{{ .Scratch.Get "navId"}}"><i class="fa-solid fa-caret-down" id="{{$caret_id}}" onClick="ChangeContent({{$caret_id}})"></i></a>
+        {{ end }}
+        <a class="d-inline docs-toc-link {{ if and .File $current_node.File | and (eq .File.UniqueID $current_node.File.UniqueID) }} active{{ end }}" href="{{ .RelPermalink }}">{{ safeHTML $icon }}{{ .LinkTitle | default .Title }}</a>
     {{end}}
 
     {{- $page_count := (add (len .Pages) (len .Sections)) -}}
     {{ if ne $page_count 0 }}
       {{ if not $first }}
-        <ul class="nav docs-sidenav">
+      <ul class="nav docs-sidenav collapse show" id="{{ .Scratch.Get "navId"}}">
       {{end}}
       {{- .Scratch.Set "pages" .Pages -}}
       {{- if .Sections -}}
@@ -77,7 +83,7 @@
 
   {{- else -}}
     {{- if not .Params.Hidden -}}
-    <li class="{{ if and .File $current_node.File | and (eq .File.UniqueID $current_node.File.UniqueID) }}active{{ end }}"><a class="{{ print "docs-menu-lv" .Params.level | default "docs-menu-lv1"}}" href="{{ .RelPermalink }}">{{ safeHTML $icon }}{{ .LinkTitle | default .Title }}</a></li>
+    <li class="level{{.Params.level}}{{ if and .File $current_node.File | and (eq .File.UniqueID $current_node.File.UniqueID) }}active{{ end }}"><a href="{{ .RelPermalink }}">{{ safeHTML $icon }}{{ .LinkTitle | default .Title }}</a></li>
     {{- end -}}
   {{ end -}}
 {{- end -}}

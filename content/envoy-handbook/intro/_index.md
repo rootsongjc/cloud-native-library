@@ -2,8 +2,6 @@
 linktitle: Envoy 简介
 weight: 1
 title: Envoy 简介
-icon: book-open
-icon_pack: fas
 date: '2022-05-18T00:00:00+08:00'
 type: book
 ---
