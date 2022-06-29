@@ -23,9 +23,9 @@ image:
   preview_only: false
 
 links:
-  - icon: globe
+  - icon: language
     icon_pack: fa
-    name: 原文
+    name: 阅读英文版原文
     url: https://www.tetrate.io/blog/validating-a-request-payload-with-wasm/
 ---
 

@@ -11,9 +11,9 @@ lastmod: 2021-12-09T21:03:00+08:00
 draft: false
 featured: false
 links:
-  - icon: globe
+  - icon: language
     icon_pack: fa
-    name: 原文
+    name: 阅读英文版原文
     url: https://isovalent.com/blog/post/2021-12-08-ebpf-servicemesh
 ---
 

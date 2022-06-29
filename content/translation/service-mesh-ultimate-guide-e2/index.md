@@ -9,9 +9,9 @@ tags: ["service mesh"]
 draft: false
 featured: false
 links:
-  - icon: globe
+  - icon: language
     icon_pack: fa
-    name: 原文
+    name: 阅读英文版原文
     url: https://www.infoq.com/articles/service-mesh-ultimate-guide-2021/
 ---
 

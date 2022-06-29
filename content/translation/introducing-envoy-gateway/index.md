@@ -29,9 +29,9 @@ authors: ["Matt Klein"]
 tags: ["Envoy","开源","网关"]
 categories: ["Envoy"]
 links:
-  - icon: medium
-    icon_pack: fab
-    name: 原文
+  - icon: language
+    icon_pack: fa
+    name: 阅读英文版原文
     url: https://blog.envoyproxy.io/introducing-envoy-gateway-ad385cc5953
 ---
 

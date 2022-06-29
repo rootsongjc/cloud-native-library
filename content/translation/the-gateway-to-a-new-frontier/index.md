@@ -29,9 +29,9 @@ authors: ["Varun Talwar"]
 tags: ["Envoy","开源","网关","Tetrate"]
 categories: ["Envoy"]
 links:
-  - icon: globe
+  - icon: language
     icon_pack: fa
-    name: 原文
+    name: 阅读英文版原文
     url: https://www.tetrate.io/blog/the-gateway-to-a-new-frontier/
 ---
 

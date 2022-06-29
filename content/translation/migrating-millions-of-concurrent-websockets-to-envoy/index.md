@@ -29,9 +29,9 @@ authors: ["Ariane van der Steldt","Radha Kumari"]
 tags: ["Envoy","slcak","haproxy","WebSockets"]
 categories: ["Envoy"]
 links:
-  - icon: globe
+  - icon: language
     icon_pack: fa
-    name: 原文
+    name: 阅读英文版原文
     url: https://slack.engineering/migrating-millions-of-concurrent-websockets-to-envoy/
 ---
 

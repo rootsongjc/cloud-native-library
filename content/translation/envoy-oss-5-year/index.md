@@ -13,9 +13,9 @@ image:
 tags: ["envoy","proxy"]
 categories: ["envoy"]
 links:
-  - icon:  globe
+  - icon: language
     icon_pack: fa
-    name: 原文
+    name: 阅读英文版原文
     url: https://mattklein123.dev/2021/09/14/5-years-envoy-oss/
 ---
 

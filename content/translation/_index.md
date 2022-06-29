@@ -16,4 +16,6 @@ cascade:
   show_related: true
   type: post
   section_pager: true
+  header:
+    on_scroll: disappear
 ---

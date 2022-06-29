@@ -9,9 +9,9 @@ lastmod: 2021-10-27T13:00:00+08:00
 draft: false
 featured: false
 links:
-  - icon: globe
+  - icon: language
     icon_pack: fa
-    name: 原文
+    name: 阅读英文版原文
     url: https://thenewstack.io/how-ebpf-streamlines-the-service-mesh
 ---
 

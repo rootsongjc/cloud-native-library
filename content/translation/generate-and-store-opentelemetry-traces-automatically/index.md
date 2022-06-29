@@ -9,9 +9,9 @@ authors: ["James Blackwood-Sewell"]
 tags: ["tobs","可观测性","Kubernetes"]
 categories: ["可观测性"]
 links:
-  - icon: globe
+  - icon: language
     icon_pack: fa
-    name: 原文
+    name: 阅读英文版原文
     url: https://timescale.com/blog/generate-and-store-opentelemetry-traces-automatically
 ---
 

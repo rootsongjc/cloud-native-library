@@ -4,14 +4,15 @@ summary: 本文为可观测性引入了一个新的角色：视觉隐喻，并�
 date: '2022-05-24T10:00:00+08:00'
 lastmod: '2022-05-24T10:00:00+08:00'
 draft: false
+type: post
 featured: false
 authors: ["Yury Niño Roa"]
 tags: ["混沌工程","可观测性"]
 categories: ["可观测性"]
 links:
-  - icon: globe
+  - icon: language
     icon_pack: fa
-    name: 原文
+    name: 阅读英文版原文
     url: https://www.infoq.com/articles/chaos-engineering-observability-visual-metaphors/
 ---
 

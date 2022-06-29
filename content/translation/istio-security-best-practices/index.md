@@ -6,9 +6,9 @@ categories: ["Istio"]
 tags: ["Istio","安全"]
 date: 2021-08-02T13:05:42+08:00
 links:
-  - icon: globe
+  - icon: language
     icon_pack: fa
-    name: 原文
+    name: 阅读英文版原文
     url: https://istio.io/latest/docs/ops/best-practices/security/
 ---
 

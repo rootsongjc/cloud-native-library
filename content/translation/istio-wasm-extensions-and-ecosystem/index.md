@@ -29,9 +29,9 @@ authors: ["胡渐飞"]
 tags: ["Envoy","Wasm","Istio","Tetrate"]
 categories: ["Istio"]
 links:
-  - icon: globe
+  - icon: language
     icon_pack: fa
-    name: 原文
+    name: 阅读英文版原文
     url: https://www.tetrate.io/blog/istio-wasm-extensions-and-ecosystem/
 ---
 

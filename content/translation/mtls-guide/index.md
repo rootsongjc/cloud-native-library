@@ -7,10 +7,11 @@ featured: false
 authors: ["William Morgan"]
 tags: ["mTLS","安全"]
 categories: ["安全"]
+type: post
 links:
-  - icon: globe
+  - icon: language
     icon_pack: fa
-    name: 原文
+    name: 阅读英文版原文
     url: https://buoyant.io/mtls-guide/
 ---
 
