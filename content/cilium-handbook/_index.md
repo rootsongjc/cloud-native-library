@@ -8,7 +8,6 @@ icon: book
 icon_pack: fas
 cascade:
   commentable: true
-  level: 1
 ---
 
 {{<callout note>}}
