@@ -3,7 +3,6 @@ weight: 105
 title: 配置 Kubernetes 开发环境
 date: '2022-05-21T00:00:00+08:00'
 type: book
-level: 1
 ---
 
 我们将在 Mac 上使用 docker 环境编译 kuberentes。

@@ -3,7 +3,6 @@ weight: 114
 title: Minikube
 date: '2022-05-21T00:00:00+08:00'
 type: book
-level: 1
 ---
 
 Minikube 用于在本地运行 kubernetes 环境，用来开发和测试。

@@ -3,7 +3,6 @@ weight: 106
 title: 测试 Kubernetes
 date: '2022-05-21T00:00:00+08:00'
 type: book
-level: 1
 ---
 
 这篇文章将指导你如何测试 Kubernetes。
@@ -205,4 +204,4 @@ kubectl get pods nginx-4263166205-ggst4 -o template '--template={{if (exists . "
 
 ## 参考文档
 
-- https://github.com/kubernetes/test-infra
+- <https://github.com/kubernetes/test-infra>

@@ -3,7 +3,6 @@ weight: 107
 title: client-go 示例
 date: '2022-05-21T00:00:00+08:00'
 type: book
-level: 1
 ---
 
 访问 kubernetes 集群有以下几种方式：

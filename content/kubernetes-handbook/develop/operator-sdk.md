@@ -3,7 +3,6 @@ weight: 109
 title: Operator SDK
 date: '2022-05-21T00:00:00+08:00'
 type: book
-level: 2
 ---
 
 [Operator SDK](https://github.com/operator-framework/operator-sdk) 由 CoreOS 开源，它是用于构建 Kubernetes 原生应用的 SDK，它提供更高级别的 API、抽象和项目脚手架。在阅读本文前请先确认您已经了解 [Operator](operator.md)是什么。

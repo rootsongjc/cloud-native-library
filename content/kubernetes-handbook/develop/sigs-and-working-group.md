@@ -3,7 +3,6 @@ weight: 104
 title: SIG 和工作组
 date: '2022-05-21T00:00:00+08:00'
 type: book
-level: 1
 ---
 
 Kubernetes 的社区是以 SIG（Special Interest Group 特别兴趣小组）和工作组的形式组织起来的，每个工作组都会定期召开视频会议。
@@ -53,4 +52,4 @@ Kubernetes 的社区是以 SIG（Special Interest Group 特别兴趣小组）和
 - **Kubeadm Adoption**：提高 kubeadm 工具的采用率。
 - **Resource Management**J：资源隔离和提高资源利用率。
 
-详细信息请参考 https://github.com/kubernetes/community/blob/master/sig-list.md
+详细信息请参考 <https://github.com/kubernetes/community/blob/master/sig-list.md>

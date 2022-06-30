@@ -3,7 +3,6 @@ weight: 108
 title: Operator
 date: '2022-05-21T00:00:00+08:00'
 type: book
-level: 1
 ---
 
 Operator 是由 [CoreOS](https://coreos.com/) 开发的，用来扩展 Kubernetes API，特定的应用程序控制器，它用来创建、配置和管理复杂的有状态应用，如数据库、缓存和监控系统。Operator 基于 Kubernetes 的资源和控制器概念之上构建，但同时又包含了应用程序特定的领域知识。创建 Operator 的关键是 CRD（自定义资源）的设计。[awesome-operators](https://github.com/operator-framework/awesome-operators) 中罗列了目前已知的 Operator。
