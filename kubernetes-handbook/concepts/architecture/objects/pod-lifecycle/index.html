@@ -1,0 +1,2476 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="宋净超（Jimmy Song）" />
+
+  
+  
+  
+    
+  
+  <meta name="description" content="本文讲解的是 Kubernetes 中 Pod 的生命周期，包括生命周期的不同阶段、存活和就绪探针、重启策略等。 Pod phase Pod 的 status 字段是一个 PodStatus 对象，PodStatus中有一个 phase 字段。 Pod 的相位（phase）是 Pod 在其生命周期中的简单宏观概述。" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://lib.jimmysong.io/kubernetes-handbook/concepts/architecture/objects/pod-lifecycle/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/css/wowchemy.991876ed536299930b8de6c3871bf814.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MP490FS739"></script>
+
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', "G-MP490FS739");
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2a4b7f65b1839466beaa48d633aa60c1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://lib.jimmysong.io/kubernetes-handbook/concepts/architecture/objects/pod-lifecycle/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary_large_image" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://lib.jimmysong.io/kubernetes-handbook/concepts/architecture/objects/pod-lifecycle/" />
+  <meta property="og:title" content="Pod 的生命周期 | 云原生资料库" />
+  <meta property="og:description" content="本文讲解的是 Kubernetes 中 Pod 的生命周期，包括生命周期的不同阶段、存活和就绪探针、重启策略等。 Pod phase Pod 的 status 字段是一个 PodStatus 对象，PodStatus中有一个 phase 字段。 Pod 的相位（phase）是 Pod 在其生命周期中的简单宏观概述。" /><meta property="og:image" content="https://lib.jimmysong.io/media/sharing.png" />
+    <meta property="twitter:image" content="https://lib.jimmysong.io/media/sharing.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2022-05-21T00:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2022-06-30T12:09:07&#43;08:00">
+  
+
+  
+
+
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>Pod 的生命周期 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="4a98f2f21514f7ea656c7b3e4871b64e" >
+  <button onclick="topFunction()" id="myBtn" title="Go to top"><i class="fa-solid fa-circle-up" aria-hidden="true"></i></button>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/js/wowchemy-init.min.14a0ed61c6dbd594b9c75193b25be179.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>搜索</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/">云原生资料库</a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/">云原生资料库</a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#books"><span>书目列表</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/translation"><span>译文</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/event"><span>活动</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#feed"><span>更新</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#tags"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>Jimmy Song</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://jimmysong.io" data-toggle="tooltip" data-placement="bottom" title="主页" target="_blank" rel="noopener" aria-label="主页">
+                <i class="fas fa-home" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+        
+
+        
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/rootsongjc/cloud-native-library/" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    
+
+
+
+
+<div class="container-fluid docs">
+  <div class="row flex-xl-nowrap">
+    <div class="col-12 col-md-3 col-xl-2 docs-sidebar">
+      <form class="docs-search d-flex align-items-center">
+  <button class="btn docs-toggle d-md-none p-0 mr-md-3 w-100" type="button" data-toggle="collapse" data-target="#docs-nav" aria-controls="docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    <div class="d-flex">
+      <span class="d-md-none pl-1 flex-grow-1 text-left overflow-hidden">
+        
+          Kubernetes 中的资源对象
+        
+      </span>
+      <span><i class="fas fa-chevron-down"></i></span>
+    </div>
+  </button>
+
+  
+  <button class="form-control sidebar-search js-search d-none d-md-flex">
+    <i class="fas fa-search pr-2"></i>
+    <span class="sidebar-search-text">搜索...</span>
+    <span class="sidebar-search-shortcut">/</span>
+  </button>
+  
+</form>
+
+<nav class="collapse docs-links" id="docs-nav">
+  
+  
+  
+  
+  
+  
+
+  
+  
+    
+
+    
+      
+
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <ul class="nav docs-sidenav">
+          <li class="level1 "><a href="/kubernetes-handbook/"><i class="fas fa-book pr-1"></i>Kubernetes 基础教程</a></li>
+    
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#idbbb1097067de33f07e36fe34a2687c5f" aria-expanded="false" aria-controls="idbbb1097067de33f07e36fe34a2687c5f"><i class="fa-solid fa-caret-down" id="caret-idbbb1097067de33f07e36fe34a2687c5f" onClick="ChangeContent(&#34;caret-idbbb1097067de33f07e36fe34a2687c5f&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/concepts/">概念原理</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="idbbb1097067de33f07e36fe34a2687c5f">
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#id6c07e8f236655e0e464fe4de78fc9cce" aria-expanded="false" aria-controls="id6c07e8f236655e0e464fe4de78fc9cce"><i class="fa-solid fa-caret-down" id="caret-id6c07e8f236655e0e464fe4de78fc9cce" onClick="ChangeContent(&#34;caret-id6c07e8f236655e0e464fe4de78fc9cce&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/concepts/architecture/">Kubernetes 架构</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="id6c07e8f236655e0e464fe4de78fc9cce">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/architecture/perspective/">Kubernetes 的设计理念</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/architecture/etcd/">Etcd 解析</a></li>
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#id24271fb74547fa625c486b293299c240" aria-expanded="false" aria-controls="id24271fb74547fa625c486b293299c240"><i class="fa-solid fa-caret-down" id="caret-id24271fb74547fa625c486b293299c240" onClick="ChangeContent(&#34;caret-id24271fb74547fa625c486b293299c240&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/concepts/architecture/open-interfaces/">开放接口</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="id24271fb74547fa625c486b293299c240">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/architecture/open-interfaces/cri/">容器运行时接口（CRI）</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/architecture/open-interfaces/cni/">容器网络接口（CNI）</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/architecture/open-interfaces/csi/">容器存储接口（CSI）</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#id05fd4750904d8023f7d4bded5259bd13" aria-expanded="false" aria-controls="id05fd4750904d8023f7d4bded5259bd13"><i class="fa-solid fa-caret-down" id="caret-id05fd4750904d8023f7d4bded5259bd13" onClick="ChangeContent(&#34;caret-id05fd4750904d8023f7d4bded5259bd13&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/concepts/architecture/objects/">Kubernetes 中的资源对象</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="id05fd4750904d8023f7d4bded5259bd13">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/architecture/objects/pod-overview/">Pod 概览</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/architecture/objects/pod/">Pod 解析</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/architecture/objects/init-containers/">Init 容器</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/architecture/objects/pause-container/">Pause 容器</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/architecture/objects/pod-security-policy/">Pod 安全策略</a></li>
+
+
+
+  <li class="child level1 active"><a href="/kubernetes-handbook/concepts/architecture/objects/pod-lifecycle/">Pod 的生命周期</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/architecture/objects/pod-hook/">Pod Hook</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/architecture/objects/pod-preset/">Pod Preset</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/architecture/objects/pod-disruption-budget/">Pod 中断与 PDB（Pod 中断预算）</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/architecture/pod-state-and-lifecycle/">Pod 状态与生命周期管理</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#ide38b06f0842077ca19e223ce70eb4c8c" aria-expanded="false" aria-controls="ide38b06f0842077ca19e223ce70eb4c8c"><i class="fa-solid fa-caret-down" id="caret-ide38b06f0842077ca19e223ce70eb4c8c" onClick="ChangeContent(&#34;caret-ide38b06f0842077ca19e223ce70eb4c8c&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/concepts/cluster/">集群资源管理</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="ide38b06f0842077ca19e223ce70eb4c8c">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/cluster/node/">Node</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/cluster/namespace/">Namespace</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/cluster/label/">Label</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/cluster/annotation/">Annotation</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/cluster/taint-and-toleration/">Taint 和 Toleration（污点和容忍）</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/cluster/garbage-collection/">垃圾收集</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/cluster/scheduling/">资源调度</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/cluster/qos/">服务质量等级（QoS）</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#ida6c4aa51c47e58beaa415d3b3072c1eb" aria-expanded="false" aria-controls="ida6c4aa51c47e58beaa415d3b3072c1eb"><i class="fa-solid fa-caret-down" id="caret-ida6c4aa51c47e58beaa415d3b3072c1eb" onClick="ChangeContent(&#34;caret-ida6c4aa51c47e58beaa415d3b3072c1eb&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/concepts/controllers/">控制器</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="ida6c4aa51c47e58beaa415d3b3072c1eb">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/controllers/deployment/">Deployment</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/controllers/statefulset/">StatefulSet</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/controllers/daemonset/">DaemonSet</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/controllers/replicaset/">ReplicationController 和 ReplicaSet</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/controllers/job/">Job</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/controllers/cronjob/">CronJob</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/controllers/ingress-controller/">Ingress 控制器</a></li>
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#idbe2146e8e32c38790abb93887befcc32" aria-expanded="false" aria-controls="idbe2146e8e32c38790abb93887befcc32"><i class="fa-solid fa-caret-down" id="caret-idbe2146e8e32c38790abb93887befcc32" onClick="ChangeContent(&#34;caret-idbe2146e8e32c38790abb93887befcc32&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/concepts/controllers/hpa/">Horizontal Pod Autoscaling</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="idbe2146e8e32c38790abb93887befcc32">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/controllers/hpa/custom-metrics-hpa/">自定义指标 HPA</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/controllers/admission-controller/">准入控制器（Admission Controller）</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#idea111825e1af5274a57c3a7684ef7f07" aria-expanded="false" aria-controls="idea111825e1af5274a57c3a7684ef7f07"><i class="fa-solid fa-caret-down" id="caret-idea111825e1af5274a57c3a7684ef7f07" onClick="ChangeContent(&#34;caret-idea111825e1af5274a57c3a7684ef7f07&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/concepts/service-discovery/">服务发现与路由</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="idea111825e1af5274a57c3a7684ef7f07">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/service-discovery/service/">Service</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/service-discovery/topology-aware-routing/">拓扑感知路由</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/service-discovery/ingress/">Ingress</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/service-discovery/gateway/">Gateway</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#idb8e24fae00aa16ee092331ea8cfb0283" aria-expanded="false" aria-controls="idb8e24fae00aa16ee092331ea8cfb0283"><i class="fa-solid fa-caret-down" id="caret-idb8e24fae00aa16ee092331ea8cfb0283" onClick="ChangeContent(&#34;caret-idb8e24fae00aa16ee092331ea8cfb0283&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/concepts/auth/">身份与权限认证</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="idb8e24fae00aa16ee092331ea8cfb0283">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/auth/serviceaccount/">ServiceAccount</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/auth/rbac/">基于角色的访问控制（RBAC）</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/auth/network-policy/">NetworkPolicy</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/auth/spiffe/">SPIFFE</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/auth/spire/">SPIRE</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/auth/spire-k8s-workload-registar/">SPIRE Kubernetes 工作负载注册器</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/auth/svid/">SVID 身份颁发过程</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#id7cda683bf4e9795b6ddcf8309b3c9cb0" aria-expanded="false" aria-controls="id7cda683bf4e9795b6ddcf8309b3c9cb0"><i class="fa-solid fa-caret-down" id="caret-id7cda683bf4e9795b6ddcf8309b3c9cb0" onClick="ChangeContent(&#34;caret-id7cda683bf4e9795b6ddcf8309b3c9cb0&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/concepts/networking/">网络</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="id7cda683bf4e9795b6ddcf8309b3c9cb0">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/networking/flannel/">扁平网络 Flannel</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/networking/calico/">非 Overlay 扁平网络 Calico</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/networking/cilium/">基于 eBPF 的网络 Cilium</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#idbde076e3f4ba00a20e4d9c947dd6db64" aria-expanded="false" aria-controls="idbde076e3f4ba00a20e4d9c947dd6db64"><i class="fa-solid fa-caret-down" id="caret-idbde076e3f4ba00a20e4d9c947dd6db64" onClick="ChangeContent(&#34;caret-idbde076e3f4ba00a20e4d9c947dd6db64&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/concepts/storage/">存储</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="idbde076e3f4ba00a20e4d9c947dd6db64">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/storage/secret/">Secret</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/storage/configmap/">ConfigMap</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/storage/configmap-hot-update/">ConfigMap 的热更新</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/storage/volume/">Volume</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/storage/persistent-volume/">持久化卷（Persistent Volume）</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/storage/storageclass/">Storage Class</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/storage/local-persistent-storage/">本地持久化存储</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#id698ed0dddb75044a694f2e38a990899e" aria-expanded="false" aria-controls="id698ed0dddb75044a694f2e38a990899e"><i class="fa-solid fa-caret-down" id="caret-id698ed0dddb75044a694f2e38a990899e" onClick="ChangeContent(&#34;caret-id698ed0dddb75044a694f2e38a990899e&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/concepts/extend/">扩展集群</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="id698ed0dddb75044a694f2e38a990899e">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/extend/custom-resource/">使用自定义资源扩展 API</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/extend/crd/">使用 CRD 扩展 Kubernetes API</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/extend/aggregated-api-server/">Aggregated API Server</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/extend/apiservice/">APIService</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/extend/service-catalog/">服务目录（Service Catalog）</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#id1516631c18f69cc2498203dbf58bde35" aria-expanded="false" aria-controls="id1516631c18f69cc2498203dbf58bde35"><i class="fa-solid fa-caret-down" id="caret-id1516631c18f69cc2498203dbf58bde35" onClick="ChangeContent(&#34;caret-id1516631c18f69cc2498203dbf58bde35&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/concepts/multi-cluster/">多集群管理</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="id1516631c18f69cc2498203dbf58bde35">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/multi-cluster/multi-cluster-services-api/">多集群服务 API（Multi-Cluster Services API）</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/concepts/multi-cluster/federation/">集群联邦（Cluster Federation）</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#ida7d1d45d7587ad4ae83ffc2ddbdd5401" aria-expanded="false" aria-controls="ida7d1d45d7587ad4ae83ffc2ddbdd5401"><i class="fa-solid fa-caret-down" id="caret-ida7d1d45d7587ad4ae83ffc2ddbdd5401" onClick="ChangeContent(&#34;caret-ida7d1d45d7587ad4ae83ffc2ddbdd5401&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/guide/">使用指南</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="ida7d1d45d7587ad4ae83ffc2ddbdd5401">
+      
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#id3df208a8e32aad7a03b4670ae30f5eed" aria-expanded="false" aria-controls="id3df208a8e32aad7a03b4670ae30f5eed"><i class="fa-solid fa-caret-down" id="caret-id3df208a8e32aad7a03b4670ae30f5eed" onClick="ChangeContent(&#34;caret-id3df208a8e32aad7a03b4670ae30f5eed&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/guide/config/">资源对象配置</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="id3df208a8e32aad7a03b4670ae30f5eed">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/config/liveness-readiness-probes/">配置 Pod 的 liveness 和 readiness 探针</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/config/service-account/">配置 Pod 的 Service Account</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/config/secret/">Secret 配置</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/config/quota/">管理 namespace 中的资源配额</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#ida2b1d00d4079bdc94044c399df286380" aria-expanded="false" aria-controls="ida2b1d00d4079bdc94044c399df286380"><i class="fa-solid fa-caret-down" id="caret-ida2b1d00d4079bdc94044c399df286380" onClick="ChangeContent(&#34;caret-ida2b1d00d4079bdc94044c399df286380&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/guide/cli/">命令使用</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="ida2b1d00d4079bdc94044c399df286380">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/cli/docker-cli-to-kubectl/">Docker 用户过渡到 kubectl 命令行指南</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/cli/using-kubectl/">Kubectl 命令概览</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/cli/kubectl-cheatsheet/">kubectl 命令技巧大全</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/cli/etcdctl/">使用 etcdctl 访问 Kubernetes 数据</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#idfcf98ffbe51d1bf16b7959ae597e543e" aria-expanded="false" aria-controls="idfcf98ffbe51d1bf16b7959ae597e543e"><i class="fa-solid fa-caret-down" id="caret-idfcf98ffbe51d1bf16b7959ae597e543e" onClick="ChangeContent(&#34;caret-idfcf98ffbe51d1bf16b7959ae597e543e&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/guide/security/">集群安全性管理</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="idfcf98ffbe51d1bf16b7959ae597e543e">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/security/managing-tls-in-a-cluster/">管理集群中的 TLS</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/security/kubelet-authentication-authorization/">Kublet 的认证授权</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/security/tls-bootstrapping/">TLS Bootstrap</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/security/ip-masq-agent/">IP 伪装代理</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/security/kubectl-user-authentication-authorization/">创建用户认证授权的 kubeconfig 文件</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/security/auth-with-kubeconfig-or-token/">使用 kubeconfig 或 token 进行用户身份认证</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/security/authentication/">Kubernetes 中的用户与身份认证授权</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/security/kubernetes-security-best-practice/">Kubernetes 集群安全性配置最佳实践</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#idd6e95bf3f3b447e9bd0288338c45288a" aria-expanded="false" aria-controls="idd6e95bf3f3b447e9bd0288338c45288a"><i class="fa-solid fa-caret-down" id="caret-idd6e95bf3f3b447e9bd0288338c45288a" onClick="ChangeContent(&#34;caret-idd6e95bf3f3b447e9bd0288338c45288a&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/guide/access/">访问 Kubernetes 集群</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="idd6e95bf3f3b447e9bd0288338c45288a">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/access/methods/">访问集群</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/access/authenticate-across-clusters-kubeconfig/">使用 kubeconfig 文件配置跨集群认证</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/access/connecting-to-applications-port-forward/">通过端口转发访问集群中的应用程序</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/access/service-access-application-cluster/">使用 service 访问群集中的应用程序</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/access/accessing-kubernetes-pods-from-outside-of-the-cluster/">从外部访问 Kubernetes 中的 Pod</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/access/lens/">Lens - Kubernetes IDE</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/access/kubernator-kubernetes-ui/">Kubernator - 更底层的 Kubernetes UI</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#id477e8759bd44aaee63eaa39004daf791" aria-expanded="false" aria-controls="id477e8759bd44aaee63eaa39004daf791"><i class="fa-solid fa-caret-down" id="caret-id477e8759bd44aaee63eaa39004daf791" onClick="ChangeContent(&#34;caret-id477e8759bd44aaee63eaa39004daf791&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/guide/devops/">在 Kubernetes 中开发部署应用</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="id477e8759bd44aaee63eaa39004daf791">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/devops/deploy-applications-in-kubernetes/">适用于 Kubernetes 的应用开发部署流程</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/devops/migrating-hadoop-yarn-to-kubernetes/">迁移传统应用到 Kubernetes 步骤详解——以 Hadoop YARN 为例</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/guide/devops/using-statefulset/">使用StatefulSet部署有状态应用</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#id833067b935f1e6259f9861a83fb17a3a" aria-expanded="false" aria-controls="id833067b935f1e6259f9861a83fb17a3a"><i class="fa-solid fa-caret-down" id="caret-id833067b935f1e6259f9861a83fb17a3a" onClick="ChangeContent(&#34;caret-id833067b935f1e6259f9861a83fb17a3a&#34;)"></i></a>
+        
+        <a class="d-inline docs-toc-link " href="/kubernetes-handbook/develop/">开发指南</a>
+    
+      
+      <ul class="nav docs-sidenav collapse show" id="id833067b935f1e6259f9861a83fb17a3a">
+      
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/develop/sigs-and-working-group/">SIG 和工作组</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/develop/developing-environment/">配置 Kubernetes 开发环境</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/develop/testing/">测试 Kubernetes</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/develop/client-go-sample/">client-go 示例</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/develop/operator/">Operator</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/develop/operator-sdk/">Operator SDK</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/develop/kubebuilder/">Kubebuilder</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/develop/advance-developer/">高级开发指南</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/develop/contribute/">参与 Kubernetes 社区贡献</a></li>
+
+
+
+  <li class="child level1 "><a href="/kubernetes-handbook/develop/minikube/">Minikube</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+      
+    
+
+    
+      </ul>
+    
+
+  
+</nav>
+
+    </div>
+
+    
+    
+    <div class="d-none d-xl-block col-xl-2 docs-toc">
+      
+     
+      <ul class="nav toc-top">
+        <li><a href="#" id="back_to_top" class="docs-toc-title">目录</a></li>
+      </ul>
+     
+
+      <nav id="TableOfContents">
+  <ul>
+    <li><a href="#pod-phase">Pod phase</a></li>
+    <li><a href="#pod-状态">Pod 状态</a></li>
+    <li><a href="#容器探针">容器探针</a>
+      <ul>
+        <li><a href="#该什么时候使用存活liveness和就绪readiness探针">该什么时候使用存活（liveness）和就绪（readiness）探针?</a></li>
+        <li><a href="#readinessgates">readinessGates</a></li>
+      </ul>
+    </li>
+    <li><a href="#pod-和容器状态">Pod 和容器状态</a></li>
+    <li><a href="#重启策略">重启策略</a></li>
+    <li><a href="#pod-的生命">Pod 的生命</a></li>
+    <li><a href="#示例">示例</a>
+      <ul>
+        <li><a href="#高级-liveness-探针示例">高级 liveness 探针示例</a></li>
+        <li><a href="#状态示例">状态示例</a></li>
+      </ul>
+    </li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+
+      
+<div class="subscribe-module col-12">
+    <img src="/img/wechat.webp" alt="image" title="Jimmy Song的微信公众号"/>
+    <p class="text-center">关注「几米宋」个人微信公众号，获取本站更新</p>
+</div>
+
+
+
+    </div>
+    
+
+    <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 docs-content" role="main">
+
+      <article class="article">
+
+        <div class="docs-article-container">
+          
+            
+  <nav class="d-none d-md-flex" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+
+    <li class="breadcrumb-item">
+      <a href="/">
+        
+          首页
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/kubernetes-handbook/">
+        
+          Kubernetes 基础教程
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/kubernetes-handbook/concepts/">
+        
+          概念原理
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/kubernetes-handbook/concepts/architecture/">
+        
+          Kubernetes 架构
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/kubernetes-handbook/concepts/architecture/objects/">
+        
+          Kubernetes 中的资源对象
+        
+      </a>
+    </li>
+  
+
+      <li class="breadcrumb-item active" aria-current="page">
+        Pod 的生命周期
+      </li>
+    </ol>
+  </nav>
+
+
+
+
+          
+
+          <h1>Pod 的生命周期</h1>
+
+          <div class="article-style">
+            <p>本文讲解的是 Kubernetes  中 Pod 的生命周期，包括生命周期的不同阶段、存活和就绪探针、重启策略等。</p>
+<h2 id="pod-phase">Pod phase</h2>
+<p>Pod 的 <code>status</code> 字段是一个 PodStatus 对象，PodStatus中有一个 <code>phase</code> 字段。</p>
+<p>Pod 的相位（phase）是 Pod 在其生命周期中的简单宏观概述。该字段并不是对容器或 Pod 的综合汇总，也不是为了做为综合状态机。</p>
+<p>Pod 相位的数量和含义是严格指定的。除了本文档中列举的状态外，不应该再假定 Pod 有其他的 <code>phase</code> 值。</p>
+<p>下面是 <code>phase</code> 可能的值：</p>
+<ul>
+<li>挂起（Pending）：Pod 已被 Kubernetes 系统接受，但有一个或者多个容器镜像尚未创建。等待时间包括调度 Pod 的时间和通过网络下载镜像的时间，这可能需要花点时间。</li>
+<li>运行中（Running）：该 Pod 已经绑定到了一个节点上，Pod 中所有的容器都已被创建。至少有一个容器正在运行，或者正处于启动或重启状态。</li>
+<li>成功（Succeeded）：Pod 中的所有容器都被成功终止，并且不会再重启。</li>
+<li>失败（Failed）：Pod 中的所有容器都已终止了，并且至少有一个容器是因为失败终止。也就是说，容器以非0状态退出或者被系统终止。</li>
+<li>未知（Unknown）：因为某些原因无法取得 Pod 的状态，通常是因为与 Pod 所在主机通信失败。</li>
+</ul>
+<p>下图是Pod的生命周期示意图，从图中可以看到Pod状态的变化。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-pod的生命周期示意图图片来自网络">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img src="../../../../images/kubernetes-pod-life-cycle.jpg" alt="Pod 的生命周期示意图（图片来自网络）" loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      Pod的生命周期示意图（图片来自网络）
+    </figcaption></figure>
+</p>
+<h2 id="pod-状态">Pod 状态</h2>
+<p>Pod 有一个 PodStatus 对象，其中包含一个 PodCondition 数组。 PodCondition 数组的每个元素都有一个 <code>type</code> 字段和一个 <code>status</code> 字段。<code>type</code> 字段是字符串，可能的值有 PodScheduled、Ready、Initialized、Unschedulable和ContainersReady。<code>status</code> 字段是一个字符串，可能的值有 True、False 和 Unknown。</p>
+<h2 id="容器探针">容器探针</h2>
+<p>探针是由 <a href="https://kubernetes.io/docs/admin/kubelet/" target="_blank" rel="noopener">kubelet</a> 对容器执行的定期诊断。要执行诊断，kubelet 调用由容器实现的 <a href="https://godoc.org/k8s.io/kubernetes/pkg/api/v1#Handler" target="_blank" rel="noopener">Handler</a>。有三种类型的处理程序：</p>
+<ul>
+<li>ExecAction：在容器内执行指定命令。如果命令退出时返回码为 0 则认为诊断成功。</li>
+<li>TCPSocketAction：对指定端口上的容器的 IP 地址进行 TCP 检查。如果端口打开，则诊断被认为是成功的。</li>
+<li>HTTPGetAction：对指定的端口和路径上的容器的 IP 地址执行 HTTP Get 请求。如果响应的状态码大于等于200 且小于 400，则诊断被认为是成功的。</li>
+</ul>
+<p>每次探测都将获得以下三种结果之一：</p>
+<ul>
+<li>成功：容器通过了诊断。</li>
+<li>失败：容器未通过诊断。</li>
+<li>未知：诊断失败，因此不会采取任何行动。</li>
+</ul>
+<p>Kubelet 可以选择是否执行在容器上运行的两种探针执行和做出反应：</p>
+<ul>
+<li><code>livenessProbe</code>：指示容器是否正在运行。如果存活探测失败，则 kubelet 会杀死容器，并且容器将受到其 <a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy" target="_blank" rel="noopener">重启策略</a> 的影响。如果容器不提供存活探针，则默认状态为 <code>Success</code>。</li>
+<li><code>readinessProbe</code>：指示容器是否准备好服务请求。如果就绪探测失败，端点控制器将从与 Pod 匹配的所有 Service 的端点中删除该 Pod 的 IP 地址。初始延迟之前的就绪状态默认为 <code>Failure</code>。如果容器不提供就绪探针，则默认状态为 <code>Success</code>。</li>
+</ul>
+<h3 id="该什么时候使用存活liveness和就绪readiness探针">该什么时候使用存活（liveness）和就绪（readiness）探针?</h3>
+<p>如果容器中的进程能够在遇到问题或不健康的情况下自行崩溃，则不一定需要存活探针; kubelet 将根据 Pod 的<code>restartPolicy</code> 自动执行正确的操作。</p>
+<p>如果您希望容器在探测失败时被杀死并重新启动，那么请指定一个存活探针，并指定<code>restartPolicy</code> 为 Always 或 OnFailure。</p>
+<p>如果要仅在探测成功时才开始向 Pod 发送流量，请指定就绪探针。在这种情况下，就绪探针可能与存活探针相同，但是 spec 中的就绪探针的存在意味着 Pod 将在没有接收到任何流量的情况下启动，并且只有在探针探测成功后才开始接收流量。</p>
+<p>如果您希望容器能够自行维护，您可以指定一个就绪探针，该探针检查与存活探针不同的端点。</p>
+<p>请注意，如果您只想在 Pod 被删除时能够排除请求，则不一定需要使用就绪探针；在删除 Pod 时，Pod 会自动将自身置于未完成状态，无论就绪探针是否存在。当等待 Pod 中的容器停止时，Pod 仍处于未完成状态。</p>
+<h3 id="readinessgates">readinessGates</h3>
+<p>自 Kubernetes 1.14（该版本 <code>readinessGates</code> GA，在1.11 版本是为 alpha）起默认支持 Pod 就绪检测机制扩展。</p>
+<p>应用程序可以向 PodStatus 注入额外的反馈或信号：Pod readiness。要使用这个功能，请在 PodSpec 中设置 <code>readinessGates</code> 来指定 kubelet 评估 Pod readiness 的附加条件列表。</p>
+<p>Readiness gates 由 Pod 的 <code>status.condition</code> 字段的当前状态决定。如果 Kubernetes 在 Pod 的 <code>status.conditions</code> 字段中找不到这样的条件，则该条件的状态默认为 &ldquo;False&rdquo;。</p>
+<p>下面是一个例子。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Pod</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">readinessGates</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">conditionType</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;www.example.com/feature-1&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">status</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">conditions</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">Ready                             </span><span class="w"> </span><span class="c"># 内置的 Pod 状态</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">status</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;False&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">lastProbeTime</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">lastTransitionTime</span><span class="p">:</span><span class="w"> </span><span class="ld">2018-01-01T00:00:00Z</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;www.example.com/feature-1&#34;</span><span class="w">        </span><span class="c"># 附加的额外的 Pod 状态</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">status</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;False&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">lastProbeTime</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">lastTransitionTime</span><span class="p">:</span><span class="w"> </span><span class="ld">2018-01-01T00:00:00Z</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">containerStatuses</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">containerID</span><span class="p">:</span><span class="w"> </span><span class="l">docker://abcd...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">ready</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">...</span><span class="w">
+</span></span></span></code></pre></div><p>您添加的 Pod 条件的名称必须符合 Kubernetes 的 <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set" target="_blank" rel="noopener">label key 格式</a>。</p>
+<p>只有到 Pod 中的所有容器状态都是 Ready，且 Pod 附加的额外状态检测的 <code>readinessGates</code> 条件也是 Ready 的时候，Pod 的状态才是 Ready。</p>
+<h2 id="pod-和容器状态">Pod 和容器状态</h2>
+<p>有关 Pod 容器状态的详细信息，请参阅 PodStatus 和 ContainerStatus。请注意，报告的 Pod 状态信息取决于当前的 ContainerState。</p>
+<h2 id="重启策略">重启策略</h2>
+<p>PodSpec 中有一个 <code>restartPolicy</code> 字段，可能的值为 Always、OnFailure 和 Never。默认为 Always。 <code>restartPolicy</code> 适用于 Pod 中的所有容器。<code>restartPolicy</code> 仅指通过同一节点上的 kubelet 重新启动容器。失败的容器由 kubelet 以五分钟为上限的指数退避延迟（10秒，20秒，40秒&hellip;）重新启动，并在成功执行十分钟后重置。如 <a href="https://kubernetes.io/docs/user-guide/pods/#durability-of-pods-or-lack-thereof" target="_blank" rel="noopener">Pod 文档</a> 中所述，一旦绑定到一个节点，Pod 将永远不会重新绑定到另一个节点。</p>
+<h2 id="pod-的生命">Pod 的生命</h2>
+<p>一般来说，Pod 不会消失，直到人为销毁他们。这可能是一个人或控制器。这个规则的唯一例外是成功或失败的 <code>phase</code> 超过一段时间（由 master 确定）的Pod将过期并被自动销毁。</p>
+<p>有三种可用的控制器：</p>
+<ul>
+<li>
+<p>使用 <a href="https://kubernetes.io/docs/concepts/jobs/run-to-completion-finite-workloads/" target="_blank" rel="noopener">Job</a> 运行预期会终止的 Pod，例如批量计算。Job 仅适用于重启策略为 <code>OnFailure</code> 或 <code>Never</code> 的 Pod。</p>
+</li>
+<li>
+<p>对预期不会终止的 Pod 使用 <a href="https://kubernetes.io/docs/concepts/workloads/controllers/replicationcontroller/" target="_blank" rel="noopener">ReplicationController</a>、<a href="https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/" target="_blank" rel="noopener">ReplicaSet</a> 和 <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/" target="_blank" rel="noopener">Deployment</a> ，例如 Web 服务器。 ReplicationController 仅适用于具有 <code>restartPolicy</code> 为 Always 的 Pod。</p>
+</li>
+<li>
+<p>提供特定于机器的系统服务，使用 <a href="https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/" target="_blank" rel="noopener">DaemonSet</a> 为每台机器运行一个 Pod 。</p>
+</li>
+</ul>
+<p>所有这三种类型的控制器都包含一个 PodTemplate。建议创建适当的控制器，让它们来创建 Pod，而不是直接自己创建 Pod。这是因为单独的 Pod 在机器故障的情况下没有办法自动复原，而控制器却可以。</p>
+<p>如果节点死亡或与集群的其余部分断开连接，则 Kubernetes 将应用一个策略将丢失节点上的所有 Pod 的 <code>phase</code> 设置为 Failed。</p>
+<h2 id="示例">示例</h2>
+<h3 id="高级-liveness-探针示例">高级 liveness 探针示例</h3>
+<p>存活探针由 kubelet 来执行，因此所有的请求都在 kubelet 的网络命名空间中进行。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Pod</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">test</span><span class="p">:</span><span class="w"> </span><span class="l">liveness</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">liveness-http</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">args</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="l">/server</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">k8s.gcr.io/liveness</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">livenessProbe</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">httpGet</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c"># when &#34;host&#34; is not defined, &#34;PodIP&#34; will be used</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c"># host: my-host</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c"># when &#34;scheme&#34; is not defined, &#34;HTTP&#34; scheme will be used. Only &#34;HTTP&#34; and &#34;HTTPS&#34; are allowed</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c"># scheme: HTTPS</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l">/healthz</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">httpHeaders</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">X-Custom-Header</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l">Awesome</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">initialDelaySeconds</span><span class="p">:</span><span class="w"> </span><span class="m">15</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">timeoutSeconds</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">liveness</span><span class="w">
+</span></span></span></code></pre></div><h3 id="状态示例">状态示例</h3>
+<ul>
+<li>Pod 中只有一个容器并且正在运行。容器成功退出。
+<ul>
+<li>记录完成事件。</li>
+<li>如果 <code>restartPolicy</code> 为：
+<ul>
+<li>Always：重启容器；Pod <code>phase</code> 仍为 Running。</li>
+<li>OnFailure：Pod <code>phase</code> 变成 Succeeded。</li>
+<li>Never：Pod <code>phase</code> 变成 Succeeded。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Pod 中只有一个容器并且正在运行。容器退出失败。
+<ul>
+<li>记录失败事件。</li>
+<li>如果 <code>restartPolicy</code> 为：
+<ul>
+<li>Always：重启容器；Pod <code>phase</code> 仍为 Running。</li>
+<li>OnFailure：重启容器；Pod <code>phase</code> 仍为 Running。</li>
+<li>Never：Pod <code>phase</code> 变成 Failed。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Pod 中有两个容器并且正在运行。容器1退出失败。
+<ul>
+<li>
+<p>记录失败事件。</p>
+</li>
+<li>
+<p>如果 restartPolicy 为：</p>
+<ul>
+<li>Always：重启容器；Pod <code>phase</code> 仍为 Running。</li>
+<li>OnFailure：重启容器；Pod <code>phase</code> 仍为 Running。</li>
+<li>Never：不重启容器；Pod <code>phase</code> 仍为 Running。</li>
+</ul>
+</li>
+<li>
+<p>如果有容器1没有处于运行状态，并且容器2退出：</p>
+<ul>
+<li>记录失败事件。</li>
+<li>如果 <code>restartPolicy</code> 为：
+<ul>
+<li>Always：重启容器；Pod <code>phase</code> 仍为 Running。</li>
+<li>OnFailure：重启容器；Pod <code>phase</code> 仍为 Running。</li>
+<li>Never：Pod <code>phase</code> 变成 Failed。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Pod 中只有一个容器并处于运行状态。容器运行时内存超出限制：
+<ul>
+<li>容器以失败状态终止。</li>
+<li>记录 OOM 事件。</li>
+<li>如果 <code>restartPolicy</code> 为：
+<ul>
+<li>Always：重启容器；Pod <code>phase</code> 仍为 Running。</li>
+<li>OnFailure：重启容器；Pod <code>phase</code> 仍为 Running。</li>
+<li>Never: 记录失败事件；Pod <code>phase</code> 仍为 Failed。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Pod 正在运行，磁盘故障：
+<ul>
+<li>杀掉所有容器。</li>
+<li>记录适当事件。</li>
+<li>Pod <code>phase</code> 变成 Failed。</li>
+<li>如果使用控制器来运行，Pod 将在别处重建。</li>
+</ul>
+</li>
+<li>Pod 正在运行，其节点被分段。
+<ul>
+<li>节点控制器等待直到超时。</li>
+<li>节点控制器将 Pod <code>phase</code> 设置为 Failed。</li>
+<li>如果是用控制器来运行，Pod 将在别处重建。</li>
+</ul>
+</li>
+</ul>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/" target="_blank" rel="noopener">Pod lifecycle - kubernetes.io</a></li>
+</ul>
+
+          </div>
+
+          
+
+
+
+          
+          
+          <div class="article-widget">
+            
+<div class="container-xl">
+<div class="row post-nav">
+  
+  
+  
+  <div class="col-6 post-nav-item">
+    <div class="meta-nav">上一页</div>
+    <a href="/kubernetes-handbook/concepts/architecture/objects/pod-security-policy/" rel="next">Pod 安全策略</a>
+  </div>
+  
+  
+  
+  <div class="col-6 post-nav-item">
+    <div class="meta-nav">下一页</div>
+    <a href="/kubernetes-handbook/concepts/architecture/objects/pod-hook/" rel="prev">Pod Hook</a>
+  </div>
+  
+</div>
+</div>
+
+          </div>
+          
+        </div>
+
+        <div class="body-footer">
+          <p>最近更新于 2022-06-30</p>
+
+          
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/cloud-native-library//edit/master/content/kubernetes-handbook/concepts/architecture/objects/pod-lifecycle.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+          
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments" class="mb-3">
+    <script src="https://giscus.app/client.js"
+        data-repo="rootsongjc/cloud-native-library"
+        data-repo-id="MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg="
+        data-category="Announcements"
+        data-category-id="DIC_kwDODMrxWM4CPL7J"
+        data-mapping="pathname"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="light"
+        data-lang="zh-CN"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </section>
+  
+
+
+
+          
+
+
+        </div>
+
+      </article>
+
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2022 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+
+    </main>
+  </div>
+</div>
+
+  </div>
+
+  <div class="page-footer">
+    
+    
+  </div>
+
+      
+
+    
+    <script src="/js/vendor-bundle.min.53d67dc2cb1ebceb89d5e2aba2f86112.js"></script>
+
+    
+    
+    
+      
+
+      
+      
+
+      
+
+      
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+        
+        
+      
+
+    
+
+    
+    
+    
+
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+    <script>
+      anchors.add();
+    </script>
+    
+
+    
+    
+    
+      
+      <script id="search-hit-fuse-template" type="text/x-template">
+        <div class="search-hit" id="summary-{{key}}">
+          <div class="search-hit-content">
+            <div class="search-hit-name">
+              <a href="{{relpermalink}}">{{title}}</a>
+              <div class="article-metadata search-hit-type">{{type}}</div>
+              <p class="search-hit-description">{{snippet}}</p>
+            </div>
+          </div>
+        </div>
+      </script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+      
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+      
+      
+      
+      
+      
+      
+      
+    
+
+    
+
+    
+    
+    
+    <script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+      
+    
+    
+    <script src="/zh/js/wowchemy.min.d29a6fc876b457837294a96644b02d4f.js"></script>
+
+    
+    
+    
+    
+    
+    
+      
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <script src="/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script><script>
+    
+mybutton = document.getElementById("myBtn");
+
+
+window.onscroll = function() {scrollFunction()};
+
+function scrollFunction() {
+  if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+    mybutton.style.display = "block";
+  } else {
+    mybutton.style.display = "none";
+  }
+}
+
+
+function topFunction() {
+  document.body.scrollTop = 0; 
+  document.documentElement.scrollTop = 0; 
+}
+
+
+function ChangeContent(e){
+  var node = document.getElementById(e);
+        if (node.className.indexOf('fa-caret-down') > -1){
+                node.setAttribute("class", "fa-solid fa-caret-right");
+            }else{
+                node.setAttribute("class", "fa-solid fa-caret-down");
+                }
+    }
+</script>
+
+
+
+</body>
+</html>
