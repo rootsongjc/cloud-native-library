@@ -1,5 +1,5 @@
 ---
-weight: 4
+weight: 100
 title: 开发指南
 date: '2022-05-21T00:00:00+08:00'
 type: book

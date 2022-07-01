@@ -1,7 +1,7 @@
 ---
 widget: featured
 headless: true
-weight: 23
+weight: 31
 title: "精选图书"
 subtitle: "特别企划，日常更新中"
 content:
