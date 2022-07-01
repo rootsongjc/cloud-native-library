@@ -1,0 +1,1597 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="宋净超（Jimmy Song）" />
+
+  
+  
+  
+    
+  
+  <meta name="description" content="Linux 内核在网络堆栈中支持一组 BPF 钩子（hook），可用于运行 BPF 程序。Cilium 数据路径使用这些钩子来加载 BPF 程序，这些程序一起使用时会创建更高级别的网络结构。 以下是 Cilium 使用的钩子列表和简要说明。有关每个钩子" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://lib.jimmysong.io/cilium-handbook/ebpf/intro/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/css/wowchemy.fd757e55a5e23f8a6b3dd388c3c6062a.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MP490FS739"></script>
+
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', "G-MP490FS739");
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2a4b7f65b1839466beaa48d633aa60c1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://lib.jimmysong.io/cilium-handbook/ebpf/intro/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary_large_image" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://lib.jimmysong.io/cilium-handbook/ebpf/intro/" />
+  <meta property="og:title" content="eBPF 数据路径介绍 | 云原生资料库" />
+  <meta property="og:description" content="Linux 内核在网络堆栈中支持一组 BPF 钩子（hook），可用于运行 BPF 程序。Cilium 数据路径使用这些钩子来加载 BPF 程序，这些程序一起使用时会创建更高级别的网络结构。 以下是 Cilium 使用的钩子列表和简要说明。有关每个钩子" /><meta property="og:image" content="https://lib.jimmysong.io/media/sharing.png" />
+    <meta property="twitter:image" content="https://lib.jimmysong.io/media/sharing.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2022-06-17T12:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2022-07-01T14:59:02&#43;08:00">
+  
+
+  
+
+
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>eBPF 数据路径介绍 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="19ca8e733fcdcca3590daa50a7f1e49c" >
+  <button onclick="topFunction()" id="myBtn" title="Go to top"><i class="fa-solid fa-circle-up" aria-hidden="true"></i></button>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/js/wowchemy-init.min.14a0ed61c6dbd594b9c75193b25be179.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>搜索</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/">云原生资料库</a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/">云原生资料库</a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#books"><span>书目列表</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/translation"><span>译文</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/event"><span>活动</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#feed"><span>更新</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#tags"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>Jimmy Song</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://jimmysong.io" data-toggle="tooltip" data-placement="bottom" title="主页" target="_blank" rel="noopener" aria-label="主页">
+                <i class="fas fa-home" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+        
+
+        
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/rootsongjc/cloud-native-library/" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    
+
+
+
+
+<div class="container-fluid docs">
+  <div class="row flex-xl-nowrap">
+    <div class="col-12 col-md-3 col-xl-2 docs-sidebar">
+      <form class="docs-search d-flex align-items-center">
+  <button class="btn docs-toggle d-md-none p-0 mr-md-3 w-100" type="button" data-toggle="collapse" data-target="#docs-nav" aria-controls="docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    <div class="d-flex">
+      <span class="d-md-none pl-1 flex-grow-1 text-left overflow-hidden">
+        
+          eBPF 数据路径
+        
+      </span>
+      <span><i class="fas fa-chevron-down"></i></span>
+    </div>
+  </button>
+
+  
+  <button class="form-control sidebar-search js-search d-none d-md-flex">
+    <i class="fas fa-search pr-2"></i>
+    <span class="sidebar-search-text">搜索...</span>
+    <span class="sidebar-search-shortcut">/</span>
+  </button>
+  
+</form>
+
+<nav class="collapse docs-links" id="docs-nav">
+  
+  
+  
+  
+  
+  
+
+  
+  
+    
+
+    
+      
+
+      
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+      <ul class="nav docs-sidenav">
+          <li class="level "><a href="/cilium-handbook/"><i class="fas fa-book pr-1"></i>Cilium 中文指南</a></li>
+    
+      
+
+
+
+  <li class="child level "><a href="/cilium-handbook/intro/">Cilium 和 Hubble 简介</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/clustermesh/">多集群（集群网格）</a></li>
+
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level" aria-hidden="false" data-toggle="collapse" href="#idd422d4f9d6bdba6e50c9f25686c5c3a4" aria-expanded="false" aria-controls="idd422d4f9d6bdba6e50c9f25686c5c3a4"><i class="fa-solid fa-caret-right" id="caret-idd422d4f9d6bdba6e50c9f25686c5c3a4" onClick="Collapse(&#34;caret-idd422d4f9d6bdba6e50c9f25686c5c3a4&#34;)"></i></a>
+    
+    
+    <a class="d-inline docs-toc-link " href="/cilium-handbook/concepts/">Cilium 概念</a>
+    
+      
+      <ul class="nav docs-sidenav collapse  " id="idd422d4f9d6bdba6e50c9f25686c5c3a4">
+      
+
+
+
+  <li class="child level "><a href="/cilium-handbook/concepts/overview/">组件概览</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/concepts/terminology/">Cilium 术语说明</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/concepts/observability/">可观测性</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level1" aria-hidden="false" data-toggle="collapse" href="#id4d843e0beb4b67c7080796fa99a9e5df" aria-expanded="false" aria-controls="id4d843e0beb4b67c7080796fa99a9e5df"><i class="fa-solid fa-caret-right" id="caret-id4d843e0beb4b67c7080796fa99a9e5df" onClick="Collapse(&#34;caret-id4d843e0beb4b67c7080796fa99a9e5df&#34;)"></i></a>
+    
+    
+    <a class="d-inline docs-toc-link " href="/cilium-handbook/networking/">网络</a>
+    
+      
+      <ul class="nav docs-sidenav collapse  " id="id4d843e0beb4b67c7080796fa99a9e5df">
+      
+
+
+
+  <li class="child level "><a href="/cilium-handbook/networking/routing/">路由</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/networking/ipam/">IP 地址管理（IPAM）</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/networking/masquerading/">IP 地址伪装</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/networking/fragmentation/">IPv4 分片处理</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level" aria-hidden="false" data-toggle="collapse" href="#id39d64558a008c829843ba28d057db418" aria-expanded="false" aria-controls="id39d64558a008c829843ba28d057db418"><i class="fa-solid fa-caret-right" id="caret-id39d64558a008c829843ba28d057db418" onClick="Collapse(&#34;caret-id39d64558a008c829843ba28d057db418&#34;)"></i></a>
+    
+    
+    <a class="d-inline docs-toc-link " href="/cilium-handbook/security/">网络安全</a>
+    
+      
+      <ul class="nav docs-sidenav collapse  " id="id39d64558a008c829843ba28d057db418">
+      
+
+
+
+  <li class="child level "><a href="/cilium-handbook/security/intro/">介绍</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/security/identity/">基于身份</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/security/policyenforcement/">策略执行</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/security/proxy/">代理注入</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    
+    
+    
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level" aria-hidden="false" data-toggle="collapse" href="#iddca3c7608691072d6a5986e01bc4cbe6" aria-expanded="false" aria-controls="iddca3c7608691072d6a5986e01bc4cbe6"><i class="fa-solid fa-caret-down" id="caret-iddca3c7608691072d6a5986e01bc4cbe6" onClick="Collapse(&#34;caret-iddca3c7608691072d6a5986e01bc4cbe6&#34;)"></i></a>
+    
+    
+    <a class="d-inline docs-toc-link " href="/cilium-handbook/ebpf/">eBPF 数据路径</a>
+    
+      
+      <ul class="nav docs-sidenav collapse  show " id="iddca3c7608691072d6a5986e01bc4cbe6">
+      
+
+
+
+  <li class="child level active"><a href="/cilium-handbook/ebpf/intro/">介绍</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/ebpf/lifeofapacket/">数据包流程</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/ebpf/maps/">eBPF Map</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/ebpf/iptables/">Iptables 用法</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level" aria-hidden="false" data-toggle="collapse" href="#id3b3bff2af63cbbce04ec275687a413aa" aria-expanded="false" aria-controls="id3b3bff2af63cbbce04ec275687a413aa"><i class="fa-solid fa-caret-right" id="caret-id3b3bff2af63cbbce04ec275687a413aa" onClick="Collapse(&#34;caret-id3b3bff2af63cbbce04ec275687a413aa&#34;)"></i></a>
+    
+    
+    <a class="d-inline docs-toc-link " href="/cilium-handbook/policy/">网络策略</a>
+    
+      
+      <ul class="nav docs-sidenav collapse  " id="id3b3bff2af63cbbce04ec275687a413aa">
+      
+
+
+
+  <li class="child level "><a href="/cilium-handbook/policy/intro/">网络策略模式</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/policy/visibility/">七层可视性</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/policy/lifecycle/">端点生命周期</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/policy/troubleshooting/">故障排除</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/policy/kubernetes/">Kubernetes 网络策略</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+
+
+
+  
+    
+    
+    
+    
+      
+    
+    
+
+    
+    
+    
+    <div class="docs-toc-item has-child">
+    
+    
+    <a class="nav-toogle parent d-inline level" aria-hidden="false" data-toggle="collapse" href="#idf6ad695a1148fc908b065989a04de492" aria-expanded="false" aria-controls="idf6ad695a1148fc908b065989a04de492"><i class="fa-solid fa-caret-right" id="caret-idf6ad695a1148fc908b065989a04de492" onClick="Collapse(&#34;caret-idf6ad695a1148fc908b065989a04de492&#34;)"></i></a>
+    
+    
+    <a class="d-inline docs-toc-link " href="/cilium-handbook/kubernetes/">Kubernetes 集成</a>
+    
+      
+      <ul class="nav docs-sidenav collapse  " id="idf6ad695a1148fc908b065989a04de492">
+      
+
+
+
+  <li class="child level "><a href="/cilium-handbook/kubernetes/intro/">介绍</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/kubernetes/concepts/">概念</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/kubernetes/requirements/">要求</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/kubernetes/policy/">网络策略</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/kubernetes/ciliumendpoint/">端点 CRD</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/kubernetes/ciliumendpointslice/">端点切片 CRD</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/kubernetes/compatibility/">Kubernetes 兼容性</a></li>
+
+
+
+
+  <li class="child level "><a href="/cilium-handbook/kubernetes/troubleshooting/">故障排除</a></li>
+
+      
+        </ul>
+      
+    
+
+    
+      </div>
+    
+
+      
+    
+
+    
+      </ul>
+    
+
+  
+</nav>
+
+    </div>
+
+    
+    
+    <div class="d-none d-xl-block col-xl-2 docs-toc">
+      
+     
+
+      <nav id="TableOfContents"></nav>
+
+      
+<div class="subscribe-module col-12">
+    <img src="/img/wechat.webp" alt="image" title="Jimmy Song的微信公众号"/>
+    <p class="text-center">关注「几米宋」个人微信公众号，获取本站更新</p>
+</div>
+
+
+
+    </div>
+    
+
+    <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 docs-content" role="main">
+
+      <article class="article">
+
+        <div class="docs-article-container">
+          
+            
+  <nav class="d-none d-md-flex" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      
+  
+    
+  
+    
+  
+    
+  
+
+    <li class="breadcrumb-item">
+      <a href="/">
+        
+          首页
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/cilium-handbook/">
+        
+          Cilium 中文指南
+        
+      </a>
+    </li>
+  
+
+    <li class="breadcrumb-item">
+      <a href="/cilium-handbook/ebpf/">
+        
+          eBPF 数据路径
+        
+      </a>
+    </li>
+  
+
+      <li class="breadcrumb-item active" aria-current="page">
+        介绍
+      </li>
+    </ol>
+  </nav>
+
+
+
+
+          
+
+          <h1>eBPF 数据路径介绍</h1>
+
+          <div class="article-style">
+            <p>Linux 内核在网络堆栈中支持一组 BPF 钩子（hook），可用于运行 BPF 程序。Cilium 数据路径使用这些钩子来加载 BPF 程序，这些程序一起使用时会创建更高级别的网络结构。</p>
+<p>以下是 Cilium 使用的钩子列表和简要说明。有关每个钩子细节的更详尽的文档，请参阅 <a href="https://docs.cilium.io/en/stable/bpf/#bpf-guide" target="_blank" rel="noopener">BPF 和 XDP 参考指南</a>。</p>
+<ul>
+<li>
+<p><strong>XDP</strong>：XDP BPF 钩子位于网络驱动程序中的最早可能点，并在数据包接收时触发 BPF 程序的运行。这实现了可能的最佳数据包处理性能，因为程序在任何其他处理发生之前直接在数据包数据上运行。此钩子非常适合运行丢弃恶意或意外流量的过滤程序以及其他常见的 DDOS 保护机制。</p>
+</li>
+<li>
+<p><strong>流量控制入口/出口</strong>：附加到流量控制（traffic control，简称 TC）入口钩子的 BPF 程序附加到网络接口，与 XDP 相同，但将在网络堆栈完成数据包的初始处理后运行。该钩子在三层网络之前运行，但可以访问与数据包关联的大部分元数据。这非常适合进行本地节点处理，例如应用三层/四层端点策略并将流量重定向到端点。对于面向网络的设备，TC 入口钩子可以与上面的 XDP 钩子耦合。完成此操作后，可以合理地假设此时的大部分流量是合法的并以主机为目的地。</p>
+<p>容器通常使用称为 veth 对的虚拟设备，它充当将容器连接到主机的虚拟路由。通过附加到这个 veth 对的主机端的 TC 入口钩子，Cilium 可以监控和执行所有离开容器的流量的策略。通过将 BPF 程序附加到与每个容器关联的 veth 对，并将所有网络流量路由到主机端虚拟设备，同时将另一个 BPF 程序附加到 TC 入口钩子，Cilium 可以监控所有进入或离开节点的流量并执行策略.</p>
+</li>
+<li>
+<p><strong>套接字操作</strong>：套接字操作钩子附加到特定的 cgroup 并在 TCP 事件上运行。Cilium 将 BPF 套接字操作程序附加到根 cgroup 并使用它来监视 TCP 状态转换，特别是 ESTABLISHED 状态转换。如果 TCP 套接字具有节点本地对等节点（可能是本地代理），则当套接字转换为 ESTABLISHED 状态时，附加套接字发送 / 接收程序。</p>
+</li>
+<li>
+<p><strong>套接字发送/接收</strong>：套接字发送/接收钩子（socket send/recv hook）在 TCP 套接字执行的每个发送操作上运行。此时，钩子可以检查消息并丢弃消息、将消息发送到 TCP 层或将消息重定向到另一个套接字。Cilium 使用它来加速数据路径重定向，如下所述。</p>
+</li>
+</ul>
+<p>将上述钩子与虚拟接口（<code>cilium_host</code>、<code>cilium_net</code>）、可选的 overlay 接口（<code>cilium_vxlan</code>）、Linux 内核加密支持和用户空间代理（Envoy）相结合，Cilium 创建了以下网络对象。</p>
+<ul>
+<li>
+<p><strong>前置过滤器（Prefilter）</strong>：前置过滤器对象运行一个 XDP 程序并提供一组前置过滤器规则，用于过滤来自网络的流量以获得最佳性能。具体来说，数据包要么被丢弃，例如当目标不是有效的端点时，要么被堆栈处理。这可以根据需要轻松扩展以构建新的前置过滤器标准/功能。</p>
+</li>
+<li>
+<p><strong>端点策略</strong>：端点策略对象实现 Cilium 端点强制。使用映射来查找与身份和策略相关的数据包，该层可以很好地扩展到许多端点。根据策略，该层可能会丢弃数据包、转发到本地端点、转发到服务对象或转发到七层策略对象以获取进一步的七层规则。这是 Cilium 数据路径中的主要对象，负责将数据包映射到身份并执行三层和四层策略。</p>
+</li>
+<li>
+<p><strong>服务</strong>：服务对象对对象接收的每个数据包的目标 IP 和可选的目标端口执行映射查找。如果找到匹配条目，数据包将被转发到配置的三层/四层端点之一。Service 块可用于使用 TC 入口钩子在任何接口上实现独立的负载均衡器，或者可以集成到端点策略对象中。</p>
+</li>
+<li>
+<p><strong>三层加密</strong>：在入口时，三层加密对象标记要解密的数据包，将数据包传递给 Linux xfrm（转换）层进行解密，数据包解密后对象接收数据包，然后将其向上传递到堆栈以供其他人进一步处理对象。根据模式、直接路由或覆盖，这可能是 BPF 尾调用或将数据包传递给下一个对象的 Linux 路由堆栈。解密所需的密钥在 IPsec 标头中编码，因此在入口处我们不需要进行映射查找来查找解密密钥。</p>
+<p>在出口处，首先使用目标 IP 执行映射查找以确定数据包是否应加密，如果加密，则目标节点上可用的密钥。选择两个节点上可用的最新密钥，并将数据包标记为加密。然后将数据包传递到对其进行加密的 Linux xfrm 层。在接收到现在加密的数据包后，通过将其发送到 Linux 堆栈进行路由或在使用覆盖时进行直接尾调用，将其传递到下一层。</p>
+</li>
+<li>
+<p><strong>套接字层强制</strong>：套接字层强制使用两个钩子，套接字操作钩子和套接字发送/接收钩子来监视和附加到与 Cilium 托管端点关联的所有 TCP 套接字，包括任何 七层代理。套接字操作钩子将识别用于加速的候选套接字。这些包括所有本地节点连接（端点到端点）和任何到 Cilium 代理的连接。然后，这些已识别的连接将由套接字发送/接收钩子处理所有消息，并将使用 <code>sockmap</code> 快速重定向加速。快速重定向确保 Cilium 中实现的所有策略对关联的套接字 / 端点映射有效，并假设它们直接将消息发送到对等套接字。这是允许的，因为 <code>sockmap</code> <code>send/recv</code> 钩子确保消息不需要由上述任何对象处理。</p>
+</li>
+<li>
+<p><strong>七层策略</strong>：七层策略对象将代理流量重定向到 Cilium 用户空间代理实例。Cilium 使用 Envoy 实例作为其用户空间代理。然后，Envoy 将根据配置的七层策略转发流量或生成适当的拒绝消息。</p>
+</li>
+</ul>
+<p>这些组件相互连接，以创建 Cilium 使用的灵活高效的数据路径。下面我们展示了连接单个节点上的端点、入口到端点以及端点到出口网络设备的以下可能流程。在每种情况下，都有一个附加图表显示启用套接字层强制时可用的 TCP 加速路径。</p>
+
+          </div>
+
+          
+
+
+
+          
+          
+          <div class="article-widget">
+            
+<div class="container-xl">
+<div class="row post-nav">
+  
+  
+  
+  <div class="col-6 post-nav-item">
+    <div class="meta-nav">下一页</div>
+    <a href="/cilium-handbook/ebpf/lifeofapacket/" rel="prev">数据包流程</a>
+  </div>
+  
+</div>
+</div>
+
+          </div>
+          
+        </div>
+
+        <div class="body-footer">
+          <p>最近更新于 2022-07-01</p>
+
+          
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/cloud-native-library//edit/master/content/cilium-handbook/ebpf/intro.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+          
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments" class="mb-3">
+    <script src="https://giscus.app/client.js"
+        data-repo="rootsongjc/cloud-native-library"
+        data-repo-id="MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg="
+        data-category="Announcements"
+        data-category-id="DIC_kwDODMrxWM4CPL7J"
+        data-mapping="pathname"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="light"
+        data-lang="zh-CN"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </section>
+  
+
+
+
+          
+
+
+        </div>
+
+      </article>
+
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2022 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+
+    </main>
+  </div>
+</div>
+
+  </div>
+
+  <div class="page-footer">
+    
+    
+  </div>
+
+      
+
+    
+    <script src="/js/vendor-bundle.min.53d67dc2cb1ebceb89d5e2aba2f86112.js"></script>
+
+    
+    
+    
+      
+
+      
+      
+
+      
+
+      
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+        
+        
+      
+
+    
+
+    
+    
+    
+
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+    <script>
+      anchors.add();
+    </script>
+    
+
+    
+    
+    
+      
+      <script id="search-hit-fuse-template" type="text/x-template">
+        <div class="search-hit" id="summary-{{key}}">
+          <div class="search-hit-content">
+            <div class="search-hit-name">
+              <a href="{{relpermalink}}">{{title}}</a>
+              <div class="article-metadata search-hit-type">{{type}}</div>
+              <p class="search-hit-description">{{snippet}}</p>
+            </div>
+          </div>
+        </div>
+      </script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+      
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+      
+      
+      
+      
+      
+      
+      
+    
+
+    
+
+    
+    
+    
+    <script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+      
+    
+    
+    <script src="/zh/js/wowchemy.min.d29a6fc876b457837294a96644b02d4f.js"></script>
+
+    
+    
+    
+    
+    
+    
+      
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <script src="/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script><script>
+    
+mybutton = document.getElementById("myBtn");
+
+
+window.onscroll = function() {scrollFunction()};
+
+function scrollFunction() {
+  if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+    mybutton.style.display = "block";
+  } else {
+    mybutton.style.display = "none";
+  }
+}
+
+
+function topFunction() {
+  document.body.scrollTop = 0; 
+  document.documentElement.scrollTop = 0; 
+}
+
+
+function Collapse(e){
+  var node = document.getElementById(e);
+        if (node.className.indexOf('fa-caret-down') > -1){
+                node.setAttribute("class", "fa-solid fa-caret-right");
+            }else{
+                node.setAttribute("class", "fa-solid fa-caret-down");
+                }
+    }
+</script>
+
+
+
+</body>
+</html>

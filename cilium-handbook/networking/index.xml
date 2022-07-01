@@ -1,0 +1,637 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>网络 | 云原生资料库</title>
+    <link>https://lib.jimmysong.io/cilium-handbook/networking/</link>
+      <atom:link href="https://lib.jimmysong.io/cilium-handbook/networking/index.xml" rel="self" type="application/rss+xml" />
+    <description>网络</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Fri, 17 Jun 2022 12:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://lib.jimmysong.io/media/sharing.png</url>
+      <title>网络</title>
+      <link>https://lib.jimmysong.io/cilium-handbook/networking/</link>
+    </image>
+    
+    <item>
+      <title>路由</title>
+      <link>https://lib.jimmysong.io/cilium-handbook/networking/routing/</link>
+      <pubDate>Fri, 17 Jun 2022 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/cilium-handbook/networking/routing/</guid>
+      <description>&lt;h2 id=&#34;封装&#34;&gt;封装&lt;/h2&gt;
+&lt;p&gt;当没有提供配置时，Cilium 会自动在此模式下运行，因为它是对底层网络基础设施要求最低的模式。&lt;/p&gt;
+&lt;p&gt;在这种模式下，所有集群节点使用基于 UDP 的封装协议  &lt;a href=&#34;https://docs.cilium.io/en/stable/glossary/#term-vxlan&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;VXLAN&lt;/code&gt;&lt;/a&gt; 或  &lt;a href=&#34;https://docs.cilium.io/en/stable/glossary/#term-geneve&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;Geneve&lt;/code&gt;&lt;/a&gt;。Cilium 节点之间的所有流量都被封装。&lt;/p&gt;
+&lt;h3 id=&#34;对网络的要求&#34;&gt;对网络的要求&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;封装依赖于正常的节点到节点的连接。这意味着如果 Cilium 节点已经可以互相到达，那么所有的路由要求都已经满足了。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;底层网络和防火墙必须允许封装数据包：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;封装方式&lt;/th&gt;
+&lt;th&gt;端口范围 / 协议&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;VXLAN（默认）&lt;/td&gt;
+&lt;td&gt;8472/UDP&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Geneve&lt;/td&gt;
+&lt;td&gt;6081/UDP&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;封装模式的优点&#34;&gt;封装模式的优点&lt;/h3&gt;
+&lt;p&gt;封装模式具有以下优点：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;简单&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;连接集群节点的网络不需要知道 PodCIDR。集群节点可以产生多个路由或链路层域。只要集群节点可以使用 IP/UDP 相互访问，底层网络的拓扑就无关紧要。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;寻址空间&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;由于不依赖于任何底层网络限制，如果相应地配置了 PodCIDR 大小，可用的寻址空间可能会更大，并且允许每个节点运行任意数量的 Pod。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;自动配置&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;当与 Kubernetes 等编排系统一起运行时，集群中所有节点的列表（包括它们关联的分配前缀节点）会自动提供给每个代理。加入集群的新节点将自动合并到网格中。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;身份上下文&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;封装协议允许将元数据与网络数据包一起携带。Cilium 利用这种能力来传输元数据，例如源安全身份。身份传输是一种优化，旨在避免在远程节点上进行一次身份查找。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;封装模式的缺点&#34;&gt;封装模式的缺点&lt;/h3&gt;
+&lt;p&gt;封装模式有以下缺点：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;MTU 开销&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;由于添加了封装标头，可用于有效负载的有效 MTU 低于本地路由（VXLAN 的每个网络数据包 50 字节）。这会导致特定网络连接的最大吞吐率较低。这可以通过启用巨型帧（每 1500 字节 50 字节的开销对比每 9000 字节的 50 字节开销）在很大程度上得到缓解。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;本地路由&#34;&gt;本地路由&lt;/h2&gt;
+&lt;p&gt;本地路由数据路径使用 &lt;code&gt;tunnel: disabled&lt;/code&gt; 启用并启用本机数据包转发模式。本地数据包转发模式利用 Cilium 运行的网络的路由功能，而不是执行封装。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-本地路由模式&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../native_routing.png&#34; alt=&#34;本地路由模式&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      本地路由模式
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;在本地路由模式下，Cilium 会将所有未发送到另一个本地端点的数据包委托给 Linux 内核的路由子系统。这意味着数据包将被路由，就好像本地进程会发出数据包一样。因此，连接集群节点的网络必须能够路由 PodCIDR。&lt;/p&gt;
+&lt;p&gt;当配置本地路由时，Cilium 会在 Linux 内核中自动启用 IP 转发。&lt;/p&gt;
+&lt;h3 id=&#34;对网络的要求-1&#34;&gt;对网络的要求&lt;/h3&gt;
+&lt;p&gt;为了运行本地路由模式，连接运行 Cilium 的主机的网络必须能够使用分配给 pod 或其他工作负载的地址转发 IP 流量。&lt;/p&gt;
+&lt;p&gt;节点上的 Linux 内核必须知道如何转发运行 Cilium 的所有节点的 pod 或其他工作负载的数据包。这可以通过两种方式实现：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;节点本身不知道如何路由所有 pod IP，但网络上存在一个知道如何到达所有其他 pod 的路由器。在这种情况下，Linux 节点配置为包含指向此类路由器的默认路由。该模型用于云提供商网络集成。&lt;/li&gt;
+&lt;li&gt;每个单独的节点都知道所有其他节点的所有 Pod IP，并且路由被插入到 Linux 内核路由表中来表示这一点。如果所有节点共享一个 L2 网络，则可以通过启用 &lt;code&gt;auto-direct-node-routes: true&lt;/code&gt; 选项来解决此问题。否则，必须运行额外的系统组件（例如 BGP 守护程序）来分发路由。请参阅 &lt;a href=&#34;https://docs.cilium.io/en/stable/gettingstarted/kube-router/#kube-router&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;使用 kube-router 运行 BGP&lt;/a&gt; 指南，了解如何使用 kube-router 项目实现此目的。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;配置&#34;&gt;配置&lt;/h3&gt;
+&lt;p&gt;必须设置以下配置选项以在本地路由模式下运行数据路径：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;tunnel: disabled&lt;/code&gt;：启用本机路由模式。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ipv4-native-routing-cidr: x.x.x.x/y&lt;/code&gt;：设置可以执行本机路由的 CIDR。&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>IP 地址管理（IPAM）</title>
+      <link>https://lib.jimmysong.io/cilium-handbook/networking/ipam/</link>
+      <pubDate>Fri, 17 Jun 2022 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/cilium-handbook/networking/ipam/</guid>
+      <description>&lt;p&gt;IP 地址管理（IPAM）负责分配和管理由 Cilium 管理的网络端点（容器和其他）使用的 IP 地址。Cilium 支持以下各种 IPAM 模式，以满足不同用户的需求。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;#cluster-scope&#34;&gt;集群范围（默认）&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#kubernetes-host-scope&#34;&gt;Kubernetes 主机范围&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.cilium.io/en/stable/concepts/networking/ipam/azure/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Azure IPAM&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.cilium.io/en/stable/concepts/networking/ipam/eni/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;AWS ENI&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.cilium.io/en/stable/concepts/networking/ipam/gke/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Google Kubernetes Engine&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#crd-backed&#34;&gt;CRD 支持&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;cluster-scope&#34;&gt;集群范围&lt;/h2&gt;
+&lt;p&gt;集群范围 IPAM 模式将 PodCIDR 分配给每个节点，并使用每个节点上的主机范围分配器分配 IP。因此它类似于 &lt;a href=&#34;#kubernetes-host-scope&#34;&gt;Kubernetes 主机范围&lt;/a&gt;模式。区别在于 Kubernetes 不是通过 Kubernetes &lt;code&gt;v1.Node&lt;/code&gt;资源分配每个节点的 PodCIDR，而是 Cilium Operator 通过 &lt;code&gt;v2.CiliumNode&lt;/code&gt; 资源管理每个节点的 PodCIDR。这种模式的优点是它不依赖于 Kubernetes 被配置为分发每个节点的 PodCIDR。&lt;/p&gt;
+&lt;h3 id=&#34;架构&#34;&gt;架构&lt;/h3&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-集群范围模式-ipam-架构图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;架构图&#34; srcset=&#34;
+               /cilium-handbook/networking/ipam/cluster_pool_hu18386816528823f1b8a1fc62c80b3645_30291_7f1cd93d2353f1cfded798e211a096f5.webp 400w,
+               /cilium-handbook/networking/ipam/cluster_pool_hu18386816528823f1b8a1fc62c80b3645_30291_7ba000e6b86605e7fd8d828fecd26d89.webp 760w,
+               /cilium-handbook/networking/ipam/cluster_pool_hu18386816528823f1b8a1fc62c80b3645_30291_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/cilium-handbook/networking/ipam/cluster_pool_hu18386816528823f1b8a1fc62c80b3645_30291_7f1cd93d2353f1cfded798e211a096f5.webp&#34;
+               width=&#34;714&#34;
+               height=&#34;175&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      集群范围模式 IPAM 架构图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;如果无法将 Kubernetes 配置为分发 PodCIDR 或需要更多控制，这将非常有用。&lt;/p&gt;
+&lt;p&gt;在这种模式下，Cilium 代理将在启动时等待，直到 &lt;code&gt;PodCIDRs&lt;/code&gt; 范围通过 Cilium 节点 &lt;code&gt;v2.CiliumNode&lt;/code&gt; 对象，通过 &lt;code&gt;v2.CiliumNode&lt;/code&gt; 中设置的资源字段为所有启用的地址族提供：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;字段&lt;/th&gt;
+&lt;th&gt;描述&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;Spec.IPAM.PodCIDRs&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;IPv4 和/或 IPv6 PodCIDR 范围&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;集群范围配置&#34;&gt;集群范围配置&lt;/h3&gt;
+&lt;p&gt;有关如何在 Cilium 中启用此模式的实用教程，请参阅 &lt;a href=&#34;https://docs.cilium.io/en/stable/gettingstarted/ipam-cluster-pool/#gsg-ipam-crd-cluster-pool&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;由 Cilium 集群池 IPAM 支持的 CRD&lt;/a&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;故障排除&#34;&gt;故障排除&lt;/h3&gt;
+&lt;h4 id=&#34;查找分配错误&#34;&gt;查找分配错误&lt;/h4&gt;
+&lt;p&gt;检查 &lt;code&gt;Error&lt;/code&gt; 字段中的 &lt;code&gt;Status.Operator&lt;/code&gt; 字段：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl get ciliumnodes -o &lt;span class=&#34;nv&#34;&gt;jsonpath&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;range .items&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;*&lt;span class=&#34;o&#34;&gt;]}{&lt;/span&gt;.metadata.name&lt;span class=&#34;o&#34;&gt;}{&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;\t&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;}{&lt;/span&gt;.status.operator.error&lt;span class=&#34;o&#34;&gt;}{&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;\n&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;}{&lt;/span&gt;end
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;kubernetes-host-scope&#34;&gt;Kubernetes 主机范围&lt;/h2&gt;
+&lt;p&gt;Kubernetes 主机范围 IPAM 模式启用 &lt;code&gt;ipam: kubernetes&lt;/code&gt; 并将地址分配委托给集群中的每个单独节点。Kubernetes 分配的 IP 超出了与每个节点关联的 &lt;code&gt;PodCIDR&lt;/code&gt; 范围。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-kubernetes-主机范围模式-ipam-架构图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;架构图&#34; srcset=&#34;
+               /cilium-handbook/networking/ipam/k8s_hostscope_hu36cc8012ddf91787d81ab43aea779584_99991_f1294b1400cd471b5b4b7bda05cd8f7d.webp 400w,
+               /cilium-handbook/networking/ipam/k8s_hostscope_hu36cc8012ddf91787d81ab43aea779584_99991_e72d557375f5f85dd8504ae4e77ba860.webp 760w,
+               /cilium-handbook/networking/ipam/k8s_hostscope_hu36cc8012ddf91787d81ab43aea779584_99991_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/cilium-handbook/networking/ipam/k8s_hostscope_hu36cc8012ddf91787d81ab43aea779584_99991_f1294b1400cd471b5b4b7bda05cd8f7d.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;232&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Kubernetes 主机范围模式 IPAM 架构图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;在这种模式下，Cilium 代理将在启动时等待，直到 &lt;code&gt;PodCIDR&lt;/code&gt; 范围通过 Kubernetes &lt;code&gt;v1.Node&lt;/code&gt; 对象通过以下方法之一为所有启用的地址家族提供：&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;通过 v1.Node 资源字段&lt;/strong&gt;&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;字段&lt;/th&gt;
+&lt;th&gt;描述&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;spec.podCIDRs&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;IPv4 和 / 或 IPv6 PodCIDR 范围&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;spec.podCIDR&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;IPv4 或 IPv6 PodCIDR 范围&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+  &lt;div class=&#34;alert-title&#34;&gt;
+      &lt;p&gt;提示&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    &lt;code&gt;kube-controller-manager&lt;/code&gt; 使用 &lt;code&gt;--allocate-node-cidrs&lt;/code&gt; 标志运行 &lt;code&gt;kube-controller-manager&lt;/code&gt; 以指示 Kubernetes  应该分配的 PodCIDR 范围。
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;通过 v1.Node 注释&lt;/strong&gt;&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;注解&lt;/th&gt;
+&lt;th&gt;描述&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;io.cilium.network.ipv4-pod-cidr&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;IPv4 PodCIDR 范围&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;io.cilium.network.ipv6-pod-cidr&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;IPv6 PodCIDR 范围&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;io.cilium.network.ipv4-cilium-host&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;cilium 主机接口的 IPv4 地址&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;io.cilium.network.ipv6-cilium-host&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;cilium 主机接口的 IPv6 地址&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;io.cilium.network.ipv4-health-ip&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;cilium-health 端点的 IPv4 地址&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;io.cilium.network.ipv6-health-ip&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;cilium-health 端点的 IPv6 地址&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+  &lt;div class=&#34;alert-title&#34;&gt;
+      &lt;p&gt;&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    基于注解的机制主要与旧的 Kubernetes 版本结合使用，这些版本尚不支持&lt;code&gt;spec.podCIDRs&lt;/code&gt;但同时支持 IPv4 和 IPv6。
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;h3 id=&#34;主机范围配置&#34;&gt;主机范围配置&lt;/h3&gt;
+&lt;p&gt;存在以下 ConfigMap 选项来配置 Kubernetes 主机范围：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;ipam: kubernetes&lt;/code&gt;：启用 Kubernetes IPAM 模式。启用此选项将自动启用&lt;code&gt;k8s-require-ipv4-pod-cidr&lt;/code&gt; 如何  &lt;code&gt;enable-ipv4&lt;/code&gt; 是 &lt;code&gt;true&lt;/code&gt; 和 &lt;code&gt;k8s-require-ipv6-pod-cidr&lt;/code&gt; 如何  &lt;code&gt;enable-ipv6&lt;/code&gt; 是  &lt;code&gt;true&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;k8s-require-ipv4-pod-cidr: true&lt;/code&gt;：指示 Cilium 代理等待，直到 IPv4 PodCIDR 通过 Kubernetes 节点资源可用。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;k8s-require-ipv6-pod-cidr: true&lt;/code&gt;：指示 Cilium 代理等待，直到 IPv6 PodCIDR 通过 Kubernetes 节点资源可用。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;使用 helm 之前的选项可以定义为：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;ipam: kubernetes&lt;/code&gt;：&lt;code&gt;--set ipam.mode=kubernetes&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;k8s-require-ipv4-pod-cidr: true&lt;/code&gt;：&lt;code&gt;--set k8s.requireIPv4PodCIDR=true&lt;/code&gt;， 仅适用于 &lt;code&gt;--set ipam.mode=kubernetes&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;k8s-require-ipv6-pod-cidr: true&lt;/code&gt;：&lt;code&gt;--set k8s.requireIPv6PodCIDR=true&lt;/code&gt;，仅适用于 &lt;code&gt;--set ipam.mode=kubernetes&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;crd-backed&#34;&gt;CRD 支持&lt;/h2&gt;
+&lt;p&gt;CRD 支持的 IPAM 模式提供了一个可扩展的接口，以通过 Kubernetes 自定义资源定义 (CRD) 控制 IP 地址管理。这允许将 IPAM 委托给外部运营商或使其用户可配置每个节点。&lt;/p&gt;
+&lt;h3 id=&#34;架构-1&#34;&gt;架构&lt;/h3&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;https://tva1.sinaimg.cn/large/e6c9d24ely1h3bbtsnex0j20lv06yaan.jpg&#34; alt=&#34;../../../../_images/crd_arch.png&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;启用此模式后，每个 Cilium 代理将开始监视 &lt;code&gt;ciliumnodes.cilium.io&lt;/code&gt;名称与运行代理的 Kubernetes 节点匹配的 Kubernetes 自定义资源。&lt;/p&gt;
+&lt;p&gt;每当更新自定义资源时，每个节点的分配池都会更新为 &lt;code&gt;spec.ipam.available&lt;/code&gt; 字段中列出的所有地址。移除当前分配的 IP 后，该 IP 将继续使用，但在释放后无法重新分配。&lt;/p&gt;
+&lt;p&gt;在分配池中分配 IP 后，将 IP 添加到  &lt;code&gt;status.ipam.inuse&lt;/code&gt; 字段中。&lt;/p&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+  &lt;div class=&#34;alert-title&#34;&gt;
+      &lt;p&gt;提示&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    节点状态更新被限制为最多每 15 秒运行一次。因此，如果同时调度多个 Pod，状态部分的更新可能会滞后。
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;h3 id=&#34;crd-支持配置&#34;&gt;CRD 支持配置&lt;/h3&gt;
+&lt;p&gt;通过在 &lt;code&gt;cilium-config&lt;/code&gt; ConfigMap 中设置 &lt;code&gt;ipam: crd&lt;/code&gt; 或指定选项 &lt;code&gt;--ipam=crd&lt;/code&gt;，可以启用 CRD 支持的 IPAM 模式。启用后，代理将等待与 Kubernetes 节点名称相匹配的 &lt;code&gt;CiliumNode&lt;/code&gt; 自定义资源变得可用，并且至少有一个 IP 地址被列为可用。当连接性健康检查被启用时，必须有至少两个 IP 地址可用。&lt;/p&gt;
+&lt;p&gt;在等待期间，代理将打印以下日志消息：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Waiting for initial IP to become available in &amp;#39;&amp;lt;node-name&amp;gt;&amp;#39; custom resource
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;有关如何使用 Cilium 启用 CRD IPAM 模式的实用教程，请参阅 &lt;a href=&#34;https://docs.cilium.io/en/stable/gettingstarted/ipam-crd/#gsg-ipam-crd&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CRD 支持的 IPAM&lt;/a&gt;部分。&lt;/p&gt;
+&lt;h3 id=&#34;权限&#34;&gt;权限&lt;/h3&gt;
+&lt;p&gt;为了使自定义资源发挥作用，需要以下额外权限。使用标准 Cilium 部署工件时会自动授予这些权限：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io/v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ClusterRole&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;cilium&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;rules&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiGroups&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;cilium.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resources&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;ciliumnodes&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;ciliumnodes/status&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;verbs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;s1&#34;&gt;&amp;#39;*&amp;#39;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;crd-定义&#34;&gt;CRD 定义&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;CilumNode&lt;/code&gt; 自定义资源以标准 Kubernetes 资源为模型，分为一个 &lt;code&gt;spec&lt;/code&gt; 和 &lt;code&gt;status&lt;/code&gt; 部分：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;CiliumNode&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;c1&#34;&gt;// Spec is the specification of the node
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;nx&#34;&gt;Spec&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;NodeSpec&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;`json:&amp;#34;spec&amp;#34;`&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;c1&#34;&gt;// Status it the status of the node
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;nx&#34;&gt;Status&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;NodeStatus&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;`json:&amp;#34;status&amp;#34;`&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;ipam-规范&#34;&gt;IPAM 规范&lt;/h3&gt;
+&lt;p&gt;该 &lt;code&gt;spec&lt;/code&gt; 部分嵌入了一个 IPAM 特定字段，该字段允许定义节点可用于分配的所有 IP 的列表：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// AllocationMap is a map of allocated IPs indexed by IP
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;AllocationMap&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;map&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;AllocationIP&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// NodeSpec is the configuration specific to a node
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;NodeSpec&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;c1&#34;&gt;// [...]
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;c1&#34;&gt;// IPAM is the address management specification. This section can be
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// populated by a user or it can be automatically populated by an IPAM
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// operator
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;//
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// +optional
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;nx&#34;&gt;IPAM&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;IPAMSpec&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;`json:&amp;#34;ipam,omitempty&amp;#34;`&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// IPAMSpec is the IPAM specification of the node
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;IPAMSpec&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;c1&#34;&gt;// Pool is the list of IPs available to the node for allocation. When
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// an IP is used, the IP will remain on this list but will be added to
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// Status.IPAM.InUse
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;//
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// +optional
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;nx&#34;&gt;Pool&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;AllocationMap&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;`json:&amp;#34;pool,omitempty&amp;#34;`&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// AllocationIP is an IP available for allocation or already allocated
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;AllocationIP&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;c1&#34;&gt;// Owner is the owner of the IP, this field is set if the IP has been
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// allocated. It will be set to the pod name or another identifier
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// representing the usage of the IP
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;//
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// The owner field is left blank for an entry in Spec.IPAM.Pool
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// and filled out as the IP is used and also added to
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// Status.IPAM.InUse.
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;//
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// +optional
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;nx&#34;&gt;Owner&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;`json:&amp;#34;owner,omitempty&amp;#34;`&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;c1&#34;&gt;// Resource is set for both available and allocated IPs, it represents
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// what resource the IP is associated with, e.g. in combination with
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// AWS ENI, this will refer to the ID of the ENI
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;//
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// +optional
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;nx&#34;&gt;Resource&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;`json:&amp;#34;resource,omitempty&amp;#34;`&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;ipam-状态&#34;&gt;IPAM 状态&lt;/h3&gt;
+&lt;p&gt;该 &lt;code&gt;status &lt;/code&gt;部分包含一个 IPAM 特定字段。IPAM 状态报告该节点上所有使用的地址：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// NodeStatus is the status of a node
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;NodeStatus&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;c1&#34;&gt;// [...]
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;c1&#34;&gt;// IPAM is the IPAM status of the node
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;//
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// +optional
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;nx&#34;&gt;IPAM&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;IPAMStatus&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;`json:&amp;#34;ipam,omitempty&amp;#34;`&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// IPAMStatus is the IPAM status of a node
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;IPAMStatus&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;c1&#34;&gt;// InUse lists all IPs out of Spec.IPAM.Pool which have been
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// allocated and are in use.
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;//
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;c1&#34;&gt;// +optional
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;nx&#34;&gt;InUse&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;AllocationMap&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;`json:&amp;#34;used,omitempty&amp;#34;`&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;technical-deep-dive&#34;&gt;技术详解&lt;/h2&gt;
+&lt;h3 id=&#34;cilium-容器网络控制流程&#34;&gt;Cilium 容器网络控制流程&lt;/h3&gt;
+&lt;p&gt;下面的控制流程图概述了端点如何为 Cilium 支持的每种不同的地址管理模式从 IPAM 获取其 IP 地址。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-cilium-容器网络控制流程图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;流程图&#34; srcset=&#34;
+               /cilium-handbook/networking/ipam/cilium_container_networking_control_flow_hu037560d23669cd07a8884a427e90118e_49243_db5fd6aa0dab91cc7de8148f543aa9bf.webp 400w,
+               /cilium-handbook/networking/ipam/cilium_container_networking_control_flow_hu037560d23669cd07a8884a427e90118e_49243_4b6bf0f38155c2195af97fe87ae411c9.webp 760w,
+               /cilium-handbook/networking/ipam/cilium_container_networking_control_flow_hu037560d23669cd07a8884a427e90118e_49243_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/cilium-handbook/networking/ipam/cilium_container_networking_control_flow_hu037560d23669cd07a8884a427e90118e_49243_db5fd6aa0dab91cc7de8148f543aa9bf.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;428&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Cilium 容器网络控制流程图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>IP 地址伪装</title>
+      <link>https://lib.jimmysong.io/cilium-handbook/networking/masquerading/</link>
+      <pubDate>Fri, 17 Jun 2022 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/cilium-handbook/networking/masquerading/</guid>
+      <description>&lt;p&gt;用于 Pod 的 IPv4 地址通常是从 RFC1918 私有地址块分配的，因此不可公开路由。Cilium 会自动将离开集群的所有流量的源 IP 地址伪装成节点的 IPv4 地址，因为节点的 IP 地址已经可以在网络上路由。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-ip-地址伪装示意图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../masquerade.png&#34; alt=&#34;IP 地址伪装示意图&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      IP 地址伪装示意图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;对于 IPv6 地址，只有在使用 iptables 实现模式时才会执行伪装。&lt;/p&gt;
+&lt;p&gt;可以使用 IPv4 选项和离开主机的 IPv6 流量禁用此行为。&lt;code&gt;enable-ipv4-masquerade: false``enable-ipv6-masquerade: false&lt;/code&gt;&lt;/p&gt;
+&lt;h2 id=&#34;配置&#34;&gt;配置&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;设置可路由 CIDR&lt;/p&gt;
+&lt;p&gt;默认行为是排除本地节点的 IP 分配 CIDR 内的任何目标。如果 pod IP 可在更广泛的网络中路由，则可以使用以下选项指定该网络：&lt;code&gt;ipv4-native-routing-cidr: 10.0.0.0/8 &lt;/code&gt;，在这种情况下，该 CIDR 内的所有目的地都 &lt;strong&gt;不会&lt;/strong&gt; 被伪装。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;设置伪装接口&lt;/p&gt;
+&lt;p&gt;请参阅&lt;a href=&#34;https://docs.cilium.io/en/stable/concepts/networking/masquerading/#masq-modes&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;实现模式&lt;/a&gt;以配置伪装接口。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;masq-modes&#34;&gt;实现模式&lt;/h2&gt;
+&lt;h3 id=&#34;基于-ebpf&#34;&gt;基于 eBPF&lt;/h3&gt;
+&lt;p&gt;基于 eBPF 的实现是最有效的实现。它需要 Linux 内核 4.19，并且可以使用 &lt;code&gt;bpf.masquerade=true&lt;/code&gt; helm 选项启用。&lt;/p&gt;
+&lt;p&gt;当前的实现依赖于 &lt;a href=&#34;https://docs.cilium.io/en/stable/gettingstarted/kubeproxy-free/#kubeproxy-free&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;BPF NodePort 特性&lt;/a&gt;。将来会删除该依赖项（&lt;a href=&#34;https://github.com/cilium/cilium/issues/13732&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;GitHub Issue 13732&lt;/a&gt;）。&lt;/p&gt;
+&lt;p&gt;伪装只能在那些运行 eBPF 伪装程序的设备上进行。这意味着如果输出设备运行程序，从 pod 发送到外部的数据包将被伪装（到输出设备 IPv4 地址）。如果未指定，程序将自动附加到 &lt;a href=&#34;https://docs.cilium.io/en/stable/gettingstarted/kubeproxy-free/#nodeport-devices&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;BPF NodePort 设备检测机制&lt;/a&gt;选择的设备上。要手动更改此设置，请使用 &lt;code&gt;devices&lt;/code&gt; helm 选项。使用 &lt;code&gt;cilium status&lt;/code&gt; 确定程序在哪些设备上运行：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl &lt;span class=&#34;nb&#34;&gt;exec&lt;/span&gt; -it -n kube-system cilium-xxxxx -- cilium status &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep Masquerading
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Masquerading:   BPF &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;ip-masq-agent&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;   &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;eth0, eth1&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;  10.0.0.0/16
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;从上面的输出可以看出，程序正在 &lt;code&gt;eth0&lt;/code&gt; 和 &lt;code&gt;eth1&lt;/code&gt; 设备上运行。&lt;/p&gt;
+&lt;p&gt;基于 eBPF 的伪装可以伪装以下 IPv4 四层协议的数据包：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;TCP&lt;/li&gt;
+&lt;li&gt;UDP&lt;/li&gt;
+&lt;li&gt;ICMP（仅 Echo 请求和 Echo 回复）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;默认情况下，来自 pod 的所有发往  &lt;code&gt;ipv4-native-routing-cidr&lt;/code&gt; 范围外 IP 地址的数据包都会被伪装，但发往其他集群节点的数据包除外。排除 CIDR 显示在 （&lt;code&gt;cilium status&lt;/code&gt; ) 的上述输出中（&lt;code&gt;10.0.0.0/16&lt;/code&gt;）。&lt;/p&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+  &lt;div class=&#34;alert-title&#34;&gt;
+      &lt;p&gt;提示&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    启用 eBPF 伪装后，从 Pod 到集群节点外部 IP 的流量也不会被伪装。eBPF 实现在这方面不同于基于 iptables 的伪装。此限制在 &lt;a href=&#34;https://github.com/cilium/cilium/issues/17177&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;GitHub Issue 17177&lt;/a&gt; 中进行了跟踪。
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;p&gt;为了实现更细粒度的控制，Cilium 在 eBPF 中实现了&lt;a href=&#34;https://github.com/kubernetes-sigs/ip-masq-agent&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;ip-masq-agent&lt;/a&gt;，可以通过&lt;code&gt;ipMasqAgent.enabled=true&lt;/code&gt; helm 选项启用。&lt;/p&gt;
+&lt;p&gt;基于 eBPF 的 &lt;code&gt;ip-masq-agent&lt;/code&gt; 支持配置文件中设置的 &lt;code&gt;nonMasqueradeCIDRs&lt;/code&gt; 和  &lt;code&gt;masqLinkLocal&lt;/code&gt; 选项。从 pod 发送到属于任何 CIDR 的目的地的数据包 &lt;code&gt;nonMasqueradeCIDRs&lt;/code&gt; 不会被伪装。如果配置文件为空，代理将配置以下非伪装 CIDR：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;10.0.0.0/8&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;172.16.0.0/12&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;192.168.0.0/16&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;100.64.0.0/10&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;192.0.0.0/24&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;192.0.2.0/24&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;192.88.99.0/24&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;198.18.0.0/15&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;198.51.100.0/24&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;203.0.113.0/24&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;240.0.0.0/4&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;此外，如果 &lt;code&gt;masqLinkLocal&lt;/code&gt; 未设置或设置为 false，则 &lt;code&gt;169.254.0.0/16&lt;/code&gt; 附加到非伪装 CIDR 列表中。&lt;/p&gt;
+&lt;p&gt;代理使用 Fsnotify 跟踪配置文件的更新，因此 &lt;code&gt;resyncInterval&lt;/code&gt; 不需要原始选项。&lt;/p&gt;
+&lt;p&gt;下面的示例显示了如何通过配置代理 &lt;a href=&#34;https://docs.cilium.io/en/stable/glossary/#term-configmap&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;ConfigMap&lt;/code&gt;&lt;/a&gt; 并对其进行验证：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ cat agent-config/config
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;nonMasqueradeCIDRs:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- 10.0.0.0/8
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- 172.16.0.0/12
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- 192.168.0.0/16
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;masqLinkLocal: &lt;span class=&#34;nb&#34;&gt;false&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl create configmap ip-masq-agent --from-file&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;agent-config --namespace&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;kube-system
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ &lt;span class=&#34;c1&#34;&gt;# Wait ~60s until the ConfigMap is mounted into a cilium pod&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl -n kube-system &lt;span class=&#34;nb&#34;&gt;exec&lt;/span&gt; -ti cilium-xxxxx -- cilium bpf ipmasq list
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;IP PREFIX/ADDRESS
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;10.0.0.0/8
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;169.254.0.0/16
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;172.16.0.0/12
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;192.168.0.0/16
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&#34;alert alert-note&#34;&gt;
+  &lt;div class=&#34;alert-title&#34;&gt;
+      &lt;p&gt;&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    IPv6 流量当前不支持基于 eBPF 的伪装。
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;h3 id=&#34;基于-iptables&#34;&gt;基于 iptables&lt;/h3&gt;
+&lt;p&gt;这是适用于所有内核版本的遗留实现。&lt;/p&gt;
+&lt;p&gt;默认行为将伪装所有离开非 Cilium 网络设备的流量。这通常会导致正确的行为。为了限制应在其上执行伪装的网络接口，可以使用&lt;code&gt;egress-masquerade-interfaces: eth0&lt;/code&gt; 选项。&lt;/p&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+  &lt;div class=&#34;alert-title&#34;&gt;
+      &lt;p&gt;提示&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    也可以指定接口前缀 &lt;code&gt;eth+&lt;/code&gt;，匹配前缀的所有接口 &lt;code&gt;eth&lt;/code&gt; 都将用于伪装。
+  &lt;/div&gt;
+&lt;/div&gt;
+
+</description>
+    </item>
+    
+    <item>
+      <title>IPv4 分片处理</title>
+      <link>https://lib.jimmysong.io/cilium-handbook/networking/fragmentation/</link>
+      <pubDate>Fri, 17 Jun 2022 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/cilium-handbook/networking/fragmentation/</guid>
+      <description>&lt;p&gt;默认情况下，Cilium 将 eBPF 数据路径配置为执行 IP 分片跟踪，以允许不支持分片的协议（例如 UDP）通过网络透明地传输大型消息。IP 分片跟踪在 eBPF 中使用 LRU（最近最少使用）映射实现，需要 Linux 4.10 或更高版本。可以使用以下选项配置此功能：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;--enable-ipv4-fragment-tracking&lt;/code&gt;：启用或禁用 IPv4 分片跟踪。默认启用。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--bpf-fragments-map-max&lt;/code&gt;：控制使用 IP 分片的最大活动并发连接数。对于默认值，请参阅&lt;a href=&#34;https://docs.cilium.io/en/stable/concepts/ebpf/maps/#bpf-map-limitations&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;eBPF Maps&lt;/a&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;当使用 &lt;code&gt;kube-proxy&lt;/code&gt; 运行 Cilium 时，碎片化的 NodePort 流量可能会由于内核错误而中断，其中路由 MTU 不受转发数据包的影响。纤毛碎片跟踪需要第一个逻辑碎片首先到达。由于内核错误，可能会在外部封装层上发生额外的碎片，从而导致数据包重新排序并导致无法跟踪碎片。&lt;/p&gt;
+&lt;p&gt;内核错误已被 &lt;a href=&#34;https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=02a1b175b0e92d9e0fa5df3957ade8d733ceb6a0&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;修复&lt;/a&gt; 并向后移植到所有维护的内核版本。如果您发现连接问题，请确保您的节点上的内核包最近已升级，然后再报告问题。&lt;/p&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+  &lt;div class=&#34;alert-title&#34;&gt;
+      &lt;p&gt;提示&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    这是一个测试版功能。如果你遇到任何问题，请提供反馈并提交 GitHub Issue。
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;ul class=&#34;cta-group&#34;&gt;
+  
+  &lt;li&gt;
+    &lt;a href=&#34;../security&#34;  class=&#34;btn btn-primary px-3 py-3&#34;&gt;下一章&lt;/a&gt;
+  &lt;/li&gt;
+  
+  
+&lt;/ul&gt;
+
+</description>
+    </item>
+    
+  </channel>
+</rss>

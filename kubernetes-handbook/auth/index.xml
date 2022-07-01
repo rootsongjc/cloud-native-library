@@ -1,0 +1,1487 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>身份与权限认证 | 云原生资料库</title>
+    <link>https://lib.jimmysong.io/kubernetes-handbook/auth/</link>
+      <atom:link href="https://lib.jimmysong.io/kubernetes-handbook/auth/index.xml" rel="self" type="application/rss+xml" />
+    <description>身份与权限认证</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Sat, 21 May 2022 00:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://lib.jimmysong.io/media/sharing.png</url>
+      <title>身份与权限认证</title>
+      <link>https://lib.jimmysong.io/kubernetes-handbook/auth/</link>
+    </image>
+    
+    <item>
+      <title>ServiceAccount</title>
+      <link>https://lib.jimmysong.io/kubernetes-handbook/auth/serviceaccount/</link>
+      <pubDate>Sat, 21 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/kubernetes-handbook/auth/serviceaccount/</guid>
+      <description>&lt;p&gt;ServiceAccount 为 Pod 中的进程提供身份信息。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：&lt;strong&gt;本文是关于 Service Account 的用户指南，管理指南另见 Service Account 的集群管理指南 。&lt;/strong&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;本文档描述的关于 Service Account 的行为只有当您按照 Kubernetes 项目建议的方式搭建起集群的情况下才有效。您的集群管理员可能在您的集群中有自定义配置，这种情况下该文档可能并不适用。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;当您（真人用户）访问集群（例如使用&lt;code&gt;kubectl&lt;/code&gt;命令）时，apiserver 会将您认证为一个特定的 User Account（目前通常是&lt;code&gt;admin&lt;/code&gt;，除非您的系统管理员自定义了集群配置）。Pod 容器中的进程也可以与 apiserver 联系。 当它们在联系 apiserver 的时候，它们会被认证为一个特定的 Service Account（例如&lt;code&gt;default&lt;/code&gt;）。&lt;/p&gt;
+&lt;h2 id=&#34;使用默认的-service-account-访问-api-server&#34;&gt;使用默认的 Service Account 访问 API server&lt;/h2&gt;
+&lt;p&gt;当您创建 pod 的时候，如果您没有指定一个 service account，系统会自动得在与该pod 相同的 namespace 下为其指派一个&lt;code&gt;default&lt;/code&gt; service account。如果您获取刚创建的 pod 的原始 json 或 yaml 信息（例如使用&lt;code&gt;kubectl get pods/podename -o yaml&lt;/code&gt;命令），您将看到&lt;code&gt;spec.serviceAccountName&lt;/code&gt;字段已经被设置为 &lt;code&gt;default&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;您可以在 pod 中使用自动挂载的 service account 凭证来访问 API，如 &lt;a href=&#34;https://kubernetes.io/docs/user-guide/accessing-the-cluster/#accessing-the-api-from-a-pod&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Accessing the Cluster&lt;/a&gt; 中所描述。&lt;/p&gt;
+&lt;p&gt;Service account 是否能够取得访问 API 的许可取决于您使用的 &lt;a href=&#34;https://kubernetes.io/docs/admin/authorization/#a-quick-note-on-service-accounts&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;授权插件和策略&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;在 1.6 以上版本中，您可以选择取消为 service account 自动挂载 API 凭证，只需在 service account 中设置 &lt;code&gt;automountServiceAccountToken: false&lt;/code&gt;：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ServiceAccount&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;build-robot&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;automountServiceAccountToken&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;false&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nn&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在 1.6 以上版本中，您也可以选择只取消单个 pod 的 API 凭证自动挂载：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Pod&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;my-pod&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;serviceAccountName&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;build-robot&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;automountServiceAccountToken&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;false&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果在 pod 和 service account 中同时设置了 &lt;code&gt;automountServiceAccountToken&lt;/code&gt; , pod 设置中的优先级更高。&lt;/p&gt;
+&lt;h2 id=&#34;使用多个service-account&#34;&gt;使用多个Service Account&lt;/h2&gt;
+&lt;p&gt;每个 namespace 中都有一个默认的叫做 &lt;code&gt;default&lt;/code&gt; 的 service account 资源。&lt;/p&gt;
+&lt;p&gt;您可以使用以下命令列出 namespace 下的所有 serviceAccount 资源。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl get serviceAccounts
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;NAME      SECRETS    AGE
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;default   &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;          1d
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;您可以像这样创建一个 ServiceAccount 对象：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ cat &amp;gt; /tmp/serviceaccount.yaml &lt;span class=&#34;s&#34;&gt;&amp;lt;&amp;lt;EOF
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;apiVersion: v1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;kind: ServiceAccount
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;metadata:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  name: build-robot
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;EOF&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl create -f /tmp/serviceaccount.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;serviceaccount &lt;span class=&#34;s2&#34;&gt;&amp;#34;build-robot&amp;#34;&lt;/span&gt; created
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果您看到如下的 service account 对象的完整输出信息：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl get serviceaccounts/build-robot -o yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;apiVersion: v1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kind: ServiceAccount
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;metadata:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  creationTimestamp: 2015-06-16T00:12:59Z
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  name: build-robot
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  namespace: default
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  resourceVersion: &lt;span class=&#34;s2&#34;&gt;&amp;#34;272500&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  selfLink: /api/v1/namespaces/default/serviceaccounts/build-robot
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  uid: 721ab723-13bc-11e5-aec2-42010af0021e
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;secrets:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- name: build-robot-token-bvbk5
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;然后您将看到有一个 token 已经被自动创建，并被 service account 引用。&lt;/p&gt;
+&lt;p&gt;您可以使用授权插件来 &lt;a href=&#34;https://kubernetes.io/docs/admin/authorization/#a-quick-note-on-service-accounts&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;设置 service account 的权限&lt;/a&gt; 。&lt;/p&gt;
+&lt;p&gt;设置非默认的 service account，只需要在 pod 的&lt;code&gt;spec.serviceAccountName&lt;/code&gt; 字段中将name设置为您想要用的 service account 名字即可。&lt;/p&gt;
+&lt;p&gt;在 pod 创建之初 service account 就必须已经存在，否则创建将被拒绝。&lt;/p&gt;
+&lt;p&gt;您不能更新已创建的 pod 的 service account。&lt;/p&gt;
+&lt;p&gt;您可以清理 service account，如下所示：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl delete serviceaccount/build-robot
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;手动创建-service-account-的-api-token&#34;&gt;手动创建 service account 的 API token&lt;/h2&gt;
+&lt;p&gt;假设我们已经有了一个如上文提到的名为 ”build-robot“ 的 service account，我们手动创建一个新的 secret。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ cat &amp;gt; /tmp/build-robot-secret.yaml &lt;span class=&#34;s&#34;&gt;&amp;lt;&amp;lt;EOF
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;apiVersion: v1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;kind: Secret
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;metadata:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  name: build-robot-secret
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  annotations: 
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;    kubernetes.io/service-account.name: build-robot
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;type: kubernetes.io/service-account-token
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;EOF&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl create -f /tmp/build-robot-secret.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;secret &lt;span class=&#34;s2&#34;&gt;&amp;#34;build-robot-secret&amp;#34;&lt;/span&gt; created
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;现在您可以确认下新创建的 secret 取代了 “build-robot” 这个 service account 原来的 API token。&lt;/p&gt;
+&lt;p&gt;所有已不存在的 service account 的 token 将被 token controller 清理掉。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl describe secrets/build-robot-secret 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Name:   build-robot-secret
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Namespace:  default
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Labels:   &amp;lt;none&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Annotations:  kubernetes.io/service-account.name&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;build-robot,kubernetes.io/service-account.uid&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;870ef2a5-35cf-11e5-8d06-005056b45392
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Type: kubernetes.io/service-account-token
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;Data&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;====&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;ca.crt: &lt;span class=&#34;m&#34;&gt;1220&lt;/span&gt; bytes
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;token: ...
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;namespace: &lt;span class=&#34;m&#34;&gt;7&lt;/span&gt; bytes
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：该内容中的&lt;code&gt;token&lt;/code&gt;被省略了。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;为-service-account-添加-imagepullsecret&#34;&gt;为 service account 添加 ImagePullSecret&lt;/h2&gt;
+&lt;p&gt;首先，创建一个 imagePullSecret，详见&lt;a href=&#34;https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这里&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;然后，确认已创建。如：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl get secrets myregistrykey
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;NAME             TYPE                              DATA    AGE
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;myregistrykey    kubernetes.io/.dockerconfigjson   &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;       1d
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;然后，修改 namespace 中的默认 service account 使用该 secret 作为 imagePullSecret。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl patch serviceaccount default -p &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;imagePullSecrets&amp;#34;: [{&amp;#34;name&amp;#34;: &amp;#34;myregistrykey&amp;#34;}]}&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Vi 交互过程中需要手动编辑：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl get serviceaccounts default -o yaml &amp;gt; ./sa.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ cat sa.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;apiVersion: v1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kind: ServiceAccount
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;metadata:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  creationTimestamp: 2015-08-07T22:02:39Z
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  name: default
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  namespace: default
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  resourceVersion: &lt;span class=&#34;s2&#34;&gt;&amp;#34;243024&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  selfLink: /api/v1/namespaces/default/serviceaccounts/default
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  uid: 052fb0f4-3d50-11e5-b066-42010af0d7b6
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;secrets:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- name: default-token-uudge
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ vi sa.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;editor session not shown&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;delete line with key &lt;span class=&#34;s2&#34;&gt;&amp;#34;resourceVersion&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;add lines with &lt;span class=&#34;s2&#34;&gt;&amp;#34;imagePullSecret:&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ cat sa.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;apiVersion: v1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kind: ServiceAccount
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;metadata:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  creationTimestamp: 2015-08-07T22:02:39Z
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  name: default
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  namespace: default
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  selfLink: /api/v1/namespaces/default/serviceaccounts/default
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  uid: 052fb0f4-3d50-11e5-b066-42010af0d7b6
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;secrets:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- name: default-token-uudge
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;imagePullSecrets:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- name: myregistrykey
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl replace serviceaccount default -f ./sa.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;serviceaccounts/default
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;现在，所有当前 namespace 中新创建的 pod 的 spec 中都会增加如下内容：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;imagePullSecrets&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;myregistrykey&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Configure Service Accounts for Pods - kubernetes.io&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>基于角色的访问控制（RBAC）</title>
+      <link>https://lib.jimmysong.io/kubernetes-handbook/auth/rbac/</link>
+      <pubDate>Sat, 21 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/kubernetes-handbook/auth/rbac/</guid>
+      <description>&lt;p&gt;&lt;strong&gt;注意：本文基于 Kubernetes 1.6 撰写，当时 RBAC 模式处于 beta 版本。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;基于角色的访问控制（Role-Based Access Control，即”RBAC”）使用 &lt;code&gt;rbac.authorization.k8s.io&lt;/code&gt; API Group 实现授权决策，允许管理员通过 Kubernetes API 动态配置策略。&lt;/p&gt;
+&lt;p&gt;要启用 RBAC，请使用 &lt;code&gt;--authorization-mode=RBAC&lt;/code&gt; 启动 API Server。&lt;/p&gt;
+&lt;h2 id=&#34;api-概述&#34;&gt;API 概述&lt;/h2&gt;
+&lt;p&gt;本节将介绍 RBAC API 所定义的四种顶级类型。用户可以像使用其他 Kubernetes API 资源一样 （例如通过 &lt;code&gt;kubectl&lt;/code&gt;、API 调用等）与这些资源进行交互。例如，命令 &lt;code&gt;kubectl create -f (resource).yml&lt;/code&gt; 可以被用于以下所有的例子，当然，读者在尝试前可能需要先阅读以下相关章节的内容。&lt;/p&gt;
+&lt;h3 id=&#34;role-与-clusterrole&#34;&gt;Role 与 ClusterRole&lt;/h3&gt;
+&lt;p&gt;在 RBAC API 中，一个角色包含了一套表示一组权限的规则。 权限以纯粹的累加形式累积（没有” 否定” 的规则）。 角色可以由命名空间（namespace）内的 &lt;code&gt;Role&lt;/code&gt; 对象定义，而整个 Kubernetes 集群范围内有效的角色则通过 &lt;code&gt;ClusterRole&lt;/code&gt; 对象实现。&lt;/p&gt;
+&lt;p&gt;一个 &lt;code&gt;Role&lt;/code&gt; 对象只能用于授予对某一单一命名空间中资源的访问权限。 以下示例描述了”default” 命名空间中的一个 &lt;code&gt;Role&lt;/code&gt; 对象的定义，用于授予对 pod 的读访问权限：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Role&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;default&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;pod-reader&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;rules&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiGroups&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 空字符串&amp;#34;&amp;#34; 表明使用 core API group&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resources&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;pods&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;verbs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;get&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;watch&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;list&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;ClusterRole&lt;/code&gt; 对象可以授予与 &lt;code&gt;Role&lt;/code&gt; 对象相同的权限，但由于它们属于集群范围对象， 也可以使用它们授予对以下几种资源的访问权限：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;集群范围资源（例如节点，即 node）&lt;/li&gt;
+&lt;li&gt;非资源类型 endpoint（例如”/healthz”）&lt;/li&gt;
+&lt;li&gt;跨所有命名空间的命名空间范围资源（例如 pod，需要运行命令 &lt;code&gt;kubectl get pods --all-namespaces&lt;/code&gt; 来查询集群中所有的 pod）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;下面示例中的 &lt;code&gt;ClusterRole&lt;/code&gt; 定义可用于授予用户对某一特定命名空间，或者所有命名空间中的 secret（取决于其 &lt;a href=&#34;https://kubernetes.io/docs/reference/access-authn-authz/rbac/#rolebinding-and-clusterrolebinding&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;绑定&lt;/a&gt; 方式）的读访问权限：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ClusterRole&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 鉴于 ClusterRole 是集群范围对象，所以这里不需要定义 &amp;#34;namespace&amp;#34; 字段&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;secret-reader&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;rules&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiGroups&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resources&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;secrets&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;verbs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;get&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;watch&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;list&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;rolebinding-与-clusterrolebinding&#34;&gt;RoleBinding 与 ClusterRoleBinding&lt;/h3&gt;
+&lt;p&gt;角色绑定将一个角色中定义的各种权限授予一个或者一组用户。 角色绑定包含了一组相关主体（即 subject，包括用户 ——User、用户组 ——Group、或者服务账户 ——Service Account）以及对被授予角色的引用。 在命名空间中可以通过 &lt;code&gt;RoleBinding&lt;/code&gt; 对象授予权限，而集群范围的权限授予则通过 &lt;code&gt;ClusterRoleBinding&lt;/code&gt; 对象完成。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;RoleBinding&lt;/code&gt; 可以引用在同一命名空间内定义的 &lt;code&gt;Role&lt;/code&gt; 对象。 下面示例中定义的 &lt;code&gt;RoleBinding&lt;/code&gt; 对象在”default” 命名空间中将”pod-reader” 角色授予用户”jane”。 这一授权将允许用户”jane” 从”default” 命名空间中读取 pod。&lt;/p&gt;
+&lt;p&gt;以下角色绑定定义将允许用户 &amp;ldquo;jane&amp;rdquo; 从 &amp;ldquo;default&amp;rdquo; 命名空间中读取 pod。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;RoleBinding&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;read-pods&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;default&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;subjects&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;User&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;jane&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;roleRef&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Role&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;pod-reader&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;RoleBinding&lt;/code&gt; 对象也可以引用一个 &lt;code&gt;ClusterRole&lt;/code&gt; 对象用于在 &lt;code&gt;RoleBinding&lt;/code&gt; 所在的命名空间内授予用户对所引用的 &lt;code&gt;ClusterRole&lt;/code&gt; 中 定义的命名空间资源的访问权限。这一点允许管理员在整个集群范围内首先定义一组通用的角色，然后再在不同的命名空间中复用这些角色。&lt;/p&gt;
+&lt;p&gt;例如，尽管下面示例中的 &lt;code&gt;RoleBinding&lt;/code&gt; 引用的是一个 &lt;code&gt;ClusterRole&lt;/code&gt; 对象，但是用户”dave”（即角色绑定主体）还是只能读取”development” 命名空间中的 secret（即 &lt;code&gt;RoleBinding&lt;/code&gt; 所在的命名空间）。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# 以下角色绑定允许用户 &amp;#34;dave&amp;#34; 读取 &amp;#34;development&amp;#34; 命名空间中的 secret。&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;RoleBinding&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;read-secrets&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;development&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 这里表明仅授权读取 &amp;#34;development&amp;#34; 命名空间中的资源。&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;subjects&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;User&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;dave&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;roleRef&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ClusterRole&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;secret-reader&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;最后，可以使用&lt;code&gt;ClusterRoleBinding&lt;/code&gt;在集群级别和所有命名空间中授予权限。下面示例中所定义的&lt;code&gt;ClusterRoleBinding&lt;/code&gt;允许在用户组”manager” 中的任何用户都可以读取集群中任何命名空间中的 secret。&lt;/p&gt;
+&lt;p&gt;以下 &lt;code&gt;ClusterRoleBinding&lt;/code&gt; 对象允许在用户组 &amp;ldquo;manager&amp;rdquo; 中的任何用户都可以读取集群中任何命名空间中的 secret。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ClusterRoleBinding&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;read-secrets-global&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;subjects&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Group&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;manager&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;roleRef&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ClusterRole&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;secret-reader&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;对资源的引用&#34;&gt;对资源的引用&lt;/h3&gt;
+&lt;p&gt;大多数资源由代表其名字的字符串表示，例如”pods”，就像它们出现在相关 API endpoint 的 URL 中一样。然而，有一些 Kubernetes API 还 包含了” 子资源”，比如 pod 的 logs。在 Kubernetes 中，pod logs endpoint 的 URL 格式为：&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;GET /api/v1/namespaces/{namespace}/pods/{name}/log&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;在这种情况下，”pods” 是命名空间资源，而”log” 是 pods 的子资源。为了在 RBAC 角色中表示出这一点，我们需要使用斜线来划分资源 与子资源。如果需要角色绑定主体读取 pods 以及 pod log，您需要定义以下角色：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Role&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;default&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;pod-and-pod-logs-reader&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;rules&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiGroups&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resources&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;pods&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;pods/log&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;verbs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;get&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;list&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;通过&lt;code&gt;resourceNames&lt;/code&gt;列表，角色可以针对不同种类的请求根据资源名引用资源实例。当指定了&lt;code&gt;resourceNames&lt;/code&gt;列表时，不同动作 种类的请求的权限，如使用”get”、”delete”、”update” 以及”patch” 等动词的请求，将被限定到资源列表中所包含的资源实例上。 例如，如果需要限定一个角色绑定主体只能”get” 或者”update” 一个 configmap 时，您可以定义以下角色：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Role&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;default&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;configmap-updater&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;rules&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiGroups&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resources&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;configmap&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resourceNames&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;my-configmap&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;verbs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;update&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;get&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;值得注意的是，如果设置了&lt;code&gt;resourceNames&lt;/code&gt;，则请求所使用的动词不能是 list、watch、create 或者 deletecollection。 由于资源名不会出现在 create、list、watch 和 deletecollection 等 API 请求的 URL 中，所以这些请求动词不会被设置了&lt;code&gt;resourceNames&lt;/code&gt;的规则所允许，因为规则中的&lt;code&gt;resourceNames&lt;/code&gt; 部分不会匹配这些请求。&lt;/p&gt;
+&lt;h4 id=&#34;一些角色定义的例子&#34;&gt;一些角色定义的例子&lt;/h4&gt;
+&lt;p&gt;在以下示例中，我们仅截取展示了 &lt;code&gt;rules&lt;/code&gt; 部分的定义。&lt;/p&gt;
+&lt;p&gt;允许读取 core API Group 中定义的资源”pods”：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;rules&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiGroups&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resources&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;pods&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;verbs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;get&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;list&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;watch&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;允许读写在”extensions” 和”apps” API Group 中定义的”deployments”：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;rules&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiGroups&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;extensions&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;apps&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resources&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;deployments&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;verbs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;get&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;list&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;watch&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;create&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;update&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;patch&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;delete&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;允许读取”pods” 以及读写”jobs”：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;rules&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiGroups&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resources&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;pods&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;verbs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;get&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;list&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;watch&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiGroups&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;batch&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;extensions&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resources&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;jobs&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;verbs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;get&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;list&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;watch&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;create&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;update&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;patch&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;delete&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;允许读取一个名为”my-config” 的&lt;code&gt;ConfigMap&lt;/code&gt;实例（需要将其通过&lt;code&gt;RoleBinding&lt;/code&gt;绑定从而限制针对某一个命名空间中定义的一个&lt;code&gt;ConfigMap&lt;/code&gt;实例的访问）：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;rules&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiGroups&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resources&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;configmaps&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resourceNames&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;my-config&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;verbs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;get&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;允许读取 core API Group 中的”nodes” 资源（由于&lt;code&gt;Node&lt;/code&gt;是集群级别资源，所以此&lt;code&gt;ClusterRole&lt;/code&gt;定义需要与一个&lt;code&gt;ClusterRoleBinding&lt;/code&gt;绑定才能有效）：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;rules&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiGroups&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resources&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;nodes&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;verbs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;get&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;list&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;watch&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;允许对非资源 endpoint “/healthz” 及其所有子路径的”GET” 和”POST” 请求（此&lt;code&gt;ClusterRole&lt;/code&gt;定义需要与一个&lt;code&gt;ClusterRoleBinding&lt;/code&gt;绑定才能有效）：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;rules&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;nonResourceURLs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;/healthz&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;/healthz/*&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 在非资源 URL 中，&amp;#39;*&amp;#39; 代表后缀通配符&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;verbs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;get&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;post&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;对角色绑定主体（Subject）的引用&lt;code&gt;RoleBinding&lt;/code&gt;或者&lt;code&gt;ClusterRoleBinding&lt;/code&gt; 将角色绑定到 &lt;em&gt;角色绑定主体&lt;/em&gt;（Subject）。 角色绑定主体可以是用户组（Group）、用户（User）或者服务账户（Service Accounts）。&lt;/p&gt;
+&lt;p&gt;用户由字符串表示。可以是纯粹的用户名，例如”alice”、电子邮件风格的名字，如 “bob@example.com” 或者是用字符串表示的数字 id。由 Kubernetes 管理员配置 &lt;a href=&#34;https://kubernetes.io/docs/admin/authentication/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;认证模块&lt;/a&gt; 以产生所需格式的用户名。对于用户名，RBAC 授权系统不要求任何特定的格式。然而，前缀 &lt;code&gt;system:&lt;/code&gt; 是 为 Kubernetes 系统使用而保留的，所以管理员应该确保用户名不会意外地包含这个前缀。&lt;/p&gt;
+&lt;p&gt;Kubernetes 中的用户组信息由授权模块提供。用户组与用户一样由字符串表示。Kubernetes 对用户组 字符串没有格式要求，但前缀 &lt;code&gt;system:&lt;/code&gt; 同样是被系统保留的。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;服务账户&lt;/a&gt; 拥有包含 &lt;code&gt;system:serviceaccount:&lt;/code&gt; 前缀的用户名，并属于拥有 &lt;code&gt;system:serviceaccounts:&lt;/code&gt; 前缀的用户组。&lt;/p&gt;
+&lt;h4 id=&#34;角色绑定的一些例子&#34;&gt;角色绑定的一些例子&lt;/h4&gt;
+&lt;p&gt;以下示例中，仅截取展示了 &lt;code&gt;RoleBinding&lt;/code&gt; 的 &lt;code&gt;subjects&lt;/code&gt; 字段。&lt;/p&gt;
+&lt;p&gt;一个名为”alice@example.com” 的用户：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;subjects&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;User&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;alice@example.com&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;一个名为”frontend-admins” 的用户组：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;subjects&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Group&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;frontend-admins&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;kube-system 命名空间中的默认服务账户：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;subjects&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ServiceAccount&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;default&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kube-system&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;名为”qa” 命名空间中的所有服务账户：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;subjects&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Group&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;system:serviceaccounts:qa&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在集群中的所有服务账户：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;subjects&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Group&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;system:serviceaccounts&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;所有认证过的用户（version 1.5+）：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;subjects&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Group&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;system:authenticated&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;所有未认证的用户（version 1.5+）：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;subjects&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Group&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;system:unauthenticated&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;所有用户（version 1.5+）：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;subjects&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Group&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;system:authenticated&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Group&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;system:unauthenticated&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;默认角色与默认角色绑定&#34;&gt;默认角色与默认角色绑定&lt;/h2&gt;
+&lt;p&gt;API Server 会创建一组默认的 &lt;code&gt;ClusterRole&lt;/code&gt; 和 &lt;code&gt;ClusterRoleBinding&lt;/code&gt; 对象。 这些默认对象中有许多包含 &lt;code&gt;system:&lt;/code&gt; 前缀，表明这些资源由 Kubernetes 基础组件” 拥有”。 对这些资源的修改可能导致非功能性集群（non-functional cluster）。一个例子是 &lt;code&gt;system:node&lt;/code&gt; ClusterRole 对象。 这个角色定义了 kubelets 的权限。如果这个角色被修改，可能会导致 kubelets 无法正常工作。&lt;/p&gt;
+&lt;p&gt;所有默认的 ClusterRole 和 ClusterRoleBinding 对象都会被标记为 &lt;code&gt;kubernetes.io/bootstrapping=rbac-defaults&lt;/code&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;自动更新&#34;&gt;自动更新&lt;/h3&gt;
+&lt;p&gt;每次启动时，API Server 都会更新默认 ClusterRole 所缺乏的各种权限，并更新默认 ClusterRoleBinding 所缺乏的各个角色绑定主体。 这种自动更新机制允许集群修复一些意外的修改。由于权限和角色绑定主体在新的 Kubernetes 释出版本中可能变化，这也能够保证角色和角色 绑定始终保持是最新的。&lt;/p&gt;
+&lt;p&gt;如果需要禁用自动更新，请将默认 ClusterRole 以及 ClusterRoleBinding 的 &lt;code&gt;rbac.authorization.kubernetes.io/autoupdate&lt;/code&gt; 设置成为 &lt;code&gt;false&lt;/code&gt;。 请注意，缺乏默认权限和角色绑定主体可能会导致非功能性集群问题。&lt;/p&gt;
+&lt;p&gt;自 Kubernetes 1.6 + 起，当集群 RBAC 授权器（RBAC Authorizer）处于开启状态时，可以启用自动更新功能.&lt;/p&gt;
+&lt;h3 id=&#34;发现类角色&#34;&gt;发现类角色&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;默认 ClusterRole&lt;/th&gt;
+&lt;th&gt;默认 ClusterRoleBinding&lt;/th&gt;
+&lt;th&gt;描述&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;system:basic-user&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;system:authenticated&lt;/strong&gt; and &lt;strong&gt;system:unauthenticated&lt;/strong&gt;groups&lt;/td&gt;
+&lt;td&gt;允许用户只读访问有关自己的基本信息。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;system:discovery&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;system:authenticated&lt;/strong&gt; and &lt;strong&gt;system:unauthenticated&lt;/strong&gt;groups&lt;/td&gt;
+&lt;td&gt;允许只读访问 API discovery endpoints, 用于在 API 级别进行发现和协商。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;面向用户的角色&#34;&gt;面向用户的角色&lt;/h3&gt;
+&lt;p&gt;一些默认角色并不包含 &lt;code&gt;system:&lt;/code&gt; 前缀，它们是面向用户的角色。 这些角色包含超级用户角色（&lt;code&gt;cluster-admin&lt;/code&gt;），即旨在利用 ClusterRoleBinding（&lt;code&gt;cluster-status&lt;/code&gt;）在集群范围内授权的角色， 以及那些使用 RoleBinding（&lt;code&gt;admin&lt;/code&gt;、&lt;code&gt;edit&lt;/code&gt; 和 &lt;code&gt;view&lt;/code&gt;）在特定命名空间中授权的角色。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;默认 ClusterRole&lt;/th&gt;
+&lt;th&gt;默认 ClusterRoleBinding&lt;/th&gt;
+&lt;th&gt;描述&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;cluster-admin&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;system:masters&lt;/strong&gt; group&lt;/td&gt;
+&lt;td&gt;超级用户权限，允许对任何资源执行任何操作。 在 &lt;strong&gt;ClusterRoleBinding&lt;/strong&gt; 中使用时，可以完全控制集群和所有命名空间中的所有资源。 在 &lt;strong&gt;RoleBinding&lt;/strong&gt; 中使用时，可以完全控制 RoleBinding 所在命名空间中的所有资源，包括命名空间自己。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;admin&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;None&lt;/td&gt;
+&lt;td&gt;管理员权限，利用 &lt;strong&gt;RoleBinding&lt;/strong&gt; 在某一命名空间内部授予。 在 &lt;strong&gt;RoleBinding&lt;/strong&gt; 中使用时，允许针对命名空间内大部分资源的读写访问， 包括在命名空间内创建角色与角色绑定的能力。 但不允许对资源配额（resource quota）或者命名空间本身的写访问。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;edit&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;None&lt;/td&gt;
+&lt;td&gt;允许对某一个命名空间内大部分对象的读写访问，但不允许查看或者修改角色或者角色绑定。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;view&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;None&lt;/td&gt;
+&lt;td&gt;允许对某一个命名空间内大部分对象的只读访问。 不允许查看角色或者角色绑定。 由于可扩散性等原因，不允许查看 secret 资源。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;core-component-roles&#34;&gt;Core Component Roles&lt;/h3&gt;
+&lt;h3 id=&#34;核心组件角色&#34;&gt;核心组件角色&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;默认 ClusterRole&lt;/th&gt;
+&lt;th&gt;默认 ClusterRoleBinding&lt;/th&gt;
+&lt;th&gt;描述&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;system:kube-scheduler&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;system:kube-scheduler&lt;/strong&gt; user&lt;/td&gt;
+&lt;td&gt;允许访问 kube-scheduler 组件所需要的资源。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;system:kube-controller-manager&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;system:kube-controller-manager&lt;/strong&gt; user&lt;/td&gt;
+&lt;td&gt;允许访问 kube-controller-manager 组件所需要的资源。 单个控制循环所需要的权限请参阅 &lt;a href=&#34;https://kubernetes.io/docs/reference/access-authn-authz/rbac/#controller-roles&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;控制器（controller）角色&lt;/a&gt;.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;system:node&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;system:nodes&lt;/strong&gt; group (deprecated in 1.7)&lt;/td&gt;
+&lt;td&gt;允许对 kubelet 组件所需要的资源的访问，&lt;strong&gt;包括读取所有 secret 和对所有 pod 的写访问&lt;/strong&gt;。 自 Kubernetes 1.7 开始，相比较于这个角色，更推荐使用 &lt;a href=&#34;https://kubernetes.io/docs/admin/authorization/node/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Node authorizer&lt;/a&gt; 以及 &lt;a href=&#34;https://kubernetes.io/docs/admin/admission-controllers#NodeRestriction&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;NodeRestriction admission plugin&lt;/a&gt;， 并允许根据调度运行在节点上的 pod 授予 kubelets API 访问的权限。 自 Kubernetes 1.7 开始，当启用 &lt;code&gt;Node&lt;/code&gt; 授权模式时，对 &lt;code&gt;system:nodes&lt;/code&gt; 用户组的绑定将不会被自动创建。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;system:node-proxier&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;system:kube-proxy&lt;/strong&gt; user&lt;/td&gt;
+&lt;td&gt;允许对 kube-proxy 组件所需要资源的访问。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;其它组件角色&#34;&gt;其它组件角色&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;默认 ClusterRole&lt;/th&gt;
+&lt;th&gt;默认 ClusterRoleBinding&lt;/th&gt;
+&lt;th&gt;描述&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;system:auth-delegator&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;None&lt;/td&gt;
+&lt;td&gt;允许委托认证和授权检查。 通常由附加 API Server 用于统一认证和授权。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;system:heapster&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;None&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/kubernetes/heapster&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Heapster&lt;/a&gt; 组件的角色。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;system:kube-aggregator&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;None&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/kubernetes/kube-aggregator&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;kube-aggregator&lt;/a&gt; 组件的角色。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;system:kube-dns&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;kube-dns&lt;/strong&gt; service account in the &lt;strong&gt;kube-system&lt;/strong&gt;namespace&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;https://kubernetes.io/docs/admin/dns/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;kube-dns&lt;/a&gt; 组件的角色。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;system:node-bootstrapper&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;None&lt;/td&gt;
+&lt;td&gt;允许对执行 &lt;a href=&#34;https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kubelet TLS 引导（Kubelet TLS bootstrapping）&lt;/a&gt; 所需要资源的访问.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;system:node-problem-detector&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;None&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/kubernetes/node-problem-detector&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;node-problem-detector&lt;/a&gt; 组件的角色。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;system:persistent-volume-provisioner&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;None&lt;/td&gt;
+&lt;td&gt;允许对大部分动态存储卷创建组件（dynamic volume provisioner）所需要资源的访问。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;控制器controller角色&#34;&gt;控制器（Controller）角色&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;https://kubernetes.io/docs/admin/kube-controller-manager/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kubernetes controller manager&lt;/a&gt; 负责运行核心控制循环。 当使用 &lt;code&gt;--use-service-account-credentials&lt;/code&gt; 选项运行 controller manager 时，每个控制循环都将使用单独的服务账户启动。 而每个控制循环都存在对应的角色，前缀名为 &lt;code&gt;system:controller:&lt;/code&gt;。 如果不使用 &lt;code&gt;--use-service-account-credentials&lt;/code&gt; 选项时，controller manager 将会使用自己的凭证运行所有控制循环，而这些凭证必须被授予相关的角色。 这些角色包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;system:controller:attachdetach-controller&lt;/li&gt;
+&lt;li&gt;system:controller:certificate-controller&lt;/li&gt;
+&lt;li&gt;system:controller:cronjob-controller&lt;/li&gt;
+&lt;li&gt;system:controller:daemon-set-controller&lt;/li&gt;
+&lt;li&gt;system:controller:deployment-controller&lt;/li&gt;
+&lt;li&gt;system:controller:disruption-controller&lt;/li&gt;
+&lt;li&gt;system:controller:endpoint-controller&lt;/li&gt;
+&lt;li&gt;system:controller:generic-garbage-collector&lt;/li&gt;
+&lt;li&gt;system:controller:horizontal-pod-autoscaler&lt;/li&gt;
+&lt;li&gt;system:controller:job-controller&lt;/li&gt;
+&lt;li&gt;system:controller:namespace-controller&lt;/li&gt;
+&lt;li&gt;system:controller:node-controller&lt;/li&gt;
+&lt;li&gt;system:controller:persistent-volume-binder&lt;/li&gt;
+&lt;li&gt;system:controller:pod-garbage-collector&lt;/li&gt;
+&lt;li&gt;system:controller:replicaset-controller&lt;/li&gt;
+&lt;li&gt;system:controller:replication-controller&lt;/li&gt;
+&lt;li&gt;system:controller:resourcequota-controller&lt;/li&gt;
+&lt;li&gt;system:controller:route-controller&lt;/li&gt;
+&lt;li&gt;system:controller:service-account-controller&lt;/li&gt;
+&lt;li&gt;system:controller:service-controller&lt;/li&gt;
+&lt;li&gt;system:controller:statefulset-controller&lt;/li&gt;
+&lt;li&gt;system:controller:ttl-controller&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;初始化与预防权限升级&#34;&gt;初始化与预防权限升级&lt;/h2&gt;
+&lt;p&gt;RBAC API 会阻止用户通过编辑角色或者角色绑定来升级权限。 由于这一点是在 API 级别实现的，所以在 RBAC 授权器（RBAC authorizer）未启用的状态下依然可以正常工作。&lt;/p&gt;
+&lt;p&gt;用户只有在拥有了角色所包含的所有权限的条件下才能创建／更新一个角色，这些操作还必须在角色所处的相同范围内进行（对于 &lt;code&gt;ClusterRole&lt;/code&gt; 来说是集群范围，对于 &lt;code&gt;Role&lt;/code&gt; 来说是在与角色相同的命名空间或者集群范围）。 例如，如果用户”user-1” 没有权限读取集群范围内的 secret 列表，那么他也不能创建包含这种权限的 &lt;code&gt;ClusterRole&lt;/code&gt;。为了能够让用户创建／更新角色，需要：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;授予用户一个角色以允许他们根据需要创建／更新 &lt;code&gt;Role&lt;/code&gt; 或者 &lt;code&gt;ClusterRole&lt;/code&gt; 对象。&lt;/li&gt;
+&lt;li&gt;授予用户一个角色包含他们在 &lt;code&gt;Role&lt;/code&gt; 或者 &lt;code&gt;ClusterRole&lt;/code&gt; 中所能够设置的所有权限。如果用户尝试创建或者修改 &lt;code&gt;Role&lt;/code&gt; 或者 &lt;code&gt;ClusterRole&lt;/code&gt; 以设置那些他们未被授权的权限时，这些 API 请求将被禁止。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;用户只有在拥有所引用的角色中包含的所有权限时才可以创建／更新角色绑定（这些操作也必须在角色绑定所处的相同范围内进行）* 或者 * 用户被明确授权可以在所引用的角色上执行绑定操作。 例如，如果用户”user-1” 没有权限读取集群范围内的 secret 列表，那么他将不能创建 &lt;code&gt;ClusterRole&lt;/code&gt; 来引用那些授予了此项权限的角色。为了能够让用户创建／更新角色绑定，需要：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;授予用户一个角色以允许他们根据需要创建／更新 &lt;code&gt;RoleBinding&lt;/code&gt; 或者 &lt;code&gt;ClusterRoleBinding&lt;/code&gt; 对象。&lt;/li&gt;
+&lt;li&gt;授予用户绑定某一特定角色所需要的权限：
+&lt;ul&gt;
+&lt;li&gt;隐式地，通过授予用户所有所引用的角色中所包含的权限&lt;/li&gt;
+&lt;li&gt;显式地，通过授予用户在特定 Role（或者 ClusterRole）对象上执行 &lt;code&gt;bind&lt;/code&gt; 操作的权限&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;例如，下面例子中的 ClusterRole 和 RoleBinding 将允许用户”user-1” 授予其它用户”user-1-namespace” 命名空间内的 &lt;code&gt;admin&lt;/code&gt;、&lt;code&gt;edit&lt;/code&gt; 和 &lt;code&gt;view&lt;/code&gt; 等角色和角色绑定。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ClusterRole&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;role-grantor&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;rules&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiGroups&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;rbac.authorization.k8s.io&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resources&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;rolebindings&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;verbs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;create&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiGroups&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;rbac.authorization.k8s.io&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resources&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;clusterroles&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;verbs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;bind&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resourceNames&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;admin&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;edit&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;view&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nn&#34;&gt;---&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;RoleBinding&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;role-grantor-binding&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;user-1-namespace&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;roleRef&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ClusterRole&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;role-grantor&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;subjects&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;User&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;user-1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当初始化第一个角色和角色绑定时，初始用户需要能够授予他们尚未拥有的权限。 初始化初始角色和角色绑定时需要：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;使用包含 &lt;code&gt;system：masters&lt;/code&gt; 用户组的凭证，该用户组通过默认绑定绑定到 &lt;code&gt;cluster-admin&lt;/code&gt; 超级用户角色。&lt;/li&gt;
+&lt;li&gt;如果您的 API Server 在运行时启用了非安全端口（&lt;code&gt;--insecure-port&lt;/code&gt;），您也可以通过这个没有施行认证或者授权的端口发送角色或者角色绑定请求。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;一些命令行工具&#34;&gt;一些命令行工具&lt;/h2&gt;
+&lt;p&gt;有两个 &lt;code&gt;kubectl&lt;/code&gt; 命令可以用于在命名空间内或者整个集群内授予角色。&lt;/p&gt;
+&lt;h3 id=&#34;kubectl-create-rolebinding&#34;&gt;&lt;code&gt;kubectl create rolebinding&lt;/code&gt;&lt;/h3&gt;
+&lt;p&gt;在某一特定命名空间内授予 &lt;code&gt;Role&lt;/code&gt; 或者 &lt;code&gt;ClusterRole&lt;/code&gt;。示例如下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;在名为”acme” 的命名空间中将 &lt;code&gt;admin&lt;/code&gt; &lt;code&gt;ClusterRole&lt;/code&gt; 授予用户”bob”：&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;kubectl create rolebinding bob-admin-binding --clusterrole=admin --user=bob --namespace=acme&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;在名为”acme” 的命名空间中将 &lt;code&gt;view&lt;/code&gt; &lt;code&gt;ClusterRole&lt;/code&gt; 授予服务账户”myapp”：&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;kubectl create rolebinding myapp-view-binding --clusterrole=view --serviceaccount=acme:myapp --namespace=acme&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;kubectl-create-clusterrolebinding&#34;&gt;&lt;code&gt;kubectl create clusterrolebinding&lt;/code&gt;&lt;/h3&gt;
+&lt;p&gt;在整个集群中授予 &lt;code&gt;ClusterRole&lt;/code&gt;，包括所有命名空间。示例如下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;在整个集群范围内将 &lt;code&gt;cluster-admin&lt;/code&gt; &lt;code&gt;ClusterRole&lt;/code&gt; 授予用户”root”：&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;kubectl create clusterrolebinding root-cluster-admin-binding --clusterrole=cluster-admin --user=root&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;在整个集群范围内将 &lt;code&gt;system:node&lt;/code&gt; &lt;code&gt;ClusterRole&lt;/code&gt; 授予用户”kubelet”：&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;kubectl create clusterrolebinding kubelet-node-binding --clusterrole=system:node --user=kubelet&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;在整个集群范围内将 &lt;code&gt;view&lt;/code&gt; &lt;code&gt;ClusterRole&lt;/code&gt; 授予命名空间”acme” 内的服务账户”myapp”：&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;kubectl create clusterrolebinding myapp-view-binding --clusterrole=view --serviceaccount=acme:myapp&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;请参阅 CLI 帮助文档以获得上述命令的详细用法&lt;/p&gt;
+&lt;h2 id=&#34;服务账户service-account权限&#34;&gt;服务账户（Service Account）权限&lt;/h2&gt;
+&lt;p&gt;默认的 RBAC 策略将授予控制平面组件（control-plane component）、节点（node）和控制器（controller）一组范围受限的权限， 但对于”kube-system” 命名空间以外的服务账户，则 &lt;strong&gt;不授予任何权限&lt;/strong&gt;（超出授予所有认证用户的发现权限）。&lt;/p&gt;
+&lt;p&gt;这一点允许您根据需要向特定服务账户授予特定权限。 细粒度的角色绑定将提供更好的安全性，但需要更多精力管理。 更粗粒度的授权可能授予服务账户不需要的 API 访问权限（甚至导致潜在授权扩散），但更易于管理。&lt;/p&gt;
+&lt;p&gt;从最安全到最不安全可以排序以下方法：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;对某一特定应用程序的服务账户授予角色（最佳实践）&lt;/p&gt;
+&lt;p&gt;要求应用程序在其 pod 规范（pod spec）中指定 &lt;code&gt;serviceAccountName&lt;/code&gt; 字段，并且要创建相应服务账户（例如通过 API、应用程序清单或者命令 &lt;code&gt;kubectl create serviceaccount&lt;/code&gt; 等）。&lt;/p&gt;
+&lt;p&gt;例如，在”my-namespace” 命名空间中授予服务账户”my-sa” 只读权限：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create rolebinding my-sa-view &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --clusterrole&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;view &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --serviceaccount&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;my-namespace:my-sa &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --namespace&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;my-namespace
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;在某一命名空间中授予”default” 服务账户一个角色&lt;/p&gt;
+&lt;p&gt;如果一个应用程序没有在其 pod 规范中指定 &lt;code&gt;serviceAccountName&lt;/code&gt;，它将默认使用”default” 服务账户。&lt;/p&gt;
+&lt;p&gt;注意：授予”default” 服务账户的权限将可用于命名空间内任何没有指定 &lt;code&gt;serviceAccountName&lt;/code&gt; 的 pod。&lt;/p&gt;
+&lt;p&gt;下面的例子将在”my-namespace” 命名空间内授予”default” 服务账户只读权限：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create rolebinding default-view &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --clusterrole&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;view &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --serviceaccount&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;my-namespace:default &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --namespace&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;my-namespace
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;目前，许多 &lt;a href=&#34;https://kubernetes.io/docs/concepts/cluster-administration/addons/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;加载项（addon）&lt;/a&gt; 作为”kube-system” 命名空间中的”default” 服务账户运行。 要允许这些加载项使用超级用户访问权限，请将 cluster-admin 权限授予”kube-system” 命名空间中的”default” 服务账户。 注意：启用上述操作意味着”kube-system” 命名空间将包含允许超级用户访问 API 的秘钥。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create clusterrolebinding add-on-cluster-admin &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --clusterrole&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;cluster-admin &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --serviceaccount&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;kube-system:default
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;为命名空间中所有的服务账户授予角色&lt;/p&gt;
+&lt;p&gt;如果您希望命名空间内的所有应用程序都拥有同一个角色，无论它们使用什么服务账户，您可以为该命名空间的服务账户用户组授予角色。&lt;/p&gt;
+&lt;p&gt;下面的例子将授予”my-namespace” 命名空间中的所有服务账户只读权限：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create rolebinding serviceaccounts-view &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --clusterrole&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;view &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --group&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;system:serviceaccounts:my-namespace &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --namespace&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;my-namespace
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;对集群范围内的所有服务账户授予一个受限角色（不鼓励）&lt;/p&gt;
+&lt;p&gt;如果您不想管理每个命名空间的权限，则可以将集群范围角色授予所有服务账户。&lt;/p&gt;
+&lt;p&gt;下面的例子将所有命名空间中的只读权限授予集群中的所有服务账户：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create clusterrolebinding serviceaccounts-view &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --clusterrole&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;view &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --group&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;system:serviceaccounts
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;授予超级用户访问权限给集群范围内的所有服务账户（强烈不鼓励）&lt;/p&gt;
+&lt;p&gt;如果您根本不关心权限分块，您可以对所有服务账户授予超级用户访问权限。&lt;/p&gt;
+&lt;p&gt;警告：这种做法将允许任何具有读取权限的用户访问 secret 或者通过创建一个容器的方式来访问超级用户的凭据。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create clusterrolebinding serviceaccounts-cluster-admin &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --clusterrole&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;cluster-admin &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --group&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;system:serviceaccounts
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;从版本-15-升级&#34;&gt;从版本 1.5 升级&lt;/h2&gt;
+&lt;p&gt;在 Kubernetes 1.6 之前，许多部署使用非常宽泛的 ABAC 策略，包括授予对所有服务账户的完整 API 访问权限。&lt;/p&gt;
+&lt;p&gt;默认的 RBAC 策略将授予控制平面组件（control-plane components）、节点（nodes）和控制器（controller）一组范围受限的权限， 但对于”kube-system” 命名空间以外的服务账户，则 &lt;em&gt;不授予任何权限&lt;/em&gt;（超出授予所有认证用户的发现权限）。&lt;/p&gt;
+&lt;p&gt;虽然安全性更高，但这可能会影响到期望自动接收 API 权限的现有工作负载。 以下是管理此转换的两种方法：&lt;/p&gt;
+&lt;h3 id=&#34;并行授权器authorizer&#34;&gt;并行授权器（authorizer）&lt;/h3&gt;
+&lt;p&gt;同时运行 RBAC 和 ABAC 授权器，并包括旧版 ABAC 策略：&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;--authorization-mode=RBAC,ABAC --authorization-policy-file=mypolicy.jsonl&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;RBAC 授权器将尝试首先授权请求。如果 RBAC 授权器拒绝 API 请求，则 ABAC 授权器将被运行。这意味着 RBAC 策略 &lt;em&gt;或者&lt;/em&gt; ABAC 策略所允许的任何请求都是可通过的。&lt;/p&gt;
+&lt;p&gt;当以日志级别为 2 或更高（&lt;code&gt;--v = 2&lt;/code&gt;）运行时，您可以在 API Server 日志中看到 RBAC 拒绝请求信息（以 &lt;code&gt;RBAC DENY:&lt;/code&gt; 为前缀）。 您可以使用该信息来确定哪些角色需要授予哪些用户，用户组或服务账户。 一旦 &lt;a href=&#34;https://kubernetes.io/docs/reference/access-authn-authz/rbac/#service-account-permissions&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;授予服务账户角色&lt;/a&gt;，并且服务器日志中没有 RBAC 拒绝消息的工作负载正在运行，您可以删除 ABAC 授权器。&lt;/p&gt;
+&lt;h3 id=&#34;宽泛的-rbac-权限&#34;&gt;宽泛的 RBAC 权限&lt;/h3&gt;
+&lt;p&gt;您可以使用 RBAC 角色绑定来复制一个宽泛的策略。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;警告：以下政策略允许所有服务账户作为集群管理员。 运行在容器中的任何应用程序都会自动接收服务账户凭据，并且可以对 API 执行任何操作，包括查看 secret 和修改权限。 因此，并不推荐使用这种策略。&lt;/strong&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create clusterrolebinding permissive-binding &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --clusterrole&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;cluster-admin &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --user&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;admin &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --user&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;kubelet &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --group&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;system:serviceaccounts
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://kubernetes.io/zh/docs/reference/access-authn-authz/rbac/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;使用 RBAC 鉴权 - kubernetes.io&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>NetworkPolicy</title>
+      <link>https://lib.jimmysong.io/kubernetes-handbook/auth/network-policy/</link>
+      <pubDate>Sat, 21 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/kubernetes-handbook/auth/network-policy/</guid>
+      <description>&lt;p&gt;网络策略说明一组 &lt;code&gt;Pod&lt;/code&gt; 之间是如何被允许互相通信，以及如何与其它网络 Endpoint 进行通信。 &lt;code&gt;NetworkPolicy&lt;/code&gt; 资源使用标签来选择 &lt;code&gt;Pod&lt;/code&gt;，并定义了一些规则，这些规则指明允许什么流量进入到选中的 &lt;code&gt;Pod&lt;/code&gt; 上。关于 Network Policy 的详细用法请参考 &lt;a href=&#34;https://kubernetes.io/docs/concepts/services-networking/network-policies/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kubernetes 官网&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;Network Policy 的作用对象是 Pod，也可以应用到 Namespace 和集群的 Ingress、Egress 流量。Network Policy 是作用在 L3/4 层的，即限制的是对 IP 地址和端口的访问，如果需要对应用层做访问限制需要使用如 &lt;a href=&#34;https://istio.io&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Istio&lt;/a&gt; 这类 Service Mesh。&lt;/p&gt;
+&lt;h2 id=&#34;前提条件&#34;&gt;前提条件&lt;/h2&gt;
+&lt;p&gt;网络策略通过网络插件来实现，所以必须使用一种支持 &lt;code&gt;NetworkPolicy&lt;/code&gt; 的网络方案（如 &lt;a href=&#34;https://www.projectcalico.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;calico&lt;/a&gt;）—— 非 Controller 创建的资源，是不起作用的。&lt;/p&gt;
+&lt;h2 id=&#34;隔离的与未隔离的-pod&#34;&gt;隔离的与未隔离的 Pod&lt;/h2&gt;
+&lt;p&gt;默认 Pod 是未隔离的，它们可以从任何的源接收请求。 具有一个可以选择 Pod 的网络策略后，Pod 就会变成隔离的。 一旦 Namespace 中配置的网络策略能够选择一个特定的 Pod，这个 Pod 将拒绝任何该网络策略不允许的连接。（Namespace 中其它未被网络策略选中的 Pod 将继续接收所有流量）&lt;/p&gt;
+&lt;h2 id=&#34;networkpolicy-资源&#34;&gt;&lt;code&gt;NetworkPolicy&lt;/code&gt; 资源&lt;/h2&gt;
+&lt;p&gt;下面是一个 &lt;code&gt;NetworkPolicy&lt;/code&gt; 的例子：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;networking.k8s.io/v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;NetworkPolicy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;test-network-policy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;default&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;podSelector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;matchLabels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;role&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;db&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;policyTypes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;Ingress&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;Egress&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;ingress&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;from&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;ipBlock&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;cidr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;172.17.0.0&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;/16&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;except&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;- &lt;span class=&#34;m&#34;&gt;172.17.1.0&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;/24&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;namespaceSelector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;matchLabels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;project&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;myproject&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;podSelector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;matchLabels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;role&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;frontend&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;ports&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;protocol&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;TCP&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;6379&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;egress&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;to&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;ipBlock&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;cidr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;10.0.0.0&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;/24&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;ports&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;protocol&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;TCP&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;5978&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;em&gt;将上面配置 POST 到 API Server 将不起任何作用，除非选择的网络方案支持网络策略。&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;必选字段&lt;/strong&gt;：像所有其它 Kubernetes 配置一样， &lt;code&gt;NetworkPolicy&lt;/code&gt; 需要 &lt;code&gt;apiVersion&lt;/code&gt;、&lt;code&gt;kind&lt;/code&gt; 和 &lt;code&gt;metadata&lt;/code&gt; 这三个字段，关于如何使用配置文件的基本信息，可以查看 &lt;a href=&#34;https://kubernetes.io/docs/user-guide/configuring-containers&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这里&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;spec&lt;/strong&gt;：&lt;code&gt;NetworkPolicy&lt;/code&gt; spec 具有在给定 Namespace 中定义特定网络的全部信息。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;podSelector&lt;/strong&gt;：每个 &lt;code&gt;NetworkPolicy&lt;/code&gt; 包含一个 &lt;code&gt;podSelector&lt;/code&gt;，它可以选择一组应用了网络策略的 Pod。由于 &lt;code&gt;NetworkPolicy&lt;/code&gt; 当前只支持定义 &lt;code&gt;ingress&lt;/code&gt; 规则，这个 &lt;code&gt;podSelector&lt;/code&gt; 实际上为该策略定义了一组 “目标Pod”。示例中的策略选择了标签为 “role=db” 的 Pod。一个空的 &lt;code&gt;podSelector&lt;/code&gt; 选择了该 Namespace 中的所有 Pod。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;ingress&lt;/strong&gt;：每个&lt;code&gt;NetworkPolicy&lt;/code&gt; 包含了一个白名单 &lt;code&gt;ingress&lt;/code&gt; 规则列表。每个规则只允许能够匹配上 &lt;code&gt;from&lt;/code&gt; 和 &lt;code&gt;ports&lt;/code&gt;配置段的流量。示例策略包含了单个规则，它从这两个源中匹配在单个端口上的流量，第一个是通过&lt;code&gt;namespaceSelector&lt;/code&gt; 指定的，第二个是通过 &lt;code&gt;podSelector&lt;/code&gt; 指定的。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;egress&lt;/strong&gt;：每个&lt;code&gt;NetworkPolicy&lt;/code&gt; 包含了一个白名单 &lt;code&gt;ingress&lt;/code&gt; 规则列表。每个规则只允许能够匹配上 &lt;code&gt;to&lt;/code&gt; 和 &lt;code&gt;ports&lt;/code&gt;配置段的流量。示例策略包含了单个规则，它匹配目的地 &lt;code&gt;10.0.0.0/24&lt;/code&gt; 单个端口的流量。&lt;/p&gt;
+&lt;p&gt;因此，上面示例的 NetworkPolicy：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;在 “default” Namespace中 隔离了标签 “role=db” 的 Pod（如果他们还没有被隔离）&lt;/li&gt;
+&lt;li&gt;在 “default” Namespace中，允许任何具有 “role=frontend” 的 Pod，IP 范围在  172.17.0.0–172.17.0.255 和 172.17.2.0–172.17.255.255（整个 172.17.0.0/16 段， 172.17.1.0/24 除外）连接到标签为 “role=db” 的 Pod 的 TCP 端口 6379&lt;/li&gt;
+&lt;li&gt;允许在 Namespace 中任何具有标签 “project=myproject” ，IP范围在10.0.0.0/24段的 Pod，连接到 “default” Namespace 中标签为 “role=db” 的 Pod 的 TCP 端口 5978&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;查看 &lt;a href=&#34;https://kubernetes.io/docs/getting-started-guides/network-policy/walkthrough&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;NetworkPolicy 入门指南&lt;/a&gt;给出的更进一步的例子。&lt;/p&gt;
+&lt;h2 id=&#34;默认策略&#34;&gt;默认策略&lt;/h2&gt;
+&lt;p&gt;通过创建一个可以选择所有 Pod 但不允许任何流量的 NetworkPolicy，你可以为一个 Namespace 创建一个 “默认的” 隔离策略，如下所示：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;networking.k8s.io/v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;NetworkPolicy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;default-deny&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;podSelector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;这确保了即使是没有被任何 NetworkPolicy 选中的 Pod，将仍然是被隔离的。&lt;/p&gt;
+&lt;p&gt;可选地，在 Namespace 中，如果你想允许所有的流量进入到所有的 Pod（即使已经添加了某些策略，使一些 Pod 被处理为 “隔离的”），你可以通过创建一个策略来显式地指定允许所有流量：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;networking.k8s.io/v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;NetworkPolicy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;allow-all&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;podSelector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;ingress&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- {}&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://kubernetes.io/docs/concepts/services-networking/network-policies/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Network Policies - kubernetes.io&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>SPIFFE</title>
+      <link>https://lib.jimmysong.io/kubernetes-handbook/auth/spiffe/</link>
+      <pubDate>Sat, 21 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/kubernetes-handbook/auth/spiffe/</guid>
+      <description>&lt;p&gt;SPIFFE，即每个人的安全生产身份框架（Secure Production Identity Framework for Everyone），是一套开源标准，用于在动态和异构环境中安全地进行身份识别。采用 SPIFFE 的系统无论在哪里运行，都可以轻松可靠地相互认证。&lt;/p&gt;
+&lt;p&gt;SPIFFE 开源规范的核心是——通过简单 API 定义了一个短期的加密身份文件 SVID。然后，工作负载进行认证时可以使用该身份文件，例如建立 TLS 连接或签署和验证 JWT 令牌等。&lt;/p&gt;
+&lt;p&gt;SPIFFE 已经在云原生应用中得到了大量的应用，尤其是在 Istio 和 Envoy 中。下面将向你介绍 SPIFFE 的一些基本概念。&lt;/p&gt;
+&lt;h2 id=&#34;工作负载&#34;&gt;工作负载&lt;/h2&gt;
+&lt;p&gt;工作负载是个单一的软件，以特定的配置部署，用于单一目的；它可能包括软件的多个运行实例，所有这些实例执行相同的任务。工作负载这个术语可以包含一系列不同的软件系统定义，包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;一个运行 Python 网络应用程序的网络服务器，在一个虚拟机集群上运行，前面有一个负载均衡器。&lt;/li&gt;
+&lt;li&gt;一个 MySQL 数据库的实例。&lt;/li&gt;
+&lt;li&gt;一个处理队列中项目的 worker 程序。&lt;/li&gt;
+&lt;li&gt;独立部署的系统的集合，它们一起工作，例如一个使用数据库服务的网络应用程序。网络应用程序和数据库也可以单独被视为工作负载。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;就 SPIFFE 而言，工作负载往往比物理或虚拟节点更加细化——通常细化到节点上的单个进程。这对工作负载来说至关重要，例如，在容器编排器中托管的工作负载，几个工作负载可能在同一个节点上（但彼此隔离）。&lt;/p&gt;
+&lt;p&gt;就 SPIFFE 而言，一个工作负载也可能跨越许多节点。例如，一个可弹性扩展的网络服务器可能同时运行在许多机器上。&lt;/p&gt;
+&lt;p&gt;虽然工作负载的粒度会因环境而异，但就 SPIFFE 而言，我们&lt;strong&gt;假设&lt;/strong&gt;工作负载之间有足够好的隔离，这样恶意的工作负载就不能窃取他人的凭证。这种隔离的稳健性和实现的机制超出了 SPIFFE 的范围。&lt;/p&gt;
+&lt;h2 id=&#34;spiffe-id&#34;&gt;SPIFFE ID&lt;/h2&gt;
+&lt;p&gt;SPIFFE ID 是一个字符串，可以唯一地、具体地标识一个工作负载。SPIFFE ID 也可以分配给工作负载所运行的中间系统（如一组虚拟机）。例如，&lt;code&gt;spiffe://acme.com/billing/payments&lt;/code&gt; 是一个有效的SPIFFE ID。&lt;/p&gt;
+&lt;p&gt;SPIFFE ID 是一个&lt;a href=&#34;https://tools.ietf.org/html/rfc3986&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;统一资源标识符（URI&lt;/a&gt;），其格式如下：&lt;code&gt;spiffe://信任域/工作负载标识符&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;工作负载标识符&lt;/strong&gt;是一个&lt;a href=&#34;https://spiffe.io/docs/latest/spiffe-about/spiffe-concepts/#trust-domain&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;信任域&lt;/a&gt;内的特定工作负载的唯一标识。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIFFE 规范&lt;/a&gt;详细描述了 SPIFFE ID 的格式和使用。&lt;/p&gt;
+&lt;h2 id=&#34;信任域&#34;&gt;信任域&lt;/h2&gt;
+&lt;p&gt;信任域对应于系统的信任根。信任域可以代表个人、组织、环境或部门，运行他们自己独立的 SPIFFE 基础设施。在同一信任域中确定的所有工作负载都会被颁发身份文件，它们可以根据信任域的根密钥进行验证。&lt;/p&gt;
+&lt;p&gt;通常建议将处于不同物理位置（如不同的数据中心或云区域）或应用不同安全实践的环境（如与生产环境相比的暂存或实验环境）的工作负载放在不同的信任域中。&lt;/p&gt;
+&lt;h2 id=&#34;spiffe-可验证的身份文件svid&#34;&gt;SPIFFE 可验证的身份文件（SVID）&lt;/h2&gt;
+&lt;p&gt;SVID（SPIFFE Verifiable Identity Document） 是工作负载向资源或调用者证明其身份的文件。如果 SVID 是由 SPIFFE ID 的信任域内的机构签发的，则被认为是有效的。&lt;/p&gt;
+&lt;p&gt;SVID 包含一个 SPIFFE ID，代表了服务的身份。它将 SPIFFE ID 编码在一个可加密验证的文件中，目前支持两种格式：X.509 证书或 JWT 令牌。&lt;/p&gt;
+&lt;p&gt;由于令牌容易受到&lt;strong&gt;重放攻击（replay attack）&lt;/strong&gt;，即在传输过程中获得令牌的攻击者可以使用它来冒充工作负载，因此建议尽可能使用 &lt;code&gt;X.509-SVID&lt;/code&gt;。然而，在某些情况下，JWT令牌格式是唯一的选择，例如，当你的架构在两个工作负载之间有一个L7代理或负载均衡器。&lt;/p&gt;
+&lt;p&gt;关于 SVID 的详细信息，请参阅 &lt;a href=&#34;https://github.com/spiffe/spiffe/blob/main/standards/X509-SVID.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SVID 规范&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;spiffe-工作负载-api&#34;&gt;SPIFFE 工作负载 API&lt;/h2&gt;
+&lt;p&gt;工作负载 API 提供以下内容。&lt;/p&gt;
+&lt;p&gt;对于&lt;code&gt;X.509&lt;/code&gt;格式的身份文件（&lt;code&gt;X.509-SVID&lt;/code&gt;）:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;其身份，描述为 SPIFFE ID。&lt;/li&gt;
+&lt;li&gt;一个与该 ID 绑定的私钥，可用于代表工作负载签署数据。一个相应的短期 X.509 证书也将被创建，即 &lt;code&gt;X509-SVID&lt;/code&gt;。这可以用来建立 TLS 或以其他方式对其他工作负载进行认证。&lt;/li&gt;
+&lt;li&gt;一组证书——被称为&lt;a href=&#34;https://spiffe.io/docs/latest/spiffe-about/spiffe-concepts/#trust-bundle&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;信任包&lt;/a&gt;。一个工作负载用来验证另一个工作负载提出的&lt;code&gt;X.509-SVID&lt;/code&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;对于 JWT 格式的身份文件（JWT-SVID）：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;其身份，描述为 SPIFFE ID&lt;/li&gt;
+&lt;li&gt;JWT 令牌&lt;/li&gt;
+&lt;li&gt;一组证书——被称为&lt;a href=&#34;https://spiffe.io/docs/latest/spiffe-about/spiffe-concepts/#trust-bundle&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;信任包&lt;/a&gt;，一个工作负载用来验证其他工作负载的身份。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;与 &lt;a href=&#34;https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;AWS  EC2 实例元数据 API&lt;/a&gt;和 &lt;a href=&#34;https://cloud.google.com/compute/docs/storing-retrieving-metadata&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Google GCE 实例元数据 API&lt;/a&gt; 类似，工作负载 API 不要求调用的工作负载对自己的身份有任何了解，也不要求调用 API 时拥有任何认证令牌。这意味着你的应用程序不需要与工作负载共同部署任何认证密钥。&lt;/p&gt;
+&lt;p&gt;然而，与这些其他 API 不同的是，Workload API 与平台无关，可以在进程级和内核级识别正在运行的服务，这使得它适合与 Kubernetes 等容器调度器一起使用。&lt;/p&gt;
+&lt;p&gt;为了最大限度地减少密钥泄露的风险，所有私钥（和相应的证书）都是短期的，经常自动轮换。工作负载可以在相应的密钥过期前从工作负载API请求新的密钥和信任包。&lt;/p&gt;
+&lt;h2 id=&#34;信任包&#34;&gt;信任包&lt;/h2&gt;
+&lt;p&gt;当使用 &lt;code&gt;X.509-SVID&lt;/code&gt; 时，目标工作负载使用信任包（Trust Bundle）来验证源工作负载的身份。信任包是一个或多个证书机构（CA）根证书的集合，工作负载认为这些证书是可信的。信任包包含 X.509 和 JWT SVID 的公钥材料。&lt;/p&gt;
+&lt;p&gt;用来验证 X.509 SVID 的公钥材料是一组证书。用于验证 JWT 的公钥材料是一个原始公钥。信任包的内容是经常轮换的。工作负载在调用工作负载 API 时检索信任包。&lt;/p&gt;
+&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://spiffe.io&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIFFE 官网 - spiffe.io&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>SPIRE</title>
+      <link>https://lib.jimmysong.io/kubernetes-handbook/auth/spire/</link>
+      <pubDate>Fri, 10 Jun 2022 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/kubernetes-handbook/auth/spire/</guid>
+      <description>&lt;p&gt;这篇文章将向你介绍 SPIRE 的架构、基本概念及原理。&lt;/p&gt;
+&lt;p&gt;SPIRE 是 &lt;a href=&#34;../spiffe&#34;&gt;SPIFFE API&lt;/a&gt; 的一个生产就绪的实现，它执行节点和工作负载认证，以便根据一组预先定义的条件，安全地向工作负载发出 SVID，并验证其他工作负载的 SVID。&lt;/p&gt;
+&lt;h2 id=&#34;spire-架构和组件&#34;&gt;SPIRE 架构和组件&lt;/h2&gt;
+&lt;p&gt;SPIRE 部署由一个 SPIRE 服务器和一个或多个 SPIRE 代理组成。服务器充当通过代理向一组工作负载发放身份的签名机构。它还维护一个工作负载身份的注册表，以及为签发这些身份而必须验证的条件。代理在本地向工作负载公开 SPIFFE 工作负载 API，必须安装在工作负载运行的每个节点上。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-spire-架构图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/spire-arch.jpg&#34; alt=&#34;SPIRE 架构图&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      SPIRE 架构图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h2 id=&#34;服务器&#34;&gt;服务器&lt;/h2&gt;
+&lt;p&gt;SPIRE 服务器负责管理和发布其配置的 SPIFFE 信任域中的所有身份。它存储注册条目（指定决定特定 SPIFFE ID 应被签发的条件的选择器）和签名密钥，使用节点证明来自动验证代理的身份，并在被验证的代理请求时为工作负载创建 SVID。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-spire-服务器&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/spire-server.jpg&#34; alt=&#34;SPIRE 服务器&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      SPIRE 服务器
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;服务器的行为是通过一系列的插件决定的。SPIRE 包含几个插件，你可以建立额外的插件来扩展 SPIRE 以满足特定的使用情况。插件的类型包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;节点证明器插件&lt;/strong&gt;：与代理节点证明器一起，验证代理运行的节点的身份。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;节点解析器插件&lt;/strong&gt;：它通过验证关于节点的额外属性来扩展服务器可以用来识别节点的选择器集合。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;数据存储插件&lt;/strong&gt;：服务器用它来存储、查询和更新各种信息，如注册条目、哪些节点已认证、这些节点的选择器是什么。有一个内置的数据存储插件，可以使用 MySQL、SQLite3 或 PostgresSQL 数据库来存储必要的数据。默认情况下，使用 SQLite 3。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;密钥管理器插件&lt;/strong&gt;：控制服务器如何存储用于签署 X.509-SVID 和 JWT-SVID 的私钥。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;上游权威机构插件&lt;/strong&gt;：默认情况下，SPIRE 服务器充当其自身的证书授权机构。但是，你可以使用上游权威机构插件来使用来自不同 PKI 系统的不同 CA。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;你可以通过配置插件和其他各种配置变量来定制服务器的行为。详见 &lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_server/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 服务器配置参考&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;代理&#34;&gt;代理&lt;/h2&gt;
+&lt;p&gt;SPIRE 代理在已识别的工作负载所运行的每个节点上运行。该代理：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;从服务器上请求 SVID，并将其缓存起来，直到工作负载请求其 SVID 为止。&lt;/li&gt;
+&lt;li&gt;向节点上的工作负载公开 SPIFFE 工作负载 API，并证明调用它的工作负载的身份&lt;/li&gt;
+&lt;li&gt;为已识别的工作负载提供其 SVID&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-spire-代理&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/spire-agent.jpg&#34; alt=&#34;SPIRE 代理&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      SPIRE 代理
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;该代理的主要组成部分包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;节点证明器插件&lt;/strong&gt;：与服务器节点证明器一起，验证代理运行的节点的身份。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;工作负载证明器插件&lt;/strong&gt;：通过从节点操作系统中查询有关工作负载进程的信息，并将其与你在使用选择器注册工作负载属性时提供给服务器的信息进行比较，来验证节点上工作负载进程的身份。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;密钥管理器插件&lt;/strong&gt;：代理用来生成和使用颁发给工作负载的 X.509-SVID 的私钥。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;你可以通过配置插件和其他配置变量来定制代理的行为。详见《&lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_agent/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 代理配置参考》&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;自定义服务器和代理插件&#34;&gt;自定义服务器和代理插件&lt;/h2&gt;
+&lt;p&gt;你可以为特定的平台和架构创建自定义的服务器和代理插件，而 SPIRE 并不包括这些插件。例如，你可以为一个架构创建服务器和代理节点验证器，而不是在节点验证下总结的那些。或者你可以创建一个自定义密钥管理器插件，以 SPIRE 目前不支持的方式处理私钥。因为 SPIRE 在运行时加载自定义插件，你不需要重新编译 SPIRE 来启用它们。&lt;/p&gt;
+&lt;h2 id=&#34;工作负载注册&#34;&gt;工作负载注册&lt;/h2&gt;
+&lt;p&gt;为了让 SPIRE 识别工作负载，你必须通过注册条目向 SPIRE 服务器注册工作负载。工作负载注册告诉 SPIRE 如何识别工作负载以及为其提供哪个 SPIFFE ID。&lt;/p&gt;
+&lt;p&gt;注册条目将身份（以 SPIFFE ID 的形式）映射到一组称为选择器的属性，工作负载必须拥有这些属性才能获得特定身份。在工作负载证明期间，代理使用这些选择器值来验证工作负载的身份。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://spiffe.io/docs/latest/spire/using/registering/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 文档&lt;/a&gt;中详细介绍了工作负载注册。&lt;/p&gt;
+&lt;h2 id=&#34;证明&#34;&gt;证明&lt;/h2&gt;
+&lt;p&gt;SPIRE 上下文中的证明（attestation）是断言工作负载的身份。SPIRE 通过从受信任的第三方收集工作负载进程本身和运行 SPIRE 代理的节点的属性并将它们与工作负载注册时定义的一组选择器进行比较来实现这一点。&lt;/p&gt;
+&lt;p&gt;用于执行证明的可信第三方 SPIRE 查询是特定于平台的。&lt;/p&gt;
+&lt;p&gt;SPIRE 分两个阶段执行证明：首先是节点证明（其中验证工作负载正在运行的节点的身份），然后是工作负载证明（其中验证节点上的工作负载）。&lt;/p&gt;
+&lt;p&gt;SPIRE 有一个灵活的架构，允许它根据工作负载运行的环境，使用许多不同的受信第三方进行节点和工作负载验证。你通过代理和服务器配置文件中的条目告诉 SPIRE 使用哪些受信任的第三方，并通过你在注册工作负载时指定的选择器值告诉 SPIRE 使用哪些类型的信息进行验证。&lt;/p&gt;
+&lt;h3 id=&#34;节点证明&#34;&gt;节点证明&lt;/h3&gt;
+&lt;p&gt;SPIRE 要求每个代理在首次连接到服务器时进行身份验证和自我验证；这个过程称为节点证明（Node Attestation）。在节点证明期间，代理和服务器一起验证运行代理的节点的身份。他们通过称为节点证明器的插件来做到这一点。所有节点证明器都向节点及其环境询问只有该节点拥有的信息片段，以证明该节点的身份。&lt;/p&gt;
+&lt;p&gt;节点证明的成功后，代理收到唯一的 SPIFFE ID。然后，代理的 SPIFFE ID 充当其负责的工作负载的 “父级”。&lt;/p&gt;
+&lt;p&gt;节点身份证明的示例包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;通过云平台交付给节点的身份证明文件（例如 AWS Instance 身份证明文件）&lt;/li&gt;
+&lt;li&gt;验证存储在连接到节点的硬件安全模块或可信平台模块上的私钥&lt;/li&gt;
+&lt;li&gt;安装代理时通过加入令牌提供的手动验证&lt;/li&gt;
+&lt;li&gt;多节点软件系统安装在节点上时提供的标识凭据（例如 Kubernetes 服务账户令牌）&lt;/li&gt;
+&lt;li&gt;其他机器身份证明（例如部署的服务器证书）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;节点证明器向服务器返回一组（可选）节点选择器，用于标识特定机器（例如 Amazon 实例 ID）。由于在定义工作负载的身份时，单个机器的特定身份通常没有用处，因此 SPIRE 会查询&lt;a href=&#34;https://spiffe.io/docs/latest/spire-about/spire-concepts/#node-resolution&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;节点解析器&lt;/a&gt;（如果有）以查看可以验证被证明节点的哪些附加属性（例如，如果节点是 AWS 安全组的成员）。来自证明器和解析者的选择器集成为与代理节点的 SPIFFE ID 关联的选择器集。&lt;/p&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+  &lt;div class=&#34;alert-title&#34;&gt;
+      &lt;p&gt;&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    节点证明不需要节点选择器，除非你&lt;a href=&#34;https://spiffe.io/docs/latest/spire/using/registering/#mapping-workloads-to-multiple-nodes&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;将工作负载映射到多个节点&lt;/a&gt;。
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;p&gt;下图说明了节点证明中的步骤。在此图中，底层平台是 AWS：&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-spire-节点证明步骤&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/spire-node-attestor.jpg&#34; alt=&#34;SPIRE 节点证明步骤&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      SPIRE 节点证明步骤
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h4 id=&#34;步骤总结节点证明&#34;&gt;步骤总结：节点证明&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;代理 AWS 节点证明器插件向 AWS 查询节点身份证明，并将该信息提供给代理。&lt;/li&gt;
+&lt;li&gt;代理将此身份证明传递给服务器。服务器将此数据传递给其 AWS 节点证明器。&lt;/li&gt;
+&lt;li&gt;服务器 AWS 节点证明器独立验证身份证明，或者通过调用 AWS API，使用它在步骤 2 中获得的信息。节点证明器还为代理创建一个 SPIFFE ID，并将其传递回服务器进程，以及它发现的任何节点选择器。&lt;/li&gt;
+&lt;li&gt;服务器发回代理节点的 SVID。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4 id=&#34;节点证明器&#34;&gt;节点证明器&lt;/h4&gt;
+&lt;p&gt;代理和服务器通过它们各自的节点证明器询问底层平台。SPIRE 支持节点证明器在各种环境中证明节点身份，包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;AWS 上的 EC2 实例（使用 EC2 实例身份文档）&lt;/li&gt;
+&lt;li&gt;Microsoft Azure 上的 VM（使用 Azure 托管服务标识）&lt;/li&gt;
+&lt;li&gt;Google Cloud Platform 上的 Google Compute Engine 实例（使用 GCE 实例身份令牌）&lt;/li&gt;
+&lt;li&gt;作为 Kubernetes 集群成员的节点（使用 Kubernetes 服务账户令牌）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;对于没有平台可以直接识别节点的情况，SPIRE 包括用于证明的节点证明器：&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;使用服务器生成的加入令牌&lt;/strong&gt;—— 加入令牌（join token）是 SPIRE 服务器和代理之间的预共享密钥。服务器可以在安装后生成加入令牌，该令牌可用于在代理启动时对其进行验证。为帮助防止滥用，加入令牌在使用后立即过期。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;使用现有的 X.509 证书&lt;/strong&gt;—— 有关配置节点证明器的信息，请参阅 &lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_server/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 服务器配置参考&lt;/a&gt;和 &lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_agent/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 代理配置参考&lt;/a&gt;。&lt;/p&gt;
+&lt;h4 id=&#34;节点解析&#34;&gt;节点解析&lt;/h4&gt;
+&lt;p&gt;一旦验证了单个节点的身份，“节点解析器” 插件就会扩展一组选择器，这些选择器可用于通过验证节点的其他属性来识别节点（例如，如果节点是特定 AWS 安全组的成员） ，或具有与之关联的特定标签）。只有服务器参与节点解析。SPIRE 在证明之后直接运行一次节点解析器。&lt;/p&gt;
+&lt;h4 id=&#34;节点解析器&#34;&gt;节点解析器&lt;/h4&gt;
+&lt;p&gt;服务器支持以下平台的节点解析器插件：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;亚马逊网络服务（AWS）&lt;/li&gt;
+&lt;li&gt;微软 Azure&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;工作负载证明&#34;&gt;工作负载证明&lt;/h3&gt;
+&lt;p&gt;工作负载证明提出了一个问题：“这是谁的进程？” 代理通过询问本地可用的权限（例如节点的操作系统内核，或在同一节点上运行的本地 kubelet）来回答这个问题，以确定调用工作负载 API 的进程的属性。&lt;/p&gt;
+&lt;p&gt;然后，当你使用选择器注册工作负载的属性时，将这些属性与提供给服务器的信息进行比较。&lt;/p&gt;
+&lt;p&gt;这些类型的信息可能包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;底层操作系统如何调度进程。在基于 Unix 的系统上，这可能是用户 ID (uid)、组 ID (gid)、文件系统路径等。）&lt;/li&gt;
+&lt;li&gt;进程是如何由 Kubernetes 等编排系统调度的。在这种情况下，工作负载可能由运行它的 Kubernetes 服务账户或命名空间来描述。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;虽然代理和服务器都在节点证明中发挥作用，但只有代理参与工作负载证明。&lt;/p&gt;
+&lt;p&gt;下图说明了工作负载证明的步骤：&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-工作负载证明&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/workload-attestation.jpg&#34; alt=&#34;工作负载证明&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      工作负载证明
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h4 id=&#34;步骤摘要工作负载证明&#34;&gt;步骤摘要：工作负载证明&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;工作负载调用工作负载 API 以请求 SVID。在 Unix 系统上，这被暴露为 Unix 域套接字。&lt;/li&gt;
+&lt;li&gt;代理询问节点的内核以识别调用者的进程 ID。然后，它调用任何已配置的工作负载证明器插件，为它们提供工作负载的进程 ID。&lt;/li&gt;
+&lt;li&gt;工作负载证明者使用进程 ID 来发现有关工作负载的其他信息，并根据需要查询相邻平台特定的组件，例如 Kubernetes kubelet。通常，这些组件也与代理驻留在同一节点上。&lt;/li&gt;
+&lt;li&gt;证明者将发现的信息以选择器的形式返回给代理。&lt;/li&gt;
+&lt;li&gt;代理通过将发现的选择器与注册条目进行比较来确定工作负载的身份，并将正确的缓存 SVID 返回给工作负载。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4 id=&#34;工作负载证明者&#34;&gt;工作负载证明者&lt;/h4&gt;
+&lt;p&gt;SPIRE 包括适用于 Unix、Kubernetes 和 Docker 的工作负载证明器插件。&lt;/p&gt;
+&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://spiffe.io/docs/latest/spire-about/spire-concepts/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE Concepts - spiffe.io&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>SPIRE Kubernetes 工作负载注册器</title>
+      <link>https://lib.jimmysong.io/kubernetes-handbook/auth/spire-k8s-workload-registar/</link>
+      <pubDate>Wed, 08 Jun 2022 16:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/kubernetes-handbook/auth/spire-k8s-workload-registar/</guid>
+      <description>&lt;p&gt;SPIRE Kubernetes 工作负载注册器实现了一个 Kubernetes &lt;code&gt;ValidatingAdmissionWebhook&lt;/code&gt;，便于在 Kubernetes 内自动注册工作负载。&lt;/p&gt;
+&lt;h2 id=&#34;配置&#34;&gt;配置&lt;/h2&gt;
+&lt;h3 id=&#34;命令行配置&#34;&gt;命令行配置&lt;/h3&gt;
+&lt;p&gt;注册器有以下命令行选项：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;标志&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;描述&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;默认值&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;-config&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;磁盘上 HCL 配置文件的路径&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;k8s-workload-registrar.conf&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;hcl-配置&#34;&gt;HCL 配置&lt;/h3&gt;
+&lt;p&gt;配置文件是注册器所必需的。它包含 &lt;a href=&#34;https://github.com/hashicorp/hcl&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;HCL&lt;/a&gt; 编码的配置项。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;键&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;类型&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;必需的？&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;描述&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;默认&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;log_level&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;必需的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;日志级别（&lt;code&gt;panic&lt;/code&gt;、 &lt;code&gt;fatal&lt;/code&gt;、 &lt;code&gt;error&lt;/code&gt;、 &lt;code&gt;warn&lt;/code&gt;、 &lt;code&gt;warning&lt;/code&gt;、 &lt;code&gt;info&lt;/code&gt;、 &lt;code&gt;debug&lt;/code&gt;、&lt;code&gt;trace&lt;/code&gt; 之一）&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;info&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;log_path&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;可选的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;写入日志的磁盘路径&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;trust_domain&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;必需的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;SPIRE 服务器的信任域&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;agent_socket_path&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;可选的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;SPIRE 代理的 Unix 域套接字的路径。如果 &lt;code&gt;server_address&lt;/code&gt; 不是 unix 域套接字地址，则为必需。&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;server_address&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;必需的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;SPIRE 服务器的地址。可以使用 &lt;code&gt;unix:///path/to/socket&lt;/code&gt; 指定本地套接字。这与代理套接字不同。&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;server_socket_path&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;可选的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;SPIRE 服务器的 Unix 域套接字的路径，相当于指定带有 &lt;code&gt;unix://&lt;/code&gt; 前缀的 &lt;code&gt;server_address&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;cluster&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;必需的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;用于在其下注册节点 / 工作负载的逻辑集群。必须与 SPIRE SERVER PSAT 节点证明者配置相匹配。&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;pod_label&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;可选的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;pod 标签，用于基于标签的工作负载注册&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;pod_annotation&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;可选的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;pod 注解，用于基于注解的工作负载注册&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;mode&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;可选的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;如何使用 &lt;code&gt;webhook&lt;/code&gt;、 &lt;code&gt;reconcile&lt;/code&gt; 或运行注册器 &lt;code&gt;crd&lt;/code&gt;。&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;webhook&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;disabled_namespaces&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;[]string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;可选的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;逗号分隔的命名空间列表，用于禁用自动 SVID 生成&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;kube-system&lt;/code&gt;、 &lt;code&gt;kube-public&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;以下配置指令是针对 &lt;code&gt;webhook&lt;/code&gt; 模式的：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;键&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;类型&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;必需的？&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;描述&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;默认&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;addr&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;必需的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;将 HTTPS 监听器绑定到的地址&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;:8443&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;cert_path&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;必需的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;PEM 编码的服务器 TLS 证书的磁盘路径&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;cert.pem&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;key_path&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;必需的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;PEM 编码的服务器 TLS 密钥的磁盘路径&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;key.pem&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;cacert_path&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;必需的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;用于验证客户端（即 API 服务器）的 CA 证书的磁盘路径&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;cacert.pem&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;insecure_skip_client_verification&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;boolean&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;必需的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;如果为 true，则跳过客户端证书验证（在这种情况下 &lt;code&gt;cacert_path&lt;/code&gt; 被忽略）。&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;false&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;以下配置是针对 &lt;code&gt;reconcile&lt;/code&gt; 模式的：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;键&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;类型&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;必需的？&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;描述&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;默认&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;leader_election&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;bool&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;可选的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;启用 / 禁用领导者选举。如果你有多个注册器副本正在运行，请启用&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;false&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;leader_election_resource_lock&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;可选的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;配置用于领导选举锁的资源类型&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;configmaps&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;metrics_addr&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;可选的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;公开指标的地址，&lt;code&gt;0&lt;/code&gt; 用于禁用&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;:8080&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;controller_name&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;可选的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;构成用于父 ID 的 spiffe ID 的一部分&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;spire-k8s-registrar&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;add_pod_dns_names&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;bool&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;可选的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;启用 / 禁用将 k8s DNS 名称添加到 pod SVID。&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;错误的&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;cluster_dns_zone&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;string&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;可选的&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;k8s 集群中用于服务的 DNS 区域。&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;cluster.local&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;关于 CRD 配置指令，见 &lt;a href=&#34;https://github.com/spiffe/spire/blob/main/support/k8s/k8s-workload-registrar/mode-crd/README.md#configuration&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CRD 模式配置&lt;/a&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;示例&#34;&gt;示例&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;log_level&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;debug&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;trust_domain&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;domain.test&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;server_socket_path&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;/tmp/spire-server/private/api.sock&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;cluster&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;production&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;工作负载注册&#34;&gt;工作负载注册&lt;/h2&gt;
+&lt;p&gt;当在 webhook、reconcile 或 crd 模式下运行时，&lt;code&gt;pod_controller=true&lt;/code&gt; 的条目将被自动创建为 Pod。可用的工作负载注册模式包括：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;注册模式&lt;/th&gt;
+&lt;th&gt;pod_label&lt;/th&gt;
+&lt;th&gt;pod_annotation&lt;/th&gt;
+&lt;th&gt;identity_template&lt;/th&gt;
+&lt;th&gt;基于服务账户&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;webhook&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;由 pod_label 指定&lt;/td&gt;
+&lt;td&gt;由 pod_annotation 指定&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;不可用&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;服务账户&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;reconcile&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;由 pod_label 指定&lt;/td&gt;
+&lt;td&gt;由 pod_annotation 指定&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;不可用&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;服务账户&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;crd&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;由 pod_label 指定&lt;/td&gt;
+&lt;td&gt;由 pod_annotation 指定&lt;/td&gt;
+&lt;td&gt;由 identity_template 指定&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;不可用&lt;/em&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;如果对 &lt;a href=&#34;http://localhost:1313/kubernetes-handbook/concepts/spire-k8s-workload-registar/#service-account-based-workload-registration&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;基于服务账户的 SPIFFE ID&lt;/a&gt; &lt;code&gt;webhook&lt;/code&gt; 使用和 &lt;code&gt;reconcile&lt;/code&gt; 模式，请不要指定 &lt;code&gt;pod_label&lt;/code&gt; 或 &lt;code&gt;pod_annotation&lt;/code&gt;。如果你使用基于标签的 SPIFFE ID，请仅指定 &lt;code&gt;pod_label&lt;/code&gt;。如果你使用基于注解的 SPIFFE ID，请仅指定 &lt;code&gt;pod_annotation&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;对于 &lt;code&gt;crd&lt;/code&gt; 模式，如果既不选择 &lt;code&gt;pod_label&lt;/code&gt; 也不选择 &lt;code&gt;pod_annotation&lt;/code&gt; 工作负载注册模式， &lt;code&gt;identity_template&lt;/code&gt; 则作为默认配置： &lt;code&gt;ns/{{.Pod.Namespace}}/sa/{{.Pod.ServiceAccount}}&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;新创建的 SVID 可能需要几秒钟才能对工作负载可用。&lt;/p&gt;
+&lt;h3 id=&#34;联合条目注册&#34;&gt;联合条目注册&lt;/h3&gt;
+&lt;p&gt;pod 注解 &lt;code&gt;spiffe.io/federatesWith&lt;/code&gt; 可用于创建与其他信任域联合的 SPIFFE ID。&lt;/p&gt;
+&lt;p&gt;要指定多个信任域，请用逗号分隔它们。&lt;/p&gt;
+&lt;p&gt;例子：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Pod&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spiffe.io/federatesWith&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;example.com,example.io,example.ai&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;test&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;containers&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;基于服务账户的工作负载注册&#34;&gt;基于服务账户的工作负载注册&lt;/h3&gt;
+&lt;p&gt;授予工作负载的 SPIFFE ID 源自：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;服务账户&lt;/li&gt;
+&lt;li&gt;可配置的 pod 标签&lt;/li&gt;
+&lt;li&gt;可配置的 pod 注解&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;服务账户派生的工作负载注册将服务账户映射到表单的 SPIFFE ID &lt;code&gt;spiffe://&amp;lt;TRUSTDOMAIN&amp;gt;/ns/&amp;lt;NAMESPACE&amp;gt;/sa/&amp;lt;SERVICEACCOUNT&amp;gt;&lt;/code&gt;。例如，如果一个 pod 使用命名空间中的服务账户 &lt;code&gt;blog&lt;/code&gt; 进入 &lt;code&gt;production&lt;/code&gt;，则将创建以下注册条目：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Entry ID      : 200d8b19-8334-443d-9494-f65d0ad64eb5
+SPIFFE ID     : spiffe://example.org/ns/production/sa/blog
+Parent ID     : ...
+TTL           : default
+Selector      : k8s:ns:production
+Selector      : k8s:pod-name:example-workload-98b6b79fd-jnv5m
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;基于标签的工作负载注册&#34;&gt;基于标签的工作负载注册&lt;/h3&gt;
+&lt;p&gt;基于标签的工作负载注册将 pod 标签值映射到表单的 SPIFFE ID &lt;code&gt;spiffe://&amp;lt;TRUSTDOMAIN&amp;gt;/&amp;lt;LABELVALUE&amp;gt;&lt;/code&gt;。例如，如果注册器配置了 &lt;code&gt;spire-workload&lt;/code&gt; 标签，并且 pod 带有 &lt;code&gt;spire-workload=example-workload&lt;/code&gt;，则将创建以下注册条目：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Entry ID      : 200d8b19-8334-443d-9494-f65d0ad64eb5
+SPIFFE ID     : spiffe://example.org/example-workload
+Parent ID     : ...
+TTL           : default
+Selector      : k8s:ns:production
+Selector      : k8s:pod-name:example-workload-98b6b79fd-jnv5m
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不包含 pod 标签的 pod 将被忽略。&lt;/p&gt;
+&lt;h3 id=&#34;基于注解的工作负载注册&#34;&gt;基于注解的工作负载注册&lt;/h3&gt;
+&lt;p&gt;基于注解的工作负载注册将 pod 注解值映射到表单的 SPIFFE ID &lt;code&gt;spiffe://&amp;lt;TRUSTDOMAIN&amp;gt;/&amp;lt;ANNOTATIONVALUE&amp;gt;&lt;/code&gt;。通过使用该模式，可以自由设置 SPIFFE ID 路径。例如，如果注册器配置了 &lt;code&gt;spiffe.io/spiffe-id&lt;/code&gt; 注解并且 pod 带有 &lt;code&gt;spiffe.io/spiffe-id: production/example-workload&lt;/code&gt;，则将创建以下注册条目：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Entry ID      : 200d8b19-8334-443d-9494-f65d0ad64eb5
+SPIFFE ID     : spiffe://example.org/production/example-workload
+Parent ID     : ...
+TTL           : default
+Selector      : k8s:ns:production
+Selector      : k8s:pod-name:example-workload-98b6b79fd-jnv5m
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;不包含 pod 注解的 pod 将被忽略。&lt;/p&gt;
+&lt;h3 id=&#34;基于身份模板的工作负载注册&#34;&gt;基于身份模板的工作负载注册&lt;/h3&gt;
+&lt;p&gt;这是特定于 &lt;code&gt;crd&lt;/code&gt; 模式的。请参阅 &lt;code&gt;crd&lt;/code&gt; 模式文档中的&lt;a href=&#34;https://github.com/spiffe/spire/blob/main/support/k8s/k8s-workload-registrar/mode-crd/README.md#identity-template-based-workload-registration&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;基于身份模板的工作负载注册&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;部署&#34;&gt;部署&lt;/h2&gt;
+&lt;p&gt;注册器既可以作为独立 Deployment 部署，也可以作为 SPIRE 服务器 pod 中的容器部署。如果它是独立部署的，则需要手动创建与注册器部署相匹配的管理员注册条目。&lt;/p&gt;
+&lt;p&gt;如果它被部署为 SPIRE 服务器 pod 中的容器，那么它会通过 Unix 域套接字与 SPIRE 服务器通信。它将需要访问包含套接字文件的共享卷。&lt;/p&gt;
+&lt;h3 id=&#34;协调模式配置&#34;&gt;协调模式配置&lt;/h3&gt;
+&lt;p&gt;要使用协调模式（Reconcile Mode），你需要创建适当的角色并将它们绑定到你打算运行控制器的 ServiceAccount。&lt;/p&gt;
+&lt;h3 id=&#34;crd-模式配置&#34;&gt;CRD 模式配置&lt;/h3&gt;
+&lt;p&gt;请参阅 &lt;a href=&#34;https://github.com/spiffe/spire/blob/main/support/k8s/k8s-workload-registrar/mode-crd/README.md#quick-start&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CRD Kubernetes Workload Registrar 快速入门&lt;/a&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;webhook-模式配置&#34;&gt;Webhook 模式配置&lt;/h3&gt;
+&lt;p&gt;注册器将需要访问其服务器密钥对和用于验证客户端的 CA 证书。&lt;/p&gt;
+&lt;p&gt;设置验证准入控制器需要以下 K8s 对象：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Service&lt;/code&gt; 指向 spire-server 容器中的注册端口&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ValidatingWebhookConfiguration&lt;/code&gt; 将注册器配置为验证准入控制器&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;此外，除非你禁用客户端身份验证 ( &lt;code&gt;insecure_skip_client_verification&lt;/code&gt;)，否则你将需要：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Config&lt;/code&gt; 注册器服务客户端的用户条目包含 API 服务器应用于向注册器进行身份验证的客户端证书 / 密钥。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;AdmissionConfiguration&lt;/code&gt; 描述 API 服务器可以在哪里找到包含 &lt;code&gt;Config&lt;/code&gt;。该文件通过 &lt;code&gt;--admission-control-config-file&lt;/code&gt; 标志传递给 API 服务器。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;webhook-模式安全注意事项&#34;&gt;Webhook 模式安全注意事项&lt;/h4&gt;
+&lt;p&gt;注册器默认对客户端进行身份验证。这是注册器整体安全性的一个非常重要的方面，因为注册器可用于提供对 SPIRE 服务器 API 的间接访问，尽管范围有限。除非你完全了解风险，否则不建议跳过客户端验证（通过 &lt;code&gt;insecure_skip_client_verification&lt;/code&gt; 配置）。&lt;/p&gt;
+&lt;h4 id=&#34;从-webhook-迁移&#34;&gt;从 webhook 迁移&lt;/h4&gt;
+&lt;p&gt;需要移除 k8s &lt;code&gt;ValidatingWebhookConfiguration&lt;/code&gt;，否则 pod 可能无法准入。如果你使用默认配置，则可以通过以下方式完成：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl validatingwebhookconfiguration delete k8s-workload-registrar-webhook
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;dns-名称&#34;&gt;DNS 名称&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;reconcile&lt;/code&gt; 和 &lt;code&gt;crd&lt;/code&gt; 模式都提供了将 DNS 名称添加到 pod 的注册条目的能力。它们目前对应该添加哪些名称有不同的想法，&lt;code&gt;reconcile&lt;/code&gt; 添加可用于访问 pod 的所有可能名称（通过服务或直接），并将 &lt;code&gt;crd&lt;/code&gt; 模式限制为 &lt;code&gt;&amp;lt;service&amp;gt;.&amp;lt;namespace&amp;gt;.svc&lt;/code&gt; 。该功能默认为关闭 &lt;code&gt;reconcile&lt;/code&gt; 模式和打开 &lt;code&gt;crd&lt;/code&gt; 模式。&lt;/p&gt;
+&lt;div class=&#34;alert alert-warning&#34;&gt;
+  &lt;div class=&#34;alert-title&#34;&gt;
+      &lt;p&gt;&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    已知某些软件会使用反向 DNS “验证” 客户端证书中提供的 DNS 和 IP SAN。不能保证Kubernetes客户端会从一个具有有效反向DNS的IP地址进行连接，该地址与这些DNS名称实现所创建的名称之一相匹配，在这种情况下验证会失败。如果你打算使用 X509-SVID 对此类服务的客户端进行身份验证，则需要禁用将 DNS 名称添加到条目中。众所周知，这会影响 etcd。
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&#34;模式之间的差异&#34;&gt;模式之间的差异&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;webhook&lt;/code&gt; 模式使用验证准入 Webhook 在准入时捕获 pod 创建 / 删除事件。它是注册器实现中的第一个，但存在以下问题：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;StatefulSet 的 add 和 delete 之间的竞争条件会经常导致 StatefulSet 没有条目；&lt;/li&gt;
+&lt;li&gt;Webhook 的不可用要么必须完全阻止准入，要么你最终会得到没有条目的 pod；&lt;/li&gt;
+&lt;li&gt;SPIRE 服务器错误必须完全阻止准入，否则你最终会得到没有条目的 pod；&lt;/li&gt;
+&lt;li&gt;当 &lt;code&gt;webhook/spire-server&lt;/code&gt; 不可用时，它不会清理删除的 pod 的遗留条目；&lt;/li&gt;
+&lt;li&gt;条目不是单个节点的父节点，所有 SVID 都被泛洪到集群中的所有代理，这严重限制了可扩展性。因此，强烈建议不要使用 &lt;code&gt;webhook&lt;/code&gt; 模式，但出于向后兼容的原因，它仍然是默认设置。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;code&gt;reconcile&lt;/code&gt; 模式和 &lt;code&gt;crd&lt;/code&gt; 模式都使用协调控制器而不是 webhook。&lt;code&gt;reconcile&lt;/code&gt; 模式和启用了 &lt;code&gt;pod_controller&lt;/code&gt; 的 &lt;code&gt;crd&lt;/code&gt; 模式具有与 webhook 类似的自动工作负载创建功能，但它们不会遭受相同的竞争条件，能够从注册器故障中恢复（并在之后清理），并且两者都还确保为 Pod 自动创建的条目仅限于适当的节点，以防止 SVID 泛滥。以这种方式使用时，&lt;code&gt;reconcile&lt;/code&gt; 创建新条目可能比 &lt;code&gt;crd&lt;/code&gt; 模式稍快，并且需要较少的配置。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;crd&lt;/code&gt; 模式还提供了一个命名空间的 SpiffeID 自定义资源。这些资源供注册器内部使用，但也可以手动创建以允许创建任意 Spire 条目。如果你打算直接管理 SpiffeID 自定义资源，那么强烈建议你在运行控制器时启用 &lt;code&gt;crd&lt;/code&gt; 模式的 webhook。&lt;/p&gt;
+&lt;h3 id=&#34;平台支持&#34;&gt;平台支持&lt;/h3&gt;
+&lt;p&gt;该工具仅支持 UNIX 系统。&lt;/p&gt;
+&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/spiffe/spire/blob/main/support/k8s/k8s-workload-registrar/README.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE Kubernetes Workload Registar - github.com&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>SVID 身份颁发过程</title>
+      <link>https://lib.jimmysong.io/kubernetes-handbook/auth/svid/</link>
+      <pubDate>Sat, 21 May 2022 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/kubernetes-handbook/auth/svid/</guid>
+      <description>&lt;p&gt;本文介绍 SPIRE 如何向工作负载颁发身份的详细步骤，叙述了从代理在节点上启动到同一节点上的工作负载收到 X.509 SVID 形式的有效身份的全过程。请注意，JWT 格式的 SVID 的处理方式是不同的。为了简单演示的目的，工作负载在 AWS EC2 上运行。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;SPIRE 服务器启动。&lt;/li&gt;
+&lt;li&gt;除非用户配置了 &lt;code&gt;UpstreamAuthority&lt;/code&gt; 插件，否则服务器会生成自签名证书（使用自己的私钥签名的证书）；服务器将使用此证书为该服务器信任域中的所有工作负载签署 SVID。&lt;/li&gt;
+&lt;li&gt;如果是第一次启动，服务器会自动生成一个信任包（trust bundle），其内容存储在你指定的 sql 数据存储中 —— 在&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.3.0/doc/plugin_server_datastore_sql.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;服务器插件：DataStore sql&lt;/a&gt; 的 “内置插件” 部分中描述。&lt;/li&gt;
+&lt;li&gt;服务器打开其注册 API，以允许你注册工作负载。&lt;/li&gt;
+&lt;li&gt;工作负载节点上的 SPIRE 代理启动。&lt;/li&gt;
+&lt;li&gt;代理执行节点证明，向服务器证明它正在运行的节点的身份。例如，在 AWS EC2 实例上运行时，它通常会通过向服务器提供 &lt;a href=&#34;https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-identity-documents.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;AWS 实例身份文档&lt;/a&gt;来执行节点证明。&lt;/li&gt;
+&lt;li&gt;代理通过 TLS 连接向服务器提供此身份证明，该 TLS 连接通过代理配置的引导程序包进行身份验证。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+  &lt;div class=&#34;alert-title&#34;&gt;
+      &lt;p&gt;&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    此引导程序包是默认配置，应在生产中替换为客户提供的凭据。
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;ol start=&#34;8&#34;&gt;
+&lt;li&gt;服务器调用 AWS API 来验证证明。&lt;/li&gt;
+&lt;li&gt;AWS 承认该文件是有效的。&lt;/li&gt;
+&lt;li&gt;服务器执行节点解析，以验证有关代理节点的其他属性并相应地更新其注册条目。例如，如果节点已使用 Microsoft Azure 托管服务标识 (MSI) 进行了证明。解析器从代理 SPIFFE ID 中提取租户 ID 和主体 ID，并使用各种 Azure 服务获取信息以构建一组额外的选择器。&lt;/li&gt;
+&lt;li&gt;服务器向代理发出一个 SVID，代表代理本身的身份。&lt;/li&gt;
+&lt;li&gt;代理联系服务器（使用其 SVID 作为其 TLS 客户端证书）以获取它被授权的注册条目。&lt;/li&gt;
+&lt;li&gt;服务器使用代理的 SVID 对代理进行身份验证。代理依次完成 mTLS 握手并使用引导程序包对服务器进行身份验证。&lt;/li&gt;
+&lt;li&gt;然后，服务器从其数据存储中获取所有&lt;a href=&#34;https://spiffe.io/docs/latest/spire-about/spire-concepts/#authorized-registration-entries&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;授权的注册条目&lt;/a&gt;并将它们发送给代理。&lt;/li&gt;
+&lt;li&gt;然后，代理将工作负载 CSR 发送到服务器，服务器对其进行签名并作为工作负载 SVID 返回给客户端。客户端将它们放入缓存中。&lt;/li&gt;
+&lt;li&gt;现在引导完成，代理开始监听 Workload API 套接字。&lt;/li&gt;
+&lt;li&gt;工作负载调用工作负载 API 来请求 SVID。&lt;/li&gt;
+&lt;li&gt;代理通过调用其工作负载证明器来启动工作负载证明过程，并向他们提供工作负载进程的进程 ID。&lt;/li&gt;
+&lt;li&gt;证明器使用内核和用户空间调用来发现有关工作负载的其他信息。&lt;/li&gt;
+&lt;li&gt;证明器以工作负载选择器的形式将发现的信息返回给代理。&lt;/li&gt;
+&lt;li&gt;代理通过将发现的工作负载选择器与注册条目进行比较来确定工作负载的身份，并返回正确的 SVID（已在其缓存中）。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;授权注册条目&#34;&gt;授权注册条目&lt;/h2&gt;
+&lt;p&gt;服务器只向代理发送授权的注册条目。服务器执行以下操作来获取这些授权条目：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;查询数据库以查找将代理的 SPIFFE ID 列为其 “父 SPIFFE ID” 的任何注册条目。&lt;/li&gt;
+&lt;li&gt;在数据库中查询特定代理与哪些附加属性相关联（“节点选择器”）。&lt;/li&gt;
+&lt;li&gt;查询数据库以获取在任何这些节点选择器上声明选择的至少一个注册条目。&lt;/li&gt;
+&lt;li&gt;递归地查询数据库中的任何注册条目，这些条目声明了迄今为止获得的任何条目作为它们的 “父 SPIFFE ID”（下降到所有子节点）。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;另请参阅&lt;a href=&#34;https://spiffe.io/docs/latest/spire/using/registering/#mapping-workloads-to-multiple-nodes&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;将工作负载映射到多个节点&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;服务器将生成授权的注册条目集发送给代理。&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
