@@ -92,7 +92,7 @@ $ curl localhost:10000/status/200
 < x-envoy-upstream-service-time: 2
 ```
 
-这是因为 Envoy 执行了重试，但最后还是失败了。同样，如果我们在管理界面（<http://localhost:9901/stats/prometheus>）上打开统计页面，我们会发现代表重试次数的指标（`envoy_cluster_retry_upstream_rq`）的数值为 5。
+这是因为 Envoy 执行了重试，但最后还是失败了。同样，如果我们在管理界面（`http://localhost:9901/stats/prometheus>`）上打开统计页面，我们会发现代表重试次数的指标（`envoy_cluster_retry_upstream_rq`）的数值为 5。
 
 ```
 # TYPE envoy_cluster_retry_upstream_rq counter

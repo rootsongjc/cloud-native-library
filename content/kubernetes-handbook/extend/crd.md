@@ -66,7 +66,7 @@ spec:
 kubectl create -f resourcedefinition.yaml
 ```
 
-访问 RESTful API 端点如 <http://172.20.0.113:8080> 将看到如下 API 端点已创建：
+访问 RESTful API 端点如 `http://172.20.0.113:8080` 将看到如下 API 端点已创建：
 
 ```bash
 /apis/stable.example.com/v1/namespaces/*/crontabs/...

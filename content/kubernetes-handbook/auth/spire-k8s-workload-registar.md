@@ -78,7 +78,7 @@ cluster = "production"
 | `reconcile` | 由 pod_label 指定 | 由 pod_annotation 指定 | *不可用*                  | 服务账户     |
 | `crd`       | 由 pod_label 指定 | 由 pod_annotation 指定 | 由 identity_template 指定 | *不可用*     |
 
-如果对 [基于服务账户的 SPIFFE ID](http://localhost:1313/kubernetes-handbook/concepts/spire-k8s-workload-registar/#service-account-based-workload-registration) `webhook` 使用和 `reconcile` 模式，请不要指定 `pod_label` 或 `pod_annotation`。如果你使用基于标签的 SPIFFE ID，请仅指定 `pod_label`。如果你使用基于注解的 SPIFFE ID，请仅指定 `pod_annotation`
+如果对 [基于服务账户的 SPIFFE ID](#service-account-based-workload-registration) `webhook` 使用和 `reconcile` 模式，请不要指定 `pod_label` 或 `pod_annotation`。如果你使用基于标签的 SPIFFE ID，请仅指定 `pod_label`。如果你使用基于注解的 SPIFFE ID，请仅指定 `pod_annotation`
 
 对于 `crd` 模式，如果既不选择 `pod_label` 也不选择 `pod_annotation` 工作负载注册模式， `identity_template` 则作为默认配置： `ns/{{.Pod.Namespace}}/sa/{{.Pod.ServiceAccount}}`
 
@@ -104,7 +104,7 @@ spec:
   ...
 ```
 
-### 基于服务账户的工作负载注册
+### 基于服务账户的工作负载注册{#service-account-based-workload-registration}
 
 授予工作负载的 SPIFFE ID 源自：
 
@@ -202,7 +202,7 @@ kubectl validatingwebhookconfiguration delete k8s-workload-registrar-webhook
 `reconcile` 和 `crd` 模式都提供了将 DNS 名称添加到 pod 的注册条目的能力。它们目前对应该添加哪些名称有不同的想法，`reconcile` 添加可用于访问 pod 的所有可能名称（通过服务或直接），并将 `crd` 模式限制为 `<service>.<namespace>.svc` 。该功能默认为关闭 `reconcile` 模式和打开 `crd` 模式。
 
 {{<callout warning>}}
-已知某些软件会使用反向 DNS “验证” 客户端证书中提供的 DNS 和 IP SAN。不能保证Kubernetes客户端会从一个具有有效反向DNS的IP地址进行连接，该地址与这些DNS名称实现所创建的名称之一相匹配，在这种情况下验证会失败。如果你打算使用 X509-SVID 对此类服务的客户端进行身份验证，则需要禁用将 DNS 名称添加到条目中。众所周知，这会影响 etcd。
+ 注意：已知某些软件会使用反向 DNS “验证” 客户端证书中提供的 DNS 和 IP SAN。不能保证Kubernetes客户端会从一个具有有效反向DNS的IP地址进行连接，该地址与这些DNS名称实现所创建的名称之一相匹配，在这种情况下验证会失败。如果你打算使用 X509-SVID 对此类服务的客户端进行身份验证，则需要禁用将 DNS 名称添加到条目中。众所周知，这会影响 etcd。
 {{</callout>}}
 
 ## 模式之间的差异

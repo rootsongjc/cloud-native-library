@@ -20,7 +20,7 @@ kubectl -n kubernator expose deploy kubernator
 kubectl proxy
 ```
 
-然后就可以通过 <http://localhost:8001/api/v1/namespaces/kubernator/services/kubernator/proxy/> 来访问了。
+然后就可以通过 `http://localhost:8001/api/v1/namespaces/kubernator/services/kubernator/proxy/` 来访问了。
 
 Catalog 页面可以看到 Kubernetes 中资源对象的树形结构，还可以在该页面中对资源对象的配置进行更改和操作。
 

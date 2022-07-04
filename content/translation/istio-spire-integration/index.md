@@ -133,9 +133,9 @@ $ kubectl apply -f samples/security/spire/spire-quickstart.yaml
    istiod-989f54d9c-sg7sn                  1/1     Running   0          23s
    ```
 
-只有在 SPIRE 服务器上为它们创建了相应的注册条目时，数据平面容器才会到达 `Ready`。然后，Envoy 将能够从 SPIRE 获取加密身份。请参阅 “[注册工作负载](http://localhost:1313/translation/istio-spire-integration/#register-workloads) "，为你的网格中的服务注册条目。
+只有在 SPIRE 服务器上为它们创建了相应的注册条目时，数据平面容器才会到达 `Ready`。然后，Envoy 将能够从 SPIRE 获取加密身份。请参阅[注册工作负载](#register-workloads) ，为你的网格中的服务注册条目。
 
-## 注册工作负载
+## 注册工作负载{#register-workloads}
 
 本节介绍在 SPIRE 服务器中注册工作负载的可用选项。
 

@@ -80,7 +80,7 @@ admin:
 func-e run -c 3-lab-1-circuit-breaker.yaml
 ```
 
-为了向代理发送多个并发请求，我们将使用一个名为 [hey](https://github.com/rakyll/hey) 的工具。默认情况下，hey 运行 50 个并发，发送 200 个请求，所以我们在请求 [http://localhost:1000](http://localhost:1000/)，甚至不需要传入任何参数。
+为了向代理发送多个并发请求，我们将使用一个名为 [hey](https://github.com/rakyll/hey) 的工具。默认情况下，hey 运行 50 个并发，发送 200 个请求，所以我们在请求 `http://localhost:1000`，甚至不需要传入任何参数。
 
 ```sh
 hey http://localhost:10000

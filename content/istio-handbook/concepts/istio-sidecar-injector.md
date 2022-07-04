@@ -276,4 +276,4 @@ $ istio-iptables [flags]
 ## 参考
 
 - [安装 sidecar - istio.io](https://istio.io/latest/zh/docs/setup/additional-setup/sidecar-injection/)
-- [Istio 中的 Sidecar 注入、透明流量劫持及路由过程详解 - jimmysong.io](http://localhost:1313/blog/sidecar-injection-iptables-and-traffic-routing/)
+- [Istio 中的 Sidecar 注入、透明流量劫持及路由过程详解 - jimmysong.io](https://jimmysong.io/blog/sidecar-injection-iptables-and-traffic-routing/)
