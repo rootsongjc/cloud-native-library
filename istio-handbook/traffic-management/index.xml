@@ -26,7 +26,7 @@
 &lt;li&gt;&lt;code&gt;EnvoyFilter&lt;/code&gt;：描述了针对代理服务的过滤器，用来定制由 Istio Pilot 生成的代理配置。一定要谨慎使用此功能。错误的配置内容一旦完成传播，可能会令整个服务网格陷入瘫痪状态。这一配置是用于对 Istio 网络系统内部实现进行变更的。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;：本文中的示例引用自 Istio 官方 Bookinfo 示例，见：&lt;a href=&#34;https://github.com/istio/istio/tree/master/samples/bookinfo/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Istio 代码库&lt;/a&gt;，且对于配置的讲解都以在 Kubernetes 中部署的服务为准。&lt;/p&gt;
-&lt;h3 id=&#34;virtualservice&#34;&gt;VirtualService&lt;/h3&gt;
+&lt;h2 id=&#34;virtualservice&#34;&gt;VirtualService&lt;/h2&gt;
 &lt;p&gt;&lt;code&gt;VirtualService&lt;/code&gt; 故名思义，就是虚拟服务，在 Istio 1.0 以前叫做 RouteRule。&lt;code&gt;VirtualService&lt;/code&gt; 中定义了一系列针对指定服务的流量路由规则。每个路由规则都是针对特定协议的匹配规则。如果流量符合这些特征，就会根据规则发送到服务注册表中的目标服务（或者目标服务的子集或版本）。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：&lt;code&gt;VirtualService&lt;/code&gt; 中的规则是按照在 YAML 文件中的顺序执行的，这就是为什么在存在多条规则时，需要慎重考虑优先级的原因。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;配置说明&lt;/strong&gt;&lt;/p&gt;
@@ -87,7 +87,7 @@
 &lt;li&gt;我们看到上面的 &lt;code&gt;VirtualService&lt;/code&gt; 的 HTTP 路由中还定义了一个 &lt;code&gt;destination&lt;/code&gt;。&lt;code&gt;destination&lt;/code&gt; 用于定义在网络中可寻址的服务，请求或连接在经过路由规则的处理之后，就会被发送给 &lt;code&gt;destination&lt;/code&gt;。&lt;code&gt;destination.host&lt;/code&gt; 应该明确指向服务注册表中的一个服务。Istio 的服务注册表除包含平台服务注册表中的所有服务（例如 Kubernetes 服务、Consul 服务）之外，还包含了 &lt;code&gt;ServiceEntry&lt;/code&gt; 资源所定义的服务。&lt;code&gt;VirtualService&lt;/code&gt; 中只定义流量发送给哪个服务的路由规则，但是并不知道要发送的服务的地址是什么，这就需要 &lt;code&gt;DestinationRule&lt;/code&gt; 来定义了。&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;subset&lt;/code&gt; 配置流量目的地的子集，下文会讲到。&lt;code&gt;VirtualService&lt;/code&gt; 中其实可以除了 &lt;code&gt;hosts&lt;/code&gt; 字段外其他什么都不配置，路由规则可以在 &lt;code&gt;DestinationRule&lt;/code&gt; 中单独配置来覆盖此处的默认规则。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h4 id=&#34;subset&#34;&gt;Subset&lt;/h4&gt;
+&lt;h3 id=&#34;subset&#34;&gt;Subset&lt;/h3&gt;
 &lt;p&gt;&lt;code&gt;subset&lt;/code&gt; 不属于 Istio 创建的 CRD，但是它是一条重要的配置信息，有必要单独说明下。&lt;code&gt;subset&lt;/code&gt; 是服务端点的集合，可以用于 A/B 测试或者分版本路由等场景。另外在 &lt;code&gt;subset&lt;/code&gt; 中可以覆盖服务级别的即 &lt;code&gt;VirtualService&lt;/code&gt; 中的定义的流量策略。&lt;/p&gt;
 &lt;p&gt;以下是&lt;code&gt;subset&lt;/code&gt; 的配置信息。对于 Kubernetes 中的服务，一个 &lt;code&gt;subset&lt;/code&gt; 相当于使用 label 的匹配条件选出来的 &lt;code&gt;service&lt;/code&gt;。&lt;/p&gt;
 &lt;table&gt;
@@ -116,7 +116,7 @@
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
-&lt;h3 id=&#34;destinationrule&#34;&gt;DestinationRule&lt;/h3&gt;
+&lt;h2 id=&#34;destinationrule&#34;&gt;DestinationRule&lt;/h2&gt;
 &lt;p&gt;&lt;code&gt;DestinationRule&lt;/code&gt; 所定义的策略，决定了经过路由处理之后的流量的访问策略。这些策略中可以定义负载均衡配置、连接池大小以及外部检测（用于在负载均衡池中对不健康主机进行识别和驱逐）配置。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;配置说明&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;下面是 &lt;code&gt;DestinationRule&lt;/code&gt; 的配置说明。&lt;/p&gt;
@@ -159,11 +159,11 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;labels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;version&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;该路由策略将所有对 &lt;code&gt;reviews&lt;/code&gt; 服务的流量路由到 &lt;code&gt;v1&lt;/code&gt; 的 subset。&lt;/p&gt;
-&lt;h3 id=&#34;serviceentry&#34;&gt;ServiceEntry&lt;/h3&gt;
+&lt;h2 id=&#34;serviceentry&#34;&gt;ServiceEntry&lt;/h2&gt;
 &lt;p&gt;Istio 服务网格内部会维护一个与平台无关的使用通用模型表示的服务注册表，当你的服务网格需要访问外部服务的时候，就需要使用 &lt;code&gt;ServiceEntry&lt;/code&gt; 来添加服务注册。&lt;/p&gt;
-&lt;h3 id=&#34;envoyfilter&#34;&gt;EnvoyFilter&lt;/h3&gt;
+&lt;h2 id=&#34;envoyfilter&#34;&gt;EnvoyFilter&lt;/h2&gt;
 &lt;p&gt;&lt;code&gt;EnvoyFilter&lt;/code&gt; 描述了针对代理服务的过滤器，用来定制由 Istio Pilot 生成的代理配置。一定要谨慎使用此功能。错误的配置内容一旦完成传播，可能会令整个服务网格陷入瘫痪状态。这一配置是用于对 Istio 网络系统内部实现进行变更的，属于高级配置，用于扩展 Envoy 中的过滤器的。&lt;/p&gt;
-&lt;h3 id=&#34;gateway&#34;&gt;Gateway&lt;/h3&gt;
+&lt;h2 id=&#34;gateway&#34;&gt;Gateway&lt;/h2&gt;
 &lt;p&gt;Gateway 为 HTTP/TCP 流量配置了一个负载均衡，多数情况下在网格边缘进行操作，用于启用一个服务的入口（ingress）流量，相当于前端代理。与 Kubernetes 的 Ingress 不同，Istio &lt;code&gt;Gateway&lt;/code&gt; 只配置四层到六层的功能（例如开放端口或者 TLS 配置），而 Kubernetes 的 Ingress 是七层的。将 &lt;code&gt;VirtualService&lt;/code&gt; 绑定到 &lt;code&gt;Gateway&lt;/code&gt; 上，用户就可以使用标准的 Istio 规则来控制进入的 HTTP 和 TCP 流量。&lt;/p&gt;
 &lt;p&gt;Gateway 设置了一个集群外部流量访问集群中的某些服务的入口，而这些流量究竟如何路由到那些服务上则需要通过配置 &lt;code&gt;VirtualServcie&lt;/code&gt; 来绑定。下面仍然以 &lt;code&gt;productpage&lt;/code&gt; 这个服务来说明。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;networking.istio.io/v1alpha3&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;

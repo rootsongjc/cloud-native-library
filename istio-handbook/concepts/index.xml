@@ -1168,7 +1168,7 @@
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
 &lt;p&gt;我们将要解析的是 &lt;code&gt;reviews-v1&lt;/code&gt; 这个 Pod 中的 Inbound 和 Outbound 流量。&lt;/p&gt;
-&lt;h3 id=&#34;理解-inbound-handler&#34;&gt;理解 Inbound Handler&lt;/h3&gt;
+&lt;h2 id=&#34;理解-inbound-handler&#34;&gt;理解 Inbound Handler&lt;/h2&gt;
 &lt;p&gt;Inbound Handler 的作用是将 iptables 拦截到的 downstream 的流量转发给 Pod 内的应用程序容器。在我们的实例中，假设其中一个 Pod 的名字是 &lt;code&gt;reviews-v1-545db77b95-jkgv2&lt;/code&gt;，运行 &lt;code&gt;istioctl proxy-config listener reviews-v1-545db77b95-jkgv2 --port 15006&lt;/code&gt; 查看该 Pod 中 15006 端口上的监听器情况 ，你将看到下面的输出。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;na&#34;&gt;ADDRESS PORT  MATCH                                                                                           DESTINATION&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;na&#34;&gt;0.0.0.0 15006 Addr: *:15006                                                                                   Non-HTTP/Non-TCP&lt;/span&gt;
@@ -1305,7 +1305,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;我们看其中的 &lt;code&gt;TYPE&lt;/code&gt; 为 &lt;code&gt;ORIGINAL_DST&lt;/code&gt;，将流量发送到原始目标地址（Pod IP），因为原始目标地址即当前 Pod，你还应该注意到 &lt;code&gt;upstreamBindConfig.sourceAddress.address&lt;/code&gt; 的值被改写为了 &lt;code&gt;127.0.0.6&lt;/code&gt;，而且对于 Pod 内流量是通过 &lt;code&gt;lo&lt;/code&gt; 网卡发送的，这刚好呼应了上文中的 iptables &lt;code&gt;ISTIO_OUTPUT&lt;/code&gt; 链中的第一条规则，根据该规则，流量将被透传到 Pod 内的应用容器。&lt;/p&gt;
-&lt;h3 id=&#34;理解-outbound-handler&#34;&gt;理解 Outbound Handler&lt;/h3&gt;
+&lt;h2 id=&#34;理解-outbound-handler&#34;&gt;理解 Outbound Handler&lt;/h2&gt;
 &lt;p&gt;在本示例中 &lt;code&gt;reviews&lt;/code&gt; 会向 &lt;code&gt;ratings&lt;/code&gt; 服务发送 HTTP 请求，请求的地址是：&lt;code&gt;http://ratings.default.svc.cluster.local:9080/&lt;/code&gt;，Outbound Handler 的作用是将 iptables 拦截到的本地应用程序向外发出的流量，经由 Envoy 代理路由到上游。&lt;/p&gt;
 &lt;p&gt;Envoy 监听在 15001 端口上监听所有 Outbound 流量，Outbound Handler 处理，然后经过 &lt;code&gt;virtualOutbound&lt;/code&gt; Listener、&lt;code&gt;0.0.0.0_9080&lt;/code&gt; Listener，然后通过 Route 9080 找到上游的 cluster，进而通过 EDS 找到 Endpoint 执行路由动作。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;&lt;code&gt;ratings.default.svc.cluster.local:9080&lt;/code&gt; 路由&lt;/strong&gt;&lt;/p&gt;
