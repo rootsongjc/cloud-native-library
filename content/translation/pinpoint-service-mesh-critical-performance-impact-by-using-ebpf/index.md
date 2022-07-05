@@ -17,9 +17,9 @@ links:
 
 ## 背景介绍 {#background}
 
-Apache SkyWalking 观察部署在服务网格中的服务的度量、日志、跟踪和事件。在进行故障排除时，SkyWalking 错误分析是一个宝贵的工具，可以帮助确定错误发生的位置。然而，确定性能问题更加困难：利用预先存在的观察数据往往不可能找到性能问题的根本原因。为此，动态调试和故障排除在进行服务性能剖析时就比不可少。在这篇文章中，我们将讨论如何使用 eBPF 技术来改进 SkyWalking 中的剖析功能，并分析其对服务网格性能的影响。
+Apache SkyWalking 观察部署在服务网格中的服务的度量、日志、追踪和事件。在进行故障排除时，SkyWalking 错误分析是一个宝贵的工具，可以帮助确定错误发生的位置。然而，确定性能问题更加困难：利用预先存在的观察数据往往不可能找到性能问题的根本原因。为此，动态调试和故障排除在进行服务性能剖析时就比不可少。在这篇文章中，我们将讨论如何使用 eBPF 技术来改进 SkyWalking 中的剖析功能，并分析其对服务网格性能的影响。
 
-## SkyWalking 中的跟踪剖析 {#trace-profiling-in-skywalking}
+## SkyWalking 中的追踪剖析 {#trace-profiling-in-skywalking}
 
 自 SkyWalking 7.0.0 以来，Trace Profiling 通过定期对线程堆栈进行采样，让开发者知道运行哪行代码花费更多时间，从而帮助开发者发现性能问题。然而，Trace Profiling 不适合以下情况：
 
