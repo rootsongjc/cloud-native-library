@@ -161,7 +161,7 @@ Error from server (NotFound): Unable to list "crontabs": the server could not fi
 
 ### Finalizer（终结器）
 
-*Finalizer（终结器）*允许控制器实现异步预删除 hook。自定义对象支持终结器，就像内置对象一样。
+Finalizer（终结器）允许控制器实现异步预删除 hook。自定义对象支持终结器，就像内置对象一样。
 
 您可以将终结器添加到自定义对象，如下所示：
 
@@ -413,13 +413,13 @@ crontab "my-new-cron-object" created
 
 启用状态子资源后，将公开自定义资源的子资源 `/status`。
 
-- 状态和规范节分别由自定义资源内的 JSONPath `.status` 和 `.spec`JSONPath 表示。
-- `PUT``/status` 对子资源的请求采用自定义资源对象，并忽略除状态节之外的任何更改。
-- `PUT``/status` 对子资源的请求仅验证自定义资源的状态节。
+- 状态和规范节分别由自定义资源内的 JSONPath `.status` 和 `.spec` JSONPath 表示。
+- `PUT` `/status` 对子资源的请求采用自定义资源对象，并忽略除状态节之外的任何更改。
+- `PUT` `/status` 对子资源的请求仅验证自定义资源的状态节。
 - `PUT`/ `POST`/ `PATCH` 请求自定义资源忽略更改状态节。
 - 对 spec 节的任何更改都会增加 `.metadata.generation` 的值。
 - 在 CRD OpenAPI 验证模式的根目录中只允许以下构造：
-- - Description
+  - Description
   - Example
   - ExclusiveMaximum
   - ExclusiveMinimum
