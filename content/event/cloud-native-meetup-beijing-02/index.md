@@ -24,7 +24,7 @@ all_day: false
 # Schedule page publish date (NOT talk date).
 publishDate: 2020-12-20T18:00:00+08:00
 
-authors: ["jimmy-song","孙召昌","赵新","张城","刘硕然"]
+authors: ["宋净超","孙召昌","赵新","张城","刘硕然"]
 tags: ["Istio","DubboGo","SpringCloud","ChubaoFS","OpenTelemetry"]
 
 # Is this a featured talk? (true/false)

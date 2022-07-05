@@ -3,8 +3,6 @@
 title: "刘晗"
 
 # Username (this should match the folder name and the name on publications)
-authors:
-- "han-liu"
 
 # Is this the primary user of the site?
 superuser: false
