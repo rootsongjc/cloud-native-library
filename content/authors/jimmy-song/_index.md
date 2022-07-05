@@ -1,6 +1,8 @@
 ---
 title: 宋净超
 role: Tetrate 布道师、云原生社区创始人
+authors:
+  - "jimmy-song"
 social:
   - icon: home
     icon_pack: fas

@@ -17,7 +17,7 @@ date_end: 2019-01-06T18:00:00+08:00
 all_day: false
 publishDate: 2019-01-06T13:00:00+08:00
 
-authors: ["郑德惠","陈逸凡","崔秀龙","宋净超","敖小剑"]
+authors: ["郑德惠","陈逸凡","崔秀龙","jimmy-song","敖小剑"]
 tags: ["Service Mesh"]
 featured: false
 image:

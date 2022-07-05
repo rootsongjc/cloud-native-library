@@ -1,7 +1,8 @@
 ---
 # Display name
-title: 宋净超（Jimmy Song）
-
+title: 宋净超
+authors:
+  - "jimmy-song"
 # Is this the primary user of the site?
 superuser: true
 

@@ -24,7 +24,7 @@ all_day: false
 # Schedule page publish date (NOT talk date).
 publishDate: '2020-11-28T20:00:00+08:00'
 
-authors: ["宋净超","高洪涛","杨可奥","侯诗军","程亮"]
+authors: ["jimmy-song","高洪涛","杨可奥","侯诗军","程亮"]
 tags: ["Istio","SkyWalking","DubboGo","ChaosMesh"]
 
 # Is this a featured talk? (true/false)
