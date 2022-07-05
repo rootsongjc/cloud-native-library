@@ -19,9 +19,9 @@ links:
     url: https://mattklein123.dev/2021/09/14/5-years-envoy-oss/
 ---
 
-译者注：本文译自 Envoy 代理的创始人 Matt Klein 于昨晚在个人博客上发布的文章 [5 year of Envoy OSS](https://mattklein123.dev/2021/09/14/5-years-envoy-oss/)。他在 Twitter 因为自己的程序 bug 造成重大事故而离职，后加入 Lyft，在开源 Envoy 之前几乎没有贡献和管理开源项目的经验，这篇文章分享了他个人及 Envoy 开源的心路历程，在投身开源 Envoy 还是为雇主 Lyft 效命，该如何抉择？看完本文，相信对于开源项目的维护者、创业者及投资人都会大有收获。
+## 编者的话
 
-------
+本文译自 Envoy 代理的创始人 Matt Klein 于昨晚在个人博客上发布的文章 [5 year of Envoy OSS](https://mattklein123.dev/2021/09/14/5-years-envoy-oss/)。他在 Twitter 因为自己的程序 bug 造成重大事故而离职，后加入 Lyft，在开源 Envoy 之前几乎没有贡献和管理开源项目的经验，这篇文章分享了他个人及 Envoy 开源的心路历程，在投身开源 Envoy 还是为雇主 Lyft 效命，该如何抉择？看完本文，相信对于开源项目的维护者、创业者及投资人都会大有收获。
 
 ## 前言
 

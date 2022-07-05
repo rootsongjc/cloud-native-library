@@ -11,4 +11,4 @@ type: book
 
 部署 Hubble Relay 后，Hubble 提供完整的网络可视性。在这种情况下，Hubble Relay 服务提供了一个 Hubble API，它在 ClusterMesh 场景中涵盖整个集群甚至多个集群。可以通过将 Hubble CLI（`hubble`）指向 Hubble Relay 服务或通过 Hubble UI 访问 Hubble 数据。Hubble UI 是一个 Web 界面，可以自动发现三层/四层甚至七层的服务依赖图，允许用户友好的可视化和过滤数据流作为服务图。
 
-{{< cta cta_text="下一章" cta_link="../networking" >}}
+{{< cta cta_text="下一章" cta_link="../../networking" >}}

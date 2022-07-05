@@ -35,6 +35,8 @@ links:
     url: https://www.tetrate.io/blog/istio-wasm-extensions-and-ecosystem/
 ---
 
+## 前言
+
 Istio 1.12 中新的 WebAssembly 基础设施使其能够轻松地将额外的功能注入网格部署中。
 
 经过三年的努力，Istio 现在有了一个强大的扩展机制，可以将自定义和第三方 Wasm 模块添加到网格中的 sidecar。Tetrate 工程师[米田武（Takeshi Yoneda）](https://github.com/mathetake)和[周礼赞（Lizan Zhou）](https://github.com/lizan)在实现这一目标方面发挥了重要作用。这篇文章将介绍 Istio 中 Wasm 的基础知识，以及为什么它很重要，然后是关于建立自己的 Wasm 插件并将其部署到网格的简短教程。

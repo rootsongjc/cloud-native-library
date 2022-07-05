@@ -29,23 +29,23 @@ links:
     url: https://www.tetrate.io/blog/validating-a-request-payload-with-wasm/
 ---
 
-### 什么是 Wasm 插件？
+## 什么是 Wasm 插件？
 
 你可以使用 Wasm 插件在数据路径上添加自定义代码，轻松地扩展服务网格的功能。可以用你选择的语言编写插件。目前，有 AssemblyScript（TypeScript-ish）、C++、Rust、Zig 和 Go 语言的 Proxy-Wasm SDK。
 
 在这篇博文中，我们描述了如何使用 Wasm 插件来验证一个请求的有效载荷。这是 Wasm 与 Istio 的一个重要用例，也是你可以使用 Wasm 扩展 Istio 的许多方法的一个例子。您可能有兴趣阅读我们关于[在 Istio 中使用 Wasm 的博文](https://www.tetrate.io/blog/category/wasm/)，并观看我们关于在 Istio 和 Envoy 中使用 Wasm 的免费研讨会的录音。
 
-### 何时使用 Wasm 插件？
+## 何时使用 Wasm 插件？
 
 当你需要添加 Envoy 或 Istio 不支持的自定义功能时，你应该使用 Wasm 插件。使用 Wasm 插件来添加自定义验证、认证、日志或管理配额。
 
 在这个例子中，我们将构建和运行一个 Wasm 插件，验证请求 body 是 JSON，并包含两个必要的键 ——`id` 和 `token`。
 
-### 编写 Wasm 插件
+## 编写 Wasm 插件
 
 这个示例使用 [tinygo](https://tinygo.org/) 来编译成 Wasm。确保你已经安装了 [tinygo 编译器](https://tinygo.org/getting-started/install/)。
 
-#### 配置 Wasm 上下文
+### 配置 Wasm 上下文
 
 首先配置 Wasm 上下文，这样 tinygo 文件才能操作 HTTP 请求：
 
@@ -93,7 +93,7 @@ type payloadValidationContext struct {
 }
 ```
 
-#### 验证负载
+### 验证负载
 
 内容类型头是通过实现 `OnHttpRequestHeaders` 来验证的，一旦从客户端收到请求头，就会调用该头。
 
@@ -167,7 +167,7 @@ func validatePayload(body []byte) bool {
 }
 ```
 
-#### 编译成 Wasm
+### 编译成 Wasm
 
 使用 tinygo 编译器编译成 Wasm：
 
@@ -175,9 +175,9 @@ func validatePayload(body []byte) bool {
 tinygo build -o main.wasm -scheduler=none -target=wasi main.go
 ```
 
-### 部署 Wasm 插件
+## 部署 Wasm 插件
 
-#### 打包到 Docker 中部署到 Envoy
+### 打包到 Docker 中部署到 Envoy
 
 对于开发，这个插件可以在 Docker 中部署到 Envoy。下面的 Envoy 配置文件将设置 Envoy 监听 `localhost:18000`，运行所提供的 Wasm 插件，并在成功后响应 HTTP 200 和文本 `hello from server`。突出显示的部分是配置 Wasm 插件。
 
@@ -338,9 +338,9 @@ x-envoy-upstream-service-time: 1
 hello from the server
 ```
 
-### 部署到 Istio
+## 部署到 Istio
 
-#### 部署 Istio 和 httpbin 示例应用
+### 部署 Istio 和 httpbin 示例应用
 
 我们使用 [kind](https://kind.sigs.k8s.io/) 来创建测试集群，对于其他方式创建的 Kubernetes 集群同样适用。
 
@@ -374,7 +374,7 @@ curl -X POST -i http://localhost:8080/post
 1. 对于 Istio 1.12 和更新版本的 Istio，支持 [WasmPlugin](https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/) 资源
 2. 对于老版本的 Istio，可以使用 [EnvoyFilter](https://istio.io/latest/docs/reference/config/networking/envoy-filter/)
 
-#### 使用 WasmPlugin 安装
+### 使用 WasmPlugin 安装
 
 WasmPlugin 资源从镜像仓库中提取 wasm 模块。因此，让我们首先为我们的 wasm 模块构建并推送一个 Docker 镜像。下面的 Docker 文件允许从你的 wasm 模块建立一个 Docker 镜像。
 
@@ -409,7 +409,7 @@ spec:
   phase: AUTHN
 ```
 
-#### 使用 EnvoyFilter 安装
+### 使用 EnvoyFilter 安装
 
 为了使用 EnvoyFilter，我们创建一个包含已编译的 Wasm 插件的 ConfigMap，将 ConfigMap 挂载到网关 pod 中，然后通过 EnvoyFilter 配置 Envoy，从本地文件加载 Wasm 插件。这种方法的限制是，更大和更复杂的 Wasm 模块可能超出 ConfigMap 1MB 的大小限制。
 
@@ -466,7 +466,7 @@ spec:
               vm_id: json-validation
 ```
 
-#### 测试 Wasm 插件
+### 测试 Wasm 插件
 
 重复之前的 curl 请求。
 
@@ -487,7 +487,7 @@ content-type must be provided
 curl -i http://localhost:8080/post  -H 'Content-Type: application/json' --data '{"id": "xxx", "token": "xxx"}'
 ```
 
-### 让必填字段可配置
+## 让必填字段可配置
 
 与其在编译的 golang 代码中硬编码所需的 JSON 字段，不如允许通过 Envoy 配置来配置这些字段。
 
@@ -629,7 +629,7 @@ func (ctx *payloadValidationContext) validatePayload(body []byte) bool {
 
 然后可以使用与之前相同的命令对其进行编译和测试。
 
-### 总结
+## 总结
 
 总而言之，要在 Istio 1.12 和更新的版本上使用 Wasm 插件，需要三个步骤：
 

@@ -12,6 +12,8 @@ links:
     url: https://istio.io/latest/docs/ops/best-practices/security/
 ---
 
+## 编者的话
+
 本文译自 Istio 官方博客 [Security Best Practices](https://istio.io/latest/docs/ops/best-practices/security/)。
 
 Istio 的安全功能提供了强大的身份、策略、透明的 TLS 加密以及认证、授权和审计（AAA）工具来保护你的服务和数据。然而，为了充分安全地利用这些功能，必须注意遵循最佳实践。建议在继续阅读之前，先回顾一下[安全概述](https://istio.io/latest/docs/concepts/security/)。

@@ -35,6 +35,8 @@ links:
     url: https://www.tetrate.io/blog/the-gateway-to-a-new-frontier/
 ---
 
+## 前言
+
 今天，Envoy 社区[宣布了](https://www.cncf.io/blog/2022/05/16/introducing-envoy-gateway/)一个令人兴奋的新项目。 [Envoy Gateway](https://github.com/envoyproxy/gateway)。该项目将行业领导者联合起来，精简由 Envoy 驱动的应用网关的好处。这种方法使 Envoy Gateway 能够立即为快速创新打下坚实的基础。该项目将提供一套服务来管理 Envoy 代理机群，通过易用性来推动采用，并通过定义明确的扩展机制来支持众多的用例。
 
 ## 我们为什么要这样做？

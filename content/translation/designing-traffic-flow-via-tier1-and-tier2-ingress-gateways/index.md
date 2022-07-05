@@ -14,11 +14,9 @@ links:
     url: https://www.tetrate.io/blog/designing-traffic-flow-via-tier1-and-tier2-ingress-gateways/
 ---
 
-{{<callout note 编者的话>}}
+## 编者的话{#foreword}
 
 本文是来自 [Tetrate](https://tetrate.io) 工程师的分享，Tetrate 的拳头产品是 [Tetrate Service Bridge](https://tetrate.io/tetrate-service-bridge)（下文简称 TSB），它是在开源的 Istio 和 Envoy 基础上构建的，但为其增加了管理平面。
-
-{{</callout>}}
 
 ## 简介{#intro}
 

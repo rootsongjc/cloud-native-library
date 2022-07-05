@@ -35,9 +35,11 @@ links:
     url: https://slack.engineering/migrating-millions-of-concurrent-websockets-to-envoy/
 ---
 
+## 前言
+
 Slack 有一个全球客户群，在高峰期有数百万同时连接的用户。用户之间的大部分通信涉及到向对方发送大量的微小信息。在 Slack 的大部分历史中，我们一直使用 [HAProxy](https://www.haproxy.com/) 作为所有传入流量的负载均衡器。今天，我们将讨论我们在使用 HAProxy 时所面临的问题，我们如何用 [Envoy Proxy](https://www.envoyproxy.io/) 来解决这些问题，迁移所涉及的步骤，以及结果是什么。让我们开始吧！
 
-## **Slack 的 Websockets**
+## Slack 的 Websockets
 
 为了即时传递信息，我们使用 [websocket 连接](https://tools.ietf.org/html/rfc6455)，这是一种双向的通信链接，负责让你看到 "有几个人在打字......"，然后是他们打的东西，速度几乎是光速的。websocket 连接被摄取到一个叫做 "wss"（WebSocket 服务）的系统中，可以通过 `wss-primary.slack.com` 和 `wss-backup.slack.com`（这不是网站，如果去访问，只会得到一个 HTTP 404）从互联网上访问。
 
@@ -49,11 +51,11 @@ Websocket 连接一开始是普通的 HTTPS 连接，然后客户端发出协议
 
 过去，我们在多个 [AWS](https://aws.amazon.com/) Region 有一组专门用于 websockets 的 HAProxy 实例，以终止靠近用户的 websocket 连接，并将请求转发给相应的后端服务。
 
-## **迁移到 Envoy Proxy 的动机**
+## 迁移到 Envoy Proxy 的动机
 
 虽然我们从 Slack 开始就一直在使用 HAproxy，并且知道如何大规模地操作它，但有一些操作上的挑战让我们考虑替代方案，比如 Envoy Proxy。
 
-### **热重启**
+### 热重启
 
 在 Slack，后端服务端点列表的变化是一个常见的事件（由于实例被添加或删除）。HAProxy 提供两种方法来更新其配置，以适应端点列表的变化。一种是使用 HAProxy Runtime API。我们在其中一套 HAProxy 实例中使用了这种方法，我们的经验在另一篇博文中有所描述 —— [在 Slack 的可怕的、恐怖的、没有好处的、非常糟糕的一天](https://slack.engineering/a-terrible-horrible-no-good-very-bad-day-at-slack/)。另一种方法，我们用于 websockets 负载均衡器（LB），是将后端渲染到 HAProxy 配置文件中，然后重新加载 HAProxy。
 
@@ -65,7 +67,7 @@ Envoy 允许我们使用[动态配置的集群和端点](https://www.envoyproxy.
 
 这一切都使 Envoy 的运营开销大大减少，而且不需要额外的服务来管理配置变化或重新启动。
 
-### **负载均衡功能**
+### 负载均衡功能
 
 Envoy 提供了一些先进的负载均衡功能，如：
 

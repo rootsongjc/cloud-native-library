@@ -16,4 +16,6 @@ cascade:
   show_related: true
   type: post
   section_pager: true
+  share: false
+  editable: true
 ---

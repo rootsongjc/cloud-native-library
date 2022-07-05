@@ -1,10 +1,10 @@
 ---
 title: 使用 eBPF 准确定位服务网格的关键性能问题
-summary: 在这篇文章中，我们将讨论如何使用 eBPF 技术来改进 SkyWalking 中的剖析功能，并分析其对服务网格性能的影响，如何在生产中，使用 SkyWalking Rover 进行性能分析。
+summary: 在这篇文章中，我们将讨论如何使用 eBPF 技术来改进 SkyWalking 中的剖析功能，并用于分析服务网格中的性能影响。
 date: '2022-07-05T17:00:00+08:00'
 draft: false
 featured: false
-authors: ["han-liu","sheng-wu"]
+authors: ["刘晗","吴晟"]
 tags: ["SkyWalking","可观测性","性能分析","eBPF","Service Mesh"]
 categories: ["可观测性"]
 type: post
@@ -17,7 +17,7 @@ links:
 
 ## 背景介绍 {#background}
 
-Apache SkyWalking 观察部署在服务网格中的服务的度量、日志、追踪和事件。在进行故障排除时，SkyWalking 错误分析是一个宝贵的工具，可以帮助确定错误发生的位置。然而，确定性能问题更加困难：利用预先存在的观察数据往往不可能找到性能问题的根本原因。为此，动态调试和故障排除在进行服务性能剖析时就比不可少。在这篇文章中，我们将讨论如何使用 eBPF 技术来改进 SkyWalking 中的剖析功能，并分析其对服务网格性能的影响。
+Apache SkyWalking 观察部署在服务网格中的服务的度量、日志、追踪和事件。在进行故障排除时，SkyWalking 错误分析是一个宝贵的工具，可以帮助确定错误发生的位置。然而，确定性能问题更加困难：利用预先存在的观察数据往往不可能找到性能问题的根本原因。为此，动态调试和故障排除在进行服务性能剖析时就必不可少。在这篇文章中，我们将讨论如何使用 eBPF 技术来改进 SkyWalking 中的剖析功能，并用于分析服务网格中的性能影响。
 
 ## SkyWalking 中的追踪剖析 {#trace-profiling-in-skywalking}
 
@@ -26,7 +26,7 @@ Apache SkyWalking 观察部署在服务网格中的服务的度量、日志、�
 - **线程模型**：Trace Profiling 对于剖析在单线程中执行的代码最有用。它对严重依赖异步执行模式的中间件不太有用。例如，Go 中的 Goroutines 或 Kotlin Coroutines。
 - **语言**：目前，Trace Profiling 只支持 Java 和 Python，因为在 Go 和 Node.js 等一些语言的运行时中不容易获得线程栈。
 - **Agent 绑定**：Trace Profiling 需要安装 Agent，根据语言的不同，这可能很麻烦（例如，PHP 必须依赖其 C 内核；Rust 和 C/C++ 需要的仪器需要手动安装）。
-- **追踪关联性**：由于追踪剖析只与单个请求相关，所以很难确定哪个请求导致了问题。
+- **关联性**：由于追踪剖析只与单个请求相关，所以当无法确认哪个请求产生问题时则变得难已处理。
 - **生命周期短的服务**：由于（至少）两个原因，Trace Profiling 不支持短声明周期的服务：
   - 在启动阶段，很难区分系统性能和类代码操作。
   - Trace Profiling 与一个端点相连，以识别性能影响，但没有端点来匹配这些短生命周期的服务。
@@ -41,7 +41,7 @@ Apache SkyWalking 观察部署在服务网格中的服务的度量、日志、�
 
 ![图片](eBPF-hook-points.jpg "eBPF 程序调用流程图")
 
-使用 eBPF 技术，可以将 Skywalking 的剖析能力范围扩大到：
+使用 eBPF 技术，可以将 SkyWalking 的剖析能力范围扩大到：
 
 - **全局性能剖析**：在 eBPF 之前，数据收集被限制在代理可以观察的范围内。由于 eBPF 程序在内核中运行，它们可以观察到所有的线程。当你不确定某个性能问题是否是由一个特定的请求引起的，这一点特别有用。
 - **数据内容**：eBPF 可以转储用户和内核空间的线程栈，所以如果性能问题发生在内核空间就更容易被发现。
@@ -50,7 +50,7 @@ Apache SkyWalking 观察部署在服务网格中的服务的度量、日志、�
 
 ### eBPF 的局限性 {#ebpf-limitations}
 
-虽然 eBPF 为发掘性能瓶颈提供了显著的优势，但没有任何技术是完美的。eBPF 有一些限制，如下所述（幸运的是，由于 SkyWalking 不需要 eBPF，其影响是有限的）：
+虽然 eBPF 为发掘性能瓶颈提供了显著的优势，但没有任何技术是完美的。eBPF 有一些限制，如下所述（幸运的是，由于 SkyWalking 不依赖 eBPF，其影响是有限的）：
 
 - **Linux 版本要求**：eBPF 程序需要的 Linux 内核版本要 4.4 以上，更新的内核版本可以提供更多的数据收集。BCC 记录了 [不同 Linux 内核版本所支持的功能](https://github.com/iovisor/bcc/blob/13b5563c11f7722a61a17c6ca0a1a387d2fa7788/docs/kernel-versions.md#main-features)，不同版本之间的差异在于 eBPF 收集的数据集。
 - **需要特权权限**：所有打算将 eBPF 程序加载到 Linux 内核的进程必须在特权模式下运行。因此，代码中的错误或其他问题可能对安全有很大的影响。

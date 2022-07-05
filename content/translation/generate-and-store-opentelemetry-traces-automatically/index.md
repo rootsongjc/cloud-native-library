@@ -15,6 +15,8 @@ links:
     url: https://timescale.com/blog/generate-and-store-opentelemetry-traces-automatically
 ---
 
+## 前言
+
 OpenTelemetry 追踪包含了理解分布式系统和排除故障的信息宝库 —— 但你的服务必须首先被指标化，以发射 OpenTelemetry 追踪来实现这一价值。然后，这些追踪信息需要被发送到一个可观察的后端，使你能够获得关于这些数据的任意问题的答案。可观测性是一个分析问题。
 
 本周早些时候，我们部分解决了这个问题，宣布[在 Promscale 中普遍提供 OpenTelemetry 追踪支持](https://www.timescale.com/blog/observability-powered-by-sql-understand-your-systems-like-never-before-with-opentelemetry-traces-and-postgresql/)，将由 SQL 驱动的可观测性带给所有开发者。随着对分析语言 ——SQL 的全面支持，我们解决了分析的问题。但我们仍然需要解决第一部分的问题：测量。

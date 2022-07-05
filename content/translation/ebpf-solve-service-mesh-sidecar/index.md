@@ -17,9 +17,9 @@ links:
     url: https://isovalent.com/blog/post/2021-12-08-ebpf-servicemesh
 ---
 
-译者注：本文作者是 Isovalent 联合创始人&CTO，原文标题 [How eBPF will solve Service Mesh - Goodbye Sidecars](https://isovalent.com/blog/post/2021-12-08-ebpf-servicemesh)，作者回顾了Linux 内核的连接性，实现服务网格的几种模式，以及如何使用 eBPF 实现无 Sidecar 的服务网格。
+## 编者的话
 
-------
+本文作者是 Isovalent 联合创始人&CTO，原文标题 [How eBPF will solve Service Mesh - Goodbye Sidecars](https://isovalent.com/blog/post/2021-12-08-ebpf-servicemesh)，作者回顾了Linux 内核的连接性，实现服务网格的几种模式，以及如何使用 eBPF 实现无 Sidecar 的服务网格。
 
 ## 什么是服务网格？
 

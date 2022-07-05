@@ -14,9 +14,9 @@ links:
     url: https://istio.io/latest/blog/2021/proxyless-grpc/
 ---
 
-译者注：本文译自 Istio 官方博客，博客原标题 [gRPC Proxyless Service Mesh](https://istio.io/latest/blog/2021/proxyless-grpc/)，其实是 Istio 1.11 版本中支持的实验特性，可以直接将 gRPC 服务添加到 Istio 中，而不需要再向 Pod 中注入 Envoy 代理。本文中还给出了一个 Demo 性能测试数据，这种做法可以极大的提升应用性能，降低网络延迟。	
+## 编者的话
 
-------
+本文译自 Istio 官方博客，博客原标题 [gRPC Proxyless Service Mesh](https://istio.io/latest/blog/2021/proxyless-grpc/)，其实是 Istio 1.11 版本中支持的实验特性，可以直接将 gRPC 服务添加到 Istio 中，而不需要再向 Pod 中注入 Envoy 代理。本文中还给出了一个 Demo 性能测试数据，这种做法可以极大的提升应用性能，降低网络延迟。	
 
 Istio 使用一组发现 API（统称为 [xDS API](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/dynamic_configuration) 来动态配置其 Envoy sidecar 代理。这些 API 的目标是成为一个 [通用的数据平面 API](https://blog.envoyproxy.io/the-universal-data-plane-api-d15cec7a?gi=64aa2eea0283)。gRPC 项目对 xDS API 有很好的支持，也就是说你可以管理 gRPC 工作负载，而不需要同时部署 Envoy sidecar。你可以在 [Megan Yahya 的 KubeCon EU 2021 演讲](https://www.youtube.com/watch?v=cGJXkZ7jiDk)中了解更多关于该集成的信息。关于 gRPC 支持的最新情况，可以在他们的[提案](https://github.com/grpc/proposal/search?q=xds)中找到，还有实现状态。
 
