@@ -15,7 +15,7 @@ type: book
 
 **注**：本文中的示例引用自 Istio 官方 Bookinfo 示例，见：[Istio 代码库](https://github.com/istio/istio/tree/master/samples/bookinfo/)，且对于配置的讲解都以在 Kubernetes 中部署的服务为准。
 
-### VirtualService
+## VirtualService
 
 `VirtualService` 故名思义，就是虚拟服务，在 Istio 1.0 以前叫做 RouteRule。`VirtualService` 中定义了一系列针对指定服务的流量路由规则。每个路由规则都是针对特定协议的匹配规则。如果流量符合这些特征，就会根据规则发送到服务注册表中的目标服务（或者目标服务的子集或版本）。
 
@@ -57,7 +57,7 @@ spec:
 - 我们看到上面的 `VirtualService` 的 HTTP 路由中还定义了一个 `destination`。`destination` 用于定义在网络中可寻址的服务，请求或连接在经过路由规则的处理之后，就会被发送给 `destination`。`destination.host` 应该明确指向服务注册表中的一个服务。Istio 的服务注册表除包含平台服务注册表中的所有服务（例如 Kubernetes 服务、Consul 服务）之外，还包含了 `ServiceEntry` 资源所定义的服务。`VirtualService` 中只定义流量发送给哪个服务的路由规则，但是并不知道要发送的服务的地址是什么，这就需要 `DestinationRule` 来定义了。
 - `subset` 配置流量目的地的子集，下文会讲到。`VirtualService` 中其实可以除了 `hosts` 字段外其他什么都不配置，路由规则可以在 `DestinationRule` 中单独配置来覆盖此处的默认规则。
 
-#### Subset
+### Subset
 
 `subset` 不属于 Istio 创建的 CRD，但是它是一条重要的配置信息，有必要单独说明下。`subset` 是服务端点的集合，可以用于 A/B 测试或者分版本路由等场景。另外在 `subset` 中可以覆盖服务级别的即 `VirtualService` 中的定义的流量策略。
 
@@ -69,7 +69,7 @@ spec:
 | `labels`        | `map<string, string>` | 必要字段。使用标签对服务注册表中的服务端点进行筛选。         |
 | `trafficPolicy` | `TrafficPolicy`       | 应用到这一 `subset` 的流量策略。缺省情况下 `subset` 会继承 `DestinationRule` 级别的策略，这一字段的定义则会覆盖缺省的继承策略。 |
 
-### DestinationRule
+## DestinationRule
 
 `DestinationRule` 所定义的策略，决定了经过路由处理之后的流量的访问策略。这些策略中可以定义负载均衡配置、连接池大小以及外部检测（用于在负载均衡池中对不健康主机进行识别和驱逐）配置。
 
@@ -102,15 +102,15 @@ spec:
 
 该路由策略将所有对 `reviews` 服务的流量路由到 `v1` 的 subset。
 
-### ServiceEntry
+## ServiceEntry
 
 Istio 服务网格内部会维护一个与平台无关的使用通用模型表示的服务注册表，当你的服务网格需要访问外部服务的时候，就需要使用 `ServiceEntry` 来添加服务注册。
 
-### EnvoyFilter
+## EnvoyFilter
 
 `EnvoyFilter` 描述了针对代理服务的过滤器，用来定制由 Istio Pilot 生成的代理配置。一定要谨慎使用此功能。错误的配置内容一旦完成传播，可能会令整个服务网格陷入瘫痪状态。这一配置是用于对 Istio 网络系统内部实现进行变更的，属于高级配置，用于扩展 Envoy 中的过滤器的。
 
-### Gateway
+## Gateway
 
 Gateway 为 HTTP/TCP 流量配置了一个负载均衡，多数情况下在网格边缘进行操作，用于启用一个服务的入口（ingress）流量，相当于前端代理。与 Kubernetes 的 Ingress 不同，Istio `Gateway` 只配置四层到六层的功能（例如开放端口或者 TLS 配置），而 Kubernetes 的 Ingress 是七层的。将 `VirtualService` 绑定到 `Gateway` 上，用户就可以使用标准的 Istio 规则来控制进入的 HTTP 和 TCP 流量。
 

@@ -1,6 +1,6 @@
 ---
 weight: 81
-title: kubectl 命令技巧大全
+title: Kubectl 命令技巧大全
 date: '2022-05-21T00:00:00+08:00'
 type: book
 ---

@@ -26,7 +26,7 @@ Envoy 的配置 dump 出来后的结构如下图所示。
 
 Bootstrap 是 Envoy 中配置的根本来源，Bootstrap 消息中有一个关键的概念，就是静态和动态资源的之间的区别。例如 Listener或 Cluster 这些资源既可以从静态资源配置中获得也可以从动态资源中配置的 LDS 或 CDS 之类的 xDS 服务获取。
 
-### Listener
+## Listener
 
 Listener 顾名思义，就是监听器，监听 IP 地址和端口，然后根据策略转发。
 
@@ -80,7 +80,7 @@ Listener 的数据结构如下，除了 `name`、`address` 和 `filter_chains` �
 
 - **use_original_dst**：这是一个布尔值，如果使用 iptables 重定向连接，则代理接收的端口可能与原始目的地址的端口不一样。当此标志设置为 true 时，Listener 将重定向的连接切换到与原始目的地址关联的 Listener。如果没有与原始目的地址关联的 Listener，则连接由接收它的 Listener 处理。默认为 false。注意：该参数将被废弃，请使用原始目的地址的 Listener filter 替代。该参数的主要用途是，Envoy 通过监听 15001 端口将应用的流量截取后再由其他 Listener 处理而不是直接转发出去。
 
-### Cluster
+## Cluster
 
 Cluster 是指 Envoy 连接的一组逻辑相同的上游主机。Envoy 通过服务发现来发现 cluster 的成员。可以选择通过主动健康检查来确定集群成员的健康状态。Envoy 通过负载均衡策略决定将请求路由到 cluster 的哪个成员。
 
@@ -141,7 +141,7 @@ Cluster 的数据结构如下，除了 `name` 字段，其他都是可选的。
 - **hosts**：这是个列表，配置负载均衡的 IP 地址和端口，只有使用了  `STATIC`、`STRICT_DNS`、`LOGICAL_DNS` 服务发现类型时才需要配置。
 - **eds_cluster_config**：如果使用 `EDS` 做服务发现，则需要配置该项目，其中包括的配置有 `service_name` 和 `ads`。
 
-### Route
+## Route
 
 我们在这里所说的路由指的是 HTTP 路由，这也使得 Envoy 可以用来处理网格边缘的流量。HTTP 路由转发是通过路由过滤器实现的。该过滤器的主要职能就是执行路由表中的指令。除了可以做重定向和转发，路由过滤器还需要处理重试、统计之类的任务。
 
@@ -173,7 +173,7 @@ Cluster 的数据结构如下，除了 `name` 字段，其他都是可选的。
 - **virtual_hosts**：因为 **VirtualHosts** 是 Envoy 中引入的一个重要概念，我们在下文将详细说明 `virtual_hosts` 的数据结构。
 - **validate_clusters**：这是一个布尔值，用来设置开启使用 cluster manager 来检测路由表引用的 cluster 是否有效。如果是路由表是通过 `route_config` 静态配置的则该值默认设置为 true，如果是使用 RDS 动态配置的话，则该值默认设置为 false。
 
-#### route.VirtualHost
+## route.VirtualHost
 
 VirtualHost 即上文中 Route 配置中的 `virtual_hosts`，VirtualHost 是路由配置中的顶级元素。每个虚拟主机都有一个逻辑名称以及一组根据传入请求的 host header 路由到它的域。这允许单个 Listener 为多个顶级域路径树提供服务。基于域选择了虚拟主机后 Envoy  就会处理路由以查看要路由到哪个上游集群或是否执行重定向。
 
@@ -285,7 +285,7 @@ VirtualHost 即上文中 Route 配置中的 `virtual_hosts`，VirtualHost 是路
         }
 ```
 
-#### route.Route
+## route.Route
 
 路由既是如何匹配请求的规范，也是对下一步做什么的指示（例如，redirect、forward、rewrite等）。
 

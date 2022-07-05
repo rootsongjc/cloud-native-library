@@ -12,11 +12,11 @@ Istio 是最受欢迎和发展最快的开源项目之一。它的发布时间�
 - `tetrate` 发行版，跟踪上游 Istio 并可能应用额外的补丁。
 - `tetratefips` 发行版，是符合 FIPS 标准的 tetrate 版本。
 
-### 如何开始使用？
+## 如何开始使用？
 
 第一步是下载 GetMesh CLI。你可以在 macOS 和 Linux 平台上安装 GetMesh。我们可以使用以下命令来下载最新版本的 GetMesh 和认证的 Istio。
 
-### 如何开始？
+## 如何开始？
 
 第一步是下载 GetMesh CLI。你可以在 macOS 和 Linux 平台上安装 GetMesh。我们可以使用以下命令下载最新版本的 GetMesh 并认证 Istio。
 
@@ -35,7 +35,7 @@ no running Istio pods in "istio-system"
 
 版本命令输出 GetMesh 的版本、活跃的 Istio CLI 的版本以及 Kubernetes 集群上安装的 Istio 的版本。
 
-### 使用 GetMesh 安装 Istio
+## 使用 GetMesh 安装 Istio
 
 GetMesh 通过 Kubernetes 配置文件与活跃的 Kubernetes 集群进行通信。
 
@@ -49,7 +49,7 @@ getmesh istioctl install --set profile=demo
 
 如果我们现在检查版本，你会注意到输出显示控制平面和数据平面的版本。
 
-### 验证配置
+## 验证配置
 
 `config-validate` 命令允许你对当前配置和任何尚未应用的 YAML 清单进行验证。
 
@@ -76,7 +76,7 @@ The error codes of the found issues are prefixed by 'IST' or 'KIA'. For the deta
 $ getmesh config-validate my-resources.yaml
 ```
 
-### 管理多个 Istio CLI
+## 管理多个 Istio CLI
 
 我们可以使用 show 命令来列出当前下载的 Istio 版本：
 
@@ -143,7 +143,7 @@ data plane version: 1.9.5-tetrate-v0 (2 proxies)
 getmesh  switch --version 1.9.5 --flavor tetrate --flavor-version 0
 ```
 
-### CA 集成
+## CA 集成
 
 我们没有使用自签的根证书，而是从 GCP CAS（证书授权服务）获得一个中间的 Istio 证书授权（CA）来签署工作负载证书。
 
@@ -222,7 +222,7 @@ ENDPOINT                         STATUS      OUTLIER CHECK     CLUSTER
 
 我们将在后面的模块中讨论 Sidecar 资源。
 
-### 配置发现选择器
+## 配置发现选择器
 
 发现选择器可以在 MeshConfig 中的 Mesh 层面上进行配置。它们是一个 Kubernetes 选择器的列表，指定了 Istio 在向 sidecar 推送配置时观察和更新的命名空间的集合。
 

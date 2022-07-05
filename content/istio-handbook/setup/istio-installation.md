@@ -24,7 +24,7 @@ Istio 官方已不再推荐使用 Operator 来安装 Istio，建议你使用 ist
 
 当使用本地 Kubernetes 集群时，确保你的计算机满足 Istio 安装的最低要求（如 16384MB 内存和 4 个 CPU）。另外，确保 Kubernetes 集群的版本是 v1.19.0 或更高。
 
-### Minikube
+## Minikube
 
 在这次培训中，我们将使用 Minikube 的 Hypervisor。Hypervisor 的选择将取决于你的操作系统。要安装 Minikube 和 Hypervisor，你可以按照安装说明进行。
 
@@ -55,7 +55,7 @@ minikube   Ready    master   151m   v1.19.0
 
 > 注意：如果你使用 [Brew 软件包管理器](https://brew.sh)安装了 Minikube，你也安装了 Kubernetes CLI。
 
-### Kubernetes CLI
+## Kubernetes CLI
 
 如果你需要安装 Kubernetes CLI，请遵循[这些说明](https://kubernetes.io/docs/tasks/tools/install-kubectl/)。
 
@@ -67,7 +67,7 @@ Client Version: version.Info{Major:"1", Minor:"19", GitVersion:"v1.19.2", GitCom
 Server Version: version.Info{Major:"1", Minor:"19", GitVersion:"v1.19.0", GitCommit:"e19964183377d0ec2052d1f1fa930c4d7575bd50", GitTreeState:"clean", BuildDate:"2020-08-26T14:23:04Z", GoVersion:"go1.15", Compiler:"gc", Platform:"linux/amd64"}
 ```
 
-### 下载 Istio
+## 下载 Istio
 
 在本课程中，我们将使用 Istio 1.10.3。安装 Istio 的第一步是下载 Istio CLI（istioctl）、安装清单、示例和工具。
 
@@ -92,7 +92,7 @@ no running Istio pods in "istio-system"
 1.10.3
 ```
 
-### 安装 Istio
+## 安装 Istio
 
 Istio 支持多个配置文件（profile）。配置文件之间的区别在于所安装的组件。
 
@@ -167,7 +167,7 @@ istiod-dd4b7db5-nxrjv                   1/1     Running   0          111s
 
 当所有的 Pod 都在运行时，Operator 已经完成了 Istio 的安装。
 
-### 启用 sidecar 注入
+## 启用 sidecar 注入
 
 正如我们在上一节中所了解的，服务网格需要与每个应用程序一起运行的 sidecar 代理。
 
@@ -239,7 +239,7 @@ $ kubectl delete deployment my-nginx
 deployment.apps "my-nginx" deleted
 ```
 
-### 更新和卸载 Istio
+## 更新和卸载 Istio
 
 如果我们想更新当前的安装或改变配置文件，我们将需要更新先前部署的 `IstioOperator` 资源。
 
