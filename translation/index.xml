@@ -18,14 +18,14 @@
       <pubDate>Tue, 05 Jul 2022 17:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/translation/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/</guid>
       <description>&lt;h2 id=&#34;background&#34;&gt;背景介绍&lt;/h2&gt;
-&lt;p&gt;Apache SkyWalking 观察部署在服务网格中的服务的度量、日志、追踪和事件。在进行故障排除时，SkyWalking 错误分析是一个宝贵的工具，可以帮助确定错误发生的位置。然而，确定性能问题更加困难：利用预先存在的观察数据往往不可能找到性能问题的根本原因。为此，动态调试和故障排除在进行服务性能剖析时就比不可少。在这篇文章中，我们将讨论如何使用 eBPF 技术来改进 SkyWalking 中的剖析功能，并分析其对服务网格性能的影响。&lt;/p&gt;
+&lt;p&gt;Apache SkyWalking 观察部署在服务网格中的服务的度量、日志、追踪和事件。在进行故障排除时，SkyWalking 错误分析是一个宝贵的工具，可以帮助确定错误发生的位置。然而，确定性能问题更加困难：利用预先存在的观察数据往往不可能找到性能问题的根本原因。为此，动态调试和故障排除在进行服务性能剖析时就必不可少。在这篇文章中，我们将讨论如何使用 eBPF 技术来改进 SkyWalking 中的剖析功能，并用于分析服务网格中的性能影响。&lt;/p&gt;
 &lt;h2 id=&#34;trace-profiling-in-skywalking&#34;&gt;SkyWalking 中的追踪剖析&lt;/h2&gt;
 &lt;p&gt;自 SkyWalking 7.0.0 以来，Trace Profiling 通过定期对线程堆栈进行采样，让开发者知道运行哪行代码花费更多时间，从而帮助开发者发现性能问题。然而，Trace Profiling 不适合以下情况：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;线程模型&lt;/strong&gt;：Trace Profiling 对于剖析在单线程中执行的代码最有用。它对严重依赖异步执行模式的中间件不太有用。例如，Go 中的 Goroutines 或 Kotlin Coroutines。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;语言&lt;/strong&gt;：目前，Trace Profiling 只支持 Java 和 Python，因为在 Go 和 Node.js 等一些语言的运行时中不容易获得线程栈。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;Agent 绑定&lt;/strong&gt;：Trace Profiling 需要安装 Agent，根据语言的不同，这可能很麻烦（例如，PHP 必须依赖其 C 内核；Rust 和 C/C++ 需要的仪器需要手动安装）。&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;追踪关联性&lt;/strong&gt;：由于追踪剖析只与单个请求相关，所以很难确定哪个请求导致了问题。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;关联性&lt;/strong&gt;：由于追踪剖析只与单个请求相关，所以当无法确认哪个请求产生问题时则变得难已处理。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;生命周期短的服务&lt;/strong&gt;：由于（至少）两个原因，Trace Profiling 不支持短声明周期的服务：
 &lt;ul&gt;
 &lt;li&gt;在启动阶段，很难区分系统性能和类代码操作。&lt;/li&gt;
@@ -67,7 +67,7 @@
       eBPF 程序调用流程图
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
-&lt;p&gt;使用 eBPF 技术，可以将 Skywalking 的剖析能力范围扩大到：&lt;/p&gt;
+&lt;p&gt;使用 eBPF 技术，可以将 SkyWalking 的剖析能力范围扩大到：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;全局性能剖析&lt;/strong&gt;：在 eBPF 之前，数据收集被限制在代理可以观察的范围内。由于 eBPF 程序在内核中运行，它们可以观察到所有的线程。当你不确定某个性能问题是否是由一个特定的请求引起的，这一点特别有用。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;数据内容&lt;/strong&gt;：eBPF 可以转储用户和内核空间的线程栈，所以如果性能问题发生在内核空间就更容易被发现。&lt;/li&gt;
@@ -75,7 +75,7 @@
 &lt;li&gt;&lt;strong&gt;采样类型&lt;/strong&gt;：与追踪剖析不同，eBPF 是事件驱动的，因此，不受间隔轮询的限制。例如，eBPF 可以触发事件，并根据传输大小的阈值收集更多的数据。这可以让系统在极端负载下分流和优先收集数据。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h3 id=&#34;ebpf-limitations&#34;&gt;eBPF 的局限性&lt;/h3&gt;
-&lt;p&gt;虽然 eBPF 为发掘性能瓶颈提供了显著的优势，但没有任何技术是完美的。eBPF 有一些限制，如下所述（幸运的是，由于 SkyWalking 不需要 eBPF，其影响是有限的）：&lt;/p&gt;
+&lt;p&gt;虽然 eBPF 为发掘性能瓶颈提供了显著的优势，但没有任何技术是完美的。eBPF 有一些限制，如下所述（幸运的是，由于 SkyWalking 不依赖 eBPF，其影响是有限的）：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;Linux 版本要求&lt;/strong&gt;：eBPF 程序需要的 Linux 内核版本要 4.4 以上，更新的内核版本可以提供更多的数据收集。BCC 记录了 &lt;a href=&#34;https://github.com/iovisor/bcc/blob/13b5563c11f7722a61a17c6ca0a1a387d2fa7788/docs/kernel-versions.md#main-features&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;不同 Linux 内核版本所支持的功能&lt;/a&gt;，不同版本之间的差异在于 eBPF 收集的数据集。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;需要特权权限&lt;/strong&gt;：所有打算将 eBPF 程序加载到 Linux 内核的进程必须在特权模式下运行。因此，代码中的错误或其他问题可能对安全有很大的影响。&lt;/li&gt;
@@ -365,15 +365,8 @@
       <link>https://lib.jimmysong.io/translation/designing-traffic-flow-via-tier1-and-tier2-ingress-gateways/</link>
       <pubDate>Wed, 29 Jun 2022 11:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/translation/designing-traffic-flow-via-tier1-and-tier2-ingress-gateways/</guid>
-      <description>&lt;div class=&#34;alert alert-note&#34;&gt;
-  &lt;div class=&#34;alert-title&#34;&gt;
-      &lt;p&gt;编者的话&lt;/p&gt;
-  &lt;/div&gt;
-  &lt;div&gt;
-    本文是来自 &lt;a href=&#34;https://tetrate.io&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate&lt;/a&gt; 工程师的分享，Tetrate 的拳头产品是 &lt;a href=&#34;https://tetrate.io/tetrate-service-bridge&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate Service Bridge&lt;/a&gt;（下文简称 TSB），它是在开源的 Istio 和 Envoy 基础上构建的，但为其增加了管理平面。
-  &lt;/div&gt;
-&lt;/div&gt;
-
+      <description>&lt;h2 id=&#34;foreword&#34;&gt;编者的话&lt;/h2&gt;
+&lt;p&gt;本文是来自 &lt;a href=&#34;https://tetrate.io&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate&lt;/a&gt; 工程师的分享，Tetrate 的拳头产品是 &lt;a href=&#34;https://tetrate.io/tetrate-service-bridge&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate Service Bridge&lt;/a&gt;（下文简称 TSB），它是在开源的 Istio 和 Envoy 基础上构建的，但为其增加了管理平面。&lt;/p&gt;
 &lt;h2 id=&#34;intro&#34;&gt;简介&lt;/h2&gt;
 &lt;p&gt;Tetrate 的应用连接平台 Tetrate Service Bridge（TSB）提供两种网关类型，分别为一级网关（Tier-1）和二级网关（Tier-2），它们都基于 Envoy 构建，但是目的有所不同。本文将探讨这两种类型网关的功能，以及何时选用哪种网关。&lt;/p&gt;
 &lt;p&gt;关于两级网关的简要介绍：&lt;/p&gt;
@@ -712,7 +705,9 @@
       <link>https://lib.jimmysong.io/translation/istio-spire-integration/</link>
       <pubDate>Mon, 06 Jun 2022 11:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/translation/istio-spire-integration/</guid>
-      <description>&lt;p&gt;&lt;a href=&#34;https://spiffe.io/docs/latest/spire-about/spire-concepts/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE&lt;/a&gt; 是 SPIFFE 规范的一个生产就绪的实现，它可以执行节点和工作负载证明，以便安全地将加密身份发给在异构环境中运行的工作负载。通过与 &lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/configuration/security/secret&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy 的 SDS API&lt;/a&gt; 集成，SPIRE 可以被配置为 Istio 工作负载的加密身份来源。Istio 可以检测到一个 UNIX 域套接字的存在，该套接字在定义的套接字路径上实现了 Envoy SDS API，允许 Envoy 直接从它那里进行通信和获取身份。&lt;/p&gt;
+      <description>&lt;h2 id=&#34;编者的话&#34;&gt;编者的话&lt;/h2&gt;
+&lt;p&gt;Istio 1.14 版本增加了对 SPIRE 集成的支持，这篇文章将指导你如何在 Istio 中集成 SPIRE。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://spiffe.io/docs/latest/spire-about/spire-concepts/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE&lt;/a&gt; 是 SPIFFE 规范的一个生产就绪的实现，它可以执行节点和工作负载证明，以便安全地将加密身份发给在异构环境中运行的工作负载。通过与 &lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/configuration/security/secret&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy 的 SDS API&lt;/a&gt; 集成，SPIRE 可以被配置为 Istio 工作负载的加密身份来源。Istio 可以检测到一个 UNIX 域套接字的存在，该套接字在定义的套接字路径上实现了 Envoy SDS API，允许 Envoy 直接从它那里进行通信和获取身份。&lt;/p&gt;
 &lt;p&gt;这种与 SPIRE 的集成提供了灵活的认证选项，这是默认的 Istio 身份管理所不具备的，同时利用了 Istio 强大的服务管理。例如，SPIRE 的插件架构能够提供多样化的工作负载认证选项，超越 Istio 提供的 Kubernetes 命名空间和服务账户认证。SPIRE 的节点认证将认证扩展到工作负载运行的物理或虚拟硬件上。&lt;/p&gt;
 &lt;p&gt;关于这种 SPIRE 与 Istio 集成的快速演示，请参阅&lt;a href=&#34;https://github.com/istio/istio/tree/release-1.14/samples/security/spire&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;通过 Envoy 的 SDS API 将 SPIRE 作为 CA 进行集成&lt;/a&gt;。&lt;/p&gt;
 &lt;p&gt;请注意，这个集成需要 1.14 版本的 &lt;code&gt;istioctl&lt;/code&gt; 和数据平面。&lt;/p&gt;
@@ -1036,7 +1031,8 @@
       <link>https://lib.jimmysong.io/translation/generate-and-store-opentelemetry-traces-automatically/</link>
       <pubDate>Mon, 30 May 2022 11:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/translation/generate-and-store-opentelemetry-traces-automatically/</guid>
-      <description>&lt;p&gt;OpenTelemetry 追踪包含了理解分布式系统和排除故障的信息宝库 —— 但你的服务必须首先被指标化，以发射 OpenTelemetry 追踪来实现这一价值。然后，这些追踪信息需要被发送到一个可观察的后端，使你能够获得关于这些数据的任意问题的答案。可观测性是一个分析问题。&lt;/p&gt;
+      <description>&lt;h2 id=&#34;前言&#34;&gt;前言&lt;/h2&gt;
+&lt;p&gt;OpenTelemetry 追踪包含了理解分布式系统和排除故障的信息宝库 —— 但你的服务必须首先被指标化，以发射 OpenTelemetry 追踪来实现这一价值。然后，这些追踪信息需要被发送到一个可观察的后端，使你能够获得关于这些数据的任意问题的答案。可观测性是一个分析问题。&lt;/p&gt;
 &lt;p&gt;本周早些时候，我们部分解决了这个问题，宣布&lt;a href=&#34;https://www.timescale.com/blog/observability-powered-by-sql-understand-your-systems-like-never-before-with-opentelemetry-traces-and-postgresql/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;在 Promscale 中普遍提供 OpenTelemetry 追踪支持&lt;/a&gt;，将由 SQL 驱动的可观测性带给所有开发者。随着对分析语言 ——SQL 的全面支持，我们解决了分析的问题。但我们仍然需要解决第一部分的问题：测量。&lt;/p&gt;
 &lt;p&gt;为了让你的服务发出追踪数据，你必须手动添加 OpenTelemetry 测量工具到代码中。而且你必须针对所有服务和你使用的所有框架来做，否则你将无法看到每个请求的执行情况。你还需要部署 OpenTelemetry 收集器来接收所有新的追踪，处理它们，批处理它们，并最终将它们发送到你的可观测性后端。这需要花费大量的时间和精力。&lt;/p&gt;
 &lt;p&gt;如果你不需要做所有这些手工工作，并且可以在几分钟内而不是几小时甚至几天内启动和运行呢？如果你还能建立一个完整的可观测性技术栈并自动连接所有的组件呢？如果我告诉你，你可以用一个命令完成所有这些工作呢？&lt;/p&gt;
@@ -1869,7 +1865,8 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
       <link>https://lib.jimmysong.io/translation/the-gateway-to-a-new-frontier/</link>
       <pubDate>Tue, 17 May 2022 11:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/translation/the-gateway-to-a-new-frontier/</guid>
-      <description>&lt;p&gt;今天，Envoy 社区&lt;a href=&#34;https://www.cncf.io/blog/2022/05/16/introducing-envoy-gateway/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;宣布了&lt;/a&gt;一个令人兴奋的新项目。 &lt;a href=&#34;https://github.com/envoyproxy/gateway&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy Gateway&lt;/a&gt;。该项目将行业领导者联合起来，精简由 Envoy 驱动的应用网关的好处。这种方法使 Envoy Gateway 能够立即为快速创新打下坚实的基础。该项目将提供一套服务来管理 Envoy 代理机群，通过易用性来推动采用，并通过定义明确的扩展机制来支持众多的用例。&lt;/p&gt;
+      <description>&lt;h2 id=&#34;前言&#34;&gt;前言&lt;/h2&gt;
+&lt;p&gt;今天，Envoy 社区&lt;a href=&#34;https://www.cncf.io/blog/2022/05/16/introducing-envoy-gateway/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;宣布了&lt;/a&gt;一个令人兴奋的新项目。 &lt;a href=&#34;https://github.com/envoyproxy/gateway&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy Gateway&lt;/a&gt;。该项目将行业领导者联合起来，精简由 Envoy 驱动的应用网关的好处。这种方法使 Envoy Gateway 能够立即为快速创新打下坚实的基础。该项目将提供一套服务来管理 Envoy 代理机群，通过易用性来推动采用，并通过定义明确的扩展机制来支持众多的用例。&lt;/p&gt;
 &lt;h2 id=&#34;我们为什么要这样做&#34;&gt;我们为什么要这样做？&lt;/h2&gt;
 &lt;p&gt;Tetrate 是 Envoy Proxy 的第一贡献者（按提交量计算），也是 Envoy Gateway 指导小组的成员，其贡献者涵盖技术和管理领域。我们相信，我们强大的伙伴关系和在开源软件方面的深厚经验将有助于确保 Envoy Gateway 的成功。Tetrate 推动了 EG 计划，因为我们致力于上游项目，因为我们相信这将降低 Envoy Proxy 用户的进入门槛，也因为这与我们开发服务网格作为零信任架构基础的使命相一致。Tetrate 将大力投资建设 Envoy Gateway 的安全功能，包括支持 OAuth2 和 &lt;a href=&#34;https://letsencrypt.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Let’s Encrypt&lt;/a&gt; 集成等 API 功能。&lt;/p&gt;
 &lt;h3 id=&#34;对上游项目的承诺&#34;&gt;对上游项目的承诺&lt;/h3&gt;
@@ -1902,7 +1899,8 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
       <link>https://lib.jimmysong.io/translation/introducing-envoy-gateway/</link>
       <pubDate>Mon, 16 May 2022 13:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/translation/introducing-envoy-gateway/</guid>
-      <description>&lt;p&gt;今天，我们很高兴地宣布 &lt;a href=&#34;https://github.com/envoyproxy/gateway&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy Gateway&lt;/a&gt; 成为 Envoy 代理家族的新成员，该项目旨在大幅降低将 Envoy 作为 API 网关的使用门槛。&lt;/p&gt;
+      <description>&lt;h2 id=&#34;前言&#34;&gt;前言&lt;/h2&gt;
+&lt;p&gt;今天，我们很高兴地宣布 &lt;a href=&#34;https://github.com/envoyproxy/gateway&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy Gateway&lt;/a&gt; 成为 Envoy 代理家族的新成员，该项目旨在大幅降低将 Envoy 作为 API 网关的使用门槛。&lt;/p&gt;
 &lt;h2 id=&#34;历史&#34;&gt;历史&lt;/h2&gt;
 &lt;p&gt;Envoy &lt;a href=&#34;https://medium.com/lyft-engineering/announcing-envoy-c-l7-proxy-and-communication-bus-92520b6c8191&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;在 2016 年秋天开源&lt;/a&gt;，令我们惊讶的是，它很快就引领了整个行业。用户被这个项目的许多不同方面所吸引，包括它的包容性社区、可扩展性、API 驱动的配置模型、强大的可观测性输出和越来越广泛的功能集。&lt;/p&gt;
 &lt;p&gt;尽管在其早期历史中，Envoy 成为了&lt;strong&gt;服务网格&lt;/strong&gt;的代名词，但它在 Lyft 的首次使用实际上是作为 API 网关 / 边缘代理，提供深入的可观测性输出，帮助 Lyft 从单体架构迁移到微服务架构。&lt;/p&gt;
@@ -1942,15 +1940,15 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
       <link>https://lib.jimmysong.io/translation/validating-a-request-payload-with-wasm/</link>
       <pubDate>Fri, 13 May 2022 13:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/translation/validating-a-request-payload-with-wasm/</guid>
-      <description>&lt;h3 id=&#34;什么是-wasm-插件&#34;&gt;什么是 Wasm 插件？&lt;/h3&gt;
+      <description>&lt;h2 id=&#34;什么是-wasm-插件&#34;&gt;什么是 Wasm 插件？&lt;/h2&gt;
 &lt;p&gt;你可以使用 Wasm 插件在数据路径上添加自定义代码，轻松地扩展服务网格的功能。可以用你选择的语言编写插件。目前，有 AssemblyScript（TypeScript-ish）、C++、Rust、Zig 和 Go 语言的 Proxy-Wasm SDK。&lt;/p&gt;
 &lt;p&gt;在这篇博文中，我们描述了如何使用 Wasm 插件来验证一个请求的有效载荷。这是 Wasm 与 Istio 的一个重要用例，也是你可以使用 Wasm 扩展 Istio 的许多方法的一个例子。您可能有兴趣阅读我们关于&lt;a href=&#34;https://www.tetrate.io/blog/category/wasm/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;在 Istio 中使用 Wasm 的博文&lt;/a&gt;，并观看我们关于在 Istio 和 Envoy 中使用 Wasm 的免费研讨会的录音。&lt;/p&gt;
-&lt;h3 id=&#34;何时使用-wasm-插件&#34;&gt;何时使用 Wasm 插件？&lt;/h3&gt;
+&lt;h2 id=&#34;何时使用-wasm-插件&#34;&gt;何时使用 Wasm 插件？&lt;/h2&gt;
 &lt;p&gt;当你需要添加 Envoy 或 Istio 不支持的自定义功能时，你应该使用 Wasm 插件。使用 Wasm 插件来添加自定义验证、认证、日志或管理配额。&lt;/p&gt;
 &lt;p&gt;在这个例子中，我们将构建和运行一个 Wasm 插件，验证请求 body 是 JSON，并包含两个必要的键 ——&lt;code&gt;id&lt;/code&gt; 和 &lt;code&gt;token&lt;/code&gt;。&lt;/p&gt;
-&lt;h3 id=&#34;编写-wasm-插件&#34;&gt;编写 Wasm 插件&lt;/h3&gt;
+&lt;h2 id=&#34;编写-wasm-插件&#34;&gt;编写 Wasm 插件&lt;/h2&gt;
 &lt;p&gt;这个示例使用 &lt;a href=&#34;https://tinygo.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;tinygo&lt;/a&gt; 来编译成 Wasm。确保你已经安装了 &lt;a href=&#34;https://tinygo.org/getting-started/install/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;tinygo 编译器&lt;/a&gt;。&lt;/p&gt;
-&lt;h4 id=&#34;配置-wasm-上下文&#34;&gt;配置 Wasm 上下文&lt;/h4&gt;
+&lt;h3 id=&#34;配置-wasm-上下文&#34;&gt;配置 Wasm 上下文&lt;/h3&gt;
 &lt;p&gt;首先配置 Wasm 上下文，这样 tinygo 文件才能操作 HTTP 请求：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kn&#34;&gt;package&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;main&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
@@ -1993,7 +1991,7 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;	&lt;span class=&#34;nx&#34;&gt;types&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;DefaultHttpContext&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;	&lt;span class=&#34;nx&#34;&gt;totalRequestBodySize&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h4 id=&#34;验证负载&#34;&gt;验证负载&lt;/h4&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;验证负载&#34;&gt;验证负载&lt;/h3&gt;
 &lt;p&gt;内容类型头是通过实现 &lt;code&gt;OnHttpRequestHeaders&lt;/code&gt; 来验证的，一旦从客户端收到请求头，就会调用该头。&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;proxywasm.SendHttpResponse&lt;/code&gt; 用于响应 403 forbidden 的错误代码和信息，如果内容类型丢失的话。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ctx&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;payloadValidationContext&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;OnHttpRequestHeaders&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;numHeaders&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;endOfStream&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bool&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;types&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Action&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
@@ -2056,11 +2054,11 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;	&lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h4 id=&#34;编译成-wasm&#34;&gt;编译成 Wasm&lt;/h4&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;编译成-wasm&#34;&gt;编译成 Wasm&lt;/h3&gt;
 &lt;p&gt;使用 tinygo 编译器编译成 Wasm：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tinygo build -o main.wasm -scheduler&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;none -target&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;wasi main.go
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;部署-wasm-插件&#34;&gt;部署 Wasm 插件&lt;/h3&gt;
-&lt;h4 id=&#34;打包到-docker-中部署到-envoy&#34;&gt;打包到 Docker 中部署到 Envoy&lt;/h4&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;部署-wasm-插件&#34;&gt;部署 Wasm 插件&lt;/h2&gt;
+&lt;h3 id=&#34;打包到-docker-中部署到-envoy&#34;&gt;打包到 Docker 中部署到 Envoy&lt;/h3&gt;
 &lt;p&gt;对于开发，这个插件可以在 Docker 中部署到 Envoy。下面的 Envoy 配置文件将设置 Envoy 监听 &lt;code&gt;localhost:18000&lt;/code&gt;，运行所提供的 Wasm 插件，并在成功后响应 HTTP 200 和文本 &lt;code&gt;hello from server&lt;/code&gt;。突出显示的部分是配置 Wasm 插件。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;static_resources&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;listeners&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -2196,8 +2194,8 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;x-envoy-upstream-service-time: &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;hello from the server
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;部署到-istio&#34;&gt;部署到 Istio&lt;/h3&gt;
-&lt;h4 id=&#34;部署-istio-和-httpbin-示例应用&#34;&gt;部署 Istio 和 httpbin 示例应用&lt;/h4&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;部署到-istio&#34;&gt;部署到 Istio&lt;/h2&gt;
+&lt;h3 id=&#34;部署-istio-和-httpbin-示例应用&#34;&gt;部署 Istio 和 httpbin 示例应用&lt;/h3&gt;
 &lt;p&gt;我们使用 &lt;a href=&#34;https://kind.sigs.k8s.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;kind&lt;/a&gt; 来创建测试集群，对于其他方式创建的 Kubernetes 集群同样适用。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kind create cluster
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;集群创建完毕后，安装 Istio，我们使用的是 Istio 1.12.3，安装 &lt;a href=&#34;https://github.com/istio/istio/tree/master/samples/httpbin&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Istio httpbin 示例应用&lt;/a&gt;。&lt;/p&gt;
@@ -2214,7 +2212,7 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
 &lt;li&gt;对于 Istio 1.12 和更新版本的 Istio，支持 &lt;a href=&#34;https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;WasmPlugin&lt;/a&gt; 资源&lt;/li&gt;
 &lt;li&gt;对于老版本的 Istio，可以使用 &lt;a href=&#34;https://istio.io/latest/docs/reference/config/networking/envoy-filter/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;EnvoyFilter&lt;/a&gt;&lt;/li&gt;
 &lt;/ol&gt;
-&lt;h4 id=&#34;使用-wasmplugin-安装&#34;&gt;使用 WasmPlugin 安装&lt;/h4&gt;
+&lt;h3 id=&#34;使用-wasmplugin-安装&#34;&gt;使用 WasmPlugin 安装&lt;/h3&gt;
 &lt;p&gt;WasmPlugin 资源从镜像仓库中提取 wasm 模块。因此，让我们首先为我们的 wasm 模块构建并推送一个 Docker 镜像。下面的 Docker 文件允许从你的 wasm 模块建立一个 Docker 镜像。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-Docker&#34; data-lang=&#34;Docker&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;k&#34;&gt;FROM&lt;/span&gt;&lt;span class=&#34;s&#34;&gt; scratch&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
@@ -2236,7 +2234,7 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;url&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;oci://{your_registry}/json-validation:v3&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;imagePullPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;IfNotPresent&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;phase&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;AUTHN&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h4 id=&#34;使用-envoyfilter-安装&#34;&gt;使用 EnvoyFilter 安装&lt;/h4&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;使用-envoyfilter-安装&#34;&gt;使用 EnvoyFilter 安装&lt;/h3&gt;
 &lt;p&gt;为了使用 EnvoyFilter，我们创建一个包含已编译的 Wasm 插件的 ConfigMap，将 ConfigMap 挂载到网关 pod 中，然后通过 EnvoyFilter 配置 Envoy，从本地文件加载 Wasm 插件。这种方法的限制是，更大和更复杂的 Wasm 模块可能超出 ConfigMap 1MB 的大小限制。&lt;/p&gt;
 &lt;p&gt;首先，创建一个包含编译好的 Wasm 模块的 ConfigMap：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n istio-system create configmap wasm-plugins --from-file&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;main.wasm
@@ -2279,7 +2277,7 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;filename&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;/var/local/lib/wasm-plugins/main.wasm&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;              &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;runtime&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;envoy.wasm.runtime.v8&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;              &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;vm_id&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;json-validation&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h4 id=&#34;测试-wasm-插件&#34;&gt;测试 Wasm 插件&lt;/h4&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;测试-wasm-插件&#34;&gt;测试 Wasm 插件&lt;/h3&gt;
 &lt;p&gt;重复之前的 curl 请求。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;% curl -X POST -i http://localhost:8080/post
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;HTTP/1.1 &lt;span class=&#34;m&#34;&gt;403&lt;/span&gt; Forbidden
@@ -2291,7 +2289,7 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;content-type must be provided
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果提供了内容类型和 json 负载的话，请求将会成功。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -i http://localhost:8080/post  -H &lt;span class=&#34;s1&#34;&gt;&amp;#39;Content-Type: application/json&amp;#39;&lt;/span&gt; --data &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;id&amp;#34;: &amp;#34;xxx&amp;#34;, &amp;#34;token&amp;#34;: &amp;#34;xxx&amp;#34;}&amp;#39;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;让必填字段可配置&#34;&gt;让必填字段可配置&lt;/h3&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;让必填字段可配置&#34;&gt;让必填字段可配置&lt;/h2&gt;
 &lt;p&gt;与其在编译的 golang 代码中硬编码所需的 JSON 字段，不如允许通过 Envoy 配置来配置这些字段。&lt;/p&gt;
 &lt;p&gt;当在 Docker 中运行 Envoy 时，可以通过向之前创建的 Wasm &lt;code&gt;http_filter&lt;/code&gt; 添加配置来实现。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;http_filters&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -2410,7 +2408,7 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;	&lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;然后可以使用与之前相同的命令对其进行编译和测试。&lt;/p&gt;
-&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
 &lt;p&gt;总而言之，要在 Istio 1.12 和更新的版本上使用 Wasm 插件，需要三个步骤：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;在你选择的语言中实现插件的功能。我在本教程中使用 Golang。&lt;/li&gt;
@@ -2426,8 +2424,9 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
       <link>https://lib.jimmysong.io/translation/migrating-millions-of-concurrent-websockets-to-envoy/</link>
       <pubDate>Fri, 08 Apr 2022 13:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/translation/migrating-millions-of-concurrent-websockets-to-envoy/</guid>
-      <description>&lt;p&gt;Slack 有一个全球客户群，在高峰期有数百万同时连接的用户。用户之间的大部分通信涉及到向对方发送大量的微小信息。在 Slack 的大部分历史中，我们一直使用 &lt;a href=&#34;https://www.haproxy.com/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;HAProxy&lt;/a&gt; 作为所有传入流量的负载均衡器。今天，我们将讨论我们在使用 HAProxy 时所面临的问题，我们如何用 &lt;a href=&#34;https://www.envoyproxy.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy Proxy&lt;/a&gt; 来解决这些问题，迁移所涉及的步骤，以及结果是什么。让我们开始吧！&lt;/p&gt;
-&lt;h2 id=&#34;slack-的-websockets&#34;&gt;&lt;strong&gt;Slack 的 Websockets&lt;/strong&gt;&lt;/h2&gt;
+      <description>&lt;h2 id=&#34;前言&#34;&gt;前言&lt;/h2&gt;
+&lt;p&gt;Slack 有一个全球客户群，在高峰期有数百万同时连接的用户。用户之间的大部分通信涉及到向对方发送大量的微小信息。在 Slack 的大部分历史中，我们一直使用 &lt;a href=&#34;https://www.haproxy.com/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;HAProxy&lt;/a&gt; 作为所有传入流量的负载均衡器。今天，我们将讨论我们在使用 HAProxy 时所面临的问题，我们如何用 &lt;a href=&#34;https://www.envoyproxy.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy Proxy&lt;/a&gt; 来解决这些问题，迁移所涉及的步骤，以及结果是什么。让我们开始吧！&lt;/p&gt;
+&lt;h2 id=&#34;slack-的-websockets&#34;&gt;Slack 的 Websockets&lt;/h2&gt;
 &lt;p&gt;为了即时传递信息，我们使用 &lt;a href=&#34;https://tools.ietf.org/html/rfc6455&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;websocket 连接&lt;/a&gt;，这是一种双向的通信链接，负责让你看到 &amp;ldquo;有几个人在打字&amp;hellip;&amp;hellip;&amp;quot;，然后是他们打的东西，速度几乎是光速的。websocket 连接被摄取到一个叫做 &amp;ldquo;wss&amp;rdquo;（WebSocket 服务）的系统中，可以通过 &lt;code&gt;wss-primary.slack.com&lt;/code&gt; 和 &lt;code&gt;wss-backup.slack.com&lt;/code&gt;（这不是网站，如果去访问，只会得到一个 HTTP 404）从互联网上访问。&lt;/p&gt;
 &lt;p&gt;
 
@@ -2491,15 +2490,15 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
 &lt;p&gt;过去，我们在多个 &lt;a href=&#34;https://aws.amazon.com/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;AWS&lt;/a&gt; Region 有一组专门用于 websockets 的 HAProxy 实例，以终止靠近用户的 websocket 连接，并将请求转发给相应的后端服务。&lt;/p&gt;
-&lt;h2 id=&#34;迁移到-envoy-proxy-的动机&#34;&gt;&lt;strong&gt;迁移到 Envoy Proxy 的动机&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;迁移到-envoy-proxy-的动机&#34;&gt;迁移到 Envoy Proxy 的动机&lt;/h2&gt;
 &lt;p&gt;虽然我们从 Slack 开始就一直在使用 HAproxy，并且知道如何大规模地操作它，但有一些操作上的挑战让我们考虑替代方案，比如 Envoy Proxy。&lt;/p&gt;
-&lt;h3 id=&#34;热重启&#34;&gt;&lt;strong&gt;热重启&lt;/strong&gt;&lt;/h3&gt;
+&lt;h3 id=&#34;热重启&#34;&gt;热重启&lt;/h3&gt;
 &lt;p&gt;在 Slack，后端服务端点列表的变化是一个常见的事件（由于实例被添加或删除）。HAProxy 提供两种方法来更新其配置，以适应端点列表的变化。一种是使用 HAProxy Runtime API。我们在其中一套 HAProxy 实例中使用了这种方法，我们的经验在另一篇博文中有所描述 —— &lt;a href=&#34;https://slack.engineering/a-terrible-horrible-no-good-very-bad-day-at-slack/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;在 Slack 的可怕的、恐怖的、没有好处的、非常糟糕的一天&lt;/a&gt;。另一种方法，我们用于 websockets 负载均衡器（LB），是将后端渲染到 HAProxy 配置文件中，然后重新加载 HAProxy。&lt;/p&gt;
 &lt;p&gt;每次 HAProxy 重载时，都会创建一组新的进程来处理新进入的连接。我们会让旧的进程持续运行很多小时，以便让长寿的 websocket 连接耗尽，避免用户频繁断开连接。然而，我们不能有太多的 HAProxy 进程，每个进程都运行着它自己 &amp;ldquo;当时&amp;rdquo; 的配置副本 —— 我们希望实例能更快地汇聚到新版本的配置上。我们不得不定期收割旧的 HAProxy 进程，并限制 HAProxy 重新加载的频率，以防底层后端出现混乱。&lt;/p&gt;
 &lt;p&gt;无论我们使用哪种方法，都需要一些额外的基础设施来管理 HAProxy 的重新加载。&lt;/p&gt;
 &lt;p&gt;Envoy 允许我们使用&lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/service_discovery#arch-overview-service-discovery-types-eds&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;动态配置的集群和端点&lt;/a&gt;，这意味着如果端点列表发生变化，它不需要重新加载。如果代码或配置确实发生了变化，Envoy 有能力在不放弃任何连接的情况下&lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/hot_restart&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;热重启&lt;/a&gt;自己。Envoy 通过 &lt;a href=&#34;https://en.wikipedia.org/wiki/Inotify&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;inotify&lt;/a&gt; 观察文件系统配置的更新。在热重启过程中，Envoy 还将统计数据从父进程复制到子进程中，因此仪表和计数器不会被重置。&lt;/p&gt;
 &lt;p&gt;这一切都使 Envoy 的运营开销大大减少，而且不需要额外的服务来管理配置变化或重新启动。&lt;/p&gt;
-&lt;h3 id=&#34;负载均衡功能&#34;&gt;&lt;strong&gt;负载均衡功能&lt;/strong&gt;&lt;/h3&gt;
+&lt;h3 id=&#34;负载均衡功能&#34;&gt;负载均衡功能&lt;/h3&gt;
 &lt;p&gt;Envoy 提供了一些先进的负载均衡功能，如：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;内置支持区域感知路由的功能&lt;/li&gt;
@@ -2654,8 +2653,8 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
       <link>https://lib.jimmysong.io/translation/ebpf-solve-service-mesh-sidecar/</link>
       <pubDate>Thu, 09 Dec 2021 21:03:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/translation/ebpf-solve-service-mesh-sidecar/</guid>
-      <description>&lt;p&gt;译者注：本文作者是 Isovalent 联合创始人&amp;amp;CTO，原文标题 &lt;a href=&#34;https://isovalent.com/blog/post/2021-12-08-ebpf-servicemesh&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;How eBPF will solve Service Mesh - Goodbye Sidecars&lt;/a&gt;，作者回顾了Linux 内核的连接性，实现服务网格的几种模式，以及如何使用 eBPF 实现无 Sidecar 的服务网格。&lt;/p&gt;
-&lt;hr&gt;
+      <description>&lt;h2 id=&#34;编者的话&#34;&gt;编者的话&lt;/h2&gt;
+&lt;p&gt;本文作者是 Isovalent 联合创始人&amp;amp;CTO，原文标题 &lt;a href=&#34;https://isovalent.com/blog/post/2021-12-08-ebpf-servicemesh&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;How eBPF will solve Service Mesh - Goodbye Sidecars&lt;/a&gt;，作者回顾了Linux 内核的连接性，实现服务网格的几种模式，以及如何使用 eBPF 实现无 Sidecar 的服务网格。&lt;/p&gt;
 &lt;h2 id=&#34;什么是服务网格&#34;&gt;什么是服务网格？&lt;/h2&gt;
 &lt;p&gt;随着分布式应用的引入，额外的可视性、连接性和安全性要求也浮出水面。应用程序组件通过不受信任的网络跨越云和集群边界进行通信，负载均衡、弹性变得至关重要，安全必须发展到发送者和接收者都可以验证彼此的身份的模式。在分布式应用的早期，这些要求是通过直接将所需的逻辑嵌入到应用中来解决的。服务网格将这些功能从应用程序中提取出来，作为基础设施的一部分提供给所有应用程序使用，因此不再需要修改每个应用程序。&lt;/p&gt;
 &lt;p&gt;
@@ -3215,7 +3214,8 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
       <link>https://lib.jimmysong.io/translation/istio-wasm-extensions-and-ecosystem/</link>
       <pubDate>Wed, 24 Nov 2021 18:03:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/translation/istio-wasm-extensions-and-ecosystem/</guid>
-      <description>&lt;p&gt;Istio 1.12 中新的 WebAssembly 基础设施使其能够轻松地将额外的功能注入网格部署中。&lt;/p&gt;
+      <description>&lt;h2 id=&#34;前言&#34;&gt;前言&lt;/h2&gt;
+&lt;p&gt;Istio 1.12 中新的 WebAssembly 基础设施使其能够轻松地将额外的功能注入网格部署中。&lt;/p&gt;
 &lt;p&gt;经过三年的努力，Istio 现在有了一个强大的扩展机制，可以将自定义和第三方 Wasm 模块添加到网格中的 sidecar。Tetrate 工程师&lt;a href=&#34;https://github.com/mathetake&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;米田武（Takeshi Yoneda）&lt;/a&gt;和&lt;a href=&#34;https://github.com/lizan&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;周礼赞（Lizan Zhou）&lt;/a&gt;在实现这一目标方面发挥了重要作用。这篇文章将介绍 Istio 中 Wasm 的基础知识，以及为什么它很重要，然后是关于建立自己的 Wasm 插件并将其部署到网格的简短教程。&lt;/p&gt;
 &lt;h2 id=&#34;为什么-istio-中的-wasm-很重要&#34;&gt;为什么 Istio 中的 Wasm 很重要&lt;/h2&gt;
 &lt;p&gt;使用 Wasm，开发人员可以更容易的扩展网格和网关。在 Tetrate，我们相信这项技术正在迅速成熟，因此我们一直在投资上游的 Istio，使配置 API、分发机制和从 Go 开始的可扩展性体验更加容易。我们认为这将使 Istio 有一个全新的方向。&lt;/p&gt;
@@ -3409,8 +3409,8 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
       <link>https://lib.jimmysong.io/translation/grpc-proxyless-service-mesh/</link>
       <pubDate>Tue, 23 Nov 2021 10:03:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/translation/grpc-proxyless-service-mesh/</guid>
-      <description>&lt;p&gt;译者注：本文译自 Istio 官方博客，博客原标题 &lt;a href=&#34;https://istio.io/latest/blog/2021/proxyless-grpc/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;gRPC Proxyless Service Mesh&lt;/a&gt;，其实是 Istio 1.11 版本中支持的实验特性，可以直接将 gRPC 服务添加到 Istio 中，而不需要再向 Pod 中注入 Envoy 代理。本文中还给出了一个 Demo 性能测试数据，这种做法可以极大的提升应用性能，降低网络延迟。&lt;/p&gt;
-&lt;hr&gt;
+      <description>&lt;h2 id=&#34;编者的话&#34;&gt;编者的话&lt;/h2&gt;
+&lt;p&gt;本文译自 Istio 官方博客，博客原标题 &lt;a href=&#34;https://istio.io/latest/blog/2021/proxyless-grpc/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;gRPC Proxyless Service Mesh&lt;/a&gt;，其实是 Istio 1.11 版本中支持的实验特性，可以直接将 gRPC 服务添加到 Istio 中，而不需要再向 Pod 中注入 Envoy 代理。本文中还给出了一个 Demo 性能测试数据，这种做法可以极大的提升应用性能，降低网络延迟。&lt;/p&gt;
 &lt;p&gt;Istio 使用一组发现 API（统称为 &lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/dynamic_configuration&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;xDS API&lt;/a&gt; 来动态配置其 Envoy sidecar 代理。这些 API 的目标是成为一个 &lt;a href=&#34;https://blog.envoyproxy.io/the-universal-data-plane-api-d15cec7a?gi=64aa2eea0283&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;通用的数据平面 API&lt;/a&gt;。gRPC 项目对 xDS API 有很好的支持，也就是说你可以管理 gRPC 工作负载，而不需要同时部署 Envoy sidecar。你可以在 &lt;a href=&#34;https://www.youtube.com/watch?v=cGJXkZ7jiDk&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Megan Yahya 的 KubeCon EU 2021 演讲&lt;/a&gt;中了解更多关于该集成的信息。关于 gRPC 支持的最新情况，可以在他们的&lt;a href=&#34;https://github.com/grpc/proposal/search?q=xds&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;提案&lt;/a&gt;中找到，还有实现状态。&lt;/p&gt;
 &lt;p&gt;Istio 1.11 增加了实验性支持，可以直接将 gRPC 服务添加到网格中。我们支持基本的服务发现，一些基于 VirtualService 的流量策略，以及双向 TLS。&lt;/p&gt;
 &lt;h2 id=&#34;支持的功能&#34;&gt;支持的功能&lt;/h2&gt;
@@ -3801,7 +3801,8 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
       <link>https://lib.jimmysong.io/translation/how-ebpf-streamlines-the-service-mesh/</link>
       <pubDate>Wed, 27 Oct 2021 13:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/translation/how-ebpf-streamlines-the-service-mesh/</guid>
-      <description>&lt;p&gt;今天有几个服务网格的产品和项目，承诺简化应用微服务之间的连接，同时提供额外的功能，如安全连接、可观测性和流量管理。但正如我们在过去几年中反复看到的那样，对服务网格的兴奋已经被对&lt;a href=&#34;https://nowei.github.io/projects/svc_mesh_measurement_final_report.pdf&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;额外的&lt;/a&gt;&lt;a href=&#34;https://engineering.hellofresh.com/everything-we-learned-running-istio-in-production-part-2-ff4c26844bfb&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;复杂性&lt;/a&gt;和&lt;a href=&#34;https://pklinker.medium.com/performance-impacts-of-an-istio-service-mesh-63957a0000b&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;开销的&lt;/a&gt;实际&lt;a href=&#34;https://medium.com/geekculture/watch-out-for-this-istio-proxy-sidecar-memory-pitfall-8dbd99ea7e9d&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;担忧所抑制&lt;/a&gt;。让我们来探讨一下 &lt;a href=&#34;https://ebpf.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;eBPF&lt;/a&gt; 是如何让我们精简&lt;a href=&#34;https://thenewstack.io/category/service-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;服务网格&lt;/a&gt;，使服务网格的数据平面更有效率，更容易部署。&lt;/p&gt;
+      <description>&lt;h2 id=&#34;前言&#34;&gt;前言&lt;/h2&gt;
+&lt;p&gt;今天有几个服务网格的产品和项目，承诺简化应用微服务之间的连接，同时提供额外的功能，如安全连接、可观测性和流量管理。但正如我们在过去几年中反复看到的那样，对服务网格的兴奋已经被对&lt;a href=&#34;https://nowei.github.io/projects/svc_mesh_measurement_final_report.pdf&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;额外的&lt;/a&gt;&lt;a href=&#34;https://engineering.hellofresh.com/everything-we-learned-running-istio-in-production-part-2-ff4c26844bfb&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;复杂性&lt;/a&gt;和&lt;a href=&#34;https://pklinker.medium.com/performance-impacts-of-an-istio-service-mesh-63957a0000b&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;开销的&lt;/a&gt;实际&lt;a href=&#34;https://medium.com/geekculture/watch-out-for-this-istio-proxy-sidecar-memory-pitfall-8dbd99ea7e9d&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;担忧所抑制&lt;/a&gt;。让我们来探讨一下 &lt;a href=&#34;https://ebpf.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;eBPF&lt;/a&gt; 是如何让我们精简&lt;a href=&#34;https://thenewstack.io/category/service-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;服务网格&lt;/a&gt;，使服务网格的数据平面更有效率，更容易部署。&lt;/p&gt;
 &lt;h2 id=&#34;sidecar-问题&#34;&gt;Sidecar 问题&lt;/h2&gt;
 &lt;p&gt;今天的 Kubernetes 服务网格解决方案要求你在每一个应用 pod 上添加一个代理 sidecar 容器，如 &lt;a href=&#34;https://www.envoyproxy.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy&lt;/a&gt; 或 &lt;a href=&#34;https://linkerd.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Linkerd-proxy&lt;/a&gt;。这是正确的：即使在一个非常小的环境中，比如说有 20 个服务，每个服务运行五个 pod，分布在三个节点上，你也有 100 个代理容器。无论代理的实现多么小和有效，这种纯粹的重复都会耗费资源。&lt;/p&gt;
 &lt;p&gt;每个代理使用的内存与它需要能够通信的服务数量有关。Pranay Singhal 写了他配置 Istio 的&lt;a href=&#34;https://medium.com/geekculture/watch-out-for-this-istio-proxy-sidecar-memory-pitfall-8dbd99ea7e9d&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;经验&lt;/a&gt;，将每个代理的消耗从 1GB 左右减少到更合理的 60-70MB。但是，即使在我们的小环境中，在三个节点上有 100 个代理，这种优化配置仍然需要每个节点 2GB 左右。&lt;/p&gt;
@@ -4264,8 +4265,8 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
       <link>https://lib.jimmysong.io/translation/envoy-oss-5-year/</link>
       <pubDate>Wed, 15 Sep 2021 10:41:54 +0800</pubDate>
       <guid>https://lib.jimmysong.io/translation/envoy-oss-5-year/</guid>
-      <description>&lt;p&gt;译者注：本文译自 Envoy 代理的创始人 Matt Klein 于昨晚在个人博客上发布的文章 &lt;a href=&#34;https://mattklein123.dev/2021/09/14/5-years-envoy-oss/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;5 year of Envoy OSS&lt;/a&gt;。他在 Twitter 因为自己的程序 bug 造成重大事故而离职，后加入 Lyft，在开源 Envoy 之前几乎没有贡献和管理开源项目的经验，这篇文章分享了他个人及 Envoy 开源的心路历程，在投身开源 Envoy 还是为雇主 Lyft 效命，该如何抉择？看完本文，相信对于开源项目的维护者、创业者及投资人都会大有收获。&lt;/p&gt;
-&lt;hr&gt;
+      <description>&lt;h2 id=&#34;编者的话&#34;&gt;编者的话&lt;/h2&gt;
+&lt;p&gt;本文译自 Envoy 代理的创始人 Matt Klein 于昨晚在个人博客上发布的文章 &lt;a href=&#34;https://mattklein123.dev/2021/09/14/5-years-envoy-oss/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;5 year of Envoy OSS&lt;/a&gt;。他在 Twitter 因为自己的程序 bug 造成重大事故而离职，后加入 Lyft，在开源 Envoy 之前几乎没有贡献和管理开源项目的经验，这篇文章分享了他个人及 Envoy 开源的心路历程，在投身开源 Envoy 还是为雇主 Lyft 效命，该如何抉择？看完本文，相信对于开源项目的维护者、创业者及投资人都会大有收获。&lt;/p&gt;
 &lt;h2 id=&#34;前言&#34;&gt;前言&lt;/h2&gt;
 &lt;p&gt;今天是 &lt;a href=&#34;https://www.envoyproxy.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy Proxy 开源&lt;/a&gt;的 &lt;a href=&#34;https://eng.lyft.com/announcing-envoy-c-l7-proxy-and-communication-bus-92520b6c8191&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;5 周年&lt;/a&gt;。毫不夸张地说，在专业方面，过去的 5 年是一个史诗般的过山车，我的情绪介于兴奋、自豪、焦虑、尴尬、无聊、倦怠之间。我想分享一下这个项目的前传和历史，以及我在发展大型开源软件项目的过程中所学到的一些经验教训。&lt;/p&gt;
 &lt;h2 id=&#34;前传和历史&#34;&gt;前传和历史&lt;/h2&gt;
@@ -4452,7 +4453,8 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
       <link>https://lib.jimmysong.io/translation/istio-security-best-practices/</link>
       <pubDate>Mon, 02 Aug 2021 13:05:42 +0800</pubDate>
       <guid>https://lib.jimmysong.io/translation/istio-security-best-practices/</guid>
-      <description>&lt;p&gt;本文译自 Istio 官方博客 &lt;a href=&#34;https://istio.io/latest/docs/ops/best-practices/security/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Security Best Practices&lt;/a&gt;。&lt;/p&gt;
+      <description>&lt;h2 id=&#34;编者的话&#34;&gt;编者的话&lt;/h2&gt;
+&lt;p&gt;本文译自 Istio 官方博客 &lt;a href=&#34;https://istio.io/latest/docs/ops/best-practices/security/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Security Best Practices&lt;/a&gt;。&lt;/p&gt;
 &lt;p&gt;Istio 的安全功能提供了强大的身份、策略、透明的 TLS 加密以及认证、授权和审计（AAA）工具来保护你的服务和数据。然而，为了充分安全地利用这些功能，必须注意遵循最佳实践。建议在继续阅读之前，先回顾一下&lt;a href=&#34;https://istio.io/latest/docs/concepts/security/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;安全概述&lt;/a&gt;。&lt;/p&gt;
 &lt;h2 id=&#34;双向-tls&#34;&gt;双向 TLS&lt;/h2&gt;
 &lt;p&gt;Istio 将尽可能使用&lt;a href=&#34;https://istio.io/latest/docs/concepts/security/#mutual-tls-authentication&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;双向 TLS&lt;/a&gt; 对流量进行&lt;a href=&#34;https://istio.io/latest/docs/ops/configuration/traffic-management/tls-configuration/#auto-mtls&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;自动&lt;/a&gt;加密。然而，代理在默认情况下被配置为&lt;a href=&#34;https://istio.io/latest/docs/concepts/security/#permissive-mode&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;许可模式（Permissive Mode）&lt;/a&gt;，这意味着他们将接受双向 TLS 和明文流量。&lt;/p&gt;
