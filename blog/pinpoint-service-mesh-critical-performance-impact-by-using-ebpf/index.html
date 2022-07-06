@@ -1,0 +1,1748 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="宋净超" />
+
+  
+  
+  
+    
+  
+  <meta name="description" content="在这篇文章中，我们将讨论如何使用 eBPF 技术来改进 SkyWalking 中的剖析功能，并用于分析服务网格中的性能影响。" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://lib.jimmysong.io/blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/css/wowchemy.2755b27cdb86d7e4c307e6503ba106d4.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MP490FS739"></script>
+
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', "G-MP490FS739");
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2a4b7f65b1839466beaa48d633aa60c1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://lib.jimmysong.io/blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary_large_image" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://lib.jimmysong.io/blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/" />
+  <meta property="og:title" content="使用 eBPF 准确定位服务网格的关键性能问题 | 云原生资料库" />
+  <meta property="og:description" content="在这篇文章中，我们将讨论如何使用 eBPF 技术来改进 SkyWalking 中的剖析功能，并用于分析服务网格中的性能影响。" /><meta property="og:image" content="https://lib.jimmysong.io/media/sharing.png" />
+    <meta property="twitter:image" content="https://lib.jimmysong.io/media/sharing.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2022-07-05T17:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2022-07-06T09:24:21&#43;08:00">
+  
+
+  
+
+
+    
+
+
+
+
+
+
+  
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://lib.jimmysong.io/blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/"
+  },
+  "headline": "使用 eBPF 准确定位服务网格的关键性能问题",
+  
+  "datePublished": "2022-07-05T17:00:00+08:00",
+  "dateModified": "2022-07-06T09:24:21+08:00",
+  
+  "author": {
+    "@type": "Person",
+    "name": "刘晗"
+  },
+  
+  "publisher": {
+    "@type": "Organization",
+    "name": "云原生社区",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://lib.jimmysong.io/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_192x192_fill_lanczos_center_3.png"
+    }
+  },
+  "description": "在这篇文章中，我们将讨论如何使用 eBPF 技术来改进 SkyWalking 中的剖析功能，并用于分析服务网格中的性能影响。"
+}
+</script>
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>使用 eBPF 准确定位服务网格的关键性能问题 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="2855c0e827fd48a1a2088ce3bdb5003c" >
+  <button onclick="topFunction()" id="myBtn" title="Go to top"><i class="fa-solid fa-circle-up" aria-hidden="true"></i></button>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/js/wowchemy-init.min.14a0ed61c6dbd594b9c75193b25be179.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6 search-title">
+          <p>搜索</p>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/">云原生资料库</a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/">云原生资料库</a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#books"><span>图书</span></a>
+          </li>
+
+          
+          
+
+          
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"><span>教程</span><span class="caret"></span>
+            </a>
+            <div class="dropdown-menu">
+              
+                <a class="dropdown-item" href="/istio-handbook"><span>Istio 基础教程</span></a>
+              
+                <a class="dropdown-item" href="/envoy-handbook"><span>Envoy 基础教程</span></a>
+              
+                <a class="dropdown-item" href="/kubernetes-handbook"><span>Kubernetes 基础教程</span></a>
+              
+            </div>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link  active" href="/blog"><span>译文</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/event"><span>活动</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#feed"><span>更新</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#tags"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>Jimmy Song</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://jimmysong.io" data-toggle="tooltip" data-placement="bottom" title="主页" target="_blank" rel="noopener" aria-label="主页">
+                <i class="fas fa-home" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://jimmysong.io/contact/" data-toggle="tooltip" data-placement="bottom" title="联系" target="_blank" rel="noopener" aria-label="联系">
+                <i class="fab fa-weixin" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://twitter.com/jimmysongio" data-toggle="tooltip" data-placement="bottom" title="关注" target="_blank" rel="noopener" aria-label="关注">
+                <i class="fab fa-twitter" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+        
+
+        
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/rootsongjc/cloud-native-library/" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    <div class="container-xl">
+    <div class="post-container">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  
+  
+<div class="article-container pt-3">
+  <h1>使用 eBPF 准确定位服务网格的关键性能问题</h1>
+
+  
+
+  
+    
+
+
+<div class="article-metadata">
+
+  <div>
+  
+  
+  
+  
+    <i class="fa-solid fa-feather"></i>
+    
+
+  <span >
+      <a href="/author/%E5%88%98%E6%99%97/">刘晗</a></span>, <span >
+      <a href="/author/%E5%90%B4%E6%99%9F/">吴晟</a></span>
+    <span class="middot-divider"></span>
+  
+  
+  
+  
+  <span class="article-categories">
+    <i class="fas fa-folder mr-1"></i><a href="/category/%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7/" class="text-capitalize">可观测性</a></span>
+  
+  </div>
+
+  
+  <span class="article-date">
+    
+    
+      
+          最近更新于
+      
+    
+    2022-07-06
+  </span>
+  
+
+  
+
+  
+  <span class="middot-divider"></span>
+  字数 3616
+  <span class="middot-divider"></span>
+  <span class="article-reading-time">
+      阅读时长 16 分钟
+  </span>
+  
+
+  
+  
+  
+  
+
+</div>
+
+    
+
+
+
+
+<div class="btn-links mb-2">
+  
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  <a class="btn btn-outline-primary btn-page-header" href="https://skywalking.apache.org/blog/2022-07-05-pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/" target="_blank" rel="noopener">
+    <i class="fa fa-language mr-1"></i>阅读英文版原文</a>
+
+
+</div>
+
+
+  
+</div>
+
+
+    </div>
+    <div class="border-bottom mb-2"></div>
+    <div class="row flex-xl-nowrap">
+        <div class="col-3 d-none d-xl-block docs-toc">
+            <!-- toc -->
+            
+<div class="">
+    <ul class="nav toc-top">
+        <li>
+            <a href="#" id="back_to_top" class="docs-toc-title">目录</a>
+        </li>
+    </ul>
+  <nav id="TableOfContents">
+  <ul>
+    <li><a href="#background">背景介绍</a></li>
+    <li><a href="#trace-profiling-in-skywalking">SkyWalking 中的追踪剖析</a></li>
+    <li><a href="#introduce-ebpf">eBPF 简介</a>
+      <ul>
+        <li><a href="#ebpf-limitations">eBPF 的局限性</a></li>
+        <li><a href="#introducing-skywalking-rover">SkyWalking Rover 简介</a></li>
+        <li><a href="#cpu-profiling-with-rover">使用 Rover 进行 CPU 剖析</a></li>
+      </ul>
+    </li>
+    <li><a href="#profiling-envoy-with-ebpf">用 eBPF 对 Envoy 进行剖析</a>
+      <ul>
+        <li><a href="#demo-environment">演示环境</a></li>
+      </ul>
+    </li>
+    <li><a href="#on-cpu-profiling">CPU 剖析</a>
+      <ul>
+        <li><a href="#zipkin-追踪">Zipkin 追踪</a></li>
+        <li><a href="#zipkin-100-采样">Zipkin 100% 采样</a></li>
+        <li><a href="#禁用-zipkin-追踪">禁用 Zipkin 追踪</a></li>
+        <li><a href="#tracing-with-throughput">追踪吞吐量</a></li>
+      </ul>
+    </li>
+    <li><a href="#access-log-format">访问日志格式</a>
+      <ul>
+        <li><a href="#default-log-format">默认访问日志格式</a></li>
+        <li><a href="#simplifying-access-log-format">简化访问日志格式</a></li>
+      </ul>
+    </li>
+    <li><a href="#off-cpu-剖析">Off-CPU 剖析</a>
+      <ul>
+        <li><a href="#write-access-log">写入访问日志</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+</div>
+
+            <!-- /toc -->
+            
+            <div class="subscribe-module col-12 mt-1">
+    <img src="/img/wechat.webp" alt="image" title="Jimmy Song的微信公众号"/>
+    <p class="text-center">关注「几米宋」个人微信公众号，获取本站更新</p>
+</div>
+
+            
+        </div>
+        <main class="article-body col-9 container docs-content" role="main">
+            <article class="article">
+                <div class="article-style">
+                    <h2 id="background">背景介绍</h2>
+<p>Apache SkyWalking 观察部署在服务网格中的服务的度量、日志、追踪和事件。在进行故障排除时，SkyWalking 错误分析是一个宝贵的工具，可以帮助确定错误发生的位置。然而，确定性能问题更加困难：利用预先存在的观察数据往往不可能找到性能问题的根本原因。为此，动态调试和故障排除在进行服务性能剖析时就必不可少。在这篇文章中，我们将讨论如何使用 eBPF 技术来改进 SkyWalking 中的剖析功能，并用于分析服务网格中的性能影响。</p>
+<h2 id="trace-profiling-in-skywalking">SkyWalking 中的追踪剖析</h2>
+<p>自 SkyWalking 7.0.0 以来，Trace Profiling 通过定期对线程堆栈进行采样，让开发者知道运行哪行代码花费更多时间，从而帮助开发者发现性能问题。然而，Trace Profiling 不适合以下情况：</p>
+<ul>
+<li><strong>线程模型</strong>：Trace Profiling 对于剖析在单线程中执行的代码最有用。它对严重依赖异步执行模式的中间件不太有用。例如，Go 中的 Goroutines 或 Kotlin Coroutines。</li>
+<li><strong>语言</strong>：目前，Trace Profiling 只支持 Java 和 Python，因为在 Go 和 Node.js 等一些语言的运行时中不容易获得线程栈。</li>
+<li><strong>Agent 绑定</strong>：Trace Profiling 需要安装 Agent，根据语言的不同，这可能很麻烦（例如，PHP 必须依赖其 C 内核；Rust 和 C/C++ 需要的仪器需要手动安装）。</li>
+<li><strong>关联性</strong>：由于追踪剖析只与单个请求相关，所以当无法确认哪个请求产生问题时则变得难已处理。</li>
+<li><strong>生命周期短的服务</strong>：由于（至少）两个原因，Trace Profiling 不支持短声明周期的服务：
+<ul>
+<li>在启动阶段，很难区分系统性能和类代码操作。</li>
+<li>Trace Profiling 与一个端点相连，以识别性能影响，但没有端点来匹配这些短生命周期的服务。</li>
+</ul>
+</li>
+</ul>
+<p>幸运的是，有一些技术比 Trace Profiling 更实用。</p>
+<h2 id="introduce-ebpf">eBPF 简介</h2>
+<p>我们发现，eBPF —— 一种可以在操作系统内核中运行沙盒程序的技术，从而安全有效地扩展内核的功能，而不需要修改内核或加载内核模块，可以帮助我们填补 Trace Profiling 留下的空白。eBPF 技术正在流行，因为它打破了传统上的用户和内核空间之间的障碍。现在我们可以将程序作为字节码注入到内核中运行，而不需要定制和重新编译内核。可观测可以很好地利用这一点。</p>
+<p>在下图中，我们可以看到，当系统执行 <code>execve</code> 系统调用时，eBPF 程序被触发，通过使用函数调用获得当前进程的运行时信息。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-ebpf-程序调用流程图">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="图片" srcset="
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/eBPF-hook-points_hu045d3eb9c20514286c2b99759556b302_48258_31dd29f7e8dc45b4aa8c3e9978c15fd3.webp 400w,
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/eBPF-hook-points_hu045d3eb9c20514286c2b99759556b302_48258_501ba58999de3fea0b73da4d1a5134c6.webp 760w,
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/eBPF-hook-points_hu045d3eb9c20514286c2b99759556b302_48258_1200x1200_fit_q75_h2_lanczos.webp 1200w"
+               src="/blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/eBPF-hook-points_hu045d3eb9c20514286c2b99759556b302_48258_31dd29f7e8dc45b4aa8c3e9978c15fd3.webp"
+               width="760"
+               height="578"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      eBPF 程序调用流程图
+    </figcaption></figure>
+</p>
+<p>使用 eBPF 技术，可以将 SkyWalking 的剖析能力范围扩大到：</p>
+<ul>
+<li><strong>全局性能剖析</strong>：在 eBPF 之前，数据收集被限制在代理可以观察的范围内。由于 eBPF 程序在内核中运行，它们可以观察到所有的线程。当你不确定某个性能问题是否是由一个特定的请求引起的，这一点特别有用。</li>
+<li><strong>数据内容</strong>：eBPF 可以转储用户和内核空间的线程栈，所以如果性能问题发生在内核空间就更容易被发现。</li>
+<li><strong>代理绑定</strong>：所有现代 Linux 内核都支持 eBPF，所以不需要安装任何东西。这意味着它是一个免编排与代理的模型。这减少了由内置软件引起的摩擦，这些软件可能没有安装正确的代理，如服务网格中的 Envoy。</li>
+<li><strong>采样类型</strong>：与追踪剖析不同，eBPF 是事件驱动的，因此，不受间隔轮询的限制。例如，eBPF 可以触发事件，并根据传输大小的阈值收集更多的数据。这可以让系统在极端负载下分流和优先收集数据。</li>
+</ul>
+<h3 id="ebpf-limitations">eBPF 的局限性</h3>
+<p>虽然 eBPF 为发掘性能瓶颈提供了显著的优势，但没有任何技术是完美的。eBPF 有一些限制，如下所述（幸运的是，由于 SkyWalking 不依赖 eBPF，其影响是有限的）：</p>
+<ul>
+<li><strong>Linux 版本要求</strong>：eBPF 程序需要的 Linux 内核版本要 4.4 以上，更新的内核版本可以提供更多的数据收集。BCC 记录了 <a href="https://github.com/iovisor/bcc/blob/13b5563c11f7722a61a17c6ca0a1a387d2fa7788/docs/kernel-versions.md#main-features" target="_blank" rel="noopener">不同 Linux 内核版本所支持的功能</a>，不同版本之间的差异在于 eBPF 收集的数据集。</li>
+<li><strong>需要特权权限</strong>：所有打算将 eBPF 程序加载到 Linux 内核的进程必须在特权模式下运行。因此，代码中的错误或其他问题可能对安全有很大的影响。</li>
+<li><strong>对动态语言的支持较弱</strong>：eBPF 对基于 JIT 的动态语言，如 Java，支持较弱。这也取决于你想收集什么数据。对于 Profiling，eBPF 不支持解析程序的字符表（symbol），这就是为什么大多数基于 eBPF 的剖析技术只支持静态语言如 C、C++、Go 和 Rust。然而，字符表映射有时可以通过语言所提供的工具来解决。例如，在 Java 中，可以使用 <a href="https://github.com/jvm-profiling-tools/perf-map-agent#architecture" target="_blank" rel="noopener">perf-map-agent</a> 来生成字符表映射。然而，动态语言不支持附加（<code>uprobe</code>）功能，而这种功能可以让我们通过符号追踪执行事件。</li>
+</ul>
+<h3 id="introducing-skywalking-rover">SkyWalking Rover 简介</h3>
+<p>SkyWalking Rover 是 SkyWalking 生态系统中引入的 eBPF 剖析功能。下图显示了 SkyWalking Rover 的整体架构。SkyWalking Rover 目前支持 Kubernetes 环境，必须部署在 Kubernetes 集群内。与 SkyWalking 后端服务器建立连接后，它将当前机器上的进程信息保存到 SkyWalking。当用户通过用户界面创建 eBPF 剖析任务时，SkyWalking Rover 会接收任务并在相关的基于 C、C++、Golang 和 Rust 语言的程序中执行。</p>
+<p>除了需要具有 eBPF 功能的内核外，部署 SkyWalking Rover 没有其他先决条件。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-skywalking-rover-架构图">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="图片" srcset="
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/skywalking-rover_hu96ce0a1793ef4084b7c6baa2f4d21194_31590_6edef539501f91527785125de04f77d1.webp 400w,
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/skywalking-rover_hu96ce0a1793ef4084b7c6baa2f4d21194_31590_77630572196fa0d44044c36d67f6e3d2.webp 760w,
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/skywalking-rover_hu96ce0a1793ef4084b7c6baa2f4d21194_31590_1200x1200_fit_q75_h2_lanczos.webp 1200w"
+               src="/blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/skywalking-rover_hu96ce0a1793ef4084b7c6baa2f4d21194_31590_6edef539501f91527785125de04f77d1.webp"
+               width="760"
+               height="259"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      SkyWalking Rover 架构图
+    </figcaption></figure>
+</p>
+<h3 id="cpu-profiling-with-rover">使用 Rover 进行 CPU 剖析</h3>
+<p>CPU 剖析是显示服务性能的最直观方式。受 <a href="https://www.brendangregg.com/offcpuanalysis.html" target="_blank" rel="noopener">Brendan Gregg 的博客文章</a> 的启发，我们将 CPU 剖析分为两种类型，并在 Rover 中加以实施：</p>
+<ol>
+<li>
+<p><strong>CPU 剖析</strong>：线程在 CPU 上的运行时间。</p>
+</li>
+<li>
+<p><strong>off-CPU 剖析</strong>：线程在 I/O、锁、定时器、分页 / 交换等方面被阻塞时的等待时间。</p>
+</li>
+</ol>
+<h2 id="profiling-envoy-with-ebpf">用 eBPF 对 Envoy 进行剖析</h2>
+<p>Envoy 是一个流行的代理，在 Istio 服务网格中被用作为数据平面。在 Kubernetes 集群中，Istio 将 Envoy 作为 sidecar 注入到每个服务的 pod 中，在那里透明地拦截和处理传入和传出的流量。作为数据平面，Envoy 的任何性能问题都会影响到网格中的所有服务流量。在这种情况下，使用 eBPF 剖析来分析生产中由服务网格引起的问题是比较有力的。</p>
+<h3 id="demo-environment">演示环境</h3>
+<p>如果你想看到详细过程，我们已经建立了一个演示环境，在那里我们部署了一个 Nginx 服务进行压力测试。流量被 Envoy 拦截并转发到 Nginx。安装整个环境的命令可以在 <a href="https://github.com/mrproliu/skywalking-rover-profiling-demo" target="_blank" rel="noopener">GitHub</a> 上获取。</p>
+<h2 id="on-cpu-profiling">CPU 剖析</h2>
+<p>当服务的 CPU 使用率很高时，CPU 剖析适用于分析线程堆栈。如果堆栈被转储的次数较多，意味着线程堆栈占据了更多的 CPU 资源。</p>
+<p>在使用演示配置文件安装 Istio 时，我们发现有两个地方的性能可以优化：</p>
+<ul>
+<li><strong>Zipkin 追踪</strong>：不同的 Zipkin 采样百分比对 QPS 有直接影响。</li>
+<li><strong>访问日志格式</strong>：减少 Envoy 访问日志的字段可以提高 QPS。</li>
+</ul>
+<h3 id="zipkin-追踪">Zipkin 追踪</h3>
+<h3 id="zipkin-100-采样">Zipkin 100% 采样</h3>
+<p>在默认的演示配置文件中，Envoy 使用 100% 采样作为默认的追踪策略。这对性能有什么影响？</p>
+<p>如下图所示，使用 CPU 剖析，我们发现它大约需要 <strong>16%</strong> 的 CPU 开销。在固定消耗 <strong>2 个 CPU</strong> 的情况下，其 QPS 可以达到 <strong>5.7K</strong>。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-zipkin-100-采样-cpu-剖析的火焰图">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="图片" srcset="
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/zipkin-sampling-100_huf238a1b5794ab6185477371703bb7cbb_258667_5c5bdd04bcd413ed5927348c85330886.webp 400w,
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/zipkin-sampling-100_huf238a1b5794ab6185477371703bb7cbb_258667_b68a53a9b8fc1f02dbfc560074a62481.webp 760w,
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/zipkin-sampling-100_huf238a1b5794ab6185477371703bb7cbb_258667_1200x1200_fit_q75_h2_lanczos.webp 1200w"
+               src="/blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/zipkin-sampling-100_huf238a1b5794ab6185477371703bb7cbb_258667_5c5bdd04bcd413ed5927348c85330886.webp"
+               width="760"
+               height="385"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      Zipkin 100% 采样 CPU 剖析的火焰图
+    </figcaption></figure>
+</p>
+<h3 id="禁用-zipkin-追踪">禁用 Zipkin 追踪</h3>
+<p>此时，我们发现，如果没有必要，可以降低 Zipkin 采样比例，甚至可以禁用追踪。根据 <a href="https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#Tracing" target="_blank" rel="noopener">Istio 文档</a>，我们可以在安装 Istio 时使用以下命令禁用追踪。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">istioctl install -y --set <span class="nv">profile</span><span class="o">=</span>demo <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>   --set <span class="s1">&#39;meshConfig.enableTracing=false&#39;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>   --set <span class="s1">&#39;meshConfig.defaultConfig.tracing.sampling=0.0&#39;</span>
+</span></span></code></pre></div><p>禁用追踪后，我们再次进行 CPU 剖析。根据下图，我们发现 Zipkin 已经从火焰图中消失了。在与前面的例子相同的 <strong>2 个 CPU</strong> 消耗下，QPS 达到 <strong>9K</strong>，几乎增加了 <strong>60%</strong>。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-禁用-zipkin-追踪的-cpu-剖析火焰图">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="图片" srcset="
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/zipkin-disable-tracing_hu1f0ecaf355e785aa0e2514c9e5fd63b4_235208_6ce84d92564a56b7ebc933d9646c9347.webp 400w,
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/zipkin-disable-tracing_hu1f0ecaf355e785aa0e2514c9e5fd63b4_235208_4120d0c8954a6454493ed53dde25e284.webp 760w,
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/zipkin-disable-tracing_hu1f0ecaf355e785aa0e2514c9e5fd63b4_235208_1200x1200_fit_q75_h2_lanczos.webp 1200w"
+               src="/blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/zipkin-disable-tracing_hu1f0ecaf355e785aa0e2514c9e5fd63b4_235208_6ce84d92564a56b7ebc933d9646c9347.webp"
+               width="760"
+               height="384"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      禁用 Zipkin 追踪的 CPU 剖析火焰图
+    </figcaption></figure>
+</p>
+<h3 id="tracing-with-throughput">追踪吞吐量</h3>
+<p>在 CPU 使用率相同的情况下，我们发现，当追踪功能被禁用时，Envoy 的性能会大大提升。当然，这需要我们在 Zipkin 收集的样本数量和 Envoy 的预期性能（QPS）之间做出权衡。</p>
+<p>下表说明了在相同的 CPU 使用率下，不同的 Zipkin 采样比例对 QPS 的影响。</p>
+<table>
+<thead>
+<tr>
+<th>Zipkin 采样比例</th>
+<th>QPS</th>
+<th>CPU</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100% <strong>（默认）</strong></td>
+<td>5.7K</td>
+<td>2</td>
+<td>Zipkin 占用 16%</td>
+</tr>
+<tr>
+<td>1%</td>
+<td>8.1K</td>
+<td>2</td>
+<td>Zipkin 占用 0.3%</td>
+</tr>
+<tr>
+<td>禁用</td>
+<td>9.2K</td>
+<td>2</td>
+<td>Zipkin 占用 0%</td>
+</tr>
+</tbody>
+</table>
+<h2 id="access-log-format">访问日志格式</h2>
+<h3 id="default-log-format">默认访问日志格式</h3>
+<p>在默认的演示配置文件中，默认的访问日志格式包含大量的数据。下面的火焰图显示了在解析数据时涉及的各种功能，如请求头、响应头和流媒体主体。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-默认访问日志格式的-cpu-剖析火焰图">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="图片" srcset="
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/log-format-default_hu7d2fdb57bd91148e550aa40a981eaed2_174188_0f5231040d3cb686febbbade6d4f490a.webp 400w,
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/log-format-default_hu7d2fdb57bd91148e550aa40a981eaed2_174188_ca470e83e66ecbe17169087ebaace536.webp 760w,
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/log-format-default_hu7d2fdb57bd91148e550aa40a981eaed2_174188_1200x1200_fit_q75_h2_lanczos.webp 1200w"
+               src="/blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/log-format-default_hu7d2fdb57bd91148e550aa40a981eaed2_174188_0f5231040d3cb686febbbade6d4f490a.webp"
+               width="760"
+               height="385"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      默认访问日志格式的 CPU 剖析火焰图
+    </figcaption></figure>
+</p>
+<h3 id="simplifying-access-log-format">简化访问日志格式</h3>
+<p>通常情况下，我们不需要访问日志中的所有信息，所以我们通常可以简化它来获得我们需要的信息。下面的命令简化了访问日志的格式，只显示基本信息。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">istioctl install -y --set <span class="nv">profile</span><span class="o">=</span>demo <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>   --set meshConfig.accessLogFormat<span class="o">=</span><span class="s2">&#34;[% START_TIME%] \&#34;% REQ (:METHOD)% % REQ (X-ENVOY-ORIGINAL-PATH?:PATH)% % PROTOCOL%\&#34;% RESPONSE_CODE%\n&#34;</span>
+</span></span></code></pre></div><p>简化访问日志格式后，我们发现 QPS 从 <strong>5.7K</strong> 增加到 <strong>5.9K</strong>。当再次执行 CPU 剖析时，日志格式化的 CPU 使用率从 <strong>2.4%</strong> 下降到 <strong>0.7%</strong>。</p>
+<p>简化日志格式帮助我们提高了性能。</p>
+<h2 id="off-cpu-剖析">Off-CPU 剖析</h2>
+<p>Off-CPU 剖析适用于由非高 CPU 使用率引起的性能问题。例如，当一个服务中有太多的线程时，使用 off-CPU 剖析可以揭示出哪些线程花费了更多的时间进行上下文切换。</p>
+<p>我们提供两个维度的数据汇总。</p>
+<ol>
+<li><strong>切换次数</strong>：一个线程切换上下文的次数。当线程返回到 CPU 时，它完成了一次上下文切换。开关次数较多的线程栈会花费更多时间进行上下文切换。</li>
+<li><strong>切换持续时间</strong>：一个线程切换上下文所需的时间。切换持续时间较长的线程栈在 off-CPU 花费的时间较多。</li>
+</ol>
+<h3 id="write-access-log">写入访问日志</h3>
+<h4 id="enable-write">启用写入</h4>
+<p>使用与之前 CPU 测试相同的环境和设置，我们进行了 off-CPU 剖析。如下图所示，我们发现访问日志的写入占总上下文切换的 <strong>28%</strong> 左右。下图中的 <code>__write</code> 也表明这是 Linux 内核中的方法。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-启用写入的-off-cpu-剖析火焰图">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="图片" srcset="
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/access-log-write-enable_hubdf9a606cdf61d4031d0e2209c45ffff_117338_4f90812f80bcc003b7376d5607177654.webp 400w,
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/access-log-write-enable_hubdf9a606cdf61d4031d0e2209c45ffff_117338_fea2e2c0d03b286f15392cc50602ab21.webp 760w,
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/access-log-write-enable_hubdf9a606cdf61d4031d0e2209c45ffff_117338_1200x1200_fit_q75_h2_lanczos.webp 1200w"
+               src="/blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/access-log-write-enable_hubdf9a606cdf61d4031d0e2209c45ffff_117338_4f90812f80bcc003b7376d5607177654.webp"
+               width="760"
+               height="385"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      启用写入的 off-CPU 剖析火焰图
+    </figcaption></figure>
+</p>
+<h4 id="禁用写入">禁用写入</h4>
+<p>SkyWalking 实现了 Envoy 的访问日志服务（ALS）功能，允许我们使用 gRPC 协议将访问日志发送到 SkyWalking 可观察性分析平台（OAP）。即使禁用访问日志，我们仍然可以使用 ALS 来捕获 / 汇总日志。我们使用以下命令禁用了对访问日志的写入。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">istioctl install -y --set <span class="nv">profile</span><span class="o">=</span>demo --set meshConfig.accessLogFile<span class="o">=</span><span class="s2">&#34;&#34;</span>
+</span></span></code></pre></div><p>禁用访问日志功能后，我们进行了 off-CPU 剖析。如下图所示，文件写入条目已经消失了。Envoy 的吞吐量也从 <strong>5.7K</strong> 增加到 <strong>5.9K</strong>。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-禁用访问日志功能后的-off-cpu-剖析火焰图">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="图片" srcset="
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/access-log-write-disable_hu5e4e6d524a292897da8cca3705844d39_104099_5d9c5dc3f590028c1b5386c0232bffb5.webp 400w,
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/access-log-write-disable_hu5e4e6d524a292897da8cca3705844d39_104099_64a520f1998a1b10dd8b102cdaefebbb.webp 760w,
+               /blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/access-log-write-disable_hu5e4e6d524a292897da8cca3705844d39_104099_1200x1200_fit_q75_h2_lanczos.webp 1200w"
+               src="/blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/access-log-write-disable_hu5e4e6d524a292897da8cca3705844d39_104099_5d9c5dc3f590028c1b5386c0232bffb5.webp"
+               width="760"
+               height="385"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      禁用访问日志功能后的 off-CPU 剖析火焰图
+    </figcaption></figure>
+</p>
+<h2 id="总结">总结</h2>
+<p>在这篇文章中，我们研究了 Apache SkyWalking 的 Trace Profiling 可以给我们带来的启示，以及使用 eBPF 剖析可以实现的更多功能。所有这些功能都在 <a href="https://github.com/apache/skywalking-rover" target="_blank" rel="noopener">skywalking-rover</a> 中实现。除了 CPU 和 off-CPU 剖析之外，你还会发现以下功能：</p>
+<ul>
+<li><strong>连续剖析</strong>，帮助你自动剖析，无需人工干预。例如，当 Rover 检测到 CPU 超过一个可配置的阈值时，它会自动执行 CPU 剖析任务。</li>
+<li>更多的剖析类型，以丰富使用场景，如网络和内存剖析。</li>
+</ul>
+
+
+                </div>
+
+                
+
+<div class="article-tags">
+  
+  <a class="badge badge-light" href="/tag/skywalking/">SkyWalking</a>
+  
+  <a class="badge badge-light" href="/tag/%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7/">可观测性</a>
+  
+  <a class="badge badge-light" href="/tag/%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90/">性能分析</a>
+  
+  <a class="badge badge-light" href="/tag/ebpf/">ebpf</a>
+  
+  <a class="badge badge-light" href="/tag/service-mesh/">service mesh</a>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+
+
+
+  
+  
+  
+  
+  
+  <div class="media author-card content-widget-hr mb-4">
+    
+      
+      <a href="/author/%E5%88%98%E6%99%97/"><img class="avatar mr-3 avatar-circle" src="/author/%E5%88%98%E6%99%97/avatar_hue38add62c87b7486d80c9f3fda25dfc1_12220_270x270_fill_q75_lanczos_center.jpg" alt="刘晗"></a>
+    
+
+    <div class="media-body">
+      <p class="card-title"><a href="/author/%E5%88%98%E6%99%97/">刘晗</a></p>
+      
+      <p class="card-text">Tetrate 工程师, Apache SkyWalking PMC 成员</p>
+      
+    </div>
+  </div>
+
+
+  
+    
+
+
+
+  
+  
+  
+  
+  
+  <div class="media author-card content-widget-hr mb-4">
+    
+      
+      <a href="/author/%E5%90%B4%E6%99%9F/"><img class="avatar mr-3 avatar-circle" src="/author/%E5%90%B4%E6%99%9F/avatar_huffe5450bc73469408b80175244ca7f2d_22164_270x270_fill_q75_lanczos_center.jpg" alt="吴晟"></a>
+    
+
+    <div class="media-body">
+      <p class="card-title"><a href="/author/%E5%90%B4%E6%99%9F/">吴晟</a></p>
+      
+      <p class="card-text">Tetrate 创始工程师，Apache SkyWalking 作者</p>
+      
+    </div>
+  </div>
+
+
+  
+
+
+
+
+
+<div class="article-widget">
+  
+<div class="container-xl row post-nav">
+  
+  
+  
+  <div class="col-6 post-nav-item">
+    <div class="meta-nav">上一页</div>
+    <a href="/blog/designing-traffic-flow-via-tier1-and-tier2-ingress-gateways/" rel="prev">通过两级网关设计来路由服务网格流量</a>
+  </div>
+  
+</div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/cloud-native-library//edit/master/content/blog/pinpoint-service-mesh-critical-performance-impact-by-using-ebpf/index.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+
+  
+  
+  <div class="article-widget content-widget-hr">
+    <p class="related-title">相关推荐</p>
+    <ul>
+      
+      <li><a href="/blog/ebpf-solve-service-mesh-sidecar/">告别 Sidecar——使用 eBPF 解锁内核级服务网格</a></li>
+      
+      <li><a href="/blog/how-ebpf-streamlines-the-service-mesh/">eBPF 如何简化服务网格</a></li>
+      
+      <li><a href="/blog/generate-and-store-opentelemetry-traces-automatically/">一键开启 Kubernetes 可观测性——如何自动生成和存储 OpenTelemetry 追踪</a></li>
+      
+      <li><a href="/blog/chaos-engineering-observability-visual-metaphors/">混沌工程和视觉隐喻的可观测性</a></li>
+      
+      <li><a href="/what-is-ebpf/ebpf-complexity/">第四章：eBPF 的复杂性</a></li>
+      
+    </ul>
+  </div>
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments" class="mb-3 pt-0">
+    <script src="https://giscus.app/client.js"
+        data-repo="rootsongjc/cloud-native-library"
+        data-repo-id="MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg="
+        data-category="Announcements"
+        data-category-id="DIC_kwDODMrxWM4CPL7J"
+        data-mapping="pathname"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="light"
+        data-lang="zh-CN"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </section>
+  
+
+
+
+            </article>
+        </main>
+    </div>
+</div>
+  </div>
+
+  <div class="page-footer">
+    
+    
+    <div class="container">
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2022 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+    </div>
+    
+  </div>
+
+      
+
+    
+    <script src="/js/vendor-bundle.min.53d67dc2cb1ebceb89d5e2aba2f86112.js"></script>
+
+    
+    
+    
+      
+
+      
+      
+
+      
+
+      
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+        
+        
+      
+
+    
+
+    
+    
+    
+
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+    <script>
+      anchors.add();
+    </script>
+    
+
+    
+    
+    
+      
+      <script id="search-hit-fuse-template" type="text/x-template">
+        <div class="search-hit" id="summary-{{key}}">
+          <div class="search-hit-content">
+            <div class="search-hit-name">
+              <div class="article-metadata search-hit-type">{{relpermalink}}</div>
+              <a href="{{relpermalink}}">{{title}}</a>
+              <p class="search-hit-description">{{snippet}}</p>
+            </div>
+          </div>
+        </div>
+      </script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+      
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+      
+      
+      
+      
+      
+      
+      
+    
+
+    
+
+    
+    
+    
+    <script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+      
+    
+    
+    <script src="/zh/js/wowchemy.min.d29a6fc876b457837294a96644b02d4f.js"></script>
+
+    
+    
+    
+    
+    
+    
+      
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <script src="/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script><script>
+    
+mybutton = document.getElementById("myBtn");
+
+
+window.onscroll = function() {scrollFunction()};
+
+function scrollFunction() {
+  if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+    mybutton.style.display = "block";
+  } else {
+    mybutton.style.display = "none";
+  }
+}
+
+
+function topFunction() {
+  document.body.scrollTop = 0; 
+  document.documentElement.scrollTop = 0; 
+}
+
+
+function Collapse(e){
+  var node = document.getElementById(e);
+        if (node.className.indexOf('fa-angle-down') > -1){
+                node.setAttribute("class", "fa-solid fa-angle-right");
+            }else{
+                node.setAttribute("class", "fa-solid fa-angle-down");
+                }
+    }
+</script>
+
+
+
+</body>
+</html>
