@@ -9,6 +9,7 @@ date: '2022-05-18T00:00:00+08:00'
 type: book # Do not modify.
 cascade:
   commentable: true
+  categories: ["文化"]
 ---
 
 Google 有许多通用工程实践，几乎涵盖所有语言和项目。此文档为长期积累的最佳实践，是集体经验的结晶。我们尽可能地将其公之于众，您的组织和开源项目也会从中受益。

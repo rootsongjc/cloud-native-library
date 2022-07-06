@@ -9,6 +9,8 @@ date: '2022-05-18T00:00:00+08:00'
 type: book # Do not modify.
 cascade:
   commentable: true
+  tags: ["Envoy"]
+  categories: ["Envoy"]
 ---
 
 {{<callout note>}}

@@ -9,6 +9,8 @@ date: '2022-05-03T00:00:00Z'
 type: book # Do not modify.
 cascade:
   commentable: true
+  categories: ["云原生"]
+  tags: ["云原生"]
 ---
 
 欢迎来到云原生导览——一站式了解云原生技术体系。

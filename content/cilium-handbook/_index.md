@@ -8,6 +8,8 @@ icon: book
 icon_pack: fas
 cascade:
   commentable: true
+  categories: ["网络"]
+  tags: ["Cilium"]
 ---
 
 {{<callout note>}}
