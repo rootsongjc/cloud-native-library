@@ -51,7 +51,7 @@ kube-system   monitoring-influxdb-grafana-v4-54b7854697-tw9cd   2/2       Runnin
 
 在安装 node 节点的时候，节点上的进程是按照 flannel -> docker -> kubelet -> kube-proxy 的顺序启动的，我们下面也会按照该顺序来讲解，flannel 的网络划分和如何与 docker 交互，如何通过 iptables 访问 service。
 
-### Flannel
+## Flannel
 
 Flannel 是作为一个二进制文件的方式部署在每个 node 上，主要实现两个功能：
 
@@ -136,7 +136,7 @@ FLANNEL_IPMASQ=false
 
 以上环境变量是 flannel 向 etcd 中注册的。
 
-### Docker
+## Docker
 
 Node1 的 docker 配置如下：
 

@@ -14,13 +14,13 @@ social:
     link: 'https://jimmysong.io/contact/'
     display:
       header: true
-    label: "加我微信"
+    label: "联系"
   - icon: twitter
     icon_pack: fab
     link: https://twitter.com/jimmysongio
     display:
       header: true
-    label: "在 Twitter 上关注我"
+    label: "关注"
   - icon: github
     icon_pack: fab
     link: https://github.com/rootsongjc/

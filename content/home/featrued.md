@@ -3,7 +3,7 @@ widget: featured
 headless: true
 weight: 31
 title: "精选图书"
-subtitle: "特别企划，日常更新中"
+subtitle: "云原生基础软件系列教程"
 content:
   # Page type to display. E.g. post, event, or publication.
   page_type: publication
