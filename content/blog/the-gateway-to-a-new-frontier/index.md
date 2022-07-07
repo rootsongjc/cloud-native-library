@@ -1,30 +1,16 @@
 ---
 title: Envoy API Gateway——推动网关的进一步发展
 summary: 在我们看来，由于Envoy的设计、功能设置、安装基础和社区，它是业内最好的API网关。有了Envoy Gateway，企业可以在将Envoy嵌入其API管理策略方面增加信心。
-
-# Link this post with a project
 projects: [""]
-
-# Date published
 date: '2022-05-17T11:00:00+08:00'
-
-# Date updated
 lastmod: '2022-05-17T11:12:00+08:00'
-
-# Is this an unpublished draft?
 draft: false
-
-# Show this page in the Featured widget?
 featured: false
-
-# Featured image
-# Place an image named `featured.jpg/png` in this page's folder and customize its options here.
 image:
   caption: '© [**jimmysong.io**](https://jimmysong.io)'
   focal_point: 'right'
   placement: 2
   preview_only: false
-
 authors: ["Varun Talwar"]
 aliases: ["/translation/the-gateway-to-a-new-frontier"]
 tags: ["Envoy","开源","网关","Tetrate"]
@@ -38,7 +24,7 @@ links:
 
 ## 前言
 
-今天，Envoy 社区[宣布了](https://www.cncf.io/blog/2022/05/16/introducing-envoy-gateway/)一个令人兴奋的新项目。 [Envoy Gateway](https://github.com/envoyproxy/gateway)。该项目将行业领导者联合起来，精简由 Envoy 驱动的应用网关的好处。这种方法使 Envoy Gateway 能够立即为快速创新打下坚实的基础。该项目将提供一套服务来管理 Envoy 代理机群，通过易用性来推动采用，并通过定义明确的扩展机制来支持众多的用例。
+今天，Envoy 社区[宣布了](https://www.cncf.io/blog/2022/05/16/introducing-envoy-gateway/)一个令人兴奋的新项目：[Envoy Gateway](https://github.com/envoyproxy/gateway)。该项目将行业领导者联合起来，精简由 Envoy 驱动的应用网关的好处。这种方法使 Envoy Gateway 能够立即为快速创新打下坚实的基础。该项目将提供一套服务来管理 Envoy 代理机群，通过易用性来推动采用，并通过定义明确的扩展机制来支持众多的用例。
 
 ## 我们为什么要这样做？
 
