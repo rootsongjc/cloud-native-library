@@ -14,6 +14,10 @@ cascade:
   level: 1
 ---
 
+{{<callout note 关于本教程>}}
+本教程迁移自[《Kubernetes 中文指南——云原生应用架构实战手册》](https://jimmysong.io/kubernetes-handbook)，原手册使用 Gitbook 发布，内容涵盖 容器、Kubernetes、服务网格、Serverless 等云元生的多个领域，因内容过于宽泛，且 Gitbook 项目已停止维护，现将其中的 Kubernetes 教程部分独立成书，并使用 Hugo 重新构建。
+{{</callout>}}
+
 云原生是一种行为方式和设计理念，究其本质，凡是能够提高云上资源利用率和应用交付效率的行为或方式都是云原生的。云计算的发展史就是一部云原生化的历史。Kubernetes 开启了云原生的序幕，服务网格 Istio 的出现，引领了后 Kubernetes 时代的微服务，Serverless 的兴起，使得云原生从基础设施层不断向应用架构层挺进，我们正处于一个云原生的新时代。
 
 {{< figure src="images/cover.jpg" alt="封面" caption="《Kubernetes 基础教程》封面" width="50%" >}}
