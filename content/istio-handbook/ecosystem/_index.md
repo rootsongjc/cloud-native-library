@@ -26,9 +26,9 @@ Istio 服务网格自 2017 年 5 月开源以来，已围绕其周边诞生了�
 | [Layotto](https://github.com/mosn/layotto/)                  | 2021 年 6 月  | 运行时   | 云原生应用运行时                                       | 蚂蚁       | 325       | 可以作为 Istio 的数据平面                     |
 | [Hango Gateway](https://github.com/hango-io/hango-gateway)   | 2021 年 8 月  | 网关     | 基于 Envoy 和 Istio 构建的 API 网关                    | 网易       | 187       | 可与 Istio 集成                               |
 
-{{<callout note 关于以上数据>}}
-开源时间以 GitHub 仓库创建时间为准</br>
-Star 数量统计截止时间为 2021年11月11 日
+{{<callout note 关于以上数据的说明>}}
+- 开源时间以 GitHub 仓库创建时间为准
+- Star 数量统计截止时间为 2021年11月11 日
 {{</callout>}}
 
 ## 本章大纲
