@@ -12,8 +12,8 @@ cascade:
   tags: ["Cilium"]
 ---
 
-{{<callout note>}}
-注：《Cilium 中文指南》除特殊说明，默认基于 Cilium 1.11  稳定版本。
+{{<callout note 注意>}}
+《Cilium 中文指南》除特殊说明，默认基于 Cilium 1.11  稳定版本。
 {{</callout>}}
 
 《Cilium 中文指南》当前内容译自 [Cilium 官方文档](https://docs.cilium.io/en/v1.11/)，节选了以下章节：

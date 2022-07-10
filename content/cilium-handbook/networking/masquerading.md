@@ -94,10 +94,8 @@ IP PREFIX/ADDRESS
 192.168.0.0/16
 ```
 
-{{<callout note>}}
-
+{{<callout note 注意>}}
 IPv6 流量当前不支持基于 eBPF 的伪装。
-
 {{</callout>}}
 
 ### 基于 iptables

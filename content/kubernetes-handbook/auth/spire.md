@@ -87,7 +87,7 @@ SPIRE 要求每个代理在首次连接到服务器时进行身份验证和自�
 
 节点证明器向服务器返回一组（可选）节点选择器，用于标识特定机器（例如 Amazon 实例 ID）。由于在定义工作负载的身份时，单个机器的特定身份通常没有用处，因此 SPIRE 会查询[节点解析器](https://spiffe.io/docs/latest/spire-about/spire-concepts/#node-resolution)（如果有）以查看可以验证被证明节点的哪些附加属性（例如，如果节点是 AWS 安全组的成员）。来自证明器和解析者的选择器集成为与代理节点的 SPIFFE ID 关联的选择器集。
 
-{{<callout note>}}
+{{<callout note 注意>}}
 节点证明不需要节点选择器，除非你[将工作负载映射到多个节点](https://spiffe.io/docs/latest/spire/using/registering/#mapping-workloads-to-multiple-nodes)。
 {{</callout>}}
 

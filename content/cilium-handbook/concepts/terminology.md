@@ -116,7 +116,7 @@ Cilium 曾经在 `reserved:host` 身份中同时包含本地和所有远程主�
 | core-dns（EKS） | kube-system     | coredns         | cilium-cluster | 106     | `k8s-app=kube-dns`,`eks.amazonaws.com/component=coredns`  |
 | cilium-operator | cilium-namspace | cilium-operator | cilium-cluster | 105     | `name=cilium-operator`,`io.cilium/app=operator`           |
 
-{{<callout>}}
+{{<callout 提示>}}
 如果 `cilium-cluster` 未定义该 `cluster-name` 选项，则默认值将设置为  `default`。
 {{</callout>}}
 

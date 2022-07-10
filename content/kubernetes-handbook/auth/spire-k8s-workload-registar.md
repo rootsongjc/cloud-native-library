@@ -201,8 +201,8 @@ kubectl validatingwebhookconfiguration delete k8s-workload-registrar-webhook
 
 `reconcile` 和 `crd` 模式都提供了将 DNS 名称添加到 pod 的注册条目的能力。它们目前对应该添加哪些名称有不同的想法，`reconcile` 添加可用于访问 pod 的所有可能名称（通过服务或直接），并将 `crd` 模式限制为 `<service>.<namespace>.svc` 。该功能默认为关闭 `reconcile` 模式和打开 `crd` 模式。
 
-{{<callout warning>}}
- 注意：已知某些软件会使用反向 DNS “验证” 客户端证书中提供的 DNS 和 IP SAN。不能保证Kubernetes客户端会从一个具有有效反向DNS的IP地址进行连接，该地址与这些DNS名称实现所创建的名称之一相匹配，在这种情况下验证会失败。如果你打算使用 X509-SVID 对此类服务的客户端进行身份验证，则需要禁用将 DNS 名称添加到条目中。众所周知，这会影响 etcd。
+{{<callout warning 注意>}}
+已知某些软件会使用反向 DNS “验证” 客户端证书中提供的 DNS 和 IP SAN。不能保证Kubernetes客户端会从一个具有有效反向DNS的IP地址进行连接，该地址与这些DNS名称实现所创建的名称之一相匹配，在这种情况下验证会失败。如果你打算使用 X509-SVID 对此类服务的客户端进行身份验证，则需要禁用将 DNS 名称添加到条目中。众所周知，这会影响 etcd。
 {{</callout>}}
 
 ## 模式之间的差异

@@ -122,7 +122,7 @@ IngressClass 的默认作用于是集群级别，关于 IngressClass 作用域�
 
 以下文档描述了 Ingress 资源中公开的一组跨平台功能。 理想情况下，所有的 Ingress controller 都应该符合这个规范，但是目前还没有实现。
 
-{{<callout warning>}}
+{{<callout warning 注意>}}
 确保您查看控制器特定的文档，以便您了解每个文档的注意事项。
 {{</callout>}}
 

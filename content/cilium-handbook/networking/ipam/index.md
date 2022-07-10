@@ -74,7 +74,7 @@ Kubernetes 主机范围 IPAM 模式启用 `ipam: kubernetes` 并将地址分配�
 | `io.cilium.network.ipv4-health-ip`   | cilium-health 端点的 IPv4 地址 |
 | `io.cilium.network.ipv6-health-ip`   | cilium-health 端点的 IPv6 地址 |
 
-{{<callout note>}}
+{{<callout note 提示>}}
 基于注解的机制主要与旧的 Kubernetes 版本结合使用，这些版本尚不支持`spec.podCIDRs`但同时支持 IPv4 和 IPv6。
 {{</callout>}}
 

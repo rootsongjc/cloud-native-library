@@ -105,10 +105,8 @@ T1 网关确实需要一个专门的控制平面，这意味着网格管理的�
 
 ![图 5：带有一级网关的多集群部署实例](application-clusters-config.svg "图 5：带有一级网关的多集群部署实例")
 
-{{<callout note>}}
-
-注意：TSB 不是 DNS 管理工具，DNS 记录的更改是在 TSB 之外进行的（有多种自动化工具和技术可用于该操作)。
-
+{{<callout note 注意>}}
+TSB 不是 DNS 管理工具，DNS 记录的更改是在 TSB 之外进行的（有多种自动化工具和技术可用于该操作)。
 {{</callout>}}
 
 然而，在添加 T2 网关时，从使用 LoadBalancer 切换到 NodePort 架构，确实需要对应用集群进行轻微的改变。

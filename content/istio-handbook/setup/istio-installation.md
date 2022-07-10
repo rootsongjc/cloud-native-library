@@ -5,7 +5,7 @@ date: '2022-05-18T00:00:00+08:00'
 type: book
 ---
 
-{{< callout warning>}}
+{{< callout warning 注意>}}
 Istio 官方已不再推荐使用 Operator 来安装 Istio，建议你使用 istioctl 命令或者 Helm 来安装。
 {{</callout>}}
 
