@@ -23,7 +23,7 @@ type: book
 
 ## Pod 间连接
 
-在 Kubernetes 中，容器部署在称为 pod 的单元中，其中包括一个或多个可通过单个 IP 地址访问的容器。使用 Cilium，每个 pod 从运行 pod 的 Linux 节点的节点前缀中获取一个 IP 地址。有关其他详细信息，请参阅 [IP 地址管理（IPAM）](../../concepts/networking/ipam/#address-management)。在没有任何网络安全策略的情况下，所有的 pod 都可以互相访问。
+在 Kubernetes 中，容器部署在称为 pod 的单元中，其中包括一个或多个可通过单个 IP 地址访问的容器。使用 Cilium，每个 pod 从运行 pod 的 Linux 节点的节点前缀中获取一个 IP 地址。有关其他详细信息，请参阅 [IP 地址管理（IPAM）](../../networking/ipam/#address-management)。在没有任何网络安全策略的情况下，所有的 pod 都可以互相访问。
 
 Pod IP 地址通常位于 Kubernetes 集群本地。如果 pod 需要作为客户端访问集群外部的服务，则网络流量在离开节点时会自动伪装。
 
