@@ -26,8 +26,8 @@ Slime 解决以上问题的答案是构建 Istio 的控制平面，具体做法�
 
 Slime 内部分为三大模块，其架构图如下所示。
 
-![Slime 内部架构图](../../images/slime-internal-arch.jpg "Slime 内部架构图")
-
+![Slime 内部架构图](../../images/slime-arch.svg "Slime 内部架构图")
+slime-smart-limiter.svg
 Slime 内部三大组件为：
 
 1. `slime-boot`：在 Kubernetes 上部署 Slime 模块的 operator。
@@ -40,15 +40,15 @@ Slime 内部三大组件为：
 2. **HTTP 插件管理**：使用新的 CRD——`pluginmanager/envoyplugin` 包装了可读性，摒弃了可维护性较差的 `envoyfilter`，使得插件扩展更为便捷；
 3. **自适应限流**：结合监控信息自动调整限流策略；
 
-> **什么是 SidecarScope？**
->
-> SidecarScope 是在 Istio 1.1 版本中引入的，它并不是一个直接面向用户的配置项，而是 Sidecar 资源的包装器，具体来说就是 [Sidecar 资源](../../config-networking/sidecar/)中的 `egress` 选项。通过该配置可以减少 Istio 向 Sidecar 下发的数据量，例如只向某个命名空间中的某些服务下发某些 hosts 的访问配置，从而提高应用提高性能。
+{{<callout note "什么是 SidecarScope？">}}
+SidecarScope 是在 Istio 1.1 版本中引入的，它并不是一个直接面向用户的配置项，而是 Sidecar 资源的包装器，具体来说就是 [Sidecar 资源](../../config-networking/sidecar/)中的 `egress` 选项。通过该配置可以减少 Istio 向 Sidecar 下发的数据量，例如只向某个命名空间中的某些服务下发某些 hosts 的访问配置，从而提高应用提高性能。
+{{</callout>}}
 
 ## 使用 Slime 作为 Istio 的控制平面
 
 为了解决这些问题，Slime 在 Istio 之上构建了更高层次的抽象，相当于为 Istio 构建了一层管理平面，其工作流程图如下所示。
 
-![Slime 工作流程图](../../images/slime-flow-chart.jpg "Slime 工作流程图")
+![Slime 工作流程图](../../images/slime-process.svg "Slime 工作流程图")
 
 具体步骤如下：
 
@@ -96,7 +96,7 @@ Envoy 内置的限流组件功能单一，只能以实例维度配置限流值�
 
 Slime 自适应限流的流程图如下所示。
 
-![Slime 的自适应限流流程图](../../images/slime-smart-limiter.jpg "Slime 的自适应限流流程图")
+![Slime 的自适应限流流程图](../../images/slime-smart-limiter.svg "Slime 的自适应限流流程图")
 
 Slime 的自适应限流的流程分为两部分，一部分为 SmartLimiter 到 EnvoyFilter 的转换，另一部分为获取监控数据。目前 Slime 支持从 Kubernetes Metric Server 获取服务的CPU、内存、副本数等数据。Slime 还对外提供了一套监控数据接口（Metric Discovery Server），通过 MDS，可以将自定义的监控指标同步给限流组件。
 
