@@ -400,17 +400,37 @@ $(window).on('load', function () {
 });
 
 // Theme chooser events.
-let linkLight = document.querySelector('.js-set-theme-light');
-let linkDark = document.querySelector('.js-set-theme-dark');
-if (linkLight && linkDark) {
-  linkLight.addEventListener('click', (event) => {
+let setTheme = document.querySelector('.set-theme');
+if (setTheme) {
+  setTheme.addEventListener('click', (event) => {
+    var theme = localStorage.getItem('wcTheme');
+    var icon = document.getElementById("theme-icon");
     event.preventDefault();
+    if ( theme === "1" ){
     changeThemeModeClick(0);
-  });
-  linkDark.addEventListener('click', (event) => {
-    event.preventDefault();
+    icon.setAttribute("class", "fa fa-sun");
+    sendMessage({
+      setConfig: {
+        theme: "light"
+      }
+    });
+    }else{
     changeThemeModeClick(1);
+    icon.setAttribute("class", "fa fa-moon");
+    sendMessage({
+      setConfig: {
+        theme: "dark"
+      }
+    });
+    }
   });
+}
+
+// Sent message to giscus
+function sendMessage(message) {
+  const iframe = document.querySelector('iframe.giscus-frame');
+  if (!iframe) return;
+  iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
 }
 
 // Media Query events.

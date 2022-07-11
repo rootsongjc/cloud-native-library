@@ -16,10 +16,9 @@ date_format: 2006 年 1 月 2 日
 experience:
   - title: '资料库建立'
     company: 'Jimmy Song'
-    company_url: 'https://jimmysong.io'
     location: ''
     date_start: '2022-05-01'
-    date_end: '2022-05-31'
+    date_end: '2022-07-11'
     description: >-
       * 将 [jimmysong.io 主站](https://jimmysong.io)上的图书迁移至本站📚
 
@@ -34,6 +33,14 @@ experience:
       * 内建全文搜索功能 🔍
     
       * 启用子域名 `lib.jimmysong.io` 🌏
+
+      * 增加暗夜主题切换
+
+      * 支持一键代码复制
+
+      * 移动端适配
+
+      * 文档目录支持导航
 
 design:
   columns: "2"

@@ -200,6 +200,9 @@ function renderThemeVariation(isDarkTheme, themeMode = 2, init = false) {
       fadeIn(document.body, 600);
     }
     body.classList.add('dark');
+    var icon = document.getElementById("theme-icon");
+    icon.setAttribute("class", "fa fa-moon");
+
     if (codeHlEnabled) {
       console.debug('Setting HLJS theme to dark');
       if (codeHlLight) {
