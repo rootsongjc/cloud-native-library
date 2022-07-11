@@ -24,5 +24,4 @@ design:
   #   4 = Citation (publication only)
   view: 2
   columns: "1"
-  background-color: rgb(247, 247, 247);
 ---

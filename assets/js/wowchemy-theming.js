@@ -109,7 +109,6 @@ function changeThemeModeClick(newMode) {
 function showActiveTheme(mode) {
   let linkLight = document.querySelector('.js-set-theme-light');
   let linkDark = document.querySelector('.js-set-theme-dark');
-  let linkAuto = document.querySelector('.js-set-theme-auto');
 
   if (linkLight === null) {
     return;
@@ -120,19 +119,16 @@ function showActiveTheme(mode) {
       // Light.
       linkLight.classList.add('dropdown-item-active');
       linkDark.classList.remove('dropdown-item-active');
-      linkAuto.classList.remove('dropdown-item-active');
       break;
     case 1:
       // Dark.
       linkLight.classList.remove('dropdown-item-active');
       linkDark.classList.add('dropdown-item-active');
-      linkAuto.classList.remove('dropdown-item-active');
       break;
     default:
       // Auto.
       linkLight.classList.remove('dropdown-item-active');
       linkDark.classList.remove('dropdown-item-active');
-      linkAuto.classList.add('dropdown-item-active');
       break;
   }
 }

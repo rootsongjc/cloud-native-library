@@ -42,6 +42,5 @@ content:
 design:
   columns: '1'
   view: masonry
-  background-color: rgb(247, 247, 247);
   flip_alt_rows: false
 ---

@@ -402,8 +402,7 @@ $(window).on('load', function () {
 // Theme chooser events.
 let linkLight = document.querySelector('.js-set-theme-light');
 let linkDark = document.querySelector('.js-set-theme-dark');
-let linkAuto = document.querySelector('.js-set-theme-auto');
-if (linkLight && linkDark && linkAuto) {
+if (linkLight && linkDark) {
   linkLight.addEventListener('click', (event) => {
     event.preventDefault();
     changeThemeModeClick(0);
@@ -411,10 +410,6 @@ if (linkLight && linkDark && linkAuto) {
   linkDark.addEventListener('click', (event) => {
     event.preventDefault();
     changeThemeModeClick(1);
-  });
-  linkAuto.addEventListener('click', (event) => {
-    event.preventDefault();
-    changeThemeModeClick(2);
   });
 }
 
