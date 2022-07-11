@@ -27,7 +27,7 @@ Slime 解决以上问题的答案是构建 Istio 的控制平面，具体做法�
 Slime 内部分为三大模块，其架构图如下所示。
 
 ![Slime 内部架构图](../../images/slime-arch.svg "Slime 内部架构图")
-slime-smart-limiter.svg
+
 Slime 内部三大组件为：
 
 1. `slime-boot`：在 Kubernetes 上部署 Slime 模块的 operator。
