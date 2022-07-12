@@ -183,7 +183,7 @@ hello world
 
 输出显示了两个日志条目：一个来自 `OnHttpRequestHeaders` 处理器，第二个来自 `OnHttpResponseHeaders` 处理器。最后一行是过滤器中的直接响应配置所返回的响应示例。
 
-你可以通过用 `fg` 把进程带到前台，然后按 CTRL+C 停止代理。
+你可以使用 `fg` 命令将进程置于前台运行，然后按 `CTRL+C` 停止代理。
 
 ## 在 HTTP 响应上设置附加头信息
 

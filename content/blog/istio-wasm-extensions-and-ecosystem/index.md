@@ -1,20 +1,9 @@
 ---
 title: Istio 1.12 引入 Wasm 插件配置 API 用于扩展 Istio 生态
 summary: Istio 1.12 中新的 WebAssembly 基础设施使其能够轻松地将额外的功能注入网格部署中。
-
-# Link this post with a project
-projects: [""]
-
-# Date published
 date: 2021-11-24T18:03:00+08:00
-
-# Date updated
-lastmod: 2021-11-24T18:03:00+08:00
-
-# Is this an unpublished draft?
+lastmod: 2022-07-12T12:03:00+08:00
 draft: false
-
-# Show this page in the Featured widget?
 featured: false
 
 # Featured image
@@ -193,7 +182,7 @@ func (ctx *httpHeaders) OnHttpRequestHeaders(int, bool) types.Action {
 
 在 `OnHttpRequestHeaders` 函数中，我们得到当前的时间戳，将其与最后一次补给时间的时间戳进行比较（对于速率限制器），如果需要的话，就补给令牌。
 
-如果没有剩余的令牌，我们就发送一个带有额外头的 403 响应（**由：proxy-wasm-go-sdk！！**）。
+如果没有剩余的令牌，我们就发送一个带有额外头的 403 响应（**powered-by: proxy-wasm-go-sdk!!**）。
 
 让我们用 tinygo 将 Golang 程序编译成 Wasm 模块，并将其打包成一个 Docker 镜像。
 
@@ -201,7 +190,19 @@ func (ctx *httpHeaders) OnHttpRequestHeaders(int, bool) types.Action {
 tinygo build -o main.wasm -scheduler=none -target=wasi main.go
 ```
 
-我们构建一个 Docker 镜像，并将其推送到镜像仓库（用你自己的 Docker 镜像仓库和镜像名称替换 `${YOUR_DOCKER_REGISTRY_IMAGE}`）。在这之后，你的 Wasm 插件就可以在你的服务网格中使用了。
+编写 Dockfile，将编译出来的 Wasm 模块添加到 Docker 镜像中。
+
+```dockerfile
+FROM scratch
+ADD main.wasm .
+CMD ["main.wasm"]
+```
+
+{{<callout note 译者注>}}
+原文中漏掉了创建 Dockerfile 这一步，我们直接从 scratch 创建镜像，可以保证镜像最小化。
+{{</callout>}}
+
+构建 Docker 镜像，并将其推送到镜像仓库（用你自己的 Docker 镜像仓库和镜像名称替换 `${YOUR_DOCKER_REGISTRY_IMAGE}`）。在这之后，你的 Wasm 插件就可以在你的服务网格中使用了。
 
 ```sh
 docker build -t ${YOUR_DOCKER_REGISTRY_IMAGE}:v1 .
