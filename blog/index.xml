@@ -3325,10 +3325,21 @@ Pawlikowski 的一本实用书，由曼宁公司出版。该书记录了模拟�
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在 &lt;code&gt;OnHttpResponseHeaders&lt;/code&gt; 函数中，我们正在迭代 &lt;code&gt;extraHeaders&lt;/code&gt; 变量，并将头文件添加到响应中。&lt;/p&gt;
 &lt;p&gt;在 &lt;code&gt;OnHttpRequestHeaders&lt;/code&gt; 函数中，我们得到当前的时间戳，将其与最后一次补给时间的时间戳进行比较（对于速率限制器），如果需要的话，就补给令牌。&lt;/p&gt;
-&lt;p&gt;如果没有剩余的令牌，我们就发送一个带有额外头的 403 响应（&lt;strong&gt;由：proxy-wasm-go-sdk！！&lt;/strong&gt;）。&lt;/p&gt;
+&lt;p&gt;如果没有剩余的令牌，我们就发送一个带有额外头的 403 响应（&lt;strong&gt;powered-by: proxy-wasm-go-sdk!!&lt;/strong&gt;）。&lt;/p&gt;
 &lt;p&gt;让我们用 tinygo 将 Golang 程序编译成 Wasm 模块，并将其打包成一个 Docker 镜像。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tinygo build -o main.wasm -scheduler&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;none -target&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;wasi main.go
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;我们构建一个 Docker 镜像，并将其推送到镜像仓库（用你自己的 Docker 镜像仓库和镜像名称替换 &lt;code&gt;${YOUR_DOCKER_REGISTRY_IMAGE}&lt;/code&gt;）。在这之后，你的 Wasm 插件就可以在你的服务网格中使用了。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;编写 Dockfile，将编译出来的 Wasm 模块添加到 Docker 镜像中。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-dockerfile&#34; data-lang=&#34;dockerfile&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;k&#34;&gt;FROM&lt;/span&gt;&lt;span class=&#34;s&#34;&gt; scratch&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;ADD&lt;/span&gt; main.wasm .&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;CMD&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;main.wasm&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;译者注&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    原文中漏掉了创建 Dockerfile 这一步，我们直接从 scratch 创建镜像，可以保证镜像最小化。
+&lt;/div&gt;
+
+&lt;p&gt;构建 Docker 镜像，并将其推送到镜像仓库（用你自己的 Docker 镜像仓库和镜像名称替换 &lt;code&gt;${YOUR_DOCKER_REGISTRY_IMAGE}&lt;/code&gt;）。在这之后，你的 Wasm 插件就可以在你的服务网格中使用了。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker build -t &lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;YOUR_DOCKER_REGISTRY_IMAGE&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;:v1 .
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker push -t &lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;YOUR_DOCKER_REGISTRY_IMAGE&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;:v1 
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;另外，你也可以使用一个预构建的 Docker 镜像，它有相同的代码，位于 &lt;a href=&#34;http://ghcr.io/tetratelabs/wasm-rate-limiting:v1&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;ghcr.io/tetratelabs/wasm-rate-limiting:v1&lt;/a&gt;。&lt;/p&gt;
