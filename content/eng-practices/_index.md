@@ -23,7 +23,7 @@ Google 代码审查指南，实则两套指南：
 - 代码审查者指南
 - 代码开发者指南
 
-### 译者序
+## 译者序
 
 此仓库翻译自 [google/eng-practices](https://github.com/google/eng-practices)，目前为止的主要内容为 Google 总结的如何进行 **Code Review（代码审查）** 指南，根据原 Github 仓库的标题判断以后会追加更多 Google 工程实践的内容。
 

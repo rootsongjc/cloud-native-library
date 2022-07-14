@@ -7,7 +7,7 @@ social:
     icon_pack: fas
     link: "https://jimmysong.io"
     display:
-      header: true
+      header: false
     label: "主页"
   - icon: weixin
     icon_pack: fab
