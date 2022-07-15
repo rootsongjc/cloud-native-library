@@ -20,4 +20,5 @@ cascade:
   section_pager: true
   share: false
   editable: true
+  mobile_toc: true
 ---
