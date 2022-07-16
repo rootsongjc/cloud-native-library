@@ -39,7 +39,7 @@ Apache SkyWalking 观察部署在服务网格中的服务的度量、日志、�
 
 在下图中，我们可以看到，当系统执行 `execve` 系统调用时，eBPF 程序被触发，通过使用函数调用获得当前进程的运行时信息。
 
-![图片](eBPF-hook-points.jpg "eBPF 程序调用流程图")
+![eBPF 程序调用流程图](eBPF-hook-points.jpg)
 
 使用 eBPF 技术，可以将 SkyWalking 的剖析能力范围扩大到：
 
@@ -62,7 +62,7 @@ SkyWalking Rover 是 SkyWalking 生态系统中引入的 eBPF 剖析功能。下
 
 除了需要具有 eBPF 功能的内核外，部署 SkyWalking Rover 没有其他先决条件。
 
-![图片](skywalking-rover.jpg "SkyWalking Rover 架构图")
+![SkyWalking Rover 架构图](skywalking-rover.jpg)
 
 ### 使用 Rover 进行 CPU 剖析 {#cpu-profiling-with-rover}
 
@@ -97,7 +97,7 @@ Envoy 是一个流行的代理，在 Istio 服务网格中被用作为数据平�
 
 如下图所示，使用 CPU 剖析，我们发现它大约需要 **16%** 的 CPU 开销。在固定消耗 **2 个 CPU** 的情况下，其 QPS 可以达到 **5.7K**。
 
-![图片](zipkin-sampling-100.jpg "Zipkin 100% 采样 CPU 剖析的火焰图")
+![Zipkin 100% 采样 CPU 剖析的火焰图](zipkin-sampling-100.jpg)
 
 ### 禁用 Zipkin 追踪
 
@@ -111,7 +111,7 @@ istioctl install -y --set profile=demo \
 
 禁用追踪后，我们再次进行 CPU 剖析。根据下图，我们发现 Zipkin 已经从火焰图中消失了。在与前面的例子相同的 **2 个 CPU** 消耗下，QPS 达到 **9K**，几乎增加了 **60%**。
 
-![图片](zipkin-disable-tracing.jpg "禁用 Zipkin 追踪的 CPU 剖析火焰图")
+![禁用 Zipkin 追踪的 CPU 剖析火焰图](zipkin-disable-tracing.jpg)
 
 ### 追踪吞吐量 {#tracing-with-throughput}
 
@@ -131,7 +131,7 @@ istioctl install -y --set profile=demo \
 
 在默认的演示配置文件中，默认的访问日志格式包含大量的数据。下面的火焰图显示了在解析数据时涉及的各种功能，如请求头、响应头和流媒体主体。
 
-![图片](log-format-default.jpg "默认访问日志格式的 CPU 剖析火焰图")
+![默认访问日志格式的 CPU 剖析火焰图](log-format-default.jpg)
 
 ### 简化访问日志格式 {#simplifying-access-log-format}
 
@@ -161,7 +161,7 @@ Off-CPU 剖析适用于由非高 CPU 使用率引起的性能问题。例如，�
 
 使用与之前 CPU 测试相同的环境和设置，我们进行了 off-CPU 剖析。如下图所示，我们发现访问日志的写入占总上下文切换的 **28%** 左右。下图中的 `__write` 也表明这是 Linux 内核中的方法。
 
-![图片](access-log-write-enable.jpg "启用写入的 off-CPU 剖析火焰图")
+![启用写入的 off-CPU 剖析火焰图](access-log-write-enable.jpg)
 
 #### 禁用写入
 
@@ -173,7 +173,7 @@ istioctl install -y --set profile=demo --set meshConfig.accessLogFile=""
 
 禁用访问日志功能后，我们进行了 off-CPU 剖析。如下图所示，文件写入条目已经消失了。Envoy 的吞吐量也从 **5.7K** 增加到 **5.9K**。
 
-![图片](access-log-write-disable.jpg "禁用访问日志功能后的 off-CPU 剖析火焰图")
+![禁用访问日志功能后的 off-CPU 剖析火焰图](access-log-write-disable.jpg)
 
 ## 总结
 
