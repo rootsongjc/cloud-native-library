@@ -6,6 +6,7 @@ tags:
 date: 2022-05-18
 internal_link: istio-handbook
 type: publication
+draft: true
 featured: true
 publication_type: "ebook"
 publication_link: "/istio-handbook"
