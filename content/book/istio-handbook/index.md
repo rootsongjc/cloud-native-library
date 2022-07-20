@@ -2,37 +2,17 @@
 title: Istio 基础教程
 summary: 云原生应用网络构建指南
 tags:
-  - Handbook系列
+  - 教程
 date: 2022-05-18
-internal_link: istio-handbook
+internal_link: https://academy.tetrate.io/courses/istio-fundamentals-zh
 type: publication
-draft: true
+draft: false
 featured: true
 publication_type: "ebook"
-publication_link: "/istio-handbook"
+publication_link: "https://academy.tetrate.io/courses/istio-fundamentals-zh"
 ---
 
-## 关于本书
-
-本书的主题包括：
-
-- 服务网格概念解析
-- 控制平面和数据平面的原理
-- Istio 架构详解
-- 基于 Istio 的自定义扩展
-- 迁移到 Istio 服务网格
-- 构建云原生应用网络
-
-书中部分内容来自 Tetrate 出品的 [Istio 基础教程](https://academy.tetrate.io/courses/istio-fundamentals-zh)，请访问 [Tetrate 学院](https://academy.tetrate.io/)，解锁全部教程及测试，获得 Tetrate 认证的 Istio 认证。
-
-## 致谢
-
-感谢 [ServiceMesher](https://www.servicemesher.com) 及[云原生社区](https://cloudnative.to/)先后负责翻译了 [Envoy](https://cloudnative.to/envoy/) 及 [Istio](https://istio.io/latest/zh/) 官方文档，为本书的成书提供了大量参考资料。
-
-## 许可证
-
-本书所有内容支持使用[署名 - 非商业性使用 - 相同方式共享 4.0 (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)  协议共享。
-
-## 参与本书
-
-请参考 [Istio 文档样式指南](https://istio.io/latest/about/contribute/style-guide/)。
+- 本课程分为 8 个模块，其中包括理论部分，我们将学习 Istio 的各项功能；实践实验室，我们将在实践中尝试这些功能；以及测试你的这些知识的掌握程度。
+- 在本课程结束时，您将了解什么是 Istio，使用真实世界的例子，了解服务网格给您的组织带来的价值。你将能够配置流量路由、注入故障、使用弹性功能并保护你的服务。本课程是为了加强你的学习，在课程结束时，如果你能正确回答所有测验的 70%，将提供一份完成证书。
+- 本课程是为了加强你的学习，在课程结束时，如果你能正确回答所有测验的 70%，将提供一份完成证书。
+- 本课程有 4 个小时的内容，是自定进度的。你可以按照自己的节奏完成，可以在一天内完成，或者根据你的方便，分散在不同的时间内完成。

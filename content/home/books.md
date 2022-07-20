@@ -36,6 +36,8 @@ content:
       tag: 出版物
     - name: 翻译电子书
       tag: 翻译电子书
+    - name: 教程
+      tag: 教程
 
 design:
   columns: '2'
