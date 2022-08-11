@@ -27,7 +27,7 @@ Pod 中的容器也有访问共享 volume 的权限，这些 volume 会被定义
 
 就像每个应用容器，pod 被认为是临时（非持久的）实体。在 Pod 的生命周期中讨论过，pod 被创建后，被分配一个唯一的 ID（UID），调度到节点上，并一致维持期望的状态直到被终结（根据重启策略）或者被删除。如果 node 死掉了，分配到了这个 node 上的 pod，在经过一个超时时间后会被重新调度到其他 node 节点上。一个给定的 pod（如 UID 定义的）不会被 “重新调度” 到新的节点上，而是被一个同样的 pod 取代，如果期望的话甚至可以是相同的名字，但是会有一个新的 UID。
 
-Volume 跟 pod 有相同的生命周期（当其 UID 存在的时候）。当 Pod 因为某种原因被删除或者被新创建的相同的 Pod 取代，它相关的东西（例如 volume）也会被销毁和再创建一个新的 volume。
+临时卷的生命周期跟 pod 相同，当 Pod 因为某种原因被删除或者被新创建的相同的 pod 取代时，pod 的附属物（例如 volume）也会被销毁和重新创建。Kubernetes 中提供了众多的卷类型，关于卷（Volume）的详细介绍请参考 [Kubernetes 文档](https://kubernetes.io/zh-cn/docs/concepts/storage/volumes/)。
 
 ![Pod 示意图](../../images/pod-overview.png "Pod 示意图")
 
@@ -37,7 +37,7 @@ Volume 跟 pod 有相同的生命周期（当其 UID 存在的时候）。当 Po
 
 ### 管理
 
-Pod 是一个服务的多个进程的聚合单位，pod 提供这种模型能够简化应用部署管理，通过提供一个更高级别的抽象的方式。Pod 作为一个独立的部署单位，支持横向扩展和复制。共生（协同调度），命运共同体（例如被终结），协同复制，资源共享，依赖管理，Pod 都会自动的为容器处理这些问题。
+Pod 是一个服务的多个进程的聚合单位，pod 提供这种模型能够简化应用部署管理，通过提供一个更高级别的抽象的方式。Pod 作为一个独立的部署单位，支持横向扩展和复制。共生（协同调度），命运共同体（例如被终结），协同复制，资源共享，依赖管理，pod 都会自动的为容器处理这些问题。
 
 ### 资源共享和通信
 
@@ -45,7 +45,7 @@ Pod 中的应用可以共享网络空间（IP 地址和端口），因此可以�
 
 Pod 中应用容器的 hostname 被设置成 Pod 的名字。
 
-Pod 中的应用容器可以共享 volume。Volume 能够保证 pod 重启时使用的数据不丢失。
+Pod 中的应用容器可以共享卷。持久化卷能够保证 pod 重启时使用的数据不丢失。
 
 ## Pod 的使用
 
@@ -59,13 +59,13 @@ Pod 也可以用于垂直应用栈（例如 LAMP），这样使用的主要动�
 
 通常单个 pod 中不会同时运行一个应用的多个实例。
 
-详细说明请看： [The Distributed System ToolKit: Patterns for Composite Containers](https://kubernetes.io/blog/2015/06/the-distributed-system-toolkit-patterns/).
+详细说明请看： [The Distributed System ToolKit: Patterns for Composite Containers](https://kubernetes.io/blog/2015/06/the-distributed-system-toolkit-patterns/)。
 
 ## 其他替代选择
 
 **为什么不直接在一个容器中运行多个应用程序呢？**
 
-1. 透明。让 Pod 中的容器对基础设施可见，以便基础设施能够为这些容器提供服务，例如进程管理和资源监控。这可以为用户带来极大的便利。
+1. 透明。让 pod 中的容器对基础设施可见，以便基础设施能够为这些容器提供服务，例如进程管理和资源监控。这可以为用户带来极大的便利。
 2. 解耦软件依赖。每个容器都可以进行版本管理，独立的编译和发布。未来 kubernetes 甚至可能支持单个容器的在线升级。
 3. 使用方便。用户不必运行自己的进程管理器，还要担心错误信号传播等。
 4. 效率。因为由基础架构提供更多的职责，所以容器可以变得更加轻量级。
@@ -89,13 +89,13 @@ Pod 原语有利于：
 - 将 pod 生命周期与控制器生命周期分离，例如用于自举（bootstrap）
 - 控制器和服务的分离 —— 端点控制器只是监视 pod
 - 将集群级功能与 Kubelet 级功能的清晰组合 ——Kubelet 实际上是 “pod 控制器”
-- 高可用性应用程序，它们可以在终止之前及在删除之前更换 pod，例如在计划驱逐、镜像预拉取或实时 pod 迁移的情况下[#3949](https://github.com/kubernetes/kubernetes/issues/3949)
+- 高可用性应用程序，它们可以在终止之前及在删除之前更换 pod，例如在计划驱逐、镜像预拉取或实时 pod 迁移的情况下，详见[Issue #3949](https://github.com/kubernetes/kubernetes/issues/3949)。
 
 [StatefulSet](../statefulset) 控制器支持有状态的 Pod。在 1.4 版本中被称为 PetSet。在 kubernetes 之前的版本中创建有状态 pod 的最佳方式是创建一个 replica 为 1 的 replication controller。
 
 ## Pod 的终止
 
-因为 Pod 作为在集群的节点上运行的进程，所以在不再需要的时候能够优雅的终止掉是十分必要的（比起使用发送 KILL 信号这种暴力的方式）。用户需要能够发起一个删除 Pod 的请求，并且知道它们何时会被终止，是否被正确的删除。用户想终止程序时发送删除 pod 的请求，在 pod 可以被强制删除前会有一个宽限期，会发送一个 TERM 请求到每个容器的主进程。一旦超时，将向主进程发送 KILL 信号并从 API server 中删除。如果 kubelet 或者 container manager 在等待进程终止的过程中重启，在重启后仍然会重试完整的宽限期。
+因为 pod 作为在集群的节点上运行的进程，所以在不再需要的时候能够优雅的终止掉是十分必要的（比起使用发送 KILL 信号这种暴力的方式）。用户需要能够发起一个删除 Pod 的请求，并且知道它们何时会被终止，是否被正确的删除。用户想终止程序时发送删除 pod 的请求，在 pod 可以被强制删除前会有一个宽限期，会发送一个 TERM 请求到每个容器的主进程。一旦超时，将向主进程发送 KILL 信号并从 API server 中删除。如果 kubelet 或者 container manager 在等待进程终止的过程中重启，在重启后仍然会重试完整的宽限期。
 
 示例流程如下：
 
