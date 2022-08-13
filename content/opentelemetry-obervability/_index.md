@@ -1,6 +1,6 @@
 ---
 linktitle: OpenTelemetry 可观测性的未来
-summary: 本报告译自 O'Reilly 出品的 The Future of Observablity with OpeTelemetry，作者 Ted Young，译者 Jimmy Song。
+summary: 本报告译自 O'Reilly 出品的 The Future of Observablity with OpenTelemetry，作者 Ted Young，译者 Jimmy Song。
 weight: 1
 icon: book-open
 icon_pack: fas
