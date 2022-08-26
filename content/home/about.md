@@ -3,7 +3,7 @@ widget: experience
 headless: true
 weight: 70
 title: '关于云原生资料库'
-subtitle: "更新时间线"
+subtitle: "几米宋微信公众号"
 # Date format
 #   Refer to https://wowchemy.com/docs/customization/#date-format
 date_format: 2006 年 1 月 2 日

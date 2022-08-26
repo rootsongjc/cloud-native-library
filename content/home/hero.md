@@ -19,6 +19,6 @@ cta_alt:
   label: 阅读译文
 ---
 
-本站搜罗整理了 [Jimmy](https://jimmysong.io) 自 2017 年以来的发布的云原生电子书、教程、翻译和活动等资料。在这里，一站式学习云原生！
+在这里，你可以一站式学习云原生。本站为 Jimmy 自 2017 年以来的发布的云原生电子书、教程、翻译等资料，原创文章请转到 [Jimmy 的博客](https://jimmysong.io/blog/)。更多云原生资料及加入交流群请转到[云原生社区](https://cloudnative.to)。
 
 </br>
