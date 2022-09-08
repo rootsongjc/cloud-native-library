@@ -2,7 +2,7 @@
 title: "Istio 服务网格 ambient 模式安全详解"
 date: 2022-09-08T12:00:00+08:00
 draft: false
-summary: "深入研究最近发布的 Istio 环境网格（Istio 的无 sidecar 数据平面）的安全隐患。"
+summary: "深入研究最近发布的 Istio Ambient Mesh（Istio 的无 sidecar 数据平面）的安全隐患。"
 tags: ["Istio", "Service Mesh","Ambient Mesh","sidecar"]
 categories: ["Istio"]
 links:
@@ -12,7 +12,7 @@ links:
     url: https://istio.io/latest/blog/2022/ambient-security/
 ---
 
-我们最近发布了 Istio Ambient Mesh（环境网格），它是 Istio 的无 sidecar 数据平面。如[公告博客中所述](/blog/introducing-ambient-mesh/)，我们使用 Ambient Mesh 解决的首要问题是简化操作、更广泛的应用程序兼容性、降低基础设施成本和提高性能。在设计 ambient 数据平面时，我们希望在不牺牲安全性或功能的情况下仔细平衡运维、成本和性能方面的问题。随着 ambient 组件在应用程序 pod 之外运行，安全边界发生了变化 —— 我们相信会变得更好。在这篇博客中，我们将详细介绍这些安全性变化以及它们与 sidecar 部署模式在安全性方面的对比。
+我们最近发布了 Istio Ambient Mesh（译者注：笔者更倾向于将其称为 Ambient Mode，即外围模式，但译文中仍然保留了 Ambient Mesh 的叫法），它是 Istio 的无 sidecar 数据平面。如[公告博客中所述](/blog/introducing-ambient-mesh/)，我们使用 Ambient Mesh 解决的首要问题是简化操作、更广泛的应用程序兼容性、降低基础设施成本和提高性能。在设计 ambient 数据平面时，我们希望在不牺牲安全性或功能的情况下仔细平衡运维、成本和性能方面的问题。随着 ambient 组件在应用程序 pod 之外运行，安全边界发生了变化 —— 我们相信会变得更好。在这篇博客中，我们将详细介绍这些安全性变化以及它们与 sidecar 部署模式在安全性方面的对比。
 
 ![Ambient Mesh 的分层示意图](amibent-mesh-layer.svg)
 

@@ -2,7 +2,7 @@
 title: "Istio 无 sidecar 代理数据平面 ambient 模式简介"
 date: 2022-09-08T11:00:00+08:00
 draft: false
-summary: "环境网格（Ambient Mesh）是一种新的 Istio 数据平面模式，旨在简化操作、扩大应用兼容性并降低基础设施成本。"
+summary: "Ambient Mesh（外围模式）是一种新的 Istio 数据平面模式，旨在简化操作、扩大应用兼容性并降低基础设施成本。"
 tags: ["Istio", "Service Mesh","Ambient Mesh"]
 categories: ["Istio"]
 links:
@@ -12,7 +12,7 @@ links:
     url: https://istio.io/latest/blog/2022/introducing-ambient-mesh/
 ---
 
-今天，我们很高兴地介绍 **环境网格**（Ambient Mesh），这是一种新的 Istio 数据平面模式，旨在简化操作、扩大应用兼容性并降低基础设施成本。用户可以选择将 Ambient Mesh 集成到其基础设施的网格数据平面，放弃 sidecar 代理，同时保持 Istio 的零信任安全、遥测和流量管理等核心功能。我们正在与 Istio 社区分享 Ambient Mesh 的预览版，我们正努力在未来几个月内将其推向生产就绪。
+今天，我们很高兴地介绍 **Ambient Mesh**（译者注：笔者更倾向于将其称为 Ambient Mode，即外围模式），这是一种新的 Istio 数据平面模式，旨在简化操作、扩大应用兼容性并降低基础设施成本。用户可以选择将 Ambient Mesh 集成到其基础设施的网格数据平面，放弃 sidecar 代理，同时保持 Istio 的零信任安全、遥测和流量管理等核心功能。我们正在与 Istio 社区分享 Ambient Mesh 的预览版，我们正努力在未来几个月内将其推向生产就绪。
 
 ## Istio 和 Sidecar
 
@@ -32,7 +32,7 @@ links:
 
 传统上，Istio 在单一的架构组件中实现了所有的数据平面功能，从基本的加密到高级的 L7 策略，这就是 sidecar。在实践中，这使得 sidecar 成为一个全有或全无的主张。即使工作负载只需要简单的传输安全，管理员仍然需要承担部署和维护 sidecar 的运营成本。Sidecar 对每个工作负载都有固定的运营成本，无法根据用例的复杂性进行扩展。
 
-Ambient Mesh 采取了一种不同的方法。它将 Istio 的功能分成两个不同的层次。在底层，有一个安全覆盖层，处理流量的路由和零信任安全。在这之上，当需要时，用户可以启用 L7 处理，以获得 Istio 的全部功能。L7 处理模式虽然比安全覆盖层更重，但仍作为基础设施的一个环境组件运行，不需要对应用 pod 进行修改。
+Ambient Mesh 采取了一种不同的方法。它将 Istio 的功能分成两个不同的层次。在底层，有一个安全覆盖层，处理流量的路由和零信任安全。在这之上，当需要时，用户可以启用 L7 处理，以获得 Istio 的全部功能。L7 处理模式虽然比安全覆盖层更重，但仍作为基础设施的一个外围组件运行，不需要对应用 pod 进行修改。
 
 ![Ambient Mesh 分层](ambient-mesh-layers.svg)
 
