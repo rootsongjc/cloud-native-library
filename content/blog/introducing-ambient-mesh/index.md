@@ -42,13 +42,13 @@ Ambient Mesh 采取了一种不同的方法。它将 Istio 的功能分成两个
 
 Ambient Mesh 使用一个共享代理（agent），在 Kubernetes 集群的每个节点上运行。这个代理是一个零信任隧道（ztunnel），它的主要职责是安全地连接和验证网格内的元素。节点上的网络堆栈将参与工作负载的所有流量通过本地 ztunnel 代理重定向。这将 Istio 的数据平面与应用程序的关注点完全分开，最终允许运营人员启用、禁用、扩展和升级数据平面而不干扰应用程序。ztunnel 不对工作负载流量进行 L7 处理，使其明显比 sidecar 精简。这大大降低了复杂性和相关资源的使用成本，使它适合作为共享基础设施交付。
 
-Ztunnel 实现了服务网格的核心功能：零信任。当为命名空间启用环境时，会创建一个安全覆盖层。它为工作负载提供 mTLS、遥测、认证和 L4 授权，而无需终止或解析 HTTP。
+Ztunnel 实现了服务网格的核心功能：零信任。当为命名空间启用 Ambient 时，会创建一个安全覆盖层。它为工作负载提供 mTLS、遥测、认证和 L4 授权，而无需终止或解析 HTTP。
 
 ![Ambient mesh 使用一个共享的、每个节点的 ztunnel 来提供一个零信任的安全覆盖。](e6c9d24ely1h5z19731yhj21wj0u040v.jpg)
 
 在启用 Ambient Mesh 和创建安全覆盖后，可以配置命名空间以利用 L7 功能。这允许命名空间实现全套的 Istio 功能，包括 [Virtual Service API](https://istio.io/latest/docs/reference/config/networking/virtual-service/)、[L7 遥测](https://istio.io/latest/docs/reference/config/telemetry/)和 [L7 授权策略](https://istio.io/latest/docs/reference/config/security/authorization-policy/)。以这种模式运行的命名空间使用一个或多个基于 Envoy 的 **Waypoint proxy**（路径点代理）来处理该命名空间的工作负载的 L7 处理。Istio 的控制平面将集群中的 ztunnel 配置为通过 waypoint 代理传递所有需要 L7 处理的流量。重要的是，从 Kubernetes 的角度来看，waypoint 代理只是普通的 pod，可以像其他 Kubernetes 部署一样进行自动扩展。我们预计这将为用户节省大量资源，因为路径代理可以自动扩展，以适应它们所服务的命名空间的实时流量需求，而不是运营人员预期的最大最坏情况下的负载。
 
-![当需要额外的功能时，环境网状结构会部署路径代理，Ztunnel通过这些代理进行连接以执行策略。](e6c9d24ely1h5yzsd8vv8j21wj0u00vx.jpg)
+![当需要额外的功能时，Ambient Mesh 会部署路径代理，Ztunnel通过这些代理进行连接以执行策略。](e6c9d24ely1h5yzsd8vv8j21wj0u00vx.jpg)
 
 Ambient Mesh 使用 **HTTP CONNECT over mTLS** 来实现其安全隧道，并在路径中插入 waypoint 代理，这种模式我们称之为 **HBONE**（HTTP-Based Overlay Network Environment，基于 HTTP 的重叠网络环境）。HBONE 提供了比 TLS 本身更干净的流量封装，同时实现了与普通负载均衡器基础设施的互操作性。默认使用 FIPS 构建，以满足合规性需求。关于 HBONE 的更多细节，其基于标准的方法，以及 UDP 和其他非 TCP 协议的计划，将在未来的博客中提供。
 
