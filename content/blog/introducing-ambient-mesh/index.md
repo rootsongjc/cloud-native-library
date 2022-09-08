@@ -1,5 +1,5 @@
 ---
-title: "Ambient Mesh：一种新的 Istio 无 sidecar 代理数据平面模式简介"
+title: "Istio 无 sidecar 代理数据平面 ambient 模式简介"
 date: 2022-09-08T11:00:00+08:00
 draft: false
 summary: "环境网格（Ambient Mesh）是一种新的 Istio 数据平面模式，旨在简化操作、扩大应用兼容性并降低基础设施成本。"
