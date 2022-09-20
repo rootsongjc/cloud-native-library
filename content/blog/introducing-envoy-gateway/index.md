@@ -33,7 +33,7 @@ links:
   - icon: language
     icon_pack: fa
     name: 阅读英文版原文
-    url: https://blog.envoyproxy.io/introducing-envoy-gateway-ad385cc5953
+    url: https://blog.envoyproxy.io/introducing-envoy-gateway-ad385cc59532
 ---
 
 ## 前言
