@@ -1,3 +1,7 @@
+---
+draft: true
+---
+
 # 零信任的基石：使用 SPIFFE 为基础设施创建通用身份
 
 本书译自 Solving the Bottom Turtle — a SPIFFE Way to Establish Trust in Your Infrastructure via Universal Identity，译者 [Jimmy Song](https://jimmysong.io)。
