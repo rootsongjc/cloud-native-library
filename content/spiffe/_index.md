@@ -54,6 +54,4 @@ Fonts: *Work Sans* designed by Wei Huang, *Iosevka* by Belleve Invis
 
 {{< list_children show_summary="false">}}
 
-## 关于本书
-
 {{< cta cta_text="开始阅读" cta_link="preface" >}}
