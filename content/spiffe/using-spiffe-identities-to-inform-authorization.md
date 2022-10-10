@@ -70,7 +70,7 @@ spiffe://trust.domain.org/<地区>/<dev,stage,prod>/<组织>/<工作负载名称
 
 身份方案不仅可以采取一系列固定字段的形式，还可以采取更复杂的结构，这取决于一个组织的需求。我们可以看的一个常见的例子是跨不同协调系统的工作负载身份。例如，在 Kubernetes 和 OpenShift 中，工作负载的命名规则是不同的。下面的图示就是一个例子。你可能注意到，这些字段不仅指的是不同的属性和对象，而且 SPIFFE ID 的结构也取决于上下文。
 
-消费者可以通过观察身份的前缀来区分方案的结构。例如，一个前缀为 `spie://trust.domain.org/Kubernetes/...` 的身份将根据下图的方案结构被解析为一个 Kubernetes 身份。
+消费者可以通过观察身份的前缀来区分方案的结构。例如，一个前缀为 `spiffe://trust.domain.org/Kubernetes/...` 的身份将根据下图的方案结构被解析为一个 Kubernetes 身份。
 
 ![图 8.2：另一个潜在的 SPIFFE ID 方案的说明。](../images/f8-2.jpg)
 

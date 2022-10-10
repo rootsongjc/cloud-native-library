@@ -88,9 +88,9 @@ type: book
 
 **迈向未来的步骤**
 
-自 2010 年以来，业界为解决软件身份问题进行了多种努力。谷歌的低开销认证服务（LOAS），后来被命名为[应用层传输安全（ALTS）](https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security/)），建立了一个新的身份格式和有线协议，用于从运行时环境接收软件身份，并将其应用于所有网络通信。它被称为**拨号音安全（dial tone security）**。
+自 2010 年以来，业界为解决软件身份问题进行了多种努力。谷歌的低开销认证服务（LOAS），后来被命名为[应用层传输安全（ALTS）](https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security/)，建立了一个新的身份格式和有线协议，用于从运行时环境接收软件身份，并将其应用于所有网络通信。它被称为**拨号音安全（dial tone security）**。
 
-在另一个例子中，Netflix 的内部开发的解决方案（代号为 [Metatron](https://www.usenix.org/sites/default/files/conference/protected-files/enigma_haken_slides.pdf)）通过利用云 API 来证明实例上运行的机器图像，并通过 CI/CD 集成来产生机器镜像和代码身份之间的加密绑定，从而在每个实例基础上建立软件身份。这种软件身份采取 X.509 证书的形式，对服务与服务之间的通信进行相互认证，包括访问作为该解决方案一部分开发的 **秘密服务**，在此基础上实现秘密管理。
+在另一个例子中，Netflix 的内部开发的解决方案（代号为 [Metatron](https://www.usenix.org/sites/default/files/conference/protected-files/enigma_haken_slides.pdf)）通过利用云 API 来证明实例上运行的机器镜像，并通过 CI/CD 集成来产生机器镜像和代码身份之间的加密绑定，从而在每个实例基础上建立软件身份。这种软件身份采取 X.509 证书的形式，对服务与服务之间的通信进行相互认证，包括访问作为该解决方案一部分开发的 **秘密服务**，在此基础上实现秘密管理。
 
 业界的其他一些努力，包括来自 [Facebook 等公司的努力](https://engineering.fb.com/security/service-encryption/)，证明了对这样一个系统的需要，并强调了实施的难度。
 
@@ -104,7 +104,7 @@ Beda 的论文在 2016 年的 [GlueCon 上发表](https://engineering.fb.com/sec
 - 使用 X.509，因为大多数软件已经兼容，而且
 - 有效地将身份的概念从网络定位器中剥离出来。
 
-在引入 SPIFFE 概念之后，在 Netflix 服务认同方面的专家举行了一次会议，讨论原始 SPIFFE 提案的最终形态和可行性。许多成员已经实施了、继续改进并重新解决了工作负载识别问题，突出了社区合作的机会。参加会议的成员希望获得彼此之间以及与他人之间的互操作性。这些专家意识到他们已经实施了类似的解决方案来解决同样的问题，并可以共同建立一个共同的标准。
+在引入 SPIFFE 概念之后，在 Netflix 服务认同方面的专家举行了一次会议，讨论原始 SPIFFE 提案的最终形态和可行性。许多成员已经实施了、继续改进并重新解决了工作负载识别问题，突出了社区合作的机会。参加会议的成员希望获得彼此之间以及与他人之间的互操作性。这些专家意识到他们已经实施了类似的解决方案来解决同样的问题，并可以建立一个共同的标准。
 
 解决工作负载身份问题的最初目标是建立一个开放的规范和相应的生产实现。该框架需要在不同的实现和现成的软件之间提供互操作性，其核心是在一个不信任的环境中建立信任的根基，驱除隐性信任。最后，摆脱以网络为中心的身份，以实现灵活性和更好的扩展特性。
 
