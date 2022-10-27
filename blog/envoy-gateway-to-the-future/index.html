@@ -1,0 +1,1491 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="宋净超" />
+
+  
+  
+  
+    
+  
+  <meta name="description" content="深入研究最近发布的 Istio Ambient Mesh（Istio 的无 sidecar 数据平面）的安全隐患。" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://lib.jimmysong.io/blog/envoy-gateway-to-the-future/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/css/wowchemy.b26eb9b802629dccab300faa82cc98c7.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MP490FS739"></script>
+
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', "G-MP490FS739");
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2a4b7f65b1839466beaa48d633aa60c1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://lib.jimmysong.io/blog/envoy-gateway-to-the-future/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary_large_image" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://lib.jimmysong.io/blog/envoy-gateway-to-the-future/" />
+  <meta property="og:title" content="面向未来的网关：新的Kubernetes Gateway API和Envoy Gateway 0.2 介绍 | 云原生资料库" />
+  <meta property="og:description" content="深入研究最近发布的 Istio Ambient Mesh（Istio 的无 sidecar 数据平面）的安全隐患。" /><meta property="og:image" content="https://lib.jimmysong.io/media/sharing.png" />
+    <meta property="twitter:image" content="https://lib.jimmysong.io/media/sharing.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2022-10-27T10:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2022-10-27T16:08:47&#43;08:00">
+  
+
+  
+
+
+    
+
+
+
+
+
+
+  
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://lib.jimmysong.io/blog/envoy-gateway-to-the-future/"
+  },
+  "headline": "面向未来的网关：新的Kubernetes Gateway API和Envoy Gateway 0.2 介绍",
+  
+  "datePublished": "2022-10-27T10:00:00+08:00",
+  "dateModified": "2022-10-27T16:08:47+08:00",
+  
+  "author": {
+    "@type": "Person",
+    "name": "Matt Turner"
+  },
+  
+  "publisher": {
+    "@type": "Organization",
+    "name": "云原生社区",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://lib.jimmysong.io/media/logo.svg"
+    }
+  },
+  "description": "深入研究最近发布的 Istio Ambient Mesh（Istio 的无 sidecar 数据平面）的安全隐患。"
+}
+</script>
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>面向未来的网关：新的Kubernetes Gateway API和Envoy Gateway 0.2 介绍 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="0e1411c915256ee7c5ce6b01748cd29f" >
+  <button onclick="topFunction()" id="backTopBtn" title="Go to top"><i class="fa-solid fa-circle-up" aria-hidden="true"></i></button>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/js/wowchemy-init.min.62d6f8dfe8493f1c68557dde65bec362.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6 search-title">
+          <p>搜索</p>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/"><img src="/media/logo.svg" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/"><img src="/media/logo.svg" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#books"><span>图书</span></a>
+          </li>
+
+          
+          
+
+          
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"><span>教程</span><span class="caret"></span>
+            </a>
+            <div class="dropdown-menu">
+              
+                <a class="dropdown-item" href="/kubernetes-handbook"><span>Kubernetes 基础教程</span></a>
+              
+                <a class="dropdown-item" href="https://academy.tetrate.io/courses/istio-fundamentals-zh"><span>Istio 基础教程</span></a>
+              
+                <a class="dropdown-item" href="https://academy.tetrate.io/courses/envoy-fundamentals-zh"><span>Envoy 基础教程</span></a>
+              
+            </div>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link  active" href="/blog"><span>译文</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#feed"><span>更新</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#tags"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>Jimmy Song</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://jimmysong.io/contact/" data-toggle="tooltip" data-placement="bottom" title="联系" target="_blank" rel="noopener" aria-label="联系">
+                <i class="fab fa-weixin" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://twitter.com/jimmysongio" data-toggle="tooltip" data-placement="bottom" title="关注" target="_blank" rel="noopener" aria-label="关注">
+                <i class="fab fa-twitter" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+        
+
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://jimmysong.io" target="_blank" rel="noopener" data-toggle="tooltip" data-placement="bottom" title="主站" aria-label="主站"><i class="fas fa-home" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link js-search" href="#" data-toggle="tooltip" data-placement="bottom" title="搜索" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item d-none d-lg-inline-flex">
+            <a class="nav-link" href="https://github.com/rootsongjc/cloud-native-library/" target="_blank" rel="noopener" data-toggle="tooltip" data-placement="bottom" title="查看源码" aria-label="查看源码" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+        <li class="nav-item">
+          <a href="#" class="nav-link set-theme">
+            <i class="fa fa-sun" aria-hidden="true" id="theme-icon"></i>
+          </a>
+        </li>
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    <div class="container-xl">
+    <div class="post-container">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  
+  
+<div class="article-container pt-3">
+  <h1>面向未来的网关：新的Kubernetes Gateway API和Envoy Gateway 0.2 介绍</h1>
+
+  
+
+  
+    
+
+
+<div class="article-metadata">
+
+  <div>
+  
+  
+  
+  
+    <i class="fa-solid fa-feather"></i>
+    
+
+  <span >
+      <a href="/author/matt-turner/">Matt Turner</a></span>
+    
+    <span class="middot-divider"></span>
+    
+  
+  
+  
+  
+  
+  
+  <span class="article-categories">
+    <i class="fas fa-folder mr-1"></i><a href="/category/gateway/" class="text-capitalize">Gateway</a></span>
+  
+  </div>
+
+  
+  <span class="article-date">
+    
+    
+      
+          
+          发布于
+      
+    
+    2022-10-27
+  </span>
+  
+
+  
+
+  
+  <span class="middot-divider"></span>
+  字数 3009
+  <span class="middot-divider"></span>
+  <span class="article-reading-time">
+      阅读时长 14 分钟
+  </span>
+  
+
+  
+  
+  
+  
+
+</div>
+
+    
+
+
+
+
+<div class="btn-links mb-2">
+  
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  <a class="btn btn-outline-primary btn-page-header" href="https://www.tetrate.io/blog/gateway-to-the-future-the-new-gateway-api-and-envoy-gateway-0-2/" target="_blank" rel="noopener">
+    <i class="fa fa-globe mr-1"></i>原文</a>
+
+
+</div>
+
+
+  
+</div>
+
+
+    </div>
+    <div class="border-bottom mb-2"></div>
+    <div class="row flex-xl-nowrap">
+        <div class="col-3 d-none d-xl-block docs-toc">
+            <!-- toc -->
+            
+<div class="">
+    <ul class="nav toc-top">
+        <li>
+            <a href="#" id="back_to_top" class="docs-toc-title">目录</a>
+        </li>
+    </ul>
+  <nav id="TableOfContents">
+  <ul>
+    <li><a href="#为什么我们需要一个新的入口控制器">为什么我们需要一个新的入口控制器</a></li>
+    <li><a href="#envoy-gateway未来-gateway-发展的基础">Envoy Gateway：未来 Gateway 发展的基础</a>
+      <ul>
+        <li><a href="#代码演示">代码演示</a></li>
+      </ul>
+    </li>
+    <li><a href="#通往-api-的-gateway">通往 API 的 Gateway</a>
+      <ul>
+        <li><a href="#超越基本入口的高级功能">超越基本入口的高级功能</a></li>
+        <li><a href="#使用-wasm-的动态可扩展性">使用 Wasm 的动态可扩展性</a></li>
+        <li><a href="#gateway-api-鼓励扩展">Gateway API 鼓励扩展</a></li>
+        <li><a href="#为未来的网关发展提供一个共同的最佳的基础">为未来的网关发展提供一个共同的、最佳的基础</a></li>
+      </ul>
+    </li>
+    <li><a href="#通往服务网格的-gateway">通往服务网格的 Gateway</a>
+      <ul>
+        <li><a href="#用于入口和服务网格的统一-gateway-api">用于入口和服务网格的统一 Gateway API</a></li>
+      </ul>
+    </li>
+    <li><a href="#结束语">结束语</a></li>
+  </ul>
+</nav>
+</div>
+
+            <!-- /toc -->
+            
+            <div class="subscribe-module col-12 mt-1">
+    <img src="/img/wechat.webp" alt="image" title="Jimmy Song的微信公众号"/>
+    <p class="text-center pt-1">关注「几米宋」微信公众号，获取本站更新</p>
+    
+    
+     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4029167986768912"
+     crossorigin="anonymous"></script>
+     <ins class="adsbygoogle"
+       style="display:block"
+       data-ad-client="ca-pub-4029167986768912"
+       data-ad-slot="6856371908"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
+    <script>
+       (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+    
+    
+</div>
+
+            
+        </div>
+        <main class="article-body col-9 container docs-content" role="main">
+            <article class="article">
+                <div class="article-style">
+                    
+                    <details class="toc-inpage d-print-none d-show-block mb-0">
+  <summary class="font-weight-bold">点击查看目录</summary>
+  <nav id="TableOfContents">
+  <ul>
+    <li><a href="#为什么我们需要一个新的入口控制器">为什么我们需要一个新的入口控制器</a></li>
+    <li><a href="#envoy-gateway未来-gateway-发展的基础">Envoy Gateway：未来 Gateway 发展的基础</a>
+      <ul>
+        <li><a href="#代码演示">代码演示</a></li>
+      </ul>
+    </li>
+    <li><a href="#通往-api-的-gateway">通往 API 的 Gateway</a>
+      <ul>
+        <li><a href="#超越基本入口的高级功能">超越基本入口的高级功能</a></li>
+        <li><a href="#使用-wasm-的动态可扩展性">使用 Wasm 的动态可扩展性</a></li>
+        <li><a href="#gateway-api-鼓励扩展">Gateway API 鼓励扩展</a></li>
+        <li><a href="#为未来的网关发展提供一个共同的最佳的基础">为未来的网关发展提供一个共同的、最佳的基础</a></li>
+      </ul>
+    </li>
+    <li><a href="#通往服务网格的-gateway">通往服务网格的 Gateway</a>
+      <ul>
+        <li><a href="#用于入口和服务网格的统一-gateway-api">用于入口和服务网格的统一 Gateway API</a></li>
+      </ul>
+    </li>
+    <li><a href="#结束语">结束语</a></li>
+  </ul>
+</nav>
+</details>
+
+                    
+                    <p>最近 <a href="https://blog.envoyproxy.io/introducing-envoy-gateway-ad385cc59532" target="_blank" rel="noopener">Envoy Gateway 0.2</a> 发布了，API 网关的生态系统迎来了新的变化。这篇文章将想你介绍 Kubernetes API 网关领域的最新进展。</p>
+<p>如何将外部的网络请求路由到 Kubernetes 集群？你可以使用入口控制器：一组 HTTP 反向代理，将流量转接到集群中，并由 operator 来管理。也可以使用 Ambassador、Contour、Traefik 或 HAproxy 这类软件。还可以使用云提供商的解决方案，或者只是用默认的的 Nginx Ingress。或者你可能使用一个功能更全面的 API 网关，如 Tyk 或 Kong，或者在 Kubernetes Ingress 前面的另一层有一个单独的网关，如 AWS 的 API 网关，或内部的 F5，可以选择的实在太多。</p>
+<h2 id="为什么我们需要一个新的入口控制器">为什么我们需要一个新的入口控制器</h2>
+<p>因为很多入口控制器都有不同程度的限制：有些是基于旧的技术，如 Nginx、HAproxy，甚至是基于 Apache 建立的。这些技术的特性不适用于云原生环境，比如在配置改变时放弃已建立的连接（如果你想深入了解，Ambassador 发表了一篇<a href="https://blog.getambassador.io/envoy-vs-nginx-vs-haproxy-why-the-open-source-ambassador-api-gateway-chose-envoy-23826aed79ef" target="_blank" rel="noopener">比较</a>文章）。云供应商的产品确实倾向于基于更现代的东西（比如 <a href="https://www.usenix.org/system/files/conference/nsdi18/nsdi18-dalton.pdf" target="_blank" rel="noopener">SDN</a>），但是这可能产生厂商锁定。目前，你只需用一个 Kubernetes API 来指定所有不同选项的配置：Ingress。这个 API 的可配置项很少，几乎任何你想配置的设置都需要通过 annotation 来实现，而不是作为一类字段。</p>
+<h2 id="envoy-gateway未来-gateway-发展的基础">Envoy Gateway：未来 Gateway 发展的基础</h2>
+<p>现在又有了新的选择：Envoy Gateway，简称 EG。顾名思义，这是一个基于 Envoy 代理的网关（入口控制器）。它是一个托管在 GitHub 上的 Envoy 社区项目。这不是第一个基于 Envoy 的入口；已经有流行的建立在 Envoy 之上的 Contour 和 Ambassador 等项目。但是这些项目的开发者和更多的人正在一起为 EG 做出贡献，Ambassador 和 Contour 都说他们会在适当的时候<a href="https://blog.envoyproxy.io/introducing-envoy-gateway-ad385cc59532" target="_blank" rel="noopener">在 Envoy Gateway 的代码上重构</a>（也就是说，我们 Tetrate 公司无可否认地为我们在这个项目中的领导作用感到自豪）。</p>
+<p>Envoy 本身是久经考验的入口代理、sidecar 代理，并且正在准备取代<a href="https://cloud.google.com/docs/security/infrastructure/design#google_front_end_service" target="_blank" rel="noopener">谷歌的 GFE</a>。</p>
+<h3 id="代码演示">代码演示</h3>
+<p>如果你想在了解更多关于 Envoy Gateway 的内容之前先演练一番，我已经写了<a href="https://tetr8.io/3MPT6KT" target="_blank" rel="noopener">一篇姐妹篇</a>，其中有详细的说明，可以自己设置 Envoy Gateway，如果你没有环境，那篇文章中也包括了我机器上所有的命令输出，这样你就可以看到会发生什么。</p>
+<h2 id="通往-api-的-gateway">通往 API 的 Gateway</h2>
+<p>Envoy Gateway 以其最简单的形式 —— 你可能刚刚设置好的系统，将请求转发到其集群中。它根据 HTTP host 和 path 进行路由，也可以根据其他 header 进行路由。每个集群都需要这样做，很高兴看到 Envoy Gateway 在开发的短短 6 个月内就能做到这一点（要了解更多关于 Envoy Gateway 的信息，请看 <a href="https://www.tetrate.io/envoy-gateway/" target="_blank" rel="noopener">Gateway to a New Frontier</a>。</p>
+<h3 id="超越基本入口的高级功能">超越基本入口的高级功能</h3>
+<p>然而，许多组织需要比这个基本的 7 层网络路由更多的功能。如果需要像 WAF、body 的模式验证、bot 拦截等，许多人就会使用 API 网关。我们看到很多组织在他们的入口控制器前面部署了一个单独的 API 网关。然而，API 网关可以<em>取代</em>入口控制器，因为它也可以做路由和流量观察的基本功能。它们可以提供这些功能，因为它们是由与入口控制器相同的代理构建的，例如，Kong 是基于 nginx 的。API 网关产品在市场上很受欢迎，但如果你真的想一想 API 网关是什么，它就是一个 HTTP 代理，有一系列的附加功能（我之前提到的 WAF 等）。这并不是说它们不增加任何价值 —— 它们提供的功能是多种多样的，而且很强大，但有一个共同的功能基线和实现代码。</p>
+<h3 id="使用-wasm-的动态可扩展性">使用 Wasm 的动态可扩展性</h3>
+<p>因此，Envoy Gateway 完全有能力发展成为一个全功能的 API 网关。Envoy 实际上已经具备了一些更先进的功能，包括 JWT 验证、OIDC 认证流和速率限制。此外，Envoy 是动态可扩展的；它可以在不重启的情况下加载插件，这意味着可以很容易地按需添加更多的功能。这些插件是以 WASM 字节码的形式提供的，这意味着它们可以用任何可以编译成 WASM 的语言（Tiny Go、Rust 等）编写，而不仅仅是其他代理支持的脚本语言。社区正在开始编写这些插件：缓存可能会首先落地，<a href="https://coraza.io/" target="_blank" rel="noopener">Coraza</a> 项目是一个相对成熟的 <code>mod_security</code> 风格的 WAF，用 Go 编写，可以编译成 WASM，现在可以用于 Envoy 代理。</p>
+<h3 id="gateway-api-鼓励扩展">Gateway API 鼓励扩展</h3>
+<p>在入口控制器市场上，扩展和竞争的另一大障碍是 API。需要特定于供应商的注解（或全新的特定于供应商的 API），这些注解很笨重，而且妨碍了交叉兼容。相比之下，Envoy Gateway 是由 Gateway API 配置的，这是 <code>gateway.networking.k8s.io </code>API 组的一组资源。这个 API 将最终取代 Ingress 资源。它的核心已经比 Ingress 更加灵活和富有表现力，而且它被设计成以可管理的方式增长和扩展。这将允许它发展成为所有南北流量控制的一流模型，从基本的路由到先进的 API 管理功能。这反过来又会将 Envoy Gateway 拥有的所有功能，以一种标准的、与供应商无关的方式暴露出来，让人们在使用这些功能时无需跳过障碍或担心锁定问题。Envoy Gateway 将在 2023 年 3 月的 0.3 版本中支持 Gateway API 的这些新部分。</p>
+<h3 id="为未来的网关发展提供一个共同的最佳的基础">为未来的网关发展提供一个共同的、最佳的基础</h3>
+<p>Envoy Gateway 的动力来自于对 API 网关功能堆栈的日益关注。基本的入口正在变得商业化，所以社区正在汇集其资源和专业知识，为未来的网关开发创造一个共同的、最好的基础。同时提供新的 Gateway API 供其实现是非常方便的，Envoy Gateway 的 0.2 版本标志着对目前定义的 Gateway API 核心类型的全面支持。</p>
+<p>扩展到高级用例模型的工作已经开始，现在正在设计 <a href="https://docs.google.com/document/d/1TlQjBy1utEwgrxE_HVT4-EHpVJ51hgnfMuAh0Q_uNoE/view" target="_blank" rel="noopener">JWT auth 配置</a>，其他的也将陆续推出。插件本身的工作也已经开始（例如，Coraza，一个仿照无处不在的 <code>mod_security</code> 的 Golang WAF）。虽然这些都有很长的路要走，但我个人非常期待看到这一切在未来一两年的发展。</p>
+<h2 id="通往服务网格的-gateway">通往服务网格的 Gateway</h2>
+<p>你可能在想，已经有一类产品支持 OIDC 认证和速率限制等功能了：服务网格。这是真的；最突出的网格，Istio，在其默认配置中为入口部署了一套代理服务器。Istio 现在支持 Gateway API（就像 Envoy Gateway 一样）来配置该入口。我们在 Tetrate 对这种融合感到兴奋：企业现在可以采用 Envoy Gateway 来简单而快速地开展工作。Envoy Gateway 在管理这种南北流量方面做得很好，运行它可以让他们了解 Envoy 在生产中的性能和操作特点。当这些组织准备好控制他们的服务到服务，也就是东西向流量时，他们可以部署 Istio，因为他们已经熟悉了主要的基础组件（Envoy）。虽然他们可能会选择使用 Istio 的入口网关（以保持他们的控制平面数量减少到 1），但他们现有的 Gateway API 资源将继续工作。由于同样基于 Envoy，Istio 的 Ingress 也可以接受任何加载到 Envoy Gateway 的 API Gateway 风格的插件。所有这一切都使得在必要时增加服务网格的力量变得非常容易。</p>
+<h3 id="用于入口和服务网格的统一-gateway-api">用于入口和服务网格的统一 Gateway API</h3>
+<p>更重要的是，现在已经有了一个工作组来协调网关和网格网络之间的重叠部分：<a href="https://gateway-api.sigs.k8s.io/contributing/gamma/" target="_blank" rel="noopener">GAMMA 倡议</a>。GAMMA 是 Gateway API for Mesh Management and Administration 的缩写，这是对 Gateway API 未来发展方向的一个倡议；计划是开始对服务网格的关注进行建模，即东西向流量也是如此。GAMMA 将确保 Envoy Gateway 和服务网格的良好合作，并将关注 Gateway API 的统一，以涵盖入口和网格。我们很高兴看到，这将为许多组织轻松和逐步地采用服务网格，基于一个与产品无关的 API，这对所有人都是好事。</p>
+<h2 id="结束语">结束语</h2>
+<p>这篇文章对新的标准 API、Gateway API 和参考实现 Envoy Gateway 作了很好的介绍，希望能对你了解当前的入口网关生态有所帮助。</p>
+<p>如果你想关注 EG 的发展，你可以加入 Envoy slack 的 <code>#gateway</code> 频道，并在 <a href="https://github.com/envoyproxy/gateway" target="_blank" rel="noopener">https://github.com/envoyproxy/gateway</a> 查看提交和问题。该项目有一个 <a href="https://github.com/envoyproxy/gateway/blob/main/docs/design/ROADMAP.md" target="_blank" rel="noopener">未来几个版本的路线图</a>，0.3.0 版本发布预期是在 2023 年 3 月。</p>
+<p>如果你想测试一下 Envoy Gateway，我写了一个配套的教程，其中包含了启动和运行的步骤说明。</p>
+<p>如果你正在开始使用 Istio 和 Envoy，请<a href="https://academy.tetrate.io/" target="_blank" rel="noopener">查看 Tetrate 学院</a>，你会发现大量的免费课程、研讨会，以及 Tetrate 的 Istio 管理员认证考试。</p>
+<p>要想以最简单的方式安装、管理和升级 Istio，请查看<a href="https://istio.tetratelabs.io/" target="_blank" rel="noopener">我们的开源 Tetrate Istio 发行版（TID）</a>。TID 是一个经过审查的 Istio 的上游发行版 ——Istio 的加固镜像，具有持续的支持，更容易安装、管理和升级。</p>
+
+                </div>
+                
+
+<div class="article-tags">
+  
+  <a class="badge badge-light" href="/tag/istio/">Istio</a>
+  
+  <a class="badge badge-light" href="/tag/service-mesh/">Service Mesh</a>
+  
+  <a class="badge badge-light" href="/tag/envoy/">Envoy</a>
+  
+  <a class="badge badge-light" href="/tag/api-gateway/">API Gateway</a>
+  
+  <a class="badge badge-light" href="/tag/envoy-gateway/">Envoy Gateway</a>
+  
+  <a class="badge badge-light" href="/tag/gateway/">Gateway</a>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+
+
+
+
+  
+
+
+
+
+
+<div class="article-widget">
+  
+<div class="container-xl row post-nav">
+  
+  
+  
+  <a class="col-6 post-nav-item btn btn-lg mb-md-1"  href="/blog/what-is-ambient-mesh/" rel="prev">
+    <div class="meta-nav">上一页</div>
+    <p>什么是 Ambient Mesh？</p></a>
+  
+</div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/cloud-native-library//edit/master/content/blog/envoy-gateway-to-the-future/index.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+
+  
+  
+  <div class="article-widget content-widget-hr">
+    <p class="related-title">相关推荐</p>
+    <ul>
+      
+      <li><a href="/blog/what-is-ambient-mesh/">什么是 Ambient Mesh？</a></li>
+      
+      <li><a href="/blog/ambient-security/">Istio 服务网格 ambient 模式安全详解</a></li>
+      
+      <li><a href="/blog/introducing-ambient-mesh/">Istio 无 sidecar 代理数据平面 ambient 模式简介</a></li>
+      
+      <li><a href="/blog/designing-traffic-flow-via-tier1-and-tier2-ingress-gateways/">通过两级网关设计来路由服务网格流量</a></li>
+      
+      <li><a href="/blog/validating-a-request-payload-with-wasm/">使用 WebAssembly 验证请求负载</a></li>
+      
+    </ul>
+  </div>
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments" class="mb-3 pt-0">
+    <script>
+  let themeNumber = localStorage.getItem('wcTheme');
+  var giscusTheme = "light";
+  if (themeNumber == 1){
+    giscusTheme = "dark";
+  }
+  console.log(giscusTheme)
+  let giscusAttributes = {
+    "src": "https://giscus.app/client.js",
+    "data-theme": giscusTheme,
+    "data-repo":"rootsongjc/cloud-native-library",
+    "data-repo-id":"MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg=",
+    "data-category":"Announcements",
+    "data-category-id":"DIC_kwDODMrxWM4CPL7J",
+    "data-mapping":"pathname",
+    "data-reactions-enabled":"1",
+    "data-emit-metadata":"0",
+    "data-input-position":"top",
+    "data-theme":giscusTheme,
+    "data-lang":"zh-CN",
+    "data-loading":"lazy",
+    "crossorigin":"anonymous",
+    "origins":"https://jimmysong.io",
+    "originsRegex":"http://localhost:[0-9]+",
+    "async": "",
+  };
+
+  let giscusScript = document.createElement("script");
+  Object.entries(giscusAttributes).forEach(([key, value]) => giscusScript.setAttribute(key, value));
+  document.querySelector('#comments').appendChild(giscusScript);
+</script>
+
+  </section>
+  
+
+
+
+            </article>
+        </main>
+    </div>
+</div>
+  </div>
+
+  <div class="page-footer">
+    
+    
+    <div class="container">
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2022 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+    </div>
+    
+  </div>
+
+  
+
+
+<script src="/js/vendor-bundle.min.46271ef31da3f018e9cd1b59300aa265.js"></script>
+
+
+
+
+  
+
+  
+  
+
+  
+
+  
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+    
+    
+  
+
+
+
+
+
+
+
+
+
+
+  
+  <script id="search-hit-fuse-template" type="text/x-template">
+    <div class="search-hit" id="summary-{{key}}">
+      <div class="search-hit-content">
+        <div class="search-hit-name">
+          <div class="article-metadata search-hit-type">{{relpermalink}}</div>
+          <a href="{{relpermalink}}">{{title}}</a>
+          <p class="search-hit-description">{{snippet}}</p>
+        </div>
+      </div>
+    </div>
+  </script>
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+
+
+
+
+
+
+
+<script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+<script src="/zh/js/wowchemy.min.24983018b0e5661cd5fe1822254286ea.js"></script>
+
+
+
+
+
+
+
+  
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script src="/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+<script>
+
+var mybutton = document.getElementById("backTopBtn");
+
+
+window.onscroll = function() {scrollFunction()};
+
+function scrollFunction() {
+  if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+    mybutton.style.display = "block";
+  } else {
+    mybutton.style.display = "none";
+  }
+}
+
+
+function topFunction() {
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
+}
+</script>
+
+
+
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+<script>
+  anchors.add();
+</script>
+
+
+
+<script>
+
+
+
+(function() {
+  'use strict';
+
+  if(!document.queryCommandSupported('copy')) {
+    return;
+  }
+
+  function flashCopyMessage(el, msg) {
+    el.className = "highlight-copy-btn";
+    el.textContent = msg;
+    setTimeout(function() {
+      el.textContent = "";
+      el.className = "highlight-copy-btn fa fa-copy";
+    }, 1000);
+  }
+
+  function selectText(node) {
+    var selection = window.getSelection();
+    var range = document.createRange();
+    range.selectNodeContents(node);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    return selection;
+  }
+
+  function addCopyButton(containerEl) {
+    var copyBtn = document.createElement("button");
+    copyBtn.className = "highlight-copy-btn fa fa-copy";
+    copyBtn.textContent = "";
+
+    var codeEl = containerEl.firstElementChild;
+    copyBtn.addEventListener('click', function() {
+      try {
+        var selection = selectText(codeEl);
+        document.execCommand('copy');
+        selection.removeAllRanges();
+        
+        flashCopyMessage(copyBtn, '已复制')
+        
+      } catch(e) {
+        console && console.log(e);
+        flashCopyMessage(copyBtn, 'Failed :\'(')
+      }
+    });
+
+    containerEl.appendChild(copyBtn);
+  }
+
+  
+  var highlightBlocks = document.getElementsByClassName('highlight');
+  Array.prototype.forEach.call(highlightBlocks, addCopyButton);
+})();
+</script>
+
+
+
+<script>
+
+function Collapse(e){
+  var node = document.getElementById(e);
+  if (node.className.indexOf('fa-angle-down') > -1){
+    node.setAttribute("class", "fa-solid fa-angle-right");
+    }else{
+    node.setAttribute("class", "fa-solid fa-angle-down");
+    }
+}
+</script>
+
+
+</body>
+</html>
