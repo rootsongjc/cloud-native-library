@@ -1,10 +1,10 @@
 ---
-title: "面向未来的网关：新的Kubernetes Gateway API和Envoy Gateway 0.2 介绍"
+title: "面向未来的网关：新的 Kubernetes Gateway API 和 Envoy Gateway 0.2 介绍"
 date: 2022-10-27T10:00:00+08:00
 draft: false
 authors: ["Matt Turner"]
-summary: "最近 Envoy Gateway 0.2 发布了，API 网关的生态系统迎来了新的变化。这篇文章将想你介绍 Kubernetes API 网关领域的最新进展。"
-tags: ["Istio", "Service Mesh","Envoy","API Gateway","Envoy Gateway","Gateway"]
+summary: "最近 Envoy Gateway 0.2 发布了，API 网关的生态系统迎来了新的变化。这篇文章将向你介绍 Kubernetes API 网关领域的最新进展。"
+tags: ["Istio", "Envoy","API Gateway","Envoy Gateway","Gateway"]
 categories: ["Gateway"]
 links:
   - icon: globe
