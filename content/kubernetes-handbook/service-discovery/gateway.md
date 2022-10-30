@@ -1,27 +1,35 @@
 ---
 weight: 42
-title: Gateway
+title: Gateway API
 date: '2022-05-21T00:00:00+08:00'
 type: book
 ---
 
-除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 [Gateway API 项目](https://github.com/kubernetes-sigs/gateway-api)，这是一个 CRD，可以帮助我们将 Kubernetes 中的服务暴露到集群外。
+除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 [Gateway API 项目](https://github.com/kubernetes-sigs/gateway-api)，它可以帮助我们将 Kubernetes 中的服务暴露到集群外。
 
-Gateway API 是一个由 [SIG-NETWORK](https://github.com/kubernetes/community/tree/master/sig-network) 管理的开源项目。该项目的目标是在 Kubernetes 生态系统中发展服务网络 API。Gateway API 提供了暴露 Kubernetes 应用的接口 ——Service、Ingress 等。
+{{<callout note "Gateway API 与 Ingress 有什么不同？">}}
 
-该 API 在 Istio 中也被应用，用于将 Kubernetes 中的服务暴露到服务网格之外。
+Ingress 的主要目标是用简单的、声明性的语法来暴露 HTTP 应用。Gateway API 暴露了一个更通用的代理 API，可以用于更多的协议，而不仅仅是 HTTP，并为更多的基础设施组件建模，为集群运营提供更好的部署和管理选项。
+
+{{</callout>}}
+
+Gateway API 是一个由 [SIG-NETWORK](https://github.com/kubernetes/community/tree/master/sig-network) 管理的开源项目。该项目的目标是在 Kubernetes 生态系统中发展服务网络 API。Gateway API 提供了暴露 Kubernetes 应用的资源——`GatewayClass`、`Gateway`、`HTTPRoute`、`TCPRoute` 等。
+
+该 API 在 Istio 中也被应用，用于将网格内的服务暴露到集群外。
 
 ## 目标
 
 Gateway API 旨在通过提供表现性的、可扩展的、面向角色的接口来改善服务网络，这些接口由许多厂商实现，并得到了业界的广泛支持。
 
-Gateway API 是一个 API 资源的集合 —— Service、GatewayClass、Gateway、HTTPRoute、TCPRoute 等。使用这些资源共同为各种网络用例建模。
+Gateway API 是一个 API 资源的集合 —— `GatewayClass`、`Gateway`、`HTTPRoute`、`TCPRoute` 等。使用这些资源共同为各种网络用例建模。
 
-下图中展示的是 Kubernetes 集群中四层和七层的网络配置。从图中可以看到通过将这些资源对象分离，可以实现配置上的解耦，由不同角色的人员来管理。
+下图中展示的是 Kubernetes 集群中四层和七层的网络配置。从图中可以看到通过将这些资源对象分离，可以实现配置上的解耦，由不同角色的人员来管理，而这也是 Gateway API 的相较于 Ingress 的一大特色。
 
-![Kubernetes Gateway API 简介](../../images/kubernetes-gateway-api-intro.jpg "Kubernetes Gateway API 简介")
+![Kubernetes Gateway API 简介](../../images/gateway-api.svg "Kubernetes Gateway API 简介")
 
 ## Gateway 相较于 Ingress 做了哪些改进？
+
+以下是 Gateway API 对 Ingress 的改进点。
 
 **更具表现力**
 
@@ -57,7 +65,7 @@ Gateway API 允许在 API 的各个层次上链接自定义资源。这就允许
 
 在了解了 Gateway API 的目的后，接下来我们再看下它的资源模型、请求流程、TLS 配置及扩展点等。
 
-## 角色
+## 角色划分
 
 Gateway API 开发者为其使用场景定义四类角色：
 
@@ -65,6 +73,14 @@ Gateway API 开发者为其使用场景定义四类角色：
 - 集群运维：管理整个集群的计算、存储、网络、安全等
 - 应用程序开发者：为自己开发的应用负责，管理应用的健壮性
 - 应用管理员：不是所有的公司都有，通常在一些复杂系统中会有专门的应用管理员
+
+Gateway API 通过 Kubernetes 服务网络的面向角色的设计在分布式灵活性和集中控制之间取得了平衡。使得许多不同的非协调团队可以使用共享网络基础设施（硬件负载均衡器、云网络、集群托管代理等），所有团队都受集群运维设置的策略约束。下图展示了在进行 Gateway 管理时的角色划分。
+
+![Gateway 管理中的角色划分（图片来自：https://gateway-api.sigs.k8s.io/）](../../images/gateway-roles.png)
+
+集群运维人员创建从 [GatewayClass](https://gateway-api.sigs.k8s.io/api-types/gatewayclass) 派生的 [Gateway](https://gateway-api.sigs.k8s.io/api-types/gateway) 资源。此 Gateway 部署或配置它所代表的底层网络资源。通过 Gateway 和 Route 之间的[路由附加进程](https://gateway-api.sigs.k8s.io/concepts/api-overview#attaching-routes-to-gateways) ，集群运维人员和特定团队必须就可以附加到此 Gateway 并通过它公开其应用程序的内容达成一致。集群运维人员可以在网关上实施  [TLS](https://gateway-api.sigs.k8s.io/guides/tls#downstream-tls) 集中式策略。同时，Store 和 Site 团队[在他们自己的 Namespaces 中](https://gateway-api.sigs.k8s.io/guides/multiple-ns)运行，但是将他们的 Routes 附加到同一个共享 Gateway，允许他们独立控制自己的[路由逻辑](https://gateway-api.sigs.k8s.io/guides/http-routing)。这种关注点分离允许 Store 队管理自己的[流量拆分部署](https://gateway-api.sigs.k8s.io/guides/traffic-splitting)，同时将集中策略和控制权留给集群运维人员。
+
+这种灵活性技能保持 API 的标准和可移植性，还使其可以适应截然不同的组织模型和实现。
 
 ## 资源模型
 
@@ -82,11 +98,11 @@ Gateway API 的资源模型中，主要有三种类型的对象：
 
 `GatewayClass` 是一个集群范围的资源。必须至少定义一个 `GatewayClass`，`Gateway` 才能够生效。实现 Gateway API 的控制器通过关联的 `GatewayClass` 资源来实现，用户可以在自己的 `Gateway` 中引用该资源。
 
-这类似于 `Ingress` 的 `IngressClass`] 和 `PersistentVolumes` 的 [`StorageClass`](https://kubernetes.io/docs/concepts/storage/storage-classes/)。在 `Ingress` v1beta1 中，最接近 `GatewayClass` 的是 `ingress-class` 注解，而在 IngressV1 中，最接近的类似物是 `IngressClass` 对象。
+这类似于 `Ingress` 的 `IngressClass` 和 `PersistentVolumes` 的 [`StorageClass`](https://kubernetes.io/docs/concepts/storage/storage-classes/)。在 `Ingress` v1beta1 中，最接近 `GatewayClass` 的是 `ingress-class` 注解，而在 IngressV1 中，最接近的类似物是 `IngressClass` 对象。
 
 ### Gateway
 
-`Gateway` 描述了如何将流量翻译到集群内的服务。也就是说，它定义了一个方法，将流量从不了解 Kubernetes 的地方翻译到了解 Kubernetes 的地方。例如，由云负载均衡器、集群内代理或外部硬件负载均衡器发送到 Kubernetes 服务的流量。虽然许多用例的客户端流量源自集群的 "外部"，但这并不强求。
+`Gateway` 描述了如何将流量翻译到集群内的服务。它定义了一个将流量从不了解 Kubernetes 的地方翻译到了解 Kubernetes 的地方的方法。例如，由云负载均衡器、集群内代理或外部硬件负载均衡器发送到 Kubernetes 服务的流量。虽然许多用例的客户端流量源自集群的 "外部"，但这并不是必需的。
 
 `Gateway` 定义了对实现 `GatewayClass` 配置和行为合同的特定负载均衡器配置的请求。该资源可以由运维人员直接创建，也可以由处理 `GatewayClass` 的控制器创建。
 
@@ -94,17 +110,57 @@ Gateway API 的资源模型中，主要有三种类型的对象：
 
 一个 `Gateway` 可以包含一个或多个 `Route` 引用，这些 `Route` 引用的作用是将一个子集的流量引导到一个特定的服务上。
 
-### {HTTP,TCP,Foo} Route
+### Route
 
 `Route` 对象定义了特定协议的规则，用于将请求从 `Gateway` 映射到 Kubernetes 服务。
 
-`HTTPRoute` 和 `TCPRoute` 是目前唯一已定义的 `Route` 对象。未来可能会添加其他特定协议的 `Route` 对象。
+从 v1alpha2 开始，Gateway API 中包含四种 `Route` 资源类型。对于其他协议，鼓励使用特定于实现的自定义路由类型。未来可能会向 API 添加新的路由类型。
 
-### BackendPolicy
+{{<callout note "注意">}}
 
-`BackendPolicy` 提供了一种配置 `Gateway` 和后端之间连接的方法。在这个 API 中，后端是指路由可以转发流量的任何资源。后端的一个常见例子是 `Service`。这个级别的配置目前仅限于 TLS，但将来会扩展到支持更高级的策略，如健康检查。
+目前除了 `HTTPRoute` 是 Gateway API 正式支持的，其他的路由类型还在实验中，详见[版本文档](https://gateway-api.sigs.k8s.io/concepts/versioning/)。
 
-一些后端配置可能会根据针对后端的 `Route` 而有所不同。在这些情况下，配置字段将放在 `Route` 上，而不是 `BackendPolicy` 上。
+{{</callout>}}
+
+#### HTTPRoute
+
+`HTTPRoute` 用于多路复用 HTTP 或终止的 HTTPS 连接。它适用于检查 HTTP 流并使用 HTTP 请求数据进行路由或修改的情况，例如使用 HTTP Header 进行路由或在运行中修改它们。
+
+#### TLSRoute
+
+`TLSRoute` 用于多路复用 TLS 连接，通过 SNI 进行区分。它适用于使用 SNI 作为主要路由方法的地方，并且对 HTTP 等高级协议的属性不感兴趣。连接的字节流被代理，无需对后端进行任何检查。
+
+#### TCPRoute 和 UDPRoute
+
+`TCPRoute`（和 `UDPRoute`）旨在用于将一个或多个端口映射到单个后端。在这种情况下，没有可用于在同一端口上选择不同后端的鉴别器（Discriminator），因此每个 `TCPRoute` 确实需要监听器上的不同端口（通常，无论如何）。你可以终止 TLS，在这种情况下，未加密的字节流被传递到后端。你可以选择不终止 TLS，在这种情况下，加密的字节流被传递到后端。
+
+#### GRCPRoute
+
+`GRPCRoute` 用于惯用地路由 gRPC 流量。支持 `GRPCRoute` 的网关需要支持 HTTP/2，而无需从 HTTP/1 进行初始升级，因此可以保证 gRPC 流量正常流动。
+
+#### Route 类型列表
+
+下面的「路由鉴别器」一栏是指可以使用哪些信息来允许多个 Routes 共享 Listener 上的端口。
+
+| 对象        | OSI 层                         | 路由鉴别器            | TLS 支持   | 目的                                           |
+| :---------- | :----------------------------- | :-------------------- | :--------- | :--------------------------------------------- |
+| `HTTPRoute` | 第 7 层                        | HTTP 协议中的任何内容 | 仅终止     | HTTP 和 HTTPS 路由                             |
+| `TLSRoute`  | 第 4 层和第 7 层之间的某个位置 | SNI 或其他 TLS 属性   | 直通或终止 | TLS 协议的路由，包括不需要检查 HTTP 流的 HTTPS |
+| `TCPRoute`  | 第 4 层                        | 目的端口              | 直通或终止 | 允许将 TCP 流从 Listener 转发到 Backends       |
+| `UDPRoute`  | 第 4 层                        | 目的端口              | 没有任何   | 允许将 UDP 流从监听器转发到后端                |
+| `GRPCRoute` | 第 7 层                        | gRPC 协议中的任何内容 | 仅终止     | 基于 HTTP/2 和 HTTP/2 明文的 gRPC 路由         |
+
+请注意，通过 `HTTPRoute` 和 `TCPRoute` 路由的流量可以在网关和后端之间进行加密（通常称为重新加密）。无法使用现有的 Gateway API 资源对其进行配置，但实现可以为此提供自定义配置，直到 Gateway API 定义了标准化方法。
+
+### 将路由添加到网关
+
+将 Route 附加到 Gateway 表示在 Gateway 上应用的配置，用于配置底层负载均衡器或代理。Route 如何以及哪些 Route 附加到 Gateway 由资源本身控制。Route 和 Gateway 资源具有内置控件以允许或限制它们的连接方式。与 Kubernetes RBAC 一起，这些允许组织实施有关如何公开  Route 以及在公开在哪些 Gateway 上的策略。
+
+如何将 Route 附加到网关以实现不同的组织策略和责任范围有很大的灵活性。下面是 Gateway 和 Route 可以具有的不同关系：
+
+- **一对一**：Gateway 和 Route 可以由单个所有者部署和使用，具有一对一的关系。
+- **一对多**： Gateway 可以绑定许多 Route，这些 Route 由来自不同命名空间的不同团队拥有。
+- **多对一**：Route 也可以绑定到多个 Gateway，允许单个 Route 同时控制跨不同 IP、负载均衡器或网络的应用程序公开。
 
 ### 路由绑定
 
@@ -116,67 +172,104 @@ Gateway API 的资源模型中，主要有三种类型的对象：
 
 ![路由绑定示意图](../../images/gateway-api-route-binding.jpg "路由绑定示意图")
 
-在如何将路由与网关绑定以实现不同的组织政策和责任范围方面，有很大的灵活性。下面是网关和路由之间可能的对应关系：
+将路由附加到网关包括以下步骤：
 
-- 一对一：网关和路由可以由一个所有者部署和使用，并具有一对一的关系。团队 C 就是一个例子。
-- 一对多：一个网关可以有许多路由与之绑定，这些路由由来自不同命名空间的不同团队所拥有。团队 A 和 B 就是这样的一个例子。
-- 多对一：路由也可以绑定到多个网关，允许一个路由同时控制不同 IP、负载均衡器或网络上的应用暴露。
+1. Route 需要在其 `parentRefs` 字段中引用 Gateway 的条目；
+2. Gateway 上的至少一个监听器需要允许其附着。
 
-总之，网关选择路由，路由控制它们的暴露。当网关选择一个允许自己暴露的路由时，那么该路由将与网关绑定。当路由与网关绑定时，意味着它们的集体路由规则被配置在了由该网关管理的底层负载均衡器或代理服务器上。因此，网关是一个网络数据平面的逻辑表示，可以通过路由进行配置。
+## 引用网关
 
-#### 路由选择
+Route 可以通过在`parentRef`. 路由可以使用以下字段进一步选择网关下的监听器子集`parentRef`：
 
-`Gateway` 根据 `Route` 元数据，特别是 `Route` 资源的种类、命名空间和标签来选择 `Route`。`Route` 实际上被绑定到 `Gateway` 中的特定监听器上，因此每个监听器都有一个 `listener.routes` 字段，它通过以下一个或多个标准来选择 `Route`。
+Route 可以通过在 `parentRef` 中指定命名空间（如果 Route 和 Gateway 在同一个名称空间中则该配置是可选的）和 Gateway 的名称来引用 Gateway。Route 可以使用 `parentRef` 中的以下字段进一步选择 Gateway 下的监听器子集：
 
-- **Label**：`Gateway` 可以通过资源上存在的标签来选择 `Route`（类似于 Service 通过 Pod 标签选择 Pod 的方式）。
-- **Kind**：网关监听器只能选择单一类型的路由资源。可以是 `HTTPRoute`、`TCPRoute` 或自定义 `Route` 类型。
-- **Namespace**：`Gateway` 还可以通过 `namespaces.from` 字段控制可以从哪些 `Namespace`、 `Route` 中选择。它支持三种可能的值。
-  - `SameNamespace` 是默认选项。只有与该网关相同的命名空间中的路由才会被选择。
-  - `All` 将选择来自所有命名空间的 `Route`。
-  - `Selector` 意味着该网关将选择由 Namespace 标签选择器选择的 Namespace 子集的 Route。当使用 Selector 时，那么 `listeners.route.namespaces.selector` 字段可用于指定标签选择器。`All` 或 `SameNamespace` 不支持该字段。
+1. **SectionName**：当设置了 `sectionName` 时，Route 选择具有指定名称的监听器；
+2. **Port**：当设置了 `port` 时，Route 会选择所有指定的监听端口且协议与此类 Route 兼容的监听器。
 
-下面的 `Gateway` 将在集群中的所有 `Namespace` 中选择 `expose: prod-web-gw` 的所有 `HTTPRoute` 资源。
+当设置了多个 `parentRef` 字段时，Route 选择满足这些字段中指定的所有条件的监听器。例如，当 `sectionName` 和 `port` 两者都设置时，Route 选择具有指定名称的监听器并在指定端口上监听。
 
-```yaml
-kind: Gateway
-...
-spec:
-  listeners:  
-  - routes:
-      kind: HTTPRoute
-      selector:
-        matchLabels:
-          expose: prod-web-gw 
-      namespaces:
-        from: All
-```
+### 限制路由附加
 
-#### 路由暴露
+每个 Gateway 监听器都可以通过以下机制限制其可以附加哪些路由：
 
-路由可以决定它们如何通过网关暴露。`gateways.allow` 字段支持三个值。
+1. **Hostname**：设置监听器上的 `hostname` 字段时，指定`hostnames` 字段的附加路由必须至少有一个重叠值。
+2. **Namespace**：监听器上的 `allowedRoutes.namespaces` 字段可用于限制可以附加路由的位置。该 `namespaces.from` 字段支持以下值：
+   - `SameNamespace` 是默认选项。只有与该网关相同的命名空间中的路由才会被选择。
+   - `All` 将选择来自所有命名空间的 `Route`。
+   - `Selector` 意味着该网关将选择由 Namespace 标签选择器选择的 Namespace 子集的 Route。当使用 Selector 时，那么 `listeners.route.namespaces.selector` 字段可用于指定标签选择器。`All` 或 `SameNamespace` 不支持该字段。
+3. **Kind**：监听器上的 `allowedRoutes.kinds` 字段可用于限制可能附加的路由种类。
 
-- `All`：如果没有指定，则是默认值。这使得所有的 `Route` 标签和 `Namespace` 选择器都绑定在网关上。
-- `SameNamespace` 只允许该路由与来自同一 `Namespace` 的网关绑定。
-- `FromList` 允许指定一个明确的网关列表，以便路由与之绑定。
+如果未指定上述任何一项，网关监听器将信任从支持监听器协议的同一命名空间附加的路由。
 
-下面的 `my-route` Route 只选择 `foo-namespace` 中的 `foo-gateway`，而不能与其他 `Gateway` 绑定。注意，`foo-gateway` 与 `my-route` 在不同的 Namespace 中。如果 `foo-gateway` 允许跨 `Namespace` 绑定，并且也选择了这个 `Route`，那么 `my-route` 就会与之绑定。
+### 更多 Gateway - Route 附加示例
+
+以下 `gateway-api-example-ns1` 命名空间中的 `my-route` Route 想要附加到 `foo-gateway` 中， 不会附加到任何其他 Gateway。请注意， `foo-gateway` 它位于不同的命名空间中。`foo-gateway` 必须允许来自 `gateway-api-example-ns2` 命名空间中的 HTTPRoutes 附加。
 
 ```yaml
+apiVersion: gateway.networking.k8s.io/v1beta1
 kind: HTTPRoute
 metadata:
   name: my-route
-  namespace: bar-namespace
+  namespace: gateway-api-example-ns2
 spec:
-  gateways:
-    allow: FromList
-    gatewayRefs:
-    - name: foo-gateway
-      namespace: foo-namespace
+  parentRefs:
+  - kind: Gateway
+    name: foo-gateway
+    namespace: gateway-api-example-ns1
+  rules:
+  - backendRefs:
+    - name: foo-svc
+      port: 8080
 ```
 
-请注意，网关和路由的绑定是双向的。这意味着两个资源必须相互选择才能绑定。如果一个`Gateway`的`Route`标签选择器不匹配任何现有的`Route`，那么即使`Route`的`spec.gateways.allow = All`，也不会有任何东西与之绑定。同样，如果一个`Route`引用了一个特定的`Gateway`，但该`Gateway`没有选择`Route`的`Namespace`，那么它们也不会绑定。只有当两个资源相互选择时，才会发生绑定。
+`foo-gateway` 允许 `my-route` HTTPRoute 附加。
 
-从资源规范中可能并不总是能明显看出哪些网关和路由是绑定的，但可以通过资源状态来确定绑定。路由状态将列出路由所绑定的所有网关以及绑定的任何相关条件。
+```yaml
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  name: foo-gateway
+  namespace: gateway-api-example-ns1
+spec:
+  gatewayClassName: foo-lb
+  listeners:
+  - name: prod-web
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      kinds: 
+        - kind: HTTPRoute
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            # 该 label 在 Kubernetes 1.22 中自动添加到所有命名空间中
+            kubernetes.io/metadata.name: gateway-api-example-ns2
+```
+
+对于一个更宽松的示例，下面的网关将允许所有 HTTPRoute 资源从带有 `expose-apps: true` 标签的命名空间附加。
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  name: prod-gateway
+  namespace: gateway-api-example-ns1
+spec:
+  gatewayClassName: foo-lb
+  listeners:
+  - name: prod-web
+    port: 80
+    protocol: HTTP    
+    allowedRoutes:
+      kinds: 
+        - kind: HTTPRoute
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            expose-apps: "true"
+```
 
 ### 组合类型
 
@@ -188,16 +281,16 @@ spec:
 
 使用反向代理实现的网关的一个典型的客户端 / 网关 API 请求流程是：
 
-- 客户端向 `http://foo.example.com` 发出请求。
-- DNS 将该名称解析为网关地址。
-- 反向代理在 `Listener` 上接收请求，并使用 `Host` 头 来匹配 `HTTPRoute`。
-- 可选地，反向代理可以根据 `HTTPRoute` 的匹配规则执行请求头和 / 或路径匹配。
-- 可选地，反向代理可以根据 `HTTPRoute` 的过滤规则修改请求，即添加 / 删除头。
-- 最后，反向代理可以根据 `HTTPRoute` 的 `forwardTo` 规则，将请求转发到集群中的一个或多个对象，即 `Service`。
+1. 客户端向 `http://foo.example.com` 发出请求。
+2. DNS 将该名称解析为网关地址。
+3. 反向代理在 `Listener` 上接收请求，并使用 `Host` 头 来匹配 `HTTPRoute`。
+4. 可选地，反向代理可以根据 `HTTPRoute` 的匹配规则执行请求头和 / 或路径匹配。
+5. 可选地，反向代理可以根据 `HTTPRoute` 的过滤规则修改请求，即添加 / 删除头。
+6. 最后，反向代理可以根据 `HTTPRoute` 的 `forwardTo` 规则，将请求转发到集群中的一个或多个对象，即 `Service`。
 
 ## TLS 配置
 
-TLS 配置在 `Gateway` 监听器上。此外，对于某些自助服务用例，TLS 证书可以配置在路由对象上。
+TLS 配置在 `Gateway` 监听器上，可以跨命名空间引用。
 
 ## 扩展点
 
@@ -205,10 +298,9 @@ API 中提供了一些扩展点，以灵活处理大量通用 API 无法处理�
 
 以下是 API 中扩展点的摘要。
 
-- `XRouteMatch.ExtensionRef`：这个扩展点应该用来扩展特定核心 `Route` 的匹配语义。这是一个实验性的扩展点，未来会根据反馈进行迭代。
-- `XForwardTo.BackendRef`：这个扩展点应该用于将流量转发到核心 Kubernetes 服务资源以外的网络端点。例如 S3 bucket、Lambda 函数、文件服务器等。
-- `HTTPRouteFilter`：`HTTPRoute` 为这一 API 类型提供了一种方法，可以钩入 HTTP 请求的请求 / 响应生命周期。
-- 自定义路由：如果上述扩展点都不能满足用例的需求，实现者可以选择为目前 API 中不支持的协议创建自定义路由资源。
+- `BackendRefs`：此扩展点应用于将流量转发到核心 Kubernetes 服务资源以外的网络端点。例如 S3 存储桶、Lambda 函数、文件服务器等。
+- `HTTPRouteFilter`：`HTTPRoute` 中的这种 API 类型提供了一种挂钩 HTTP 请求的请求 / 响应生命周期的方法。
+- **自定义路由**：如果上述扩展点都不能满足用例的需要，实施者可以选择为 API 当前不支持的协议创建自定义路由资源。自定义路由类型需要共享与核心路由类型相同的字段。这些包含在 `CommonRouteSpec` 和 `RouteStatus` 中。
 
 ## 参考
 
