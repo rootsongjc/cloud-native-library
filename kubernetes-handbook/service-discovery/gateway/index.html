@@ -66,7 +66,7 @@
   
     
   
-  <meta name="description" content="除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 Gateway API 项目，这是一个 CRD，可以帮助我们将 Kubernetes 中的服务暴露到集群外。 Gateway API 是一个由 SIG-NETWORK 管理的开源项目。该项目的目标是在 Kubernetes 生态系统中发展服务网络 API。G" />
+  <meta name="description" content="除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 Gateway API 项目，它可以帮助我们将 Kubernetes 中的服务暴露到集群外。 Gateway API 与 Ingress 有什么不同？ Ingress 的主要目标是用简单的、声明性的语法来暴露 HTTP 应用。Gateway API 暴露了一" />
 
   
   <link rel="alternate" hreflang="zh" href="https://lib.jimmysong.io/kubernetes-handbook/service-discovery/gateway/" />
@@ -329,8 +329,8 @@
   
   <meta property="og:site_name" content="云原生资料库" />
   <meta property="og:url" content="https://lib.jimmysong.io/kubernetes-handbook/service-discovery/gateway/" />
-  <meta property="og:title" content="Gateway | 云原生资料库" />
-  <meta property="og:description" content="除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 Gateway API 项目，这是一个 CRD，可以帮助我们将 Kubernetes 中的服务暴露到集群外。 Gateway API 是一个由 SIG-NETWORK 管理的开源项目。该项目的目标是在 Kubernetes 生态系统中发展服务网络 API。G" /><meta property="og:image" content="https://lib.jimmysong.io/media/sharing.png" />
+  <meta property="og:title" content="Gateway API | 云原生资料库" />
+  <meta property="og:description" content="除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 Gateway API 项目，它可以帮助我们将 Kubernetes 中的服务暴露到集群外。 Gateway API 与 Ingress 有什么不同？ Ingress 的主要目标是用简单的、声明性的语法来暴露 HTTP 应用。Gateway API 暴露了一" /><meta property="og:image" content="https://lib.jimmysong.io/media/sharing.png" />
     <meta property="twitter:image" content="https://lib.jimmysong.io/media/sharing.png" /><meta property="og:locale" content="zh" />
   
     
@@ -339,7 +339,7 @@
         content="2022-05-21T00:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2022-10-27T20:47:44&#43;08:00">
+    <meta property="article:modified_time" content="2022-10-30T11:04:47&#43;08:00">
   
 
   
@@ -356,7 +356,7 @@
 
 
 
-  <title>Gateway | 云原生资料库</title>
+  <title>Gateway API | 云原生资料库</title>
 </head>
 
 
@@ -1275,7 +1275,7 @@
 
 
 
-  <li class="child level1 active"><a href="/kubernetes-handbook/service-discovery/gateway/">Gateway</a></li>
+  <li class="child level1 active"><a href="/kubernetes-handbook/service-discovery/gateway/">Gateway API</a></li>
 
       
         </ul>
@@ -2041,14 +2041,20 @@
   <ul>
     <li><a href="#目标">目标</a></li>
     <li><a href="#gateway-相较于-ingress-做了哪些改进">Gateway 相较于 Ingress 做了哪些改进？</a></li>
-    <li><a href="#角色">角色</a></li>
+    <li><a href="#角色划分">角色划分</a></li>
     <li><a href="#资源模型">资源模型</a>
       <ul>
         <li><a href="#gatewayclass">GatewayClass</a></li>
         <li><a href="#gateway">Gateway</a></li>
-        <li><a href="#httptcpfoo-route">{HTTP,TCP,Foo} Route</a></li>
-        <li><a href="#backendpolicy">BackendPolicy</a></li>
+        <li><a href="#route">Route</a></li>
+        <li><a href="#将路由添加到网关">将路由添加到网关</a></li>
         <li><a href="#路由绑定">路由绑定</a></li>
+      </ul>
+    </li>
+    <li><a href="#引用网关">引用网关</a>
+      <ul>
+        <li><a href="#限制路由附加">限制路由附加</a></li>
+        <li><a href="#更多-gateway---route-附加示例">更多 Gateway - Route 附加示例</a></li>
         <li><a href="#组合类型">组合类型</a></li>
       </ul>
     </li>
@@ -2130,7 +2136,7 @@
   
 
       <li class="breadcrumb-item active" aria-current="page">
-        Gateway
+        Gateway API
       </li>
     </ol>
   </nav>
@@ -2140,16 +2146,23 @@
 
           
 
-          <h1>Gateway</h1>
+          <h1>Gateway API</h1>
 
           <div class="article-style">
-            <p>除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 <a href="https://github.com/kubernetes-sigs/gateway-api" target="_blank" rel="noopener">Gateway API 项目</a>，这是一个 CRD，可以帮助我们将 Kubernetes 中的服务暴露到集群外。</p>
-<p>Gateway API 是一个由 <a href="https://github.com/kubernetes/community/tree/master/sig-network" target="_blank" rel="noopener">SIG-NETWORK</a> 管理的开源项目。该项目的目标是在 Kubernetes 生态系统中发展服务网络 API。Gateway API 提供了暴露 Kubernetes 应用的接口 ——Service、Ingress 等。</p>
-<p>该 API 在 Istio 中也被应用，用于将 Kubernetes 中的服务暴露到服务网格之外。</p>
+            <p>除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 <a href="https://github.com/kubernetes-sigs/gateway-api" target="_blank" rel="noopener">Gateway API 项目</a>，它可以帮助我们将 Kubernetes 中的服务暴露到集群外。</p>
+<div class="alert-note-title">
+    <p>Gateway API 与 Ingress 有什么不同？</p>
+</div>
+<div class="alert alert-note">
+    Ingress 的主要目标是用简单的、声明性的语法来暴露 HTTP 应用。Gateway API 暴露了一个更通用的代理 API，可以用于更多的协议，而不仅仅是 HTTP，并为更多的基础设施组件建模，为集群运营提供更好的部署和管理选项。
+</div>
+
+<p>Gateway API 是一个由 <a href="https://github.com/kubernetes/community/tree/master/sig-network" target="_blank" rel="noopener">SIG-NETWORK</a> 管理的开源项目。该项目的目标是在 Kubernetes 生态系统中发展服务网络 API。Gateway API 提供了暴露 Kubernetes 应用的资源——<code>GatewayClass</code>、<code>Gateway</code>、<code>HTTPRoute</code>、<code>TCPRoute</code> 等。</p>
+<p>该 API 在 Istio 中也被应用，用于将网格内的服务暴露到集群外。</p>
 <h2 id="目标">目标</h2>
 <p>Gateway API 旨在通过提供表现性的、可扩展的、面向角色的接口来改善服务网络，这些接口由许多厂商实现，并得到了业界的广泛支持。</p>
-<p>Gateway API 是一个 API 资源的集合 —— Service、GatewayClass、Gateway、HTTPRoute、TCPRoute 等。使用这些资源共同为各种网络用例建模。</p>
-<p>下图中展示的是 Kubernetes 集群中四层和七层的网络配置。从图中可以看到通过将这些资源对象分离，可以实现配置上的解耦，由不同角色的人员来管理。</p>
+<p>Gateway API 是一个 API 资源的集合 —— <code>GatewayClass</code>、<code>Gateway</code>、<code>HTTPRoute</code>、<code>TCPRoute</code> 等。使用这些资源共同为各种网络用例建模。</p>
+<p>下图中展示的是 Kubernetes 集群中四层和七层的网络配置。从图中可以看到通过将这些资源对象分离，可以实现配置上的解耦，由不同角色的人员来管理，而这也是 Gateway API 的相较于 Ingress 的一大特色。</p>
 <p>
 
 
@@ -2168,12 +2181,13 @@
 
 <figure  id="figure-kubernetes-gateway-api-简介">
   <div class="d-flex justify-content-center">
-    <div class="w-100" ><img src="../../images/kubernetes-gateway-api-intro.jpg" alt="Kubernetes Gateway API 简介" loading="lazy" data-zoomable /></div>
+    <div class="w-100" ><img src="../../images/gateway-api.svg" alt="Kubernetes Gateway API 简介" loading="lazy" data-zoomable /></div>
   </div><figcaption>
       Kubernetes Gateway API 简介
     </figcaption></figure>
 </p>
 <h2 id="gateway-相较于-ingress-做了哪些改进">Gateway 相较于 Ingress 做了哪些改进？</h2>
+<p>以下是 Gateway API 对 Ingress 的改进点。</p>
 <p><strong>更具表现力</strong></p>
 <p>Gateway 表达了更多的核心功能，比如基于头的匹配、流量加权和其他功能，而这些功能在 Ingress 中只能通过自定义方式实现。</p>
 <p><strong>更具扩展性</strong></p>
@@ -2191,7 +2205,7 @@
 <p><strong>类</strong></p>
 <p><code>GatewayClasses</code> 将负载均衡实现的类型形式化。这些类使用户可以很容易和明确地了解资源模型本身有什么样的能力。</p>
 <p>在了解了 Gateway API 的目的后，接下来我们再看下它的资源模型、请求流程、TLS 配置及扩展点等。</p>
-<h2 id="角色">角色</h2>
+<h2 id="角色划分">角色划分</h2>
 <p>Gateway API 开发者为其使用场景定义四类角色：</p>
 <ul>
 <li>基础设施提供方：如 AWS、GKE 等</li>
@@ -2199,6 +2213,32 @@
 <li>应用程序开发者：为自己开发的应用负责，管理应用的健壮性</li>
 <li>应用管理员：不是所有的公司都有，通常在一些复杂系统中会有专门的应用管理员</li>
 </ul>
+<p>Gateway API 通过 Kubernetes 服务网络的面向角色的设计在分布式灵活性和集中控制之间取得了平衡。使得许多不同的非协调团队可以使用共享网络基础设施（硬件负载均衡器、云网络、集群托管代理等），所有团队都受集群运维设置的策略约束。下图展示了在进行 Gateway 管理时的角色划分。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-gateway-管理中的角色划分图片来自httpsgateway-apisigsk8sio">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img src="../../images/gateway-roles.png" alt="Gateway 管理中的角色划分（图片来自：https://gateway-api.sigs.k8s.io/）" loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      Gateway 管理中的角色划分（图片来自：https://gateway-api.sigs.k8s.io/）
+    </figcaption></figure>
+</p>
+<p>集群运维人员创建从 <a href="https://gateway-api.sigs.k8s.io/api-types/gatewayclass" target="_blank" rel="noopener">GatewayClass</a> 派生的 <a href="https://gateway-api.sigs.k8s.io/api-types/gateway" target="_blank" rel="noopener">Gateway</a> 资源。此 Gateway 部署或配置它所代表的底层网络资源。通过 Gateway 和 Route 之间的<a href="https://gateway-api.sigs.k8s.io/concepts/api-overview#attaching-routes-to-gateways" target="_blank" rel="noopener">路由附加进程</a> ，集群运维人员和特定团队必须就可以附加到此 Gateway 并通过它公开其应用程序的内容达成一致。集群运维人员可以在网关上实施  <a href="https://gateway-api.sigs.k8s.io/guides/tls#downstream-tls" target="_blank" rel="noopener">TLS</a> 集中式策略。同时，Store 和 Site 团队<a href="https://gateway-api.sigs.k8s.io/guides/multiple-ns" target="_blank" rel="noopener">在他们自己的 Namespaces 中</a>运行，但是将他们的 Routes 附加到同一个共享 Gateway，允许他们独立控制自己的<a href="https://gateway-api.sigs.k8s.io/guides/http-routing" target="_blank" rel="noopener">路由逻辑</a>。这种关注点分离允许 Store 队管理自己的<a href="https://gateway-api.sigs.k8s.io/guides/traffic-splitting" target="_blank" rel="noopener">流量拆分部署</a>，同时将集中策略和控制权留给集群运维人员。</p>
+<p>这种灵活性技能保持 API 的标准和可移植性，还使其可以适应截然不同的组织模型和实现。</p>
 <h2 id="资源模型">资源模型</h2>
 <p>注意：资源最初将作为 CRD 存在于 <code>networking.x-k8s.io</code> API 组中。未限定的资源名称将隐含在该 API 组中。</p>
 <p>Gateway API 的资源模型中，主要有三种类型的对象：</p>
@@ -2210,18 +2250,89 @@
 <h3 id="gatewayclass">GatewayClass</h3>
 <p><code>GatewayClass</code> 定义了一组共享共同配置和行为的 Gateway，每个 <code>GatewayClass</code> 由一个控制器处理，但控制器可以处理多个 <code>GatewayClass</code>。</p>
 <p><code>GatewayClass</code> 是一个集群范围的资源。必须至少定义一个 <code>GatewayClass</code>，<code>Gateway</code> 才能够生效。实现 Gateway API 的控制器通过关联的 <code>GatewayClass</code> 资源来实现，用户可以在自己的 <code>Gateway</code> 中引用该资源。</p>
-<p>这类似于 <code>Ingress</code> 的 <code>IngressClass</code>] 和 <code>PersistentVolumes</code> 的 <a href="https://kubernetes.io/docs/concepts/storage/storage-classes/" target="_blank" rel="noopener"><code>StorageClass</code></a>。在 <code>Ingress</code> v1beta1 中，最接近 <code>GatewayClass</code> 的是 <code>ingress-class</code> 注解，而在 IngressV1 中，最接近的类似物是 <code>IngressClass</code> 对象。</p>
+<p>这类似于 <code>Ingress</code> 的 <code>IngressClass</code> 和 <code>PersistentVolumes</code> 的 <a href="https://kubernetes.io/docs/concepts/storage/storage-classes/" target="_blank" rel="noopener"><code>StorageClass</code></a>。在 <code>Ingress</code> v1beta1 中，最接近 <code>GatewayClass</code> 的是 <code>ingress-class</code> 注解，而在 IngressV1 中，最接近的类似物是 <code>IngressClass</code> 对象。</p>
 <h3 id="gateway">Gateway</h3>
-<p><code>Gateway</code> 描述了如何将流量翻译到集群内的服务。也就是说，它定义了一个方法，将流量从不了解 Kubernetes 的地方翻译到了解 Kubernetes 的地方。例如，由云负载均衡器、集群内代理或外部硬件负载均衡器发送到 Kubernetes 服务的流量。虽然许多用例的客户端流量源自集群的 &ldquo;外部&rdquo;，但这并不强求。</p>
+<p><code>Gateway</code> 描述了如何将流量翻译到集群内的服务。它定义了一个将流量从不了解 Kubernetes 的地方翻译到了解 Kubernetes 的地方的方法。例如，由云负载均衡器、集群内代理或外部硬件负载均衡器发送到 Kubernetes 服务的流量。虽然许多用例的客户端流量源自集群的 &ldquo;外部&rdquo;，但这并不是必需的。</p>
 <p><code>Gateway</code> 定义了对实现 <code>GatewayClass</code> 配置和行为合同的特定负载均衡器配置的请求。该资源可以由运维人员直接创建，也可以由处理 <code>GatewayClass</code> 的控制器创建。</p>
 <p>由于 <code>Gateway</code> 规范捕获了用户意图，它可能不包含规范中所有属性的完整规范。例如，用户可以省略地址、端口、TLS 设置等字段。这使得管理 <code>GatewayClass</code> 的控制器可以为用户提供这些设置，从而使规范更加可移植。这种行为将通过 <code>GatewayClass</code> 状态对象来明确。</p>
 <p>一个 <code>Gateway</code> 可以包含一个或多个 <code>Route</code> 引用，这些 <code>Route</code> 引用的作用是将一个子集的流量引导到一个特定的服务上。</p>
-<h3 id="httptcpfoo-route">{HTTP,TCP,Foo} Route</h3>
+<h3 id="route">Route</h3>
 <p><code>Route</code> 对象定义了特定协议的规则，用于将请求从 <code>Gateway</code> 映射到 Kubernetes 服务。</p>
-<p><code>HTTPRoute</code> 和 <code>TCPRoute</code> 是目前唯一已定义的 <code>Route</code> 对象。未来可能会添加其他特定协议的 <code>Route</code> 对象。</p>
-<h3 id="backendpolicy">BackendPolicy</h3>
-<p><code>BackendPolicy</code> 提供了一种配置 <code>Gateway</code> 和后端之间连接的方法。在这个 API 中，后端是指路由可以转发流量的任何资源。后端的一个常见例子是 <code>Service</code>。这个级别的配置目前仅限于 TLS，但将来会扩展到支持更高级的策略，如健康检查。</p>
-<p>一些后端配置可能会根据针对后端的 <code>Route</code> 而有所不同。在这些情况下，配置字段将放在 <code>Route</code> 上，而不是 <code>BackendPolicy</code> 上。</p>
+<p>从 v1alpha2 开始，Gateway API 中包含四种 <code>Route</code> 资源类型。对于其他协议，鼓励使用特定于实现的自定义路由类型。未来可能会向 API 添加新的路由类型。</p>
+<div class="alert-note-title">
+    <p>注意</p>
+</div>
+<div class="alert alert-note">
+    目前除了 <code>HTTPRoute</code> 是 Gateway API 正式支持的，其他的路由类型还在实验中，详见<a href="https://gateway-api.sigs.k8s.io/concepts/versioning/" target="_blank" rel="noopener">版本文档</a>。
+</div>
+
+<h4 id="httproute">HTTPRoute</h4>
+<p><code>HTTPRoute</code> 用于多路复用 HTTP 或终止的 HTTPS 连接。它适用于检查 HTTP 流并使用 HTTP 请求数据进行路由或修改的情况，例如使用 HTTP Header 进行路由或在运行中修改它们。</p>
+<h4 id="tlsroute">TLSRoute</h4>
+<p><code>TLSRoute</code> 用于多路复用 TLS 连接，通过 SNI 进行区分。它适用于使用 SNI 作为主要路由方法的地方，并且对 HTTP 等高级协议的属性不感兴趣。连接的字节流被代理，无需对后端进行任何检查。</p>
+<h4 id="tcproute-和-udproute">TCPRoute 和 UDPRoute</h4>
+<p><code>TCPRoute</code>（和 <code>UDPRoute</code>）旨在用于将一个或多个端口映射到单个后端。在这种情况下，没有可用于在同一端口上选择不同后端的鉴别器（Discriminator），因此每个 <code>TCPRoute</code> 确实需要监听器上的不同端口（通常，无论如何）。你可以终止 TLS，在这种情况下，未加密的字节流被传递到后端。你可以选择不终止 TLS，在这种情况下，加密的字节流被传递到后端。</p>
+<h4 id="grcproute">GRCPRoute</h4>
+<p><code>GRPCRoute</code> 用于惯用地路由 gRPC 流量。支持 <code>GRPCRoute</code> 的网关需要支持 HTTP/2，而无需从 HTTP/1 进行初始升级，因此可以保证 gRPC 流量正常流动。</p>
+<h4 id="route-类型列表">Route 类型列表</h4>
+<p>下面的「路由鉴别器」一栏是指可以使用哪些信息来允许多个 Routes 共享 Listener 上的端口。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">对象</th>
+<th style="text-align:left">OSI 层</th>
+<th style="text-align:left">路由鉴别器</th>
+<th style="text-align:left">TLS 支持</th>
+<th style="text-align:left">目的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>HTTPRoute</code></td>
+<td style="text-align:left">第 7 层</td>
+<td style="text-align:left">HTTP 协议中的任何内容</td>
+<td style="text-align:left">仅终止</td>
+<td style="text-align:left">HTTP 和 HTTPS 路由</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>TLSRoute</code></td>
+<td style="text-align:left">第 4 层和第 7 层之间的某个位置</td>
+<td style="text-align:left">SNI 或其他 TLS 属性</td>
+<td style="text-align:left">直通或终止</td>
+<td style="text-align:left">TLS 协议的路由，包括不需要检查 HTTP 流的 HTTPS</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>TCPRoute</code></td>
+<td style="text-align:left">第 4 层</td>
+<td style="text-align:left">目的端口</td>
+<td style="text-align:left">直通或终止</td>
+<td style="text-align:left">允许将 TCP 流从 Listener 转发到 Backends</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>UDPRoute</code></td>
+<td style="text-align:left">第 4 层</td>
+<td style="text-align:left">目的端口</td>
+<td style="text-align:left">没有任何</td>
+<td style="text-align:left">允许将 UDP 流从监听器转发到后端</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>GRPCRoute</code></td>
+<td style="text-align:left">第 7 层</td>
+<td style="text-align:left">gRPC 协议中的任何内容</td>
+<td style="text-align:left">仅终止</td>
+<td style="text-align:left">基于 HTTP/2 和 HTTP/2 明文的 gRPC 路由</td>
+</tr>
+</tbody>
+</table>
+<p>请注意，通过 <code>HTTPRoute</code> 和 <code>TCPRoute</code> 路由的流量可以在网关和后端之间进行加密（通常称为重新加密）。无法使用现有的 Gateway API 资源对其进行配置，但实现可以为此提供自定义配置，直到 Gateway API 定义了标准化方法。</p>
+<h3 id="将路由添加到网关">将路由添加到网关</h3>
+<p>将 Route 附加到 Gateway 表示在 Gateway 上应用的配置，用于配置底层负载均衡器或代理。Route 如何以及哪些 Route 附加到 Gateway 由资源本身控制。Route 和 Gateway 资源具有内置控件以允许或限制它们的连接方式。与 Kubernetes RBAC 一起，这些允许组织实施有关如何公开  Route 以及在公开在哪些 Gateway 上的策略。</p>
+<p>如何将 Route 附加到网关以实现不同的组织策略和责任范围有很大的灵活性。下面是 Gateway 和 Route 可以具有的不同关系：</p>
+<ul>
+<li><strong>一对一</strong>：Gateway 和 Route 可以由单个所有者部署和使用，具有一对一的关系。</li>
+<li><strong>一对多</strong>： Gateway 可以绑定许多 Route，这些 Route 由来自不同命名空间的不同团队拥有。</li>
+<li><strong>多对一</strong>：Route 也可以绑定到多个 Gateway，允许单个 Route 同时控制跨不同 IP、负载均衡器或网络的应用程序公开。</li>
+</ul>
 <h3 id="路由绑定">路由绑定</h3>
 <p>当 <code>Route</code> 绑定到 <code>Gateway</code> 时，代表应用在 <code>Gateway</code> 上的配置，配置了底层的负载均衡器或代理。哪些 <code>Route</code> 如何绑定到 <code>Gateway</code> 是由资源本身控制的。<code>Route</code> 和 <code>Gateway</code> 资源具有内置的控制，以允许或限制它们之间如何相互选择。这对于强制执行组织政策以确定 <code>Route</code> 如何暴露以及在哪些 <code>Gateway</code> 上暴露非常有用。看下下面的例子。</p>
 <p>一个 Kubernetes 集群管理员在 <code>Infra</code> 命名空间中部署了一个名为 <code>shared-gw</code> 的 <code>Gateway</code>，供不同的应用团队使用，以便将其应用暴露在集群之外。团队 A 和团队 B（分别在命名空间 &ldquo;A&rdquo; 和 &ldquo;B&rdquo; 中）将他们的 <code>Route</code> 绑定到这个 <code>Gateway</code>。它们互不相识，只要它们的 <code>Route</code> 规则互不冲突，就可以继续隔离运行。团队 C 有特殊的网络需求（可能是性能、安全或关键性），他们需要一个专门的 <code>Gateway</code> 来代理他们的应用到集群外。团队 C 在 &ldquo;C&rdquo; 命名空间中部署了自己的 <code>Gateway</code> <code>specialive-gw</code>，该 Gateway 只能由 &ldquo;C&rdquo; 命名空间中的应用使用。</p>
@@ -2249,59 +2360,91 @@
       路由绑定示意图
     </figcaption></figure>
 </p>
-<p>在如何将路由与网关绑定以实现不同的组织政策和责任范围方面，有很大的灵活性。下面是网关和路由之间可能的对应关系：</p>
-<ul>
-<li>一对一：网关和路由可以由一个所有者部署和使用，并具有一对一的关系。团队 C 就是一个例子。</li>
-<li>一对多：一个网关可以有许多路由与之绑定，这些路由由来自不同命名空间的不同团队所拥有。团队 A 和 B 就是这样的一个例子。</li>
-<li>多对一：路由也可以绑定到多个网关，允许一个路由同时控制不同 IP、负载均衡器或网络上的应用暴露。</li>
-</ul>
-<p>总之，网关选择路由，路由控制它们的暴露。当网关选择一个允许自己暴露的路由时，那么该路由将与网关绑定。当路由与网关绑定时，意味着它们的集体路由规则被配置在了由该网关管理的底层负载均衡器或代理服务器上。因此，网关是一个网络数据平面的逻辑表示，可以通过路由进行配置。</p>
-<h4 id="路由选择">路由选择</h4>
-<p><code>Gateway</code> 根据 <code>Route</code> 元数据，特别是 <code>Route</code> 资源的种类、命名空间和标签来选择 <code>Route</code>。<code>Route</code> 实际上被绑定到 <code>Gateway</code> 中的特定监听器上，因此每个监听器都有一个 <code>listener.routes</code> 字段，它通过以下一个或多个标准来选择 <code>Route</code>。</p>
-<ul>
-<li><strong>Label</strong>：<code>Gateway</code> 可以通过资源上存在的标签来选择 <code>Route</code>（类似于 Service 通过 Pod 标签选择 Pod 的方式）。</li>
-<li><strong>Kind</strong>：网关监听器只能选择单一类型的路由资源。可以是 <code>HTTPRoute</code>、<code>TCPRoute</code> 或自定义 <code>Route</code> 类型。</li>
-<li><strong>Namespace</strong>：<code>Gateway</code> 还可以通过 <code>namespaces.from</code> 字段控制可以从哪些 <code>Namespace</code>、 <code>Route</code> 中选择。它支持三种可能的值。
+<p>将路由附加到网关包括以下步骤：</p>
+<ol>
+<li>Route 需要在其 <code>parentRefs</code> 字段中引用 Gateway 的条目；</li>
+<li>Gateway 上的至少一个监听器需要允许其附着。</li>
+</ol>
+<h2 id="引用网关">引用网关</h2>
+<p>Route 可以通过在<code>parentRef</code>. 路由可以使用以下字段进一步选择网关下的监听器子集<code>parentRef</code>：</p>
+<p>Route 可以通过在 <code>parentRef</code> 中指定命名空间（如果 Route 和 Gateway 在同一个名称空间中则该配置是可选的）和 Gateway 的名称来引用 Gateway。Route 可以使用 <code>parentRef</code> 中的以下字段进一步选择 Gateway 下的监听器子集：</p>
+<ol>
+<li><strong>SectionName</strong>：当设置了 <code>sectionName</code> 时，Route 选择具有指定名称的监听器；</li>
+<li><strong>Port</strong>：当设置了 <code>port</code> 时，Route 会选择所有指定的监听端口且协议与此类 Route 兼容的监听器。</li>
+</ol>
+<p>当设置了多个 <code>parentRef</code> 字段时，Route 选择满足这些字段中指定的所有条件的监听器。例如，当 <code>sectionName</code> 和 <code>port</code> 两者都设置时，Route 选择具有指定名称的监听器并在指定端口上监听。</p>
+<h3 id="限制路由附加">限制路由附加</h3>
+<p>每个 Gateway 监听器都可以通过以下机制限制其可以附加哪些路由：</p>
+<ol>
+<li><strong>Hostname</strong>：设置监听器上的 <code>hostname</code> 字段时，指定<code>hostnames</code> 字段的附加路由必须至少有一个重叠值。</li>
+<li><strong>Namespace</strong>：监听器上的 <code>allowedRoutes.namespaces</code> 字段可用于限制可以附加路由的位置。该 <code>namespaces.from</code> 字段支持以下值：
 <ul>
 <li><code>SameNamespace</code> 是默认选项。只有与该网关相同的命名空间中的路由才会被选择。</li>
 <li><code>All</code> 将选择来自所有命名空间的 <code>Route</code>。</li>
 <li><code>Selector</code> 意味着该网关将选择由 Namespace 标签选择器选择的 Namespace 子集的 Route。当使用 Selector 时，那么 <code>listeners.route.namespaces.selector</code> 字段可用于指定标签选择器。<code>All</code> 或 <code>SameNamespace</code> 不支持该字段。</li>
 </ul>
 </li>
-</ul>
-<p>下面的 <code>Gateway</code> 将在集群中的所有 <code>Namespace</code> 中选择 <code>expose: prod-web-gw</code> 的所有 <code>HTTPRoute</code> 资源。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Gateway</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">...</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">listeners</span><span class="p">:</span><span class="w">  
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">routes</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">HTTPRoute</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">selector</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">matchLabels</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">expose</span><span class="p">:</span><span class="w"> </span><span class="l">prod-web-gw </span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">namespaces</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="l">All</span><span class="w">
-</span></span></span></code></pre></div><h4 id="路由暴露">路由暴露</h4>
-<p>路由可以决定它们如何通过网关暴露。<code>gateways.allow</code> 字段支持三个值。</p>
-<ul>
-<li><code>All</code>：如果没有指定，则是默认值。这使得所有的 <code>Route</code> 标签和 <code>Namespace</code> 选择器都绑定在网关上。</li>
-<li><code>SameNamespace</code> 只允许该路由与来自同一 <code>Namespace</code> 的网关绑定。</li>
-<li><code>FromList</code> 允许指定一个明确的网关列表，以便路由与之绑定。</li>
-</ul>
-<p>下面的 <code>my-route</code> Route 只选择 <code>foo-namespace</code> 中的 <code>foo-gateway</code>，而不能与其他 <code>Gateway</code> 绑定。注意，<code>foo-gateway</code> 与 <code>my-route</code> 在不同的 Namespace 中。如果 <code>foo-gateway</code> 允许跨 <code>Namespace</code> 绑定，并且也选择了这个 <code>Route</code>，那么 <code>my-route</code> 就会与之绑定。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">HTTPRoute</span><span class="w">
+<li><strong>Kind</strong>：监听器上的 <code>allowedRoutes.kinds</code> 字段可用于限制可能附加的路由种类。</li>
+</ol>
+<p>如果未指定上述任何一项，网关监听器将信任从支持监听器协议的同一命名空间附加的路由。</p>
+<h3 id="更多-gateway---route-附加示例">更多 Gateway - Route 附加示例</h3>
+<p>以下 <code>gateway-api-example-ns1</code> 命名空间中的 <code>my-route</code> Route 想要附加到 <code>foo-gateway</code> 中， 不会附加到任何其他 Gateway。请注意， <code>foo-gateway</code> 它位于不同的命名空间中。<code>foo-gateway</code> 必须允许来自 <code>gateway-api-example-ns2</code> 命名空间中的 HTTPRoutes 附加。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">gateway.networking.k8s.io/v1beta1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">HTTPRoute</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">my-route</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">bar-namespace</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">gateway-api-example-ns2</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">gateways</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">allow</span><span class="p">:</span><span class="w"> </span><span class="l">FromList</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">gatewayRefs</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">foo-gateway</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">foo-namespace</span><span class="w">
-</span></span></span></code></pre></div><p>请注意，网关和路由的绑定是双向的。这意味着两个资源必须相互选择才能绑定。如果一个<code>Gateway</code>的<code>Route</code>标签选择器不匹配任何现有的<code>Route</code>，那么即使<code>Route</code>的<code>spec.gateways.allow = All</code>，也不会有任何东西与之绑定。同样，如果一个<code>Route</code>引用了一个特定的<code>Gateway</code>，但该<code>Gateway</code>没有选择<code>Route</code>的<code>Namespace</code>，那么它们也不会绑定。只有当两个资源相互选择时，才会发生绑定。</p>
-<p>从资源规范中可能并不总是能明显看出哪些网关和路由是绑定的，但可以通过资源状态来确定绑定。路由状态将列出路由所绑定的所有网关以及绑定的任何相关条件。</p>
-<h3 id="组合类型">组合类型</h3>
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">parentRefs</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">foo-gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">gateway-api-example-ns1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">rules</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">backendRefs</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">foo-svc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span></span></span></code></pre></div><p><code>foo-gateway</code> 允许 <code>my-route</code> HTTPRoute 附加。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">gateway.networking.k8s.io/v1beta1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">foo-gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">gateway-api-example-ns1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">gatewayClassName</span><span class="p">:</span><span class="w"> </span><span class="l">foo-lb</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">listeners</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">prod-web</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l">HTTP</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">allowedRoutes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">kinds</span><span class="p">:</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">HTTPRoute</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">namespaces</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="l">Selector</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">matchLabels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="c"># 该 label 在 Kubernetes 1.22 中自动添加到所有命名空间中</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">kubernetes.io/metadata.name</span><span class="p">:</span><span class="w"> </span><span class="l">gateway-api-example-ns2</span><span class="w">
+</span></span></span></code></pre></div><p>对于一个更宽松的示例，下面的网关将允许所有 HTTPRoute 资源从带有 <code>expose-apps: true</code> 标签的命名空间附加。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">gateway.networking.k8s.io/v1beta1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">prod-gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">gateway-api-example-ns1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">gatewayClassName</span><span class="p">:</span><span class="w"> </span><span class="l">foo-lb</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">listeners</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">prod-web</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l">HTTP    </span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">allowedRoutes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">kinds</span><span class="p">:</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">HTTPRoute</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">namespaces</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="l">Selector</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">matchLabels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">expose-apps</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;true&#34;</span><span class="w">
+</span></span></span></code></pre></div><h3 id="组合类型">组合类型</h3>
 <p><code>GatewayClass</code>、Gateway、<code>xRoute</code> 和 <code>Service</code> 的组合将定义一个可实现的负载均衡器。下图说明了不同资源之间的关系。</p>
 <p>
 
@@ -2328,24 +2471,23 @@
 </p>
 <h2 id="请求流程">请求流程</h2>
 <p>使用反向代理实现的网关的一个典型的客户端 / 网关 API 请求流程是：</p>
-<ul>
+<ol>
 <li>客户端向 <code>http://foo.example.com</code> 发出请求。</li>
 <li>DNS 将该名称解析为网关地址。</li>
 <li>反向代理在 <code>Listener</code> 上接收请求，并使用 <code>Host</code> 头 来匹配 <code>HTTPRoute</code>。</li>
 <li>可选地，反向代理可以根据 <code>HTTPRoute</code> 的匹配规则执行请求头和 / 或路径匹配。</li>
 <li>可选地，反向代理可以根据 <code>HTTPRoute</code> 的过滤规则修改请求，即添加 / 删除头。</li>
 <li>最后，反向代理可以根据 <code>HTTPRoute</code> 的 <code>forwardTo</code> 规则，将请求转发到集群中的一个或多个对象，即 <code>Service</code>。</li>
-</ul>
+</ol>
 <h2 id="tls-配置">TLS 配置</h2>
-<p>TLS 配置在 <code>Gateway</code> 监听器上。此外，对于某些自助服务用例，TLS 证书可以配置在路由对象上。</p>
+<p>TLS 配置在 <code>Gateway</code> 监听器上，可以跨命名空间引用。</p>
 <h2 id="扩展点">扩展点</h2>
 <p>API 中提供了一些扩展点，以灵活处理大量通用 API 无法处理的用例。</p>
 <p>以下是 API 中扩展点的摘要。</p>
 <ul>
-<li><code>XRouteMatch.ExtensionRef</code>：这个扩展点应该用来扩展特定核心 <code>Route</code> 的匹配语义。这是一个实验性的扩展点，未来会根据反馈进行迭代。</li>
-<li><code>XForwardTo.BackendRef</code>：这个扩展点应该用于将流量转发到核心 Kubernetes 服务资源以外的网络端点。例如 S3 bucket、Lambda 函数、文件服务器等。</li>
-<li><code>HTTPRouteFilter</code>：<code>HTTPRoute</code> 为这一 API 类型提供了一种方法，可以钩入 HTTP 请求的请求 / 响应生命周期。</li>
-<li>自定义路由：如果上述扩展点都不能满足用例的需求，实现者可以选择为目前 API 中不支持的协议创建自定义路由资源。</li>
+<li><code>BackendRefs</code>：此扩展点应用于将流量转发到核心 Kubernetes 服务资源以外的网络端点。例如 S3 存储桶、Lambda 函数、文件服务器等。</li>
+<li><code>HTTPRouteFilter</code>：<code>HTTPRoute</code> 中的这种 API 类型提供了一种挂钩 HTTP 请求的请求 / 响应生命周期的方法。</li>
+<li><strong>自定义路由</strong>：如果上述扩展点都不能满足用例的需要，实施者可以选择为 API 当前不支持的协议创建自定义路由资源。自定义路由类型需要共享与核心路由类型相同的字段。这些包含在 <code>CommonRouteSpec</code> 和 <code>RouteStatus</code> 中。</li>
 </ul>
 <h2 id="参考">参考</h2>
 <ul>
@@ -2383,7 +2525,7 @@
           
 
         <div class="body-footer">
-          <p>最近更新于 2022-10-27</p>
+          <p>最近更新于 2022-10-30</p>
 
           
 
