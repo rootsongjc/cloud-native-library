@@ -5,6 +5,12 @@ date: '2022-05-21T00:00:00+08:00'
 type: book
 ---
 
+{{<callout note 注意>}}
+
+本文根据 Gateway API 0.5.1 版本撰写。
+
+{{</callout>}}
+
 除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 [Gateway API 项目](https://github.com/kubernetes-sigs/gateway-api)，它可以帮助我们将 Kubernetes 中的服务暴露到集群外。
 
 {{<callout note "Gateway API 与 Ingress 有什么不同？">}}
@@ -15,7 +21,7 @@ Ingress 的主要目标是用简单的、声明性的语法来暴露 HTTP 应用
 
 Gateway API 是一个由 [SIG-NETWORK](https://github.com/kubernetes/community/tree/master/sig-network) 管理的开源项目。该项目的目标是在 Kubernetes 生态系统中发展服务网络 API。Gateway API 提供了暴露 Kubernetes 应用的资源——`GatewayClass`、`Gateway`、`HTTPRoute`、`TCPRoute` 等。
 
-该 API 在 Istio 中也被应用，用于将网格内的服务暴露到集群外。
+Gateway API 已经得到了大量的网关和服务网格项目支持，请在 Gateway 官方文档中[查看支持状况](https://gateway-api.sigs.k8s.io/implementations/)。
 
 ## 目标
 
@@ -25,7 +31,7 @@ Gateway API 是一个 API 资源的集合 —— `GatewayClass`、`Gateway`、`H
 
 下图中展示的是 Kubernetes 集群中四层和七层的网络配置。从图中可以看到通过将这些资源对象分离，可以实现配置上的解耦，由不同角色的人员来管理，而这也是 Gateway API 的相较于 Ingress 的一大特色。
 
-![Kubernetes Gateway API 简介](../../images/gateway-api.svg "Kubernetes Gateway API 简介")
+![Kubernetes Gateway API 简介](../../images/gateway-api.svg)
 
 ## Gateway 相较于 Ingress 做了哪些改进？
 
@@ -61,7 +67,7 @@ Gateway API 允许在 API 的各个层次上链接自定义资源。这就允许
 
 **类**
 
-`GatewayClasses` 将负载均衡实现的类型形式化。这些类使用户可以很容易和明确地了解资源模型本身有什么样的能力。
+`GatewayClass` 将负载均衡实现的类型形式化。这些类使用户可以很容易和明确地了解资源模型本身有什么样的能力。
 
 在了解了 Gateway API 的目的后，接下来我们再看下它的资源模型、请求流程、TLS 配置及扩展点等。
 
@@ -89,7 +95,7 @@ Gateway API 通过 Kubernetes 服务网络的面向角色的设计在分布式�
 Gateway API 的资源模型中，主要有三种类型的对象：
 
 - `GatewayClass`：定义了一组具有共同配置和行为的网关。
-- `Gateway`：请求一个点，在这个点上，流量可以被翻译到集群内的服务。
+- `Gateway`：流量请求端点，流量从这里被翻译成集群内的服务。
 - `Route`：描述了通过 Gateway 而来的流量如何映射到服务。
 
 ### GatewayClass
@@ -98,15 +104,15 @@ Gateway API 的资源模型中，主要有三种类型的对象：
 
 `GatewayClass` 是一个集群范围的资源。必须至少定义一个 `GatewayClass`，`Gateway` 才能够生效。实现 Gateway API 的控制器通过关联的 `GatewayClass` 资源来实现，用户可以在自己的 `Gateway` 中引用该资源。
 
-这类似于 `Ingress` 的 `IngressClass` 和 `PersistentVolumes` 的 [`StorageClass`](https://kubernetes.io/docs/concepts/storage/storage-classes/)。在 `Ingress` v1beta1 中，最接近 `GatewayClass` 的是 `ingress-class` 注解，而在 IngressV1 中，最接近的类似物是 `IngressClass` 对象。
+这类似于 `Ingress` 的 `IngressClass` 和 `PersistentVolumes` 的 [`StorageClass`](https://kubernetes.io/docs/concepts/storage/storage-classes/)。在 `Ingress` v1beta1 中，最接近 `GatewayClass` 的是 `ingress-class` 注解，而在 Ingress V1 中，与它类似的是 `IngressClass` 对象。
 
 ### Gateway
 
 `Gateway` 描述了如何将流量翻译到集群内的服务。它定义了一个将流量从不了解 Kubernetes 的地方翻译到了解 Kubernetes 的地方的方法。例如，由云负载均衡器、集群内代理或外部硬件负载均衡器发送到 Kubernetes 服务的流量。虽然许多用例的客户端流量源自集群的 "外部"，但这并不是必需的。
 
-`Gateway` 定义了对实现 `GatewayClass` 配置和行为合同的特定负载均衡器配置的请求。该资源可以由运维人员直接创建，也可以由处理 `GatewayClass` 的控制器创建。
+`Gateway` 定义了对实现 `GatewayClass` 配置和行为约定的特定负载均衡器配置的请求。该资源可以由运维人员直接创建，也可以由处理 `GatewayClass` 的控制器创建。
 
-由于 `Gateway` 规范捕获了用户意图，它可能不包含规范中所有属性的完整规范。例如，用户可以省略地址、端口、TLS 设置等字段。这使得管理 `GatewayClass` 的控制器可以为用户提供这些设置，从而使规范更加可移植。这种行为将通过 `GatewayClass` 状态对象来明确。
+由于 `Gateway` 规范捕获了用户意图，它可能不包含规范中所有属性的完整规范。例如，用户可以省略地址、端口、TLS 设置等字段。这使得管理 `GatewayClass` 的控制器可以为用户提供这些缺省设置，从而使规范更加可移植。这种行为将通过 `GatewayClass` 状态对象来明确。
 
 一个 `Gateway` 可以包含一个或多个 `Route` 引用，这些 `Route` 引用的作用是将一个子集的流量引导到一个特定的服务上。
 
@@ -118,7 +124,7 @@ Gateway API 的资源模型中，主要有三种类型的对象：
 
 {{<callout note "注意">}}
 
-目前除了 `HTTPRoute` 是 Gateway API 正式支持的，其他的路由类型还在实验中，详见[版本文档](https://gateway-api.sigs.k8s.io/concepts/versioning/)。
+目前只有 `HTTPRoute` 是 Gateway API 正式支持的，其他的路由类型还在实验中，详见[版本文档](https://gateway-api.sigs.k8s.io/concepts/versioning/)。
 
 {{</callout>}}
 
@@ -132,11 +138,11 @@ Gateway API 的资源模型中，主要有三种类型的对象：
 
 #### TCPRoute 和 UDPRoute
 
-`TCPRoute`（和 `UDPRoute`）旨在用于将一个或多个端口映射到单个后端。在这种情况下，没有可用于在同一端口上选择不同后端的鉴别器（Discriminator），因此每个 `TCPRoute` 确实需要监听器上的不同端口（通常，无论如何）。你可以终止 TLS，在这种情况下，未加密的字节流被传递到后端。你可以选择不终止 TLS，在这种情况下，加密的字节流被传递到后端。
+`TCPRoute`（和 `UDPRoute`）旨在用于将一个或多个端口映射到单个后端。在这种情况下，没有可用于在同一端口上选择不同后端的鉴别器（Discriminator），因此每个 `TCPRoute` 确实需要监听器上的不同端口。你可以终止 TLS，在这种情况下，未加密的字节流被传递到后端。你可以选择不终止 TLS，在这种情况下，加密的字节流被传递到后端。
 
 #### GRCPRoute
 
-`GRPCRoute` 用于惯用地路由 gRPC 流量。支持 `GRPCRoute` 的网关需要支持 HTTP/2，而无需从 HTTP/1 进行初始升级，因此可以保证 gRPC 流量正常流动。
+`GRPCRoute` 用于路由 gRPC 流量。支持 `GRPCRoute` 的网关需要支持 HTTP/2，而无需从 HTTP/1 进行初始升级，因此可以保证 gRPC 流量正常流动。
 
 #### Route 类型列表
 
@@ -154,19 +160,19 @@ Gateway API 的资源模型中，主要有三种类型的对象：
 
 ### 将路由添加到网关
 
-将 Route 附加到 Gateway 表示在 Gateway 上应用的配置，用于配置底层负载均衡器或代理。Route 如何以及哪些 Route 附加到 Gateway 由资源本身控制。Route 和 Gateway 资源具有内置控件以允许或限制它们的连接方式。与 Kubernetes RBAC 一起，这些允许组织实施有关如何公开  Route 以及在公开在哪些 Gateway 上的策略。
+将 Route 附加到 Gateway 表示在 Gateway 上应用的配置，用于配置底层负载均衡器或代理。Route 如何以及哪些 Route 附加到 Gateway 由资源本身控制。Route 和 Gateway 资源具有内置控件以允许或限制它们的连接方式。组织可以同时利用 Kubernetes RBAC，实施有关如何公开  Route 以及在公开在哪些 Gateway 上公开的策略。
 
-如何将 Route 附加到网关以实现不同的组织策略和责任范围有很大的灵活性。下面是 Gateway 和 Route 可以具有的不同关系：
+如何将 Route 附加到网关以实现不同的组织策略和责任范围有很大的灵活性。下面是 Gateway 和 Route 可以具有的关系：
 
 - **一对一**：Gateway 和 Route 可以由单个所有者部署和使用，具有一对一的关系。
 - **一对多**： Gateway 可以绑定许多 Route，这些 Route 由来自不同命名空间的不同团队拥有。
-- **多对一**：Route 也可以绑定到多个 Gateway，允许单个 Route 同时控制跨不同 IP、负载均衡器或网络的应用程序公开。
+- **多对一**：Route 也可以绑定到多个 Gateway，允许单个 Route 同时控制跨不同 IP、负载均衡器或网络的应用程序。
 
 ### 路由绑定
 
-当 `Route` 绑定到 `Gateway` 时，代表应用在 `Gateway` 上的配置，配置了底层的负载均衡器或代理。哪些 `Route` 如何绑定到 `Gateway` 是由资源本身控制的。`Route` 和 `Gateway` 资源具有内置的控制，以允许或限制它们之间如何相互选择。这对于强制执行组织政策以确定 `Route` 如何暴露以及在哪些 `Gateway` 上暴露非常有用。看下下面的例子。
+当 `Route` 绑定到 `Gateway` 时，代表应用在 `Gateway` 上配置了底层的负载均衡器或代理。哪些 `Route` 如何绑定到 `Gateway` 是由资源本身控制的。`Route` 和 `Gateway` 资源具有内置的控制，以允许或限制它们之间如何相互选择。这对于强制执行组织策略以确定 `Route` 如何暴露以及在哪些 `Gateway` 上暴露非常有用。请看下面的例子。
 
-一个 Kubernetes 集群管理员在 `Infra` 命名空间中部署了一个名为 `shared-gw` 的 `Gateway`，供不同的应用团队使用，以便将其应用暴露在集群之外。团队 A 和团队 B（分别在命名空间 "A" 和 "B" 中）将他们的 `Route` 绑定到这个 `Gateway`。它们互不相识，只要它们的 `Route` 规则互不冲突，就可以继续隔离运行。团队 C 有特殊的网络需求（可能是性能、安全或关键性），他们需要一个专门的 `Gateway` 来代理他们的应用到集群外。团队 C 在 "C" 命名空间中部署了自己的 `Gateway` `specialive-gw`，该 Gateway 只能由 "C" 命名空间中的应用使用。
+一个 Kubernetes 集群管理员在 `Infra` 命名空间中部署了一个名为 `shared-gw` 的 `Gateway`，供不同的应用团队使用，以便将其应用暴露在集群之外。团队 A 和团队 B（分别在命名空间 "A" 和 "B" 中）将他们的 `Route` 绑定到这个 `Gateway`。它们互不相识，只要它们的 `Route` 规则互不冲突，就可以继续隔离运行。团队 C 有特殊的网络需求（可能是性能、安全或关键业务），他们需要一个专门的 `Gateway` 来代理。团队 C 在 "C" 命名空间中部署了自己的 `Gateway` `specialive-gw`，该 Gateway 只能由 "C" 命名空间中的应用使用。
 
 不同命名空间及 `Gateway` 与 `Route` 的绑定关系如下图所示。
 
@@ -175,11 +181,9 @@ Gateway API 的资源模型中，主要有三种类型的对象：
 将路由附加到网关包括以下步骤：
 
 1. Route 需要在其 `parentRefs` 字段中引用 Gateway 的条目；
-2. Gateway 上的至少一个监听器需要允许其附着。
+2. Gateway 上至少有一个监听器允许其附加。
 
 ## 引用网关
-
-Route 可以通过在`parentRef`. 路由可以使用以下字段进一步选择网关下的监听器子集`parentRef`：
 
 Route 可以通过在 `parentRef` 中指定命名空间（如果 Route 和 Gateway 在同一个名称空间中则该配置是可选的）和 Gateway 的名称来引用 Gateway。Route 可以使用 `parentRef` 中的以下字段进一步选择 Gateway 下的监听器子集：
 
@@ -190,20 +194,20 @@ Route 可以通过在 `parentRef` 中指定命名空间（如果 Route 和 Gatew
 
 ### 限制路由附加
 
-每个 Gateway 监听器都可以通过以下机制限制其可以附加哪些路由：
+每个 Gateway 监听器都可以通过以下机制限制其可以附加的路由：
 
-1. **Hostname**：设置监听器上的 `hostname` 字段时，指定`hostnames` 字段的附加路由必须至少有一个重叠值。
+1. **Hostname**：如果监听器上设置了 `hostname` ，附加路由的 `hostnames` 中必须至少有一个重叠值。
 2. **Namespace**：监听器上的 `allowedRoutes.namespaces` 字段可用于限制可以附加路由的位置。该 `namespaces.from` 字段支持以下值：
    - `SameNamespace` 是默认选项。只有与该网关相同的命名空间中的路由才会被选择。
-   - `All` 将选择来自所有命名空间的 `Route`。
+   - `All` 可选择来自所有命名空间的 `Route`。
    - `Selector` 意味着该网关将选择由 Namespace 标签选择器选择的 Namespace 子集的 Route。当使用 Selector 时，那么 `listeners.route.namespaces.selector` 字段可用于指定标签选择器。`All` 或 `SameNamespace` 不支持该字段。
 3. **Kind**：监听器上的 `allowedRoutes.kinds` 字段可用于限制可能附加的路由种类。
 
 如果未指定上述任何一项，网关监听器将信任从支持监听器协议的同一命名空间附加的路由。
 
-### 更多 Gateway - Route 附加示例
+### Gateway - Route 附加示例
 
-以下 `gateway-api-example-ns1` 命名空间中的 `my-route` Route 想要附加到 `foo-gateway` 中， 不会附加到任何其他 Gateway。请注意， `foo-gateway` 它位于不同的命名空间中。`foo-gateway` 必须允许来自 `gateway-api-example-ns2` 命名空间中的 HTTPRoutes 附加。
+在下面的例子中 `gateway-api-example-ns1` 命名空间中的 `my-route` Route 想要附加到 `foo-gateway` 中，不会附加到任何其他 Gateway 上。请注意， `foo-gateway` 位于与 Gateway 不同的命名空间中。`foo-gateway` 必须允许来自 `gateway-api-example-ns2` 命名空间中的 HTTPRoute 附加。
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1beta1
@@ -279,18 +283,172 @@ spec:
 
 ## 请求流程
 
-使用反向代理实现的网关的一个典型的客户端 / 网关 API 请求流程是：
+使用反向代理实现的网关的一个典型的客户端 / 网关 API 请求流程如下：
 
 1. 客户端向 `http://foo.example.com` 发出请求。
-2. DNS 将该名称解析为网关地址。
-3. 反向代理在 `Listener` 上接收请求，并使用 `Host` 头 来匹配 `HTTPRoute`。
-4. 可选地，反向代理可以根据 `HTTPRoute` 的匹配规则执行请求头和 / 或路径匹配。
-5. 可选地，反向代理可以根据 `HTTPRoute` 的过滤规则修改请求，即添加 / 删除头。
-6. 最后，反向代理可以根据 `HTTPRoute` 的 `forwardTo` 规则，将请求转发到集群中的一个或多个对象，即 `Service`。
+2. DNS 将该名称解析为 `Gateway` 地址。
+3. 反向代理在 `Listener` 上接收请求，并使用 `Host`  header 来匹配 `HTTPRoute`。
+4. 可选地，反向代理可以根据 `HTTPRoute` 中的 `match` 规则执行请求 header和 / 或路径匹配。
+5. 可选地，反向代理可以根据 `HTTPRoute` 中的 `filter` 规则修改请求，即添加 / 删除 header。
+6. 最后，反向代理可以根据 `HTTPRoute` 中的 `forwardTo` 规则，将请求转发到集群中的一个或多个对象，即 `Service`。
 
 ## TLS 配置
 
-TLS 配置在 `Gateway` 监听器上，可以跨命名空间引用。
+我们可以在 `Gateway` 监听器上配置 TLS，还可以跨命名空间引用。
+
+首先我们先说明几个术语：
+
+- 下游：客户端和网关之间的链接。
+- 上游：网关与路由器指定的后端服务之间的链接。
+
+其关系如下图所示。
+
+![客户端/服务器和 TLS](../../images/tls-overview.svg)
+
+通过 Gateway API 可以分别对上游或下游的 TLS 进行配置。
+
+根据监听器协议，支持不同的 TLS 模式和路由类型，如下表所示。
+
+| 监听器协议 | TLS 模式 | 支持的路由类型 |
+| :--------- | :------- | :------------- |
+| TLS        | 直通     | TLSRoute       |
+| TLS        | 终止     | TCPRoute       |
+| HTTPS      | 终止     | HTTPRoute      |
+
+请注意，在`Passthrough`（直通） TLS 模式下，没有 TLS 设置生效，因为来自客户端的 TLS 会话不会在网关处终止。本文的其余部分假定 TLS 在网关处终止，这是默认设置。
+
+### 下游 TLS
+
+下游 TLS 设置使用网关级别的监听器进行配置。
+
+### 监听器和 TLS
+
+监听器基于每个域或子域公开 TLS 设置。监听器的 TLS 设置适用于满足 `hostname` 条件的所有域。
+
+在以下示例中，`default-cert` Gateway 为所有请求提供 Secret 资源中定义的 TLS 证书。尽管该示例涉及 HTTPS 协议，但也可以将相同的功能用于 TLS-only 协议以及 TLSRoutes。
+
+```yaml
+listeners:
+- protocol: HTTPS # Other possible value is `TLS`
+  port: 443
+  tls:
+    mode: Terminate # If protocol is `TLS`, `Passthrough` is a possible mode
+    certificateRef:
+      kind: Secret
+      group: ""
+      name: default-cert
+```
+
+如果 `hostname.match` 设置为`Exact`，则 TLS 设置仅适用于在 `hostname.name` 中设置的特定主机名。
+
+### 示例
+
+#### 具有不同证书的监听器
+
+在下面的示例中，配置 Gateway 服务于 `foo.example.com` 和  `bar.example.com` 域。这些域的证书在 Gateway 中指定。
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  name: tls-basic
+spec:
+  gatewayClassName: acme-lb
+  listeners:
+  - name: foo-https
+    protocol: HTTPS
+    port: 443
+    hostname: foo.example.com
+    tls:
+      certificateRefs:
+      - kind: Secret
+        group: ""
+        name: foo-example-com-cert
+  - name: bar-https
+    protocol: HTTPS
+    port: 443
+    hostname: bar.example.com
+    tls:
+      certificateRefs:
+      - kind: Secret
+        group: ""
+        name: bar-example-com-cert
+```
+
+#### 通配符 TLS 监听器
+
+在下面的示例中，Gateway 为 `*.example.com` 和 `foo.example.com` 域配置了不同的通配符证书。由于特定匹配具有优先权，所有对 `foo.example.com` 的请求将使用 `foo-example-com-cert`，所有对 `exmaple.com` 的其他请求使用 `wildcard-example-com-cert` 证书。
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  name: wildcard-tls-gateway
+spec:
+  gatewayClassName: acme-lb
+  listeners:
+  - name: foo-https
+    protocol: HTTPS
+    port: 443
+    hostname: foo.example.com
+    tls:
+      certificateRefs:
+      - kind: Secret
+        group: ""
+        name: foo-example-com-cert
+  - name: wildcard-https
+    protocol: HTTPS
+    port: 443
+    hostname: "*.example.com"
+    tls:
+      certificateRefs:
+      - kind: Secret
+        group: ""
+        name: wildcard-example-com-cert
+```
+
+#### 跨命名空间证书引用
+
+在此示例中，配置 Gateway 引用不同命名空间中的证书。在目标命名空间中创建 `ReferenceGrant` 以允许跨命名空间引用。
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  name: cross-namespace-tls-gateway
+  namespace: gateway-api-example-ns1
+spec:
+  gatewayClassName: acme-lb
+  listeners:
+  - name: https
+    protocol: HTTPS
+    port: 443
+    hostname: "*.example.com"
+    tls:
+      certificateRefs:
+      - kind: Secret
+        group: ""
+        name: wildcard-example-com-cert
+        namespace: gateway-api-example-ns2
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: ReferenceGrant
+metadata:
+  name: allow-ns1-gateways-to-ref-secrets
+  namespace: gateway-api-example-ns2
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    namespace: gateway-api-example-ns1
+  to:
+  - group: ""
+    kind: Secret
+```
+
+### 扩展
+
+网关 TLS 配置提供了一个 `options` 映射来为特定于实现的功能添加额外的 TLS 设置。此处可能包含的一些功能示例是 TLS 版本限制或要使用的密码。
 
 ## 扩展点
 
@@ -305,3 +463,4 @@ API 中提供了一些扩展点，以灵活处理大量通用 API 无法处理�
 ## 参考
 
 - [kuberentes-sigs/gateway-api - github.com](https://github.com/kubernetes-sigs/gateway-api)
+- [Kubernetes Gateway API 文档 - gateway-api.sigs.k8s.io](https://gateway-api.sigs.k8s.io/)
