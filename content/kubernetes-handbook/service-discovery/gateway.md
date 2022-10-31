@@ -104,7 +104,56 @@ Gateway API 的资源模型中，主要有三种类型的对象：
 
 `GatewayClass` 是一个集群范围的资源。必须至少定义一个 `GatewayClass`，`Gateway` 才能够生效。实现 Gateway API 的控制器通过关联的 `GatewayClass` 资源来实现，用户可以在自己的 `Gateway` 中引用该资源。
 
-这类似于 `Ingress` 的 `IngressClass` 和 `PersistentVolumes` 的 [`StorageClass`](https://kubernetes.io/docs/concepts/storage/storage-classes/)。在 `Ingress` v1beta1 中，最接近 `GatewayClass` 的是 `ingress-class` 注解，而在 Ingress V1 中，与它类似的是 `IngressClass` 对象。
+这类似于 `Ingress` 的 `IngressClass` 和 `PersistentVolumes` 的 [`StorageClass`](https://kubernetes.io/docs/concepts/storage/storage-classes/)。在 `Ingress` v1beta1 中，最接近 `GatewayClass` 的是 `ingress-class` 注解，而在 Ingress V1 中，它的作用与 `IngressClass` 一样。
+
+下面是一个 `GatewayClass` 的配置示例。
+
+```yaml
+kind: GatewayClass
+metadata:
+  name: cluster-gateway
+spec:
+  controllerName: "example.net/gateway-controller"
+```
+
+`GatewayClass` 一般由基础设施提供商来创建，用户不需要关注控制器如何实现，只需要了解该 `GatewayClass` 创建的对应 `Gateway` 的属性即可。
+
+Gateway API 的提供者还可以开放了一部分参数配置给网关管理员，管理员可以使用 `GatewayClass.spec.parametersRef` 字段来配置：
+
+```yaml
+kind: GatewayClass
+metadata:
+  name: internet
+spec:
+  controllerName: "example.net/gateway-controller" # 该字段的值应为集群唯一的
+  parametersRef:
+    group: example.net/v1alpha1
+    kind: Config
+    name: internet-gateway-config
+---
+apiVersion: example.net/v1alpha1
+kind: Config
+metadata:
+  name: internet-gateway-config
+spec:
+  ip-address-pool: internet-vips
+  ...
+```
+
+建议使用 `GatewayClass.spec.parametersRef` 自定义资源配置，不过你也可以使用 ConfigMap。
+
+在刚部署 GatewayClass 后，`GatewayClass.status`  中的状态类型为 `Accepted` 但是 `status` 为 `False`，控制器处理完配置后 `status` 将变为 `True`，如果在该过程中出现错误，那么会显示在状态中，如下所示。
+
+```yaml
+kind: GatewayClass
+...
+status:
+  conditions:
+  - type: Accepted
+    status: False
+    Reason: BadFooBar
+    Message: "foobar" is an FooBar.
+```
 
 ### Gateway
 
@@ -115,6 +164,72 @@ Gateway API 的资源模型中，主要有三种类型的对象：
 由于 `Gateway` 规范捕获了用户意图，它可能不包含规范中所有属性的完整规范。例如，用户可以省略地址、端口、TLS 设置等字段。这使得管理 `GatewayClass` 的控制器可以为用户提供这些缺省设置，从而使规范更加可移植。这种行为将通过 `GatewayClass` 状态对象来明确。
 
 一个 `Gateway` 可以包含一个或多个 `Route` 引用，这些 `Route` 引用的作用是将一个子集的流量引导到一个特定的服务上。
+
+`Gateway` 规范中定义了以下内容：
+
+- `GatewayClassName`：定义此网关使用的  `GatewayClass`  对象的名称。
+- `Listeners`：定义主机名、端口、协议、终止、TLS 设置以及哪些路由可以附加到监听器。
+- `Addresses`：定义为此 Gateway 请求的网络地址。
+
+如果以上规范中的配置无法实现，Gateway 将处于错误状态，状态条件中会显示详细信息。
+
+下面展示的是使用 [Envoy Gateway](https://gateway.envoyproxy.io/) 生成的 Gateway 示例：
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"gateway.networking.k8s.io/v1beta1","kind":"Gateway","metadata":{"annotations":{},"name":"eg","namespace":"default"},"spec":{"gatewayClassName":"eg","listeners":[{"name":"http","port":8080,"protocol":"HTTP"}]}}
+  creationTimestamp: "2022-10-22T07:03:28Z"
+  generation: 1
+  name: eg
+  namespace: default
+  resourceVersion: "326707757"
+  uid: 20f37614-1814-4c4a-b3ee-8d923a1a78f8
+spec:
+  gatewayClassName: eg
+  listeners:
+  - allowedRoutes:
+      namespaces:
+        from: Same
+    name: http
+    port: 8080
+    protocol: HTTP
+status:
+  addresses:
+  - type: IPAddress
+    value: 11.11.11.11 # 如果 Envoy Gateway 部署在云上，云会创建一个 LoadBalancer 实例从而获得一个外部 IP，该 IP 为网关 IP
+  conditions:
+  - lastTransitionTime: "2022-10-22T07:03:28Z"
+    message: The Gateway has been scheduled by Envoy Gateway
+    observedGeneration: 1
+    reason: Scheduled
+    status: "True"
+    type: Scheduled
+  - lastTransitionTime: "2022-10-22T07:04:17Z"
+    message: Address assigned to the Gateway, 1/1 envoy Deployment replicas available
+    observedGeneration: 1
+    reason: Ready
+    status: "True"
+    type: Ready
+  listeners:
+  - attachedRoutes: 1
+    conditions:
+    - lastTransitionTime: "2022-10-22T07:03:30Z"
+      message: Listener is ready
+      observedGeneration: 1
+      reason: Ready
+      status: "True"
+      type: Ready
+    name: http
+    supportedKinds:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+```
+
+从上面的示例中我们可以看到 `status` 中显示了 Gateway 的状态，如网关的 IP 地址，监听器上附着的路由以及更新时间。
 
 ### Route
 
@@ -131,6 +246,16 @@ Gateway API 的资源模型中，主要有三种类型的对象：
 #### HTTPRoute
 
 `HTTPRoute` 用于多路复用 HTTP 或终止的 HTTPS 连接。它适用于检查 HTTP 流并使用 HTTP 请求数据进行路由或修改的情况，例如使用 HTTP Header 进行路由或在运行中修改它们。
+
+HTTPRoute 的规范中包括：
+
+- `parentRefs`：定义此路由要附加到的 Gateway。
+- `hostnames`（可选）：定义用于匹配 HTTP 请求的主机头的主机名列表。
+- `rules`：定义规则列表以针对匹配的 HTTP 请求执行操作。每条规则由 `matches`、`filters`（可选）和 `backendRefs`（可选）字段组成。
+
+下图展示了流量经过网关和 HTTPRoute 发送到服务中的过程。
+
+![流量经过网关和 HTTPRoute 到服务中的过程](../../images/httproute-basic-example.svg)
 
 #### TLSRoute
 
@@ -157,6 +282,20 @@ Gateway API 的资源模型中，主要有三种类型的对象：
 | `GRPCRoute` | 第 7 层                        | gRPC 协议中的任何内容 | 仅终止     | 基于 HTTP/2 和 HTTP/2 明文的 gRPC 路由         |
 
 请注意，通过 `HTTPRoute` 和 `TCPRoute` 路由的流量可以在网关和后端之间进行加密（通常称为重新加密）。无法使用现有的 Gateway API 资源对其进行配置，但实现可以为此提供自定义配置，直到 Gateway API 定义了标准化方法。
+
+### ReferenceGrant
+
+{{<callout note 注意>}}
+
+`ReferenceGrant` 资源仍在实验阶段，更多信息请参考[版本文档](https://gateway-api.sigs.k8s.io/concepts/versioning)。
+
+{{</callout>}}
+
+`ReferenceGrant` 可用于在 Gateway API 中启用跨命名空间引用。特别是，路由可能会将流量转发到其他命名空间中的后端，或者 Gateway 可能会引用另一个命名空间中的 Secret。
+
+过去，我们已经看到跨命名空间边界转发流量是一种理想的功能，但如果没有 `ReferenceGrant` 之类的保护措施， 就会出现[漏洞](https://github.com/kubernetes/kubernetes/issues/103675)。
+
+如果从其命名空间外部引用一个对象，则该对象的所有者必须创建一个 `ReferenceGrant` 资源以显式允许该引用，否则跨命名空间引用是无效的。
 
 ### 将路由添加到网关
 
