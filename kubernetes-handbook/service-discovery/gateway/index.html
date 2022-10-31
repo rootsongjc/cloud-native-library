@@ -339,7 +339,7 @@
         content="2022-05-21T00:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2022-10-31T16:49:12&#43;08:00">
+    <meta property="article:modified_time" content="2022-10-31T21:32:47&#43;08:00">
   
 
   
@@ -2047,6 +2047,7 @@
         <li><a href="#gatewayclass">GatewayClass</a></li>
         <li><a href="#gateway">Gateway</a></li>
         <li><a href="#route">Route</a></li>
+        <li><a href="#referencegrant">ReferenceGrant</a></li>
         <li><a href="#将路由添加到网关">将路由添加到网关</a></li>
         <li><a href="#路由绑定">路由绑定</a></li>
       </ul>
@@ -2264,12 +2265,107 @@
 <h3 id="gatewayclass">GatewayClass</h3>
 <p><code>GatewayClass</code> 定义了一组共享共同配置和行为的 Gateway，每个 <code>GatewayClass</code> 由一个控制器处理，但控制器可以处理多个 <code>GatewayClass</code>。</p>
 <p><code>GatewayClass</code> 是一个集群范围的资源。必须至少定义一个 <code>GatewayClass</code>，<code>Gateway</code> 才能够生效。实现 Gateway API 的控制器通过关联的 <code>GatewayClass</code> 资源来实现，用户可以在自己的 <code>Gateway</code> 中引用该资源。</p>
-<p>这类似于 <code>Ingress</code> 的 <code>IngressClass</code> 和 <code>PersistentVolumes</code> 的 <a href="https://kubernetes.io/docs/concepts/storage/storage-classes/" target="_blank" rel="noopener"><code>StorageClass</code></a>。在 <code>Ingress</code> v1beta1 中，最接近 <code>GatewayClass</code> 的是 <code>ingress-class</code> 注解，而在 Ingress V1 中，与它类似的是 <code>IngressClass</code> 对象。</p>
-<h3 id="gateway">Gateway</h3>
+<p>这类似于 <code>Ingress</code> 的 <code>IngressClass</code> 和 <code>PersistentVolumes</code> 的 <a href="https://kubernetes.io/docs/concepts/storage/storage-classes/" target="_blank" rel="noopener"><code>StorageClass</code></a>。在 <code>Ingress</code> v1beta1 中，最接近 <code>GatewayClass</code> 的是 <code>ingress-class</code> 注解，而在 Ingress V1 中，它的作用与 <code>IngressClass</code> 一样。</p>
+<p>下面是一个 <code>GatewayClass</code> 的配置示例。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">GatewayClass</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">cluster-gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">controllerName</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;example.net/gateway-controller&#34;</span><span class="w">
+</span></span></span></code></pre></div><p><code>GatewayClass</code> 一般由基础设施提供商来创建，用户不需要关注控制器如何实现，只需要了解该 <code>GatewayClass</code> 创建的对应 <code>Gateway</code> 的属性即可。</p>
+<p>Gateway API 的提供者还可以开放了一部分参数配置给网关管理员，管理员可以使用 <code>GatewayClass.spec.parametersRef</code> 字段来配置：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">GatewayClass</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">internet</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">controllerName</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;example.net/gateway-controller&#34;</span><span class="w"> </span><span class="c"># 该字段的值应为集群唯一的</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">parametersRef</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l">example.net/v1alpha1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Config</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">internet-gateway-config</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">---</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">example.net/v1alpha1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Config</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">internet-gateway-config</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">ip-address-pool</span><span class="p">:</span><span class="w"> </span><span class="l">internet-vips</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="l">...</span><span class="w">
+</span></span></span></code></pre></div><p>建议使用 <code>GatewayClass.spec.parametersRef</code> 自定义资源配置，不过你也可以使用 ConfigMap。</p>
+<p>在刚部署 GatewayClass 后，<code>GatewayClass.status</code>  中的状态类型为 <code>Accepted</code> 但是 <code>status</code> 为 <code>False</code>，控制器处理完配置后 <code>status</code> 将变为 <code>True</code>，如果在该过程中出现错误，那么会显示在状态中，如下所示。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">GatewayClass</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">status</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">conditions</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">Accepted</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">status</span><span class="p">:</span><span class="w"> </span><span class="kc">False</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">Reason</span><span class="p">:</span><span class="w"> </span><span class="l">BadFooBar</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">Message</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;foobar&#34;</span><span class="w"> </span><span class="l">is an FooBar.</span><span class="w">
+</span></span></span></code></pre></div><h3 id="gateway">Gateway</h3>
 <p><code>Gateway</code> 描述了如何将流量翻译到集群内的服务。它定义了一个将流量从不了解 Kubernetes 的地方翻译到了解 Kubernetes 的地方的方法。例如，由云负载均衡器、集群内代理或外部硬件负载均衡器发送到 Kubernetes 服务的流量。虽然许多用例的客户端流量源自集群的 &ldquo;外部&rdquo;，但这并不是必需的。</p>
 <p><code>Gateway</code> 定义了对实现 <code>GatewayClass</code> 配置和行为约定的特定负载均衡器配置的请求。该资源可以由运维人员直接创建，也可以由处理 <code>GatewayClass</code> 的控制器创建。</p>
 <p>由于 <code>Gateway</code> 规范捕获了用户意图，它可能不包含规范中所有属性的完整规范。例如，用户可以省略地址、端口、TLS 设置等字段。这使得管理 <code>GatewayClass</code> 的控制器可以为用户提供这些缺省设置，从而使规范更加可移植。这种行为将通过 <code>GatewayClass</code> 状态对象来明确。</p>
 <p>一个 <code>Gateway</code> 可以包含一个或多个 <code>Route</code> 引用，这些 <code>Route</code> 引用的作用是将一个子集的流量引导到一个特定的服务上。</p>
+<p><code>Gateway</code> 规范中定义了以下内容：</p>
+<ul>
+<li><code>GatewayClassName</code>：定义此网关使用的  <code>GatewayClass</code>  对象的名称。</li>
+<li><code>Listeners</code>：定义主机名、端口、协议、终止、TLS 设置以及哪些路由可以附加到监听器。</li>
+<li><code>Addresses</code>：定义为此 Gateway 请求的网络地址。</li>
+</ul>
+<p>如果以上规范中的配置无法实现，Gateway 将处于错误状态，状态条件中会显示详细信息。</p>
+<p>下面展示的是使用 <a href="https://gateway.envoyproxy.io/" target="_blank" rel="noopener">Envoy Gateway</a> 生成的 Gateway 示例：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">gateway.networking.k8s.io/v1beta1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">annotations</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">kubectl.kubernetes.io/last-applied-configuration</span><span class="p">:</span><span class="w"> </span><span class="p">|</span><span class="sd">
+</span></span></span><span class="line"><span class="cl"><span class="sd">      </span><span class="w">      </span>{<span class="s2">&#34;apiVersion&#34;</span><span class="p">:</span><span class="s2">&#34;gateway.networking.k8s.io/v1beta1&#34;</span><span class="p">,</span><span class="s2">&#34;kind&#34;</span><span class="p">:</span><span class="s2">&#34;Gateway&#34;</span><span class="p">,</span><span class="s2">&#34;metadata&#34;</span><span class="p">:</span>{<span class="s2">&#34;annotations&#34;</span><span class="p">:</span>{}<span class="p">,</span><span class="s2">&#34;name&#34;</span><span class="p">:</span><span class="s2">&#34;eg&#34;</span><span class="p">,</span><span class="s2">&#34;namespace&#34;</span><span class="p">:</span><span class="s2">&#34;default&#34;</span>}<span class="p">,</span><span class="s2">&#34;spec&#34;</span><span class="p">:</span>{<span class="s2">&#34;gatewayClassName&#34;</span><span class="p">:</span><span class="s2">&#34;eg&#34;</span><span class="p">,</span><span class="s2">&#34;listeners&#34;</span><span class="p">:[</span>{<span class="s2">&#34;name&#34;</span><span class="p">:</span><span class="s2">&#34;http&#34;</span><span class="p">,</span><span class="s2">&#34;port&#34;</span><span class="p">:</span><span class="m">8080</span><span class="p">,</span><span class="s2">&#34;protocol&#34;</span><span class="p">:</span><span class="s2">&#34;HTTP&#34;</span>}<span class="p">]</span>}}<span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">creationTimestamp</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;2022-10-22T07:03:28Z&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">generation</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">eg</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">default</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">resourceVersion</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;326707757&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">uid</span><span class="p">:</span><span class="w"> </span><span class="l">20f37614-1814-4c4a-b3ee-8d923a1a78f8</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">gatewayClassName</span><span class="p">:</span><span class="w"> </span><span class="l">eg</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">listeners</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">allowedRoutes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">namespaces</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="l">Same</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">http</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l">HTTP</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">status</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">addresses</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">IPAddress</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="m">11.11.11.11</span><span class="w"> </span><span class="c"># 如果 Envoy Gateway 部署在云上，云会创建一个 LoadBalancer 实例从而获得一个外部 IP，该 IP 为网关 IP</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">conditions</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">lastTransitionTime</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;2022-10-22T07:03:28Z&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">message</span><span class="p">:</span><span class="w"> </span><span class="l">The Gateway has been scheduled by Envoy Gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">observedGeneration</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">reason</span><span class="p">:</span><span class="w"> </span><span class="l">Scheduled</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">status</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;True&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">Scheduled</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">lastTransitionTime</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;2022-10-22T07:04:17Z&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">message</span><span class="p">:</span><span class="w"> </span><span class="l">Address assigned to the Gateway, 1/1 envoy Deployment replicas available</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">observedGeneration</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">reason</span><span class="p">:</span><span class="w"> </span><span class="l">Ready</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">status</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;True&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">Ready</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">listeners</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">attachedRoutes</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">conditions</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">lastTransitionTime</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;2022-10-22T07:03:30Z&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">message</span><span class="p">:</span><span class="w"> </span><span class="l">Listener is ready</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">observedGeneration</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">reason</span><span class="p">:</span><span class="w"> </span><span class="l">Ready</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">status</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;True&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">Ready</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">http</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">supportedKinds</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l">gateway.networking.k8s.io</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">HTTPRoute</span><span class="w">
+</span></span></span></code></pre></div><p>从上面的示例中我们可以看到 <code>status</code> 中显示了 Gateway 的状态，如网关的 IP 地址，监听器上附着的路由以及更新时间。</p>
 <h3 id="route">Route</h3>
 <p><code>Route</code> 对象定义了特定协议的规则，用于将请求从 <code>Gateway</code> 映射到 Kubernetes 服务。</p>
 <p>从 v1alpha2 开始，Gateway API 中包含四种 <code>Route</code> 资源类型。对于其他协议，鼓励使用特定于实现的自定义路由类型。未来可能会向 API 添加新的路由类型。</p>
@@ -2282,6 +2378,36 @@
 
 <h4 id="httproute">HTTPRoute</h4>
 <p><code>HTTPRoute</code> 用于多路复用 HTTP 或终止的 HTTPS 连接。它适用于检查 HTTP 流并使用 HTTP 请求数据进行路由或修改的情况，例如使用 HTTP Header 进行路由或在运行中修改它们。</p>
+<p>HTTPRoute 的规范中包括：</p>
+<ul>
+<li><code>parentRefs</code>：定义此路由要附加到的 Gateway。</li>
+<li><code>hostnames</code>（可选）：定义用于匹配 HTTP 请求的主机头的主机名列表。</li>
+<li><code>rules</code>：定义规则列表以针对匹配的 HTTP 请求执行操作。每条规则由 <code>matches</code>、<code>filters</code>（可选）和 <code>backendRefs</code>（可选）字段组成。</li>
+</ul>
+<p>下图展示了流量经过网关和 HTTPRoute 发送到服务中的过程。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-流量经过网关和-httproute-到服务中的过程">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img src="../../images/httproute-basic-example.svg" alt="流量经过网关和 HTTPRoute 到服务中的过程" loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      流量经过网关和 HTTPRoute 到服务中的过程
+    </figcaption></figure>
+</p>
 <h4 id="tlsroute">TLSRoute</h4>
 <p><code>TLSRoute</code> 用于多路复用 TLS 连接，通过 SNI 进行区分。它适用于使用 SNI 作为主要路由方法的地方，并且对 HTTP 等高级协议的属性不感兴趣。连接的字节流被代理，无需对后端进行任何检查。</p>
 <h4 id="tcproute-和-udproute">TCPRoute 和 UDPRoute</h4>
@@ -2339,6 +2465,17 @@
 </tbody>
 </table>
 <p>请注意，通过 <code>HTTPRoute</code> 和 <code>TCPRoute</code> 路由的流量可以在网关和后端之间进行加密（通常称为重新加密）。无法使用现有的 Gateway API 资源对其进行配置，但实现可以为此提供自定义配置，直到 Gateway API 定义了标准化方法。</p>
+<h3 id="referencegrant">ReferenceGrant</h3>
+<div class="alert-note-title">
+    <p>注意</p>
+</div>
+<div class="alert alert-note">
+    <code>ReferenceGrant</code> 资源仍在实验阶段，更多信息请参考<a href="https://gateway-api.sigs.k8s.io/concepts/versioning" target="_blank" rel="noopener">版本文档</a>。
+</div>
+
+<p><code>ReferenceGrant</code> 可用于在 Gateway API 中启用跨命名空间引用。特别是，路由可能会将流量转发到其他命名空间中的后端，或者 Gateway 可能会引用另一个命名空间中的 Secret。</p>
+<p>过去，我们已经看到跨命名空间边界转发流量是一种理想的功能，但如果没有 <code>ReferenceGrant</code> 之类的保护措施， 就会出现<a href="https://github.com/kubernetes/kubernetes/issues/103675" target="_blank" rel="noopener">漏洞</a>。</p>
+<p>如果从其命名空间外部引用一个对象，则该对象的所有者必须创建一个 <code>ReferenceGrant</code> 资源以显式允许该引用，否则跨命名空间引用是无效的。</p>
 <h3 id="将路由添加到网关">将路由添加到网关</h3>
 <p>将 Route 附加到 Gateway 表示在 Gateway 上应用的配置，用于配置底层负载均衡器或代理。Route 如何以及哪些 Route 附加到 Gateway 由资源本身控制。Route 和 Gateway 资源具有内置控件以允许或限制它们的连接方式。组织可以同时利用 Kubernetes RBAC，实施有关如何公开  Route 以及在公开在哪些 Gateway 上公开的策略。</p>
 <p>如何将 Route 附加到网关以实现不同的组织策略和责任范围有很大的灵活性。下面是 Gateway 和 Route 可以具有的关系：</p>
