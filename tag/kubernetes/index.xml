@@ -5576,7 +5576,14 @@ bar.foo.com --|                 |-&amp;gt; bar.foo.com s2:80
       <link>https://lib.jimmysong.io/kubernetes-handbook/service-discovery/gateway/</link>
       <pubDate>Sat, 21 May 2022 00:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/kubernetes-handbook/service-discovery/gateway/</guid>
-      <description>&lt;p&gt;除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 &lt;a href=&#34;https://github.com/kubernetes-sigs/gateway-api&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Gateway API 项目&lt;/a&gt;，它可以帮助我们将 Kubernetes 中的服务暴露到集群外。&lt;/p&gt;
+      <description>&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;注意&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    本文根据 Gateway API 0.5.1 版本撰写。
+&lt;/div&gt;
+
+&lt;p&gt;除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 &lt;a href=&#34;https://github.com/kubernetes-sigs/gateway-api&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Gateway API 项目&lt;/a&gt;，它可以帮助我们将 Kubernetes 中的服务暴露到集群外。&lt;/p&gt;
 &lt;div class=&#34;alert-note-title&#34;&gt;
     &lt;p&gt;Gateway API 与 Ingress 有什么不同？&lt;/p&gt;
 &lt;/div&gt;
@@ -5585,7 +5592,7 @@ bar.foo.com --|                 |-&amp;gt; bar.foo.com s2:80
 &lt;/div&gt;
 
 &lt;p&gt;Gateway API 是一个由 &lt;a href=&#34;https://github.com/kubernetes/community/tree/master/sig-network&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SIG-NETWORK&lt;/a&gt; 管理的开源项目。该项目的目标是在 Kubernetes 生态系统中发展服务网络 API。Gateway API 提供了暴露 Kubernetes 应用的资源——&lt;code&gt;GatewayClass&lt;/code&gt;、&lt;code&gt;Gateway&lt;/code&gt;、&lt;code&gt;HTTPRoute&lt;/code&gt;、&lt;code&gt;TCPRoute&lt;/code&gt; 等。&lt;/p&gt;
-&lt;p&gt;该 API 在 Istio 中也被应用，用于将网格内的服务暴露到集群外。&lt;/p&gt;
+&lt;p&gt;Gateway API 已经得到了大量的网关和服务网格项目支持，请在 Gateway 官方文档中&lt;a href=&#34;https://gateway-api.sigs.k8s.io/implementations/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;查看支持状况&lt;/a&gt;。&lt;/p&gt;
 &lt;h2 id=&#34;目标&#34;&gt;目标&lt;/h2&gt;
 &lt;p&gt;Gateway API 旨在通过提供表现性的、可扩展的、面向角色的接口来改善服务网络，这些接口由许多厂商实现，并得到了业界的广泛支持。&lt;/p&gt;
 &lt;p&gt;Gateway API 是一个 API 资源的集合 —— &lt;code&gt;GatewayClass&lt;/code&gt;、&lt;code&gt;Gateway&lt;/code&gt;、&lt;code&gt;HTTPRoute&lt;/code&gt;、&lt;code&gt;TCPRoute&lt;/code&gt; 等。使用这些资源共同为各种网络用例建模。&lt;/p&gt;
@@ -5630,7 +5637,7 @@ bar.foo.com --|                 |-&amp;gt; bar.foo.com s2:80
 &lt;p&gt;&lt;strong&gt;跨命名空间引用&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;跨越不同 Namespaces 的路由可以绑定到网关。这样，尽管对工作负载进行了命名空间划分，但仍可共享网络基础设施。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;类&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;GatewayClasses&lt;/code&gt; 将负载均衡实现的类型形式化。这些类使用户可以很容易和明确地了解资源模型本身有什么样的能力。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;GatewayClass&lt;/code&gt; 将负载均衡实现的类型形式化。这些类使用户可以很容易和明确地了解资源模型本身有什么样的能力。&lt;/p&gt;
 &lt;p&gt;在了解了 Gateway API 的目的后，接下来我们再看下它的资源模型、请求流程、TLS 配置及扩展点等。&lt;/p&gt;
 &lt;h2 id=&#34;角色划分&#34;&gt;角色划分&lt;/h2&gt;
 &lt;p&gt;Gateway API 开发者为其使用场景定义四类角色：&lt;/p&gt;
@@ -5671,17 +5678,17 @@ bar.foo.com --|                 |-&amp;gt; bar.foo.com s2:80
 &lt;p&gt;Gateway API 的资源模型中，主要有三种类型的对象：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;GatewayClass&lt;/code&gt;：定义了一组具有共同配置和行为的网关。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;Gateway&lt;/code&gt;：请求一个点，在这个点上，流量可以被翻译到集群内的服务。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Gateway&lt;/code&gt;：流量请求端点，流量从这里被翻译成集群内的服务。&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;Route&lt;/code&gt;：描述了通过 Gateway 而来的流量如何映射到服务。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h3 id=&#34;gatewayclass&#34;&gt;GatewayClass&lt;/h3&gt;
 &lt;p&gt;&lt;code&gt;GatewayClass&lt;/code&gt; 定义了一组共享共同配置和行为的 Gateway，每个 &lt;code&gt;GatewayClass&lt;/code&gt; 由一个控制器处理，但控制器可以处理多个 &lt;code&gt;GatewayClass&lt;/code&gt;。&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;GatewayClass&lt;/code&gt; 是一个集群范围的资源。必须至少定义一个 &lt;code&gt;GatewayClass&lt;/code&gt;，&lt;code&gt;Gateway&lt;/code&gt; 才能够生效。实现 Gateway API 的控制器通过关联的 &lt;code&gt;GatewayClass&lt;/code&gt; 资源来实现，用户可以在自己的 &lt;code&gt;Gateway&lt;/code&gt; 中引用该资源。&lt;/p&gt;
-&lt;p&gt;这类似于 &lt;code&gt;Ingress&lt;/code&gt; 的 &lt;code&gt;IngressClass&lt;/code&gt; 和 &lt;code&gt;PersistentVolumes&lt;/code&gt; 的 &lt;a href=&#34;https://kubernetes.io/docs/concepts/storage/storage-classes/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;StorageClass&lt;/code&gt;&lt;/a&gt;。在 &lt;code&gt;Ingress&lt;/code&gt; v1beta1 中，最接近 &lt;code&gt;GatewayClass&lt;/code&gt; 的是 &lt;code&gt;ingress-class&lt;/code&gt; 注解，而在 IngressV1 中，最接近的类似物是 &lt;code&gt;IngressClass&lt;/code&gt; 对象。&lt;/p&gt;
+&lt;p&gt;这类似于 &lt;code&gt;Ingress&lt;/code&gt; 的 &lt;code&gt;IngressClass&lt;/code&gt; 和 &lt;code&gt;PersistentVolumes&lt;/code&gt; 的 &lt;a href=&#34;https://kubernetes.io/docs/concepts/storage/storage-classes/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;StorageClass&lt;/code&gt;&lt;/a&gt;。在 &lt;code&gt;Ingress&lt;/code&gt; v1beta1 中，最接近 &lt;code&gt;GatewayClass&lt;/code&gt; 的是 &lt;code&gt;ingress-class&lt;/code&gt; 注解，而在 Ingress V1 中，与它类似的是 &lt;code&gt;IngressClass&lt;/code&gt; 对象。&lt;/p&gt;
 &lt;h3 id=&#34;gateway&#34;&gt;Gateway&lt;/h3&gt;
 &lt;p&gt;&lt;code&gt;Gateway&lt;/code&gt; 描述了如何将流量翻译到集群内的服务。它定义了一个将流量从不了解 Kubernetes 的地方翻译到了解 Kubernetes 的地方的方法。例如，由云负载均衡器、集群内代理或外部硬件负载均衡器发送到 Kubernetes 服务的流量。虽然许多用例的客户端流量源自集群的 &amp;ldquo;外部&amp;rdquo;，但这并不是必需的。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;Gateway&lt;/code&gt; 定义了对实现 &lt;code&gt;GatewayClass&lt;/code&gt; 配置和行为合同的特定负载均衡器配置的请求。该资源可以由运维人员直接创建，也可以由处理 &lt;code&gt;GatewayClass&lt;/code&gt; 的控制器创建。&lt;/p&gt;
-&lt;p&gt;由于 &lt;code&gt;Gateway&lt;/code&gt; 规范捕获了用户意图，它可能不包含规范中所有属性的完整规范。例如，用户可以省略地址、端口、TLS 设置等字段。这使得管理 &lt;code&gt;GatewayClass&lt;/code&gt; 的控制器可以为用户提供这些设置，从而使规范更加可移植。这种行为将通过 &lt;code&gt;GatewayClass&lt;/code&gt; 状态对象来明确。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Gateway&lt;/code&gt; 定义了对实现 &lt;code&gt;GatewayClass&lt;/code&gt; 配置和行为约定的特定负载均衡器配置的请求。该资源可以由运维人员直接创建，也可以由处理 &lt;code&gt;GatewayClass&lt;/code&gt; 的控制器创建。&lt;/p&gt;
+&lt;p&gt;由于 &lt;code&gt;Gateway&lt;/code&gt; 规范捕获了用户意图，它可能不包含规范中所有属性的完整规范。例如，用户可以省略地址、端口、TLS 设置等字段。这使得管理 &lt;code&gt;GatewayClass&lt;/code&gt; 的控制器可以为用户提供这些缺省设置，从而使规范更加可移植。这种行为将通过 &lt;code&gt;GatewayClass&lt;/code&gt; 状态对象来明确。&lt;/p&gt;
 &lt;p&gt;一个 &lt;code&gt;Gateway&lt;/code&gt; 可以包含一个或多个 &lt;code&gt;Route&lt;/code&gt; 引用，这些 &lt;code&gt;Route&lt;/code&gt; 引用的作用是将一个子集的流量引导到一个特定的服务上。&lt;/p&gt;
 &lt;h3 id=&#34;route&#34;&gt;Route&lt;/h3&gt;
 &lt;p&gt;&lt;code&gt;Route&lt;/code&gt; 对象定义了特定协议的规则，用于将请求从 &lt;code&gt;Gateway&lt;/code&gt; 映射到 Kubernetes 服务。&lt;/p&gt;
@@ -5690,7 +5697,7 @@ bar.foo.com --|                 |-&amp;gt; bar.foo.com s2:80
     &lt;p&gt;注意&lt;/p&gt;
 &lt;/div&gt;
 &lt;div class=&#34;alert alert-note&#34;&gt;
-    目前除了 &lt;code&gt;HTTPRoute&lt;/code&gt; 是 Gateway API 正式支持的，其他的路由类型还在实验中，详见&lt;a href=&#34;https://gateway-api.sigs.k8s.io/concepts/versioning/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;版本文档&lt;/a&gt;。
+    目前只有 &lt;code&gt;HTTPRoute&lt;/code&gt; 是 Gateway API 正式支持的，其他的路由类型还在实验中，详见&lt;a href=&#34;https://gateway-api.sigs.k8s.io/concepts/versioning/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;版本文档&lt;/a&gt;。
 &lt;/div&gt;
 
 &lt;h4 id=&#34;httproute&#34;&gt;HTTPRoute&lt;/h4&gt;
@@ -5698,9 +5705,9 @@ bar.foo.com --|                 |-&amp;gt; bar.foo.com s2:80
 &lt;h4 id=&#34;tlsroute&#34;&gt;TLSRoute&lt;/h4&gt;
 &lt;p&gt;&lt;code&gt;TLSRoute&lt;/code&gt; 用于多路复用 TLS 连接，通过 SNI 进行区分。它适用于使用 SNI 作为主要路由方法的地方，并且对 HTTP 等高级协议的属性不感兴趣。连接的字节流被代理，无需对后端进行任何检查。&lt;/p&gt;
 &lt;h4 id=&#34;tcproute-和-udproute&#34;&gt;TCPRoute 和 UDPRoute&lt;/h4&gt;
-&lt;p&gt;&lt;code&gt;TCPRoute&lt;/code&gt;（和 &lt;code&gt;UDPRoute&lt;/code&gt;）旨在用于将一个或多个端口映射到单个后端。在这种情况下，没有可用于在同一端口上选择不同后端的鉴别器（Discriminator），因此每个 &lt;code&gt;TCPRoute&lt;/code&gt; 确实需要监听器上的不同端口（通常，无论如何）。你可以终止 TLS，在这种情况下，未加密的字节流被传递到后端。你可以选择不终止 TLS，在这种情况下，加密的字节流被传递到后端。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;TCPRoute&lt;/code&gt;（和 &lt;code&gt;UDPRoute&lt;/code&gt;）旨在用于将一个或多个端口映射到单个后端。在这种情况下，没有可用于在同一端口上选择不同后端的鉴别器（Discriminator），因此每个 &lt;code&gt;TCPRoute&lt;/code&gt; 确实需要监听器上的不同端口。你可以终止 TLS，在这种情况下，未加密的字节流被传递到后端。你可以选择不终止 TLS，在这种情况下，加密的字节流被传递到后端。&lt;/p&gt;
 &lt;h4 id=&#34;grcproute&#34;&gt;GRCPRoute&lt;/h4&gt;
-&lt;p&gt;&lt;code&gt;GRPCRoute&lt;/code&gt; 用于惯用地路由 gRPC 流量。支持 &lt;code&gt;GRPCRoute&lt;/code&gt; 的网关需要支持 HTTP/2，而无需从 HTTP/1 进行初始升级，因此可以保证 gRPC 流量正常流动。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;GRPCRoute&lt;/code&gt; 用于路由 gRPC 流量。支持 &lt;code&gt;GRPCRoute&lt;/code&gt; 的网关需要支持 HTTP/2，而无需从 HTTP/1 进行初始升级，因此可以保证 gRPC 流量正常流动。&lt;/p&gt;
 &lt;h4 id=&#34;route-类型列表&#34;&gt;Route 类型列表&lt;/h4&gt;
 &lt;p&gt;下面的「路由鉴别器」一栏是指可以使用哪些信息来允许多个 Routes 共享 Listener 上的端口。&lt;/p&gt;
 &lt;table&gt;
@@ -5753,16 +5760,16 @@ bar.foo.com --|                 |-&amp;gt; bar.foo.com s2:80
 &lt;/table&gt;
 &lt;p&gt;请注意，通过 &lt;code&gt;HTTPRoute&lt;/code&gt; 和 &lt;code&gt;TCPRoute&lt;/code&gt; 路由的流量可以在网关和后端之间进行加密（通常称为重新加密）。无法使用现有的 Gateway API 资源对其进行配置，但实现可以为此提供自定义配置，直到 Gateway API 定义了标准化方法。&lt;/p&gt;
 &lt;h3 id=&#34;将路由添加到网关&#34;&gt;将路由添加到网关&lt;/h3&gt;
-&lt;p&gt;将 Route 附加到 Gateway 表示在 Gateway 上应用的配置，用于配置底层负载均衡器或代理。Route 如何以及哪些 Route 附加到 Gateway 由资源本身控制。Route 和 Gateway 资源具有内置控件以允许或限制它们的连接方式。与 Kubernetes RBAC 一起，这些允许组织实施有关如何公开  Route 以及在公开在哪些 Gateway 上的策略。&lt;/p&gt;
-&lt;p&gt;如何将 Route 附加到网关以实现不同的组织策略和责任范围有很大的灵活性。下面是 Gateway 和 Route 可以具有的不同关系：&lt;/p&gt;
+&lt;p&gt;将 Route 附加到 Gateway 表示在 Gateway 上应用的配置，用于配置底层负载均衡器或代理。Route 如何以及哪些 Route 附加到 Gateway 由资源本身控制。Route 和 Gateway 资源具有内置控件以允许或限制它们的连接方式。组织可以同时利用 Kubernetes RBAC，实施有关如何公开  Route 以及在公开在哪些 Gateway 上公开的策略。&lt;/p&gt;
+&lt;p&gt;如何将 Route 附加到网关以实现不同的组织策略和责任范围有很大的灵活性。下面是 Gateway 和 Route 可以具有的关系：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;一对一&lt;/strong&gt;：Gateway 和 Route 可以由单个所有者部署和使用，具有一对一的关系。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;一对多&lt;/strong&gt;： Gateway 可以绑定许多 Route，这些 Route 由来自不同命名空间的不同团队拥有。&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;多对一&lt;/strong&gt;：Route 也可以绑定到多个 Gateway，允许单个 Route 同时控制跨不同 IP、负载均衡器或网络的应用程序公开。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;多对一&lt;/strong&gt;：Route 也可以绑定到多个 Gateway，允许单个 Route 同时控制跨不同 IP、负载均衡器或网络的应用程序。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h3 id=&#34;路由绑定&#34;&gt;路由绑定&lt;/h3&gt;
-&lt;p&gt;当 &lt;code&gt;Route&lt;/code&gt; 绑定到 &lt;code&gt;Gateway&lt;/code&gt; 时，代表应用在 &lt;code&gt;Gateway&lt;/code&gt; 上的配置，配置了底层的负载均衡器或代理。哪些 &lt;code&gt;Route&lt;/code&gt; 如何绑定到 &lt;code&gt;Gateway&lt;/code&gt; 是由资源本身控制的。&lt;code&gt;Route&lt;/code&gt; 和 &lt;code&gt;Gateway&lt;/code&gt; 资源具有内置的控制，以允许或限制它们之间如何相互选择。这对于强制执行组织政策以确定 &lt;code&gt;Route&lt;/code&gt; 如何暴露以及在哪些 &lt;code&gt;Gateway&lt;/code&gt; 上暴露非常有用。看下下面的例子。&lt;/p&gt;
-&lt;p&gt;一个 Kubernetes 集群管理员在 &lt;code&gt;Infra&lt;/code&gt; 命名空间中部署了一个名为 &lt;code&gt;shared-gw&lt;/code&gt; 的 &lt;code&gt;Gateway&lt;/code&gt;，供不同的应用团队使用，以便将其应用暴露在集群之外。团队 A 和团队 B（分别在命名空间 &amp;ldquo;A&amp;rdquo; 和 &amp;ldquo;B&amp;rdquo; 中）将他们的 &lt;code&gt;Route&lt;/code&gt; 绑定到这个 &lt;code&gt;Gateway&lt;/code&gt;。它们互不相识，只要它们的 &lt;code&gt;Route&lt;/code&gt; 规则互不冲突，就可以继续隔离运行。团队 C 有特殊的网络需求（可能是性能、安全或关键性），他们需要一个专门的 &lt;code&gt;Gateway&lt;/code&gt; 来代理他们的应用到集群外。团队 C 在 &amp;ldquo;C&amp;rdquo; 命名空间中部署了自己的 &lt;code&gt;Gateway&lt;/code&gt; &lt;code&gt;specialive-gw&lt;/code&gt;，该 Gateway 只能由 &amp;ldquo;C&amp;rdquo; 命名空间中的应用使用。&lt;/p&gt;
+&lt;p&gt;当 &lt;code&gt;Route&lt;/code&gt; 绑定到 &lt;code&gt;Gateway&lt;/code&gt; 时，代表应用在 &lt;code&gt;Gateway&lt;/code&gt; 上配置了底层的负载均衡器或代理。哪些 &lt;code&gt;Route&lt;/code&gt; 如何绑定到 &lt;code&gt;Gateway&lt;/code&gt; 是由资源本身控制的。&lt;code&gt;Route&lt;/code&gt; 和 &lt;code&gt;Gateway&lt;/code&gt; 资源具有内置的控制，以允许或限制它们之间如何相互选择。这对于强制执行组织策略以确定 &lt;code&gt;Route&lt;/code&gt; 如何暴露以及在哪些 &lt;code&gt;Gateway&lt;/code&gt; 上暴露非常有用。请看下面的例子。&lt;/p&gt;
+&lt;p&gt;一个 Kubernetes 集群管理员在 &lt;code&gt;Infra&lt;/code&gt; 命名空间中部署了一个名为 &lt;code&gt;shared-gw&lt;/code&gt; 的 &lt;code&gt;Gateway&lt;/code&gt;，供不同的应用团队使用，以便将其应用暴露在集群之外。团队 A 和团队 B（分别在命名空间 &amp;ldquo;A&amp;rdquo; 和 &amp;ldquo;B&amp;rdquo; 中）将他们的 &lt;code&gt;Route&lt;/code&gt; 绑定到这个 &lt;code&gt;Gateway&lt;/code&gt;。它们互不相识，只要它们的 &lt;code&gt;Route&lt;/code&gt; 规则互不冲突，就可以继续隔离运行。团队 C 有特殊的网络需求（可能是性能、安全或关键业务），他们需要一个专门的 &lt;code&gt;Gateway&lt;/code&gt; 来代理。团队 C 在 &amp;ldquo;C&amp;rdquo; 命名空间中部署了自己的 &lt;code&gt;Gateway&lt;/code&gt; &lt;code&gt;specialive-gw&lt;/code&gt;，该 Gateway 只能由 &amp;ldquo;C&amp;rdquo; 命名空间中的应用使用。&lt;/p&gt;
 &lt;p&gt;不同命名空间及 &lt;code&gt;Gateway&lt;/code&gt; 与 &lt;code&gt;Route&lt;/code&gt; 的绑定关系如下图所示。&lt;/p&gt;
 &lt;p&gt;
 
@@ -5790,10 +5797,9 @@ bar.foo.com --|                 |-&amp;gt; bar.foo.com s2:80
 &lt;p&gt;将路由附加到网关包括以下步骤：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;Route 需要在其 &lt;code&gt;parentRefs&lt;/code&gt; 字段中引用 Gateway 的条目；&lt;/li&gt;
-&lt;li&gt;Gateway 上的至少一个监听器需要允许其附着。&lt;/li&gt;
+&lt;li&gt;Gateway 上至少有一个监听器允许其附加。&lt;/li&gt;
 &lt;/ol&gt;
 &lt;h2 id=&#34;引用网关&#34;&gt;引用网关&lt;/h2&gt;
-&lt;p&gt;Route 可以通过在&lt;code&gt;parentRef&lt;/code&gt;. 路由可以使用以下字段进一步选择网关下的监听器子集&lt;code&gt;parentRef&lt;/code&gt;：&lt;/p&gt;
 &lt;p&gt;Route 可以通过在 &lt;code&gt;parentRef&lt;/code&gt; 中指定命名空间（如果 Route 和 Gateway 在同一个名称空间中则该配置是可选的）和 Gateway 的名称来引用 Gateway。Route 可以使用 &lt;code&gt;parentRef&lt;/code&gt; 中的以下字段进一步选择 Gateway 下的监听器子集：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;&lt;strong&gt;SectionName&lt;/strong&gt;：当设置了 &lt;code&gt;sectionName&lt;/code&gt; 时，Route 选择具有指定名称的监听器；&lt;/li&gt;
@@ -5801,21 +5807,21 @@ bar.foo.com --|                 |-&amp;gt; bar.foo.com s2:80
 &lt;/ol&gt;
 &lt;p&gt;当设置了多个 &lt;code&gt;parentRef&lt;/code&gt; 字段时，Route 选择满足这些字段中指定的所有条件的监听器。例如，当 &lt;code&gt;sectionName&lt;/code&gt; 和 &lt;code&gt;port&lt;/code&gt; 两者都设置时，Route 选择具有指定名称的监听器并在指定端口上监听。&lt;/p&gt;
 &lt;h3 id=&#34;限制路由附加&#34;&gt;限制路由附加&lt;/h3&gt;
-&lt;p&gt;每个 Gateway 监听器都可以通过以下机制限制其可以附加哪些路由：&lt;/p&gt;
+&lt;p&gt;每个 Gateway 监听器都可以通过以下机制限制其可以附加的路由：&lt;/p&gt;
 &lt;ol&gt;
-&lt;li&gt;&lt;strong&gt;Hostname&lt;/strong&gt;：设置监听器上的 &lt;code&gt;hostname&lt;/code&gt; 字段时，指定&lt;code&gt;hostnames&lt;/code&gt; 字段的附加路由必须至少有一个重叠值。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Hostname&lt;/strong&gt;：如果监听器上设置了 &lt;code&gt;hostname&lt;/code&gt; ，附加路由的 &lt;code&gt;hostnames&lt;/code&gt; 中必须至少有一个重叠值。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;Namespace&lt;/strong&gt;：监听器上的 &lt;code&gt;allowedRoutes.namespaces&lt;/code&gt; 字段可用于限制可以附加路由的位置。该 &lt;code&gt;namespaces.from&lt;/code&gt; 字段支持以下值：
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;SameNamespace&lt;/code&gt; 是默认选项。只有与该网关相同的命名空间中的路由才会被选择。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;All&lt;/code&gt; 将选择来自所有命名空间的 &lt;code&gt;Route&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;All&lt;/code&gt; 可选择来自所有命名空间的 &lt;code&gt;Route&lt;/code&gt;。&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;Selector&lt;/code&gt; 意味着该网关将选择由 Namespace 标签选择器选择的 Namespace 子集的 Route。当使用 Selector 时，那么 &lt;code&gt;listeners.route.namespaces.selector&lt;/code&gt; 字段可用于指定标签选择器。&lt;code&gt;All&lt;/code&gt; 或 &lt;code&gt;SameNamespace&lt;/code&gt; 不支持该字段。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;Kind&lt;/strong&gt;：监听器上的 &lt;code&gt;allowedRoutes.kinds&lt;/code&gt; 字段可用于限制可能附加的路由种类。&lt;/li&gt;
 &lt;/ol&gt;
 &lt;p&gt;如果未指定上述任何一项，网关监听器将信任从支持监听器协议的同一命名空间附加的路由。&lt;/p&gt;
-&lt;h3 id=&#34;更多-gateway---route-附加示例&#34;&gt;更多 Gateway - Route 附加示例&lt;/h3&gt;
-&lt;p&gt;以下 &lt;code&gt;gateway-api-example-ns1&lt;/code&gt; 命名空间中的 &lt;code&gt;my-route&lt;/code&gt; Route 想要附加到 &lt;code&gt;foo-gateway&lt;/code&gt; 中， 不会附加到任何其他 Gateway。请注意， &lt;code&gt;foo-gateway&lt;/code&gt; 它位于不同的命名空间中。&lt;code&gt;foo-gateway&lt;/code&gt; 必须允许来自 &lt;code&gt;gateway-api-example-ns2&lt;/code&gt; 命名空间中的 HTTPRoutes 附加。&lt;/p&gt;
+&lt;h3 id=&#34;gateway---route-附加示例&#34;&gt;Gateway - Route 附加示例&lt;/h3&gt;
+&lt;p&gt;在下面的例子中 &lt;code&gt;gateway-api-example-ns1&lt;/code&gt; 命名空间中的 &lt;code&gt;my-route&lt;/code&gt; Route 想要附加到 &lt;code&gt;foo-gateway&lt;/code&gt; 中，不会附加到任何其他 Gateway 上。请注意， &lt;code&gt;foo-gateway&lt;/code&gt; 位于与 Gateway 不同的命名空间中。&lt;code&gt;foo-gateway&lt;/code&gt; 必须允许来自 &lt;code&gt;gateway-api-example-ns2&lt;/code&gt; 命名空间中的 HTTPRoute 附加。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;gateway.networking.k8s.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;HTTPRoute&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -5897,17 +5903,181 @@ bar.foo.com --|                 |-&amp;gt; bar.foo.com s2:80
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
 &lt;h2 id=&#34;请求流程&#34;&gt;请求流程&lt;/h2&gt;
-&lt;p&gt;使用反向代理实现的网关的一个典型的客户端 / 网关 API 请求流程是：&lt;/p&gt;
+&lt;p&gt;使用反向代理实现的网关的一个典型的客户端 / 网关 API 请求流程如下：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;客户端向 &lt;code&gt;http://foo.example.com&lt;/code&gt; 发出请求。&lt;/li&gt;
-&lt;li&gt;DNS 将该名称解析为网关地址。&lt;/li&gt;
-&lt;li&gt;反向代理在 &lt;code&gt;Listener&lt;/code&gt; 上接收请求，并使用 &lt;code&gt;Host&lt;/code&gt; 头 来匹配 &lt;code&gt;HTTPRoute&lt;/code&gt;。&lt;/li&gt;
-&lt;li&gt;可选地，反向代理可以根据 &lt;code&gt;HTTPRoute&lt;/code&gt; 的匹配规则执行请求头和 / 或路径匹配。&lt;/li&gt;
-&lt;li&gt;可选地，反向代理可以根据 &lt;code&gt;HTTPRoute&lt;/code&gt; 的过滤规则修改请求，即添加 / 删除头。&lt;/li&gt;
-&lt;li&gt;最后，反向代理可以根据 &lt;code&gt;HTTPRoute&lt;/code&gt; 的 &lt;code&gt;forwardTo&lt;/code&gt; 规则，将请求转发到集群中的一个或多个对象，即 &lt;code&gt;Service&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;DNS 将该名称解析为 &lt;code&gt;Gateway&lt;/code&gt; 地址。&lt;/li&gt;
+&lt;li&gt;反向代理在 &lt;code&gt;Listener&lt;/code&gt; 上接收请求，并使用 &lt;code&gt;Host&lt;/code&gt;  header 来匹配 &lt;code&gt;HTTPRoute&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;可选地，反向代理可以根据 &lt;code&gt;HTTPRoute&lt;/code&gt; 中的 &lt;code&gt;match&lt;/code&gt; 规则执行请求 header和 / 或路径匹配。&lt;/li&gt;
+&lt;li&gt;可选地，反向代理可以根据 &lt;code&gt;HTTPRoute&lt;/code&gt; 中的 &lt;code&gt;filter&lt;/code&gt; 规则修改请求，即添加 / 删除 header。&lt;/li&gt;
+&lt;li&gt;最后，反向代理可以根据 &lt;code&gt;HTTPRoute&lt;/code&gt; 中的 &lt;code&gt;forwardTo&lt;/code&gt; 规则，将请求转发到集群中的一个或多个对象，即 &lt;code&gt;Service&lt;/code&gt;。&lt;/li&gt;
 &lt;/ol&gt;
 &lt;h2 id=&#34;tls-配置&#34;&gt;TLS 配置&lt;/h2&gt;
-&lt;p&gt;TLS 配置在 &lt;code&gt;Gateway&lt;/code&gt; 监听器上，可以跨命名空间引用。&lt;/p&gt;
+&lt;p&gt;我们可以在 &lt;code&gt;Gateway&lt;/code&gt; 监听器上配置 TLS，还可以跨命名空间引用。&lt;/p&gt;
+&lt;p&gt;首先我们先说明几个术语：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;下游：客户端和网关之间的链接。&lt;/li&gt;
+&lt;li&gt;上游：网关与路由器指定的后端服务之间的链接。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;其关系如下图所示。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-客户端服务器和-tls&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/tls-overview.svg&#34; alt=&#34;客户端/服务器和 TLS&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      客户端/服务器和 TLS
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;通过 Gateway API 可以分别对上游或下游的 TLS 进行配置。&lt;/p&gt;
+&lt;p&gt;根据监听器协议，支持不同的 TLS 模式和路由类型，如下表所示。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;监听器协议&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;TLS 模式&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;支持的路由类型&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;TLS&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;直通&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;TLSRoute&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;TLS&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;终止&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;TCPRoute&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;HTTPS&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;终止&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;HTTPRoute&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;请注意，在&lt;code&gt;Passthrough&lt;/code&gt;（直通） TLS 模式下，没有 TLS 设置生效，因为来自客户端的 TLS 会话不会在网关处终止。本文的其余部分假定 TLS 在网关处终止，这是默认设置。&lt;/p&gt;
+&lt;h3 id=&#34;下游-tls&#34;&gt;下游 TLS&lt;/h3&gt;
+&lt;p&gt;下游 TLS 设置使用网关级别的监听器进行配置。&lt;/p&gt;
+&lt;h3 id=&#34;监听器和-tls&#34;&gt;监听器和 TLS&lt;/h3&gt;
+&lt;p&gt;监听器基于每个域或子域公开 TLS 设置。监听器的 TLS 设置适用于满足 &lt;code&gt;hostname&lt;/code&gt; 条件的所有域。&lt;/p&gt;
+&lt;p&gt;在以下示例中，&lt;code&gt;default-cert&lt;/code&gt; Gateway 为所有请求提供 Secret 资源中定义的 TLS 证书。尽管该示例涉及 HTTPS 协议，但也可以将相同的功能用于 TLS-only 协议以及 TLSRoutes。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;listeners&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;protocol&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;HTTPS&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# Other possible value is `TLS`&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;443&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tls&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;mode&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Terminate&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# If protocol is `TLS`, `Passthrough` is a possible mode&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;certificateRef&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Secret&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;group&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;default-cert&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果 &lt;code&gt;hostname.match&lt;/code&gt; 设置为&lt;code&gt;Exact&lt;/code&gt;，则 TLS 设置仅适用于在 &lt;code&gt;hostname.name&lt;/code&gt; 中设置的特定主机名。&lt;/p&gt;
+&lt;h3 id=&#34;示例&#34;&gt;示例&lt;/h3&gt;
+&lt;h4 id=&#34;具有不同证书的监听器&#34;&gt;具有不同证书的监听器&lt;/h4&gt;
+&lt;p&gt;在下面的示例中，配置 Gateway 服务于 &lt;code&gt;foo.example.com&lt;/code&gt; 和  &lt;code&gt;bar.example.com&lt;/code&gt; 域。这些域的证书在 Gateway 中指定。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;gateway.networking.k8s.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Gateway&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;tls-basic&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;gatewayClassName&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;acme-lb&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;listeners&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;foo-https&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;protocol&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;HTTPS&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;443&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;hostname&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;foo.example.com&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tls&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;certificateRefs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Secret&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;group&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;foo-example-com-cert&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;bar-https&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;protocol&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;HTTPS&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;443&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;hostname&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;bar.example.com&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tls&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;certificateRefs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Secret&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;group&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;bar-example-com-cert&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h4 id=&#34;通配符-tls-监听器&#34;&gt;通配符 TLS 监听器&lt;/h4&gt;
+&lt;p&gt;在下面的示例中，Gateway 为 &lt;code&gt;*.example.com&lt;/code&gt; 和 &lt;code&gt;foo.example.com&lt;/code&gt; 域配置了不同的通配符证书。由于特定匹配具有优先权，所有对 &lt;code&gt;foo.example.com&lt;/code&gt; 的请求将使用 &lt;code&gt;foo-example-com-cert&lt;/code&gt;，所有对 &lt;code&gt;exmaple.com&lt;/code&gt; 的其他请求使用 &lt;code&gt;wildcard-example-com-cert&lt;/code&gt; 证书。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;gateway.networking.k8s.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Gateway&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;wildcard-tls-gateway&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;gatewayClassName&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;acme-lb&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;listeners&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;foo-https&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;protocol&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;HTTPS&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;443&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;hostname&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;foo.example.com&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tls&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;certificateRefs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Secret&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;group&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;foo-example-com-cert&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;wildcard-https&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;protocol&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;HTTPS&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;443&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;hostname&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;*.example.com&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tls&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;certificateRefs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Secret&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;group&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;wildcard-example-com-cert&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h4 id=&#34;跨命名空间证书引用&#34;&gt;跨命名空间证书引用&lt;/h4&gt;
+&lt;p&gt;在此示例中，配置 Gateway 引用不同命名空间中的证书。在目标命名空间中创建 &lt;code&gt;ReferenceGrant&lt;/code&gt; 以允许跨命名空间引用。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;gateway.networking.k8s.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Gateway&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;cross-namespace-tls-gateway&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;gateway-api-example-ns1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;gatewayClassName&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;acme-lb&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;listeners&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;https&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;protocol&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;HTTPS&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;443&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;hostname&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;*.example.com&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tls&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;certificateRefs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Secret&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;group&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;wildcard-example-com-cert&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;gateway-api-example-ns2&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nn&#34;&gt;---&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;gateway.networking.k8s.io/v1alpha2&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ReferenceGrant&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;allow-ns1-gateways-to-ref-secrets&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;gateway-api-example-ns2&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;from&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;group&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;gateway.networking.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Gateway&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;gateway-api-example-ns1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;to&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;group&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Secret&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;扩展&#34;&gt;扩展&lt;/h3&gt;
+&lt;p&gt;网关 TLS 配置提供了一个 &lt;code&gt;options&lt;/code&gt; 映射来为特定于实现的功能添加额外的 TLS 设置。此处可能包含的一些功能示例是 TLS 版本限制或要使用的密码。&lt;/p&gt;
 &lt;h2 id=&#34;扩展点&#34;&gt;扩展点&lt;/h2&gt;
 &lt;p&gt;API 中提供了一些扩展点，以灵活处理大量通用 API 无法处理的用例。&lt;/p&gt;
 &lt;p&gt;以下是 API 中扩展点的摘要。&lt;/p&gt;
@@ -5919,6 +6089,7 @@ bar.foo.com --|                 |-&amp;gt; bar.foo.com s2:80
 &lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;https://github.com/kubernetes-sigs/gateway-api&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;kuberentes-sigs/gateway-api - github.com&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://gateway-api.sigs.k8s.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kubernetes Gateway API 文档 - gateway-api.sigs.k8s.io&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 </description>
     </item>
