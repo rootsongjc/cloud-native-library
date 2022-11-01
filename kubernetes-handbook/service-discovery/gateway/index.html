@@ -66,7 +66,7 @@
   
     
   
-  <meta name="description" content="注意 本文根据 Gateway API 0.5.1 版本撰写。 除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 Gateway API 项目，它可以帮助我们将 Kubernetes 中的服务暴露到集群外。 Gateway API 与 Ingress 有什么不同？ Ingress 的主要目标是用简单的、声明性的语法来暴露 HTTP 应" />
+  <meta name="description" content="注意 本文根据 Gateway API 0.5.1 版本撰写。目前 Gateway API 仅用于处理 Kubernetes 集群中的南北向（入口）流量，未来也有可能处理集群内（东西向）流量。关于使用 Gateway API 处理东西向流量的提议详见此文档。 除了直接使用 Service 和 Ingress 之外，Kubernete" />
 
   
   <link rel="alternate" hreflang="zh" href="https://lib.jimmysong.io/kubernetes-handbook/service-discovery/gateway/" />
@@ -330,7 +330,7 @@
   <meta property="og:site_name" content="云原生资料库" />
   <meta property="og:url" content="https://lib.jimmysong.io/kubernetes-handbook/service-discovery/gateway/" />
   <meta property="og:title" content="Gateway API | 云原生资料库" />
-  <meta property="og:description" content="注意 本文根据 Gateway API 0.5.1 版本撰写。 除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 Gateway API 项目，它可以帮助我们将 Kubernetes 中的服务暴露到集群外。 Gateway API 与 Ingress 有什么不同？ Ingress 的主要目标是用简单的、声明性的语法来暴露 HTTP 应" /><meta property="og:image" content="https://lib.jimmysong.io/media/sharing.png" />
+  <meta property="og:description" content="注意 本文根据 Gateway API 0.5.1 版本撰写。目前 Gateway API 仅用于处理 Kubernetes 集群中的南北向（入口）流量，未来也有可能处理集群内（东西向）流量。关于使用 Gateway API 处理东西向流量的提议详见此文档。 除了直接使用 Service 和 Ingress 之外，Kubernete" /><meta property="og:image" content="https://lib.jimmysong.io/media/sharing.png" />
     <meta property="twitter:image" content="https://lib.jimmysong.io/media/sharing.png" /><meta property="og:locale" content="zh" />
   
     
@@ -339,7 +339,7 @@
         content="2022-05-21T00:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2022-10-31T21:32:47&#43;08:00">
+    <meta property="article:modified_time" content="2022-11-01T16:12:28&#43;08:00">
   
 
   
@@ -2040,6 +2040,7 @@
       <nav id="TableOfContents">
   <ul>
     <li><a href="#目标">目标</a></li>
+    <li><a href="#gateway-api-与-ingress-有什么不同">Gateway API 与 Ingress 有什么不同？</a></li>
     <li><a href="#gateway-相较于-ingress-做了哪些改进">Gateway 相较于 Ingress 做了哪些改进？</a></li>
     <li><a href="#角色划分">角色划分</a></li>
     <li><a href="#资源模型">资源模型</a>
@@ -2050,6 +2051,11 @@
         <li><a href="#referencegrant">ReferenceGrant</a></li>
         <li><a href="#将路由添加到网关">将路由添加到网关</a></li>
         <li><a href="#路由绑定">路由绑定</a></li>
+      </ul>
+    </li>
+    <li><a href="#策略附件">策略附件</a>
+      <ul>
+        <li><a href="#策略优先级">策略优先级</a></li>
       </ul>
     </li>
     <li><a href="#引用网关">引用网关</a>
@@ -2161,17 +2167,10 @@
     <p>注意</p>
 </div>
 <div class="alert alert-note">
-    本文根据 Gateway API 0.5.1 版本撰写。
+    本文根据 Gateway API 0.5.1 版本撰写。目前 Gateway API 仅用于处理 Kubernetes 集群中的南北向（入口）流量，未来也有可能处理集群内（东西向）流量。关于使用 Gateway API 处理东西向流量的提议详见<a href="https://docs.google.com/document/d/1T_DtMQoq2tccLAtJTpo3c0ohjm25vRS35MsestSL9QU/edit" target="_blank" rel="noopener">此文档</a>。
 </div>
 
 <p>除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 <a href="https://github.com/kubernetes-sigs/gateway-api" target="_blank" rel="noopener">Gateway API 项目</a>，它可以帮助我们将 Kubernetes 中的服务暴露到集群外。</p>
-<div class="alert-note-title">
-    <p>Gateway API 与 Ingress 有什么不同？</p>
-</div>
-<div class="alert alert-note">
-    Ingress 的主要目标是用简单的、声明性的语法来暴露 HTTP 应用。Gateway API 暴露了一个更通用的代理 API，可以用于更多的协议，而不仅仅是 HTTP，并为更多的基础设施组件建模，为集群运营提供更好的部署和管理选项。
-</div>
-
 <p>Gateway API 是一个由 <a href="https://github.com/kubernetes/community/tree/master/sig-network" target="_blank" rel="noopener">SIG-NETWORK</a> 管理的开源项目。该项目的目标是在 Kubernetes 生态系统中发展服务网络 API。Gateway API 提供了暴露 Kubernetes 应用的资源——<code>GatewayClass</code>、<code>Gateway</code>、<code>HTTPRoute</code>、<code>TCPRoute</code> 等。</p>
 <p>Gateway API 已经得到了大量的网关和服务网格项目支持，请在 Gateway 官方文档中<a href="https://gateway-api.sigs.k8s.io/implementations/" target="_blank" rel="noopener">查看支持状况</a>。</p>
 <h2 id="目标">目标</h2>
@@ -2201,6 +2200,8 @@
       Kubernetes Gateway API 简介
     </figcaption></figure>
 </p>
+<h2 id="gateway-api-与-ingress-有什么不同">Gateway API 与 Ingress 有什么不同？</h2>
+<p>Ingress 的主要目标是用简单的、声明性的语法来暴露 HTTP 应用。Gateway API 暴露了一个更通用的代理 API，可以用于更多的协议，而不仅仅是 HTTP，并为更多的基础设施组件建模，为集群运营提供更好的部署和管理选项。</p>
 <h2 id="gateway-相较于-ingress-做了哪些改进">Gateway 相较于 Ingress 做了哪些改进？</h2>
 <p>以下是 Gateway API 对 Ingress 的改进点。</p>
 <p><strong>更具表现力</strong></p>
@@ -2516,6 +2517,62 @@
 <li>Route 需要在其 <code>parentRefs</code> 字段中引用 Gateway 的条目；</li>
 <li>Gateway 上至少有一个监听器允许其附加。</li>
 </ol>
+<h2 id="策略附件">策略附件</h2>
+<p>策略附件（Policy Attachment）是一种自定义策略资源，例如超时、重试、健康检查等，这些功能在不同的网关实现中的细节各不相同个，为了 Gateway API 的可移植性，我们将这些工作作为插件附加到资源上。</p>
+<p>附加到 Gateway API 资源和实施的策略必须使用以下方法来确保 API 实施之间的一致性。此模式包含三个主要组件：</p>
+<ul>
+<li>将策略附加到资源的标准化方法。</li>
+<li>支持在策略资源中配置默认值和覆盖值。</li>
+<li>用于说明默认值和覆盖值应如何交互的层次结构。</li>
+</ul>
+<p>这种标准化不仅可以实现一致的模式，还可以让未来的工具（例如 kubectl 插件）能够可视化已应用于给定资源的所有策略。</p>
+<p>你可以使用 <code>targetRef</code> 字段指定策略附加所附加到的资源对象，例如下所示：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">networking.acme.io/v1alpha1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">RetryPolicy</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">foo</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">default</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">maxRetries</span><span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">targetRef</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l">networking.acme.io</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ExternalService</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">foo.com</span><span class="w">
+</span></span></span></code></pre></div><p>该在例子中，为一个外部服务配置了一个重试策略。你可以给几乎任何可以发送、接收流量的对象附加策略，例如 <code>GatewayClass</code>、<code>Gateway</code>、<code>Service</code>、<code>Route</code>、<code>Namespace</code> ，不过附加策略的时候，需要注意其优先级。</p>
+<h3 id="策略优先级">策略优先级</h3>
+<p>入口网关（南北向）和集群内的代理（东西向）在功能上有大量重叠，Gateway API 的目标是可同时两者，其在入口和网格内不同资源上的层次结构的优先级是如下图所示。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-gateway-api-的默认值和覆盖值的优先层级">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img src="../../images/policy-attachment-level.svg" alt="Gateway API 的默认值和覆盖值的优先层级" loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      Gateway API 的默认值和覆盖值的优先层级
+    </figcaption></figure>
+</p>
+<p>从图中我们可以看到：</p>
+<ul>
+<li>
+<p>覆盖值：上层覆盖下层</p>
+</li>
+<li>
+<p>默认值：下层覆盖上层</p>
+</li>
+</ul>
 <h2 id="引用网关">引用网关</h2>
 <p>Route 可以通过在 <code>parentRef</code> 中指定命名空间（如果 Route 和 Gateway 在同一个名称空间中则该配置是可选的）和 Gateway 的名称来引用 Gateway。Route 可以使用 <code>parentRef</code> 中的以下字段进一步选择 Gateway 下的监听器子集：</p>
 <ol>
@@ -2840,7 +2897,7 @@
           
 
         <div class="body-footer">
-          <p>最近更新于 2022-10-31</p>
+          <p>最近更新于 2022-11-01</p>
 
           
 

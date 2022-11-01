@@ -5580,17 +5580,10 @@ bar.foo.com --|                 |-&amp;gt; bar.foo.com s2:80
     &lt;p&gt;注意&lt;/p&gt;
 &lt;/div&gt;
 &lt;div class=&#34;alert alert-note&#34;&gt;
-    本文根据 Gateway API 0.5.1 版本撰写。
+    本文根据 Gateway API 0.5.1 版本撰写。目前 Gateway API 仅用于处理 Kubernetes 集群中的南北向（入口）流量，未来也有可能处理集群内（东西向）流量。关于使用 Gateway API 处理东西向流量的提议详见&lt;a href=&#34;https://docs.google.com/document/d/1T_DtMQoq2tccLAtJTpo3c0ohjm25vRS35MsestSL9QU/edit&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;此文档&lt;/a&gt;。
 &lt;/div&gt;
 
 &lt;p&gt;除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 &lt;a href=&#34;https://github.com/kubernetes-sigs/gateway-api&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Gateway API 项目&lt;/a&gt;，它可以帮助我们将 Kubernetes 中的服务暴露到集群外。&lt;/p&gt;
-&lt;div class=&#34;alert-note-title&#34;&gt;
-    &lt;p&gt;Gateway API 与 Ingress 有什么不同？&lt;/p&gt;
-&lt;/div&gt;
-&lt;div class=&#34;alert alert-note&#34;&gt;
-    Ingress 的主要目标是用简单的、声明性的语法来暴露 HTTP 应用。Gateway API 暴露了一个更通用的代理 API，可以用于更多的协议，而不仅仅是 HTTP，并为更多的基础设施组件建模，为集群运营提供更好的部署和管理选项。
-&lt;/div&gt;
-
 &lt;p&gt;Gateway API 是一个由 &lt;a href=&#34;https://github.com/kubernetes/community/tree/master/sig-network&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SIG-NETWORK&lt;/a&gt; 管理的开源项目。该项目的目标是在 Kubernetes 生态系统中发展服务网络 API。Gateway API 提供了暴露 Kubernetes 应用的资源——&lt;code&gt;GatewayClass&lt;/code&gt;、&lt;code&gt;Gateway&lt;/code&gt;、&lt;code&gt;HTTPRoute&lt;/code&gt;、&lt;code&gt;TCPRoute&lt;/code&gt; 等。&lt;/p&gt;
 &lt;p&gt;Gateway API 已经得到了大量的网关和服务网格项目支持，请在 Gateway 官方文档中&lt;a href=&#34;https://gateway-api.sigs.k8s.io/implementations/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;查看支持状况&lt;/a&gt;。&lt;/p&gt;
 &lt;h2 id=&#34;目标&#34;&gt;目标&lt;/h2&gt;
@@ -5620,6 +5613,8 @@ bar.foo.com --|                 |-&amp;gt; bar.foo.com s2:80
       Kubernetes Gateway API 简介
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
+&lt;h2 id=&#34;gateway-api-与-ingress-有什么不同&#34;&gt;Gateway API 与 Ingress 有什么不同？&lt;/h2&gt;
+&lt;p&gt;Ingress 的主要目标是用简单的、声明性的语法来暴露 HTTP 应用。Gateway API 暴露了一个更通用的代理 API，可以用于更多的协议，而不仅仅是 HTTP，并为更多的基础设施组件建模，为集群运营提供更好的部署和管理选项。&lt;/p&gt;
 &lt;h2 id=&#34;gateway-相较于-ingress-做了哪些改进&#34;&gt;Gateway 相较于 Ingress 做了哪些改进？&lt;/h2&gt;
 &lt;p&gt;以下是 Gateway API 对 Ingress 的改进点。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;更具表现力&lt;/strong&gt;&lt;/p&gt;
@@ -5935,6 +5930,62 @@ bar.foo.com --|                 |-&amp;gt; bar.foo.com s2:80
 &lt;li&gt;Route 需要在其 &lt;code&gt;parentRefs&lt;/code&gt; 字段中引用 Gateway 的条目；&lt;/li&gt;
 &lt;li&gt;Gateway 上至少有一个监听器允许其附加。&lt;/li&gt;
 &lt;/ol&gt;
+&lt;h2 id=&#34;策略附件&#34;&gt;策略附件&lt;/h2&gt;
+&lt;p&gt;策略附件（Policy Attachment）是一种自定义策略资源，例如超时、重试、健康检查等，这些功能在不同的网关实现中的细节各不相同个，为了 Gateway API 的可移植性，我们将这些工作作为插件附加到资源上。&lt;/p&gt;
+&lt;p&gt;附加到 Gateway API 资源和实施的策略必须使用以下方法来确保 API 实施之间的一致性。此模式包含三个主要组件：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;将策略附加到资源的标准化方法。&lt;/li&gt;
+&lt;li&gt;支持在策略资源中配置默认值和覆盖值。&lt;/li&gt;
+&lt;li&gt;用于说明默认值和覆盖值应如何交互的层次结构。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这种标准化不仅可以实现一致的模式，还可以让未来的工具（例如 kubectl 插件）能够可视化已应用于给定资源的所有策略。&lt;/p&gt;
+&lt;p&gt;你可以使用 &lt;code&gt;targetRef&lt;/code&gt; 字段指定策略附加所附加到的资源对象，例如下所示：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;networking.acme.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;RetryPolicy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;default&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;maxRetries&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;targetRef&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;group&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;networking.acme.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ExternalService&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;foo.com&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;该在例子中，为一个外部服务配置了一个重试策略。你可以给几乎任何可以发送、接收流量的对象附加策略，例如 &lt;code&gt;GatewayClass&lt;/code&gt;、&lt;code&gt;Gateway&lt;/code&gt;、&lt;code&gt;Service&lt;/code&gt;、&lt;code&gt;Route&lt;/code&gt;、&lt;code&gt;Namespace&lt;/code&gt; ，不过附加策略的时候，需要注意其优先级。&lt;/p&gt;
+&lt;h3 id=&#34;策略优先级&#34;&gt;策略优先级&lt;/h3&gt;
+&lt;p&gt;入口网关（南北向）和集群内的代理（东西向）在功能上有大量重叠，Gateway API 的目标是可同时两者，其在入口和网格内不同资源上的层次结构的优先级是如下图所示。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-gateway-api-的默认值和覆盖值的优先层级&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/policy-attachment-level.svg&#34; alt=&#34;Gateway API 的默认值和覆盖值的优先层级&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Gateway API 的默认值和覆盖值的优先层级
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;从图中我们可以看到：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;覆盖值：上层覆盖下层&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;默认值：下层覆盖上层&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;h2 id=&#34;引用网关&#34;&gt;引用网关&lt;/h2&gt;
 &lt;p&gt;Route 可以通过在 &lt;code&gt;parentRef&lt;/code&gt; 中指定命名空间（如果 Route 和 Gateway 在同一个名称空间中则该配置是可选的）和 Gateway 的名称来引用 Gateway。Route 可以使用 &lt;code&gt;parentRef&lt;/code&gt; 中的以下字段进一步选择 Gateway 下的监听器子集：&lt;/p&gt;
 &lt;ol&gt;
