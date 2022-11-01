@@ -7,17 +7,11 @@ type: book
 
 {{<callout note 注意>}}
 
-本文根据 Gateway API 0.5.1 版本撰写。
+本文根据 Gateway API 0.5.1 版本撰写。目前 Gateway API 仅用于处理 Kubernetes 集群中的南北向（入口）流量，未来也有可能处理集群内（东西向）流量。关于使用 Gateway API 处理东西向流量的提议详见[此文档](https://docs.google.com/document/d/1T_DtMQoq2tccLAtJTpo3c0ohjm25vRS35MsestSL9QU/edit)。
 
 {{</callout>}}
 
 除了直接使用 Service 和 Ingress 之外，Kubernetes 社区还发起了 [Gateway API 项目](https://github.com/kubernetes-sigs/gateway-api)，它可以帮助我们将 Kubernetes 中的服务暴露到集群外。
-
-{{<callout note "Gateway API 与 Ingress 有什么不同？">}}
-
-Ingress 的主要目标是用简单的、声明性的语法来暴露 HTTP 应用。Gateway API 暴露了一个更通用的代理 API，可以用于更多的协议，而不仅仅是 HTTP，并为更多的基础设施组件建模，为集群运营提供更好的部署和管理选项。
-
-{{</callout>}}
 
 Gateway API 是一个由 [SIG-NETWORK](https://github.com/kubernetes/community/tree/master/sig-network) 管理的开源项目。该项目的目标是在 Kubernetes 生态系统中发展服务网络 API。Gateway API 提供了暴露 Kubernetes 应用的资源——`GatewayClass`、`Gateway`、`HTTPRoute`、`TCPRoute` 等。
 
@@ -32,6 +26,10 @@ Gateway API 是一个 API 资源的集合 —— `GatewayClass`、`Gateway`、`H
 下图中展示的是 Kubernetes 集群中四层和七层的网络配置。从图中可以看到通过将这些资源对象分离，可以实现配置上的解耦，由不同角色的人员来管理，而这也是 Gateway API 的相较于 Ingress 的一大特色。
 
 ![Kubernetes Gateway API 简介](../../images/gateway-api.svg)
+
+## Gateway API 与 Ingress 有什么不同？
+
+Ingress 的主要目标是用简单的、声明性的语法来暴露 HTTP 应用。Gateway API 暴露了一个更通用的代理 API，可以用于更多的协议，而不仅仅是 HTTP，并为更多的基础设施组件建模，为集群运营提供更好的部署和管理选项。
 
 ## Gateway 相较于 Ingress 做了哪些改进？
 
@@ -321,6 +319,48 @@ HTTPRoute 的规范中包括：
 
 1. Route 需要在其 `parentRefs` 字段中引用 Gateway 的条目；
 2. Gateway 上至少有一个监听器允许其附加。
+
+## 策略附件
+
+策略附件（Policy Attachment）是一种自定义策略资源，例如超时、重试、健康检查等，这些功能在不同的网关实现中的细节各不相同个，为了 Gateway API 的可移植性，我们将这些工作作为插件附加到资源上。
+
+附加到 Gateway API 资源和实施的策略必须使用以下方法来确保 API 实施之间的一致性。此模式包含三个主要组件：
+
+- 将策略附加到资源的标准化方法。
+- 支持在策略资源中配置默认值和覆盖值。
+- 用于说明默认值和覆盖值应如何交互的层次结构。
+
+这种标准化不仅可以实现一致的模式，还可以让未来的工具（例如 kubectl 插件）能够可视化已应用于给定资源的所有策略。
+
+你可以使用 `targetRef` 字段指定策略附加所附加到的资源对象，例如下所示：
+
+```yaml
+apiVersion: networking.acme.io/v1alpha1
+kind: RetryPolicy
+metadata:
+  name: foo
+spec:
+  default:
+    maxRetries: 5
+  targetRef:
+    group: networking.acme.io
+    kind: ExternalService
+    name: foo.com
+```
+
+该在例子中，为一个外部服务配置了一个重试策略。你可以给几乎任何可以发送、接收流量的对象附加策略，例如 `GatewayClass`、`Gateway`、`Service`、`Route`、`Namespace` ，不过附加策略的时候，需要注意其优先级。
+
+### 策略优先级
+
+入口网关（南北向）和集群内的代理（东西向）在功能上有大量重叠，Gateway API 的目标是可同时两者，其在入口和网格内不同资源上的层次结构的优先级是如下图所示。
+
+![Gateway API 的默认值和覆盖值的优先层级](../../images/policy-attachment-level.svg)
+
+从图中我们可以看到：
+
+- 覆盖值：上层覆盖下层
+
+- 默认值：下层覆盖上层
 
 ## 引用网关
 
