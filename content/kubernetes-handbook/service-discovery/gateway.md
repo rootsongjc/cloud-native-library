@@ -295,7 +295,7 @@ HTTPRoute 的规范中包括：
 
 如果从其命名空间外部引用一个对象，则该对象的所有者必须创建一个 `ReferenceGrant` 资源以显式允许该引用，否则跨命名空间引用是无效的。
 
-### 将路由添加到网关
+## 将路由添加到网关
 
 将 Route 附加到 Gateway 表示在 Gateway 上应用的配置，用于配置底层负载均衡器或代理。Route 如何以及哪些 Route 附加到 Gateway 由资源本身控制。Route 和 Gateway 资源具有内置控件以允许或限制它们的连接方式。组织可以同时利用 Kubernetes RBAC，实施有关如何公开  Route 以及在公开在哪些 Gateway 上公开的策略。
 
@@ -332,7 +332,7 @@ HTTPRoute 的规范中包括：
 
 这种标准化不仅可以实现一致的模式，还可以让未来的工具（例如 kubectl 插件）能够可视化已应用于给定资源的所有策略。
 
-你可以使用 `targetRef` 字段指定策略附加所附加到的资源对象，例如下所示：
+你可以使用 `targetRef` 字段指定策略附件附加到的资源对象，例如下所示：
 
 ```yaml
 apiVersion: networking.acme.io/v1alpha1
@@ -352,7 +352,7 @@ spec:
 
 ### 策略优先级
 
-入口网关（南北向）和集群内的代理（东西向）在功能上有大量重叠，Gateway API 的目标是可同时两者，其在入口和网格内不同资源上的层次结构的优先级是如下图所示。
+你可以给策略附件指定 `override` 和 `default` 值，其在入口和网格内不同资源上的覆盖值和默认值的优先级是如下图所示。
 
 ![Gateway API 的默认值和覆盖值的优先层级](../../images/policy-attachment-level.svg)
 
