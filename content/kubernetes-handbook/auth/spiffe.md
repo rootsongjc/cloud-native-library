@@ -42,7 +42,7 @@ SPIFFE ID 是一个[统一资源标识符（URI](https://tools.ietf.org/html/rfc
 
 通常建议将处于不同物理位置（如不同的数据中心或云区域）或应用不同安全实践的环境（如与生产环境相比的暂存或实验环境）的工作负载放在不同的信任域中。
 
-## SPIFFE 可验证的身份文件（SVID）
+## SPIFFE 可验证的身份文件（SVID）{#svid}
 
 SVID（SPIFFE Verifiable Identity Document） 是工作负载向资源或调用者证明其身份的文件。如果 SVID 是由 SPIFFE ID 的信任域内的机构签发的，则被认为是有效的。
 
