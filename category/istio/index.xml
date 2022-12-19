@@ -5,12 +5,399 @@
     <link>https://lib.jimmysong.io/category/istio/</link>
       <atom:link href="https://lib.jimmysong.io/category/istio/index.xml" rel="self" type="application/rss+xml" />
     <description>Istio</description>
-    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Wed, 28 Sep 2022 10:00:00 +0800</lastBuildDate>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Mon, 19 Dec 2022 13:00:00 +0800</lastBuildDate>
     <image>
       <url>https://lib.jimmysong.io/media/sharing.png</url>
       <title>Istio</title>
       <link>https://lib.jimmysong.io/category/istio/</link>
     </image>
+    
+    <item>
+      <title>如何使用 Hashicorp Vault 作为一种更安全的方式来存储 Istio 证书</title>
+      <link>https://lib.jimmysong.io/blog/how-to-use-hashicorp-vault-as-a-more-secure-way-to-store-istio-certificates/</link>
+      <pubDate>Mon, 19 Dec 2022 13:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/blog/how-to-use-hashicorp-vault-as-a-more-secure-way-to-store-istio-certificates/</guid>
+      <description>&lt;p&gt;在本文中，我们将探讨如何使用 Hashicorp Vault 作为一种比使用 Kubernetes &lt;a href=&#34;https://kubernetes.io/docs/concepts/configuration/secret&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Secret&lt;/a&gt; 更安全的方式来存储 Istio 证书。默认情况下，Secret 使用 base64 编码存储在 &lt;em&gt;etcd&lt;/em&gt; 中。在安全策略严格的环境中，这可能是不可接受的，因此需要额外的措施来保护它们。一种此类解决方案涉及将机密存储在外部机密存储提供程序中，例如 &lt;a href=&#34;https://www.vaultproject.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;HashiCorp Vault&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;Vault 可以托管在 Kubernetes 集群内部和外部。在本案例中，我们将探索使用托管在 Kubernetes 外部的 Vault，以便它可以同时为多个集群提供秘密。该设置也非常适合探索 Istio 的&lt;a href=&#34;https://istio.io/latest/docs/setup/install/multicluster&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;多集群功能&lt;/a&gt;，它需要一个共享的信任域。&lt;/p&gt;
+&lt;p&gt;利用 &lt;code&gt;vault-agent-init&lt;/code&gt; 容器，我们可以将证书和私钥材料注入实际的 Istio 控制平面 Pod，以便它们使用外部 CA 证书进行引导。这避免了依赖 Secret 来引导 Istio 控制平面。该技术也完全适用于入口和出口证书。&lt;/p&gt;
+&lt;p&gt;有关如何在 Istio 中使用和管理证书的更多信息，请参见官方文档：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://istio.io/latest/zh/docs/concepts/security/#pki&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;身份和证书管理&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://istio.io/latest/zh/docs/tasks/security/cert-management/plugin-ca-cert&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;插入 CA 证书&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://istio.io/latest/zh/docs/tasks/security/cert-management/custom-ca-k8s&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;使用 Kubernetes CSR 的自定义 CA 集成&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;有关基于实际生产经验的最佳实践，另请查看以下 &lt;a href=&#34;https://tetrate.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate&lt;/a&gt; 的博客文章：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://tetrate.io/blog/istio-trust&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;信任链：Istio 对现有 PKI 的信任&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://tetrate.io/blog/automate-istio-ca-rotation-in-production-at-scale&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;在生产中大规模自动化 Istio CA 轮换&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这篇博文附带的代码可以在以下存储库中找到：&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/tetratelabs/istio-vault-ext-certs&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://github.com/tetratelabs/istio-vault-ext-certs&lt;/a&gt;&lt;/p&gt;
+&lt;h2 id=&#34;istiod-证书处理&#34;&gt;&lt;strong&gt;Istiod 证书处理&lt;/strong&gt;&lt;/h2&gt;
+&lt;p&gt;尽管上述博文中解释了一些决策逻辑，但也值得参考&lt;a href=&#34;https://github.com/istio/istio/blob/master/pilot/pkg/bootstrap/istio_ca.go&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;源代码&lt;/a&gt;以查找一些未记录的行为。&lt;/p&gt;
+&lt;p&gt;在 Istio 的源码 &lt;code&gt;istio/pilot/pkg/bootstrap/istio_ca.go&lt;/code&gt; 文件中，你将看到：为了向后兼容，Istio 保留了对用于自签名证书 &lt;code&gt;cacerts&lt;/code&gt; Secret 的支持。它安装在相同的位置，如果发现了就会被使用——创建秘密就足够了，不需要额外的选项。在旧安装程序中，&lt;code&gt;LocalCertDir&lt;/code&gt; 被硬编码到 &lt;code&gt;/etc/cacerts&lt;/code&gt; 并使用 &lt;code&gt;cacerts&lt;/code&gt;  Secret 安装。已删除对签署其他根 CA 的支持——太危险，没有明确的用例。&lt;/p&gt;
+&lt;p&gt;默认配置，用于向后兼容 Citadel：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;如果 &lt;code&gt;istio-system&lt;/code&gt; 中存在 &lt;code&gt;cacerts&lt;/code&gt; 秘密，将被挂载。它可能包含一个可选的 &lt;code&gt;root-cert.pem&lt;/code&gt;，
+带有额外的根和可选的 &lt;code&gt;{ca-key, ca-cert, cert-chain}.pem&lt;/code&gt; 由用户提供的根 CA。&lt;/li&gt;
+&lt;li&gt;如果未找到用户提供的根 CA，则使用 &lt;code&gt;istio-ca-secret&lt;/code&gt; Secret ，以及 &lt;code&gt;ca-cert.pem&lt;/code&gt; 和 &lt;code&gt;ca-key.pem&lt;/code&gt; 文件。&lt;/li&gt;
+&lt;li&gt;如果两者均未找到，将创建 &lt;code&gt;istio-ca-secret&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;带有 &lt;code&gt;caTLSRootCert&lt;/code&gt; 文件的 &lt;code&gt;istio-security&lt;/code&gt; ConfigMap 将用于根证书，并在需要时创建。该 ConfigMap 由节点代理使用，不再可能在 sds-agent 中使用，但我们仍保留它以向后兼容。将与 node-agent 一起删除。sds-agent 使用 K8S root 直接调用 &lt;code&gt;NewCitadelClient&lt;/code&gt; 。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;为了指示 Istio 从其他地方获取证书，而不是标准 Kubernetes Secret，我们将利用 &lt;em&gt;istio-pilot&lt;/em&gt;（又名 istiod 或 Istio 控制平面）的环境变量（&lt;a href=&#34;https://istio.io/latest/docs/reference/commands/pilot-discovery&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;见此文档&lt;/a&gt;），从 Kubernetes Pod 中的另一个位置获取证书。这是必需的，因为 &lt;code&gt;vault-agent-init&lt;/code&gt; 注入容器将创建一个新的挂载卷 &lt;code&gt;/vault/secrets&lt;/code&gt; ，以放置从外部 Vault 服务器拉出的证书和私钥。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;变量名称&lt;/th&gt;
+&lt;th&gt;类型&lt;/th&gt;
+&lt;th&gt;默认值&lt;/th&gt;
+&lt;th&gt;描述&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;ROOT_CA_DIR&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;字符串&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;/etc/cacerts&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;本地或安装的 CA 根目录的位置&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h2 id=&#34;pod-内的-vault-agent-init-容器注解&#34;&gt;Pod 内的 &lt;code&gt;vault-agent-init&lt;/code&gt; 容器注解&lt;/h2&gt;
+&lt;p&gt;我们将利用 Vault 注入器注解来指示 Sidecar 提取哪些数据以及在这样做时使用什么 Vault 角色。我们还确保容器在我们实际的主容器之前运行，因此后者可以获取证书和密钥材料以正确引导自身。&lt;a href=&#34;https://developer.hashicorp.com/vault/docs/platform/k8s/injector/annotations&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;此处&lt;/a&gt;列举并记录了 Vault 注解。我们将在本教程中使用的相关注释如下：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;&lt;strong&gt;注解&lt;/strong&gt;&lt;/th&gt;
+&lt;th&gt;&lt;strong&gt;默认值&lt;/strong&gt;&lt;/th&gt;
+&lt;th&gt;&lt;strong&gt;描述&lt;/strong&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;vault.hashicorp.com/agent-inject&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;false&lt;/td&gt;
+&lt;td&gt;配置是否为 Pod 显式启用或禁用注入。这应该设置为 true 或 false。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;vault.hashicorp.com/agent-init-first&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;false&lt;/td&gt;
+&lt;td&gt;如果为 true，则将 Pod 配置为首先运行 Vault Agent init 容器（如果为 false，则最后运行）。当其他 init 容器需要预填充的秘密时，这很有用。这应该设置为 true 或 false。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;vault.hashicorp.com/role&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;–&lt;/td&gt;
+&lt;td&gt;配置 Vault 代理自动验证方法使用的 Vault 角色。&lt;code&gt;vault.hashicorp.com/agent-configmap&lt;/code&gt; 未设置时需要。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;vault.hashicorp.com/auth-path&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;–&lt;/td&gt;
+&lt;td&gt;配置 Kubernetes 身份验证方法的身份验证路径。默认为 &lt;code&gt;auth/kubernetes&lt;/code&gt;。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;vault.hashicorp.com/agent-inject-secret-&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;–&lt;/td&gt;
+&lt;td&gt;配置 Vault 代理以从容器所需的 Vault 中检索秘密。Secret 的名称是 &lt;code&gt;vault.hashicorp.com/agent-inject-secret-&lt;/code&gt; 之后的任意唯一字符串，例如 &lt;code&gt;vault.hashicorp.com/agent-inject-secret-foobar&lt;/code&gt; 该值是 secret 所在的 Vault 中的路径。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;vault.hashicorp.com/agent-inject-template-&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;–&lt;/td&gt;
+&lt;td&gt;配置 Vault Agent 应该用于呈现秘密的模板。模板的名称是 v&lt;code&gt;ault.hashicorp.com/agent-inject-template-&lt;/code&gt; 之后的任何唯一字符串，例如 &lt;code&gt;vault.hashicorp.com/agent-inject-template-foobar&lt;/code&gt;。这应该映射到 &lt;code&gt;vault.hashicorp.com/agent-inject-secret-&lt;/code&gt; 中提供的相同唯一值。如果未提供，则使用默认的通用模板。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h2 id=&#34;vault-server-considerations&#34;&gt;Vault 服务器注意事项&lt;/h2&gt;
+&lt;p&gt;Vault 支持多种客户端验证自己的方法。我们将利用 &lt;a href=&#34;https://developer.hashicorp.com/vault/docs/auth/kubernetes&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kubernetes 身份验证后端&lt;/a&gt;，这意味着我们将利用 Kubernetes ServiceAccount JWT 令牌验证。请注意，自 Kubernetes 1.24 以来，不再自动生成 ServiceAccount 令牌。您仍然可以手动创建这些 API 令牌，如&lt;a href=&#34;https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#manually-create-an-api-token-for-a-serviceaccount&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;此处所述&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;至于证书和私钥材料的存储，我们有两种选择：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://developer.hashicorp.com/vault/docs/secrets/pki&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;PKI 秘密引擎&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://developer.hashicorp.com/vault/docs/secrets/kv&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;KV 秘密引擎&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;因为 PKI 秘密引擎不提供精简的 API 来检索我们需要的证书和私钥，并且因为 PKI 秘密引擎会为每次调用（例如，每次 &lt;em&gt;istiod&lt;/em&gt; 重启）生成一个新的中间证书，我们将使用通用的 KV 秘密引擎，将我们需要的所有值存储在一个简单的键值数据结构中。我们假设中间证书的更新是通过一些服务门户或 CI/CD 过程在外部处理的，这些过程也将更新的中间证书存储在 Vault 服务器中。&lt;/p&gt;
+&lt;p&gt;Istio 的控制平面 Pod 需要以下文件才能在 CA 中正确引导其构建：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Key&lt;/th&gt;
+&lt;th&gt;值（PEM 编码）&lt;/th&gt;
+&lt;th&gt;细节&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;ca-key.pem&lt;/td&gt;
+&lt;td&gt;私钥&lt;/td&gt;
+&lt;td&gt;中间证书的私钥，用作 &lt;em&gt;istiod&lt;/em&gt; 的根 CA。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;ca-cert.pem&lt;/td&gt;
+&lt;td&gt;CA 公共证书&lt;/td&gt;
+&lt;td&gt;中间证书，用作 &lt;em&gt;istiod&lt;/em&gt; 的根 CA。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;root-cert.pem&lt;/td&gt;
+&lt;td&gt;CA 根证书&lt;/td&gt;
+&lt;td&gt;我们新生成的中间证书的信任根。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;cert-chain.pem&lt;/td&gt;
+&lt;td&gt;完整的证书链&lt;/td&gt;
+&lt;td&gt;中间证书在顶部，根证书在底部。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h2 id=&#34;设置&#34;&gt;设置&lt;/h2&gt;
+&lt;p&gt;如果要遵循本地设置，则安装软件的先决条件包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;kubectl&lt;/em&gt; 与 Kubernetes 集群交互（&lt;a href=&#34;https://kubernetes.io/docs/tasks/tools/#kubectl&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;下载&lt;/a&gt;）&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;helm&lt;/em&gt; 安装 Vault injector 和 Istio chart（&lt;a href=&#34;https://helm.sh/docs/intro/install&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;下载&lt;/a&gt;）&lt;/li&gt;
+&lt;li&gt;用于配置 Vault 服务器的 &lt;em&gt;vault cli&lt;/em&gt; 工具（&lt;a href=&#34;https://developer.hashicorp.com/vault/tutorials/getting-started/getting-started-install#install-vault&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;下载&lt;/a&gt;）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;如果您想要本地演示环境，请按照&lt;a href=&#34;https://github.com/tetratelabs/istio-vault-ext-certs/blob/main/local-setup.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;此处&lt;/a&gt;的说明进行操作，该说明使用 &lt;code&gt;docker-compose&lt;/code&gt; 启动一个 Vault 服务器和两个独立的 k3s 集群。如果您使用自己的 Kubernetes 集群和外部托管的 Vault 实例，请跳至下一节。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;docker-compose&lt;/em&gt; 启动本地环境（&lt;a href=&#34;https://github.com/docker/compose/releases&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;下载&lt;/a&gt;）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;为了取得进展，我们希望根据您的环境设置以下 shell 变量。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;export&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;VAULT_SERVER&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;export&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;K8S_API_SERVER_1&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;export&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;K8S_API_SERVER_2&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;vault-kubernetes-身份验证后端&#34;&gt;&lt;strong&gt;Vault Kubernetes 身份验证后端&lt;/strong&gt;&lt;/h2&gt;
+&lt;p&gt;正如在有关 &lt;a href=&#34;#vault-server-considerations&#34;&gt;Vault 服务器注意事项&lt;/a&gt;的介绍部分中提到的，我们将使用 &lt;a href=&#34;https://developer.hashicorp.com/vault/docs/auth/kubernetes&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kubernetes 身份验证后端&lt;/a&gt;。由于 &lt;em&gt;istiod&lt;/em&gt; 将从 Vault 服务器获取证书和私钥材料，让我们从在两个集群中创建相应的服务账户开始。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl --kubeconfig kubecfg1.yml create ns istio-system
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl --kubeconfig kubecfg2.yml create ns istio-system
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl --kubeconfig kubecfg1.yml apply -f istio-sa.yml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl --kubeconfig kubecfg2.yml apply -f istio-sa.yml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;ServiceAccount、Secret 和 ClusterRoleBinding 如下：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# istio-sa.yaml&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ServiceAccount&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istiod&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istio-system&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;labels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# added for istio helm installation&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istiod&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;app.kubernetes.io/managed-by&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Helm&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;release&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istio-istiod&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# added for istio helm installation&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;meta.helm.sh/release-name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istio-istiod&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;meta.helm.sh/release-namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istio-system&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nn&#34;&gt;---&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Secret&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istiod&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istio-system&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kubernetes.io/service-account.name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istiod&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;type&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;kubernetes.io/service-account-token&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nn&#34;&gt;---&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io/v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ClusterRoleBinding&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;role-tokenreview-binding&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;roleRef&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ClusterRole&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;system:auth-delegator&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;subjects&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ServiceAccount&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istiod&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istio-system&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;blockquote&gt;
+&lt;p&gt;注意：&lt;em&gt;我们在 istiod ServiceAccount 上添加了 Helm 标签和注解，以免与稍后的 Istio Helm 部署发生冲突。&lt;/em&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;在两个集群中创建 ServiceAccount 后，让我们将它们的 Secret 令牌和 ca.cert 值存储在 output 文件夹中：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;mkdir -p ./output
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl --kubeconfig kubecfg1.yml get secret -n istio-system istiod -o go-template&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;{{ .data.token }}&amp;#34;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; base64 --decode &amp;gt; output/istiod1.jwt
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl --kubeconfig kubecfg1.yml config view --raw --minify --flatten -o &lt;span class=&#34;nv&#34;&gt;jsonpath&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;{.clusters[].cluster.certificate-authority-data}&amp;#34;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; base64 --decode &amp;gt; output/k8sapi-cert1.pem
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl --kubeconfig kubecfg2.yml get secret -n istio-system istiod -o go-template&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;{{ .data.token }}&amp;#34;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; base64 --decode &amp;gt; output/istiod2.jwt
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl --kubeconfig kubecfg2.yml config view --raw --minify --flatten -o &lt;span class=&#34;nv&#34;&gt;jsonpath&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;{.clusters[].cluster.certificate-authority-data}&amp;#34;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; base64 --decode &amp;gt; output/k8sapi-cert2.pem
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;关于 Kubernetes API 证书和 istiod ServiceAccount JWT 令牌的详细内容的更多信息可以在&lt;a href=&#34;https://github.com/tetratelabs/istio-vault-ext-certs/blob/main/output&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这里&lt;/a&gt;找到，在这里我们也更深入地描述了 Vault 的交互过程，即通过 REST API 调用来验证和获取秘密。在调试权限拒绝的问题时，这些可以派上用场。&lt;/p&gt;
+&lt;p&gt;让我们根据刚刚检索到的 Kubernetes CA 证书和 JWT 令牌创建必要的 Vault 身份验证配置：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;export&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;VAULT_ADDR&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;http://localhost:8200
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;vault login root
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;vault auth &lt;span class=&#34;nb&#34;&gt;enable&lt;/span&gt; --path&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;kubernetes-cluster1 kubernetes
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;vault auth &lt;span class=&#34;nb&#34;&gt;enable&lt;/span&gt; --path&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;kubernetes-cluster2 kubernetes
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;vault write auth/kubernetes-cluster1/config &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;kubernetes_host&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$K8S_API_SERVER_1&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;kubernetes_ca_cert&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;@output/k8sapi-cert1.pem &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;token_reviewer_jwt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;sb&#34;&gt;`&lt;/span&gt;cat output/istiod1.jwt&lt;span class=&#34;sb&#34;&gt;`&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;disable_local_ca_jwt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;true&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;vault write auth/kubernetes-cluster2/config &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;kubernetes_host&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$K8S_API_SERVER_2&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;kubernetes_ca_cert&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;@output/k8sapi-cert2.pem &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;token_reviewer_jwt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;sb&#34;&gt;`&lt;/span&gt;cat output/istiod2.jwt&lt;span class=&#34;sb&#34;&gt;`&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;disable_local_ca_jwt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;true&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;blockquote&gt;
+&lt;p&gt;注意：如果您使用的是 &lt;em&gt;docker-compose&lt;/em&gt; 提供的环境，则 &lt;code&gt;VAULT_ADDR&lt;/code&gt; 设置为 localhost。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;vault-kv-secret-中的-istio-证书和私钥&#34;&gt;&lt;em&gt;Vault kv&lt;/em&gt; Secret 中的 Istio 证书和私钥&lt;/h2&gt;
+&lt;p&gt;接下来我们将创建一个新的自签名根证书并为我们的两个集群生成中间证书。我们将在&lt;a href=&#34;https://github.com/istio/istio/tree/master/tools/certs&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这里&lt;/a&gt;使用上游 Istio 提供的辅助 &lt;em&gt;Makefile&lt;/em&gt; 脚本：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;cd&lt;/span&gt; certs
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;make -f ../certs-gen/Makefile.selfsigned.mk root-ca
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;make -f ../certs-gen/Makefile.selfsigned.mk istiod-cluster1-cacerts
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;make -f ../certs-gen/Makefile.selfsigned.mk istiod-cluster2-cacerts
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;cd&lt;/span&gt; ..
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;有关实际内容和正在设置的 X509v3 扩展的更多详细信息，请参见&lt;a href=&#34;https://github.com/tetratelabs/istio-vault-ext-certs/blob/main/certs&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;此处&lt;/a&gt;。您可以通过&lt;a href=&#34;https://github.com/tetratelabs/istio-vault-ext-certs/blob/main/certs-gen&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;此处&lt;/a&gt;的 &lt;em&gt;Makefile&lt;/em&gt;文档和相应的 &lt;em&gt;Makefile&lt;/em&gt; 覆盖值微调证书。&lt;/p&gt;
+&lt;p&gt;让我们将生成的证书和私钥添加到 Vault &lt;em&gt;kv&lt;/em&gt; secret 中：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;export&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;VAULT_ADDR&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;http://localhost:8200
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;vault login root
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;vault secrets &lt;span class=&#34;nb&#34;&gt;enable&lt;/span&gt; -path&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;kubernetes-cluster1-secrets kv
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;vault secrets &lt;span class=&#34;nb&#34;&gt;enable&lt;/span&gt; -path&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;kubernetes-cluster2-secrets kv
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;vault kv put kubernetes-cluster1-secrets/istiod-service/certs &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;ca_key&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;@certs/istiod-cluster1/ca-key.pem &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;ca_cert&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;@certs/istiod-cluster1/ca-cert.pem &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;cert_chain&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;@certs/istiod-cluster1/cert-chain.pem &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;root_cert&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;@certs/istiod-cluster1/root-cert.pem
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;vault kv put kubernetes-cluster2-secrets/istiod-service/certs &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;ca_key&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;@certs/istiod-cluster2/ca-key.pem &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;ca_cert&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;@certs/istiod-cluster2/ca-cert.pem &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;cert_chain&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;@certs/istiod-cluster2/cert-chain.pem &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;root_cert&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;@certs/istiod-cluster2/root-cert.pem
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;通过限制对每个集群的这些证书和私钥的访问，绑定到基于 Kubernetes &lt;em&gt;istiod&lt;/em&gt; ServiceAccount 的身份验证后端：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;echo&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;path &amp;#34;kubernetes-cluster1-secrets/istiod-service/certs&amp;#34; {
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s1&#34;&gt;  capabilities = [&amp;#34;read&amp;#34;]
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s1&#34;&gt;}&amp;#39;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; vault policy write istiod-certs-cluster1 -
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;echo&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;path &amp;#34;kubernetes-cluster2-secrets/istiod-service/certs&amp;#34; {
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s1&#34;&gt;  capabilities = [&amp;#34;read&amp;#34;]
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s1&#34;&gt;}&amp;#39;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; vault policy write istiod-certs-cluster2 -
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;vault write auth/kubernetes-cluster1/role/istiod &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;bound_service_account_names&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;istiod &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;bound_service_account_namespaces&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;istio-system &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;policies&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;istiod-certs-cluster1 &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;ttl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;24h
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;vault write auth/kubernetes-cluster2/role/istiod &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;bound_service_account_names&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;istiod &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;bound_service_account_namespaces&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;istio-system &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;policies&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;istiod-certs-cluster2  &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nv&#34;&gt;ttl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;24h
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;部署-vault-inject-和-istio-helm-charts&#34;&gt;部署 &lt;em&gt;vault-inject&lt;/em&gt; 和 Istio Helm Charts&lt;/h2&gt;
+&lt;p&gt;为了部署 Vault 注入器，我们将利用官方 Vault &lt;a href=&#34;https://github.com/hashicorp/vault-helm&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Helm chart&lt;/a&gt;。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm repo add hashicorp https://helm.releases.hashicorp.com
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm repo update
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl --kubeconfig kubecfg1.yml create ns vault
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl --kubeconfig kubecfg2.yml create ns vault
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm --kubeconfig kubecfg1.yml install -n vault vault-inject hashicorp/vault --set &lt;span class=&#34;s2&#34;&gt;&amp;#34;injector.externalVaultAddr=&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$VAULT_SERVER&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm --kubeconfig kubecfg2.yml install -n vault vault-inject hashicorp/vault --set &lt;span class=&#34;s2&#34;&gt;&amp;#34;injector.externalVaultAddr=&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$VAULT_SERVER&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl --kubeconfig kubecfg1.yml -n vault get pods
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl --kubeconfig kubecfg2.yml -n vault get pods
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;NAME                                           READY   STATUS    RESTARTS   AGE
+vault-inject-agent-injector-5776975795-9vt9w   1/1     Running   0          92s
+NAME                                           READY   STATUS    RESTARTS   AGE
+vault-inject-agent-injector-5776975795-9vjnx   1/1     Running   0          91s
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;要安装 Istio，我们将使用 Tetrate Istio Distro &lt;a href=&#34;https://github.com/tetratelabs/helm-charts&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Helm chart&lt;/a&gt;。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm repo add tetratelabs https://tetratelabs.github.io/helm-charts
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm repo update
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm --kubeconfig kubecfg1.yml install -n istio-system istio-base tetratelabs/base
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm --kubeconfig kubecfg2.yml install -n istio-system istio-base tetratelabs/base
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm --kubeconfig kubecfg1.yml install -n istio-system istio-istiod tetratelabs/istiod --values&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;./cluster1-values.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm --kubeconfig kubecfg2.yml install -n istio-system istio-istiod tetratelabs/istiod --values&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;./cluster2-values.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl --kubeconfig kubecfg1.yml -n istio-system get pods
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl --kubeconfig kubecfg2.yml -n istio-system get pods
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请注意我们如何利用多个 Istio Helm chart 值覆盖来我们预期的目标：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;注入一个 pilot Pod 环境变量 &lt;code&gt;ROOT_CA_DIR&lt;/code&gt; 来告诉 &lt;em&gt;istiod&lt;/em&gt; 从哪里获取证书和私钥&lt;/li&gt;
+&lt;li&gt;告诉 &lt;code&gt;vault-agent-init&lt;/code&gt; 容器在 &lt;em&gt;istiod&lt;/em&gt; 容器之前运行，因此秘密安装在 &lt;code&gt;/vault/secrets&lt;/code&gt; 的卷中可用&lt;/li&gt;
+&lt;li&gt;指示 Vault 注入器从正确的位置和数据密钥获取机密&lt;/li&gt;
+&lt;li&gt;这样做时承担 Vault &lt;em&gt;istiod&lt;/em&gt; 角色&lt;/li&gt;
+&lt;li&gt;覆盖默认的 Kubernetes auth-path，因为我们有多个集群&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;pilot&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;env&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;ROOT_CA_DIR&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;/vault/secrets&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;podAnnotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;vault.hashicorp.com/agent-inject&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;true&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;vault.hashicorp.com/agent-init-first&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;true&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;vault.hashicorp.com/agent-inject-secret-ca-key.pem&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;kubernetes-cluster1-secrets/istiod-service/certs&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;vault.hashicorp.com/agent-inject-template-ca-key.pem&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;sd&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;        {{- with secret &amp;#34;kubernetes-cluster1-secrets/istiod-service/certs&amp;#34; -}}
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;        {{ .Data.ca_key }}
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;        {{ end -}}&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;        
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;vault.hashicorp.com/agent-inject-secret-ca-cert.pem&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;kubernetes-cluster1-secrets/istiod-service/certs&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;vault.hashicorp.com/agent-inject-template-ca-cert.pem&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;sd&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;        {{- with secret &amp;#34;kubernetes-cluster1-secrets/istiod-service/certs&amp;#34; -}}
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;        {{ .Data.ca_cert }}
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;        {{ end -}}&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;        
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;vault.hashicorp.com/agent-inject-secret-root-cert.pem&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;kubernetes-cluster1-secrets/istiod-service/certs&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;vault.hashicorp.com/agent-inject-template-root-cert.pem&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;sd&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;        {{- with secret &amp;#34;kubernetes-cluster1-secrets/istiod-service/certs&amp;#34; -}}
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;        {{ .Data.root_cert }}
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;        {{ end -}}&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;        
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;vault.hashicorp.com/agent-inject-secret-cert-chain.pem&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;kubernetes-cluster1-secrets/istiod-service/certs&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;vault.hashicorp.com/agent-inject-template-cert-chain.pem&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;sd&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;        {{- with secret &amp;#34;kubernetes-cluster1-secrets/istiod-service/certs&amp;#34; -}}
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;        {{ .Data.cert_chain }}
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;        {{ end -}}&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;        
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;vault.hashicorp.com/role&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;istiod&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;vault.hashicorp.com/auth-path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;auth/kubernetes-cluster1&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当我们查看 &lt;code&gt;vault-agent-init&lt;/code&gt; 容器日志时，我们应该看到类似这样的内容。我们的控制平面已经正确地获取了 Vault 注入的秘密。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl --kubeconfig kubecfg1.yml logs -n istio-system -l &lt;span class=&#34;nv&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;istiod -c vault-agent-init --tail&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;-1
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;==&amp;gt; Vault agent started! Log data will stream in below:
+
+  ==&amp;gt; Vault agent configuration:
+
+                      Cgo: disabled
+                Log Level: info
+                  Version: Vault v1.12.0, built 2022-10-10T18:14:33Z
+              Version Sha: 558abfa75702b5dab4c98e86b802fb9aef43b0eb
+
+  2022-11-18T11:01:21.398Z [INFO]  sink.file: creating file sink
+  2022-11-18T11:01:21.398Z [INFO]  sink.file: file sink configured: path=/home/vault/.vault-token mode=-rw-r-----
+  2022-11-18T11:01:21.398Z [INFO]  template.server: starting template server
+  2022-11-18T11:01:21.398Z [INFO]  sink.server: starting sink server
+  2022-11-18T11:01:21.398Z [INFO]  auth.handler: starting auth handler
+  2022-11-18T11:01:21.398Z [INFO]  auth.handler: authenticating
+  2022-11-18T11:01:21.398Z [INFO] (runner) creating new runner (dry: false, once: false)
+  2022-11-18T11:01:21.398Z [INFO] (runner) creating watcher
+  2022-11-18T11:01:21.402Z [INFO]  auth.handler: authentication successful, sending token to sinks
+  2022-11-18T11:01:21.402Z [INFO]  auth.handler: starting renewal process
+  2022-11-18T11:01:21.402Z [INFO]  sink.file: token written: path=/home/vault/.vault-token
+  2022-11-18T11:01:21.402Z [INFO]  sink.server: sink server stopped
+  2022-11-18T11:01:21.402Z [INFO]  sinks finished, exiting
+  2022-11-18T11:01:21.402Z [INFO]  template.server: template server received new token
+  2022-11-18T11:01:21.402Z [INFO] (runner) stopping
+  2022-11-18T11:01:21.402Z [INFO] (runner) creating new runner (dry: false, once: false)
+  2022-11-18T11:01:21.402Z [INFO] (runner) creating watcher
+  2022-11-18T11:01:21.402Z [INFO] (runner) starting
+  2022-11-18T11:01:21.403Z [INFO]  auth.handler: renewed auth token
+  2022-11-18T11:01:21.515Z [INFO] (runner) rendered &amp;#34;(dynamic)&amp;#34; =&amp;gt; &amp;#34;/vault/secrets/root-cert.pem&amp;#34;
+  2022-11-18T11:01:21.515Z [INFO] (runner) rendered &amp;#34;(dynamic)&amp;#34; =&amp;gt; &amp;#34;/vault/secrets/ca-cert.pem&amp;#34;
+  2022-11-18T11:01:21.515Z [INFO] (runner) rendered &amp;#34;(dynamic)&amp;#34; =&amp;gt; &amp;#34;/vault/secrets/cert-chain.pem&amp;#34;
+  2022-11-18T11:01:21.516Z [INFO] (runner) rendered &amp;#34;(dynamic)&amp;#34; =&amp;gt; &amp;#34;/vault/secrets/ca-key.pem&amp;#34;
+  2022-11-18T11:01:21.516Z [INFO] (runner) stopping
+  2022-11-18T11:01:21.516Z [INFO]  template.server: template server stopped
+  2022-11-18T11:01:21.516Z [INFO] (runner) received finish
+  2022-11-18T11:01:21.516Z [INFO]  auth.handler: shutdown triggered, stopping lifetime watcher
+  2022-11-18T11:01:21.516Z [INFO]  auth.handler: auth handler stopped
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当我们查看 &lt;code&gt;discovery&lt;/code&gt; 容器日志时，我们应该看到如下内容：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl --kubeconfig kubecfg1.yml logs -n istio-system -l &lt;span class=&#34;nv&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;istiod -c discovery --tail&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;-1
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt; info	Using istiod file format for signing ca files
+  info	Use plugged-in cert at /vault/secrets/ca-key.pem
+  info	x509 cert - Issuer: &amp;#34;CN=Intermediate CA,O=Istio,L=istiod-cluster1&amp;#34;, Subject: &amp;#34;&amp;#34;, SN: 39f67569f10d36a1fc91e9d82156b07d, NotBefore: &amp;#34;2022-11-18T11:11:59Z&amp;#34;, NotAfter: &amp;#34;2032-11-15T11:13:59Z&amp;#34;
+  info	x509 cert - Issuer: &amp;#34;CN=Root CA,O=Istio&amp;#34;, Subject: &amp;#34;CN=Intermediate CA,O=Istio,L=istiod-cluster1&amp;#34;, SN: dedf298a147681d6, NotBefore: &amp;#34;2022-11-17T22:01:54Z&amp;#34;, NotAfter: &amp;#34;2024-11-16T22:01:54Z&amp;#34;
+  info	x509 cert - Issuer: &amp;#34;CN=Root CA,O=Istio&amp;#34;, Subject: &amp;#34;CN=Root CA,O=Istio&amp;#34;, SN: f5bcd7e89bdb6248, NotBefore: &amp;#34;2022-11-17T22:01:52Z&amp;#34;, NotAfter: &amp;#34;2032-11-14T22:01:52Z&amp;#34;
+  info	Istiod certificates are reloaded
+  info	spiffe	Added 1 certs to trust domain cluster.local in peer cert verifier
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我们可以看到我们的 Istio 控制平面已经正确地获取了我们的 Vault 注入证书和私钥。任务完成！&lt;/p&gt;
+&lt;h2 id=&#34;结论&#34;&gt;结论&lt;/h2&gt;
+&lt;p&gt;在本文中，我们已经使用外部 Vault 存储的证书和私钥成功引导了 Istio 控制平面。实现这一目标的步骤包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;将证书和私钥存储在每个集群专用的 Vault 秘密安装路径中&lt;/li&gt;
+&lt;li&gt;为每个集群设置 Kubernetes Vault 身份验证后端，链接到正确的 ServiceAccount&lt;/li&gt;
+&lt;li&gt;定义适当的角色和策略以允许从 &lt;em&gt;istiod&lt;/em&gt; ServiceAccount 访问 Vault 机密&lt;/li&gt;
+&lt;li&gt;将 Istio Pilot 引导程序参数调整为：
+&lt;ul&gt;
+&lt;li&gt;注入 &lt;em&gt;vault-agent-init&lt;/em&gt; sidecar&lt;/li&gt;
+&lt;li&gt;获取包含我们的证书和私钥的正确 Vault 机密&lt;/li&gt;
+&lt;li&gt;使用正确的角色和身份验证后端来这样做&lt;/li&gt;
+&lt;li&gt;从正确的 vault secret 安装路径中获取证书和私钥&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;我们可以使用完全相同的技术来注入&lt;em&gt;入口网关&lt;/em&gt;和&lt;em&gt;出口网关&lt;/em&gt;证书。创建 Istio &lt;a href=&#34;https://istio.io/latest/docs/reference/config/networking/gateway/#ServerTLSSettings&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Gateway&lt;/a&gt; 对象时，请确保将 &lt;em&gt;serverCertificate&lt;/em&gt;、&lt;em&gt;privateKey&lt;/em&gt; 和 &lt;em&gt;caCertificates&lt;/em&gt; 指向 &lt;code&gt;/vault/secrets&lt;/code&gt; 挂载卷中的正确文件。我们将把它作为练习留给读者。&lt;/p&gt;
+&lt;p&gt;通过将证书注入绑定到 Kubernetes ServiceAccount，我们现在已将证书生命周期管理委托给外部秘密 Vault 实例。现在可以使用专用角色和写入/更新策略创建服务门户或 CI/CD 管道等外部流程，以提供必要的证书生命周期管理安全性。&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>什么是 Ambient Mesh？</title>
