@@ -3,8 +3,8 @@ title: "如何使用 Hashicorp Vault 作为一种更安全的方式来存储 Ist
 date: 2022-12-19T13:00:00+08:00
 draft: false
 authors: ["Tetrate"]
-summary: "本文是将指导你使用 Vault 存储 Istio 的证书。"
-tags: ["Vault","零信任","安全","Istio","证书"]
+summary: "本文将指导你使用 Vault 存储 Istio 的证书。"
+tags: ["Vault","零信任","安全","Istio","证书","Harshicorp"]
 categories: ["Istio"]
 links:
   - icon: globe
@@ -27,8 +27,8 @@ Vault 可以托管在 Kubernetes 集群内部和外部。在本案例中，我�
 
 有关基于实际生产经验的最佳实践，另请查看以下 [Tetrate](https://tetrate.io/) 的博客文章：
 
-- [信任链：Istio 对现有 PKI 的信任](https://tetrate.io/blog/istio-trust)
-- [在生产中大规模自动化 Istio CA 轮换](https://tetrate.io/blog/automate-istio-ca-rotation-in-production-at-scale)
+- [在 Istio 中构建证书信任链：将现有 PKI 作为信任根](/blog/istio-trust/)
+- [在生产中大规模自动化 Istio CA 轮换](/blog/automate-istio-ca-rotation-in-production-at-scale)
 
 这篇博文附带的代码可以在以下存储库中找到：
 
