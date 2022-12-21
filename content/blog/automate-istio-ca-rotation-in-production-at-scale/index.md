@@ -112,7 +112,7 @@ spec:
 EOF
 ```
 
- **注意：**Cert-manager 将证书和密钥公开为 [`kubernetes.io/tls` Secret](https://kubernetes.io/docs/concepts/configuration/secret/#secret-types)。Istio 可以使用从 [1.14.2 版本](https://istio.io/latest/news/releases/1.14.x/announcing-1.14.2/#changes)开始的 `kubernetes.io/tls` 类型的 Secret。
+ **注意**：Cert-manager 将证书和密钥公开为 [`kubernetes.io/tls` Secret](https://kubernetes.io/docs/concepts/configuration/secret/#secret-types)。Istio 可以使用从 [1.14.2 版本](https://istio.io/latest/news/releases/1.14.x/announcing-1.14.2/#changes)开始的 `kubernetes.io/tls` 类型的 Secret。
 
 ## 任务 B：安装和配置 Istio 以自动更新其 CA
 
