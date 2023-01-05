@@ -13,6 +13,118 @@
     </image>
     
     <item>
+      <title>服务网格如何将微服务安全与传统安全分层，从而安全地快速移动</title>
+      <link>https://lib.jimmysong.io/blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/</link>
+      <pubDate>Thu, 05 Jan 2023 14:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/</guid>
+      <description>&lt;p&gt;本文是 Tetrate 即将出版的《Istio in Production》一书中摘录的服务网格最佳实践系列的第一篇，作者是 Tetrate 创始工程师 Zack Butcher。&lt;/p&gt;
+&lt;p&gt;我们接到许多实施网格的企业的问题，其中之一是 “我还需要哪些控制，而网格提供哪些控制？” 换句话说，他们想知道网格如何适应现有的安全模型。我们发现，网格最适合作为一组安全控制的内圈，这些控制从物理网络到应用本身的每一层都被实施。&lt;/p&gt;
+&lt;h2 id=&#34;服务网格作为通用策略执行点&#34;&gt;服务网格作为通用策略执行点&lt;/h2&gt;
+&lt;p&gt;我们看到网格的 Sidecar 作为通用策略执行点（&lt;a href=&#34;https://csrc.nist.gov/publications/detail/sp/800-204b/final&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;NIST SP 800-204B：使用服务网格的基于属性的访问控制&lt;/a&gt;）。由于它拦截了所有进出应用程序的流量，Sidecar 为我们提供了一个强大的位置来实现各种策略。我们可以实现传统的安全策略，如基于应用程序标识而非网络位置的更高保证的应用程序之间的授权。但我们也可以实施之前不切实际或需要与应用程序深度参与的策略。例如，网格允许您编写以下策略：“后端可以从数据库读取（使用应用级身份进行身份验证和授权），但前提是请求具有有效的最终用户凭证并具有读取范围（使用最终用户身份进行身份验证和授权）。”&lt;/p&gt;
+&lt;p&gt;虽然服务网格提供了一个强大，动态和一致的安全基线，您可以在其上构建应用程序安全模型，但网格本身永远无法提供应用程序所需的 100% 运行时安全。例如，由于 Sidecar 位于用户空间中，网格在减轻许多类型的网络拒绝服务攻击方面不如传统防火墙机制。另一方面，由于同样的原因，网格在减轻许多应用级拒绝服务攻击方面比传统基础设施更有效。&lt;/p&gt;
+&lt;h2 id=&#34;作为一个强大的中间层&#34;&gt;作为一个强大的中间层&lt;/h2&gt;
+&lt;p&gt;网格作为基础架构的强大中间层：位于物理网络和所实施的 L3/L4 控制之上，但位于应用程序之下。这允许更脆弱和更难以改变的松散配置 —— 允许更高层的更大敏捷性 —— 因为控制体系在更高层被考虑。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-图-1增加细粒度策略层以增强传统安全&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;图 1：增加细粒度策略层以增强传统安全。&#34; srcset=&#34;
+               /blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/f1_hu77bfcd9fc09325634e7da69488e5d6bb_131692_79126dd30cb084331b0902ece23fa13b.webp 400w,
+               /blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/f1_hu77bfcd9fc09325634e7da69488e5d6bb_131692_0a51db888fc6b0faca698b66fc0bc330.webp 760w,
+               /blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/f1_hu77bfcd9fc09325634e7da69488e5d6bb_131692_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/f1_hu77bfcd9fc09325634e7da69488e5d6bb_131692_79126dd30cb084331b0902ece23fa13b.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;629&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      图 1：增加细粒度策略层以增强传统安全。
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;网格提供的主要安全功能是：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;作为 X.509 证书的&lt;strong&gt;运行时身份&lt;/strong&gt;，用于在传输期间加密，以及服务之间通信的身份验证和授权。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;策略执行点&lt;/strong&gt;，用于在网格中的所有应用程序上实施一致的最终用户身份验证和授权。&lt;/li&gt;
+&lt;li&gt;服务身份和最终用户身份的&lt;strong&gt;运行时策略执行&lt;/strong&gt;（例如，“A 只能使用具有读取范围的有效最终用户凭证与 B 进行通信”）。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;速率限制和弹性功能&lt;/strong&gt;，用于减轻常见的应用级拒绝服务攻击，并保护免受常见的级联故障模式的影响。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;WAF&lt;/strong&gt; 和其他&lt;strong&gt;深层包检测&lt;/strong&gt;功能，用于内部流量，而不仅仅是在边缘。&lt;/li&gt;
+&lt;li&gt;来自网格中所有应用程序的&lt;strong&gt;一致的操作遥测&lt;/strong&gt;，可用于理解、实施和审核安全策略。&lt;/li&gt;
+&lt;li&gt;具有动态运行时更新的&lt;strong&gt;策略即代码&lt;/strong&gt;（Policy-as-code）模型，独立于应用程序生命周期。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;服务网格作为分层防御的一部分&#34;&gt;服务网格作为分层防御的一部分&lt;/h2&gt;
+&lt;p&gt;考虑到网格的安全功能，我们认为，组织采用它作为分层防御方法的一部分是最合理的。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-图-2每层策略的示例以及一个示例部署拓扑&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;图 2：每层策略的示例以及一个示例部署拓扑。&#34; srcset=&#34;
+               /blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/f2_hu91a910876103ded383fabd4c1a919545_136426_290f86837047e5ea062092669095abc9.webp 400w,
+               /blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/f2_hu91a910876103ded383fabd4c1a919545_136426_c12d0a501b4e305ac65c2c2eab2818e9.webp 760w,
+               /blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/f2_hu91a910876103ded383fabd4c1a919545_136426_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/f2_hu91a910876103ded383fabd4c1a919545_136426_290f86837047e5ea062092669095abc9.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;395&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      图 2：每层策略的示例以及一个示例部署拓扑。
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h2 id=&#34;l3-层的敏捷性粗粒度的入口和出口策略以及-l7-的细粒度控制&#34;&gt;L3 层的敏捷性：粗粒度的入口和出口策略以及 L7 的细粒度控制&lt;/h2&gt;
+&lt;p&gt;在边缘的 L3 控制（如防火墙）在粗粒度的入口和出口策略方面仍然有效，但通常会减慢应用程序开发敏捷性。由于网格提供了细粒度的服务间授权，所以可以在 L3 上设置更广泛的策略，为平台、安全和应用程序团队提供更多敏捷性。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;实施对外部服务的访问控制&lt;/strong&gt;。网格的出口代理特别适用于实施应用程序到外部服务的控制，而只有出口代理本身被外出防火墙 allow-listed：这为平台或安全团队在管理哪些应用程序允许与企业基础架构之外的通信提供了很多敏捷性，同时保持现有的基于周界的模型。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;使用加密和动态访问控制代替 “可达性即授权”&lt;/strong&gt;。网格可以开始有效地取代 VPN 和基于 IPSec 的网络“可达性即授权”模式，提供传输中的加密，以及每个应用而不是每个主机的认证和授权。&lt;/p&gt;
+&lt;h2 id=&#34;l4-层的改进更扁平和易于管理的网络微分段&#34;&gt;L4 层的改进：更扁平和易于管理的网络微分段&lt;/h2&gt;
+&lt;p&gt;微分段之类的控制可以通过网格进一步改进：尽管我们可能允许整个（小）子网在基于分段的策略中进行通信，但我们可以使用网格按方法和动词对单独的服务间通信进行控制。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;补充现有的微分段同时展平网络&lt;/strong&gt;。通过提供细粒度的服务间控制，网格往往会补充现有的微分段策略，同时使得组织更容易管理的较平的网络得以采用（例如，在云环境中）。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;使用工作负载身份启用传输期间的加密（mTLS）和服务级别访问控制&lt;/strong&gt;。传输层几乎总是处理加密传输，网格通过根据 SPIFFE 规范发布和轮换短期（&amp;lt;24 小时）工作负载身份证书来为应用程序实现此功能，从而允许传输期间的加密以及服务级别的身份验证和授权。&lt;/p&gt;
+&lt;h2 id=&#34;l7-层的增强无处不在的边缘和访问控制&#34;&gt;L7 层的增强：无处不在的边缘和访问控制&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;为所有流量提供边缘控制&lt;/strong&gt;。L7 控制，如 Web 应用程序防火墙（WAF）以及 “API 网关功能”（如流量限制）几乎总是在边缘实施。网格可以通过为网格中所有流量（包括内部的 “东西” 通信）启用相同的功能来增强这些现有部署。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;简化应用程序的访问控制&lt;/strong&gt;。除了使边缘控制无处不在之外，网格还可以在应用程序看到请求之前执行端用户身份验证和粗粒度授权，从而大大简化应用程序本身必须执行的访问控制。在未来，我们将看到越来越多的访问控制功能从应用程序迁移到网格中。&lt;/p&gt;
+&lt;h2 id=&#34;总结和展望&#34;&gt;总结和展望&lt;/h2&gt;
+&lt;p&gt;我们认为，服务网格最适合作为现有安全模型的一部分，通过在传统安全控制之上添加更细粒度的安全策略来实现。作为一个通用策略执行点，网格在更改最困难的较低层提供了更松散的策略，将敏捷性推向堆栈的顶部，其中更多的上下文允许在更高层实现更特定的控制。这种强大的安全层对于大多数组织来说都是采用分层防御深度方法的最佳选择。&lt;/p&gt;
+&lt;h2 id=&#34;接下来服务网格部署最佳实践&#34;&gt;接下来：服务网格部署最佳实践&lt;/h2&gt;
+&lt;p&gt;我们服务网格最佳实践系列博客文章的下一篇将讨论部署拓扑。在多个集群的真实基础架构中部署服务网格时存在一些移动部分。在下一篇文章中，我们将更详细地研究：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;控制平面应如何部署在应用程序附近。&lt;/li&gt;
+&lt;li&gt;应该如何部署入口，以促进安全和敏捷性。&lt;/li&gt;
+&lt;li&gt;如何使用Envoy促进跨集群的负载平衡。&lt;/li&gt;
+&lt;li&gt;证书在网格中应该是什么样子的。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr&gt;
+&lt;p&gt;如果您不熟悉服务网格和 Kubernetes 安全性，我们在 &lt;a href=&#34;https://tetr8.io/academy&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate Academy&lt;/a&gt; 提供了一系列免费在线课程，可以让您快速了解 Istio 和 Envoy。&lt;/p&gt;
+&lt;p&gt;如果您正在寻找一种快速将 Istio 投入生产的方法，请查看 &lt;a href=&#34;https://tetr8.io/tid&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate Istio Distribution (TID)&lt;/a&gt;。TID 是 Tetrate 的强化、完全上游的 Istio 发行版，具有经过 FIPS 验证的构建和支持。这是开始使用 Istio 的好方法，因为您知道您有一个值得信赖的发行版，有一个支持您的专家团队，并且如果需要，还可以选择快速获得 FIPS 合规性。&lt;/p&gt;
+&lt;p&gt;一旦启动并运行 Istio，您可能需要更简单的方法来管理和保护您的服务，而不仅仅是 Istio 中可用的方法，这就是 Tetrate Service Bridge 的用武之地。您可以&lt;a href=&#34;https://tetr8.io/tsb&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;在这里&lt;/a&gt;详细了解 Tetrate Service Bridge 如何使服务网格更安全、更易于管理和弹性，或&lt;a href=&#34;https://tetr8.io/contact&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;联系我们进行快速演示&lt;/a&gt;。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
       <title>在生产中大规模自动化 Istio CA 轮换</title>
       <link>https://lib.jimmysong.io/blog/automate-istio-ca-rotation-in-production-at-scale/</link>
       <pubDate>Tue, 20 Dec 2022 14:00:00 +0800</pubDate>
