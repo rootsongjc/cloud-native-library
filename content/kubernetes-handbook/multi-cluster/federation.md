@@ -1,9 +1,15 @@
 ---
 weight: 70
 title: 集群联邦（Cluster Federation）
-date: '2022-05-21T00:00:00+08:00'
+date: '2023-01-17T10:40:00+08:00'
 type: book
 ---
+
+{{<callout warning 注意>}}
+
+[Kubefed](https://github.com/kubernetes-sigs/kubefed) 项目计划归档，详见 [Fellow-up: discussion on archiving Kubefed](https://groups.google.com/g/kubernetes-sig-multicluster/c/lciAVj-_ShE?pli=1)。
+
+{{</callout>}}
 
 Kubernetes 从 1.8 版本起就声称单集群最多可支持 5000 个节点和 15 万个 Pod，我相信很少有公司会部署如此庞大的一个单集群，总有很多情况下因为各种各样的原因我们可能会部署多个集群，但是有时候有想将他们统一起来管理，这时候就需要用到集群联邦（Federation）。
 
