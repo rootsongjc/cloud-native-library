@@ -690,7 +690,7 @@ brian@tweezer ~/g/w/s/c/helloworld> ls -laF *.wasm
 
 我将把它留给你去详细探索模块的内容，但我想强调几个要点。注意我们的模块导出了自己的 Memory。你可以改变这种行为，从 JavaScript 方面导入一个 Memory 实例，但我们现在不打算这么做。
 
-目前你需要关注的是，我们的 C/C++ 代码有一个很小的 libc 实现 ，它将从一个导出的 Memory 实例中分配和释放内存，而这一实例，在 [第四章](../wasm-definitive-guide/wasm-memory/) 后，应该可以运行起来：
+目前你需要关注的是，我们的 C/C++ 代码有一个很小的 libc 实现 ，它将从一个导出的 Memory 实例中分配和释放内存，而这一实例，在 [第 4 章](../wasm-definitive-guide/wasm-memory/) 后，应该可以运行起来：
 
 ```bash
 brian@tweezer ~/g/w/s/c/helloworld> wasm-objdump -x library.wasm
