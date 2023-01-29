@@ -860,10 +860,7 @@ int puts (const char * str){
 [^5]:  循环展开（Loop unrolling，译者注：指将循环展开成多个等价的循环，以减少循环次数。这样做可以提高代码的运行速度。常见的 unrolling 方法有手动 unrolling 和编译器自动 unrolling）是许多变成语言中常见的一种优化。
 [^6]: 有一个 [在线 C 语言教程](https://learn-c.org/)，如果你不介意一些恼人的广告的话。否则，Steve Oualline 的《实用 C 语言编程》（O'Reilly）或《C 语言编程》是不错的入门书。
 [^7]: 在 C 语言的世界里，nm 是一个常见的工具，可以打印出类似这样的二进制文件的内容。
-
 [^8]: 有时被称为 "用五磅的麻袋装十磅的化肥"。它将不适合！（译者注：中文意思应该是”牛头不对马嘴“。）
-
 [^9]: 这些细节不在本书的范围之内，但你可以在 [网上](https://en.wikipedia.org/wiki/Name_mangling) 找到更多信息。
 [^10]: [合并排序](https://en.wikipedia.org/wiki/Merge_sort) 是一种常用排序算法，复杂度为 O (n log n)。它很容易实现，这就是我选择它的原因。
 [^11]: Petter 在前面列出的 GitHub 仓库中的例子对字符串在 JavaScript 和 C 中来回移动做了更多的工作。
-
