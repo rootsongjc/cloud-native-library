@@ -1,0 +1,1564 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="宋净超" />
+
+  
+  
+  
+    
+  
+  <meta name="description" content="本文强调的是控制平面应该如何部署在应用程序附近，入口应该如何部署以促进安全性和敏捷性，如何使用 Envoy 促进跨集群负载均衡，以及网格内部如何使用证书。" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://lib.jimmysong.io/blog/service-mesh-deployment-best-practices-for-security-and-high-availability/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/css/wowchemy.b26eb9b802629dccab300faa82cc98c7.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MP490FS739"></script>
+
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', "G-MP490FS739");
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2a4b7f65b1839466beaa48d633aa60c1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://lib.jimmysong.io/blog/service-mesh-deployment-best-practices-for-security-and-high-availability/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary_large_image" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://lib.jimmysong.io/blog/service-mesh-deployment-best-practices-for-security-and-high-availability/" />
+  <meta property="og:title" content="服务网格安全性和高可用性部署最佳实践 | 云原生资料库" />
+  <meta property="og:description" content="本文强调的是控制平面应该如何部署在应用程序附近，入口应该如何部署以促进安全性和敏捷性，如何使用 Envoy 促进跨集群负载均衡，以及网格内部如何使用证书。" /><meta property="og:image" content="https://lib.jimmysong.io/media/sharing.png" />
+    <meta property="twitter:image" content="https://lib.jimmysong.io/media/sharing.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2023-01-30T11:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2023-01-30T18:02:24&#43;08:00">
+  
+
+  
+
+
+    
+
+
+
+
+
+
+  
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://lib.jimmysong.io/blog/service-mesh-deployment-best-practices-for-security-and-high-availability/"
+  },
+  "headline": "服务网格安全性和高可用性部署最佳实践",
+  
+  "datePublished": "2023-01-30T11:00:00+08:00",
+  "dateModified": "2023-01-30T18:02:24+08:00",
+  
+  "author": {
+    "@type": "Person",
+    "name": "Tetrate"
+  },
+  
+  "publisher": {
+    "@type": "Organization",
+    "name": "云原生社区",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://lib.jimmysong.io/media/logo.svg"
+    }
+  },
+  "description": "本文强调的是控制平面应该如何部署在应用程序附近，入口应该如何部署以促进安全性和敏捷性，如何使用 Envoy 促进跨集群负载均衡，以及网格内部如何使用证书。"
+}
+</script>
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>服务网格安全性和高可用性部署最佳实践 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="16ccdb91317fb0a874f375a55ba28c03" >
+  <button onclick="topFunction()" id="backTopBtn" title="Go to top"><i class="fa-solid fa-circle-up" aria-hidden="true"></i></button>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/js/wowchemy-init.min.62d6f8dfe8493f1c68557dde65bec362.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6 search-title">
+          <p>搜索</p>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/"><img src="/media/logo.svg" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/"><img src="/media/logo.svg" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#books"><span>图书</span></a>
+          </li>
+
+          
+          
+
+          
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"><span>教程</span><span class="caret"></span>
+            </a>
+            <div class="dropdown-menu">
+              
+                <a class="dropdown-item" href="/kubernetes-handbook"><span>Kubernetes 基础教程</span></a>
+              
+                <a class="dropdown-item" href="https://academy.tetrate.io/courses/istio-fundamentals-zh"><span>Istio 基础教程</span></a>
+              
+                <a class="dropdown-item" href="https://academy.tetrate.io/courses/envoy-fundamentals-zh"><span>Envoy 基础教程</span></a>
+              
+            </div>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link  active" href="/blog"><span>译文</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#feed"><span>更新</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#tags"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>Jimmy Song</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://jimmysong.io/contact/" data-toggle="tooltip" data-placement="bottom" title="联系" target="_blank" rel="noopener" aria-label="联系">
+                <i class="fab fa-weixin" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://twitter.com/jimmysongio" data-toggle="tooltip" data-placement="bottom" title="关注" target="_blank" rel="noopener" aria-label="关注">
+                <i class="fab fa-twitter" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+        
+
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://jimmysong.io" target="_blank" rel="noopener" data-toggle="tooltip" data-placement="bottom" title="主站" aria-label="主站"><i class="fas fa-home" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link js-search" href="#" data-toggle="tooltip" data-placement="bottom" title="搜索" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item d-none d-lg-inline-flex">
+            <a class="nav-link" href="https://github.com/rootsongjc/cloud-native-library/" target="_blank" rel="noopener" data-toggle="tooltip" data-placement="bottom" title="查看源码" aria-label="查看源码" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+        <li class="nav-item">
+          <a href="#" class="nav-link set-theme">
+            <i class="fa fa-sun" aria-hidden="true" id="theme-icon"></i>
+          </a>
+        </li>
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    <div class="container-xl">
+    <div class="post-container">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  
+  
+<div class="article-container pt-3">
+  <h1>服务网格安全性和高可用性部署最佳实践</h1>
+
+  
+
+  
+    
+
+
+<div class="article-metadata">
+
+  <div>
+  
+  
+  
+  
+    <i class="fa-solid fa-feather"></i>
+    
+
+  <span >
+      <a href="/author/tetrate/">Tetrate</a></span>
+    
+    <span class="middot-divider"></span>
+    
+  
+  
+  
+  
+  
+  
+  <span class="article-categories">
+    <i class="fas fa-folder mr-1"></i><a href="/category/istio/" class="text-capitalize">Istio</a></span>
+  
+  </div>
+
+  
+  <span class="article-date">
+    
+    
+      
+          
+          发布于
+      
+    
+    2023-01-30
+  </span>
+  
+
+  
+
+  
+  <span class="middot-divider"></span>
+  字数 3797
+  <span class="middot-divider"></span>
+  <span class="article-reading-time">
+      阅读时长 17 分钟
+  </span>
+  
+
+  
+  
+  
+  
+
+</div>
+
+    
+
+
+
+
+<div class="btn-links mb-2">
+  
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  <a class="btn btn-outline-primary btn-page-header" href="https://tetrate.io/blog/service-mesh-deployment-best-practices-for-security-and-high-availability/" target="_blank" rel="noopener">
+    <i class="fa fa-globe mr-1"></i>原文</a>
+
+
+</div>
+
+
+  
+</div>
+
+
+    </div>
+    <div class="border-bottom mb-2"></div>
+    <div class="row flex-xl-nowrap">
+        <div class="col-3 d-none d-xl-block docs-toc">
+            <!-- toc -->
+            
+<div class="">
+    <ul class="nav toc-top">
+        <li>
+            <a href="#" id="back_to_top" class="docs-toc-title">目录</a>
+        </li>
+    </ul>
+  <nav id="TableOfContents">
+  <ul>
+    <li><a href="#使服务网格控制平面与故障域保持一致">使服务网格控制平面与故障域保持一致</a></li>
+    <li><a href="#使用应用程序入口网关隔离每个应用程序的流量">使用应用程序入口网关隔离每个应用程序的流量</a></li>
+    <li><a href="#使用应用程序边缘网关在多个集群之间分配入口流量">使用应用程序边缘网关在多个集群之间分配入口流量</a></li>
+    <li><a href="#证书和公钥基础设施-pki-的建议">证书和公钥基础设施 (PKI) 的建议</a>
+      <ul>
+        <li><a href="#使用极短寿命的工作负载证书以轻松吊销">使用极短寿命的工作负载证书以轻松吊销</a></li>
+        <li><a href="#进一步的证书推荐">进一步的证书推荐</a></li>
+      </ul>
+    </li>
+    <li><a href="#下一步">下一步</a></li>
+  </ul>
+</nav>
+</div>
+
+            <!-- /toc -->
+            
+            <div class="subscribe-module col-12 mt-1">
+    <img src="/img/wechat.webp" alt="image" title="Jimmy Song的微信公众号"/>
+    <p class="text-center pt-1">关注「几米宋」微信公众号，获取本站更新</p>
+    
+    
+     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4029167986768912"
+     crossorigin="anonymous"></script>
+     <ins class="adsbygoogle"
+       style="display:block"
+       data-ad-client="ca-pub-4029167986768912"
+       data-ad-slot="6856371908"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
+    <script>
+       (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+    
+    
+</div>
+
+            
+        </div>
+        <main class="article-body col-9 container docs-content" role="main">
+            <article class="article">
+                <div class="article-style">
+                    
+                    <details class="toc-inpage d-print-none d-show-block mb-0">
+  <summary class="font-weight-bold">点击查看目录</summary>
+  <nav id="TableOfContents">
+  <ul>
+    <li><a href="#使服务网格控制平面与故障域保持一致">使服务网格控制平面与故障域保持一致</a></li>
+    <li><a href="#使用应用程序入口网关隔离每个应用程序的流量">使用应用程序入口网关隔离每个应用程序的流量</a></li>
+    <li><a href="#使用应用程序边缘网关在多个集群之间分配入口流量">使用应用程序边缘网关在多个集群之间分配入口流量</a></li>
+    <li><a href="#证书和公钥基础设施-pki-的建议">证书和公钥基础设施 (PKI) 的建议</a>
+      <ul>
+        <li><a href="#使用极短寿命的工作负载证书以轻松吊销">使用极短寿命的工作负载证书以轻松吊销</a></li>
+        <li><a href="#进一步的证书推荐">进一步的证书推荐</a></li>
+      </ul>
+    </li>
+    <li><a href="#下一步">下一步</a></li>
+  </ul>
+</nav>
+</details>
+
+                    
+                    <p>这是 <a href="https://tetrate.io/blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/" target="_blank" rel="noopener">服务网格最佳实践系列文章</a> 中的第二篇，摘自 Tetrate 创始工程师 Zack Butcher 即将出版的书籍 Istio in Production 。</p>
+<p>当涉及到在多集群的基础设施中部署服务网格时，有一些可移动的部分。这里主要想强调的是控制平面应该如何部署在应用程序附近，入口应该如何部署以促进安全性和敏捷性，如何使用 Envoy 促进跨集群负载均衡，以及网格内部如何使用证书。</p>
+<h2 id="使服务网格控制平面与故障域保持一致">使服务网格控制平面与故障域保持一致</h2>
+<p><strong>建议：围绕故障域部署松散耦合的控制平面以实现高可用性。</strong></p>
+<p>构建高可用性系统可能具有挑战性，而且通常成本很高。我们知道的一种经过验证的技术是围绕故障域构建。故障域是当关键系统发生故障时受影响的基础架构部分。我们构建可靠系统的基本方法是将系统跨越的故障域分组为多个独立的孤岛。最终系统的整体可靠性取决于我们可以使孤岛的独立程度。实际上，总是存在一些相互依赖性，将其最小化总是成本与可用性的权衡。</p>
+<p>在没有耦合故障域的情况下创建隔离孤岛的最简单方法是在每个孤岛中运行关键服务的独立副本。我们可以说这些副本是筒仓的本地副本 —— 它们共享相同的故障域。在云原生架构中，Kubernetes 集群形成了最自然的筒仓边界。Istio 是一项关键服务，因此我们在每个应用程序集群中运行一个 Istio 控制平面实例。换句话说，我们部署 Istio 使其故障域与您的应用程序的故障域保持一致。</p>
+<p>此外，我们确保 Istio 控制平面实例是松散耦合的，不需要直接与其他集群通信，从而最大限度地减少其与孤岛外部的通信。有关如何实现此目的的详细信息，请参阅下面的多集群部分。</p>
+<h2 id="使用应用程序入口网关隔离每个应用程序的流量">使用应用程序入口网关隔离每个应用程序的流量</h2>
+<p><strong>建议：从每个应用程序或应用程序团队的网关（应用程序入口网关）开始，以帮助缓解共享中断。随着时间的推移您操作经验的增加，将应用程序入口合并到共享网关以优化成本。</strong></p>
+<p>虽然 Istio 默认附带共享 <code>istio-ingressgateway</code>，但我们不建议使用共享网关。大多数采用网格的团队都需要时间来构建实施共享网关模型所需的审查实践和操作，而没有共享中断的风险。特别是在 Istio 实施的早期，我们建议每个团队部署一个 Envoy 网关。我们称这些为应用程序入口网关。随着您获得操作经验，您可以开始将应用程序合并到共享网关上以优化成本。</p>
+<p>使用共享网关模型实现每个团队隔离的捷径是为每个团队分配一个单独的主机名。按主机名隔离的团队可以更安全地配置共享网关实例。然而，其他共同命运的中断风险仍然存在，例如入口代理部署的错误配置、嘈杂的邻居消耗资源和增加所有应用程序的延迟等。根据我们的经验，每个团队一个网关的方法会产生最快的影响，并且失败的机会最少，并且总体成本相对较低。</p>
+<p>我们期望成熟部署的最终状态是 80-20 的比例：大多数应用程序将通过共享网关接收流量，而一小部分高度关键或敏感的应用程序将保留专用网关。</p>
+<h2 id="使用应用程序边缘网关在多个集群之间分配入口流量">使用应用程序边缘网关在多个集群之间分配入口流量</h2>
+<p><strong>建议：使用应用程序边缘网关为客户端提供单一地址，以供客户端使用并将流量分配到跨多个集群的应用程序入口网关。</strong></p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-图-1-基于-envoy-的应用程序边缘网关">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="图 1： 基于 Envoy 的应用程序边缘网关。" srcset="
+               /blog/service-mesh-deployment-best-practices-for-security-and-high-availability/f1_huc41918abcc0abb4ae826e47ed4df036b_56580_b1aed888f47d64e3f6c201ac7073a483.webp 400w,
+               /blog/service-mesh-deployment-best-practices-for-security-and-high-availability/f1_huc41918abcc0abb4ae826e47ed4df036b_56580_d80f992d4047e76d4ac7121b57c0d6c3.webp 760w,
+               /blog/service-mesh-deployment-best-practices-for-security-and-high-availability/f1_huc41918abcc0abb4ae826e47ed4df036b_56580_1200x1200_fit_q75_h2_lanczos_3.webp 1200w"
+               src="/blog/service-mesh-deployment-best-practices-for-security-and-high-availability/f1_huc41918abcc0abb4ae826e47ed4df036b_56580_b1aed888f47d64e3f6c201ac7073a483.webp"
+               width="744"
+               height="680"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      图 1： 基于 Envoy 的应用程序边缘网关。
+    </figcaption></figure>
+</p>
+<p>我们经常看到客户需要跨多个集群分配入口流量。例如，他们可能希望启用蓝 / 绿基础设施升级，以促进跨区域故障转移，或者通过使用 Envoy 的 L7 功能将流量从单体迁移到微服务来实现扼杀模式。我们称这些为应用程序边缘网关。</p>
+<p>为了实现这个用例，我们将部署 Envoy—— 在专用的 Kubernetes 集群中或作为一组虚拟机 —— 来接收外部流量。这些 Envoy 实例将通过其 Kubernetes 入口或 VM VIP 将流量转发到您的应用程序。这与 ingress-per-team 方法协同工作：多集群网关为客户端提供一个单一地址以供使用，根据您的基础设施需要提供尽可能多的应用程序网关和集群。</p>
+<p>虽然此网关确实存在共享故障域，但其配置远比每个应用程序一个入口网关的配置简单。因此，作为共享基础架构运行起来更容易，也更安全。每个集群都有一个应用程序入口网关的共享应用程序边缘网关是一种强大而灵活的模型，用于在网格上部署和操作应用程序，还可以更轻松地操作底层基础设施。</p>
+<h2 id="证书和公钥基础设施-pki-的建议">证书和公钥基础设施 (PKI) 的建议</h2>
+<p><strong>建议： 从您现有的企业根目录为网格 mTLS 创建一个中间签名证书。</strong></p>
+<p>Istio 使用常规 X.509 证书进行身份验证并在网格中启用传输加密。我们建议为现有企业根目录中的所有网格 mTLS 创建一个网格中间签名证书。如果每个环境都有一个根，请为每个环境创建一个网格中间签名证书。使用该网格中间颁发证书为每个 Istio 安装创建一个签名证书。我们建议创建一个网格中间签名证书，以便在任何特定环境中网格的整个 PKI 是一棵树，如果需要可以一起失效。成本是一些额外的证书管理，与控制平面签名证书相比，在管理网格中间签名证书的生命周期时需要更加小心。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-图-2-tetrate-推荐的将网格与现有-pki-集成的方法在环境如-prod中为-istio-生成中间签名证书使用它向该环境中的每个-istio-控制平面实例颁发签名证书并让-istio-像往常一样向每个集群中的所有-pod-颁发工作负载叶证书">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="图 2. Tetrate 推荐的将网格与现有 PKI 集成的方法：在环境（如 prod）中为 Istio 生成中间签名证书，使用它向该环境中的每个 Istio 控制平面实例颁发签名证书，并让 Istio 像往常一样向每个集群中的所有 pod 颁发工作负载（叶）证书。" srcset="
+               /blog/service-mesh-deployment-best-practices-for-security-and-high-availability/f2_hu8980259f9ffefa27bcd6ff2891498f48_83231_0dcbff1066d8be83e33c3d8059bf928b.webp 400w,
+               /blog/service-mesh-deployment-best-practices-for-security-and-high-availability/f2_hu8980259f9ffefa27bcd6ff2891498f48_83231_a1b398323d1c523d6a2adaf525d044d2.webp 760w,
+               /blog/service-mesh-deployment-best-practices-for-security-and-high-availability/f2_hu8980259f9ffefa27bcd6ff2891498f48_83231_1200x1200_fit_q75_h2_lanczos_3.webp 1200w"
+               src="/blog/service-mesh-deployment-best-practices-for-security-and-high-availability/f2_hu8980259f9ffefa27bcd6ff2891498f48_83231_0dcbff1066d8be83e33c3d8059bf928b.webp"
+               width="760"
+               height="459"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      图 2. Tetrate 推荐的将网格与现有 PKI 集成的方法：在环境（如 prod）中为 Istio 生成中间签名证书，使用它向该环境中的每个 Istio 控制平面实例颁发签名证书，并让 Istio 像往常一样向每个集群中的所有 pod 颁发工作负载（叶）证书。
+    </figcaption></figure>
+</p>
+<p>Istio 监视文件系统，并在检测到文件更改时重新加载其签名证书。因此，只要你有一个批准的机制来将秘密加载到 <em>istiod</em> pod 的文件系统中 —— 比如 <em>cert-manager</em>、Vault 的 <em>init-agent</em> 或 sidecar，或者只是存储在加密 <em>etcd</em> 中的普通旧 Kubernetes Secret—— 集成 Istio 进入您的 PKI 应该很容易。控制平面签名证书的轮换应由您的 PKI 自动执行。</p>
+<p>Istio 使用众所周知的密码学库：Istio 的内部 CA 使用 Golang 的密码学套件，Envoy（sidecar 和 ingress）使用 BoringSSL 进行证书验证和传输中的加密。通过 Tetrate 的开源 Istio 发行版 <a href="https://tetr8.io/tid" target="_blank" rel="noopener">Tetrate Istio Distro</a> ，经过 FIPS 验证的控制平面和数据平面构建也作为 <a href="https://tetr8.io/tis" target="_blank" rel="noopener">Tetrate Istio 订阅</a> 的一部分提供，因此您可能期望的所有 X.509 约束（基本约束，如 CA 和深度，开箱即用地支持和强制执行命名约束、策略约束等）。</p>
+<h3 id="使用极短寿命的工作负载证书以轻松吊销">使用极短寿命的工作负载证书以轻松吊销</h3>
+<p><strong>建议：使用 Istio 来自动化证书管理，以便设置极短的工作负载证书 TTL 变得切实可行，从而使 <a href="https://csrc.nist.gov/glossary/term/certificate_revocation_list" target="_blank" rel="noopener">证书撤销列表（CRL）</a> 保持简短且易于管理。</strong></p>
+<p>在证书颁发和轮换（Istio 为您自动执行）之后，PKI 中最大的挑战是证书吊销。证书吊销是通过证书吊销列表实现的，通常 CRL 具有 24 小时的强制执行 SLA：添加到列表中的证书在吊销后最多 24 小时内可能会被基础设施视为有效。此外，由于吊销的证书必须在其整个生命周期 (TTL) 内保留在列表中，因此吊销列表会变得庞大而笨拙。</p>
+<p>Istio 提供的一个更好的解决方案是自动化证书管理，以便设置极短的工作负载证书 TTL 是切实可行的。默认情况下，Istio 附带 24 小时的工作负载证书 TTL。这足够短，大多数安全组织可以选择让受损的证书过期，而不是明确地撤销它们。而且，当您向 CRL 添加证书时，它只需要在那里停留很短的时间（因为我们不需要在 CRL 上保留过期的证书）。通过这种方式，网格有助于解决大多数组织面临的最痛苦的 PKI 问题：它颁发和吊销短期证书，这意味着吊销列表可以在需要时保持简短且易于管理。</p>
+<p><strong>注意</strong>：由于网格使用 mTLS 证书作为身份，Istio 将 Envoy 配置为自动丢弃已建立的连接，以强制客户端和服务器在任何一方轮换证书时重新验证彼此。这是 Istio 实现中的设计决策，通常通过 Istio 的弹性功能对应用程序隐藏：对应用程序透明的自动重试重新建立连接。在网格中设置较短的证书 TTL 会强制这些重新连接更频繁地发生。值得注意的是，这种行为偶尔会中断一些期望长期 TCP 连接的应用程序。</p>
+<h3 id="进一步的证书推荐">进一步的证书推荐</h3>
+<p>您应该与您的安全团队协调，为您的网格颁发的证书建立适当的约束。我们推荐的一些常见约束如下。</p>
+<p><strong>证书生命周期 (TTL)</strong>。请注意，只要证书是从同一个根颁发的，Istio 就支持控制平面签名证书和工作负载证书的零停机轮换。我们建议每个级别的证书生命周期如下：</p>
+<ul>
+<li>网格中间签名证书 1-3 年</li>
+<li>控制平面签名证书 3 个月</li>
+<li>工作负载证书需要 12-24 小时</li>
+</ul>
+<p>Istio 自动处理工作负载证书的轮换。这些证书上的短 TTL（少于 24 小时）有助于限制可能被盗的凭据进行时间限制攻击，还可以减少对 CRL 的需求。控制平面证书应按一个月的偏移轮换以确保平稳过渡 —— 换句话说，在 3 个月的 TTL 到期前 1 个月轮换控制平面签名证书。类似地，当网格中间签名证书还剩一半到三分之一的生命周期时轮换（一年 TTL 提前 3-4 个月，三年 TTL 提前 6-8 个月）。</p>
+<p><strong>基础（CA 和深度）</strong>。控制平面签名证书应该只能颁发叶证书：用于工作负载识别的非签名证书。因此，应配置深度限制以防止控制平面签名证书颁发任何其他签名证书。</p>
+<p>网格中间签名证书需要创建控制平面签名证书，因此它应该配置一个深度，以便能够<strong>在它下面创建一个级别的签名证书，而不是更多</strong>。</p>
+<p><strong>名称约束</strong>。Istio 颁发的工作负载证书不会填充 X.509 主体名称 (SN) 字段；网格身份验证依赖于作为主体备用名称 (SAN) 字段携带的 SPIFFE 身份。阅读 <a href="https://github.com/spiffe/spiffe/blob/main/standards/X509-SVID.md#4-constraints-and-usage" target="_blank" rel="noopener">SPIFFE 规范以获取有关验证和身份验证工作的信息</a>，以及 Istio 的 <a href="https://istio.io/latest/docs/concepts/security/#istio-identity" target="_blank" rel="noopener">文档</a> 以了解 Istio 如何根据 SPIFFE 对身份进行编码。在为网格中间和控制平面签名证书编写名称约束时，请记住这一点。</p>
+<p><strong>密钥用法</strong>。 <code>keyCertSign</code> 必须为网格中间签名证书和控制平面签名证书设置，但应为工作负载证书禁用。换句话说，网格中间和控制平面证书是签名证书，而工作负载证书不是。</p>
+<p>根据 SPIFFE 的建议，不应将签名证书用于传输中的加密，并且应配置密钥使用以防止它（通过加密约束）。</p>
+<p><strong>扩展密钥用法</strong>。虽然此处没有具体要求，但 SPIFFE X.509 SVID 规范说明 <code>id-kp-serverAuth</code> 和 <code>id-kp-clientAuth</code> 应针对叶（工作负载）证书进行配置。</p>
+<p>SPIFFE 规范还推荐了 <a href="https://github.com/spiffe/spiffe/blob/main/standards/X509-SVID.md#4-constraints-and-usage" target="_blank" rel="noopener">各种证书约束</a>，尽管其中大部分上面已经约束了。</p>
+<h2 id="下一步">下一步</h2>
+<p>我们希望从多年帮助我们的客户充分利用服务网格的经验中收集的这些最佳实践将有助于促进您的部署。如果您还没有，请查看 <a href="/blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/">如何将服务网格作为安全模型的一部分，以分层形式将微服务安全与传统安全结合起来</a> 这篇文章。</p>
+<p>接下来：服务网格运行时配置建议。在我们的下一篇文章中，我们将谈论：</p>
+<ul>
+<li>命名约定</li>
+<li>全局设置</li>
+<li>流量管理</li>
+<li>安全</li>
+<li>遥测</li>
+</ul>
+<p>敬请关注。</p>
+
+                </div>
+                
+
+<div class="article-tags">
+  
+  <a class="badge badge-light" href="/tag/istio/">Istio</a>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+
+
+
+  
+  
+  
+  
+  
+  <div class="media author-card content-widget-hr mb-4">
+    
+      
+      <a href="/author/tetrate/"><img class="avatar mr-3 avatar-circle" src="/author/tetrate/avatar_hu273cd959d6007257193e2f2ec28ea0f6_14800_270x270_fill_q75_lanczos_center.jpg" alt="Tetrate"></a>
+    
+
+    <div class="media-body">
+      <p class="card-title"><a href="/author/tetrate/">Tetrate</a></p>
+      <p class="card-subtitle">企业级服务网格提供商</p>
+      
+      
+    </div>
+  </div>
+
+
+  
+
+
+
+
+
+<div class="article-widget">
+  
+<div class="container-xl row post-nav">
+  
+  
+  
+  <a class="col-6 post-nav-item btn btn-lg mb-md-1"  href="/blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/" rel="prev">
+    <div class="meta-nav">上一页</div>
+    <p>如何将服务网格作为安全模型的一部分，以分层形式将微服务安全与传统安全结合起来</p></a>
+  
+</div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/cloud-native-library//edit/master/content/blog/service-mesh-deployment-best-practices-for-security-and-high-availability/index.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+
+  
+  
+  <div class="article-widget content-widget-hr">
+    <p class="related-title">相关推荐</p>
+    <ul>
+      
+      <li><a href="/blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/">如何将服务网格作为安全模型的一部分，以分层形式将微服务安全与传统安全结合起来</a></li>
+      
+      <li><a href="/blog/automate-istio-ca-rotation-in-production-at-scale/">在生产中大规模自动化 Istio CA 轮换</a></li>
+      
+      <li><a href="/blog/istio-trust/">将 Istio 纳入信任链：使用现有 PKI 作为信任根</a></li>
+      
+      <li><a href="/blog/how-to-use-hashicorp-vault-as-a-more-secure-way-to-store-istio-certificates/">如何使用 Hashicorp Vault 作为一种更安全的方式来存储 Istio 证书</a></li>
+      
+      <li><a href="/blog/what-is-ambient-mesh/">什么是 Ambient Mesh？</a></li>
+      
+    </ul>
+  </div>
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments" class="mb-3 pt-0">
+    <script>
+  let themeNumber = localStorage.getItem('wcTheme');
+  var giscusTheme = "light";
+  if (themeNumber == 1){
+    giscusTheme = "dark";
+  }
+  console.log(giscusTheme)
+  let giscusAttributes = {
+    "src": "https://giscus.app/client.js",
+    "data-theme": giscusTheme,
+    "data-repo":"rootsongjc/cloud-native-library",
+    "data-repo-id":"MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg=",
+    "data-category":"Announcements",
+    "data-category-id":"DIC_kwDODMrxWM4CPL7J",
+    "data-mapping":"pathname",
+    "data-reactions-enabled":"1",
+    "data-emit-metadata":"0",
+    "data-input-position":"top",
+    "data-theme":giscusTheme,
+    "data-lang":"zh-CN",
+    "data-loading":"lazy",
+    "crossorigin":"anonymous",
+    "origins":"https://jimmysong.io",
+    "originsRegex":"http://localhost:[0-9]+",
+    "async": "",
+  };
+
+  let giscusScript = document.createElement("script");
+  Object.entries(giscusAttributes).forEach(([key, value]) => giscusScript.setAttribute(key, value));
+  document.querySelector('#comments').appendChild(giscusScript);
+</script>
+
+  </section>
+  
+
+
+
+            </article>
+        </main>
+    </div>
+</div>
+  </div>
+
+  <div class="page-footer">
+    
+    
+    <div class="container">
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2023 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+    </div>
+    
+  </div>
+
+  
+
+
+<script src="/js/vendor-bundle.min.46271ef31da3f018e9cd1b59300aa265.js"></script>
+
+
+
+
+  
+
+  
+  
+
+  
+
+  
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+    
+    
+  
+
+
+
+
+
+
+
+
+
+
+  
+  <script id="search-hit-fuse-template" type="text/x-template">
+    <div class="search-hit" id="summary-{{key}}">
+      <div class="search-hit-content">
+        <div class="search-hit-name">
+          <div class="article-metadata search-hit-type">{{relpermalink}}</div>
+          <a href="{{relpermalink}}">{{title}}</a>
+          <p class="search-hit-description">{{snippet}}</p>
+        </div>
+      </div>
+    </div>
+  </script>
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+
+
+
+
+
+
+
+<script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+<script src="/zh/js/wowchemy.min.24983018b0e5661cd5fe1822254286ea.js"></script>
+
+
+
+
+
+
+
+  
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script src="/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+<script>
+
+var mybutton = document.getElementById("backTopBtn");
+
+
+window.onscroll = function() {scrollFunction()};
+
+function scrollFunction() {
+  if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+    mybutton.style.display = "block";
+  } else {
+    mybutton.style.display = "none";
+  }
+}
+
+
+function topFunction() {
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
+}
+</script>
+
+
+
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+<script>
+  anchors.add();
+</script>
+
+
+
+<script>
+
+
+
+(function() {
+  'use strict';
+
+  if(!document.queryCommandSupported('copy')) {
+    return;
+  }
+
+  function flashCopyMessage(el, msg) {
+    el.className = "highlight-copy-btn";
+    el.textContent = msg;
+    setTimeout(function() {
+      el.textContent = "";
+      el.className = "highlight-copy-btn fa fa-copy";
+    }, 1000);
+  }
+
+  function selectText(node) {
+    var selection = window.getSelection();
+    var range = document.createRange();
+    range.selectNodeContents(node);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    return selection;
+  }
+
+  function addCopyButton(containerEl) {
+    var copyBtn = document.createElement("button");
+    copyBtn.className = "highlight-copy-btn fa fa-copy";
+    copyBtn.textContent = "";
+
+    var codeEl = containerEl.firstElementChild;
+    copyBtn.addEventListener('click', function() {
+      try {
+        var selection = selectText(codeEl);
+        document.execCommand('copy');
+        selection.removeAllRanges();
+        
+        flashCopyMessage(copyBtn, '已复制')
+        
+      } catch(e) {
+        console && console.log(e);
+        flashCopyMessage(copyBtn, 'Failed :\'(')
+      }
+    });
+
+    containerEl.appendChild(copyBtn);
+  }
+
+  
+  var highlightBlocks = document.getElementsByClassName('highlight');
+  Array.prototype.forEach.call(highlightBlocks, addCopyButton);
+})();
+</script>
+
+
+
+<script>
+
+function Collapse(e){
+  var node = document.getElementById(e);
+  if (node.className.indexOf('fa-angle-down') > -1){
+    node.setAttribute("class", "fa-solid fa-angle-right");
+    }else{
+    node.setAttribute("class", "fa-solid fa-angle-down");
+    }
+}
+</script>
+
+
+</body>
+</html>
