@@ -1,19 +1,8 @@
----
-linktitle: "第 2 章：入门"
-summary: "从 Hello world 开始。"
-weight: 3
-title: "WebAssembly 入门"
-date: '2023-01-16T00:00:00+08:00'
-type: book
----
-
-> 它是如何，嗯，它是如何工作的？
->
-> —— 亚瑟王，《巨蟒与圣杯》（Monty Python and the Holy Grail）
+# WebAssembly 入门
 
 学习 WebAssembly 的难点在于入门资料很多。作为一名 C/C++ 或 Rust 开发者，你都可以从这里开始，但也可以直接了解 WebAssembly 的机制，不需要考虑语言生成的问题。本章将从不考虑语言的角度介绍 WebAssembly，随着我们深入学习底层细节，在后面的章节中，我们将与高级语言建立联系。虽然这些细节最初看起来简单，但对于理解 WebAssembly 的基本机制却非常重要，它们不会是你的最终目的。
 
-在[第 1 章](../introduction/)，我曾经在讨论 asm.js 时介绍了大多数人编写新编程语言或技术的第一个程序。在例 2-1 中，我们再次展示了这个程序，它被称为 "Hello, World!"，以向 Brian Kernighan 和 Dennis Ritchie 的开创性著作《C 程序设计语言》致敬。很多优秀的编程书籍 [^1] 都从这个例子开始，因为它使读者了解了程序的基本概念，而不会深入细节。这是一种有趣，简洁的方法，也是确保读者正确设置工具的有效方法。
+在 [第 1 章](../introduction/)，我曾经在讨论 asm.js 时介绍了大多数人编写新编程语言或技术的第一个程序。在例 2-1 中，我们再次展示了这个程序，它被称为 "Hello, World!"，以向 Brian Kernighan 和 Dennis Ritchie 的开创性著作《C 程序设计语言》致敬。很多优秀的编程书籍都从这个例子开始，因为它使读者了解了程序的基本概念，而不会深入细节。这是一种有趣，简洁的方法，也是确保读者正确设置工具的有效方法。
 
 例 2-1. 典型的 "Hello, world!" 程序，用 C 语言编写
 
@@ -57,10 +46,10 @@ WebAssembly 的二进制格式（Wasm）的设计目的是为了加速 WebAssemb
 )
 ```
 
-1. 内部函数 `$how_old`
-1. 导出的函数 `how_old` 在这里，函数被称为`$how_old`，直到明确导出它，它在模块外是不可见的。请注意命名方式的不同。内部命名以`$` 开头，而导出版本则没有。如果有人从外部调用它，它仅执行内部函数。
+1. 内部函数`$how_old`
+1. 导出的函数`how_old`在这里，函数被称为`$how_old`，直到明确导出它，它在模块外是不可见的。请注意命名方式的不同。内部命名以`$` 开头，而导出版本则没有。如果有人从外部调用它，它仅执行内部函数。
 
-本模块定义了一个接受两个整数参数并返回一个整数的函数。根据 MVP 的定义，WebAssembly 是一个 32 位环境 [^2]。随着时间的推移，这种限制正在放松，在本书出版时，可能会有某种形式的 64 位 Wasm 环境（请参阅 [Memory64 Proposal for WebAssembly](https://github.com/WebAssembly/memory64)）。WebAssembly 支持 32 位和 64 位整数（分别称为 i32 和 i64）和 32 位和 64 位浮点数（分别称为 f32 和 f64）。
+本模块定义了一个接受两个整数参数并返回一个整数的函数。根据 MVP 的定义，WebAssembly 是一个 32 位环境。随着时间的推移，这种限制正在放松，在本书出版时，可能会有某种形式的 64 位 Wasm 环境（请参阅 [Memory64 Proposal for WebAssembly](https://github.com/WebAssembly/memory64)）。WebAssembly 支持 32 位和 64 位整数（分别称为 i32 和 i64）和 32 位和 64 位浮点数（分别称为 f32 和 f64）。
 
 在 WebAssembly 层面上，没有我们熟悉的数据类型，例如字符串、对象、字典等。不用担心，在后面的章节中我们会讨论如何处理这些问题。这是我们不能编写典型的 "Hello, World!" 应用程序的原因之一。在我们开始介绍更多想法之前，我们仅处理数字，这样会更简单。因此，本书的风格是逐渐向你展示足够的知识，使你能够看到它的工作方式，而不会让你感到压抑。
 
@@ -112,7 +101,7 @@ console.log (how_old (2021, 2000));
 
 此时，您可以下载该文件的二进制版本。 默认情况下，它将被命名为 `test.wasm`，但您可以将其重命名为您喜欢的任何名称。 我们称之为 `hello.wasm`。
 
-您还可以选择使用 WebAssembly Binary Toolkit（WABT）[^3]来生成这种二进制形式。有关安装 WABT 和我们将在本书中使用的其他工具的说明，请参阅[附录](../apendix/)。
+您还可以选择使用 WebAssembly Binary Toolkit（WABT）来生成这种二进制形式。有关安装 WABT 和我们将在本书中使用的其他工具的说明，请参阅[附录](../apendix/)。
 
 此安装中包含一个名为 wat2wasm 的命令。 它的功能如其名，将文本文件转换为二进制格式：
 
@@ -130,7 +119,7 @@ drwxr-xr-x  6 brian  staff  192 Dec  7 07:53 ../
 
 ## 在 Repl 中运行 Wasm
 
-我在[附录](../appendix/)中向您展示了如何安装的另一个工具是 [wasm3](https://github.com/wasm3/wasm3)，它允许您在命令行上或通过通常称为 “repl”[^4] 的交互模式运行 Wasm 模块和函数。
+我在[附录](../appendix/)中向您展示了如何安装的另一个工具是 [wasm3](https://github.com/wasm3/wasm3)，它允许您在命令行上或通过通常称为 “repl”的交互模式运行 Wasm 模块和函数。
 
 执行下面的命令后，你会收到 wasm3 提示符。 我将它指向我的 Wasm 文件，所以我只能调用一个函数，但如果模块中有其他导出函数，它们也可以工作。
 
@@ -175,7 +164,7 @@ BuildID [sha1]=b5e98161d08d2d180d0725f973b338c2a340d015, for GNU/Linux
 
 对于我们的下一个演示，我将向您展示如何使用 JavaScript API 在浏览器中调用此行为。 我们不会介绍 API，但您会看到一个基本示例。有更复杂的模块编译和参数化方法，但首先我们学会爬行，然后才学会走路，最后是跑。
 
-在示例 2-4 中，我们看到了一段用于实例化 WebAssembly 模块实例的可重用代码。 执行此操作的 JavaScript API 在任何支持 WebAssembly MVP 的环境中都可用，但还有其他不需要 JavaScript 的环境，例如我们刚刚使用的 wasm3 运行时。 但是，此代码将在任何支持 WebAssembly 的浏览器[^5]或 Node.js 中运行。请注意，我们使用了基于 Promise 的方法。 如果你的 JavaScript 环境支持 async/await，显然也可以使用它们。
+在示例 2-4 中，我们看到了一段用于实例化 WebAssembly 模块实例的可重用代码。 执行此操作的 JavaScript API 在任何支持 WebAssembly MVP 的环境中都可用，但还有其他不需要 JavaScript 的环境，例如我们刚刚使用的 wasm3 运行时。 但是，此代码将在任何支持 WebAssembly 的浏览器或 Node.js 中运行。请注意，我们使用了基于 Promise 的方法。 如果你的 JavaScript 环境支持 async/await，显然也可以使用它们。
 
 {{<callout note 提示>}}
 
@@ -241,11 +230,3 @@ Serving HTTP on :: port 10003 (http://[::]:10003/) ...
 ![图 2-6. 在网页的 JavaScript 中调用导出的 WebAssembly 模块函数](../images/f2-6.png)
 
 显然我们还有很多东西要学，但你现在已经看到了类似于 “Hello, World!” 的示例。 希望您了解 WebAssembly 工作原理的基础知识。
-
-## 注释
-
-[^1]: 包括大部分 WebAssembly 教程！
-[^2]: 计决定的细节和他们对基本 WebAssembly 功能的动机都记录在 [GitHub](https://github.com/WebAssembly/design/blob/main/MVP.md) 上。
-[^3]: 读作 wabbit，就像那个 wascal，Bugs Bunny（兔八哥）。
-[^4]: 如果你从未使用过这样的环境，你应该看看 [维基百科上的这个页面](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop)。
-[^5]: 你可以看到哪些浏览器环境支持 WebAssembly（或其他功能），请点击 "[Can I use...](https://caniuse.com/?search=WebAssembly)"
