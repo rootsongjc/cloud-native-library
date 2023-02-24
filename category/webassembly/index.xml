@@ -100,13 +100,13 @@
 &lt;p&gt;至少 &lt;a href=&#34;https://asmjs.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;asm.js 项目&lt;/a&gt;的部分动机是为 Web 带来竞争。这很快扩展到希望允许任意应用程序安全地传递到浏览器的沙箱中，而无需修改现有代码。&lt;/p&gt;
 &lt;p&gt;正如我们之前所讨论的，浏览器生态系统已经发展到能够以基于标准的跨平台方式交付 2D 和 3D 图形、音频处理、硬件加速视频等。这个想法是，在此环境中运行将允许应用程序使用任何定义为可从 JavaScript 调用的功能。JavaScript 引擎高效，具有强大的沙箱环境，并且经过了重大的安全审计，因此没有人觉得要从头开始。真正的问题还是没有办法提前选择，所以运行时性能还可以进一步提升。&lt;/p&gt;
 &lt;p&gt;由于其动态特性和缺乏适当的整数支持，在将代码加载到浏览器之前，有几个性能障碍无法进行有意义的管理。完成此操作后，即时 (JIT) 编译器可以得到很好的加速，但仍然存在固有问题，例如缓慢的边界检查数组引用。虽然无法提前优化整个 JavaScript，但它的一个子集可以。&lt;/p&gt;
-&lt;p&gt;这里的细节与我们的历史叙述关系不大，但最终结果是 asm.js 也使用了基于 LLVM 的 clang&lt;sup id=&#34;fnref:30&#34;&gt;&lt;a href=&#34;#fn:30&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;30&lt;/a&gt;&lt;/sup&gt; 前端解析器，使用 Emscripten 工具链&lt;sup id=&#34;fnref:31&#34;&gt;&lt;a href=&#34;#fn:31&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;31&lt;/a&gt;&lt;/sup&gt; 编译的 C 和 C++ 代码是 ahead-of-time 优化，所以生成的指令可以通过现有的优化流水线非常快。LLVM 是一个干净的模块化架构，因此它的某些部分可以被替换，包括机器代码的后端生成。本质上，Emscripten 团队可以重用前两个阶段（解析和优化），然后将这个 JavaScript 子集作为自定义后端发出。因为输出是“纯 JavaScript”，所以它比 NaCl/PNaCl 方法更可移植。不幸的是，代价是性能。与直接使用 JavaScript 相比，这是一个巨大的改进，但它的性能不如 Google 的方法。不过，这足以让开发人员感到惊讶。然而，除了适度的性能改进之外，你可以将现有的 C 和 C++ 应用程序部署到具有合理性能且几乎不需要代码修改的浏览器这一事实本身就很有吸引力。有一些非常有说服力的演示涉及 Unity 引擎&lt;sup id=&#34;fnref:32&#34;&gt;&lt;a href=&#34;#fn:32&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;32&lt;/a&gt;&lt;/sup&gt;。让我们看一个简单的例子。“Hello, world!” 似乎是一个好的开始。&lt;/p&gt;
+&lt;p&gt;这里的细节与我们的历史叙述关系不大，但最终结果是 asm.js 也使用了基于 LLVM 的 clang&lt;sup id=&#34;fnref:30&#34;&gt;&lt;a href=&#34;#fn:30&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;30&lt;/a&gt;&lt;/sup&gt; 前端解析器，使用 Emscripten 工具链&lt;sup id=&#34;fnref:31&#34;&gt;&lt;a href=&#34;#fn:31&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;31&lt;/a&gt;&lt;/sup&gt; 编译的 C 和 C++ 代码是 ahead-of-time 优化，所以生成的指令可以通过现有的优化流水线非常快。LLVM 是一个干净的模块化架构，因此它的某些部分可以被替换，包括生成后端机器代码。本质上，Emscripten 团队可以重用前两个阶段（解析和优化），然后将这个 JavaScript 子集作为自定义后端发出。因为输出是“纯 JavaScript”，所以它比 NaCl/PNaCl 方法更可移植。不幸的是，代价是性能。与直接使用 JavaScript 相比，这是一个巨大的改进，但它的性能不如 Google 的方法。不过，这足以让开发人员感到惊讶。然而，除了适度的性能改进之外，你可以将现有的 C 和 C++ 应用程序部署到具有合理性能且几乎不需要代码修改的浏览器这一事实本身就很有吸引力。有一些非常有说服力的演示涉及 Unity 引擎&lt;sup id=&#34;fnref:32&#34;&gt;&lt;a href=&#34;#fn:32&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;32&lt;/a&gt;&lt;/sup&gt;。让我们看一个简单的例子。“Hello, world!” 似乎是一个好的开始。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-c&#34; data-lang=&#34;c&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;#include&lt;/span&gt; &lt;span class=&#34;cpf&#34;&gt;&amp;lt;stdio.h&amp;gt;&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;main&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;n&#34;&gt;printf&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;Hello, world!&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;	&lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请注意，此版本的经典程序没有任何异常。如果你将它存储在一个名为 &lt;code&gt;hello.c&lt;/code&gt; 的文件中，Emscripten 工具链将允许你发出一个名为 &lt;code&gt;a.out.js&lt;/code&gt; 的文件，它可以直接在 Node.js&lt;sup id=&#34;fnref:33&#34;&gt;&lt;a href=&#34;#fn:33&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;33&lt;/a&gt;&lt;/sup&gt; 中运行或通过一些脚手架运行，在浏览器。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请注意，此版本的经典程序没有任何异常。如果你将它存储在一个名为 &lt;code&gt;hello.c&lt;/code&gt; 的文件中，Emscripten 工具链将允许你发出一个名为 &lt;code&gt;a.out.js&lt;/code&gt; 的文件，它可以直接在 Node.js&lt;sup id=&#34;fnref:33&#34;&gt;&lt;a href=&#34;#fn:33&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;33&lt;/a&gt;&lt;/sup&gt; 中运行或通过一些脚手架在浏览器中运行。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;brian@tweezer ~/s/w/ch01&amp;gt; emcc hello.c
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;brian@tweezer ~/s/w/ch01&amp;gt; node a.out.js
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Hello, world!
@@ -118,7 +118,7 @@
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;brian@tweezer ~/s/w/ch01&amp;gt; clang hello.c 
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;brian@tweezer ~/s/w/ch01&amp;gt; ls -lah a.out
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;-rwxr-xr-x &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt; brian staff 48K Aug &lt;span class=&#34;m&#34;&gt;17&lt;/span&gt; 19:11 a.out
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;为什么我们所谓的优化的 JavaScript 程序比本地版本（译者注：使用 clang 14.0.0 编译后的 &lt;code&gt;a.out&lt;/code&gt; 大小为32KB）大了近三倍？这不仅仅是因为作为一个基于文本的文件，JavaScript 的体积更大。再看一下这个程序。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;为什么我们所谓的优化的 JavaScript 程序比本地版本（译者注：使用 clang 14.0.0 编译后的 &lt;code&gt;a.out&lt;/code&gt; 大小为32KB）大了近三倍？这不仅仅作为文本文件，JavaScript 的体积更大。再看一下这个程序。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-c&#34; data-lang=&#34;c&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;#include&lt;/span&gt; &lt;span class=&#34;cpf&#34;&gt;&amp;lt;stdio.h&amp;gt; ①&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;main&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;n&#34;&gt;printf&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;Hello, world!&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt; &lt;span class=&#34;err&#34;&gt;②&lt;/span&gt;
@@ -135,21 +135,22 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;0000000100000f50 T _main
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                 U _printf
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                 U dyld_stub_binder
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当 Clang 生成可执行文件时，它会将占位符指向它希望由操作系统提供的函数。对于浏览器，没有可用的标准库，至少在动态加载的意义上没有，因此必须提供库函数和任何需要的东西。此外，此版本无法直接与浏览器的控制台对话，因此需要挂钩以调用浏览器的 &lt;code&gt;console.log()&lt;/code&gt; 函数等函数。为了让它在浏览器中工作，该功能必须与应用程序一起交付，这就是它最终变得如此庞大的原因。&lt;/p&gt;
-&lt;p&gt;这有效地突出了可移植代码和可移植应用程序之间的区别，这是本书的另一个普遍主题。现在，我们可以惊叹它是如何工作的，但这本书不叫 asm.js：权威指南是有原因的。asm.js 是一个强大的垫脚石，它证明了可以从各种可优化的语言中生成具有合理性能的沙盒 JavaScript 代码。JavaScript 本身也可以进一步优化，这是超集无法实现的。该子集是使用基于 LLVM 的工具链和自定义后端生成的，比以前更省力。&lt;/p&gt;
-&lt;p&gt;asm.js 代表了不支持 WebAssembly 标准的浏览器的一个很好的回退，但现在是抛开本书主题的时候了。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当 Clang 生成可执行文件时，它会将占位符指向它希望由操作系统提供的函数。对于浏览器，没有可用的标准库，至少在动态加载的意义上没有，因此必须提供库函数和任何需要的东西。此外，此版本无法直接与浏览器的控制台通信，因此需要 hook 以调用浏览器的 &lt;code&gt;console.log()&lt;/code&gt; 等函数。为了让它在浏览器中工作，该功能必须与应用程序一起交付，这就是它最终变得如此庞大的原因。&lt;/p&gt;
+&lt;p&gt;这有效地突出了可移植代码和可移植应用程序之间的区别，这是本书的另一主题。现在，我们可以惊叹它是如何工作的，但这本书不叫《asm.js 权威指南》是有原因的。asm.js 是一个强大的铺垫，它证明了可以从各种可优化的语言中生成具有合理性能的 JavaScript 代码沙箱。JavaScript 本身也可以进一步优化，这是超集无法实现的。该子集是使用基于 LLVM 的工具链和自定义后端生成的，比以前更省力。&lt;/p&gt;
+&lt;p&gt;asm.js 代表了不支持 WebAssembly 标准的浏览器可选项，但现在是引出本书主题的时候了。&lt;/p&gt;
 &lt;h2 id=&#34;webassembly-的兴起&#34;&gt;WebAssembly 的兴起&lt;/h2&gt;
-&lt;p&gt;我们通过使用 NaCl 找到了沙箱和性能解决方案。PNaCl 提供平台可移植性，但缺乏浏览器可移植性。asm.js 解决了浏览器的可移植性和沙盒问题，但性能并不理想。此外，由于我们只能处理 JavaScript，我们无法使用新功能扩展平台，例如更高效的 64 位整数。因为它由国际标准组织管理，所以没有快速解决办法。&lt;/p&gt;
-&lt;p&gt;除此之外，JavaScript 在浏览器中加载和验证方面存在问题。浏览器必须等待下载所有引用的文件才能开始验证和优化，而后续的优化需要我们等到应用程序已经运行。鉴于我们之前讨论过开发人员使用大量水平依赖项填充他们的应用程序，JavaScript 在 Web 传输和加载时间方面的性能是另一个需要克服的瓶颈。&lt;/p&gt;
-&lt;p&gt;正是在这种背景下，2015 年，除 JavaScript 创造者 Brendan Eich 之外的其他人宣布 WebAssembly&lt;sup id=&#34;fnref:35&#34;&gt;&lt;a href=&#34;#fn:35&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;35&lt;/a&gt;&lt;/sup&gt; 的工作已经开始。他强调了几个具体原因，称其为“二进制语法的低级安全代码，最初与 asm 共同表达。一种常见的对象级格式，用于 .&lt;/p&gt;
+&lt;p&gt;我们通过使用 NaCl 找到了沙箱和性能解决方案。PNaCl 提供平台可移植性，但缺乏浏览器可移植性。asm.js 解决了浏览器的可移植性和沙盒问题，但性能并不理想。此外，由于我们只能处理 JavaScript，我们无法使用新功能扩展平台，例如更高效的 64 位整数。因为它由国际标准组织管理，所以没有办法快速解决。&lt;/p&gt;
+&lt;p&gt;除此之外，JavaScript 在浏览器中加载和验证方面存在问题。浏览器必须等待下载完成所有引用的文件后才能开始验证和优化，而后续的优化需要我们等到应用程序开始运行。鉴于我们之前讨论过开发人员使用大量水平依赖项填充他们的应用程序，JavaScript 在 Web 传输和加载时间方面的性能是另一个需要克服的瓶颈。&lt;/p&gt;
+&lt;p&gt;正是在这种背景下，2015 年，除 JavaScript 创造者 Brendan Eich 之外的其他人宣布 WebAssembly&lt;sup id=&#34;fnref:35&#34;&gt;&lt;a href=&#34;#fn:35&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;35&lt;/a&gt;&lt;/sup&gt; 的工作已经开始。他强调了几个具体原因，称其为“低级安全代码的二进制语法，最初与 asm.js 共同表达，但从长远来看能够脱离 JS 的语义，以便最好地服务作为多种源代码级编程语言的通用对象级格式。”&lt;/p&gt;
 &lt;p&gt;他进一步说：“例如可能的长期分歧：零成本异常、动态链接、调用。是的，我们的目标是为 Web 开发一种多语言编程语言目标文件格式。”&lt;/p&gt;
-&lt;p&gt;至于为什么这些方感兴趣，他给出了以下推理：“asm.js 很好，但一旦引擎对其进行优化，解析器就会变得很热——尤其是在移动设备上。传输压缩是必要的，可以节省带宽，但解压之前解析很痛。”&lt;/p&gt;
+&lt;p&gt;至于为什么对这些方感兴趣，他给出了以下推理：“asm.js 很好，但一旦引擎对其进行优化，解析器就会变得很热——尤其是在移动设备上。传输压缩是必要的，可以节省带宽，但解压之前解析它会很痛苦。”&lt;/p&gt;
 &lt;p&gt;最后，也许公告中最令人惊讶的部分是谁将参与其中：&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;W3C 社区组 WebAssembly CG 对所有人开放。从 GitHub 日志可以看出，WebAssembly 目前正在由谷歌、微软、Mozilla 和其他几家公司完成。抱歉，最初这项工作是通过私人 GitHub 账号完成的，但这是临时措施，帮助一些大公司达成共识并接受长期合作，必须玩好这个游戏才能成功。&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;p&gt;短时间内，Apple、Adobe、AutoCAD、Unity、Figma 等公司都支持了这项工作。几十年前的愿景，涉及无休止的冲突和自身利益问题，正在转变为统一的倡议，最终将为我们带来安全、快速、可移植且与 Web 兼容的操作环境。&lt;/p&gt;
-&lt;p&gt;在构建这个平台的过程中，潜在的并发症不断增加。目前还不完全清楚如何制定解决方案。并不是所有的语言都支持原生线程，也不是所有的语言都使用异常。例如，C/C++ 和 Rust，它们的运行时不需要垃圾收集。问题往往出在细节上，但合作的意愿是有的。正如他们所说，有志者事竟成。&lt;/p&gt;
+&lt;p&gt;在构建这个平台的过程中，潜在的问题不断增加。目前还不完全清楚解决方案。并不是所有的语言都支持原生线程，也不是所有的语言都使用异常。例如，C/C++ 和 Rust，它们的运行时不需要垃圾收集。问题往往出在细节上，但合作的意愿是有的。正如他们所说，有志者事竟成。&lt;/p&gt;
+&lt;p&gt;在接下来的一年左右，CG 成为 W3C 工作组 (WG)，负责定义事实上的标准。他们做出了一系列决定来定义 WebAssembly 平台的最小可行产品（MVP），所有主要浏览器供应商都将支持该产品。此外，Node.js 社区很兴奋，因为这可以为管理需要用低级语言编写的 Node 应用程序部分的本机库提供解决方案，这是很麻烦的事情。Node.js 应用程序可以拥有一个 WebAssembly 库，而不是依赖于 Windows、Linux 和 macOS 库，该库可以加载到 V8 环境中并动态转换为本机汇编代码。突然间，WebAssembly 似乎准备超越在浏览器中部署代码的目标，但我们不要太过分了。本书接下来的部分将告诉你这部分故事。&lt;/p&gt;
 &lt;h2 id=&#34;注释&#34;&gt;注释&lt;/h2&gt;
 &lt;div class=&#34;footnotes&#34; role=&#34;doc-endnotes&#34;&gt;
 &lt;hr&gt;
@@ -273,8 +274,8 @@
 &lt;p&gt;它是如何，嗯，它是如何工作的？&lt;/p&gt;
 &lt;p&gt;—— 亚瑟王，《巨蟒与圣杯》（Monty Python and the Holy Grail）&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;p&gt;学习 WebAssembly 的难点在于入门资料多。作为 C/C++ 或 Rust 开发人员，你可以从这里开始，但你也可以直接了解 WebAssembly 的机制，而不必担心语言生成。本章将从与语言无关的角度介绍 WebAssembly，在后面的章节中，我们将在深入研究低级细节时与高级语言建立联系。虽然这些细节乍一看似乎很简单，但它们对于理解 WebAssembly 的基本机制非常重要，因此它们不会成为你的最终目标。&lt;/p&gt;
-&lt;p&gt;在&lt;a href=&#34;../introduction/&#34;&gt;第 1 章&lt;/a&gt;中，当我讨论 asm.js 时，我介绍了大多数人使用一种新的编程语言或技术编写的第一个程序。在示例 2-1 中，我们再次展示了这个程序，它被称为“Hello, World!” 向 Brian Kernighan 和 Dennis Ritchie 的开创性著作 The C Programming Language 致敬。许多优秀的编程书籍&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt; 都是从这个例子开始的，因为它让读者了解了程序的基本概念，而没有深入细节。这是一种有趣、简洁的方法，也是确保读者正确设置工具的有效方法。&lt;/p&gt;
+&lt;p&gt;学习 WebAssembly 的难点在于入门资料多。作为 C/C++ 或 Rust 开发人员，你可以从这里开始，但你也可以直接了解 WebAssembly 的机制，而不必担心代码生成问题。本章将从与语言无关的角度介绍 WebAssembly，在后面的章节中，我们将在深入研究低级细节时与高级语言建立联系。虽然这些细节乍一看似乎很简单，但它们对于理解 WebAssembly 的基本机制非常重要，因此它们不会成为你的最终目标。&lt;/p&gt;
+&lt;p&gt;在&lt;a href=&#34;../introduction/&#34;&gt;第 1 章&lt;/a&gt;中，当我讨论 asm.js 时，我介绍了大多数人使用一种新的编程语言或技术编写的第一个程序。在例 2-1 中，我们再次展示了这个程序，它被称为“Hello, World!”，为了向 Brian Kernighan 和 Dennis Ritchie 的开创性著作 The C Programming Language 致敬。许多优秀的编程书籍&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt; 都是从这个例子开始的，因为它让读者了解了程序的基本概念，而没有深入细节。这是一种有趣、简洁的方法，也是确保读者正确设置工具的有效方法。&lt;/p&gt;
 &lt;p&gt;例 2-1. 典型的 &amp;ldquo;Hello, world!&amp;rdquo; 程序，用 C 语言编写&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-c&#34; data-lang=&#34;c&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;#include&lt;/span&gt; &lt;span class=&#34;cpf&#34;&gt;&amp;lt;stdio.h&amp;gt;&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;main&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;printf&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;Hello, World!&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;
@@ -283,13 +284,13 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;不幸的是，WebAssembly 没有办法打印到控制台，所以我们不能那样开始。&lt;/p&gt;
 &lt;p&gt;等等，什么？&lt;/p&gt;
 &lt;p&gt;我会给你一点时间来消化这句话，也许再读几遍以确保你理解它。&lt;/p&gt;
-&lt;p&gt;使困惑？ 是的，可以说，WebAssembly 无法打印到控制台、读取文件或打开网络连接……除非有相应的 API 可以调用。&lt;/p&gt;
-&lt;p&gt;当你检查例 2-1 时，你会发现问题所在。为了让这个程序运行，它需要一个 printf() 函数的工作副本，它可以在标准库中找到。C 程序具有可移植性的原因之一是这些标准库存在于各种平台上。POSIX 库将这些常用功能扩展到控制台之外，包括文件操作、信号处理、消息传递等。应用程序是用 POSIX 等 API 编写的，但可执行文件还需要一个静态或动态库，该库提供在目标平台上运行的调用方法的行为，这是你打算使用的操作系统的本机可执行格式。&lt;/p&gt;
-&lt;p&gt;因此，WebAssembly 使代码可移植，但我们仍然需要其他工具来帮助使应用程序可移植。我们将在本书中重新讨论这个主题，但现在请记住，WebAssembly 没有直接写入控制台的方法。&lt;/p&gt;
-&lt;p&gt;在&lt;a href=&#34;../using-c-cpp-and-wasm/&#34;&gt;第 5 章&lt;/a&gt;中，我们将向 Kernighan 和 Ritchie 致敬并运行该程序。但首先，我们需要了解 WebAssembly 的人性化格式以及如何使低级指令与堆栈机器交互。但是，我还是希望你有一句“Hello, world!” 在这里有经验，所以我们会选择其他的东西来编写和运行，这不是太具有挑战性，但仍然合理。这可以看作是一种 ”Hello, world!“。&lt;/p&gt;
+&lt;p&gt;困惑吗？ 是的，可以说，WebAssembly 无法打印到控制台、读取文件或打开网络连接……除非有相应的 API 可以调用。&lt;/p&gt;
+&lt;p&gt;当你检查例 2-1 时，你会发现问题所在。为了让这个程序运行，它需要一个 &lt;code&gt;printf()&lt;/code&gt; 函数的工作副本，它可以在标准库中找到。C 程序具有可移植性的原因之一是这些标准库存在于各种平台上。POSIX 库将这些常用功能扩展到控制台之外，包括文件操作、信号处理、消息传递等。应用程序是用 POSIX 等 API 编写的，但可执行文件还需要一个静态或动态库，该库提供在目标平台上运行的调用方法的行为，这是你打算使用的操作系统的本机可执行格式。&lt;/p&gt;
+&lt;p&gt;因此，WebAssembly 使代码可移植，但我们仍然需要其他工具来帮助应用程序可移植。我们将在本书中重新讨论这个主题，但现在请记住，WebAssembly 没有直接写入控制台的方法。&lt;/p&gt;
+&lt;p&gt;在&lt;a href=&#34;../using-c-cpp-and-wasm/&#34;&gt;第 5 章&lt;/a&gt;中，我们将向 Kernighan 和 Ritchie 致敬并运行该程序。但首先，我们需要了解 WebAssembly 的人性化格式以及如何使低级指令与机器堆栈交互。但是，我还是希望你有“Hello, world!” 的经验，所以我们会选择其他的东西来编写和运行，这不是太具有挑战性，但仍然合理。这可以看作是一种 ”Hello, world!“。&lt;/p&gt;
 &lt;h2 id=&#34;webassembly-文本格式wat&#34;&gt;WebAssembly 文本格式（Wat）&lt;/h2&gt;
-&lt;p&gt;WebAssembly 的二进制格式（Wasm）旨在加速 WebAssembly 模块的传输、加载和验证。我们将在&lt;a href=&#34;../wasm-modules/&#34;&gt;第 3 章&lt;/a&gt; 更深入地研究模块，但现在只需将它们视为部署单元，就像 Java 中的库或 Jar 文件一样。此外，还有一种描述模块行为的文本格式，方便人类阅读，这就是Wat。虽然你可以手写文本格式的代码，但很少有人这样做。这种格式有时也称为“Wast”，但这是原始名称。很多工具都支持这两种写法，所以很容易混淆。本书将使用 Wat 及其后缀 .wat。&lt;/p&gt;
-&lt;p&gt;示例 2-2 显示了一个以 Wat 表示的完整、高效的 Wasm 模块。它由函数签名和堆栈机器指令的集合表示，类似于 Lisp 格式。WebAssembly抽象机是一个虚拟的栈机，后面我们会详细讲解。大多数编译软件被编译成特定硬件架构的可执行格式。例如，如果你的目标是 Intel x86 机器，代码将被编译成一系列可以在该芯片上运行的指令。如果没有某种模拟器，它就无法在其他地方工作。Java 和 .NET 等平台具有可以在各种平台运行时环境中解释和执行的中间字节码表示。同样，WebAssembly 指令具有相似的特性，但通过在堆栈上执行少量指令来实现其目标。最后，当在 WebAssembly 主机中执行时，这些指令被映射到特定芯片上的机器指令。&lt;/p&gt;
+&lt;p&gt;WebAssembly 的二进制格式（Wasm）旨在加速 WebAssembly 模块的传输、加载和验证。我们将在&lt;a href=&#34;../wasm-modules/&#34;&gt;第 3 章&lt;/a&gt;更深入地研究模块，但现在只需将它们视为部署单元，就像 Java 中的库或 Jar 文件一样。此外，还有一种描述模块行为的文本格式，方便人类阅读，这就是Wat。虽然你可以手写文本格式的代码，但很少有人这样做。这种格式有时也称为“Wast”，但这是原始名称。很多工具都支持这两种写法，所以很容易混淆。本书将使用 Wat 及其后缀 &lt;code&gt;.wat&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;例 2-2 显示了一个以 Wat 表示的完整、高效的 Wasm 模块。它由函数签名和堆栈机器指令的集合表示，类似于 Lisp 格式。WebAssembly 抽象机是一个虚拟的堆栈，后面我们会详细讲解。大多数软件被编译成特定硬件架构的可执行格式。例如，如果你的目标是 Intel x86 机器，代码将被编译成一系列可以在该芯片上运行的指令。如果没有某种模拟器，它就无法在其他地方工作。Java 和 .NET 等平台具有可以在各种平台运行时环境中解释和执行的中间字节码表示。同样，WebAssembly 指令具有相似的特性，但通过在堆栈上执行少量指令来实现其目标。最后，当在 WebAssembly 主机中执行时，这些指令被映射到特定芯片上的机器指令。&lt;/p&gt;
 &lt;p&gt;例 2-2. 一个简单的 WebAssembly 文本文件&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-c&#34; data-lang=&#34;c&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;module&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;func&lt;/span&gt; &lt;span class=&#34;err&#34;&gt;$&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;how_old&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;param&lt;/span&gt; &lt;span class=&#34;err&#34;&gt;$&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year_now&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i32&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;param&lt;/span&gt; &lt;span class=&#34;err&#34;&gt;$&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;year_born&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i32&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;result&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i32&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;err&#34;&gt;①&lt;/span&gt;
@@ -304,10 +305,10 @@
 &lt;li&gt;导出函数 &lt;code&gt;how_old&lt;/code&gt; 在这里被称为 &lt;code&gt;$how_old&lt;/code&gt;，在显式导出之前，它在模块外是不可见的。注意命名的区别。内部命名以 &lt;code&gt;$&lt;/code&gt; 开头，而导出版本则没有。如果有人从外部调用它，它只会执行内部函数。&lt;/li&gt;
 &lt;/ol&gt;
 &lt;p&gt;该模块定义了一个函数，该函数接受两个整数参数并返回一个整数。根据 MVP 的定义，WebAssembly 是一个 32 位环境&lt;sup id=&#34;fnref:2&#34;&gt;&lt;a href=&#34;#fn:2&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;2&lt;/a&gt;&lt;/sup&gt;。随着时间的推移，这个限制正在放宽，到本书付印时，可能会出现某种形式的 64 位 Wasm 环境（请参阅 &lt;a href=&#34;&#34;&gt;Memory64 Proposal for WebAssembly&lt;/a&gt;）。WebAssembly 支持 32 位和 64 位整数（分别称为 i32 和 i64）以及 32 位和 64 位浮点数（分别称为 f32 和 f64）。&lt;/p&gt;
-&lt;p&gt;在 WebAssembly 层面，没有我们熟悉的字符串、对象、字典等数据类型。不用担心，我们将在后面的章节中讨论如何处理这些问题。这是我们不能编写典型的“Hello, World!”的原因之一。应用。在我们开始介绍更多想法之前，只处理数字会更容易。因此，本书的风格是逐渐向你展示足够的知识，使你能够看到它是如何工作的，而不会让你不知所措。&lt;/p&gt;
+&lt;p&gt;在 WebAssembly 层面，没有我们熟悉的字符串、对象、字典等数据类型。不用担心，我们将在后面的章节中讨论如何处理这些问题。这是我们不能编写典型的“Hello, World!” 应用的原因之一。在我们开始介绍更多想法之前，只处理数字会更容易。因此，本书的风格是逐渐向你展示足够的知识，使你能够看到它是如何工作的，这样不会让你不知所措。&lt;/p&gt;
 &lt;p&gt;这个内部函数用于根据一个人的出生年份和当前年份计算他的年龄。WebAssembly 没有日期的概念，也不能请求当前时间，但是不用担心。它非常擅长数学，如果你给它当前年份和一个人的出生年份，它可以减去年份得到结果。我们将这些操作分开，是为了更清楚地了解系统各部分的功能。&lt;/p&gt;
 &lt;p&gt;栈是一种常用的数据结构，经常被比作一堆托盘，就像在餐馆里一样。工作人员会将干净的盘子放在其他盘子上面。客人可以从顶部取一个。&lt;/p&gt;
-&lt;p&gt;考虑一个空栈，如图 2-1 所示，我们说我们将一些东西压入栈顶，然后从栈顶弹出它。我们只对栈顶进行操作，所以如果我们需要遍历链表，栈不是一个合适的数据结构。此外，只有一个地方可以找到我们感兴趣的内容，因此我们不需要指定位置、索引或键。这是一个快速高效的操作结构。&lt;/p&gt;
+&lt;p&gt;考虑一个空栈，如图 2-1 所示，我们将一些东西压入栈顶，然后从栈顶弹出它。我们只对栈顶进行操作，所以如果我们需要遍历链表，栈不是一个合适的数据结构。此外，只有一个地方可以找到我们感兴趣的内容，因此我们不需要指定位置、索引或键。这是一个快速高效的操作结构。&lt;/p&gt;
 &lt;p&gt;
 
 
@@ -331,7 +332,7 @@
       图 2-1. 一个空的堆栈
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
-&lt;p&gt;回顾一下例 2-2 函数中的指令列表。第一条是 &lt;code&gt;get_local&lt;/code&gt;。WebAssembly 主机环境将检索名为 &lt;code&gt;$year_now&lt;/code&gt; 的参数值，然后把它推到堆栈。假设现在的年份是 2021 年，结果如图 2-2 所示。&lt;/p&gt;
+&lt;p&gt;回顾一下例 2-2 函数中的指令列表。第一条是 &lt;code&gt;get.local&lt;/code&gt;。WebAssembly 主机环境将检索名为 &lt;code&gt;$year_now&lt;/code&gt; 的参数值，然后把它推到堆栈。假设现在的年份是 2021 年，结果如图 2-2 所示。&lt;/p&gt;
 &lt;p&gt;
 
 
@@ -355,7 +356,7 @@
       图 2-2. 一个有一个值的堆栈
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
-&lt;p&gt;在这一点上，WebAssembly 主机环境将推进到第二个指令。这也是一条 &lt;code&gt;get_local&lt;/code&gt; 指令，它将检索名为 &lt;code&gt;$year_born&lt;/code&gt; 的参数值，并将其推到堆栈中。现在堆栈上有两个值，但堆栈的顶部指向推送的最新值。假设调用该函数的人是在 2000 年出生的，那么堆栈将看起来如图 2-3。&lt;/p&gt;
+&lt;p&gt;在这一点上，WebAssembly 主机环境将推进到第二个指令。这也是一条 &lt;code&gt;get.local&lt;/code&gt; 指令，它将检索名为 &lt;code&gt;$year_born&lt;/code&gt; 的参数值，并将其推到堆栈中。现在堆栈上有两个值，但堆栈的顶部指向推送的最新值。假设调用该函数的人是在 2000 年出生的，那么堆栈将看起来如图 2-3。&lt;/p&gt;
 &lt;p&gt;
 
 
@@ -406,10 +407,10 @@
 &lt;p&gt;在这一点上，没有更多的指令要执行，我们在堆栈的顶部只剩下一个值。在例 2-2 中，我们看到我们的函数定义了一个 i32 的返回值。无论堆栈顶部的是什么，都将作为调用函数的结果返回。&lt;/p&gt;
 &lt;p&gt;我们可能觉得为两个数相减做了太多工作，但实际上我们已经用平台中立的方式表达了一系列数学事件。当代码被转换成运行时主机的本地指令时，这些值会被加载到 CPU 寄存器中，一条指令就可以用 CPU 指令集的机械原理将它们相加。我们不用担心目标平台的细节或差异，因为转换过程会快速而简单，随时可以完成。但在此之前，我们需要将文本格式转换为它的二进制表示。&lt;/p&gt;
 &lt;h2 id=&#34;将-wat-转换为-wasm&#34;&gt;将 Wat 转换为 Wasm&lt;/h2&gt;
-&lt;p&gt;任何长期担任程序员的人都会注意到我们实施的所有潜在问题。我们没有处理有人颠倒参数，使函数返回负数的情况。为了使示例简单，我们忽略这些现实。虽然这不是一个非常令人兴奋的功能，但我们已经了解了通过 WebAssembly 的原生文本格式表达一些基本行为的机制。下一步是将其转换为二进制可执行形式。我们有多种选择，但我们将重点介绍两种方法。&lt;/p&gt;
-&lt;p&gt;第一种方法不需要你安装任何东西。事实上，你可以继续调用你的函数，看看它是如何工作的！ 如果你访问&lt;a href=&#34;https://webassembly.github.io/wabt/demo/wat2wasm/index.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;在线 wat2wasm 演示&lt;/a&gt;，你将看到一个多面板网站。左上角代表一个 &lt;code&gt;.wat&lt;/code&gt; 文件。右上角代表编译后的 &lt;code&gt;.wat&lt;/code&gt; 文件注释的十六进制转储。左下角代表使用 API 调用行为的 JavaScript 代码，稍后我们将更全面地介绍它。右下角代表执行这段代码的输出。&lt;/p&gt;
-&lt;p&gt;将示例2-2 中的代码复制并粘贴到左上角的 WAT 面板中。这会将文本格式转换为二进制格式。假设你没有任何拼写错误，你还可以通过单击同一面板上的下载按钮来下载二进制格式。&lt;/p&gt;
-&lt;p&gt;现在将示例2-3 中的代码复制到左下方的窗格中。这将在大多数现代浏览器（和Node.js）中调用 WebAssembly  JavaScript  API。我们稍后会讨论这个，但现在我们正在提取二进制模块的字节（可通过 &lt;code&gt;wasmModule&lt;/code&gt;  变量在此处获得）并获取对 &lt;code&gt;how_old&lt;/code&gt; 函数的引用，以便我们可以调用它。如你所见，可以像调用任何其他 JavaScript 函数一样调用此函数。结果将通过 &lt;code&gt;console.log()&lt;/code&gt; 打印在右下角的面板上。&lt;/p&gt;
+&lt;p&gt;任何有经验的程序员都会察觉到上面代码中的潜在问题。我们没有处理有人颠倒参数，使函数返回负数的情况。为了使示例简单，我们忽略这些现实。虽然这不是一个非常令人兴奋的功能，但我们已经了解了通过 WebAssembly 的原生文本格式表达一些基本行为的机制。下一步是将其转换为二进制可执行形式。我们有多种选择，但我们将重点介绍两种方法。&lt;/p&gt;
+&lt;p&gt;第一种方法不需要你安装任何东西。事实上，你可以继续调用你的函数，看看它是如何工作的！ 如果你访问&lt;a href=&#34;https://webassembly.github.io/wabt/demo/wat2wasm/index.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;在线 wat2wasm 演示&lt;/a&gt;，你将看到一个多面板网站。左上角代表一个 &lt;code&gt;.wat&lt;/code&gt; 文件。右上角代表编译后的 &lt;code&gt;.wat&lt;/code&gt; 文件的十六进制转储。左下角代表使用 API 调用行为的 JavaScript 代码，稍后我们将更全面地介绍它。右下角代表执行这段代码的输出。&lt;/p&gt;
+&lt;p&gt;将例2-2 中的代码复制并粘贴到左上角的 WAT 面板中。这会将文本格式转换为二进制格式。假设你没有任何拼写错误，你还可以通过单击同一面板上的下载按钮来下载二进制格式。&lt;/p&gt;
+&lt;p&gt;现在将例2-3 中的代码复制到左下方的窗格中。这将在大多数现代浏览器（和Node.js）中调用 WebAssembly  JavaScript  API。我们稍后会讨论这个，但现在我们正在提取二进制模块的字节（可通过 &lt;code&gt;wasmModule&lt;/code&gt;  变量在此处获得）并获取对 &lt;code&gt;how_old&lt;/code&gt; 函数的引用，以便我们可以调用它。如你所见，可以像调用任何其他 JavaScript 函数一样调用此函数。结果将通过 &lt;code&gt;console.log()&lt;/code&gt; 打印在右下角的面板上。&lt;/p&gt;
 &lt;p&gt;例 2-3. 使用 JavaScript 调用我们的函数&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kr&#34;&gt;const&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;wasmInstance&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;new&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;WebAssembly&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Instance&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;wasmModule&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{});&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kr&#34;&gt;const&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;how_old&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;wasmInstance&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;exports&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; 
@@ -439,7 +440,7 @@
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
 &lt;p&gt;此时，你可以下载该文件的二进制版本。默认情况下，它将被命名为 &lt;code&gt;test.wasm&lt;/code&gt;，但你可以将其重命名为你喜欢的任何名称。我们称之为 &lt;code&gt;hello.wasm&lt;/code&gt;。&lt;/p&gt;
-&lt;p&gt;你还可以选择使用 WebAssembly Binary Toolkit（WABT）&lt;sup id=&#34;fnref:3&#34;&gt;&lt;a href=&#34;#fn:3&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;3&lt;/a&gt;&lt;/sup&gt;来生成这种二进制形式。有关安装 WABT 和我们将在本书中使用的其他工具的说明，请参阅&lt;a href=&#34;../apendix/&#34;&gt;附录&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;你还可以选择使用 WebAssembly Binary Toolkit（WABT）&lt;sup id=&#34;fnref:3&#34;&gt;&lt;a href=&#34;#fn:3&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;3&lt;/a&gt;&lt;/sup&gt;来生成这种二进制形式。有关安装 WABT 和本书中使用的其他工具的说明，请参阅&lt;a href=&#34;../apendix/&#34;&gt;附录&lt;/a&gt;。&lt;/p&gt;
 &lt;p&gt;此安装中包含一个名为 wat2wasm 的命令。它的功能如其名，将文本文件转换为二进制格式：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; wat2wasm hello.wat
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; ls -alF
@@ -450,7 +451,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;-rw-r--r--  &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt; brian  staff  &lt;span class=&#34;m&#34;&gt;200&lt;/span&gt; Dec  &lt;span class=&#34;m&#34;&gt;7&lt;/span&gt; 07:59 hello.wat
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;仔细观察。你的眼睛没有骗你。它的作用不大，但二进制格式只有 45 个字节长！ 之前写过很多 Java 程序，有些类名比这个还长。现在我们需要一种方法来执行我们的功能，因为我们不在浏览器中。使用 Node.js 中的 JavaScript API 很容易做到这一点，但我们将使用不同的方法来展示一系列选项。&lt;/p&gt;
 &lt;h2 id=&#34;在-repl-中运行-wasm&#34;&gt;在 Repl 中运行 Wasm&lt;/h2&gt;
-&lt;p&gt;我在&lt;a href=&#34;../appendix/&#34;&gt;附录&lt;/a&gt;中向你展示了如何安装的另一个工具是 &lt;a href=&#34;https://github.com/wasm3/wasm3&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;wasm3&lt;/a&gt;，它允许你在命令行上或通过通常称为 “repl”&lt;sup id=&#34;fnref:4&#34;&gt;&lt;a href=&#34;#fn:4&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;4&lt;/a&gt;&lt;/sup&gt; 的交互模式运行 Wasm 模块和函数。&lt;/p&gt;
+&lt;p&gt;我在&lt;a href=&#34;../appendix/&#34;&gt;附录&lt;/a&gt;中向你展示了如何安装 &lt;a href=&#34;https://github.com/wasm3/wasm3&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;wasm3&lt;/a&gt;，它允许你在命令行上或通过通常称为 “repl”&lt;sup id=&#34;fnref:4&#34;&gt;&lt;a href=&#34;#fn:4&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;4&lt;/a&gt;&lt;/sup&gt; 的交互模式运行 Wasm 模块和函数。&lt;/p&gt;
 &lt;p&gt;执行下面的命令后，你会收到 wasm3 提示符。我将它指向我的 Wasm 文件，所以我只能调用一个函数，但如果模块中有其他导出函数，它们也可以工作。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; wasm3 --repl hello.wasm
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;wasm3&amp;gt; how_old &lt;span class=&#34;m&#34;&gt;2021&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;2000&lt;/span&gt;
@@ -461,7 +462,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Error: &lt;span class=&#34;k&#34;&gt;function&lt;/span&gt; lookup failed &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;$how_old&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt; wasm3&amp;gt; how_old &lt;span class=&#34;m&#34;&gt;1980&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;2021&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Result: &lt;span class=&#34;m&#34;&gt;4294967255&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;wasm3&amp;gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请注意，我只能调用导出函数，不能调用内部函数。另请注意，如果我们按预期颠倒参数的顺序，则会失败。当你用高级语言构建 Wasm 模块时，这些将使你更容易做正确的事情（尽管当然也可以在 &lt;code&gt;.wat&lt;/code&gt; 文件中手动编写这种错误检查代码，但那太麻烦了）。要退出 repl，你只需键入 Ctrl-C 或 Ctrl-D。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请注意，我只能调用导出函数，不能调用内部函数。另请注意，如果我们颠倒参数的顺序，将会得到一个负值（这不符合年龄的事实）。当你用高级语言构建 Wasm 模块时，可以更方便的来处理这些情况（尽管当然也可以在 &lt;code&gt;.wat&lt;/code&gt; 文件中手动编写这种错误检查代码，但那太麻烦了）。要退出 repl，你只需键入 Ctrl-C 或 Ctrl-D。&lt;/p&gt;
 &lt;p&gt;然而，让我们回顾一下我们刚刚做了什么。我们通过抽象机器的指令集来表达一些任意功能。我们在浏览器中运行它。它应该适用于任何主要操作系统上的任何主要浏览器。好吧，JavaScript 也应该如此。但我们也在 MacOS 机器上以交互模式运行的 C 可执行文件中运行它：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;brian@tweezer ~/g/w/build&amp;gt; file wasm3
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;wasm3: Mach-O 64-bit executable x86_64
@@ -582,7 +583,7 @@
 &lt;p&gt;物归原处，物归原主。&lt;/p&gt;
 &lt;p&gt;—— 十七世纪的谚语&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;p&gt;操作系统运行通常以编译形式包含的程序&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;。每个操作系统都有自己的格式，定义了从哪里开始运行，需要什么数据，以及不同功能位的指令是什么。WebAssembly 也不例外。在本章中，我们将了解这种行为是如何打包的以及宿主如何知道如何处理它。&lt;/p&gt;
+&lt;p&gt;操作系统通常运行编译后的程序&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;。每个操作系统都有自己的格式，定义了从哪里开始运行，需要什么数据，以及不同功能位的指令是什么。WebAssembly 也不例外。在本章中，我们将了解这种行为是如何打包的以及宿主如何知道如何处理它。&lt;/p&gt;
 &lt;p&gt;软件工程师的整个职业生涯中可能都会忽略程序是如何通过这个过程加载和执行的。他们的世界从 &lt;code&gt;int main (int argc, char **argv)&lt;/code&gt; 或 &lt;code&gt;static void main (String [] args)&lt;/code&gt; 开始，仅仅到 &lt;code&gt;if __name == &amp;quot;__main__&amp;quot;:&lt;/code&gt; 就结束了。这些是 C、Java 和 Python 程序的众所周知的入口点，因此这是程序员承担控制流责任的地方。但是，操作系统或程序运行时需要在程序启动之前和退出之后构建和拆除可执行结构。加载器需要知道指令从哪里开始、数据元素是如何初始化的、需要加载哪些其他模块或库等。&lt;/p&gt;
 &lt;p&gt;这些细节通常由可执行文件的性质定义。在 Linux 上，这是由&lt;a href=&#34;https://en.wikipedia.org/wiki/Executable_and_Linkable_Format&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;可执行和可链接格式 (ELF)&lt;/a&gt; 定义的；在 Windows 上，它由&lt;a href=&#34;https://en.wikipedia.org/wiki/Portable_Executable&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;可移植可执行格式 (PE)&lt;/a&gt; 定义； 在 macOS 上，它由 &lt;a href=&#34;https://en.wikipedia.org/wiki/Portable_Executable&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Mach-O 格式&lt;/a&gt;定义。显然，这些是本机可执行文件的特定于平台的格式。Java 和 .NET 等更多可移植系统使用中间字节码表示，但仍具有定义良好的结构，并且它们的工作方式相似。&lt;/p&gt;
 &lt;p&gt;WebAssembly MVP 的首要设计考虑之一是定义模块结构，以便 WebAssembly 主机知道要查找和验证什么，以及在执行部署单元时从哪里开始。&lt;/p&gt;

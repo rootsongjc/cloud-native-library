@@ -339,7 +339,7 @@
         content="2023-01-16T00:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2023-02-24T15:25:10&#43;08:00">
+    <meta property="article:modified_time" content="2023-02-24T17:42:13&#43;08:00">
   
 
   
@@ -972,8 +972,8 @@
 <p>它是如何，嗯，它是如何工作的？</p>
 <p>—— 亚瑟王，《巨蟒与圣杯》（Monty Python and the Holy Grail）</p>
 </blockquote>
-<p>学习 WebAssembly 的难点在于入门资料多。作为 C/C++ 或 Rust 开发人员，你可以从这里开始，但你也可以直接了解 WebAssembly 的机制，而不必担心语言生成。本章将从与语言无关的角度介绍 WebAssembly，在后面的章节中，我们将在深入研究低级细节时与高级语言建立联系。虽然这些细节乍一看似乎很简单，但它们对于理解 WebAssembly 的基本机制非常重要，因此它们不会成为你的最终目标。</p>
-<p>在<a href="../introduction/">第 1 章</a>中，当我讨论 asm.js 时，我介绍了大多数人使用一种新的编程语言或技术编写的第一个程序。在示例 2-1 中，我们再次展示了这个程序，它被称为“Hello, World!” 向 Brian Kernighan 和 Dennis Ritchie 的开创性著作 The C Programming Language 致敬。许多优秀的编程书籍<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup> 都是从这个例子开始的，因为它让读者了解了程序的基本概念，而没有深入细节。这是一种有趣、简洁的方法，也是确保读者正确设置工具的有效方法。</p>
+<p>学习 WebAssembly 的难点在于入门资料多。作为 C/C++ 或 Rust 开发人员，你可以从这里开始，但你也可以直接了解 WebAssembly 的机制，而不必担心代码生成问题。本章将从与语言无关的角度介绍 WebAssembly，在后面的章节中，我们将在深入研究低级细节时与高级语言建立联系。虽然这些细节乍一看似乎很简单，但它们对于理解 WebAssembly 的基本机制非常重要，因此它们不会成为你的最终目标。</p>
+<p>在<a href="../introduction/">第 1 章</a>中，当我讨论 asm.js 时，我介绍了大多数人使用一种新的编程语言或技术编写的第一个程序。在例 2-1 中，我们再次展示了这个程序，它被称为“Hello, World!”，为了向 Brian Kernighan 和 Dennis Ritchie 的开创性著作 The C Programming Language 致敬。许多优秀的编程书籍<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup> 都是从这个例子开始的，因为它让读者了解了程序的基本概念，而没有深入细节。这是一种有趣、简洁的方法，也是确保读者正确设置工具的有效方法。</p>
 <p>例 2-1. 典型的 &ldquo;Hello, world!&rdquo; 程序，用 C 语言编写</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
 </span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="kt">int</span> <span class="nf">main</span> <span class="p">()</span> <span class="p">{</span><span class="n">printf</span> <span class="p">(</span><span class="s">&#34;Hello, World!</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
@@ -982,13 +982,13 @@
 </span></span></code></pre></div><p>不幸的是，WebAssembly 没有办法打印到控制台，所以我们不能那样开始。</p>
 <p>等等，什么？</p>
 <p>我会给你一点时间来消化这句话，也许再读几遍以确保你理解它。</p>
-<p>使困惑？ 是的，可以说，WebAssembly 无法打印到控制台、读取文件或打开网络连接……除非有相应的 API 可以调用。</p>
-<p>当你检查例 2-1 时，你会发现问题所在。为了让这个程序运行，它需要一个 printf() 函数的工作副本，它可以在标准库中找到。C 程序具有可移植性的原因之一是这些标准库存在于各种平台上。POSIX 库将这些常用功能扩展到控制台之外，包括文件操作、信号处理、消息传递等。应用程序是用 POSIX 等 API 编写的，但可执行文件还需要一个静态或动态库，该库提供在目标平台上运行的调用方法的行为，这是你打算使用的操作系统的本机可执行格式。</p>
-<p>因此，WebAssembly 使代码可移植，但我们仍然需要其他工具来帮助使应用程序可移植。我们将在本书中重新讨论这个主题，但现在请记住，WebAssembly 没有直接写入控制台的方法。</p>
-<p>在<a href="../using-c-cpp-and-wasm/">第 5 章</a>中，我们将向 Kernighan 和 Ritchie 致敬并运行该程序。但首先，我们需要了解 WebAssembly 的人性化格式以及如何使低级指令与堆栈机器交互。但是，我还是希望你有一句“Hello, world!” 在这里有经验，所以我们会选择其他的东西来编写和运行，这不是太具有挑战性，但仍然合理。这可以看作是一种 ”Hello, world!“。</p>
+<p>困惑吗？ 是的，可以说，WebAssembly 无法打印到控制台、读取文件或打开网络连接……除非有相应的 API 可以调用。</p>
+<p>当你检查例 2-1 时，你会发现问题所在。为了让这个程序运行，它需要一个 <code>printf()</code> 函数的工作副本，它可以在标准库中找到。C 程序具有可移植性的原因之一是这些标准库存在于各种平台上。POSIX 库将这些常用功能扩展到控制台之外，包括文件操作、信号处理、消息传递等。应用程序是用 POSIX 等 API 编写的，但可执行文件还需要一个静态或动态库，该库提供在目标平台上运行的调用方法的行为，这是你打算使用的操作系统的本机可执行格式。</p>
+<p>因此，WebAssembly 使代码可移植，但我们仍然需要其他工具来帮助应用程序可移植。我们将在本书中重新讨论这个主题，但现在请记住，WebAssembly 没有直接写入控制台的方法。</p>
+<p>在<a href="../using-c-cpp-and-wasm/">第 5 章</a>中，我们将向 Kernighan 和 Ritchie 致敬并运行该程序。但首先，我们需要了解 WebAssembly 的人性化格式以及如何使低级指令与机器堆栈交互。但是，我还是希望你有“Hello, world!” 的经验，所以我们会选择其他的东西来编写和运行，这不是太具有挑战性，但仍然合理。这可以看作是一种 ”Hello, world!“。</p>
 <h2 id="webassembly-文本格式wat">WebAssembly 文本格式（Wat）</h2>
-<p>WebAssembly 的二进制格式（Wasm）旨在加速 WebAssembly 模块的传输、加载和验证。我们将在<a href="../wasm-modules/">第 3 章</a> 更深入地研究模块，但现在只需将它们视为部署单元，就像 Java 中的库或 Jar 文件一样。此外，还有一种描述模块行为的文本格式，方便人类阅读，这就是Wat。虽然你可以手写文本格式的代码，但很少有人这样做。这种格式有时也称为“Wast”，但这是原始名称。很多工具都支持这两种写法，所以很容易混淆。本书将使用 Wat 及其后缀 .wat。</p>
-<p>示例 2-2 显示了一个以 Wat 表示的完整、高效的 Wasm 模块。它由函数签名和堆栈机器指令的集合表示，类似于 Lisp 格式。WebAssembly抽象机是一个虚拟的栈机，后面我们会详细讲解。大多数编译软件被编译成特定硬件架构的可执行格式。例如，如果你的目标是 Intel x86 机器，代码将被编译成一系列可以在该芯片上运行的指令。如果没有某种模拟器，它就无法在其他地方工作。Java 和 .NET 等平台具有可以在各种平台运行时环境中解释和执行的中间字节码表示。同样，WebAssembly 指令具有相似的特性，但通过在堆栈上执行少量指令来实现其目标。最后，当在 WebAssembly 主机中执行时，这些指令被映射到特定芯片上的机器指令。</p>
+<p>WebAssembly 的二进制格式（Wasm）旨在加速 WebAssembly 模块的传输、加载和验证。我们将在<a href="../wasm-modules/">第 3 章</a>更深入地研究模块，但现在只需将它们视为部署单元，就像 Java 中的库或 Jar 文件一样。此外，还有一种描述模块行为的文本格式，方便人类阅读，这就是Wat。虽然你可以手写文本格式的代码，但很少有人这样做。这种格式有时也称为“Wast”，但这是原始名称。很多工具都支持这两种写法，所以很容易混淆。本书将使用 Wat 及其后缀 <code>.wat</code>。</p>
+<p>例 2-2 显示了一个以 Wat 表示的完整、高效的 Wasm 模块。它由函数签名和堆栈机器指令的集合表示，类似于 Lisp 格式。WebAssembly 抽象机是一个虚拟的堆栈，后面我们会详细讲解。大多数软件被编译成特定硬件架构的可执行格式。例如，如果你的目标是 Intel x86 机器，代码将被编译成一系列可以在该芯片上运行的指令。如果没有某种模拟器，它就无法在其他地方工作。Java 和 .NET 等平台具有可以在各种平台运行时环境中解释和执行的中间字节码表示。同样，WebAssembly 指令具有相似的特性，但通过在堆栈上执行少量指令来实现其目标。最后，当在 WebAssembly 主机中执行时，这些指令被映射到特定芯片上的机器指令。</p>
 <p>例 2-2. 一个简单的 WebAssembly 文本文件</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="p">(</span><span class="n">module</span>
 </span></span><span class="line"><span class="cl">    <span class="p">(</span><span class="n">func</span> <span class="err">$</span><span class="n">how_old</span> <span class="p">(</span><span class="n">param</span> <span class="err">$</span><span class="n">year_now</span> <span class="n">i32</span><span class="p">)</span> <span class="p">(</span><span class="n">param</span> <span class="err">$</span><span class="n">year_born</span> <span class="n">i32</span><span class="p">)</span> <span class="p">(</span><span class="n">result</span> <span class="n">i32</span><span class="p">)</span> <span class="err">①</span>
@@ -1003,10 +1003,10 @@
 <li>导出函数 <code>how_old</code> 在这里被称为 <code>$how_old</code>，在显式导出之前，它在模块外是不可见的。注意命名的区别。内部命名以 <code>$</code> 开头，而导出版本则没有。如果有人从外部调用它，它只会执行内部函数。</li>
 </ol>
 <p>该模块定义了一个函数，该函数接受两个整数参数并返回一个整数。根据 MVP 的定义，WebAssembly 是一个 32 位环境<sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>。随着时间的推移，这个限制正在放宽，到本书付印时，可能会出现某种形式的 64 位 Wasm 环境（请参阅 <a href="">Memory64 Proposal for WebAssembly</a>）。WebAssembly 支持 32 位和 64 位整数（分别称为 i32 和 i64）以及 32 位和 64 位浮点数（分别称为 f32 和 f64）。</p>
-<p>在 WebAssembly 层面，没有我们熟悉的字符串、对象、字典等数据类型。不用担心，我们将在后面的章节中讨论如何处理这些问题。这是我们不能编写典型的“Hello, World!”的原因之一。应用。在我们开始介绍更多想法之前，只处理数字会更容易。因此，本书的风格是逐渐向你展示足够的知识，使你能够看到它是如何工作的，而不会让你不知所措。</p>
+<p>在 WebAssembly 层面，没有我们熟悉的字符串、对象、字典等数据类型。不用担心，我们将在后面的章节中讨论如何处理这些问题。这是我们不能编写典型的“Hello, World!” 应用的原因之一。在我们开始介绍更多想法之前，只处理数字会更容易。因此，本书的风格是逐渐向你展示足够的知识，使你能够看到它是如何工作的，这样不会让你不知所措。</p>
 <p>这个内部函数用于根据一个人的出生年份和当前年份计算他的年龄。WebAssembly 没有日期的概念，也不能请求当前时间，但是不用担心。它非常擅长数学，如果你给它当前年份和一个人的出生年份，它可以减去年份得到结果。我们将这些操作分开，是为了更清楚地了解系统各部分的功能。</p>
 <p>栈是一种常用的数据结构，经常被比作一堆托盘，就像在餐馆里一样。工作人员会将干净的盘子放在其他盘子上面。客人可以从顶部取一个。</p>
-<p>考虑一个空栈，如图 2-1 所示，我们说我们将一些东西压入栈顶，然后从栈顶弹出它。我们只对栈顶进行操作，所以如果我们需要遍历链表，栈不是一个合适的数据结构。此外，只有一个地方可以找到我们感兴趣的内容，因此我们不需要指定位置、索引或键。这是一个快速高效的操作结构。</p>
+<p>考虑一个空栈，如图 2-1 所示，我们将一些东西压入栈顶，然后从栈顶弹出它。我们只对栈顶进行操作，所以如果我们需要遍历链表，栈不是一个合适的数据结构。此外，只有一个地方可以找到我们感兴趣的内容，因此我们不需要指定位置、索引或键。这是一个快速高效的操作结构。</p>
 <p>
 
 
@@ -1030,7 +1030,7 @@
       图 2-1. 一个空的堆栈
     </figcaption></figure>
 </p>
-<p>回顾一下例 2-2 函数中的指令列表。第一条是 <code>get_local</code>。WebAssembly 主机环境将检索名为 <code>$year_now</code> 的参数值，然后把它推到堆栈。假设现在的年份是 2021 年，结果如图 2-2 所示。</p>
+<p>回顾一下例 2-2 函数中的指令列表。第一条是 <code>get.local</code>。WebAssembly 主机环境将检索名为 <code>$year_now</code> 的参数值，然后把它推到堆栈。假设现在的年份是 2021 年，结果如图 2-2 所示。</p>
 <p>
 
 
@@ -1054,7 +1054,7 @@
       图 2-2. 一个有一个值的堆栈
     </figcaption></figure>
 </p>
-<p>在这一点上，WebAssembly 主机环境将推进到第二个指令。这也是一条 <code>get_local</code> 指令，它将检索名为 <code>$year_born</code> 的参数值，并将其推到堆栈中。现在堆栈上有两个值，但堆栈的顶部指向推送的最新值。假设调用该函数的人是在 2000 年出生的，那么堆栈将看起来如图 2-3。</p>
+<p>在这一点上，WebAssembly 主机环境将推进到第二个指令。这也是一条 <code>get.local</code> 指令，它将检索名为 <code>$year_born</code> 的参数值，并将其推到堆栈中。现在堆栈上有两个值，但堆栈的顶部指向推送的最新值。假设调用该函数的人是在 2000 年出生的，那么堆栈将看起来如图 2-3。</p>
 <p>
 
 
@@ -1105,10 +1105,10 @@
 <p>在这一点上，没有更多的指令要执行，我们在堆栈的顶部只剩下一个值。在例 2-2 中，我们看到我们的函数定义了一个 i32 的返回值。无论堆栈顶部的是什么，都将作为调用函数的结果返回。</p>
 <p>我们可能觉得为两个数相减做了太多工作，但实际上我们已经用平台中立的方式表达了一系列数学事件。当代码被转换成运行时主机的本地指令时，这些值会被加载到 CPU 寄存器中，一条指令就可以用 CPU 指令集的机械原理将它们相加。我们不用担心目标平台的细节或差异，因为转换过程会快速而简单，随时可以完成。但在此之前，我们需要将文本格式转换为它的二进制表示。</p>
 <h2 id="将-wat-转换为-wasm">将 Wat 转换为 Wasm</h2>
-<p>任何长期担任程序员的人都会注意到我们实施的所有潜在问题。我们没有处理有人颠倒参数，使函数返回负数的情况。为了使示例简单，我们忽略这些现实。虽然这不是一个非常令人兴奋的功能，但我们已经了解了通过 WebAssembly 的原生文本格式表达一些基本行为的机制。下一步是将其转换为二进制可执行形式。我们有多种选择，但我们将重点介绍两种方法。</p>
-<p>第一种方法不需要你安装任何东西。事实上，你可以继续调用你的函数，看看它是如何工作的！ 如果你访问<a href="https://webassembly.github.io/wabt/demo/wat2wasm/index.html" target="_blank" rel="noopener">在线 wat2wasm 演示</a>，你将看到一个多面板网站。左上角代表一个 <code>.wat</code> 文件。右上角代表编译后的 <code>.wat</code> 文件注释的十六进制转储。左下角代表使用 API 调用行为的 JavaScript 代码，稍后我们将更全面地介绍它。右下角代表执行这段代码的输出。</p>
-<p>将示例2-2 中的代码复制并粘贴到左上角的 WAT 面板中。这会将文本格式转换为二进制格式。假设你没有任何拼写错误，你还可以通过单击同一面板上的下载按钮来下载二进制格式。</p>
-<p>现在将示例2-3 中的代码复制到左下方的窗格中。这将在大多数现代浏览器（和Node.js）中调用 WebAssembly  JavaScript  API。我们稍后会讨论这个，但现在我们正在提取二进制模块的字节（可通过 <code>wasmModule</code>  变量在此处获得）并获取对 <code>how_old</code> 函数的引用，以便我们可以调用它。如你所见，可以像调用任何其他 JavaScript 函数一样调用此函数。结果将通过 <code>console.log()</code> 打印在右下角的面板上。</p>
+<p>任何有经验的程序员都会察觉到上面代码中的潜在问题。我们没有处理有人颠倒参数，使函数返回负数的情况。为了使示例简单，我们忽略这些现实。虽然这不是一个非常令人兴奋的功能，但我们已经了解了通过 WebAssembly 的原生文本格式表达一些基本行为的机制。下一步是将其转换为二进制可执行形式。我们有多种选择，但我们将重点介绍两种方法。</p>
+<p>第一种方法不需要你安装任何东西。事实上，你可以继续调用你的函数，看看它是如何工作的！ 如果你访问<a href="https://webassembly.github.io/wabt/demo/wat2wasm/index.html" target="_blank" rel="noopener">在线 wat2wasm 演示</a>，你将看到一个多面板网站。左上角代表一个 <code>.wat</code> 文件。右上角代表编译后的 <code>.wat</code> 文件的十六进制转储。左下角代表使用 API 调用行为的 JavaScript 代码，稍后我们将更全面地介绍它。右下角代表执行这段代码的输出。</p>
+<p>将例2-2 中的代码复制并粘贴到左上角的 WAT 面板中。这会将文本格式转换为二进制格式。假设你没有任何拼写错误，你还可以通过单击同一面板上的下载按钮来下载二进制格式。</p>
+<p>现在将例2-3 中的代码复制到左下方的窗格中。这将在大多数现代浏览器（和Node.js）中调用 WebAssembly  JavaScript  API。我们稍后会讨论这个，但现在我们正在提取二进制模块的字节（可通过 <code>wasmModule</code>  变量在此处获得）并获取对 <code>how_old</code> 函数的引用，以便我们可以调用它。如你所见，可以像调用任何其他 JavaScript 函数一样调用此函数。结果将通过 <code>console.log()</code> 打印在右下角的面板上。</p>
 <p>例 2-3. 使用 JavaScript 调用我们的函数</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-javascript" data-lang="javascript"><span class="line"><span class="cl"><span class="kr">const</span> <span class="nx">wasmInstance</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">WebAssembly</span><span class="p">.</span><span class="nx">Instance</span> <span class="p">(</span><span class="nx">wasmModule</span><span class="p">,</span> <span class="p">{});</span>
 </span></span><span class="line"><span class="cl"><span class="kr">const</span> <span class="p">{</span><span class="nx">how_old</span><span class="p">}</span> <span class="o">=</span> <span class="nx">wasmInstance</span><span class="p">.</span><span class="nx">exports</span><span class="p">;</span> 
@@ -1138,7 +1138,7 @@
     </figcaption></figure>
 </p>
 <p>此时，你可以下载该文件的二进制版本。默认情况下，它将被命名为 <code>test.wasm</code>，但你可以将其重命名为你喜欢的任何名称。我们称之为 <code>hello.wasm</code>。</p>
-<p>你还可以选择使用 WebAssembly Binary Toolkit（WABT）<sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>来生成这种二进制形式。有关安装 WABT 和我们将在本书中使用的其他工具的说明，请参阅<a href="../apendix/">附录</a>。</p>
+<p>你还可以选择使用 WebAssembly Binary Toolkit（WABT）<sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>来生成这种二进制形式。有关安装 WABT 和本书中使用的其他工具的说明，请参阅<a href="../apendix/">附录</a>。</p>
 <p>此安装中包含一个名为 wat2wasm 的命令。它的功能如其名，将文本文件转换为二进制格式：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">&gt; wat2wasm hello.wat
 </span></span><span class="line"><span class="cl">&gt; ls -alF
@@ -1149,7 +1149,7 @@
 </span></span><span class="line"><span class="cl">-rw-r--r--  <span class="m">1</span> brian  staff  <span class="m">200</span> Dec  <span class="m">7</span> 07:59 hello.wat
 </span></span></code></pre></div><p>仔细观察。你的眼睛没有骗你。它的作用不大，但二进制格式只有 45 个字节长！ 之前写过很多 Java 程序，有些类名比这个还长。现在我们需要一种方法来执行我们的功能，因为我们不在浏览器中。使用 Node.js 中的 JavaScript API 很容易做到这一点，但我们将使用不同的方法来展示一系列选项。</p>
 <h2 id="在-repl-中运行-wasm">在 Repl 中运行 Wasm</h2>
-<p>我在<a href="../appendix/">附录</a>中向你展示了如何安装的另一个工具是 <a href="https://github.com/wasm3/wasm3" target="_blank" rel="noopener">wasm3</a>，它允许你在命令行上或通过通常称为 “repl”<sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup> 的交互模式运行 Wasm 模块和函数。</p>
+<p>我在<a href="../appendix/">附录</a>中向你展示了如何安装 <a href="https://github.com/wasm3/wasm3" target="_blank" rel="noopener">wasm3</a>，它允许你在命令行上或通过通常称为 “repl”<sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup> 的交互模式运行 Wasm 模块和函数。</p>
 <p>执行下面的命令后，你会收到 wasm3 提示符。我将它指向我的 Wasm 文件，所以我只能调用一个函数，但如果模块中有其他导出函数，它们也可以工作。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">&gt; wasm3 --repl hello.wasm
 </span></span><span class="line"><span class="cl">wasm3&gt; how_old <span class="m">2021</span> <span class="m">2000</span>
@@ -1160,7 +1160,7 @@
 </span></span><span class="line"><span class="cl">Error: <span class="k">function</span> lookup failed <span class="o">(</span><span class="s1">&#39;$how_old&#39;</span><span class="o">)</span> wasm3&gt; how_old <span class="m">1980</span> <span class="m">2021</span>
 </span></span><span class="line"><span class="cl">Result: <span class="m">4294967255</span>
 </span></span><span class="line"><span class="cl">wasm3&gt;
-</span></span></code></pre></div><p>请注意，我只能调用导出函数，不能调用内部函数。另请注意，如果我们按预期颠倒参数的顺序，则会失败。当你用高级语言构建 Wasm 模块时，这些将使你更容易做正确的事情（尽管当然也可以在 <code>.wat</code> 文件中手动编写这种错误检查代码，但那太麻烦了）。要退出 repl，你只需键入 Ctrl-C 或 Ctrl-D。</p>
+</span></span></code></pre></div><p>请注意，我只能调用导出函数，不能调用内部函数。另请注意，如果我们颠倒参数的顺序，将会得到一个负值（这不符合年龄的事实）。当你用高级语言构建 Wasm 模块时，可以更方便的来处理这些情况（尽管当然也可以在 <code>.wat</code> 文件中手动编写这种错误检查代码，但那太麻烦了）。要退出 repl，你只需键入 Ctrl-C 或 Ctrl-D。</p>
 <p>然而，让我们回顾一下我们刚刚做了什么。我们通过抽象机器的指令集来表达一些任意功能。我们在浏览器中运行它。它应该适用于任何主要操作系统上的任何主要浏览器。好吧，JavaScript 也应该如此。但我们也在 MacOS 机器上以交互模式运行的 C 可执行文件中运行它：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">brian@tweezer ~/g/w/build&gt; file wasm3
 </span></span><span class="line"><span class="cl">wasm3: Mach-O 64-bit executable x86_64
