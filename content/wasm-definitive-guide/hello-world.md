@@ -225,18 +225,18 @@ function fetchAndInstantiate (url, importObject) {return fetch (url).then (respo
 </html>
 ```
 
-在这个例子中，我们建立了一个 ID 为 age 的 `<span>`。它目前是空的。我们将用调用 WebAssembly 函数的结果来填充它。我们的 HTML 文件的其余部分并不奇怪。我们在`<head>`元素中包括可重复使用的实例化代码。在这个文件的底部，我们看到一个嵌入的 `<script>` 元素，它调用 `fetchAndInstantiate ()` 函数。它传入了对 `hello.wasm` 文件的本地引用，所以我们也必须通过 HTTP 提供这个文件。
+在这个例子中，我们建立了一个 ID 为 age 的 `<span>`。它目前是空的。我们调用 WebAssembly 函数的结果来填充它。我们的 HTML 文件的其余部分并不奇怪。我们在 `<head>` 元素中包括可重复使用的实例化代码。在这个文件的底部，我们看到一个嵌入的 `<script>` 元素，它调用 `fetchAndInstantiate ()` 函数。它传入了对 `hello.wasm` 文件的本地引用，所以我们也必须通过 HTTP 提供这个文件。
 
-该函数返回一个 *Promise*。我们会收到实例化的 Wasm 模块实例的副本，并可以调用通过模块的导出部分公开的方法。请注意，我们正在传递 JavaScript 的数字字符，但这些数字会被函数识别和接受。调用过程请求数字 21，然后将其存储在<span>我们之前讨论的空 `</span>` 的 `innerText ` 中。
+该函数返回一个 *Promise*。我们会收到实例化的 Wasm 模块的副本，调用模块导出部分公开的方法。请注意，我们正在传递的 JavaScript 的数字字符会被函数识别和接受。调用过程请求数字 21，然后将其存储在我们之前讨论的空 `</span>` 的 `innerText ` 中。
 
-我们必须通过 HTTP 提供 HTML、JavaScript 和 Wasm 模块，以便在浏览器中运行。你可以根据需要多次尝试此操作，但是使用 python3（或非 Mac 电脑上的 python），你可以启动服务器并指定一个端口来接受连接：
+我们必须通过 HTTP 提供 HTML、JavaScript 和 Wasm 模块，以便在浏览器中运行。你可以根据需要多次尝试此操作，使用 python3（或非 Mac 电脑上的 python），你可以启动服务器并指定一个端口来接受连接：
 
 ```bash
 brian@tweezer ~/g/w/s/ch02> python3 -m http.server 10003
 Serving HTTP on :: port 10003 (http://[::]:10003/) ...
 ```
 
-如果打开浏览器并将其指向 <http://localhost:10003/index.html>，你应该会看到类似于图 2-6 的内容。随意更改嵌入的 `<script>` 元素中的参数，并验证它是否继续工作。
+在浏览器中打开 <http://localhost:10003/index.html>，你应该会看到类似于图 2-6 的内容。随意更改嵌入的 `<script>` 元素中的参数，并验证它是否继续工作。
 
 ![图 2-6. 在网页的 JavaScript 中调用导出的 WebAssembly 模块函数](../images/f2-6.png)
 
