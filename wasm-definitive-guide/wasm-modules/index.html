@@ -339,7 +339,7 @@
         content="2023-01-17T15:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2023-02-24T17:42:13&#43;08:00">
+    <meta property="article:modified_time" content="2023-02-27T22:33:10&#43;08:00">
   
 
   
@@ -972,8 +972,8 @@
 <p>物归原处，物归原主。</p>
 <p>—— 十七世纪的谚语</p>
 </blockquote>
-<p>操作系统通常运行编译后的程序<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>。每个操作系统都有自己的格式，定义了从哪里开始运行，需要什么数据，以及不同功能位的指令是什么。WebAssembly 也不例外。在本章中，我们将了解这种行为是如何打包的以及宿主如何知道如何处理它。</p>
-<p>软件工程师的整个职业生涯中可能都会忽略程序是如何通过这个过程加载和执行的。他们的世界从 <code>int main (int argc, char **argv)</code> 或 <code>static void main (String [] args)</code> 开始，仅仅到 <code>if __name == &quot;__main__&quot;:</code> 就结束了。这些是 C、Java 和 Python 程序的众所周知的入口点，因此这是程序员承担控制流责任的地方。但是，操作系统或程序运行时需要在程序启动之前和退出之后构建和拆除可执行结构。加载器需要知道指令从哪里开始、数据元素是如何初始化的、需要加载哪些其他模块或库等。</p>
+<p>操作系统通常运行编译后的程序<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>。每个操作系统都有自己的格式，定义了从哪里开始运行，需要什么数据，不同功能位的指令是什么。WebAssembly 也不例外。在本章中，我们将了解程序是如何编译打包的，以及主机怎样处理编译后的程序。</p>
+<p>软件工程师可能会在整个职业生涯中都忽略了程序是如何编译、加载和执行的。他们的世界从 <code>int main (int argc, char **argv)</code> 或 <code>static void main (String [] args)</code> 开始，仅仅到 <code>if __name == &quot;__main__&quot;:</code> 就结束了。这些是 C、Java 和 Python 程序的众所周知的入口点，因此这是程序员承担控制流责任的地方。但是，操作系统或程序运行时需要在程序启动之前和退出之后构建和拆除可执行结构。加载器需要知道指令从哪里开始、数据元素是如何初始化的、需要加载哪些其他模块或库等。</p>
 <p>这些细节通常由可执行文件的性质定义。在 Linux 上，这是由<a href="https://en.wikipedia.org/wiki/Executable_and_Linkable_Format" target="_blank" rel="noopener">可执行和可链接格式 (ELF)</a> 定义的；在 Windows 上，它由<a href="https://en.wikipedia.org/wiki/Portable_Executable" target="_blank" rel="noopener">可移植可执行格式 (PE)</a> 定义； 在 macOS 上，它由 <a href="https://en.wikipedia.org/wiki/Portable_Executable" target="_blank" rel="noopener">Mach-O 格式</a>定义。显然，这些是本机可执行文件的特定于平台的格式。Java 和 .NET 等更多可移植系统使用中间字节码表示，但仍具有定义良好的结构，并且它们的工作方式相似。</p>
 <p>WebAssembly MVP 的首要设计考虑之一是定义模块结构，以便 WebAssembly 主机知道要查找和验证什么，以及在执行部署单元时从哪里开始。</p>
 <p>在<a href="../hello-world/">第 2 章</a>中，你看到了比本章开始时更复杂的模块结构。我们将逐步介绍这些部分，然后向你展示一些用于探索 WebAssembly 模块的文本和视觉结构的工具。在上一章中，我们简要讨论了二进制结构。它结构紧凑，转移和装载速度快。你可能不会经常花很多时间查看二进制细节，因为你关注的是软件方面。熟悉模块的布局很有用，让我们来看看。</p>
@@ -1017,20 +1017,20 @@
       图 3-1. 空模块在 WebAssembly 代码资源管理器中的可视化表示。
     </figcaption></figure>
 </p>
-<p>对于模块的命令行检查，你有几个选项，Wabt 工具包中的 <code>wasm-objdump</code> 可执行文件非常有用。请参阅<a href="../appendix/">附录</a>以帮助安装本书中讨论的各种工具。</p>
-<p>如果你在没有开关的情况下运行命令，它会提示错误信息。正如你将看到的，当你有更多细节需要探索时，这些会产生更大的不同。</p>
+<p>使用命令行来检查模块你有很多选择。Wabt 工具包中的 <code>wasm-objdump</code> 可执行文件非常有用。请参阅<a href="../appendix/">附录</a>以帮助安装本书中讨论的各种工具。</p>
+<p>如果你在没有指定标志位的情况下运行命令，它会提示错误信息。正如你将看到的，当你有更多细节需要探索时，这些会产生更大的不同。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">brian@tweezer ~/g/w/s/ch03&gt; wasm-objdump empty.wasm
 </span></span><span class="line"><span class="cl">At least one of the following switches must be given:
 </span></span><span class="line"><span class="cl">     -d/--disassemble
 </span></span><span class="line"><span class="cl">     -h/--headers
 </span></span><span class="line"><span class="cl">     -x/--details
 </span></span><span class="line"><span class="cl">     -s/--full-contents
-</span></span></code></pre></div><p>现在，我们只需通过使用细节开关来验证我们的模块虽然无用但却是有效的。这也表明我们处理的是第 1 版的格式。</p>
+</span></span></code></pre></div><p>现在，我们只需通过使用 <code>-x</code> 标志来验证我们的模块虽然无用但却是有效的。这也表明我们处理的是第 1 版的格式。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">brian@tweezer ~/g/w/s/ch03&gt; wasm-objdump -x empty.wasm 
 </span></span><span class="line"><span class="cl">empty.wasm: file format wasm 0x1
 </span></span><span class="line"><span class="cl">Section Details:
 </span></span></code></pre></div><h2 id="探索模块的各个部分">探索模块的各个部分</h2>
-<p>关于我们引入的概念，有一个循环依赖的问题。模块格式必须支持 WebAssembly 包含的所有各种元素，其中一些我们将在后面的章节中介绍。我们将主要关注到目前为止所看到的内容，并承诺很快会重新访问其他部分的元素。</p>
+<p>关于我们引入的概念，有一个循环依赖的问题。模块格式必须支持 WebAssembly 包含的所有元素，其中一些我们将在后面的章节中介绍。我们将主要关注到目前为止所看到的内容，很快会介绍其他部分的元素。</p>
 <p>该模块的整体结构基于一系列可选的编号部分，每个部分都涉及 WebAssembly 的一个特定功能。在表 3-1 中，我们可以看到这些部分的列表和描述。</p>
 <p>表 3-1. WebAssembly 模块列表</p>
 <table>
@@ -1055,7 +1055,7 @@
 <tr>
 <td>2</td>
 <td>Import</td>
-<td>一个模块所使用的导入元素</td>
+<td>模块中使用的导入元素</td>
 </tr>
 <tr>
 <td>3</td>
@@ -1070,7 +1070,7 @@
 <tr>
 <td>5</td>
 <td>Memory</td>
-<td>一个模块所使用的线性内存结构</td>
+<td>模块使用的线性内存结构</td>
 </tr>
 <tr>
 <td>6</td>
@@ -1080,32 +1080,32 @@
 <tr>
 <td>7</td>
 <td>Export</td>
-<td>一个模块所提供的导出元素</td>
+<td>模块提供的导出元素</td>
 </tr>
 <tr>
 <td>8</td>
 <td>Start</td>
-<td>一个可选的启动函数，用于启动一个模块</td>
+<td>可选的启动函数，用于启动模块</td>
 </tr>
 <tr>
 <td>9</td>
 <td>Element</td>
-<td>由一个模块定义的元素</td>
+<td>模块定义的元素</td>
 </tr>
 <tr>
 <td>10</td>
 <td>Code</td>
-<td>一个模块所定义的函数的主体</td>
+<td>模块定义的函数的主体</td>
 </tr>
 <tr>
 <td>11</td>
 <td>Data</td>
-<td>一个模块所定义的数据元素</td>
+<td>模块定义的数据元素</td>
 </tr>
 <tr>
 <td>12</td>
 <td>Data Count</td>
-<td>模块所定义的数据元素的数量</td>
+<td>模块定义的数据元素的数量</td>
 </tr>
 </tbody>
 </table>
@@ -1138,8 +1138,8 @@
 </span></span><span class="line"><span class="cl"> - func <span class="o">[</span>0<span class="o">]</span> &lt;how_old&gt; -&gt; <span class="s2">&#34;how_old&#34;</span>
 </span></span><span class="line"><span class="cl">Code <span class="o">[</span>1<span class="o">]</span>:
 </span></span><span class="line"><span class="cl"> - func <span class="o">[</span>0<span class="o">]</span> <span class="nv">size</span><span class="o">=</span><span class="m">7</span> &lt;how_old&gt;
-</span></span></code></pre></div><p>请注意，与我们的空模块相比，还有更多的部分。首先，我们有一个类型部分，它定义了一个签名。它提出了一种接受两个 i32 并返回一个 i32 的类型。这是我们的 <code>how_old</code> 方法的适当签名。该类型没有给出名称，但它仍然可以用于设置期望并在功能配置方面进行验证。</p>
-<p>接下来我们有一个 Function 部分，它将我们的类型（Type 部分中的 type [0]）链接到命名函数。因为我们导出了我们的函数以使其可用于我们的主机环境或其他模块，所以我们看到了内部函数 <code>&lt;how_old&gt;</code> 以名称 <code>how_old</code> 导出。最后，我们有一个 Code 部分，其中包含我们唯一函数的实际说明。</p>
+</span></span></code></pre></div><p>请注意，与空模块相比，还有更多的部分。首先，我们有一个类型部分，它定义了一个签名。它提出了一个接受两个 i32 并返回一个 i32 的类型。这是我们的 <code>how_old</code> 方法的签名。该类型没有给出名称，但它仍然可以用于设置期望并在函数配置方面进行验证。</p>
+<p>接下来我们有一个 Function 部分，它将我们的类型（Type 部分中的 <code>type [0]</code>）链接到命名函数。因为我们导出了我们的函数以使其可用于我们的主机环境或其他模块，所以我们看到了内部函数 <code>&lt;how_old&gt;</code> 以名称 <code>how_old</code> 导出。最后，我们有一个 Code 部分，其中包含我们唯一函数的实际说明。</p>
 <p>图 3-2 显示了我们的模块在 WebAssembly Code Explorer<sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup> 中的样子。</p>
 <p>
 
@@ -1165,7 +1165,7 @@
     </figcaption></figure>
 </p>
 <p>红色表示部分边界，但你也可以通过在浏览器中移动部分来获得更多详细信息。例如，导出部分中的紫色字节，如果将鼠标悬停在其中一个字节上，它应该显示导出函数的名称 <code>how_old</code>。你可以在最后的代码部分中通过绿色和蓝色字节查看实际指令。</p>
-<p>如果仔细查看示例 3-2，你会注意到默认情况下我们的变量名没有被引入。<code>wasm-objdump</code> 也强调了这一事实。出于调试目的，你需要在 wat2wasm 命令中指定：</p>
+<p>如果仔细查看例 3-2，你会注意到默认情况下我们的变量名没有被引入。<code>wasm-objdump</code> 也强调了这一事实。出于调试目的，你需要在 wat2wasm 命令中指定：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">&gt; wat2wasm hello.wat -o hellodebug.wasm --debug-names
 </span></span><span class="line"><span class="cl">&gt; wasm-objdump -x hellodebug.wasm
 </span></span><span class="line"><span class="cl">
@@ -1211,9 +1211,9 @@
     </figcaption></figure>
 </p>
 <h2 id="使用模块">使用模块</h2>
-<p>一旦你理解了检查 WebAssembly 模块的静态二进制结构的过程，你将希望继续以更动态的方式处理它。我们已经在一些示例中看到了通过 JavaScript API 实例化模块的基础知识，例如在示例 2-4 中，但是我们还可以做其他事情。</p>
-<p>示例 3-2 中的代码生成一个导出部分，但正如我们在表 3-1 中看到的，还有一个潜在的导入部分，它从宿主环境接收元素。这最终可以包括 Memory 和 Table 实例，正如我们将在后续章节中看到的那样，但现在我们可以将一个函数导入到模块中，使我们能够更直接地与 WebAssembly 的控制台窗口进行通信。请记住，我们仍在整理底层细节，你对这些技术的日常体验可能会处于更高层次。</p>
-<p>看一下示例 3-3，这是我们示例的新版本，它导出了第二个函数。更重要的是，它还导入了一个函数。</p>
+<p>理解了 WebAssembly 模块的静态二进制结构后，你可能希望以更动态的方式处理它。我们已经在一些例中看到了通过 JavaScript API 实例化模块的基础知识，例如在例 2-4 中，但是我们还可以做其他事情。</p>
+<p>例 3-2 中的代码生成一个导出部分，但正如我们在表 3-1 中看到的，还有一个潜在的导入部分，它从主机环境接收元素。这最终可以包括 Memory 和 Table 实例，正如我们将在后续章节中看到的那样，但现在我们可以将一个函数导入到模块中，使我们能够更直接地与 WebAssembly 的控制台窗口通信。请记住，我们仍在整理底层细节，你对这些技术的日常体验可能会处于更高层次。</p>
+<p>看一下例 3-3，这是例 3-2 的新版本，它导出了第二个函数。更重要的是，它还导入了一个函数。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="p">(</span><span class="n">module</span>
 </span></span><span class="line"><span class="cl">    <span class="p">(</span><span class="n">func</span> <span class="err">$</span><span class="n">log</span> <span class="p">(</span><span class="n">import</span> <span class="s">&#34;imports&#34;</span> <span class="s">&#34;log_func&#34;</span><span class="p">)</span> <span class="p">(</span><span class="n">param</span> <span class="n">i32</span><span class="p">))</span> <span class="err">①</span>
 </span></span><span class="line"><span class="cl">
@@ -1223,13 +1223,13 @@
 </span></span><span class="line"><span class="cl">        <span class="n">i32</span><span class="p">.</span><span class="n">sub</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl">    <span class="p">(</span><span class="n">func</span> <span class="err">$</span><span class="n">log_how_old</span> <span class="p">(</span><span class="n">param</span> <span class="err">$</span><span class="n">year_now</span> <span class="n">i32</span><span class="p">)</span> <span class="p">(</span><span class="n">param</span> <span class="err">$</span><span class="n">year_born</span> <span class="n">i32</span><span class="p">)</span> <span class="err">③</span>
-</span></span><span class="line"><span class="cl">       	<span class="n">local</span><span class="p">.</span><span class="n">get</span> <span class="err">$</span><span class="n">year_now</span>
-</span></span><span class="line"><span class="cl">	<span class="n">local</span><span class="p">.</span><span class="n">get</span> <span class="err">$</span><span class="n">year_born</span>
-</span></span><span class="line"><span class="cl">	<span class="n">call</span> <span class="err">$</span><span class="n">how_old</span>
-</span></span><span class="line"><span class="cl">	<span class="n">call</span> <span class="err">$</span><span class="n">log</span>
+</span></span><span class="line"><span class="cl">        <span class="n">local</span><span class="p">.</span><span class="n">get</span> <span class="err">$</span><span class="n">year_now</span>
+</span></span><span class="line"><span class="cl">        <span class="n">local</span><span class="p">.</span><span class="n">get</span> <span class="err">$</span><span class="n">year_born</span>
+</span></span><span class="line"><span class="cl">        <span class="n">call</span> <span class="err">$</span><span class="n">how_old</span>
+</span></span><span class="line"><span class="cl">        <span class="n">call</span> <span class="err">$</span><span class="n">log</span>
 </span></span><span class="line"><span class="cl">    <span class="p">)</span>
 </span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl">    <span class="p">(</span><span class="n">export</span> <span class="s">&#34;how_old&#34;</span> <span class="p">(</span><span class="n">func</span> <span class="n">ow_old</span><span class="p">))</span> <span class="err">④</span>
+</span></span><span class="line"><span class="cl">    <span class="p">(</span><span class="n">export</span> <span class="s">&#34;how_old&#34;</span> <span class="p">(</span><span class="n">func</span> <span class="n">how_old</span><span class="p">))</span> <span class="err">④</span>
 </span></span><span class="line"><span class="cl">    <span class="p">(</span><span class="n">export</span> <span class="s">&#34;log_how_old&#34;</span> <span class="p">(</span><span class="n">func</span> <span class="err">$</span><span class="n">log_how_old</span><span class="p">))</span> <span class="err">⑤</span>
 </span></span><span class="line"><span class="cl"><span class="p">)</span>
 </span></span></code></pre></div><ol>
@@ -1239,7 +1239,7 @@
 <li>像以前一样导出我们的旧函数 <code>how_old</code></li>
 <li>导出我们新的 <code>log_how_old</code> 函数</li>
 </ol>
-<p>如你所见，我们有一个可以在模块中调用的新函数，但我们还不能调用它。我们以前的功能仍然可用，没有变化。我们的新函数调用旧函数来做数学运算，但需要一个名为 <code>log_func</code> 的函数来调用它的结果。为了澄清一些差异，让我们生成 <code>.wasm</code> 输出，然后转储模块结构。</p>
+<p>如你所见，我们有一个可以在模块中调用的新函数，但我们还不能调用它。我们以前的函数仍然可用，没有变化。我们的新函数调用旧函数来做数学运算，但需要一个名为 <code>log_func</code> 的函数来调用它的结果。为了澄清一些差异，让我们生成 <code>.wasm</code> 输出，然后转储模块结构。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">brian@tweezer ~/g/w/s/ch03&gt; wat2wasm hellolog.wat brian@tweezer ~/g/w/s/ch03&gt; wasm-objdump -x hellolog.wasm
 </span></span><span class="line"><span class="cl">    hellolog.wasm:  file format wasm 0x1
 </span></span><span class="line"><span class="cl">    Section Details:
@@ -1258,9 +1258,9 @@
 </span></span><span class="line"><span class="cl">    Code <span class="o">[</span>2<span class="o">]</span>:
 </span></span><span class="line"><span class="cl">     - func <span class="o">[</span>1<span class="o">]</span> <span class="nv">size</span><span class="o">=</span><span class="m">7</span> &lt;how_old&gt;
 </span></span><span class="line"><span class="cl">     - func <span class="o">[</span>2<span class="o">]</span> <span class="nv">size</span><span class="o">=</span><span class="m">10</span> &lt;log_how_old&gt;
-</span></span></code></pre></div><p>这是我们第一次有导入部分的条目。它被定义为具有我们尚未见过的类型。如果你查看类型部分，你会看到我们现在指定了三种类型：一种采用 i32 但不返回任何内容，一种采用两个 i32 参数和一个 i32 返回值，另一种采用两个 A新类型，即 i32，不返回任何内容。</p>
-<p>这些类型中的第一个在我们的导入中定义。我们希望主机环境给我们一个函数，我们可以调用它来接收 i32。这个函数的目的是以某种方式打印出参数，而不是返回任何东西，所以它不需要返回类型。我们希望从我们之前在 JavaScript 端忽略的 importObject 中找到这个函数。第二种和前面一样。第三个是带参数调用我们的 <code>$how_old</code> 函数，但随后会记录，因此它也不需要返回值。Imports 和 Functions 部分显示了函数和签名之间的链接。</p>
-<p>要通过 <code>importObject</code> 提供元素，我们需要一些 HTML 代码，如示例 3-4 所示。</p>
+</span></span></code></pre></div><p>这是我们第一次有导入部分的条目。这是我们尚未见过的类型。如果你查看类型部分，你会看到我们现在指定了三种类型：一种接收一个 i32 但不返回任何内容，一种接收两个 i32 参数和一个 i32 返回值，另一种接收两个 i32，不返回任何内容。</p>
+<p>这些类型中的第一个在我们的导入中定义。我们希望主机环境给我们一个函数，我们可以调用它来接收 i32。这个函数的目的是以某种方式打印出参数，而不返回任何东西，所以它不需要返回类型。我们希望从我们之前在 JavaScript 端忽略的 importObject 中找到这个函数。第二种和前面一样。第三个是带参数调用 <code>$how_old</code> 函数，但随后会记录，因此它也不需要返回值。Imports 和 Functions 部分显示了函数和签名之间的链接。</p>
+<p>要通过 <code>importObject</code> 提供元素，我们需要一些 HTML 代码，如例 3-4 所示。</p>
 <p>例 3-4. 一个 HTML 文件来实例化我们的模块，并通过方法来调用导入对象。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-html" data-lang="html"><span class="line"><span class="cl"><span class="cp">&lt;!doctype html&gt;</span>
 </span></span><span class="line"><span class="cl">
@@ -1288,7 +1288,7 @@
 </span></span><span class="line"><span class="cl">    <span class="p">&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
 </span></span><span class="line"><span class="cl">  <span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
 </span></span><span class="line"><span class="cl"><span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
-</span></span></code></pre></div><p>将示例 3-3 中的 import 语句与该对象的结构进行比较。请注意，有一个 import 名称空间，其中包含一个名为 <code>log_func</code> 的函数。这是我们的 import 语句指定的结构。<code>$log_how_old</code> 函数将它的两个参数压入栈顶，然后调用 <code>$how_old</code> 指令调用我们之前的函数。请记住，此函数从一个参数中减去另一个参数并将结果返回到堆栈顶部。此时，我们不需要将该值压回堆栈； 我们可以简单地调用我们命名为 <code>$log</code> 的导入函数。前一个函数的结果将是这个新调用的参数。花点时间确保你了解参数、返回值和函数之间的关系。</p>
+</span></span></code></pre></div><p>将例 3-3 中的 import 语句与该对象的结构进行比较。请注意，有一个 import 名称空间，其中包含一个名为 <code>log_func</code> 的函数。这是我们的 import 语句指定的结构。<code>$log_how_old</code> 函数将它的两个参数压入栈顶，然后调用 <code>$how_old</code> 指令调用我们之前的函数。请记住，此函数从一个参数中减去另一个参数并将结果返回到堆栈顶部。此时，我们不需要将该值压回堆栈； 我们可以简单地调用我们命名为 <code>$log</code> 的导入函数。前一个函数的结果将是这个新调用的参数。花点时间确保你了解参数、返回值和函数之间的关系。</p>
 <p>如果你复制上一章的 <code>utils.js</code> 文件（它提供了 <code>fetchAnd Instantiate()</code> 函数<sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup>），然后像我们之前所做的那样通过 HTTP 提供这些东西，你就可以加载新的 HTML 文件。最初你不会看到任何东西，因为我们的 <code>log_func</code> 只是将它的参数转储到 <code>console.log()</code>。但是，如果你在浏览器的开发人员工具中查看控制台，你应该会看到类似图 3-4 的内容。</p>
 <p>
 
@@ -1313,15 +1313,15 @@
       图 3-4. 用一个导入的 JavaScript 函数调用我们的新函数的结果
     </figcaption></figure>
 </p>
-<p>如果将 <code>importObject</code> 更改为类似于示例 3-5 的样子，然后在浏览器中重新加载 HTML 文件，你将不会再看到控制台消息；你应该会看到一条弹出式警报消息。显然，我们的 WebAssembly 代码没有任何变化——我们只是从 JavaScript 端传入了一个不同的函数，因此看到了不同的结果。当我们深入研究这个主题时，我们将看到更复杂的交互，但希望你开始了解 WebAssembly 和 JavaScript 代码如何通过导入和导出进行交互。</p>
+<p>如果将 <code>importObject</code> 更改为类似于例 3-5 的样子，然后在浏览器中重新加载 HTML 文件，你将不会再看到控制台消息；你应该会看到一条弹出式警报消息。显然，我们的 WebAssembly 代码没有任何变化——我们只是从 JavaScript 端传入了一个不同的函数，因此看到了不同的结果。当我们深入研究这个主题时，我们将看到更复杂的交互，但希望你开始了解 WebAssembly 和 JavaScript 代码如何通过导入和导出进行交互。</p>
 <p>例 3-5.  同一个 WebAssembly 模块可以用不同的方式实例化和调用</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-javascript" data-lang="javascript"><span class="line"><span class="cl"><span class="kd">var</span> <span class="nx">importObject</span> <span class="o">=</span> <span class="p">{</span> 
 </span></span><span class="line"><span class="cl">  <span class="nx">imports</span><span class="o">:</span> <span class="p">{</span><span class="nx">log_func</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">arg</span><span class="p">)</span> <span class="p">{</span><span class="nx">alert</span> <span class="p">(</span><span class="s2">&#34;You are this old:&#34;</span> <span class="o">+</span> <span class="nx">arg</span> <span class="o">+</span> <span class="s2">&#34;years.&#34;</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">    <span class="p">}</span>
 </span></span><span class="line"><span class="cl">  <span class="p">}</span>
 </span></span><span class="line"><span class="cl"><span class="p">};</span>
-</span></span></code></pre></div><p>实例化模块和调用它们的函数将是你通过 JavaScript API 与它们进行的主要交互，但你还可以使用一些额外的行为。如果你想知道模块导入或导出哪些方法，可以使用 JavaScript API 询问已加载的模块。如果你不调用 <code>utils.js</code> 中的 <code>fetchAndInstantiate()</code> 方法，而是将 HTML 更改为具有示例 3-6 中所示的代码，你将看到如图 3-5 所示的结果。</p>
-<p>示例 3-6. 我们可以使用 JavaScript API 做更多的事情，包括流式编译。</p>
+</span></span></code></pre></div><p>实例化模块和调用它们的函数将是你通过 JavaScript API 与它们进行交互的主要方式，但你还可以添加一些额外的行为。如果你想知道模块导入或导出了哪些方法，可以使用 JavaScript API 询问已加载的模块。如果你不调用 <code>utils.js</code> 中的 <code>fetchAndInstantiate()</code> 方法，而是将 HTML 更改为具有例 3-6 中所示的代码，你将看到如图 3-5 所示的结果。</p>
+<p>例 3-6. 我们可以使用 JavaScript API 做更多的事情，包括流式编译。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-javascript" data-lang="javascript"><span class="line"><span class="cl"><span class="nx">WebAssembly</span><span class="p">.</span><span class="nx">compileStreaming</span> <span class="p">(</span><span class="nx">fetch</span> <span class="p">(</span><span class="s1">&#39;hellolog.wasm&#39;</span><span class="p">))</span>
 </span></span><span class="line"><span class="cl">  <span class="p">.</span><span class="nx">then</span> <span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">mod</span><span class="p">)</span> <span class="p">{</span><span class="kd">var</span> <span class="nx">imports</span> <span class="o">=</span> <span class="nx">WebAssembly</span><span class="p">.</span><span class="nx">Module</span><span class="p">.</span><span class="nx">imports</span> <span class="p">(</span><span class="nx">mod</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span> <span class="p">(</span><span class="nx">imports</span> <span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
@@ -1352,9 +1352,9 @@
       图 3-5. 通过 JavaScript API 查询模块结构
     </figcaption></figure>
 </p>
-<p>一旦我们了解了更多概念并开始使用更高级别的语言来表达我们的行为，WebAssembly 的全部功能就会开始显现<sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>。</p>
-<p>到目前为止，我们一直在使用名为 utils.js 的文件中的代码块，该文件类似于示例 3-7。对于简单的模块，这很好，但是当你的模块变大时，可以消除一些内置延迟。性能不仅指运行时性能，还指加载时性能。</p>
-<p>示例 3-7.  我们一直在以简单的方式实例化模块</p>
+<p>当你了解更多概念，学会使用更高级别的语言来表述后，WebAssembly 的全部功能就会开始显现<sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>。</p>
+<p>到目前为止，我们一直在使用名为 utils.js 的文件中的代码块，该文件类似于例 3-7。对于简单的模块，这很好，但是当你的模块变大时，可以消除一些内置延迟。性能不仅指运行时性能，还指加载时性能。</p>
+<p>例 3-7.  我们一直在以简单的方式实例化模块</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-javascript" data-lang="javascript"><span class="line"><span class="cl"><span class="kd">function</span> <span class="nx">fetchAndInstantiate</span> <span class="p">(</span><span class="nx">url</span><span class="p">,</span> <span class="nx">importObject</span><span class="p">)</span> <span class="p">{</span><span class="k">return</span> <span class="nx">fetch</span> <span class="p">(</span><span class="nx">url</span><span class="p">).</span><span class="nx">then</span> <span class="p">(</span><span class="nx">response</span> <span class="p">=&gt;</span>
 </span></span><span class="line"><span class="cl">    <span class="nx">response</span><span class="p">.</span><span class="nx">arrayBuffer</span> <span class="p">()).</span><span class="nx">then</span> <span class="p">(</span><span class="nx">bytes</span> <span class="p">=&gt;</span>
 </span></span><span class="line"><span class="cl">    <span class="nx">WebAssembly</span><span class="p">.</span><span class="nx">instantiate</span> <span class="p">(</span><span class="nx">bytes</span><span class="p">,</span> <span class="nx">importObject</span><span class="p">)</span>
@@ -1362,8 +1362,8 @@
 </span></span><span class="line"><span class="cl">    <span class="nx">results</span><span class="p">.</span><span class="nx">instance</span>
 </span></span><span class="line"><span class="cl">  <span class="p">);</span>
 </span></span><span class="line"><span class="cl"><span class="p">}</span>
-</span></span></code></pre></div><p>这里的问题是，虽然我们使用 Promises 来避免阻塞主线程，但我们在实例化之前将模块读入 ArrayBuffer 中。在编译模块之前，我们实际上是在等待所有网络传输完成。后 MVP 的首批功能之一是能够在字节仍在网络上传输时支持编译。模块的格式结构适合这种优化，所以不使用它是一种耻辱。</p>
-<p>虽然没有“正确”的方法来实例化你的模块（例如，在某些情况下你可能希望实例化一个模块的多个实例），但在大多数情况下，示例 3-8 中的代码是一种稍微更有效的方法。</p>
+</span></span></code></pre></div><p>这里的问题是，虽然我们使用 Promises 来避免阻塞主线程，但我们需要在实例化之前将模块读入 ArrayBuffer 中。在编译模块之前，我们实际上是在等待所有网络传输完成。MVP 后续的首批功能之一是能够在字节仍在网络上传输时支持编译。模块的格式结构适合这种优化，所以你理应使用它。</p>
+<p>虽然没有“正确”的方法来实例化你的模块（例如，在某些情况下你可能希望实例化一个模块的多个实例），但在大多数情况下，例 3-8 中的代码是一种稍微更有效的方法。</p>
 <p>例 3-8. 大多数情况下实例化模块的推荐方式。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="p">(</span><span class="n">async</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="p">{</span><span class="k">const</span> <span class="n">fetchPromise</span> <span class="o">=</span> <span class="n">fetch</span> <span class="p">(</span><span class="n">url</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">  <span class="k">const</span> <span class="p">{</span><span class="n">instance</span><span class="p">}</span> <span class="o">=</span> <span class="n">await</span> <span class="n">WebAssembly</span><span class="p">.</span><span class="n">instantiateStreaming</span> <span class="p">(</span><span class="n">fetchPromise</span><span class="p">);</span> <span class="c1">// Use the module
@@ -1371,17 +1371,17 @@
 </span></span><span class="line"><span class="cl">  <span class="n">console</span><span class="p">.</span><span class="n">log</span> <span class="p">(</span><span class="n">result</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl"><span class="p">})();</span>
 </span></span></code></pre></div><p>请注意，我们不是在创建 <code>ArrayBuffer</code>； 我们将 Promise 从 <code>fetch()</code> 方法传递给 WebAssembly 对象的 <code>instantiateStreaming()</code> 方法。这允许基线编译器在它们出现在网络上时开始编译函数。在大多数情况下，代码的编译速度快于它通过网络传输的速度，因此在你下载完代码时，它应该已经过验证并可以使用了。当 JavaScript 完成下载时，通常是验证过程开始的时候，因此我们看到启动时间有所改善。</p>
-<p>目前没有官方的方法来缓存 WebAssembly 模块，但这也是一种改善启动时间的不显眼的方法。缓存控制和其他网络工件处理将避免不必要地重新下载模块（例如，如果它们已更新）。</p>
+<p>目前没有官方的方法来缓存 WebAssembly 模块，但这也是一种改善启动时间的不显眼的方法。缓存控制和其他网络工件处理可避免不必要地重新下载模块（例如，如果它们已更新）。</p>
 <h2 id="未来与-es6-模块集成">未来与 ES6 模块集成</h2>
-<p>正如我们所见，虽然能够通过 JavaScript API 工作显然很有用，但这样做是低级和重复的，这就是我们将其放在可重用实用程序脚本文件中的原因。将来，我们希望从 HTML 中使用 WebAssembly 模块会更容易，因为它们将作为 ES6 模块提供。</p>
+<p>正如我们所见，虽然通过 JavaScript API 工作很有用，但这样做是低级和重复的，这就是我们将其放在可重用实用程序脚本文件中的原因。将来，我们希望在 HTML 中使用 WebAssembly 模块会更容易，因为它们将作为 ES6 模块提供。</p>
 <p>这有点棘手，因为顶层需要异步处理，以及模块的图形是如何在构建、实例化和评估的三个阶段加载的。二进制 WebAssembly 和基于 JavaScript 的模块的验证过程、编译发生的时间以及模块环境记录的遍历和链接方式存在细微差别。</p>
 <p>有人提议增加对该平台的支持，以消除这些差异。在撰写本书时，我们正处于提案过程的第二阶段<sup id="fnref:6"><a href="#fn:6" class="footnote-ref" role="doc-noteref">6</a></sup>。Link Clark <a href="https://www.youtube.com/watch?v=qR_b5gajwug&amp;ab_channel=MozillaHacks" target="_blank" rel="noopener">在 YouTube 上</a>很好地介绍了它的复杂性。</p>
 <p>我们的目标是引入一种声明形式，如例 3-9 所示。</p>
 <p>例 3-9. 用于加载 WebAssembly 模块的建议声明形式</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-javascript" data-lang="javascript"><span class="line"><span class="cl"><span class="kr">import</span> <span class="p">{</span><span class="nx">something</span><span class="p">}</span> <span class="nx">from</span> <span class="s2">&#34;./myModule.wasm&#34;</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl"><span class="nx">something</span> <span class="p">();</span>
-</span></span></code></pre></div><p>这不仅有利于简化 WebAssembly 模块的实例化，还有助于它们参与 JavaScript 模块的依赖关系图。如果不区分它们作为依赖项的管理方式，开发人员将更容易将以多种语言表达的行为混合为一个完整的解决方案。</p>
-<p>该提案设计简洁，支持良好，但涉及 HTML 规范、ES6 模块规范、实现、JavaScript 捆绑器和更大的 Node.js 社区的精心编排。我的猜测是，用不了多久我们就会看到该提案的进展。</p>
+</span></span></code></pre></div><p>这不仅有利于简化 WebAssembly 模块的实例化，还有助于它们参与 JavaScript 模块的依赖关系图。如果不区分它们作为依赖项的管理方式，开发人员可以更容易将以多种语言表达的行为混合为一个完整的解决方案。</p>
+<p>该提案设计简洁，支持良好，但涉及 HTML 规范、ES6 模块规范、实现、JavaScript 捆绑器和 Node.js 社区的通力合作。我猜用不了多久我们就会看到该提案的进展。</p>
 <p>现在我们已经了解了 WebAssembly 二进制文件的结构元素，你应该可以轻松地手动和以编程方式检查你自己的和第三方的模块。下一步是查看 WebAssembly 模块的更多动态元素。我们将首先关注 Memory 实例，以模拟更传统的编程运行时中连续内存块的功能。</p>
 <h2 id="注释">注释</h2>
 <div class="footnotes" role="doc-endnotes">
@@ -1444,7 +1444,7 @@
           
 
         <div class="body-footer">
-          <p>最近更新于 2023-02-24</p>
+          <p>最近更新于 2023-02-27</p>
 
           
 
