@@ -14,11 +14,11 @@ type: book # Do not modify
 >
 > —— 匿名
 
-这开始了我们讨论中的一个转折点。到目前为止，我们一直专注于 WebAssembly 和它的相关工具和技术群。如你所见，这是探索平台的有用方法，但是开发新软件的低效率方法。高级编程语言早已使我们的专业超越了低级指令集的工作细节。用句法简洁、语义丰富的语言来表达逻辑，更容易、更有效率。
+本书的转折点来了。到目前为止，我们一直专注于 WebAssembly 相关工具和技术栈。这是探索平台的方法有用，但是作为开发工具效率低下。高级编程语言早已使我们的专业超越了低级指令集的工作细节。用句法简洁、语义丰富的语言来表达逻辑，更容易、更有效率。
 
-要真正体会到 WebAssembly 所提供的东西，我们需要考虑许多可以编译成它的源语言。问题是，并不是每个问题都能用 JavaScript 来表达，所以可以选择使用另一种语言，因为它的性能、表达的清晰性，或者仅仅是重复使用现有的代码，都是很有吸引力的。
+要真正体会到 WebAssembly 所提供的东西，我们需要考虑可编译为 WebAssembly 的源语言。问题是，并不是每个问题都能用 JavaScript 来表达，所以可以选择使用另一种语言，因为它的性能、表达的清晰性，或者仅仅是重复使用现有的代码，都是很有吸引力的。
 
-C 语言是世界上最重要和最广泛使用的编程语言之一 [^1]。我在高中时开始在我的 Atari ST 电脑上玩它。我在《计算机语言》杂志上读到过它，一个朋友给了我一本开创性的、同名的书籍 《[C 编程语言](https://en.wikipedia.org/wiki/The_C_Programming_Language)》作者是 Brian Kernighan 和已故伟大的 Dennis Ritchie [^2]。
+C 语言是世界上最重要和最广泛使用的编程语言之一 [^1]。我在高中时就开始在 Atari ST 电脑上使用它。我在《计算机语言》杂志上读到过它，一个朋友给了我一本开创性的、同名的书籍 《[C 编程语言](https://en.wikipedia.org/wiki/The_C_Programming_Language)》作者是 Brian Kernighan 和已故伟大的 Dennis Ritchie [^2]。
 
 有大量的 C 语言软件可以使用，其中大部分可以简单地重新编译成 WebAssembly。我们将在[第 6 章](../apply-wasm-lagacy-code-in-the-browser/)讨论现有库的移植问题。 但现在我们将学习一点 C 语言，和使用它来改进我们迄今为止所尝试的一些工作。
 
@@ -26,27 +26,34 @@ C 语言是世界上最重要和最广泛使用的编程语言之一 [^1]。我�
 
 C 语言函数在很多方面与 JavaScript 函数相似。它有自己的词法结构，并不附属于像类或结构那样的大单元。它可以接受也可以不接受参数。然而，它只能返回一个单一的值，并且不支持异常，所以错误处理往往比 C++、Java 或 JavaScript 更原始一些。
 
-在例 5-1 中，有一个 C 语言实现了我们的年龄计算函数。 注意到它是多么的简单，可以了解正在发生的事情。这个例子甚至有一些基本的错误处理方法来处理参数错误的情况，即出生年份大于当前年份。除非有来自未来的穿越者出现，否则这种情况不应该发生，我们应该处理它。更高级别的语言只是更容易被人类用来表达我们业务逻辑。
+在例 5-1 中，有一个 C 语言实现了我们的年龄计算函数。这个程序很简单。这个例子甚至有一些基本的错误处理方法来处理参数错误的情况，即出生年份大于当前年份的情况。除非有来自未来的穿越者出现，否则这种情况不应该发生，我们应该处理它。更高级别的语言只是更容易来表达业务逻辑。
 
 例 5-1. 一个简单的 C 语言程序
 
 ```c
 #include <stdio.h>
 
-int howOld (int currentYear, int yearBorn) {
+int howOld( int currentYear, int yearBorn )
+{
+	int retValue = -1;
 
-  int retValue = -1;
+	if ( yearBorn <= currentYear )
+	{
+		retValue = currentYear - yearBorn;
+	}
 
-  if (yearBorn <= currentYear) {retValue = currentYear - yearBorn;}
-
-  return retValue;
+	return(retValue);
 }
 
-int main () {int age = howOld (2021, 2000);
 
-  if (age>= 0) {printf ("You are % d!\n", age);
-  } else {printf ("You haven't been born yet.");
-  }
+int main()
+{
+	int age = howOld( 2021, 2000 );
+
+	if ( age >= 0 )
+	{
+		printf( "You are % d!\n", age );
+	} else { printf( "You haven't been born yet." ); }
 }
 ```
 
@@ -80,7 +87,7 @@ brian@tweezer ~/g/w/s/ch05> file a.out
 a.out: Mach-O 64-bit executable x86_64
 ```
 
-这个程序不能在 Windows 或 Linux 机器上运行。如果没有新的仿真层，它甚至不能在苹果新的基于 ARM 的机器上运行。这是因为 CPU 有一个指令集，涉及到将数值加载到寄存器中，在 CPU 上调用功能，并将结果存储在内存中。重新运行 clang 以支持 duce 汇编语言输出，而不是二进制可执行文件，向你展示了这一架构的情况。
+这个程序不能在 Windows 或 Linux 机器上运行。如果没有新的仿真层，它甚至不能在苹果新的基于 ARM 的机器上运行。这是因为 CPU 有一个指令集，涉及到将数值加载到寄存器中，在 CPU 上调用功能，并将结果存储在内存中。重新运行 clang 以支持 duce 汇编语言输出，而不是二进制可执行文件：
 
 ```bash
 brian@tweezer ~/g/w/s/ch05> clang -S howold.c
@@ -168,7 +175,7 @@ L_.str.1:                               ## @.str.1
 
 我们将 Clang 作为 C 编译器例子的主要原因是，它有一个基于 LLVM 项目的现代、可插拔的架构[^4]。在现代世界中，越来越多的竞争性指令集（如 x86、ARM、RISC-V）、新的编程语言（如 Rust、Julia、Swift），以及无论何种源语言都希望重复使用通用的优化，这一点是非常重要的。
 
-在图 5-1 中，你可以看到这是一过程包括三个环节。源代码被一个前端处理步骤解析。这将是特定于语言的。这个 步骤的输出是一个中间表示（IR），一个假设的但不是真实的机器的指令集。它以一种可以被优化层操作的格式捕获了所表达的逻辑。这个过程涉及到应用一个或多个转换 ，这些转换应该具有使代码更快、更有效的效果，纯粹是基于表达的逻辑。循环可以被展开[^5]。不使用的代码可能被删除，涉及常量的表达式可能被编译器评估，因此它们不需要在运行时被评估，等等。最后一步是释放出一套本地的针对一个特定的运行时间的指令。对于我们的目的，这显然是 Mach-O x86 64 位架构。
+在图 5-1 中，你可以看到这一过程包括三个环节。源代码被一个前端处理步骤解析。这将是特定于语言的。此步骤的输出是一个中间表示（IR），一个假设的但不是真实的机器的指令集。它以一种可以被优化层操作的格式捕获了所表达的逻辑。这个过程涉及到应用一个或多个转换 ，这些转换可以使代码更快、更有效。循环可以被展开[^5]。不使用的代码可能被删除，涉及常量的表达式可能被编译器评估，因此它们不需要在运行时评估，等等。最后一步是释放出一套本地的针对一个特定的运行时的指令。对于我们的目的，这显然是 Mach-O x86 64 位架构。
 
 ![图 5-1. LLVM 的可插拔编译器架构](../images/f5-1.png)
 
@@ -176,9 +183,9 @@ L_.str.1:                               ## @.str.1
 
 你通常可以通过一个被称为交叉编译的过程，生成一个与你的计算机的本地运行时不同的后端。这对于针对可能没有安装开发者工具链的嵌入式系统很有用。这在持续集成和交付系统中也很有用，你可以从同一个构建环境中针对多个平台构建。否则，你可能需要为每个目标平台建立一个单独的构建环境。
 
-Emscripten 工具链是为 asm.js 工作而开发的，它基于 LLVM 和 Clang，所以它只需要发射可优化的 JavaScript 子集，以允许 C 程序在浏览器上运行。当 WebAssembly 指令集和平台最终被定义时，从本质上讲，只需要添加一个 WebAssembly 后端来代替它。我们将在下一章介绍这个工具链，但希望你能充分了解高级语言是如何被编译成一种通用的形式，然后再进一步转化成一种有效的本地表示。
+Emscripten 工具链是为 asm.js 工作而开发的，它基于 LLVM 和 Clang，所以它只需要生成可优化的 JavaScript 子集，以允许 C 程序在浏览器上运行。当 WebAssembly 指令集和平台最终被定义时，从本质上讲，只需要添加一个 WebAssembly 后端来代替它。我们将在下一章介绍这个工具链，但希望你能充分了解高级语言是如何被编译成一种通用的形式，然后再进一步转化成一种有效的本地表示。
 
-我们的 LLVM 安装应该原生支持 WebAssembly 作为后端。为了仔细检查，请尝试以下方法。
+我们的 LLVM 安装原生支持 WebAssembly 后端。你可以使用下面的方式来检查：
 
 ```bash
 brian@tweezer ~/g/w/s/ch05> llc --version LLVM (http://llvm.org/):
@@ -208,7 +215,7 @@ brian@tweezer ~/g/w/s/ch05> llc --version LLVM (http://llvm.org/):
         xcore      - XCore
 ```
 
-我编辑了支持的目标列表的长度（它要长得多！），但仍想表明大多数主要平台都被支持。为了简化我们的直接使用，我打算用年龄计算函数取代程序中独立的`main ()` 功能，如例 5-3 所示。
+我截断了支持的目标列表（它要长得多！），只要是为了表明大多数主要平台支持。为了简化，我打算用年龄计算函数取代程序中独立的 `main ()` 功能，如例 5-3 所示。
 
 例 5-3. 只是 howOld 函数
 
@@ -229,9 +236,9 @@ int howOld (int currentYear, int yearBorn) {
 > clang --target=wasm32 -nostdlib -Wl,--no-entry -Wl,--export-all howold2.c -o howold.wasm
 ```
 
-`--target=wasm32` 指令针对 32 位 WebAssembly 平台。`--nostdlib` 指令告诉它不要与标准库链接，因为我们最初并不打算在一个可以直接使用该函数的地方（例如，浏览器）运行该函数。`--not-entry` 和 `--export-all` 指令告诉链接器不要期望有 `main ()` 函数，并保留所有的函数用于导出目的。如果没有后者的提示，优化过程可能会消除未使用的函数，因为在技术上没有任何东西在调用它们。`-o howold.wasm` 命名了输出文件。
+`--target=wasm32` 指令针对 32 位 WebAssembly 平台。`--nostdlib` 指令告诉它不要与标准库链接，因为我们并不打算在一个可以直接使用该函数的地方（例如，浏览器）运行该函数。`--not-entry` 和 `--export-all` 指令告诉链接器不要期望有 `main ()` 函数，并保留所有的函数用于导出目的。如果没有后者的提示，优化过程可能会消除未使用的函数，因为在技术上没有任何东西在调用它们。`-o howold.wasm` 命名了输出文件。
 
-我们剩下的是一个工作的 Wasm 模块，我们知道如何从前面的章节中探索和使用。文件中有很多新的噪音，但基本原理仍然是一样的。我们有我们的类型、函数和内存，以及各种内存管理细节，我们现在将忽略这些细节：
+这将产生一个可用的 Wasm 模块，通过学习前面的章节你应该知道如何使用它。文件中有很多噪音，但基本原理仍然是一样的。我们有类型、函数和内存，以及各种内存管理细节，现在我们将忽略这些细节：
 
 ```bash
 brian@tweezer ~/g/w/s/ch05> wasm-objdump -x howold.wasm 
@@ -279,7 +286,7 @@ Section Details:
      - name: "producers"
 ```
 
-在例 5-4 中，我们使用新模块来计算基于 HTML 输入范围设置的年龄。这显然不是一个我们必须用 C 语言编写的函数，但我们暂时让它保持简单。我们有一个范围 `<input>` 元素，一旦 WebAssembly 模块被加载，它的最大值就被设置为当前年份。我们任意地将最小值设置为过去的 100 年。我们有一个函数叫 updateLabels，当值发生变化时设置我们元素的值，另一个函数是当滑块值发生变化时重新计算某人的年龄。监听器函数调用我们模块，用 currentYear 和滑块的当前值来计算差异。
+在例 5-4 中，我们使用新模块来计算基于 HTML 输入范围设置的年龄。这显然不是一个我们必须用 C 语言编写的函数，但我们暂时让它保持简单。我们有一个范围 `<input>` 元素，一旦 WebAssembly 模块被加载，它的最大值就被设置为当前年份。我们任意地将最小值设置为过去的 100 年。我们有一个函数叫 `updateLabels`，当值发生变化时设置元素的值，另一个函数是当滑块值发生变化时重新计算某人的年龄。监听器函数调用我们模块，用 `currentYear` 和滑块的当前值来计算差异。
 
 例 5-4. 在 HTML 中使用 howOld 函数
 
@@ -334,13 +341,13 @@ Section Details:
 
 ![图 5-2. 我们用于计算某人年龄的 HTML 应用程序](../images/f5-2.png)
 
-## 事情变得复杂
+## 开始变得复杂
 
-现在你已经看到了用 WebAssembly 使用 C 语言的基本情况，实际上我们并没有使用多少语言。我给你看了一个简单的例子，把几个数字传给一个只返回一个数字的函数。这与我们到目前为止所做的事情没有什么区别。
+现在你已经看到了用 WebAssembly 使用 C 语言的基本情况，实际上我们并没有写多少代码。我给你看了一个简单的例子，把几个数字传给一个只返回一个数字的函数。这与我们到目前为止所做的事情没有什么区别。
 
-更复杂的 C 语言程序将很难很简单地映射到你所接触的平台的数量上。在我们的 `"Hello, World!"` 程序方面，我们已经提出了一个问题：在浏览器中，程序没有 `printf ()` 函数可用。还有一个问题，就是 C 语言程序的结构以及内存的分配和清理方式。在我们探索的领域，将各种编译的软件文件连接在一起的过程也是根本不同的。
+更复杂的 C 语言程序将很难很简单地映射到你接触的所有平台上。比如我们的 `"Hello, World!"` 程序，有一个问题：在浏览器中，程序没有 `printf ()` 函数可用。还有一个问题，就是 C 语言程序的结构以及内存的分配和清理方式。在我们探索的领域，将各种编译后的程序链接在一起的过程也是根本不同的。
 
-好消息是，这些问题中的大多数可以通过工具和运行时平台来处理。坏消息是，这些细节很快就变得相当复杂。如果你以前从未做过任何 C 语言编程，会有很多新的想法。这本书不能教你所有的东西，但我将努力强调这种语言和 WebAssembly 之间的具体互动 [^6]。
+好消息是，这些问题中的大多数可以通过工具和运行时平台来处理。坏消息是，这些细节很快就变得相当复杂。如果你从未写过 C 语言程序，可能会有很多疑问。这本书不能教你所有的东西，但我将努力强调这种语言和 WebAssembly 之间的具体互动 [^6]。
 
 想象一下一个简单的函数，它不需要任何参数，只需要返回一个数组的总和。例 5-5 就有这样一个例子。忍耐一下吧，我暂时保持它的简单性。在这段代码中，我们没有参数，编译器可以知道数组需要多大，因为我们用前 10 位数字初始化了它。
 
@@ -358,7 +365,7 @@ int addArray () {
 }
 ```
 
-如果我们试图编译这个程序，我们可能会遇到一个警告，因为 Clang 希望有一个 `main ()` 程序。记住，这是操作系统知道从哪里开始的方法，正如我们在 [第 3 章](../wasm-modules/) 中讨论的那样。 因为它找不到这个名字的方法，所以它不能把所有的东西连接成一个独立的运行时。
+如果我们试图编译这个程序，我们可能会遇到一个警告，因为 Clang 希望有一个 `main ()` 程序。这样操作系统才知道从哪里开始，正如我们在[第 3 章](../wasm-modules/)中讨论的那样。因为它找不到这个名字的方法，所以它不能把所有的东西连接成一个独立的运行时。
 
 ```bash
 brian@tweezer ~/g/w/s/ch05> clang simple.c -o simple.o 
@@ -369,7 +376,7 @@ ld: symbol (s) not found for architecture x86_64
 clang-11: error: linker command failed with exit code 1 (use -v to see invocation)
 ```
 
-没问题。这是个很容易解决的问题。我们可以简单地告诉 Clang 编译代码，并使用 `-c` 选项告诉它不要链接。
+没问题。这是问题很容易解决。我们可以简单地告诉 Clang 编译代码，并使用 `-c` 选项告诉它不要链接。
 
 ```bash
 brian@tweezer ~/g/w/s/ch05> clang -c simple.c -o simple.o brian@tweezer ~/g/w/s/ch05> ls -laF simple.*
@@ -388,9 +395,9 @@ brian@tweezer ~/g/w/s/ch05> nm -a simple.o
     00000000000000a0 s l___const.addArray.array
 ```
 
-这在一开始可能会让人困惑，但通过一些 解释，思路应该足够清晰。我们的函数，`addArray ()` 在对象文件中被定义为文本段符号。三个带有 U 符号类型的项目表示它们是未定义的。这些特殊的符号指的是一些出于安全考虑而自动链接的缓冲区溢出保护方法，以及一个将内存从一个位置复制到另一个位置的函数。这些函数的定义将被要求使代码可执行，但这是链接阶段和像 libc 这样的可重用库所提供的。
+一开始你可能会让人困惑，但是通过我的解释，你的思路应该会清晰。我们的函数 `addArray ()` 在对象文件中被定义为文本段符号。三个带有 U 符号类型的项目表示它们是未定义的。这些特殊的符号指的是一些出于安全考虑而自动链接的缓冲区溢出保护方法，以及一个将内存从一个位置复制到另一个位置的函数。这些函数的定义将被要求使代码可执行，但这是链接阶段和像 libc 这样的可重用库所提供的。
 
-我们最终得到的是一个不完整的可执行文件，但却是一个正确形成的对我们函数的二进制表达。如果我们提供一个 `main ()` 方法并链接可执行文件，我们就可以演示它是如何工作的。在例 5-6 中，我们的函数被驱动程序调用。
+我们最终得到的是一个不完整的可执行文件，但却是一个正确形成的对我们函数的二进制表达。如果我们提供一个 `main ()` 方法并链接可执行文件，我们就可以演示它是如何工作的。在例 5-6 中，驱动程序调用我们的函数。
 
 例 5-6. 一个 `main ()` 方法来调用我们的函数
 
@@ -399,15 +406,15 @@ brian@tweezer ~/g/w/s/ch05> nm -a simple.o
 
 extern int addArray ();
 
-int main () {int sum = addArray ();
-
+int main () {
+  int sum = addArray ();
   printf ("The array sum is: % d\n", sum);
 }
 ```
 
-注意，我们必须告诉编译器关于 `addArray ()` 函数的定义，因为它没有在这个文件中定义。extern 关键字提供了一个承诺，即会有一个以这个名字命名的函数，不需要参数，并返回一个可用的整数。因此，把这个函数的结果分配给一个叫做 sum 的整数变量是可以的。然后将其传递给`printf ()` 函数，在那里它被格式化为对人友好的输出信息，表明累积的总和。
+注意，我们必须告诉编译器关于 `addArray ()` 函数的定义，因为它没有在这个文件中定义。extern 关键字提供了一个承诺，即会有一个以这个名字命名的函数，不需要参数，并返回一个可用的整数。因此，把这个函数的结果分配给一个叫做 sum 的整数变量是可以的。然后将其传递给 `printf ()` 函数，在那里它被格式化为对人友好的输出信息，表明累加的值。
 
-为了构建可执行文件，我们编译了 `simplemain.c` 和 `simple.c` 文件，并将结果存储在一个名为 simplemain 的可执行文件中。因为我们没有包括 `- c` 选项，所以它确实参与了链接器。因为我们提供了 `main ()` 方法的定义，所以它不再报错了。
+为了构建可执行文件，我们编译了 `simplemain.c` 和 `simple.c` 文件，并将结果存储在一个名为 `simplemain` 的可执行文件中。因为我们没有包括 `-c` 选项，所以它确实参与了链接器。因为我们提供了 `main ()` 方法的定义，所以它不再报错了。
 
 ```bash
 brian@tweezer ~/g/w/s/ch05> clang simplemain.c simple.c -o simplemain 
@@ -431,11 +438,11 @@ brian@tweezer ~/g/w/s/ch05> nm -a simplemain
                      U dyld_stub_binder
 ```
 
-现在我们有了一个工作程序，让我们回到我们的函数，如例 5-5。这是因为我们使用了一个字面语法来初始化数组。我们没有指定数组需要多大，因为编译器可以计算出来。在内存中，它已经分配了足够的空间来容纳这么多的整数。这个分配是在堆栈中完成的，所以当我们从函数中返回时，没有必要进行额外的清理。我们最终在内存中得到了一个足够大的位置来存储我们的数字，以进行求和，如图 5-3。
+现在我们有了一个可用的程序，回到我们的函数，如例 5-5。这是因为我们使用了一个字面语法来初始化数组。我们没有指定数组需要多大，因为编译器可以计算出来。在内存中，它已经分配了足够的空间来容纳这么多的整数。这个分配是在堆栈中完成的，所以当我们从函数中返回时，没有必要进行额外的清理。我们最终在内存中得到了一个足够大的位置来存储我们的数字，以进行求和，如图 5-3。
 
-![图 5-3. C 语言中的数组只是一个命名的内存部分，存储着我们的数据](../images/f5-3.png)
+![图 5-3. C 语言中的数组只是一个命名的内存部分，存储着我们的数据。](../images/f5-3.png)
 
-如果我们告诉编译器它需要多大，但又给它比这更多的数字，会发生什么？在例 5-7 中，我们告诉编译器我们只希望数组中有 5 个整数，但是又给它 10 个整数。这在某些圈子里被称为 blivet [^8]。通过下面的讨论，我希望告诉你，当你对代码进行编辑时，编译器如何通过对你的错误提供反馈来帮助你得到正确的解决方案。这发生在我们尝试运行代码之前，这通常是我们在解释型语言中发现问题的地方。
+如果我们告诉编译器它需要多大，但又给它比这更多的数字，会发生什么？在例 5-7 中，我们告诉编译器我们只希望数组中有 5 个整数，但是又给它 10 个整数。这在某些领域里被称为 blivet [^8]。通过下面的讨论，我想说的是，当你编辑代码时，编译器如何提供问题反馈来帮助我们制定解决方案。这发生在我们尝试运行代码之前，这通常是我们在解释型语言中发现问题的地方。
 
 例 5-7. 我们的函数的一个破损版本
 
@@ -449,7 +456,7 @@ int addArray () {
 }
 ```
 
-幸运的是，这对编译器来说也是很容易发现的。它将指出我们正在犯傻，并给我们一个警告。
+幸运的是，编译器很容易发现这个问题。它将指出我们正在犯傻，并给出警告：
 
 ```bash
 brian@tweezer ~/g/w/s/ch05> clang -c simple.c -o simple.o 
@@ -458,17 +465,18 @@ brian@tweezer ~/g/w/s/ch05> clang -c simple.c -o simple.o
 1 warning generated.
 ```
 
-如果我们想从我们的函数中返回一个数组，会发生什么？在例 5-8 中，我们试图这样做，但很快就发现它不会成功。
+如果我们想从函数中返回一个数组，会发生什么？在例 5-8 中，我们试图这样做，但很快就发现会失败。
 
 例 5-8. 尝试从一个函数中返回一个数组，但不成功
 
 ```c
-int [] generateArray () {int array []={0,1,2,3,4,5,6,7,8,9}; 
+int [] generateArray () {
+  int array []={0,1,2,3,4,5,6,7,8,9}; 
   return array;
 }
 ```
 
-尽管我们所做的似乎很合理，但编译器再次通知我们做得不对。
+尽管我们所做的似乎很合理，但编译器再次通知我们做得不对：
 
 ```bash
 brian@tweezer ~/g/w/s/ch05> clang -c simple2.c -o simple2.o
@@ -488,7 +496,7 @@ simple2.c:3:10: warning: address of stack memory associated with local variable
 2 warnings and 2 errors generated.
 ```
 
-数组名称是 C 语言中的特殊变量，它们是内存中存储这些数值的连续块的地址的占位符。我们可以引入一个指针， 一个整数，并把它分配到数组的起始位置。为了访问该位置的值，我们必须使用解除引用操作符 *。
+数组名称是 C 语言中的特殊变量，它们是内存中存储这些数值的连续块的地址的占位符。我们可以引入一个指针，一个整数，并把它分配到数组的起始位置。为了访问该位置的值，我们必须使用解除引用操作符 `*`。
 
 在例 5-9 中，你可以看到我们定义了一个指向整数的指针并将数组地址分配给它。当我们打印出 a 时，我们使用一个特殊的格式化结构 `% p` 来表示这是一个内存引用。
 
@@ -497,7 +505,8 @@ simple2.c:3:10: warning: address of stack memory associated with local variable
 ```bash
 #include <stdio.h>
 
-void generateArray () {int array [] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+void generateArray () {
+  int array [] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   int * a = array;
   printf ("a is % p\n", a);
   printf ("The first value is: % d\n", *a);
@@ -505,13 +514,14 @@ void generateArray () {int array [] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   printf ("The third value is: % d\n", *(a + 2));
 }
 
-int main () {generateArray ();
+int main () {
+  generateArray ();
 }
 ```
 
-数组中的第一个值位于数组的开头，所以我们可以用 * a 来访问它。第二个整数位于一个内存地址之上，所以我们在取消引用之前在数组的基数上加一。第三个值加二。
+数组中的第一个值位于数组的开头，所以我们可以用 `* a` 来访问它。第二个整数位于一个内存地址之上，所以我们在取消引用之前在数组的基数上加一。第三个值加二。
 
-编译我们的程序并运行它，可以看到我们所期望的输出。你的值为 a 作为一个地址不太可能是相同的，但它看起来应该是类似的。
+编译运行它，可以看到我们所期望的输出。a 的地址不太可能是相同的，但它看起来应该是类似的。
 
 ```bash
 brian@tweezer ~/g/w/s/ch05> clang simple3.c -o simple3 brian@tweezer ~/g/w/s/ch05> ./simple3
@@ -521,18 +531,20 @@ The second value is: 1
 The third value is: 2
 ```
 
-编译器之所以对我们的代码报错，是因为在例 5-8 你不能像我们尝试的那样返回一个数组。相反，你必须返回一个指针。我们再一次尝试在例 5-10 来返回我们的数组。
+编译器之所以报错，是因为在例 5-8 你不能像我们尝试的那样返回一个数组。相反，你必须返回一个指针。我们再一次尝试在例 5-10 来返回我们的数组。
 
 例 5-10. 又一次尝试从一个函数中返回一个数组，但未获成功
 
 ```c
 #include <stdio.h>
 
-int * generateArray () {int array [] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+int * generateArray () {
+  int array [] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   return array;
 }
 
-int main () {int * a = generateArray ();
+int main () {
+  int * a = generateArray ();
   printf ("a is % p\n", a);
   printf ("The first value is: % d\n", *a);
   printf ("The second value is: % d\n", *(a + 1));
@@ -554,7 +566,7 @@ simple4.c:5:10: warning: address of stack memory associated with local variable 
 
 这就是为什么我们需要在堆上分配内存的能力。它将一直有效，直到我们告诉 C 语言运行时我们不再需要它了。在堆上分配内存的最简单方法是使用 `malloc ()` 函数。
 
-我们终于有了一个工作的代码样本，在例 5-11 中的 `malloc ()` 函数是由标准库提供的，所以我们在它的定义中加入了另一个头文件。我们需要告诉这个函数要分配多少内存，所以我们使用一个整数的某个倍数。好消息是，我们现在也可以创建任意大的数组。你可以看到在这里我们把大小翻倍到 20，然后遍历 0 到 19 之间的数字来填充数组。最后返回结果，并将其在 `main ()` 捕捉为一个 `int *` 。这就像我们在例子 5-9 中的 `int *` 一样。 尽管我们现在指向的是堆而不是栈。
+我们终于有了一个有效的代码样本，在例 5-11 中的 `malloc ()` 函数是由标准库提供的，所以我们在它的定义中加入了另一个头文件。我们需要告诉这个函数要分配多少内存，所以我们使用一个整数的某个倍数。好消息是，我们现在也可以创建任意大的数组。你可以看到在这里我们把大小翻倍到 20，然后遍历 0 到 19 之间的数字来填充数组。最后返回结果，并将其在 `main ()` 捕捉为一个 `int *` 。这就像我们在例子 5-9 中的 `int *` 一样。 尽管我们现在指向的是堆而不是栈。
 
 例 5-11. 一个成功的（但仍有缺陷的）尝试从一个函数中返回一个数组的例子
 
@@ -562,14 +574,17 @@ simple4.c:5:10: warning: address of stack memory associated with local variable 
 #include <stdio.h>
 #include <stdlib.h>
 
-int * generateArray () {int * array = (int *) malloc (sizeof (int) * 20);
-  for (int i = 0; i < 20; i++) {array [i] = i;
+int * generateArray () {
+  int * array = (int *) malloc (sizeof (int) * 20);
+  for (int i = 0; i < 20; i++) {
+    array [i] = i;
   }
 
   return array;
 }
 
-int main () {int * a = generateArray ();
+int main () {
+  int * a = generateArray ();
   printf ("a is % p\n", a);
   printf ("The first value is: % d\n", *a);
   printf ("The second value is: % d\n", *(a + 1));
@@ -577,7 +592,7 @@ int main () {int * a = generateArray ();
 }
 ```
 
-编译和运行我们的新程序终于给我们带来了一些快乐：
+编译和运行新程序终于给我们带来了一些快乐：
 
 ```bash
 brian@tweezer ~/g/w/s/ch05> clang simple5.c -o simple5 brian@tweezer ~/g/w/s/ch05> ./simple5
@@ -587,13 +602,13 @@ The second value is: 1
 The third value is: 2
 ```
 
-然而，在你太舒服之前，我们的程序中仍然有一个缺陷。因为我们打印出结果并退出，这不是一个大问题，但它是那种让 C 程序员（和他们的用户）发疯的问题。我们忘了释放我们所分配的内存！"。如果这是一个服务器或一个长期运行的程序，并且我们多次调用我们的函数，我们可能最终会耗尽内存。
+然而，我们的程序中仍然有一个缺陷。尽管我们打印出结果并退出，这不是一个大问题，但它是那种让 C 程序员（和他们的用户）发疯的问题。我们忘了释放我们所分配的内存！如果这是一个服务器或一个长期运行的程序，并且多次调用我们的函数，最终可能会耗尽内存。
 
-为了解决这个问题，我们只需要调用 `free ()` 函数来告诉运行时我们已经用完了这些内存。一旦我们这样做，我们就不能再碰它了。这突出了你在用 C 语言编写程序时需要考虑的许多问题中的一部分：
+为了解决这个问题，我们只需要调用 `free ()` 函数来告诉运行时我们已经用完了这些内存。这样做之后，我们就不能再碰它了。这突出了 C 语言编程时需要考虑的许多问题：
 
-- 在你分配内存之前，不要使用它。
+- 在你分配内存之前，不要使用。
 - 不要用你所分配的内存创建 Blivets。确保它们足够大。
-- 不要忘记在完成后释放内存。
+- 完成后不要忘记释放内存。
 - 在你释放了内存之后，不要再使用它。
 
 忘记这些规则中的任何一条，都可能导致你的程序崩溃或内存耗尽。如果这看起来是个大麻烦，你会欣赏诸如 Java、Python 和 JavaScript 这样的语言，它们为你减轻了一些问题。缺点是，通常会有性能上的折衷，这就是为什么 Rust 如此引人注目。它为你提供了像 C 语言一样的速度，而没有像 C 语言一样的危险。 我们会在第 10 章介绍 Rust。
@@ -604,7 +619,7 @@ The third value is: 2
 
 在下一节中，我将使用一个更复杂的基础设施，基于 [Petter Strandmark 提供的样例项目](https://github.com/PetterS/clang-wasm)的复杂基础架构来使用 Clang 和 WebAssembly。在下一章中，我们将介绍 Emscripten 工具链，使其更容易将现有的代码移植到 WebAssembly。最终，我们将引入 WebAssembly 系统接口（WASI）来处理这些细节，但在那之前，我们需要基础设施来帮助我们克服目前看到的障碍。
 
-这个基础设施有几个部分，但它基本上是自成一体的，而且我认为最终是相当清晰的。由于一些原因，不值得在此讨论。现在，我们将使用 C++ 版本的 Clang 编译器。在这一章中，我们没有时间教你 C++，所以我不打算关注太多具体细节。在有些情况下，我们需要让 C++ 代码表现得像 C 语言一样，所以在这个问题上，请跟着我。
+这个基础设施有几个部分，但基本上是自成一体的，而且我认为最终是相当清晰的。由于一些原因，不值得在此讨论。现在，我们将使用 C++ 版本的 Clang 编译器。在这一章中，我们没有时间教你 C++，所以我不打算关注太多具体细节。在有些情况下，我们需要让 C++ 代码表现得像 C 语言一样，所以在这个问题上，请跟着我。
 
 我们将从一些 C/C++ 代码开始。这两种语言的关系相当密切，但 C++ 提供了面向对象的编程功能，使其更容易使用自然概念（如订单、账户、用户等）对一个领域进行建模。然而，我们并不打算关注这些区别，这就是为什么我一直把这两种语言放在一起提及。在例 5-12 中，你可以看到我们将要使用的一些功能。为了便于管理，我不会在此时向你展示所有的功能。
 
@@ -641,7 +656,7 @@ WASM_EXPORT void reverse (unsigned char* p, int len)
 }
 ```
 
-第一件让你眼前一亮的事情是`#include`语句。这段代码使用了 libc 库的一个非常小的实现，它为我们提供了 `malloc ()`、`free ()`、甚至 `printf ()` 的工作版本（但先别急着想这个问题）。C/C++ 中的头文件允许我们公布函数的签名，这样编译器就知道应该期待什么。
+第一件让你眼前一亮的是 `#include` 语句。这段代码使用了 libc 库的一个非常小的实现，它为我们提供了 `malloc ()`、`free ()`、甚至 `printf ()` （但先别急着想这个问题）。C/C++ 中的头文件允许我们公布函数的签名，这样编译器就知道应该期待什么。
 
 如例 5-13，我们有一系列可用的函数来链接。为了确保它们作为 C 语言函数可见，我们使用 `extern "C"` 关键字 ，以防止 C++ 编译器混淆它们的名字 [^9]。
 
@@ -653,31 +668,32 @@ WASM_EXPORT void reverse (unsigned char* p, int len)
 #include <stdarg.h>
 #include <stddef.h>
 
-extern "C" {void* memcpy ( void* dest, const void* src, size_t count);
-void* memset (void * dest, int value, size_t count);
+extern "C" {
+    void* memcpy(void* dest, const void* src, size_t count);
+    void* memset (void * dest, int value, size_t count);
 
-int puts (const char * str);
-int printf (const char* format, ...);
-int sprintf (char* buffer, const char* format, ...);
-int snprintf (char* buffer, size_t count, const char* format, ...);
-int vsnprintf (char* buffer, size_t count, const char* format, va_list va);
+    int puts ( const char * str );
+    int printf(const char* format, ...);
+    int sprintf(char* buffer, const char* format, ...);
+    int snprintf(char* buffer, size_t count, const char* format, ...);
+    int vsnprintf(char* buffer, size_t count, const char* format, va_list va);
 
-void* malloc (size_t amount);
-void* realloc (void *ptr, size_t size);
-void* calloc (size_t num, size_t size);
-void free (void* mem);
+    void* malloc(size_t amount);
+    void* realloc(void *ptr, size_t size);
+    void* calloc(size_t num, size_t size);
+    void free(void* mem);
 }
 
 #endif
 ```
 
-回顾一下例 5-12，我们有一个名为`get_memory_for_int_array ()`的方法，它需要一个 size 参数来告诉我们需要分配多少内存。如果你仔细看一下这个实现，它使用的是 C++ 的 new 操作符。为了我们的目的，只需假设这与调用`malloc ()`的意思相同。`free_mem ory_for_int_array ()`函数通过使用 delete 操作符，起到了与 `free ()` 调用类似的作用。
+回顾一下例 5-12，我们有一个名为`get_memory_for_int_array ()` 的方法，它需要一个 size 参数来告诉我们需要分配多少内存。如果你仔细看一下这个实现，它使用的是 C++ 的 new 操作符。为了我们的目的，只需假设这与调用 `malloc ()`的意思相同。`free_mem ory_for_int_array ()`函数通过使用 delete 操作符，起到了与 `free ()` 调用类似的作用。
 
 有一个 `#define` 宏赋予这些函数外部可见性，以确保对要调用它们的 JavaScript 代码可用。
 
-接下来，我们有一个函数提供了一个合并排序的实现，还有一个函数可以反转一个数组 [^10]。
+接下来，我们有一个函数提供了一个合并排序的实现，还有一个函数可以反转数组 [^10]。
 
-C/C++ 应用程序和库的构建系统并不像 Rust 的 cargo 命令那样现代和友好，但它们是坚实和灵活的。我们将使用一个简单的基于 Makefile 的方法。这是另一个我们没有时间深入介绍的细节，但基本上我们定义了一套规则来构建目标。当源代码发生变化时，它会导致重新评估依赖关系并构建任何需要构建的东西。这个文件的内容可以通过本书的 [代码仓库](https://github.com/bsletten/wasm_tdg) 找到。
+C/C++ 应用程序和库的构建系统并不像 Rust 的 cargo 命令那样现代和友好，但它们是坚实和灵活的。我们将使用一个简单的基于 Makefile 的方法。这些细节我们没有时间深入介绍，但基本上我们定义了一套规则来构建目标。当源代码发生变化时，它会导致重新评估依赖关系并构建任何需要构建的东西。这个文件的内容可以通过本书的[代码仓库](https://github.com/bsletten/wasm_tdg)找到。
 
 为了构建我们的代码，我们将使用 make 命令，这样我们就能知道进展如何：
 
@@ -690,7 +706,7 @@ brian@tweezer ~/g/w/s/c/helloworld> ls -laF *.wasm
 
 我将把它留给你去详细探索模块的内容，但我想强调几个要点。注意我们的模块导出了自己的 Memory。你可以改变这种行为，从 JavaScript 方面导入一个 Memory 实例，但我们现在不打算这么做。
 
-目前你需要关注的是，我们的 C/C++ 代码有一个很小的 libc 实现 ，它将从一个导出的 Memory 实例中分配和释放内存，而这一实例，在 [第 4 章](../wasm-definitive-guide/wasm-memory/) 后，应该可以运行起来：
+目前你需要关注的是，我们的 C/C++ 代码有一个很小的 libc 实现 ，它将从一个导出的 Memory 实例中分配和释放内存，而这一实例，在[第 4 章](../wasm-definitive-guide/wasm-memory/)后，应该可以运行起来：
 
 ```bash
 brian@tweezer ~/g/w/s/c/helloworld> wasm-objdump -x library.wasm
@@ -789,21 +805,23 @@ WASM_EXPORT void helloWorld () {printf ("Hello, World!\n");
 
 这到底是怎么做到的？如果这么简单，为什么我们要等到第五章的结尾呢？ 
 
-让我从 HTML 中向你展示一些更多的细节。 例 5-16 有一个新的函数调用 `get_memory ()`，它只是返回一个 Uint8Array 实例。有解码器和编码器变量可用于转换 UTF-8 字符串 [^11]。有一个叫做 `charPtrToString ()` 的函数，可以将一个 "字符指针"（即 C 语言字符串）转换成 UTF-8 字符串，供 JavaScript 使用。
+让我在 HTML 中向你展示一些更多的细节。 例 5-16 有一个新的函数调用 `get_memory ()`，它只是返回一个 Uint8Array 实例。有解码器和编码器变量可用于转换 UTF-8 字符串 [^11]。有一个叫做 `charPtrToString ()` 的函数，可以将一个 "字符指针"（即 C 语言字符串）转换成 UTF-8 字符串，供 JavaScript 使用。
 
-在下方我们有一个 `printString ()` 的函数，它将被调用，并将一个 JavaScript 字符串输出到控制台。我们的 importObject 被配置为名为 `print_string` 的方法，它将在调用方法之前把一个 "字符指针" 转换成一个字符串，并将其转储到控制台。你会记得，importObject 允许我们与我们的模块实例共享功能和数据。
+在下方我们有一个 `printString ()` 的函数，它将被调用，并将一个 JavaScript 字符串输出到控制台。我们的 importObject 被配置为名为 `print_string` 的方法，它将在调用方法之前把一个 "字符指针" 转换成一个字符串，并将其转储到控制台。你会记得，importObject 允许模块实例共享函数和数据。
 
-例 5-16 让 "Hello, World!" 工作的后端
+例 5-16 让 "Hello, World!" 的后端
 
 ```html
 <script>
-function get_memory () {return new Uint8Array (wasm.instance.exports.memory.buffer);
+function get_memory () {
+  return new Uint8Array (wasm.instance.exports.memory.buffer);
 }
   
 const decoder = new TextDecoder ("utf-8");
 const encoder = new TextEncoder ("utf-8");
 
-function charPtrToString (str) {const memory = get_memory ();
+function charPtrToString (str) {
+  const memory = get_memory ();
   let length=0;
   for (; memory [str + length] !== 0 ;++length) {}
   return decoder.decode (memory.subarray (str, str + length));
@@ -821,7 +839,7 @@ const importObject = {
 </script>
 ```
 
-这涵盖了 JavaScript 方面。在 C/C++ 方面，我们看到在例 5-17 的`nanolibc/libc_extra.h`头中定义了一个名为`print_string ()`的函数，它接收一个`char *`。
+这涵盖了 JavaScript 方面。在 C/C++ 方面，我们看到在例 5-17 的`nanolibc/libc_extra.h` 头中定义了一个名为 `print_string ()` 的函数，它接收一个 `char *`。
 
 例 5-17. 将 JavaScript 函数暴露为 C 函数
 
@@ -836,7 +854,7 @@ extern "C" {
 #endif
 ```
 
-在 nanolibc 目录下有一个文件，定义了我们的 `printf ()` 实例。其中的细节很复杂，所以我不想深入研究，但我要指出的是，它调用 `puts ()` 将一个 `char *` 放到输出控制台。通常这是一个低级别的服务，但根据你目前所看到的，一旦我们在例 5-18 中把最后一块连接起来，我们的 JavaScript 处理程序就会把它送到控制台。
+在 nanolibc 目录下有一个文件，定义了我们的 `printf ()` 实例。其中的细节很复杂，所以我不想深入研究，但我要指出的是，它调用 `puts ()` 将一个 `char *` 输出到控制台。通常这是一个低级别的服务，但根据你目前所看到的，一旦我们在例 5-18 中把最后一块连接起来，我们的 JavaScript 处理程序就会把它输出到控制台。
 
 例 5-18. 将 JavaScript 函数暴露为 C 函数
 
@@ -849,7 +867,7 @@ int puts (const char * str){
 
 1. `puts ()` 用一个 `char *` 调用 JavaScript 函数。
 
-终于，我们看到了这是如何工作的。我们的函数调用 `printf ()`，后者调用 `puts ()`，后者被定义为调用所提供的函数。我现在不打算描述它是如何被钩住的，但我希望其结果还是令人满意的。关于使用 C/C++ 和 WebAssembly 还有更多的知识，但那是即将到来的章节的主题。在那之前，你刚刚跨越了一个重要的鸿沟，了解了 WebAssembly 在幕后的工作情况。接下来，我们将学习如何将现有的软件移植到浏览器中运行。
+终于，我们看到了这是如何工作的。我们的函数调用 `printf ()`，后者调用 `puts ()`，后者被定义为调用所提供的函数。我现在不打算描述它是如何调用的，但我希望其结果还是令人满意的。关于使用 C/C++ 和 WebAssembly 还有更多的知识，但那是接下来的章节的主题。在那之前，你刚刚跨越了一个重要的鸿沟，了解了 WebAssembly 在幕后的工作情况。接下来，我们将学习如何将现有的软件移植到浏览器中运行。
 
 ## 注释
 

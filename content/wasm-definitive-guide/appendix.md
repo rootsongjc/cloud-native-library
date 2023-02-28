@@ -48,7 +48,7 @@ Emscripten 工具链是一套包裹 LLVM 工具的工具。最初，它支持 as
 
 ## 安装 Wasm3
 
-Wasm3 自称是 "最快的 WebAssembly 解释器和最通用的运行时"。GitHub 仓库在这里：https://github.com/wasm3/wasm3
+Wasm3 自称是 "最快的 WebAssembly 解释器和最通用的运行时"。GitHub 仓库在这里：<https://github.com/wasm3/wasm3>
 
 考虑到它所运行的平台和语言的多样性，我不打算在这一点上挑战他们。目前，它可以在以下平台上运行：
 
