@@ -32,7 +32,7 @@ spec:
           command: ["/usr/sbin/nginx","-s","quit"]
 ```
 
-postStart 在容器创建之后（但并不能保证钩子会在容器 ENTRYPOINT 之前）执行，这时候 Pod 已经被调度到某台 node 上，被某个 kubelet 管理了，这时候 kubelet 会调用 postStart 操作，该操作跟容器的启动命令是在同步执行的，也就是说在 postStart 操作执行完成之前，kubelet 会锁住容器，不让应用程序的进程启动，只有在 postStart 操作完成之后容器的状态才会被设置成为 RUNNING。
+Kubernetes 在容器创建后立即发送 postStart 事件。 但是，不能保证在调用容器的入口点之前调用 postStart 处理程序。postStart 处理程序相对于容器的代码异步运行，但 Kubernetes 对容器的管理将被阻止，直到 postStart 处理程序完成。在 postStart 处理程序完成之前，容器的状态不会设置为 RUNNING。
 
 PreStop 在容器终止之前被同步阻塞调用，常用于在容器结束前优雅的释放资源。
 
