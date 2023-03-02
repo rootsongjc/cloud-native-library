@@ -1,11 +1,13 @@
 ---
 linktitle: "第 2 章：入门"
-summary: "从 Hello world 开始。"
+summary: "这篇文章是《WebAssembly 权威指南》一书的第二章，介绍了如何使用 WebAssembly 文本格式编写一个简单的 Hello World 程序，并将其编译为二进制格式。文章还展示了如何在浏览器中运行 WebAssembly 程序，并使用 JavaScript 代码与之交互。文章最后讲解了一些常见的错误和调试技巧，以及一些有用的工具和资源，如 WABT 和 WebAssembly Explorer。"
 weight: 3
 title: "WebAssembly 入门"
 date: '2023-01-16T00:00:00+08:00'
 type: book
 ---
+
+> 译者注：这篇文章是《WebAssembly 权威指南》一书的第二章，介绍了如何使用 WebAssembly 文本格式编写一个简单的 Hello World 程序，并将其编译为二进制格式。文章还展示了如何在浏览器中运行 WebAssembly 程序，并使用 JavaScript 代码与之交互。文章最后讲解了一些常见的错误和调试技巧，以及一些有用的工具和资源，如 WABT 和 WebAssembly Explorer。
 
 学习 WebAssembly 的难点在于入门资料多。作为 C/C++ 或 Rust 开发人员，你可以从这里开始，但你也可以直接了解 WebAssembly 的机制，而不必担心代码生成问题。本章将从与语言无关的角度介绍 WebAssembly，在后面的章节中，我们将在深入研究低级细节时与高级语言建立联系。虽然这些细节乍一看似乎很简单，但它们对于理解 WebAssembly 的基本机制非常重要，因此它们不会成为你的最终目标。
 

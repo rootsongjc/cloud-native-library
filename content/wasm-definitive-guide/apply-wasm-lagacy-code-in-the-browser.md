@@ -1,6 +1,6 @@
 ---
 linktitle: 第 6 章：应用 WebAssembly—— 在浏览器中运行遗留代码
-summary: 使用 C/C++ 和 WebAssembly。
+summary: "这篇文章是《WebAssembly 权威指南》一书的第六章，介绍了如何使用 WebAssembly 在浏览器中运行遗留代码，即已经存在的 C/C++ 代码库。文章以一个实际的例子，即使用 Emscripten 工具将 C++ 代码编译为 WebAssembly 模块，并在浏览器中使用 JavaScript 调用它。文章详细说明了 Emscripten 的工作原理、编译选项、运行时环境和调试方法。"
 weight: 7
 icon: book-reader
 icon_pack: fas
@@ -9,6 +9,8 @@ title: "应用 WebAssembly：在浏览器中运行遗留代码"
 date: '2023-01-25T00:00:00+08:00'
 type: book # Do not modify
 ---
+
+> 译者注：这篇文章是《WebAssembly 权威指南》一书的第六章，介绍了如何使用 WebAssembly 在浏览器中运行遗留代码，即已经存在的 C/C++ 代码库。文章以一个实际的例子，即使用 Emscripten 工具将 C++ 代码编译为 WebAssembly 模块，并在浏览器中使用 JavaScript 调用它。文章详细说明了 Emscripten 的工作原理、编译选项、运行时环境和调试方法。
 
 现在，我们再仔细地看看在浏览器中调用 C/C++ 代码的过程。大多数编程语言的代码都不是为了在浏览器中以下载的形式运行。但是，正如香港骑士（译者注：The Hong Kong Cavaliers，电影《天生爱神》中的主角 Buckaroo Banzai 的乐队名称）的队长那样，偶尔你会发现自己出现在某个意想不到的新地方，而那里只有你 [^1]。
 

@@ -1,11 +1,13 @@
 ---
 linktitle: 第 1 章：简介
-summary: WebAssembly 简介。
+summary: "这篇文章是《WebAssembly 权威指南》一书的第一章，介绍了 WebAssembly 的基本概念和特点。WebAssembly 是一种新的编程语言，可以在不同的平台和环境中高效地执行。文章阐述了 WebAssembly 的设计目标、优势、应用场景和发展历史。文章还对比了 WebAssembly 和 JavaScript 的区别和关系，以及 WebAssembly 和其他编译目标语言的异同。"
 weight: 2
 title: WebAssembly 简介
 date: '2023-01-16T00:00:00+08:00'
 type: book
 ---
+
+> 译者注：这篇文章是《WebAssembly 权威指南》一书的第一章，介绍了 WebAssembly 的基本概念和特点。WebAssembly 是一种新的编程语言，可以在不同的平台和环境中高效地执行。文章阐述了 WebAssembly 的设计目标、优势、应用场景和发展历史。文章还对比了 WebAssembly 和 JavaScript 的区别和关系，以及 WebAssembly 和其他编译目标语言的异同。
 
 本章介绍 WebAssembly 及其诞生的背景。从某种意义上说，它是过去几年来 Web 发展的顶峰。我们有相当多的历史要讲。如果你不喜欢历史论述，你可以跳过这一章，直接去看第二章，但我希望你不要这样做。理解为什么这项技术如此重要以及它的起源是很重要的。
 

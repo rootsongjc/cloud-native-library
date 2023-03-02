@@ -1,6 +1,6 @@
 ---
 linktitle: 第 5 章：使用 C/C++ 和 WebAssembly
-summary: 使用 C/C++ 和 WebAssembly。
+summary: "这篇文章是《WebAssembly 权威指南》一书的第五章，介绍了如何使用 C/C++ 和 WebAssembly 开发应用程序。文章首先讲解了 C/C++ 语言和 WebAssembly 的兼容性和互操作性，以及一些常见的问题和解决方案。文章然后介绍了几种将 C/C++ 代码编译为 WebAssembly 模块的工具和方法，如 Emscripten、Clang 和 LLVM。文章还展示了如何使用 C/C++ 编写 WebAssembly 的函数、变量、内存、表和导入导出等特性。文章最后讲解了如何在浏览器中加载和运行 WebAssembly 模块，并使用 JavaScript 与之交互。"
 weight: 6
 icon: book-reader
 icon_pack: fas
@@ -9,6 +9,8 @@ title: 使用 C/C++ 和 WebAssembly
 date: '2023-01-25T00:00:00+08:00'
 type: book # Do not modify
 ---
+
+> 译者注：这篇文章是《WebAssembly 权威指南》一书的第五章，介绍了如何使用 C/C++ 和 WebAssembly 开发应用程序。文章首先讲解了 C/C++ 语言和 WebAssembly 的兼容性和互操作性，以及一些常见的问题和解决方案。文章然后介绍了几种将 C/C++ 代码编译为 WebAssembly 模块的工具和方法，如 Emscripten、Clang 和 LLVM。文章还展示了如何使用 C/C++ 编写 WebAssembly 的函数、变量、内存、表和导入导出等特性。文章最后讲解了如何在浏览器中加载和运行 WebAssembly 模块，并使用 JavaScript 与之交互。
 
 本书的转折点来了。到目前为止，我们一直专注于 WebAssembly 相关工具和技术栈。这是探索平台的方法有用，但是作为开发工具效率低下。高级编程语言早已使我们的专业超越了低级指令集的工作细节。用句法简洁、语义丰富的语言来表达逻辑，更容易、更有效率。
 

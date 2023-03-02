@@ -1,6 +1,6 @@
 ---
 linktitle: 第 3 章：WebAssembly 模块
-summary: WebAssembly 模块。
+summary: "这篇文章是《WebAssembly 权威指南》一书的第三章，介绍了 WebAssembly 模块的概念和结构。WebAssembly 模块是一种二进制格式，用于定义函数、变量、内存、表等 WebAssembly 组件，并可以在不同的平台和环境中执行。文章通过示例代码和图表，解释了如何创建、编译、检查和运行 WebAssembly 模块，以及如何使用导入和导出机制与外部环境交互。文章还介绍了一些有用的工具，如 Wabt 和 wasm2wat，可以帮助开发者理解和调试 WebAssembly 模块。"
 weight: 4
 draft: false
 icon: book-reader
@@ -9,6 +9,8 @@ title: WebAssembly 模块
 date: '2023-01-17T15:00:00+08:00'
 type: book # Do not modify
 ---
+
+> 译者注：这篇文章是《WebAssembly 权威指南》一书的第三章，介绍了 WebAssembly 模块的概念和结构。WebAssembly 模块是一种二进制格式，用于定义函数、变量、内存、表等 WebAssembly 组件，并可以在不同的平台和环境中执行。文章通过示例代码和图表，解释了如何创建、编译、检查和运行 WebAssembly 模块，以及如何使用导入和导出机制与外部环境交互。文章还介绍了一些有用的工具，如 Wabt 和 wasm2wat，可以帮助开发者理解和调试 WebAssembly 模块。
 
 操作系统通常运行编译后的程序[^1]。每个操作系统都有自己的格式，定义了从哪里开始运行，需要什么数据，不同功能位的指令是什么。WebAssembly 也不例外。在本章中，我们将了解程序是如何编译打包的，以及主机怎样处理编译后的程序。
 
