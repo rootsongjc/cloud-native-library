@@ -596,11 +596,9 @@ bitmap_test: bitmap_test.cpp bitmap_image.hpp
 
 ## 注释
 
-[^1]:  [《天生爱神》（*The Adventures of Buckaroo Banzai Across the 8th Dimension*）](https://zh.wikipedia.org/zh-my/%E5%8F%8D%E6%9A%B4%E6%88%B0%E5%A3%AB%E7%9B%9F) 是有史以来最好的邪典电影之一。
+[^1]: [《天生爱神》（*The Adventures of Buckaroo Banzai Across the 8th Dimension*）](https://zh.wikipedia.org/zh-my/%E5%8F%8D%E6%9A%B4%E6%88%B0%E5%A3%AB%E7%9B%9F) 是有史以来最好的邪典电影之一。
 [^2]: 这个名字是 JavaScript 和 "embiggen" 一词的语言混搭，《辛普森一家》使之流行。
 [^3]: 这是留给你的作业。
 [^4]: 如果你想了解更多关于 C++ 名称混用的信息，请查阅[维基百科](https://en.wikipedia.org/wiki/Name_mangling)。
-
 [^5]: 请注意这与我们在[第一章](../hello-world/)中提到的本地客户端（NaCl）没有关系。你可以在[网上](http://nacl.cr.yp.to/) 找到更多关于这个的细节。
-
 [^6]: 密码套件是一个密码基元的集合，为加密引擎提供一系列的能力。

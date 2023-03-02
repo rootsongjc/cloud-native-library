@@ -1,6 +1,6 @@
 ---
 linktitle: 第 8 章：在服务器中运行 WebAssembly
-summary: 在服务器端运行 WebAssembly。
+summary: "这篇文章是《WebAssembly 权威指南》一书的第八章，介绍了在服务器中运行 WebAssembly 的动机、优势和挑战。它解释了 WebAssembly 是如何提高性能、兼容性和安全性的，以及如何利用不同的语言和工具来创建和部署 WebAssembly 模块。"
 weight: 9
 icon: book-reader
 icon_pack: fas
@@ -9,6 +9,8 @@ title: 在服务器中运行 WebAssembly
 date: '2023-01-26T00:00:00+08:00'
 type: book # Do not modify
 ---
+
+> 译者注：这篇文章是《WebAssembly 权威指南》一书的第八章，介绍了在服务器中运行 WebAssembly 的动机、优势和挑战。它解释了 WebAssembly 是如何提高性能、兼容性和安全性的，以及如何利用不同的语言和工具来创建和部署 WebAssembly 模块。
 
 我的职业生涯是从用户界面领域开始的。我第一次参与了一个控制 Network Matrix Switches 的 X/Motif 应用程序 [^1]。从那时起，我就进入了一个 Whole Earth 可视化环境，能够显示数兆字节的地形数据和高光谱图像。这不仅从三维可视化的角度来看很有趣，而且在 "四人帮" 设计模式书出现的前一年，我们受到了 Silicon Graphics 的 Doug Young 的启发，围绕着命令模式建立了整个应用程序 [^2]。
 
