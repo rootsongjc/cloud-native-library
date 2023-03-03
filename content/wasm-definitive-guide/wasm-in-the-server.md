@@ -12,39 +12,37 @@ type: book # Do not modify
 
 > 译者注：这篇文章是《WebAssembly 权威指南》一书的第八章，介绍了在服务器中运行 WebAssembly 的动机、优势和挑战。它解释了 WebAssembly 是如何提高性能、兼容性和安全性的，以及如何利用不同的语言和工具来创建和部署 WebAssembly 模块。
 
-我的职业生涯是从用户界面领域开始的。我第一次参与了一个控制 Network Matrix Switches 的 X/Motif 应用程序 [^1]。从那时起，我就进入了一个 Whole Earth 可视化环境，能够显示数兆字节的地形数据和高光谱图像。这不仅从三维可视化的角度来看很有趣，而且在 "四人帮" 设计模式书出现的前一年，我们受到了 Silicon Graphics 的 Doug Young 的启发，围绕着命令模式建立了整个应用程序 [^2]。
+我的职业生涯是从用户界面领域开始的。我参与了一个控制 Network Matrix Switches 的 X/Motif 应用程序 [^1]。从那时起，我就进入了一个 Whole Earth 可视化环境，能够显示数兆字节的地形数据和高光谱图像。这不仅从三维可视化的角度来看很有趣，而且在 "四人帮" 设计模式书出现的前一年，我们受到了 Silicon Graphics 的 Doug Young 的启发，围绕着命令模式建立了整个应用程序 [^2]。
 
-在大多数时候，编写和使用的软件是一种有趣和有意义的经历。你可以真正地让人们的生活更轻松，减少压力，在他们的工作任务中投入一些心思。尽管有这些积极因素，但也有其缺点。虽然每个人都对用户界面有意见，但其中只有一些是知情的意见。
+大多数时候，编写和使用软件是一种有趣且有益的体验。 你真的可以让人们的生活更轻松，减轻压力，并在他们的工作任务中投入一些思考。 尽管有这些优点，但也有缺点。 虽然每个人都对 UI 有自己的看法，但其中只有一部分是有根据的意见。
 
-我想在某种程度上，这就是 Brian Eno 在上面的引文中所指的。值得注意的是，他是 Roxy Music 的共同创始人之一，是各地音乐发烧友的宠儿。但是，尽管他穿着华丽，但他并不真正享受在聚光灯下，在与 Bryan Ferry 经常发生冲突后，他走自己的路，更注重作曲和制作，而不是成为摇滚明星。
+后来，我的职业转变了，我开始专注于设计、架构、后端服务等。我走出了 UI 聚光灯，享受与后端服务器打交道的相对自由。 它不像面向用户的活动那样引人注目，但这也很好。
 
-我的职业生涯发生了转变，我开始专注于设计、架构、后端服务等方面。我从用户界面的聚光灯下走出来，享受后端服务器工作的相对自由。它不像面向用户的活动那样引人注意，但这也有好处。
+WebAssembly 长期以来一直被定位为客户端技术。 它主要被视为扩展浏览器的一种方式，浏览器是一种通用客户端，不再局限于仅通过 JavaScript 进行扩展。 WebAssembly 的作用远不止是前端。 它还将在浏览器之外的技术领域发挥极其重要的作用。 其实 Node.js 一直支持 WebAssembly 模块。
 
-WebAssembly 长期以来都被定位为客户端技术。它主要被看作是一种扩展和扩大浏览器可能性的方式，一个通用的客户端不再局限于只通过 JavaScript 进行扩展。WebAssembly 的作用要大得多，而不仅仅是作为前端的宠儿。它也将在浏览器之外的技术领域发挥极其重要的作用。事实上，它一直被定位在这个位置，Node.js 一直支持 WebAssembly 模块。
-
-这可能并不明显，为什么在服务器上会有这么大的意义，因为在服务器上性能是如此关键，而且你通常可以自由选择你的实施技术。然而，在硬件的异质性和进化、开发人员的生产力、商业价值、安全性以及架构作为设计选择的能力，以最大限度地减少基础设施和网络成本上，存在着一个闪亮的机会，WebAssembly 正在迅速扩展以填补这一空白。在本书的其余部分，我们将填补这一部分，但现在我们只关注在浏览器之外运行 WebAssembly 的基本知识。
+为什么它在服务器上如此有意义可能并不明显，因为在服务器上性能如此关键并且您通常可以自由选择您的实现技术。 然而，在硬件异构性和演进、开发人员生产力、商业价值、安全性，最小化基础设施和网络成本的架构选择方面，WebAssembly 有巨大的潜力。 我们将在本书的其余部分讨论这一部分，但现在我们只关注在浏览器之外运行 WebAssembly 的基础知识。
 
 ## Node.js 的本地扩展
 
-Node.js 的出现是对以下事实的回应：开发人员在浏览器的客户端使用一种语言和一套框架，而在服务器上使用另一套框架。之前为获得可重复使用的代码所做的努力（通过 Java 本身和 Google Web Toolkit [GWT]）试图朝另一个方向前进，即从服务器到客户端。这是在另一个方向的运动。软件开发领域的大部分兴奋点都发生在浏览器上，以及从 Ajax 到 jQuery 到 Angular 等技术和框架的探索中。要写出在浏览器中运行的代码，然后用不同的语言重写在服务器上运行，这让人抓狂。
+Node.js 的出现是对开发人员在浏览器客户端使用一种语言和一组框架，而在服务器端使用另一组框架这一事实的回应。 以前为实现可重用代码所做的努力（通过 Java 本身和 Google Web Toolkit [GWT]）都试图朝另一个方向发展，从服务器到客户端。 这是另一个方向的运动。 软件开发世界中的许多激动人心的事情都发生在浏览器中，从 Ajax 到 jQuery 再到 Angular 的各种技术和框架。 编写在浏览器中运行的代码，然后用不同的语言重写它以在服务器上运行是令人抓狂的。
 
-Node.js 迅速流行起来，成为软件开发者的宠儿，他们现在有了更大的影响力和更大的重用性。作为一个基于 JavaScript 的环境，在其上运行的应用程序具有内在的可移植性。Node.js 的核心是来自 Google 的高性能 V8 JavaScript 引擎、libuv（其事件循环和低级功能的抽象层的基础），以及建立在所有这些之上的一套 API。这是一个固有的可移植环境。
+Node.js 迅速流行起来并成为软件开发人员的宠儿，它现在具有更大的影响力和更高的可重用性。 作为一个基于 JavaScript 的环境，在其上运行的应用程序具有天生的可移植性。 Node.js 的核心是来自 Google 的高性能 V8 JavaScript 引擎、libuv（它的事件循环和低级功能抽象层的基础），以及建立在所有这些之上的一组 API。 这是一个固有的可移植环境。
 
-问题是，即使有强大的 V8 引擎作为核心，也不是所有东西都适合用 JavaScript 来实现。自然地，它允许用 C 和 C++ 实现的本地库来扩展机制。鉴于 JavaScript 对象生命周期和本地代码结构之间的复杂关系，这使得软件开发变得更加棘手。除此之外，你突然有了一个本地库的管理问题。如果你安装了一个带有本地库扩展的 Node.js 应用程序，需要有一个过程来让它们在 Linux、Windows、macOS 等系统上编译。
+问题是，即使以强大的 V8 引擎为核心，也不是所有事情都适合用 JavaScript 实现。 自然地，它允许使用 C 和 C++ 实现的本机库来扩展该机制。 考虑到 JavaScript 对象生命周期和本机代码结构之间的复杂关系，这使得软件开发更加棘手。 除此之外，您突然遇到了本机库管理问题。 如果您安装带有本机库扩展的 Node.js 应用程序，则需要一个过程让它们在 Linux、Windows、macOS 等平台上进行编译。
 
-许多 WebAssembly 教程展示了两个数字相加。显然，这不是一个使用本地库的好案例，除非你在谈论机器学习水平的数学。在第 9 章中，我们将更深入地讨论这种情况。现在，我们只想强调一下将 Node.js 与本地库整合在一起的相对复杂性，即使是对于这个简单的、理由不充分的例子。
+许多 WebAssembly 教程展示了将两个数字相加。 显然，这不是一个好的使用本地库的案例，除非你在谈论机器学习级别的数学。 在[第 9 章](../applied-wasm-tensorflow-js/)中，我们将更深入地讨论这种情况。 现在，我们只想强调将 Node.js 与本机库集成的相对复杂性，即使是对于这个简单的、不合理的示例也是如此。
 
-问题主要在于，C 和 C++ 代码可以直接访问内存，但 JavaScript 代码却不能。在 Node.js 环境中，V8 引擎为运行在其中的 JavaScript 代码管理内存。这使得字符串、结构、参数和其他占用内存空间的元素在引擎的 JavaScript 和本地部分之间的传递更加棘手。V8 的目的是隔离浏览器中的 JavaScript，使其不会干扰分配给不同页面上其他代码的内存。当它被嵌入到 Node.js 环境中时，这种隔离得以保持。
+主要问题是 C 和 C++ 代码可以直接访问内存，而 JavaScript 代码不能。 在 Node.js 环境中，V8 引擎为在其中运行的 JavaScript 代码管理内存。 这使得在 JavaScript 和引擎的本机部分之间传递字符串、结构、参数和其他占用内存空间的元素变得更加棘手。 V8 的目的是在浏览器中隔离 JavaScript，使其不会干扰分配给不同页面上其他代码的内存。 当它嵌入到 Node.js 环境中时，会保持这种隔离。
 
-服务器端框架通常是可扩展的，因此我们可以添加额外的响应行为、过滤器、授权模型和数据处理工作流程。在 Java 世界里，有一系列服务器开发者可以部署行为的方式。有 servlets、Spring beans、反应式系统等等。这些扩展的结构通常由标准或完善的惯例来定义。
+服务器端框架通常是可扩展的，因此我们可以添加额外的响应行为、过滤器、授权模型和数据处理工作流。 在 Java 世界中，服务器开发人员可以通过多种方式来部署行为。 有 servlet、Spring bean、反应式系统等等。 这些扩展的结构通常由标准或公认的惯例定义。
 
-在 Node.js 中，历来都有像 Express 这样的中间件，然后是用 C 和 C++ 编写的本地插件。这个环境中的大多数应用程序都没有原生的插件，因为 JavaScript 引擎已经变得相当出色，而且似乎有无限的开源库来解决各种需求。然而，对于 JavaScript 性能不合适的情况，可以创建一个扩展，并使其可以从 JavaScript 方面调用。
+在 Node.js 中，历史上有像 Express 这样的中间件，它们是用 C 和 C++ 编写的原生插件。 这种环境中的大多数应用程序都没有原生插件，因为 JavaScript 引擎已经相当不错了，而且似乎有无穷无尽的开源库可以满足各种需求。 但是，对于 JavaScript 性能不合适的情况，可以创建扩展并使其可从 JavaScript 端调用。
 
-不幸的是，这并不是一件简单的事情。首先，许多 JavaScript 开发者都不是专业的 C 和 C++ 程序员。这两种语言和运行时之间有很大的区别，把内存从不受限制的 C 和 C++ 世界传递到孤立的、有垃圾收集的 JavaScript 世界，有一条很深的鸿沟。即使开发人员很精通这些低级别语言，采用本地库也会使构建过程复杂化。突然间，程序工件不再具有内在的可移植性，我们需要跟踪 Linux、macOS 和 Windows 版本的本地库。
+不幸的是，这不是一件简单的事情。 首先，许多 JavaScript 开发人员并不是专业的 C 和 C++ 程序员。 这两种语言和运行时之间存在很大差异，存在一条深深的鸿沟，将内存从 C 和 C++ 的不受限制的世界传递到 JavaScript 的孤立的、垃圾收集的世界。 即使开发人员精通这些低级语言，使用本地库也会使构建过程复杂化。 突然间，程序工件不再具有固有的可移植性，我们需要跟踪 Linux、macOS 和 Windows 版本的本机库。
 
-让我们看看一个简单的例子，到目前为止，我们在本书中已经看到过多次。在关于附加组件的 Node.js 文档中有一个很好的 [例子](https://nodejs.org/api/addons.html#addons_addon_examples)，让我们对比一下。首先，参考 [附录](../appendix/)，确保 node 和 node-gyp 命令已经安装。然后看一下例 8-1，在这里你会看到一个将两个数字相加的单一函数。
+让我们看一个简单的例子，到目前为止，我们已经在本书中看到过很多次了。 Node.js 的插件文档中有一个很好的[例子](https://nodejs.org/api/addons.html#addons_addon_examples)，我们对比一下。 首先，请参阅[附录](../appendix/) 以确保安装了 node 和 node-gyp 命令。 然后看下例 8-1，您会看到一个将两个数字相加的函数。
 
-例 8-1. 一个来自 Node 网站的 Node.js 插件
+例 8-1. 来自 Node 网站的 Node.js 插件
 
 ```cpp
 //addon.cc
@@ -100,9 +98,9 @@ NODE_MODULE (NODE_GYP_MODULE_NAME, Init)
 }  //namespace demo
 ```
 
-这个方法叫做`Add ()`，它接受一个`FunctionCallbackInfo<Value>& refer- ence`。从这里，我们检索 Isolate 实例，这是我们对 V8 为这个实例维护的内存子系统的句柄。如果没有两个参数或者它们不是数字类型，我们就抛出一个异常。否则，我们会以数字的形式检索这些值并将它们相加，然后创建一个新的位置来保存这些值，然后将其设置为函数的返回类型。除了这些，我们需要通过`Init ()` 方法向 Node.js 注册该模块。
+此方法称为 `Add()`，它接受一个 `FunctionCallbackInfo<Value>&` 引用类型。 从这里，我们检索 Isolate 实例，它是 V8 为该实例维护的内存子系统的句柄。 如果没有两个参数或者它们不是数字类型，则抛出异常。 否则，我们将值作为数字检索，将它们相加，创建一个新位置来保存这些值，并将其设置为函数的返回类型。 除了这些，我们还需要通过 `Init()` 方法向 Node.js 注册模块。
 
-下一步是建立附加组件。在 例 8-2 中，你可以看到 `binding.gyp` 文件，它指示 node-gyp 命令如何进行构建。这可能是一个更详细的过程，但我们在这里的需求相当简单。
+下一步是构建附加组件。 在示例 8-2 中，您可以看到 `binding.gyp` 文件，它指示 node-gyp 命令如何构建。 这可能是一个更详细的过程，但我们这里的需求相当简单。
 
 例 8-2. 附加组件的构建说明
 
@@ -120,7 +118,8 @@ NODE_MODULE (NODE_GYP_MODULE_NAME, Init)
 构建命令非常简单明了（我隐藏了一些细节）：
 
 ```bash
-brian@tweezer ~/g/w/s/c/node-addon> node-gyp configure build gyp info it worked if it ends with ok
+brian@tweezer ~/g/w/s/c/node-addon> node-gyp configure build 
+gyp info it worked if it ends with ok
 gyp info using node-gyp@8.0.0
 gyp info using node@15.4.0 | darwin | x64
 gyp info find Python using Python version 3.8.3 found at "/usr/local/bin/python3"
@@ -134,7 +133,7 @@ CXX (target) Release/obj.target/addon/addon.o
 SOLINK_MODULE (target) Release/addon.node
 ```
 
-在这一点上，附加组件已经构建完成。我们可以用例 8-3 的代码来测试它。
+附加组件已经构建完成。我们可以用例 8-3 的代码来测试它。
 
 例 8-3. 测试本地插件的 JavaScript 代码
 
@@ -144,28 +143,31 @@ const addon = require ('./build/Release/addon');
 console.log ('This should be eight:', addon.add (3, 5));
 ```
 
-从表面上看，使用该附加组件感觉与调用 WebAssembly 模块类似，但显然这个实现要比我们在其他地方调用的两个数字相加的 C 代码复杂得多。真正的问题是，本地库的复杂性在管理上是一种痛苦。现在，有了 WebAssembly，就不再需要这些了，你可以理解为什么 Node.js 社区对 WebAssembly 版本的库感到兴奋。它们提供了良好的性能收益，且完全可移植，并简化了其部署模型。
+从表面上看，使用这个附加组件感觉类似于调用 WebAssembly 模块，但显然实现起来比我们在其他地方调用的数学加法 C 代码要复杂得多。 真正的问题是，本地库的复杂性很难管理。 现在，有了 WebAssembly，这些都不再需要了，您可以理解为什么 Node.js 社区对 WebAssembly 版本的库感到兴奋。 它们提供了良好的性能增益，完全可移植，并简化了它们的部署模型。
 
 ## WebAssembly 和 Node.js
 
-虽然大多数人认为 WebAssembly 是一种客户端的浏览器技术，但 Node.js 几乎和浏览器一样早就支持从 WebAssembly 模块调用函数。我不打算创建任何实际的 "服务器"，因为我认为这可能会分散我想表达的观点，但你显然可以建立一个 REST API 或类似的东西，并仍然使用我提到的功能。
+虽然大多数人认为 WebAssembly 是一种客户端浏览器技术，但 Node.js 几乎与浏览器一样早就支持从 WebAssembly 模块调用函数。 我不打算创建任何实际的“服务器”，因为我认为这可能会分散注意力，但您显然可以构建 REST API 或类似的东西，并且仍然使用我提到的功能。
 
-让我们从例 8-4 这个简单的例子开始。
+让我们从一个简单的例子开始，例 8-4。
 
-例 8-4. 一个简单的程序，将两个数字相加
+例 8-4. 两个数字相加的简单程序
 
 ```c
 #include <emscripten.h>
 #include <stdio.h>
 
-EMSCRIPTEN_KEEPALIVE int add (int x, int y) {return x + y;}
+EMSCRIPTEN_KEEPALIVE int add (int x, int y) {
+  return x + y;
+}
 
-int main () {printf ("The sum of 2 and 3 is: % d\n", add (2,3));
+int main () {
+  printf ("The sum of 2 and 3 is: % d\n", add (2,3));
   return 0;
 }
 ```
 
-有了 clang，这是很简单的编译和执行：
+使用 clang 编译和执行：
 
 ```bash
 brian@tweezer ~/g/w/s/c/node> clang add.c 
@@ -173,7 +175,7 @@ brian@tweezer ~/g/w/s/c/node> ./a.out
 The sum of 2 and 3 is: 5
 ```
 
-如果我们更新源代码，加入一些与 Emscripten 相关的宏，我们就可以很容易地在 Node.js 中运行它，就像我们之前看到的那样。我还删除了`main ()`方法，因此我们的模块将不再期望实现`printf ()` 函数，因为我们将在服务器端的 JavaScript 世界中运行。更新后的代码见于例 8-5。
+如果我们更新源代码，加入一些与 Emscripten 相关的宏，我们就可以很容易地在 Node.js 中运行它，就像我们之前看到的那样。我还删除了`main ()`方法，因此我们的模块将不再期望实现 `printf ()` 函数，因为我们将在服务器端的 JavaScript 世界中运行。更新后的代码见于例 8-5。
 
 例 8-5. 一个用 Emscripten 宏进行两个数字相加的简单程序
 
@@ -197,17 +199,18 @@ drwxr-xr-x 10 brian staff	   320 Apr 18 13:08 .../
 -rwxr-xr-x	1 brian staff	 49456 Apr 18 15:05 a.out.
 -rw-r--r--	1 brian staff 121686 Apr 18 15:05 a.out.js
 -rwxr-xr-x	1 brian staff	 11805 Apr 18 15:05 a.out.wasm.
--rw-r--r--	1 brian staff	   141 Apr 18 15:05 add.c brian@tweezer ~/g/w/c/node> node a.out.js
+-rw-r--r--	1 brian staff	   141 Apr 18 15:05 add.c 
+brian@tweezer ~/g/w/c/node> node a.out.js
 The sum of 2 and 3 is: 5
 ```
 
-如果你研究一下 a.out.js 这个文件，你会看到 Emscripten 工具链为我们处理的所有设置。
+如果你研究一下 `a.out.js` 这个文件，你会看到 Emscripten 工具链为我们处理的所有设置。
 
-有一个适当的基于 JavaScript 的 WebAssembly API 可以通过 Node.js 运行 ，如我们在浏览器中看到的。这允许你加载和实例化模块，并在你认为合适的时候调用它们的行为。在幕后，这就是 Emscripten 工具链为我们生成的东西。
+有一个适当的基于 JavaScript 的 WebAssembly API 可以通过 Node.js 运行，就像我们在浏览器中看到的那样。 这允许您加载和实例化模块，并在您认为合适的时候调用它们的行为。 在幕后，这是 Emscripten 工具链为我们生成的。
 
-然而，我们也对简化 WebAssembly 模块在服务器中的加载和实例化感兴趣，就像在浏览器中一样。Node.js 也提供了对加载 ES6 模块的经验支持，如例 8-6 所示。
+然而，我们也有兴趣简化 WebAssembly 模块在服务器中的加载和实例化，就像在浏览器中一样。 Node.js 还为加载 ES6 模块提供经验支持，如例 8-6 所示。
 
-例 8-6. 将 WebAssembly 模块作为 ES6 模块加载
+例 8-6. 将 WebAssembly 模块加载为 ES6 模块
 
 ```javascript
 import * as Module from './a.out.wasm';
@@ -217,46 +220,48 @@ console.log ('The sum of 6 and 2 is: ' + Module.add (6,2));
 根据你试图运行以下内容的时间，你可能需要实验特征标志，但注意到它比我们之前看到的要容易处理得多。该行为的表达方式也比我们在之前关于本地附加组件的讨论中看到的要简单得多。你可以看到为什么该社区对持续的 WebAssembly 支持随着时间的推移而增加感到兴奋。
 
 ```bash
-brian@tweezer ~/g/w/s/c/node> node --experimental-modules ↵ --experimental-wasm-modules index.mjs
+brian@tweezer ~/g/w/s/c/node> node --experimental-modules --experimental-wasm-modules index.mjs
 (node:74571) ExperimentalWarning: Importing Web Assembly modules is an
 experimental feature. This feature could change at any time (Use `node
 --trace-warnings ...` to show where the warning was created)
 The sum of 6 and 2 is: 8
 ```
 
-作为最后一个例子，我想把一个更复杂的第三方库拉进来。由于我将在本章末尾解释的原因，找到一个好的例子而又不至于引起太多的麻烦是很困难的。有些东西我们还没有介绍，但在本章中已经开始打基础了。
+最后一个例子，我想引入一个更复杂的第三方库。 出于我在本章末尾解释的原因，找到一个好的示例而不引起太多麻烦可能很困难。 有些事情我们还没有涉及，但我们已经开始在本章中奠定基础。
 
 ## 供应链攻击
 
-这给我们带来了另一个考虑。在安全软件系统的世界里，我们正面临着一个非常严重的问题，叫做供应链攻击。这不是一个新问题 ，但正变得越来越糟糕，越来越频繁。
+这给我们带来了另一个考虑。 在安全软件系统的世界里，我们面临着一个非常严重的问题，称为供应链攻击。 这不是一个新问题，但它越来越严重，越来越频繁。
 
-没有单一的方法来建立一个安全的系统，当然不是简单地打开加密或类似的安全功能。这些对于一个安全的系统可能是必要的，但绝对是不够的。通常是通过深度防御的组合 [^3]，最少特权原则 [^4]，以及在组织上接受安全责任的深思熟虑的尝试，你可以开始朝着正确的方向前进。
+没有单一的方法可以构建安全系统，当然也不能通过简单地打开加密或类似的安全功能来实现。 这些可能是安全系统所必需的，但绝对不够。 通常，通过结合纵深防御[^3]、最小特权原则[^4] 以及在组织上接受安全责任的深思熟虑的尝试，您可以开始朝着正确的方向前进。
 
-对我们来说，问题是我们正在运行来自不受信任的第三方代码，而我们通常在生产中给予自己的权限。开箱后，Node 没有提供任何保护，这是一个严重的问题，它为网络钓鱼、数据外流和其他攻击提供了新的攻击载体。
+对我们来说，问题是我们正在运行来自不受信任的第三方的代码，而这些第三方的权限我们通常会在生产中授予自己。 开箱即用的 Node 不提供任何保护，这是一个严重的问题，为网络钓鱼、数据泄露和其他攻击开辟了新的攻击媒介。
 
-Hayden Parker 写了一篇关于 [2018 年的供应链攻击](https://medium.com/@hkparker/analysis-of-a-supply-chain-attack-2bd8fa8286ac) 的文章。其基本思想是，攻击者将编写一个有用的开源功能供开发者使用。开发人员经常在不考虑其来源的情况下增加依赖性，或者不考虑依赖性的来源的横向集合。一旦代码在生态系统中获得足够的使用，在精心控制的情况下进行的小规模更新就会开始以微妙和难以预测的方式暴露攻击。基本上，代码可能开始寻找加密货币私钥或其他有用的敏感信息。
-这个问题的唯一真正的解决方案之一是涉及到一个积极和细心的软硬件开发人员社区，他们手工检查每一个依赖关系的每一个更新（以及其相应的全面的交叉依赖关系列表），这几乎可以保证永远不会发生。另一个解决方案是在一个场景中运行，在这个场景中，任何代码都不会被赋予为所欲为的特权。Node.js 传统上允许这种模式，这是其创建者 Ryan Dahl 创建新的和更安全的东西的原因。
+Hayden Parker 撰写了一篇关于 [2018 年供应链攻击](https://medium.com/@hkparker/analysis-of-a-supply-chain-attack-2bd8fa8286ac) 的文章。 基本思想是攻击者将编写一个有用的开源函数供开发人员使用。 开发人员经常在不考虑来源的情况下添加依赖项，或者在不考虑依赖项的情况下添加源的水平集合。 一旦代码在生态系统中获得足够的使用，精心控制的小更新就会开始以微妙且不可预测的方式暴露攻击。 基本上，代码可能会开始寻找加密货币私钥或其他有用的敏感信息。
+
+这个问题唯一真正的解决方案之一是一个活跃而专注的硬件和软件开发人员社区，他们手动检查每个依赖项的每个更新（及其相应的交叉依赖项综合列表），这几乎可以保证此类问题永远不会发生。 另一种解决方案是在没有代码有权做任何想做的事情的场景中运行。 Node.js 传统上允许这种模式，这就是为什么它的创建者 Ryan Dahl 创造了一些新的和更安全的东西。
 
 ## WebAssembly 和 Deno
 
-Deno 是一个可能比 Node.js 更安全的 JavaScript 和 Typescript 的运行时 [^5]。尽管两者最初都是由同一个人建立的，但安全问题在 Node.js 中并没有那么多的考虑，因此很难在事后再去解决。Deno 一开始就把安全作为一个默认位置。在 Deno 运行时运行的代码不能访问文件系统或打开网络连接，除非得到许可。
+对于 JavaScript 和 Typescript，Deno 可能比 Node.js [^5] 更安全。 尽管两者最初都是由同一个人构建的，但在 Node.js 中并没有考虑到安全问题，因此事后很难修复。 Deno 以安全作为默认位置开始。 除非获得许可，否则在 Deno 运行时运行的代码无法访问文件系统或打开网络连接。
 
-这显然不是一个新的想法。几乎在 Java 出现的整个过程中，它的核心都有一个安全的许可模型。问题是，Java 的权限模型可能有些拜占庭式的，而且很难做到正确。如果说有什么东西会扼杀安全，那么复杂性是最重要的。正如你将在下面看到的，Deno 有一个更简单的方法，使用基于能力的方法来处理这个问题 [^6]。
+这显然不是一个新想法。 几乎在 Java 存在的整个过程中，它的核心都有一个安全的许可模型。 问题是，Java 的权限模型可能有点复杂，很难做到正确。 如果有什么东西会扼杀安全性，那就是复杂性。 正如您将在下面看到的，Deno 使用基于功能的方法 [^6] 可以更轻松地处理此问题。
 
-除了安全性之外，Deno 还在原生地 "运行 TypeScript"，而它通常会先被转译成某种形式的 JavaScript。当 Deno 在幕后编译它并缓存编译后的形式时，它感觉更像是原生支持。这改善了 JavaScript 开发的质量（这也有安全方面的影响），允许改进类型检查。由于 TypeScript 中强大的类型系统，通常在运行时出现的问题可以在编译时被发现。
+除了安全性，Deno 还“本地运行 TypeScript”，通常首先将其转换为某种形式的 JavaScript。 感觉更像是原生支持，因为 Deno 在幕后编译它并缓存编译后的形式。 这提高了 JavaScript 开发的质量（这也有安全隐患），允许改进类型检查。 由于 TypeScript 中强大的类型系统，通常在运行时出现的问题可以在编译时捕获。
 
-从例 8-5 中的 WebAssembly 模块开始，它将两个数字加在一起。在例 8-7 中，你可以看到我们第一次尝试使用 Deno 的 WebAssembly 支持。超级简单！例 8-7. 在 Deno 中加载 WebAssembly 模块
+从例 8-5 中的 WebAssembly 模块开始，它将两个数字相加。 在示例 8-7 中，您可以看到我们首次尝试使用 Deno 的 WebAssembly 支持。 超级简单！
+
+例 8-7. 在 Deno 中加载 WebAssembly 模块
 
 ```javascript
-const wasmCode = await Deno.readFile ("./a.out.wasm")。
-const wasmModule = new WebAssembly.Module (wasmCode);
-const wasmInstance = new WebAssembly.Instance（wasmModule）。
-const add = wasmInstance.exports.add as CallableFunction 
-
-console.log ("2 + 3 =" + add (2,3))。
+const wasmCode = await Deno.readFile("./a.out.wasm"); 
+const wasmModule = new WebAssembly.Module(wasmCode); 
+const wasmInstance = new WebAssembly.Instance(wasmModule); 
+const add = wasmInstance.exports.add as CallableFunction
+console.log("2 + 3 =  " + add(2,3));
 ```
 
-不幸的是，我们的兴奋是短暂的。至少问题是清楚的。我们试图从文件系统中读取，但没有权限。我们立即看到 Deno 的安全优势。
+不要高兴的太早。我们试图从文件系统中读取，但没有权限。此时 Deno 的安全优势显露了出来。
 
 ```bash
 brian@tweezer ~/g/w/s/c/deno> deno run main.ts
@@ -278,11 +283,11 @@ Check file:///Users/brian/git-personal/wasm_tdg/src/ch08/deno/main.ts
 2+3= 5
 ```
 
-虽然我不想在运行 Node.js 和 Deno HTTP 服务器的细节上分心，但我承认，在关于服务器的这一章中，我还没有运行过服务器，这实在是有点可悲。所以，这里是一个简单的 HTTP 服务器。要想变得更复杂，就需要我们进入 Deno 中间件。
+虽然我不想被运行 Node.js 和 Deno HTTP 服务器的细节分散注意力，但我承认在本章关于服务器的内容中我还没有运行服务器有点遗憾。 所以，下面是一个简单的 HTTP 服务器。 
 
-在例 8-8 中，你看到了 Deno 是如何允许你通过 HTTP 拉取版本模块以供使用。在这个例子中，我们从 Deno 标准库中拉出一个基本的 HTTP 服务器。
+在例 8-8 中，您看到了 Deno 如何允许通过 HTTP 拉取版本化模块以供使用。 在此示例中，我们从 Deno 标准库中提取了一个基本的 HTTP 服务器。
 
-例 8-8. 在 Deno HTTP 服务器中使用 WebAssembly
+例 8-8. 将 WebAssembly 与 Deno HTTP 服务器一起使用
 
 ```javascript
 import {serve} from "https://deno.land/std@0.93.0/http/server.ts";
@@ -300,7 +305,7 @@ for await (const request of server) {let bodyContent = "2 + 3 =" + add (2,3);
 }
 ```
 
-准备好迎接快速的失望吧！就像我们没有权限从文件系统中读取的 TypeScript 代码一样，我们也不能在没有权限的情况下监听网络连接！
+准备好失败吧！就像我们没有权限从文件系统中读取的 TypeScript 代码一样，我们也不能在没有权限的情况下监听网络连接！
 
 ```bash
 brian@tweezer ~/g/w/s/c/deno> deno run --allow-read main-serve.ts 
@@ -334,9 +339,9 @@ content-length: 9
 
 接下来我们将看一下 Deno 和 WebAssembly 的最后一个例子。在我们有机会讨论 WebAssembly 系统接口（WASI）标准之前，我对展示第 11 章中的某些类型的功能一直有点犹豫不决。目前，我想展示 WebAssembly 与 Deno 的使用，不需要太多额外的细节。
 
-Tilman Roeder [^7] 创建了一个内存 SQLite WebAssembly 模块，并将其封装以便在 JavaScript 和 TypeScript 中使用，你可以在 [GitHub](https://github.com/dyedgreen/deno-sqlite) 上获取。关于它如何工作的细节还需要等待，但使用它是非常简单的，如例 8-9 所示。
+Tilman Roeder [^7] 创建了一个内存 SQLite WebAssembly 模块，并将其封装以便在 JavaScript 和 TypeScript 中使用，你可以在 [GitHub](https://github.com/dyedgreen/deno-sqlite) 上获取。关于它的细节我们暂且不提，但使用它是非常简单的，如例 8-9 所示。
 
-例 8-9. 在 Deno HTTP 服务器中使用一个 WebAssembly SQLite 包装器
+例 8-9. 在 Deno HTTP 服务器中使用 WebAssembly SQLite 包装器
 
 ```typescript
 import {DB} from "https://deno.land/x/sqlite/mod.ts";
@@ -379,15 +384,14 @@ for await (const request of server) {
     db.close ();}
 ```
 
-我们从创建数据库文件开始。我希望你的直觉告诉你，这需要另一个运行时权限，确实如此。之后，我们向数据库加载一些数据，并关闭连接。
+我们从创建数据库文件开始，你应该察觉到这里还需要另一个运行时权限，而且确实如此。 之后，我们将一些数据加载到数据库中并关闭连接。
 
-一旦我们启动服务器，在收到一个合适的 HTTP 请求后，我们将再次打开数据库，运行一个查询，生成一个结果，然后关闭数据库。我并不是说这是高质量的生产代码，但是这段代码能在 Deno 中安全地运行，并且能在 Deno 支持的各种平台上运行，这是相当了不起的。尽管我们面对的是一个包装好的 C 库（即 SQLite3），但 WebAssembly 使代码可以移植，同时仍然具有相当高的性能。我希望用安全、快速、可移植的 WebAssembly 代码扩展服务器基础设施的想法更有意义。
+一旦启动服务器，在收到适当的 HTTP 请求后，我们将再次打开数据库，运行查询，生成结果，然后关闭数据库。 我并不是说这是高质量的生产代码，但这段代码在 Deno 中以及在 Deno 支持的各种平台上安全运行是非常了不起的。 虽然我们正在处理一个包装的 C 语言库（即 SQLite3），但 WebAssembly 使代码可移植，同时仍然具有合理的性能。 我希望使用安全、快速、可移植的 WebAssembly 代码扩展服务器基础设施的想法更有意义。
 
-下面的命令将以适当的权限启动服务器：
+以下命令将以适当的权限启动服务器：
 
 ```bash
-brian@tweezer ~/g/w/s/c/deno> deno run --allow-read --allow-write ↵
-  --allow-net db-serve.ts
+brian@tweezer ~/g/w/s/c/deno> deno run --allow-read --allow-write --allow-net db-serve.ts
 HTTP webserver running.  Access it at:  http://localhost:9000/
 ```
 
@@ -407,9 +411,9 @@ TypeScript
 
 ## 展望未来
 
-这一章所代表的脱离浏览器的巨大飞跃，仅仅是个开始。虽然我们放弃了在那种受限制的环境中运行的安全限制（除了类似于锁定的 Deno 实例），我们也放弃了浏览器的丰富功能。在任何一个现代的浏览器平台上，都有大量的功能可用于 JavaScript 环境。这包括 Java 脚本引擎、硬件加速的 2D/3D 图形和视频播放、声音、字体支持、提出网络请求的能力，等等。默认情况下，Node.js 和 Deno 都不提供浏览器的所有功能，尽管 Deno 正试图支持其中的大部分。这使得编写基于 WebAssembly 的应用程序在浏览器内部和外部都能工作变得更加困难。
+本章所描述的与浏览器相关的巨大飞跃仅仅是个开始。 虽然我们放弃了在受限环境中运行的安全限制（除了锁定的 Deno 实例之外），但我们也放弃了浏览器的丰富性。 在任何现代浏览器平台上，JavaScript 环境中都有大量可用的功能。 这包括 JavaScript 引擎、硬件加速的 2D/3D 图形和视频播放、声音、字体支持、发出网络请求能力等等。 默认情况下，Node.js 和 Deno 都不提供浏览器的所有功能，尽管 Deno 试图支持其中的大部分功能。 这使得编写可在浏览器内外运行的基于 WebAssembly 的应用程序变得更加困难。
 
-WebAssembly 使代码可移植。我们需要另一种策略，通过为我们在现代计算平台上期望的功能提供一致的服务接口，使应用程序可移植。这就是为什么我对可以给你看的例子的种类有点谨慎。这个问题的真正解决方案将在第 11 章介绍。 在那之前，请耐心等待，但我们还有一堆问题要讨论的。
+为了让 WebAssembly 的代码可移植。 我们需要另一种策略，通过为我们在现代计算平台上期望的功能提供一致的服务接口来使应用程序可移植。 这就是为什么我对可以向您展示的示例类型持谨慎态度。 这个问题的真正解决方案将在[第 11 章](../wasi/)中介绍。在那之前，请耐心等待，但我们还有很多问题需要讨论。
 
 ## 注释
 
