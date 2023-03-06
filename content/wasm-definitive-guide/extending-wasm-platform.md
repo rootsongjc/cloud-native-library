@@ -1,6 +1,6 @@
 ---
 linktitle: 第 12 章：扩展 WebAssembly 平台
-summary: 扩展 WebAssembly 平台。
+summary: "这篇文章是《WebAssembly 权威指南》一书的第十二章，介绍了如何扩展 WebAssembly 平台的能力，使其能够访问宿主环境的资源和服务。文章讲解了 WebAssembly 的模块化设计和接口类型的概念，以及如何使用 WebAssembly Interface Types（WIT）和 WebAssembly System Interface（WASI）来实现跨语言和跨平台的互操作。文章还展示了如何使用 WasmEdge 和 Rust 来编写一个简单的 WebAssembly 应用。"
 weight: 13
 icon: book-reader
 icon_pack: fas
@@ -9,6 +9,8 @@ title: 扩展 WebAssembly 平台
 date: '2023-01-26T00:00:00+08:00'
 type: book # Do not modify
 ---
+
+> 译者注：这是《WebAssembly 权威指南》一书的第十二章，介绍了如何扩展 WebAssembly 平台的能力，使其能够访问宿主环境的资源和服务。文章讲解了 WebAssembly 的模块化设计和接口类型的概念，以及如何使用 WebAssembly Interface Types（WIT）和 WebAssembly System Interface（WASI）来实现跨语言和跨平台的互操作。文章还展示了如何使用 WasmEdge 和 Rust 来编写一个简单的 WebAssembly 应用。
 
 WebAssembly的[MVP](https://github.com/WebAssembly/design)定义是在地上打了一个桩，但从来没有打算作为全面的解决方案。它主要关注的是语言特性和不需要复杂的线程、垃圾收集和异常处理的运行时。还有一些其他的限制，我们在书中也看到了。虽然人们已经找到了解决这些缺点的方法，令人印象深刻，但MVP不是终点，它只是个开始。
 

@@ -1,6 +1,6 @@
 ---
 linktitle: 第 11 章：WASI（WebAssembly 系统接口）
-summary: WASI（WebAssembly 系统接口）
+summary: "这篇文章是《WebAssembly 权威指南》一书的第十一章，这章介绍了 WASI（WebAssembly 系统接口）的概念、目标、架构和实现。WASI 是一种标准化的接口，旨在让 WebAssembly 程序能够在不同的宿主环境中运行，同时保持安全性和可移植性。文章分析了 WASI 的设计原理和优势，以及它如何与 WebAssembly 模块、内存、表和函数交互。文章还展示了如何使用 WASI SDK 和 Wasmtime 运行时来编译和执行一个简单的 C 程序，并给出了一些实用的命令行工具和资源。"
 weight: 12
 icon: book-reader
 icon_pack: fas
@@ -9,6 +9,8 @@ title: WASI（WebAssembly 系统接口）
 date: '2023-01-26T00:00:00+08:00'
 type: book # Do not modify
 ---
+
+> 译者注：这是《WebAssembly 权威指南》一书的第十一章，这章介绍了 WASI（WebAssembly 系统接口）的概念、目标、架构和实现。WASI 是一种标准化的接口，旨在让 WebAssembly 程序能够在不同的宿主环境中运行，同时保持安全性和可移植性。文章分析了 WASI 的设计原理和优势，以及它如何与 WebAssembly 模块、内存、表和函数交互。文章还展示了如何使用 WASI SDK 和 Wasmtime 运行时来编译和执行一个简单的 C 程序，并给出了一些实用的命令行工具和资源。
 
 在 WebAssembly 做有些事情会异常困难，而在其他平台上却比较容易。在 C、C++ 或 Rust 这样的语言中，从文件系统中读取、向控制台写入和在内存中操作字符串都很简单。操作系统会允许有足够权限的用户来做这些事情。这里没有明确的、上下文的界限。
 
