@@ -1,11 +1,11 @@
 ---
-linktitle: 第 6 章：应用 WebAssembly—— 在浏览器中运行遗留代码
+linktitle: "第 6 章：使用 WebAssembly 在浏览器中运行遗留代码"
 summary: "这篇文章是《WebAssembly 权威指南》一书的第六章，介绍了如何使用 WebAssembly 在浏览器中运行遗留代码，即已经存在的 C/C++ 代码库。文章以一个实际的例子，即使用 Emscripten 工具将 C++ 代码编译为 WebAssembly 模块，并在浏览器中使用 JavaScript 调用它。文章详细说明了 Emscripten 的工作原理、编译选项、运行时环境和调试方法。"
 weight: 7
 icon: book-reader
 icon_pack: fas
 draft: false
-title: "应用 WebAssembly：在浏览器中运行遗留代码"
+title: "使用 WebAssembly 在浏览器中运行遗留代码"
 date: '2023-01-25T00:00:00+08:00'
 type: book # Do not modify
 ---
