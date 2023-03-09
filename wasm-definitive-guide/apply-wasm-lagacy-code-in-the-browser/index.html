@@ -339,7 +339,7 @@
         content="2023-01-25T00:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2023-03-09T16:17:54&#43;08:00">
+    <meta property="article:modified_time" content="2023-03-09T21:34:41&#43;08:00">
   
 
   
@@ -879,7 +879,7 @@
 
 
 
-  <li class="child level "><a href="/wasm-definitive-guide/applied-wasm-tensorflow-js/">第 9 章：应用 WebAssembly——TensorFlow.js</a></li>
+  <li class="child level "><a href="/wasm-definitive-guide/applied-wasm-tensorflow-js/">第 9 章：WebAssembly 在 TensorFlow.js 中的应用</a></li>
 
 
 
@@ -1215,16 +1215,16 @@ COMPILER      = -em++
 ...
 </code></pre><p>Makefile 的 clean 步骤并没有删除可执行文件。所以手动删除 <code>bitmap_test</code>（或者更好的是修改 Makefile！），现在重新运行 make。你应该看到类似下面的东西。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">brian@tweezer ~/g/w/c/bitmap&gt; make
-</span></span><span class="line"><span class="cl">em++ -ansi -pedantic-errors -Wall -Wall -Werror -Wextra -o bitmap_test ↵ bitmap_test.cpp -L/usr/lib -lstdc++ -lm
+</span></span><span class="line"><span class="cl">em++ -ansi -pedantic-errors -Wall -Wall -Werror -Wextra -o bitmap_test bitmap_test.cpp -L/usr/lib -lstdc++ -lm
 </span></span><span class="line"><span class="cl">brian@tweezer ~/g/w/c/bitmap&gt; ls -alF
 </span></span><span class="line"><span class="cl">total <span class="m">1848</span>
-</span></span><span class="line"><span class="cl">drwxr-xr-x@ <span class="m">8</span> brian staff	   <span class="m">256</span>    Mar  <span class="m">6</span> 15:21 ./
+</span></span><span class="line"><span class="cl">drwxr-xr-x@ <span class="m">8</span> brian staff    <span class="m">256</span>    Mar  <span class="m">6</span> 15:21 ./
 </span></span><span class="line"><span class="cl">drwxr-xr-x <span class="m">12</span> brian staff    <span class="m">384</span>    Mar  <span class="m">6</span> 14:47 .../
-</span></span><span class="line"><span class="cl">-rw-r-r--@  <span class="m">1</span> brian staff	   <span class="m">771</span>    Mar  <span class="m">6</span> 15:20 Makefile
-</span></span><span class="line"><span class="cl">-rw-r-r--@  <span class="m">1</span> brian staff <span class="m">247721</span>    Dec <span class="m">31</span> <span class="m">1999</span> bitmap_image.hpp
-</span></span><span class="line"><span class="cl">-rw-r--r--	<span class="m">1</span> brian staff <span class="m">248314</span>    Mar  <span class="m">6</span> 15:21 bitmap_test
-</span></span><span class="line"><span class="cl">-rw-r-r--@  <span class="m">1</span> brian staff	 <span class="m">20479</span>    Dec  <span class="m">31</span> <span class="m">1999</span> bitmap_test.cpp
-</span></span><span class="line"><span class="cl">-rwxr-xr-x	<span class="m">1</span> brian staff <span class="m">296743</span>    Mar  <span class="m">6</span> 15:21 bitmap_test.wasm*.
+</span></span><span class="line"><span class="cl">-rw-r-r--@  <span class="m">1</span> brian staff    <span class="m">771</span>    Mar  <span class="m">6</span> 15:20 Makefile
+</span></span><span class="line"><span class="cl">-rw-r-r--@  <span class="m">1</span> brian staff <span class="m">247721</span>    Dec  <span class="m">31</span> <span class="m">1999</span> bitmap_image.hpp
+</span></span><span class="line"><span class="cl">-rw-r--r--  <span class="m">1</span> brian staff <span class="m">248314</span>    Mar  <span class="m">6</span> 15:21 bitmap_test
+</span></span><span class="line"><span class="cl">-rw-r-r--@  <span class="m">1</span> brian staff  <span class="m">20479</span>    Dec  <span class="m">31</span> <span class="m">1999</span> bitmap_test.cpp
+</span></span><span class="line"><span class="cl">-rwxr-xr-x  <span class="m">1</span> brian staff <span class="m">296743</span>    Mar  <span class="m">6</span> 15:21 bitmap_test.wasm*.
 </span></span><span class="line"><span class="cl">-rw-r-r--@  <span class="m">1</span> brian staff <span class="m">120054</span>    Mar  <span class="m">6</span> 14:39 image.bmp
 </span></span></code></pre></div><p>呃，这很容易。不幸的是，我们还没有完全完成。虽然这确实是在编译，但由于各种原因，它是无法工作的。其中第一个原因是，该库希望能够写入文件系统。这一点应该不足为奇，因为这是不可能的。然而，有一个非常酷的文件系统抽象，它可以通过添加编译器指令来写入本地存储。现在，就像处理 <code>printf () </code> 的调用一样，Emscripten 工具链将模拟一个文件系统。通过在你的 Makefile 中添加指令 <code>-s FORCE_FILESYSTEM=1</code> 来解锁这一支持。我将在下面向你展示最终的形式。</p>
 <p>第二个问题是，默认生成的 Memory 实例将不允许增长。如果我们期望这个库能在内存中生成一些相当大的图像，那么它就需要足够的内存。所以，我们可以使用另一个指令来允许它这样做。这是我在<a href="../wasm-memory/">第 4 章</a>中向你展示的如何手动操作的东西。这是 Emscripten 可以为我们处理的细节。为了对这个过程有更多的控制，我们将告诉 Emscripten 不要自动退出程序，并导出 <code>main ()</code> 方法，这样我们就可以在需要时调用它。因为我们不是生成一个独立的二进制文件，我们还要告诉 Emscripten 编译器生成一个叫做 <code>bitmap_test.js</code> 的 JavaScript 文件。<code>bitmap_test</code> 规则的命令现在应该如例 6-8 所示。</p>
