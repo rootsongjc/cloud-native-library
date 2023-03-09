@@ -39,19 +39,20 @@ Rust 最初是 Mozilla 的 Graydon Hoare 的一个副项目，但已经发展成
 
 然而，虽然你最初可能会对 Rust 编译器期望你达到的成人水平感到恼火，但它很快就会成为一种人们喜爱的语言。 它在过去几年赢得了多项最受喜爱的语言调查，因此攀登陡峭的学习曲线显然是一次有益的经历[^2]。 一旦青少年成为年轻人，即使有额外的期望，也很少有人渴望回到年轻时候的自己。
 
-假定你已经按照 [附录](../appendix/) 中的详细信息安装了 Rust。 我们可以很容易地处理像“Hello World!”这样的程序。 如例10-1所示。
+假定你已经按照 [附录](../appendix/) 中的详细信息安装了 Rust。 我们可以很容易地处理像 “Hello World!” 这样的程序。 如例10-1所示。
 
 例 10-1. Rust "Hello, World!"
 
 ```rust
-fn main () {println! ("Hello, World!");
+fn main () {
+  println! ("Hello, World!");
 }
 ```
 
 这里我们有一个 `main()` 方法和将字符串打印到控制台的能力。 虽然它看起来像是一个强调的名称，但感叹号只是将其标记为一个宏，一种我们没有时间探索的语言功能 [^3]。 你可以将其视为 C 语言中的 `printf()` 或 Java 中的 `System.out.println()`。 编译和运行这个简单的程序就像编写以下命令一样简单。
 
 ```bash
-brian@tweezer ~/g/w/s/ch10> rustc helloworld.rs 
+brian@tweezer ~/g/w/s/ch10> rustc helloworld.rs
 brian@tweezer ~/g/w/s/ch10> ./helloworld
 Hello, World!
 ```
@@ -64,7 +65,7 @@ Hello, World!
 fn main () {
   let s = "cool"; 
   s = "safe";
-  
+
   println!("Rust is {}", s);
 }
 ```
@@ -89,7 +90,7 @@ warning: 1 warning emitte
 
 真正的问题是 Rust 变量默认是不可变的。 一旦你分配了一个值，你就不能改变它。 这似乎是一种奇怪的策略，但它会迫使你明确说明要更改的变量是可变的。 有一大类错误涉及无意覆盖变量。 在测试失败或出现运行时问题之前，你可能不会注意到你已经这样做了。
 
-显然，我们需要 Rust 中的变量； 你只需要告诉编译器这是你想要的，如示例 10-3 所示。
+显然，我们需要 Rust 中的变量； 你只需要告诉编译器这是你想要的，如例 10-3 所示。
 
 例 10-3. 可变的 Rust 变量
 
@@ -117,7 +118,7 @@ Rust is safe
 
 ```rust
 fn main () {
-  let s = "Hello, world." 
+  let s = "Hello, world."
   let t = s;
   println! ("s: {}", s);
   println! ("t: {}", t);
@@ -127,7 +128,7 @@ fn main () {
 这是一件非常合理的事情，我们看到 Rust 编译器没有报错：
 
 ```bash
-brian@tweezer ~/g/w/s/ch10> rustc memcheck.rs 
+brian@tweezer ~/g/w/s/ch10> rustc memcheck.rs
 brian@tweezer ~/g/w/s/ch10> ./memcheck
 s: Hello, world.
 t: Hello, world.
@@ -140,7 +141,7 @@ t: Hello, world.
 ```rust
 fn main () {
   let s = "Hello, world.".to_string ();
-  let t = s; 
+  let t = s;
   println! ("s: {}", s);
   println! ("t: {}", t);
 }
@@ -236,8 +237,8 @@ Error: function lookup failed ('add')
 
 ```bash
 brian@tweezer-2 ~/g/w/s/ch10> ls -laF add*
--rwxr-xr-x 1 brian staff 334920 May 4 11:54 add*
--rw-r--r-- 1 brian staff 111 May 4 12:07 add.rs 
+-rwxr-xr-x 1 brian staff 334920  May 4 11:54 add*
+-rw-r--r-- 1 brian staff 111     May 4 12:07 add.rs 
 -rwxr-xr-x 1 brian staff 1501227 May 4 12:16 add.wasm*
 ```
 
@@ -353,7 +354,7 @@ wasm-bindgen 的“Hello, World！” 是从 Rust 中调用 `alert()` JavaScript
 第一步是使用 cargo build 工具创建一个 Rust 库项目。 这将搭建基本项目：
 
 ```bash
-brian@tweezer ~/src> cargo new --lib hello-wasm-bindgen 
+brian@tweezer ~/src> cargo new --lib hello-wasm-bindgen
 Created library `hello-wasm-bindgen` package
 ```
 
@@ -365,11 +366,13 @@ Created library `hello-wasm-bindgen` package
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-extern {pub fn alert (s: &str);
+extern {
+  pub fn alert (s: &str);
 }
 
 #[wasm_bindgen]
-pub fn say_hello (name: &str, whom: &str) {alert (&format!("Hello, {} from {}!", name, whom));
+pub fn say_hello (name: &str, whom: &str) {
+  alert (&format!("Hello, {} from {}!", name, whom));
 }
 ```
 
@@ -437,13 +440,13 @@ Export [4]:
 ```html
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="utf-8">
-		<title>hello-wasm-bindgen Example</title>
-	</head>
-	<body>
-	<script type="module">
-		import init, {say_hello} from 		"./pkg/hello_wasm_bindgen.js"; 
+  <head>
+    <meta charset="utf-8">
+    <title>hello-wasm-bindgen Example</title>
+  </head>
+  <body>
+  <script type="module">
+    import init, {say_hello} from "./pkg/hello_wasm_bindgen.js";
     init ()
       .then (() => {say_hello ("Rust", "JavaScript");
     });

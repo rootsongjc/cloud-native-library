@@ -259,16 +259,16 @@ Makefile 的 clean 步骤并没有删除可执行文件。所以手动删除 `bi
 
 ```bash
 brian@tweezer ~/g/w/c/bitmap> make
-em++ -ansi -pedantic-errors -Wall -Wall -Werror -Wextra -o bitmap_test ↵ bitmap_test.cpp -L/usr/lib -lstdc++ -lm
+em++ -ansi -pedantic-errors -Wall -Wall -Werror -Wextra -o bitmap_test bitmap_test.cpp -L/usr/lib -lstdc++ -lm
 brian@tweezer ~/g/w/c/bitmap> ls -alF
 total 1848
-drwxr-xr-x@ 8 brian staff	   256    Mar  6 15:21 ./
+drwxr-xr-x@ 8 brian staff    256    Mar  6 15:21 ./
 drwxr-xr-x 12 brian staff    384    Mar  6 14:47 .../
--rw-r-r--@  1 brian staff	   771    Mar  6 15:20 Makefile
--rw-r-r--@  1 brian staff 247721    Dec 31 1999 bitmap_image.hpp
--rw-r--r--	1 brian staff 248314    Mar  6 15:21 bitmap_test
--rw-r-r--@  1 brian staff	 20479    Dec  31 1999 bitmap_test.cpp
--rwxr-xr-x	1 brian staff 296743    Mar  6 15:21 bitmap_test.wasm*.
+-rw-r-r--@  1 brian staff    771    Mar  6 15:20 Makefile
+-rw-r-r--@  1 brian staff 247721    Dec  31 1999 bitmap_image.hpp
+-rw-r--r--  1 brian staff 248314    Mar  6 15:21 bitmap_test
+-rw-r-r--@  1 brian staff  20479    Dec  31 1999 bitmap_test.cpp
+-rwxr-xr-x  1 brian staff 296743    Mar  6 15:21 bitmap_test.wasm*.
 -rw-r-r--@  1 brian staff 120054    Mar  6 14:39 image.bmp
 ```
 

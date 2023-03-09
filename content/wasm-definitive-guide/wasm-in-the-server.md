@@ -195,11 +195,11 @@ EMSCRIPTEN_KEEPALIVE int add (int x, int y) { ②
 brian@tweezer ~/g/w/c/node> emcc add.c
 brian@tweezer ~/g/w/c/node> ls -alF total 376
 drwxr-xr-x	6 brian staff	   192 Apr 18 15:05 ./
-drwxr-xr-x 10 brian staff	   320 Apr 18 13:08 .../
+drwxr-xr-x     10 brian staff	   320 Apr 18 13:08 .../
 -rwxr-xr-x	1 brian staff	 49456 Apr 18 15:05 a.out.
--rw-r--r--	1 brian staff 121686 Apr 18 15:05 a.out.js
--rwxr-xr-x	1 brian staff	 11805 Apr 18 15:05 a.out.wasm.
--rw-r--r--	1 brian staff	   141 Apr 18 15:05 add.c 
+-rw-r--r--	1 brian staff   121686 Apr 18 15:05 a.out.js
+-rwxr-xr-x	1 brian staff	 11805 Apr 18 15:05 a.out.wasm
+-rw-r--r--	1 brian staff	   141 Apr 18 15:05 add.c
 brian@tweezer ~/g/w/c/node> node a.out.js
 The sum of 2 and 3 is: 5
 ```

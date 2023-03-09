@@ -272,7 +272,7 @@ class HowOldExample {
 
 ## Zig
 
-如果你说自己从来没听说过 Zig，我也不会感到惊讶。我最喜欢的轶事是 Jakub Konka，一位在软件和算法以及编译器理论方面备受尊敬的研究人员，在等待 Rust 编译时学习了 Zig[^3]。这是一个有趣的故事，在取笑 Rust 编译器运行缓慢的同时，也让你了解 Zig 带来的好处 [^4]。
+如果你说自己从来没听说过 Zig，我也不会感到惊讶。我最喜欢的轶事是 Jakub Konka，一位在软件和算法以及编译器理论方面备受尊敬的研究人员，在等待 Rust 编译时学习了 Zig[^2]。这是一个有趣的故事，在取笑 Rust 编译器运行缓慢的同时，也让你了解 Zig 带来的好处 [^3]。
 
 首先，就像上面的故事所示，Zig 是一种简单的语言。该[站点](https://ziglang.org/)建议你花时间调试应用程序，而不是学习编程语言。复杂的编程语言很难学习和有效使用，除非你经过多年的练习才能掌握。Zig 没有隐藏的控制流，没有隐藏的内存分配，没有预处理器和宏系统。其完整的语法体现在一个 500 行的解析表达式语法文件中。
 
@@ -360,7 +360,7 @@ brian@tweezer ~/g/w/c/zig> wasmtime preopens.wasm brian@tweezer ~/g/w/c/zig> was
 0: Preopen{ .fd = 3, .type = PreopenType{ .Dir = '@".}}
 ```
 
-我不是想给你推销 Zig[^5]。相反，我试图强调这本书的一个主题。WebAssembly 是一项非常有价值的技术。能够选择一种语言是因为它是遗留的因此可重用，或者因为它是新的和令人兴奋的并增加了新的好处，同时能够针对我们讨论过的所有运行时是相当大的成就。
+我不是想给你推销 Zig[^4]。相反，我试图强调这本书的一个主题。WebAssembly 是一项非常有价值的技术。能够选择一种语言是因为它是遗留的因此可重用，或者因为它是新的和令人兴奋的并增加了新的好处，同时能够针对我们讨论过的所有运行时是相当大的成就。
 
 如果你想从 Zig 中获得更多乐趣，请查[俄罗斯方块](https://raulgrell.github.io/tetris/)的实现，用 Zig 编写，并使用 WebGL。
 
@@ -393,8 +393,6 @@ brian@tweezer ~/g/w/c/zig> wasmtime preopens.wasm brian@tweezer ~/g/w/c/zig> was
 ## 注释
 
 [^1]: [irb](https://github.com/ruby/irb) 是一个交互式的 Ruby REPL 环境。
-[^2]: NBC 正在保护该视频，但你可以在 [YouTube](https://www.youtube.com/watch?v=wPO8PqHGWFU&ab_channel=TheNotReadyForPrimeTimePlayers-Topic) 上收听该短剧。
-
-[^3]: [Jakub 的手稿](http://www.jakubkonka.com/)已经遍布了 WASI、witx、Wasmtime 等。
-[^4]:虽然公平地说，这是因为 Rust 做了很多事情，而且随着时间的推移，已经变得更好了。
-[^5]: 尽管如果我已经激起了你的兴趣。
+[^2]: [Jakub 的手稿](http://www.jakubkonka.com/)已经遍布了 WASI、witx、Wasmtime 等。
+[^3]: 虽然公平地说，这是因为 Rust 做了很多事情，而且随着时间的推移，已经变得更好了。
+[^4]: 尽管如果我已经激起了你的兴趣。

@@ -39,7 +39,8 @@ type: book # Do not modify
 例 11-1. Rust "Hello, World!"
 
 ```rust
-fn main () {println! ("Hello, World!");
+fn main () {
+  println! ("Hello, World!");
 }
 ```
 

@@ -1,11 +1,11 @@
 ---
-linktitle: "第 9 章：应用 WebAssembly——TensorFlow.js"
+linktitle: "第 9 章：WebAssembly 在 TensorFlow.js 中的应用"
 summary: "这篇文章是《WebAssembly 权威指南》一书的第九章，这一章是关于 TensorFlow.js 的 WebAssembly (WASM) 后端的介绍和使用教程。TensorFlow.js 是一个用于机器学习的 JavaScript 框架，它可以在浏览器和 Node.js 中运行。WASM 后端是一个可选的后端，它可以提高 CPU 的执行速度，而且只需要少量的代码修改。WASM 后端可以帮助提高在更广泛的设备上的性能，特别是那些缺乏 WebGL 支持或 GPU 较慢的低端移动设备。"
 weight: 10
 icon: book-reader
 icon_pack: fas
 draft: false
-title: 应用 WebAssembly：TensorFlow.js
+title: "WebAssembly 在 TensorFlow.js 中的应用"
 date: '2023-01-26T00:00:00+08:00'
 type: book # Do not modify
 ---

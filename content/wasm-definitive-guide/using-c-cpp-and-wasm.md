@@ -377,7 +377,8 @@ clang-11: error: linker command failed with exit code 1 (use -v to see invocatio
 没问题。这是问题很容易解决。我们可以简单地告诉 Clang 编译代码，并使用 `-c` 选项告诉它不要链接。
 
 ```bash
-brian@tweezer ~/g/w/s/ch05> clang -c simple.c -o simple.o brian@tweezer ~/g/w/s/ch05> ls -laF simple.*
+brian@tweezer ~/g/w/s/ch05> clang -c simple.c -o simple.o 
+brian@tweezer ~/g/w/s/ch05> ls -laF simple.*
 -rw-r--r-- 1 brian staff 170 Feb 19 15:27 simple.c 
 -rw-r--r-- 1 brian staff 1060 Feb 19 15:43 simple.o
 ```
@@ -522,7 +523,8 @@ int main () {
 编译运行它，可以看到我们所期望的输出。a 的地址不太可能是相同的，但它看起来应该是类似的。
 
 ```bash
-brian@tweezer ~/g/w/s/ch05> clang simple3.c -o simple3 brian@tweezer ~/g/w/s/ch05> ./simple3
+brian@tweezer ~/g/w/s/ch05> clang simple3.c -o simple3 
+brian@tweezer ~/g/w/s/ch05> ./simple3
 a is 0x7ffeef3a9720
 The first value is: 0
 The second value is: 1
@@ -627,29 +629,29 @@ The third value is: 2
 #include "nanolibc/libc.h"
 #include "nanolibc/libc_extra.h"
 #define WASM_EXPORT __attribute__((visibility ( "default") ) ) extern "C"
-WASM_EXPORT int* get_memory_for_int_array (int size)
-{return (new int [size]);
+WASM_EXPORT int* get_memory_for_int_array (int size) {
+	return (new int [size]);
 }
-
-WASM_EXPORT void free_memory_for_int_array (int* arr)
-{delete [] arr;
+WASM_EXPORT void free_memory_for_int_array (int* arr) {
+	delete [] arr;
 }
-
-WASM_EXPORT void mergeSort (char *p, int length)
-{
+WASM_EXPORT void mergeSort (char *p, int length) {
 	int c, d, swap;
-	for (c = 0; c < length - 1; c++)
-	{for ( d = 0; d < length - c - 1; d++)
-	{if ( p [d] > p [d + 1] )
-		{swap = p [d]; p [d] = p [d + 1]; p [d + 1] = swap;
+	for (c = 0; c < length - 1; c++) {
+		for ( d = 0; d < length - c - 1; d++) {
+			if ( p [d] > p [d + 1] ) {
+				swap = p [d];
+				p [d] = p [d + 1];
+				p [d + 1] = swap;
+			}
 		}
 	}
-	}
 }
-
-WASM_EXPORT void reverse (unsigned char* p, int len)
-{for ( inti = 0; i < len / 2; i++)
-	{unsigned char temp = p [i]; p [i] = p [len - i - 1]; p [len - i - 1] = temp;
+WASM_EXPORT void reverse (unsigned char* p, int len) {
+	for ( inti = 0; i < len / 2; i++) {
+		unsigned char temp = p [i];
+		p [i] = p [len - i - 1];
+		p [len - i - 1] = temp;
 	}
 }
 ```
@@ -793,7 +795,8 @@ WebAssembly.instantiateStreaming (fetch ('library.wasm'), importObject).then (fu
 例 5-15. "Hello, World!" 作为 C/C++ 代码中的一个函数
 
 ```cpp
-WASM_EXPORT void helloWorld () {printf ("Hello, World!\n");
+WASM_EXPORT void helloWorld () {
+  printf ("Hello, World!\n");
 }
 ```
 
@@ -807,7 +810,7 @@ WASM_EXPORT void helloWorld () {printf ("Hello, World!\n");
 
 在下方我们有一个 `printString ()` 的函数，它将被调用，并将一个 JavaScript 字符串输出到控制台。我们的 importObject 被配置为名为 `print_string` 的方法，它将在调用方法之前把一个 "字符指针" 转换成一个字符串，并将其转储到控制台。你会记得，importObject 允许模块实例共享函数和数据。
 
-例 5-16 让 "Hello, World!" 的后端
+例 5-16 "Hello, World!" 的后端
 
 ```html
 <script>
