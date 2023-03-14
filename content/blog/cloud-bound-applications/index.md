@@ -5,6 +5,7 @@ draft: false
 summary: "本文介绍了云绑定应用程序的概念，并探讨了在使用云绑定应用程序时需要考虑的几个关键因素。首先，作者解释了云绑定应用程序是指在构建应用程序时使用云提供的服务和资源。作者强调了使用云绑定应用程序可以带来很多好处，例如降低成本和提高可靠性。然而，作者也指出了在使用云绑定应用程序时需要考虑的几个关键因素，包括云供应商锁定、数据隐私和网络连接可靠性等。最后，作者提供了一些建议，帮助企业在使用云绑定应用程序时避免潜在的风险。例如，选择具有高可用性的云服务提供商，并在使用云绑定应用程序时加强数据安全措施。"
 tags: ["云原生"]
 categories: ["云原生"]
+authors: ["Bilgin Ibryam"]
 links:
   - icon: globe
     icon_pack: fa
@@ -32,7 +33,7 @@ links:
 
 应用程序的内部架构通常由一个团队拥有和控制。根据所选的语言和运行时，包、模块、接口、类和函数等工具和抽象可帮助开发人员控制内部边界。[领域驱动设计](https://martinfowler.com/bliki/DomainDrivenDesign.html)(DDD) 帮助开发人员设计领域模型，这些模型作为抽象来封装复杂的业务逻辑并调解业务现实与代码之间的差距。
 
-[Hexagonal](https://alistair.cockburn.us/hexagonal-architecture/)，[Onion](https://jeffreypalermo.com/2013/08/onion-architecture-part-4-after-four-years/ ) 和 [Clean](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) 架构可以[补充](https://herbertograca.com/2017/ 11/16/explicit-architecture-01-ddd-hexagonal-onion-clean-cqrs-how-i-put-it-all-together/) DDD 并安排具有不同边界和外部化基础设施依赖性的应用程序代码。尽管这些方法在开始时是创新的并且在今天仍然适用，但它们最初是为三层 Java 应用程序开发的，该应用程序由部署在共享应用程序运行时中的 JSP、Servlet 和 EJB 组成。当时的主要焦点是将应用程序逻辑与 UI 和数据库分离，并启用隔离测试。
+[Hexagonal](https://alistair.cockburn.us/hexagonal-architecture/)，[Onion](https://jeffreypalermo.com/2013/08/onion-architecture-part-4-after-four-years/ ) 和 [Clean](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) 架构可以[补充](https://herbertograca.com/2017/11/16/explicit-architecture-01-ddd-hexagonal-onion-clean-cqrs-how-i-put-it-all-together/) DDD 并安排具有不同边界和外部化基础设施依赖性的应用程序代码。尽管这些方法在开始时是创新的并且在今天仍然适用，但它们最初是为三层 Java 应用程序开发的，该应用程序由部署在共享应用程序运行时中的 JSP、Servlet 和 EJB 组成。当时的主要焦点是将应用程序逻辑与 UI 和数据库分离，并启用隔离测试。
 
 ![图 1：内部应用架构](images/f1.webp)
 
@@ -129,7 +130,7 @@ links:
 
 ### 其他绑定
 
-还有更多的绑定，属于集成绑定的范畴。例如，Kubernetes [Downward](https://kubernetes.io/docs/concepts/workloads/pods/downward-api/) API 和 Lambda [环境变量](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html) 等为应用程序提供内省数据，它为应用程序自省和元数据注入提供了一种简单的机制。配置和秘密绑定，其中秘密不仅在启动时注入到应用程序中，而且任何配置更新都通过 sidecars 推送到应用程序，例如 Hashicorp Vault Sidecar [Injector](https://developer.hashicorp.com/ vault /docs/platform/k8s/injector) 或者 Dapr 的 [Configuration](https://docs.dapr.io/developing-applications/building-blocks/configuration/configuration-api-overview/) API, Kubernetes 的 [Service Binding 设置](https://servicebinding.io/) 规范。和不太常见的模式，例如分布式[锁](https://docs.dapr.io/developing-applications/building-blocks/distributed-lock/distributed-lock-api-overview/)，这也是一个集成绑定提供对共享资源的互斥访问。
+还有更多的绑定，属于集成绑定的范畴。例如，Kubernetes [Downward](https://kubernetes.io/docs/concepts/workloads/pods/downward-api/) API 和 Lambda [环境变量](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html) 等为应用程序提供内省数据，它为应用程序自省和元数据注入提供了一种简单的机制。配置和秘密绑定，其中秘密不仅在启动时注入到应用程序中，而且任何配置更新都通过 sidecars 推送到应用程序，例如 Hashicorp Vault Sidecar [Injector](https://developer.hashicorp.com/vault/docs/platform/k8s/injector) 或者 Dapr 的 [Configuration](https://docs.dapr.io/developing-applications/building-blocks/configuration/configuration-api-overview/) API, Kubernetes 的 [Service Binding 设置](https://servicebinding.io/) 规范。和不太常见的模式，例如分布式[锁](https://docs.dapr.io/developing-applications/building-blocks/distributed-lock/distributed-lock-api-overview/)，这也是一个集成绑定提供对共享资源的互斥访问。
 
 ### 集成绑定趋势
 
@@ -139,7 +140,7 @@ links:
 
 ![图 6：云绑定应用程序生态系统](images/f6.webp)
 
-CNCF 的 [Dapr](https://dapr.io/) 是一个将大部分集成绑定和开发人员关注点整合到一个开源 API 中的项目。它提供同步服务调用、有状态服务编排、异步事件驱动交互和特定技术连接器作为 API。类似于容器和 Kubernetes 如何充当计算抽象，Dapr 充当外部服务的抽象。Dapr 还提供了独立于底层云服务且往往必须在应用层实现的集成能力，例如弹性策略、死信队列、[延迟交付](https://github.com/dapr/dapr/issues/ 2675)、跟踪、细粒度授权等。Dapr 被设计为多语言并在应用程序外部运行，从而可以轻松交换外部依赖项而无需更改应用程序的内部架构，如 Hexagon Architecture 中所述。虽然 Dapr 主要由实施应用程序的开发人员使用，但一旦引入，Dapr 就会增强分布式应用程序的可靠性和可见性，为运营和架构师团队提供 [整体利益](https://www.diagrid.io/blog/dapr-as-a-10x-platform)。要了解有关此主题的更多信息，请在今年晚些时候亲自或以虚拟方式参加 QConLondon，我将在那里[讨论](https://qconlondon.com/presentation/mar2023/commoditization-software-stack-how-application-first-cloud-services-are) “应用程序优先的云服务如何改变游戏规则”。
+CNCF 的 [Dapr](https://dapr.io/) 是一个将大部分集成绑定和开发人员关注点整合到一个开源 API 中的项目。它提供同步服务调用、有状态服务编排、异步事件驱动交互和特定技术连接器作为 API。类似于容器和 Kubernetes 如何充当计算抽象，Dapr 充当外部服务的抽象。Dapr 还提供了独立于底层云服务且往往必须在应用层实现的集成能力，例如弹性策略、死信队列、[延迟交付](https://github.com/dapr/dapr/issues/2675)、跟踪、细粒度授权等。Dapr 被设计为多语言并在应用程序外部运行，从而可以轻松交换外部依赖项而无需更改应用程序的内部架构，如 Hexagon Architecture 中所述。虽然 Dapr 主要由实施应用程序的开发人员使用，但一旦引入，Dapr 就会增强分布式应用程序的可靠性和可见性，为运营和架构师团队提供 [整体利益](https://www.diagrid.io/blog/dapr-as-a-10x-platform)。要了解有关此主题的更多信息，请在今年晚些时候亲自或以虚拟方式参加 QConLondon，我将在那里[讨论](https://qconlondon.com/presentation/mar2023/commoditization-software-stack-how-application-first-cloud-services-are) “应用程序优先的云服务如何改变游戏规则”。
 
 ## 后云原生应用
 
