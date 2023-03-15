@@ -35,11 +35,11 @@ links:
 
 [Hexagonal](https://alistair.cockburn.us/hexagonal-architecture/)，[Onion](https://jeffreypalermo.com/2013/08/onion-architecture-part-4-after-four-years/ ) 和 [Clean](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) 架构可以[补充](https://herbertograca.com/2017/11/16/explicit-architecture-01-ddd-hexagonal-onion-clean-cqrs-how-i-put-it-all-together/) DDD 并安排具有不同边界和外部化基础设施依赖性的应用程序代码。尽管这些方法在开始时是创新的并且在今天仍然适用，但它们最初是为三层 Java 应用程序开发的，该应用程序由部署在共享应用程序运行时中的 JSP、Servlet 和 EJB 组成。当时的主要焦点是将应用程序逻辑与 UI 和数据库分离，并启用隔离测试。
 
-![图 1：内部应用架构](images/f1.webp)
+![图 1：内部应用架构](images/f1.jpg)
 
 从那时起，微服务和[十二因素](https://12factor.net/) 应用程序等新挑战和概念不断涌现，并影响了我们设计应用程序的方式。微服务的核心是将应用程序逻辑分离到由单个团队拥有的可独立部署的单元中。十二因素应用程序方法旨在创建在动态云环境中运行和扩展的分布式、无状态应用程序。所有这些架构都引入了原则和最佳实践，这些原则和最佳实践塑造了我们构建应用程序内部架构的方式以及我们管理它的方式。
 
-![图 2：应用程序架构演进时间表](images/f2.webp)
+![图 2：应用程序架构演进时间表](images/f2.jpg)
 
 后来在应用程序架构演变时间表中，容器的主流采用和 Kubernetes 的引入彻底改变了应用程序的打包和编排方式。AWS Lambda 引入了高度可扩展的函数即服务 (FaaS) 的概念，将应用程序粒度的概念提升到一个新的水平，并将完整的基础设施管理责任卸载给云提供商。其他技术趋势，例如服务网格和[多运行时微服务架构](https://www.infoq.com/articles/multi-runtime-microservice-architecture/)，也已经出现并将非功能方面商品化，例如网络和分布式开发原语，分别将它们提取到 sidecar 中。受微服务的启发，数据网格架构旨在将应用程序的分析数据架构分解为更小、独立的数据域，每个域都有自己的产品和团队。这些以及最近的趋势，例如应用程序优先的云服务，正在开始重塑应用程序的外部架构，我在本文中将其统称为“云绑定应用程序”。
 
@@ -47,7 +47,7 @@ links:
 
 外部架构是应用程序与其他团队和组织拥有的其他应用程序和基础设施相交的地方，通常以专用的本地中间件、存储系统或云服务的形式出现。应用程序连接到外部系统并卸载其部分职责的方式形成了外部架构。为了从基础架构中受益，应用程序需要绑定到该基础架构并强制执行清晰的边界以保持其敏捷性。一个应用程序的内部架构和实现应该能够在不改变另一个应用程序的情况下进行更改，外部依赖关系（例如云服务）可以在不改变内部结构的情况下进行交换。
 
-![图 3：外部应用架构](images/f3.webp)
+![图 3：外部应用架构](images/f3.jpg)
 
 从广义上讲，我们可以将应用程序与其周围环境绑定的方式分为两类：
 
@@ -60,7 +60,7 @@ links:
 
 对于运营团队来说，理想情况下，每个应用程序都是一个需要在计算平台上运行的黑盒单元。计算绑定用于管理 Kubernetes、AWS Lambda 和其他服务等平台上应用程序的生命周期。这些绑定以应用程序和应用程序运行平台之间的配置和 API 交互集合的形式形式化和定义。这些交互中的大部分对应用程序是透明的，只有少数 API 需要开发人员实现，例如健康端点和指标 API。这是目前CNCF对“云原生”[定义](https://github.com/cncf/toc/blob/main/DEFINITION.md)和范围的扩展，只要开发者实现云原生应用，他们可以在云计算平台上绑定运行。
 
-![图 4：应用程序和平台计算绑定](images/f4.webp)
+![图 4：应用程序和平台计算绑定](images/f4.jpg)
 
 要在云平台上可靠地运行，应用程序必须在从规范到最佳实践的多个层面上与之绑定。这是通过一组行业标准规范（例如容器 API、指标 API）实现的，例如基于 Prometheus、健康端点或云提供商规范（例如 AWS Lambda 或 AWS ECS 规范）。此外，通过云原生最佳技术和共享知识，例如健康检查、部署策略和放置策略。让我们看看当今使用的常见计算绑定。
 
@@ -100,7 +100,7 @@ links:
 
 另一方面，集成绑定旨在供开发人员而不是运营团队使用。它们以常见的分布式系统实现领域为中心，例如服务调用、事件驱动交互、任务调度和有状态工作流编排。它们通过基于云的类似中间件的服务帮助将应用程序与专用存储系统和外部系统连接起来，在本文中统称为集成云。与容器提供计算抽象的方式相同，集成云服务提供与语言无关的集成抽象作为服务。这些原语独立于用例、应用程序实现、运行时和计算环境。例如[重试模式](https://learn.microsoft.com/en-us/azure/architecture/patterns/retry)、[DLQ模式](https://www.enterpriseintegrationpatterns.com/DeadLetterChannel.html)、 [Saga 模式](https://microservices.io/patterns/data/saga.html)、服务发现和[断路器](https://martinfowler.com/bliki/CircuitBreaker.html) 模式都可以集成为服务使用。
 
-![图 5：应用程序和平台集成绑定](images/f5.webp)
+![图 5：应用程序和平台集成绑定](images/f5.jpg)
 
 今天不存在将所有主要模式公开为独立功能的纯集成云。早期的云服务正在提供其中一些集成原语作为存储系统（如 Kafka、Redis 等）的功能，但这些功能很少单独使用或与其他功能结合使用。这里值得注意的例外是 AWS EventBridge 和 Azure Event Grid 等服务，你可以将它们与来自同一提供商的多个云服务一起使用，但不能直接与其他提供商一起使用。这是一个快速发展的领域，有一些很好的例子和一些尚未填补的空白，但我相信它们会在未来出现。应用程序必须绑定到集成的云服务并卸载其中的一些开发人员职责才能运行。以下是集成云服务的主要类型和绑定方面。
 
@@ -138,7 +138,7 @@ links:
 
 在此模型中，云绑定应用程序通常在无服务器计算基础设施上运行，遵循云原生原语。它与其他无服务器云服务绑定，用于服务编排、事件处理或同步交互，如下所示。
 
-![图 6：云绑定应用程序生态系统](images/f6.webp)
+![图 6：云绑定应用程序生态系统](images/f6.jpg)
 
 CNCF 的 [Dapr](https://dapr.io/) 是一个将大部分集成绑定和开发人员关注点整合到一个开源 API 中的项目。它提供同步服务调用、有状态服务编排、异步事件驱动交互和特定技术连接器作为 API。类似于容器和 Kubernetes 如何充当计算抽象，Dapr 充当外部服务的抽象。Dapr 还提供了独立于底层云服务且往往必须在应用层实现的集成能力，例如弹性策略、死信队列、[延迟交付](https://github.com/dapr/dapr/issues/2675)、跟踪、细粒度授权等。Dapr 被设计为多语言并在应用程序外部运行，从而可以轻松交换外部依赖项而无需更改应用程序的内部架构，如 Hexagon Architecture 中所述。虽然 Dapr 主要由实施应用程序的开发人员使用，但一旦引入，Dapr 就会增强分布式应用程序的可靠性和可见性，为运营和架构师团队提供 [整体利益](https://www.diagrid.io/blog/dapr-as-a-10x-platform)。要了解有关此主题的更多信息，请在今年晚些时候亲自或以虚拟方式参加 QConLondon，我将在那里[讨论](https://qconlondon.com/presentation/mar2023/commoditization-software-stack-how-application-first-cloud-services-are) “应用程序优先的云服务如何改变游戏规则”。
 
