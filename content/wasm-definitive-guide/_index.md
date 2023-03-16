@@ -11,6 +11,7 @@ cascade:
   commentable: true
   tags: ["WebAssembly"]
   categories: ["WebAssembly"]
+  draft: true
 ---
 
 本书译自 O'Reilly 出品的 [WebAssembly: The Definitive Guide](https://www.oreilly.com/library/view/the-future-of/9781098118433/)，作者 Brian Sletten，译者 [Jimmy Song](https://jimmysong.io)。
