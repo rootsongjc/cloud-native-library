@@ -13,257 +13,116 @@
     </image>
     
     <item>
-      <title>什么是云绑定应用程序？</title>
-      <link>https://lib.jimmysong.io/blog/cloud-bound-applications/</link>
-      <pubDate>Fri, 10 Mar 2023 12:00:00 +0800</pubDate>
-      <guid>https://lib.jimmysong.io/blog/cloud-bound-applications/</guid>
-      <description>&lt;p&gt;本文作者 Bilgin Ibryam 是 Diagrid 的技术产品经理，致力于开发人员生产力工具。在此之前，他曾在 Red Hat 担任顾问和架构师，同时也是 Apache 软件基金会的提交者和成员。Bilgin 还与人合著了两本关于 Kubernetes 模式和 Camel 设计模式的书。在业余时间，Bilgin 喜欢通过博客和其他方式写作和分享他的知识。&lt;/p&gt;
-&lt;p&gt;译者注：本文介绍了云绑定应用程序的概念，并探讨了在使用云绑定应用程序时需要考虑的几个关键因素。首先，作者解释了云绑定应用程序是指在构建应用程序时使用云提供的服务和资源。作者强调了使用云绑定应用程序可以带来很多好处，例如降低成本和提高可靠性。然而，作者也指出了在使用云绑定应用程序时需要考虑的几个关键因素，包括云供应商锁定、数据隐私和网络连接可靠性等。最后，作者提供了一些建议，帮助企业在使用云绑定应用程序时避免潜在的风险。例如，选择具有高可用性的云服务提供商，并在使用云绑定应用程序时加强数据安全措施。&lt;/p&gt;
-&lt;h3 id=&#34;关键要点&#34;&gt;关键要点&lt;/h3&gt;
+      <title>Tetrate 开源项目 Wazero 简介</title>
+      <link>https://lib.jimmysong.io/blog/introducing-wazero-from-tetrate/</link>
+      <pubDate>Mon, 20 Mar 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/blog/introducing-wazero-from-tetrate/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;译者注：本文译自 &lt;a href=&#34;https://tetrate.io/blog/introducing-wazero-from-tetrate/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate 博客&lt;/a&gt;。这篇文章介绍了 wazero，一个由 Tetrate 开发的用 Go 语言编写的 WebAssembly 运行时。wazero 可以让开发者用不同的编程语言编写代码，并在安全的沙箱环境中运行。wazero 有以下几个特点：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;云提供商将重点从基础设施服务转移到开发人员直接使用的应用程序优先服务，从而产生了新的应用程序架构。&lt;/li&gt;
-&lt;li&gt;这种架构允许开发人员将集成逻辑和管理责任卸载到云服务，并专注于实现业务逻辑。&lt;/li&gt;
-&lt;li&gt;“云绑定”代表了云原生从解决以计算为中心的问题向管理应用集成问题的演进。&lt;/li&gt;
-&lt;li&gt;云绑定应用程序使用开放 API 和事实标准将应用程序的内部架构与其外部依赖项分离。&lt;/li&gt;
-&lt;li&gt;云绑定应用程序使用开放的 API 和数据格式将应用程序绑定到计算基础设施，并将状态编排、事件驱动的交互和可靠的同步交互等集成责任卸载到云服务。&lt;/li&gt;
+&lt;li&gt;纯 Go，无依赖，支持跨平台和跨架构&lt;/li&gt;
+&lt;li&gt;遵循 WebAssembly 核心规范 1.0 和 2.0&lt;/li&gt;
+&lt;li&gt;支持 Go 的特性，如并发安全和上下文传递&lt;/li&gt;
+&lt;li&gt;提供了丰富的编程接口和命令行工具&lt;/li&gt;
+&lt;li&gt;性能优异，超过了其他同类运行时&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;&lt;a href=&#34;https://www.diagrid.io/blog/evolution-of-cloud-computing&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;应用程序优先&lt;/a&gt; 云服务的日益普及导致应用程序和云服务的集成比以前更深入。应用程序和云之间的运行时边界正在从虚拟机转移到容器和函数。在这个最终架构中，应用程序是“云绑定”的，通过将更多应用程序逻辑和管理责任卸载到云服务，开发人员可以专注于业务逻辑。&lt;/p&gt;
-&lt;p&gt;本文通过使用保持灵活性和可移植性的开放 API 和标准将应用程序绑定到云服务来检查整个软件堆栈的商品化。&lt;/p&gt;
-&lt;h2 id=&#34;内部架构演变&#34;&gt;内部架构演变&lt;/h2&gt;
-&lt;p&gt;应用程序的内部架构通常由一个团队拥有和控制。根据所选的语言和运行时，包、模块、接口、类和函数等工具和抽象可帮助开发人员控制内部边界。&lt;a href=&#34;https://martinfowler.com/bliki/DomainDrivenDesign.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;领域驱动设计&lt;/a&gt;(DDD) 帮助开发人员设计领域模型，这些模型作为抽象来封装复杂的业务逻辑并调解业务现实与代码之间的差距。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&#34;https://alistair.cockburn.us/hexagonal-architecture/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Hexagonal&lt;/a&gt;，&lt;a href=&#34;https://jeffreypalermo.com/2013/08/onion-architecture-part-4-after-four-years/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Onion&lt;/a&gt; 和 &lt;a href=&#34;https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Clean&lt;/a&gt; 架构可以&lt;a href=&#34;https://herbertograca.com/2017/11/16/explicit-architecture-01-ddd-hexagonal-onion-clean-cqrs-how-i-put-it-all-together/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;补充&lt;/a&gt; DDD 并安排具有不同边界和外部化基础设施依赖性的应用程序代码。尽管这些方法在开始时是创新的并且在今天仍然适用，但它们最初是为三层 Java 应用程序开发的，该应用程序由部署在共享应用程序运行时中的 JSP、Servlet 和 EJB 组成。当时的主要焦点是将应用程序逻辑与 UI 和数据库分离，并启用隔离测试。&lt;/p&gt;
-&lt;p&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  id=&#34;figure-图-1内部应用架构&#34;&gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;图 1：内部应用架构&#34; srcset=&#34;
-               /blog/cloud-bound-applications/images/f1_hu9d78b3ac709bda126d855d87663c548b_49980_d4d433b0169088bd8023795caad679d6.webp 400w,
-               /blog/cloud-bound-applications/images/f1_hu9d78b3ac709bda126d855d87663c548b_49980_2968361cdfbf4bfabe6be1ef423bf229.webp 760w,
-               /blog/cloud-bound-applications/images/f1_hu9d78b3ac709bda126d855d87663c548b_49980_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
-               src=&#34;https://lib.jimmysong.io/blog/cloud-bound-applications/images/f1_hu9d78b3ac709bda126d855d87663c548b_49980_d4d433b0169088bd8023795caad679d6.webp&#34;
-               width=&#34;760&#34;
-               height=&#34;619&#34;
-               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;figcaption&gt;
-      图 1：内部应用架构
-    &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/p&gt;
-&lt;p&gt;从那时起，微服务和&lt;a href=&#34;https://12factor.net/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;十二因素&lt;/a&gt; 应用程序等新挑战和概念不断涌现，并影响了我们设计应用程序的方式。微服务的核心是将应用程序逻辑分离到由单个团队拥有的可独立部署的单元中。十二因素应用程序方法旨在创建在动态云环境中运行和扩展的分布式、无状态应用程序。所有这些架构都引入了原则和最佳实践，这些原则和最佳实践塑造了我们构建应用程序内部架构的方式以及我们管理它的方式。&lt;/p&gt;
-&lt;p&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  id=&#34;figure-图-2应用程序架构演进时间表&#34;&gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;图 2：应用程序架构演进时间表&#34; srcset=&#34;
-               /blog/cloud-bound-applications/images/f2_huea87b99873e5c997eea684b6805b0089_31562_2c4e779e495715e563d074a79b279be1.webp 400w,
-               /blog/cloud-bound-applications/images/f2_huea87b99873e5c997eea684b6805b0089_31562_e37ff9c29e2c0c9bfff1dc84dccdae5e.webp 760w,
-               /blog/cloud-bound-applications/images/f2_huea87b99873e5c997eea684b6805b0089_31562_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
-               src=&#34;https://lib.jimmysong.io/blog/cloud-bound-applications/images/f2_huea87b99873e5c997eea684b6805b0089_31562_2c4e779e495715e563d074a79b279be1.webp&#34;
-               width=&#34;760&#34;
-               height=&#34;278&#34;
-               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;figcaption&gt;
-      图 2：应用程序架构演进时间表
-    &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/p&gt;
-&lt;p&gt;后来在应用程序架构演变时间表中，容器的主流采用和 Kubernetes 的引入彻底改变了应用程序的打包和编排方式。AWS Lambda 引入了高度可扩展的函数即服务 (FaaS) 的概念，将应用程序粒度的概念提升到一个新的水平，并将完整的基础设施管理责任卸载给云提供商。其他技术趋势，例如服务网格和&lt;a href=&#34;https://www.infoq.com/articles/multi-runtime-microservice-architecture/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;多运行时微服务架构&lt;/a&gt;，也已经出现并将非功能方面商品化，例如网络和分布式开发原语，分别将它们提取到 sidecar 中。受微服务的启发，数据网格架构旨在将应用程序的分析数据架构分解为更小、独立的数据域，每个域都有自己的产品和团队。这些以及最近的趋势，例如应用程序优先的云服务，正在开始重塑应用程序的外部架构，我在本文中将其统称为“云绑定应用程序”。&lt;/p&gt;
-&lt;h2 id=&#34;外部架构演化&#34;&gt;外部架构演化&lt;/h2&gt;
-&lt;p&gt;外部架构是应用程序与其他团队和组织拥有的其他应用程序和基础设施相交的地方，通常以专用的本地中间件、存储系统或云服务的形式出现。应用程序连接到外部系统并卸载其部分职责的方式形成了外部架构。为了从基础架构中受益，应用程序需要绑定到该基础架构并强制执行清晰的边界以保持其敏捷性。一个应用程序的内部架构和实现应该能够在不改变另一个应用程序的情况下进行更改，外部依赖关系（例如云服务）可以在不改变内部结构的情况下进行交换。&lt;/p&gt;
-&lt;p&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  id=&#34;figure-图-3外部应用架构&#34;&gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;图 3：外部应用架构&#34; srcset=&#34;
-               /blog/cloud-bound-applications/images/f3_hu5b78dd3264c3b9a9986219a377ba2546_63533_9b5c74e36b53ad62c571ad4244037f4a.webp 400w,
-               /blog/cloud-bound-applications/images/f3_hu5b78dd3264c3b9a9986219a377ba2546_63533_8089cc7d486fdd8be79837936ba1a201.webp 760w,
-               /blog/cloud-bound-applications/images/f3_hu5b78dd3264c3b9a9986219a377ba2546_63533_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
-               src=&#34;https://lib.jimmysong.io/blog/cloud-bound-applications/images/f3_hu5b78dd3264c3b9a9986219a377ba2546_63533_9b5c74e36b53ad62c571ad4244037f4a.webp&#34;
-               width=&#34;622&#34;
-               height=&#34;760&#34;
-               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;figcaption&gt;
-      图 3：外部应用架构
-    &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/p&gt;
-&lt;p&gt;从广义上讲，我们可以将应用程序与其周围环境绑定的方式分为两类：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;计算绑定是在计算平台（例如 Kubernetes、容器服务，甚至是 AWS Lambda 等无服务器函数）上运行应用程序所需的所有绑定、配置、API 和合约。大多数情况下，这些绑定对内部架构是透明的，并且由运营团队而非开发人员配置和使用。容器抽象是当今应用程序计算绑定最广泛的“API”。&lt;/li&gt;
-&lt;li&gt;集成绑定是对应用程序所依赖的外部依赖项的所有其他绑定的总称。云服务还使用这些绑定与应用程序交互，通常是通过定义明确的 HTTP “API”或专门的消息传递和存储访问协议，例如 AWS S3、Apache Kafka、Redis API 等。集成绑定不像运行时绑定那样透明。开发人员需要围绕它们实现额外的逻辑，例如重试、TTL、延迟、死信队列 (DLQ) 等，并将它们绑定到应用程序的业务逻辑。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;应用程序在云上运行并通过使用这些绑定来使用其他服务。让我们更详细地了解这些绑定背后的内容。&lt;/p&gt;
-&lt;h2 id=&#34;计算绑定&#34;&gt;计算绑定&lt;/h2&gt;
-&lt;p&gt;对于运营团队来说，理想情况下，每个应用程序都是一个需要在计算平台上运行的黑盒单元。计算绑定用于管理 Kubernetes、AWS Lambda 和其他服务等平台上应用程序的生命周期。这些绑定以应用程序和应用程序运行平台之间的配置和 API 交互集合的形式形式化和定义。这些交互中的大部分对应用程序是透明的，只有少数 API 需要开发人员实现，例如健康端点和指标 API。这是目前CNCF对“云原生”&lt;a href=&#34;https://github.com/cncf/toc/blob/main/DEFINITION.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;定义&lt;/a&gt;和范围的扩展，只要开发者实现云原生应用，他们可以在云计算平台上绑定运行。&lt;/p&gt;
-&lt;p&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  id=&#34;figure-图-4应用程序和平台计算绑定&#34;&gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;图 4：应用程序和平台计算绑定&#34; srcset=&#34;
-               /blog/cloud-bound-applications/images/f4_hudaa79ba76bc16ae0f12ed6510259edf2_69922_67cc8757d3f7557dca11d3d8b55f5a12.webp 400w,
-               /blog/cloud-bound-applications/images/f4_hudaa79ba76bc16ae0f12ed6510259edf2_69922_22eb1ab19fb200bb8eb113443d0a9ae0.webp 760w,
-               /blog/cloud-bound-applications/images/f4_hudaa79ba76bc16ae0f12ed6510259edf2_69922_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
-               src=&#34;https://lib.jimmysong.io/blog/cloud-bound-applications/images/f4_hudaa79ba76bc16ae0f12ed6510259edf2_69922_67cc8757d3f7557dca11d3d8b55f5a12.webp&#34;
-               width=&#34;760&#34;
-               height=&#34;616&#34;
-               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;figcaption&gt;
-      图 4：应用程序和平台计算绑定
-    &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/p&gt;
-&lt;p&gt;要在云平台上可靠地运行，应用程序必须在从规范到最佳实践的多个层面上与之绑定。这是通过一组行业标准规范（例如容器 API、指标 API）实现的，例如基于 Prometheus、健康端点或云提供商规范（例如 AWS Lambda 或 AWS ECS 规范）。此外，通过云原生最佳技术和共享知识，例如健康检查、部署策略和放置策略。让我们看看当今使用的常见计算绑定。&lt;/p&gt;
-&lt;h3 id=&#34;资源需求&#34;&gt;资源需求&lt;/h3&gt;
-&lt;p&gt;包括微服务和函数在内的应用程序需要 CPU、内存和存储等资源。这些资源的定义因所使用的平台而异。例如，在 Kubernetes 上，CPU 和内存是通过&lt;a href=&#34;https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;请求和限制&lt;/a&gt; 定义的，而在 AWS Lambda 上，用户&lt;a href=&#34;https://docs.aws.amazon.com/lambda/latest/dg/configuration-function-common.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;指定&lt;/a&gt;运行时分配的内存量，以及对应的CPU分配。存储在这些平台上的处理方式也不同，Kubernetes 使用临时存储和卷，而 Lambda 提供临时暂存资源和基于 Amazon EFS 挂载的持久存储。&lt;/p&gt;
-&lt;h3 id=&#34;生命周期钩子&#34;&gt;生命周期钩子&lt;/h3&gt;
-&lt;p&gt;由平台管理的应用程序通常需要了解重要的生命周期事件。例如，在 Kubernetes 上，init 容器等概念和 PostStart 和 PreStop 等钩子允许应用程序对这些事件做出反应。同样，Lambda 的 &lt;a href=&#34;https://docs.aws.amazon.com/lambda/latest/dg/runtimes-extensions-api.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;extensions&lt;/a&gt; API 允许应用程序拦截 Init、Invoke 和 Shutdown 阶段。处理生命周期事件的其他选项包括包装器脚本或特定于语言的运行时修改选项，例如 JVM 的关闭钩子。这些机制形成了平台和应用程序之间的契约，使其能够响应和管理自己的生命周期。&lt;/p&gt;
-&lt;h3 id=&#34;健康检查&#34;&gt;健康检查&lt;/h3&gt;
-&lt;p&gt;运行状况探测是平台监控应用程序运行状况并在必要时采取纠正措施（例如重新启动应用程序）的一种方式。由于请求的生命周期较短，Lambda 函数没有健康探测，而容器化应用程序和编排器（如 Kubernetes、AWS EKS 和 GCP Cloud Run）确实在其定义中包含 &lt;a href=&#34;https://cloud.google.com/run/docs/configuring/healthchecks&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;健康探测 &lt;/a&gt; 。这使平台能够确保应用程序平稳运行，并在应用程序运行不平稳时采取措施。&lt;/p&gt;
-&lt;h3 id=&#34;部署和放置策略&#34;&gt;部署和放置策略&lt;/h3&gt;
-&lt;p&gt;一旦知道所需的资源，计算平台就可以开始管理应用程序的生命周期。要以不损害业务逻辑完整性的方式执行此操作，平台必须了解扩展约束。有些应用程序被设计为单例。例如，它们需要维护已处理事件的顺序并且不能扩展到多个实例。其他有状态应用程序可能是仲裁驱动的，并且需要特定数量的最小实例连续运行才能正常运行。还有一些函数，例如无状态函数，可能有利于快速扩展以解决不断增加的负载峰值问题。一旦建立了应用程序的缩放指南，平台就会控制应用程序实例的启动和终止。&lt;/p&gt;
-&lt;p&gt;计算还提供滚动、蓝绿、金丝雀、一次等多种部署策略，来控制服务更新的顺序。除了部署顺序之外，这些平台还允许用户指定放置首选项。例如，Kubernetes 提供标签、污点和容忍度、亲和力和反亲和力等选项，而 Lambda 允许用户在区域和&lt;a href=&#34;https://aws.amazon.com/lambda/edge/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;边缘放置&lt;/a&gt; 类型之间进行选择。这些首选项可确保部署应用程序并满足合规性和性能要求。&lt;/p&gt;
-&lt;h3 id=&#34;网络流量&#34;&gt;网络流量&lt;/h3&gt;
-&lt;p&gt;计算平台还负责将低级网络流量引导至服务实例。这是因为它负责部署排序、放置和自动缩放，这些都会影响流量如何定向到服务实例。健康检查也可以在流量管理中发挥作用，例如 GCP Cloud Run 和 Kubernetes 中的&lt;a href=&#34;https://cloud.google.com/run/docs/configuring/healthchecks&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;准备情况检查&lt;/a&gt;。通过处理这些任务，计算平台有助于确保流量高效且有效地路由到适当的服务实例。&lt;/p&gt;
-&lt;h3 id=&#34;监控和报告&#34;&gt;监控和报告&lt;/h3&gt;
-&lt;p&gt;任何用于分布式应用程序的计算平台都必须以日志、指标和跟踪的形式提供深入的应用程序洞察力。目前该领域几乎没有被广泛接受的事实标准：日志最好以结构化格式使用，例如 JSON 或其他行业特定标准。计算平台通常收集日志或为专门的日志提取和分析服务提供扩展点以访问日志。这可以是 Kubernetes 上的 DaemonSet，用于监控的 Lambda 合作伙伴扩展，或 Vercel 边缘功能日志 Drainer。计算平台必须支持指标和追踪数据的收集和分析，以全面了解分布式应用程序的性能和行为。有几种行业标准格式和工具可用于处理此数据 &lt;a href=&#34;https://opentelemetry.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;OpenTelemetry (OTEL) for Tracking &lt;/a&gt; 计算平台可以提供内置工具来收集和分析这些数据，或者为专门服务提供扩展点来访问数据。无论代码粒度（微服务或函数）或位置（边缘或非边缘）如何，计算平台都必须允许捕获日志、指标和追踪数据，并导出到其他同类最佳的云服务。例如 &lt;a href=&#34;http://honeycomb.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Honeycomb&lt;/a&gt;、&lt;a href=&#34;https://www.datadoghq.com/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;DataDog&lt;/a&gt;、&lt;a href=&#34;https://sysdig.com/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Grafana&lt;/a&gt; 等。&lt;/p&gt;
-&lt;h3 id=&#34;计算绑定趋势&#34;&gt;计算绑定趋势&lt;/h3&gt;
-&lt;p&gt;计算绑定与语言和应用程序运行时无关，主要由运营团队用于在运行时管理应用程序，而不是开发人员实现它们。&lt;/p&gt;
-&lt;p&gt;虽然应用程序的大小和复杂性可能因整体和功能而异，但它们通常打包在具有健康检查端点、实施的生命周期挂钩和公开指标的容器中。了解这些计算绑定将帮助你有效地使用任何基于容器的计算平台，无论是本地 Kubernetes 集群、托管容器服务（例如 AWS ECS、Google Cloud Run、Azure Container App），还是基于函数的运行时（例如作为 AWS Lambda、GCP 函数或边缘运行时，例如 Vercel &lt;a href=&#34;https://vercel.com/docs/concepts/functions/edge-functions&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;边缘函数&lt;/a&gt;、CloudFlare &lt;a href=&#34;https://workers.cloudflare.com/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;worker&lt;/a&gt; 或 Netlify edge &lt;a href=&#34;https://docs.netlify.com/edge-functions/overview&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;functions&lt;/a&gt; 等。使用开放的事实上的标准 API 不仅可以帮助你创建可移植的应用程序，还可以通过使用可跨云供应商和服务提供商移植的操作实践和工具来限制供应商锁定。&lt;/p&gt;
-&lt;h2 id=&#34;集成绑定&#34;&gt;集成绑定&lt;/h2&gt;
-&lt;p&gt;另一方面，集成绑定旨在供开发人员而不是运营团队使用。它们以常见的分布式系统实现领域为中心，例如服务调用、事件驱动交互、任务调度和有状态工作流编排。它们通过基于云的类似中间件的服务帮助将应用程序与专用存储系统和外部系统连接起来，在本文中统称为集成云。与容器提供计算抽象的方式相同，集成云服务提供与语言无关的集成抽象作为服务。这些原语独立于用例、应用程序实现、运行时和计算环境。例如&lt;a href=&#34;https://learn.microsoft.com/en-us/azure/architecture/patterns/retry&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;重试模式&lt;/a&gt;、&lt;a href=&#34;https://www.enterpriseintegrationpatterns.com/DeadLetterChannel.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;DLQ模式&lt;/a&gt;、 &lt;a href=&#34;https://microservices.io/patterns/data/saga.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Saga 模式&lt;/a&gt;、服务发现和&lt;a href=&#34;https://martinfowler.com/bliki/CircuitBreaker.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;断路器&lt;/a&gt; 模式都可以集成为服务使用。&lt;/p&gt;
-&lt;p&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  id=&#34;figure-图-5应用程序和平台集成绑定&#34;&gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;图 5：应用程序和平台集成绑定&#34; srcset=&#34;
-               /blog/cloud-bound-applications/images/f5_hua2c560ba137dba3478ebc9a37ff14c3f_73940_8d1e546827579d3cb40f9d1d4a055586.webp 400w,
-               /blog/cloud-bound-applications/images/f5_hua2c560ba137dba3478ebc9a37ff14c3f_73940_6cdd521084518a01f60dc328e0a3b458.webp 760w,
-               /blog/cloud-bound-applications/images/f5_hua2c560ba137dba3478ebc9a37ff14c3f_73940_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
-               src=&#34;https://lib.jimmysong.io/blog/cloud-bound-applications/images/f5_hua2c560ba137dba3478ebc9a37ff14c3f_73940_8d1e546827579d3cb40f9d1d4a055586.webp&#34;
-               width=&#34;760&#34;
-               height=&#34;616&#34;
-               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;figcaption&gt;
-      图 5：应用程序和平台集成绑定
-    &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/p&gt;
-&lt;p&gt;今天不存在将所有主要模式公开为独立功能的纯集成云。早期的云服务正在提供其中一些集成原语作为存储系统（如 Kafka、Redis 等）的功能，但这些功能很少单独使用或与其他功能结合使用。这里值得注意的例外是 AWS EventBridge 和 Azure Event Grid 等服务，你可以将它们与来自同一提供商的多个云服务一起使用，但不能直接与其他提供商一起使用。这是一个快速发展的领域，有一些很好的例子和一些尚未填补的空白，但我相信它们会在未来出现。应用程序必须绑定到集成的云服务并卸载其中的一些开发人员职责才能运行。以下是集成云服务的主要类型和绑定方面。&lt;/p&gt;
-&lt;h3 id=&#34;集成要求&#34;&gt;集成要求&lt;/h3&gt;
-&lt;p&gt;与应用程序可以请求资源并向计算平台表达部署和放置偏好的方式相同，应用程序也可以请求和激活特定的集成绑定。这些绑定可以通过以声明方式传递给平台的配置来激活，或者在运行时通过编程交互来激活。例如，应用程序可以使用声明式和编程式&lt;a href=&#34;https://docs.dapr.io/developing-applications/building-blocks/pubsub/subscription-methods/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;订阅&lt;/a&gt; pub/sub 主题。AWS Lambda 函数事件源可以通过配置以声明方式订阅，也可以通过客户端库或 SDK 请求集成平台注册或注销特定绑定以编程方式订阅。应用程序可以订阅 cron 作业触发器、激活外部系统的连接器、进行配置更改等等，所有这些都在集成云上运行。&lt;/p&gt;
-&lt;h3 id=&#34;工作流程编排&#34;&gt;工作流程编排&lt;/h3&gt;
-&lt;p&gt;持久服务编排逻辑是一种非常普遍的必需品，也是作为服务进行外部化和消费的主要候选者。因此，工作流编排是当今最著名的集成绑定类型之一。该服务的常见用途包括为服务和业务流程编排实施 Saga 模式、使用 AWS Step Functions、Google Stateful Functions、Azure Durable Functions 进行函数编排、使用 Google Workflow 进行任务分配等等。当使用这样的绑定时，部分应用程序编排状态和逻辑被卸载到另一个服务中。虽然应用程序服务具有内部状态和管理该状态的逻辑，但其他部分是外部的，可能在其他一些云服务中。这代表了当今应用程序作为一个独立的单元进行设计和操作的方式的转变。未来的应用程序不仅&lt;a href=&#34;https://queue.acm.org/detail.cfm?id=3415014&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;数据是外部的&lt;/a&gt;，而且集成也将是外部的。随着越来越多地采用集成云，更多的集成数据和逻辑将开始存在于外部。&lt;/p&gt;
-&lt;h3 id=&#34;时间触发器&#34;&gt;时间触发器&lt;/h3&gt;
-&lt;p&gt;时间绑定表示编排绑定的时间限制专业化。它只有一个目标，即根据给定的策略在特定时间触发各种服务。此类别中的示例包括 AWS EventBridge Scheduler、Google Cloud Scheduler、Upstash Qstack 服务等。&lt;/p&gt;
-&lt;h3 id=&#34;事件驱动和消息服务&#34;&gt;事件驱动和消息服务&lt;/h3&gt;
-&lt;p&gt;这些绑定充当事件存储来卸载请求和解耦应用程序，但它们越来越不限于存储和扩展以提供消息处理模式。它们在事件存储之上提供开发者原语，例如死信队列、重试、延迟传递和消息处理模式，例如过滤、聚合、重新排序、基于内容的路由、窃听等。这种绑定的例子有 Confluent Cloud kSQL、AWS EventBridge、Decodable Data Pipeline 等。&lt;/p&gt;
-&lt;h3 id=&#34;外部连接器&#34;&gt;外部连接器&lt;/h3&gt;
-&lt;p&gt;这些绑定有助于连接到外部系统。它们还执行数据规范化、错误处理、协议转换和数据转换。示例包括 Knative 源导入器、AWS EventBridge 连接器、Confluent Cloud &lt;a href=&#34;https://www.confluent.io/product/confluent-connectors&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;连接器&lt;/a&gt;、可解码的 Kafka 连接器、AWS Lambda 源和目标。&lt;/p&gt;
-&lt;h3 id=&#34;健康检查-1&#34;&gt;健康检查&lt;/h3&gt;
-&lt;p&gt;健康检查对于计算连接至关重要，失败的健康检查通常会导致应用程序重启。集成绑定也需要健康检查，但目的不同：集成健康检查不会影响应用程序的运行时，但它会告诉集成云应用程序是否能够处理集成驱动的交互。失败的集成状态检查会停止集成绑定，直到应用程序返回正常状态并且集成绑定恢复。通常，你可以使用相同的应用程序端点进行计算和集成绑定测试。一个很好的例子是 Dapr 应用程序 &lt;a href=&#34;https://docs.dapr.io/developing-applications/building-blocks/observability/app-health/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;健康检查&lt;/a&gt;，它可以暂时阻止消费者和连接器。将数据插入不健康的应用程序。&lt;/p&gt;
-&lt;h3 id=&#34;其他绑定&#34;&gt;其他绑定&lt;/h3&gt;
-&lt;p&gt;还有更多的绑定，属于集成绑定的范畴。例如，Kubernetes &lt;a href=&#34;https://kubernetes.io/docs/concepts/workloads/pods/downward-api/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Downward&lt;/a&gt; API 和 Lambda &lt;a href=&#34;https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;环境变量&lt;/a&gt; 等为应用程序提供内省数据，它为应用程序自省和元数据注入提供了一种简单的机制。配置和秘密绑定，其中秘密不仅在启动时注入到应用程序中，而且任何配置更新都通过 sidecars 推送到应用程序，例如 Hashicorp Vault Sidecar &lt;a href=&#34;https://developer.hashicorp.com/vault/docs/platform/k8s/injector&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Injector&lt;/a&gt; 或者 Dapr 的 &lt;a href=&#34;https://docs.dapr.io/developing-applications/building-blocks/configuration/configuration-api-overview/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Configuration&lt;/a&gt; API, Kubernetes 的 &lt;a href=&#34;https://servicebinding.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Service Binding 设置&lt;/a&gt; 规范。和不太常见的模式，例如分布式&lt;a href=&#34;https://docs.dapr.io/developing-applications/building-blocks/distributed-lock/distributed-lock-api-overview/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;锁&lt;/a&gt;，这也是一个集成绑定提供对共享资源的互斥访问。&lt;/p&gt;
-&lt;h3 id=&#34;集成绑定趋势&#34;&gt;集成绑定趋势&lt;/h3&gt;
-&lt;p&gt;容器正在成为最流行和广泛使用的可移植格式，用于打包和运行应用程序，无论它们是长期运行的微服务还是短期功能。另一方面，集成绑定可以分为不同的问题域，例如事件驱动的交互、有状态的编排和状态访问，并且在底层存储和使用模式方面有所不同。例如，Apache Kafka 是 &lt;a href=&#34;https://www.kai-waehner.de/blog/2021/05/09/kafka-api-de-facto-standard-event-streaming-like-amazon-s3-object-storage/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;事实上的标准&lt;/a&gt;、用于文档访问的 AWS S3 API、用于键值缓存的 Redis、用于关系数据访问的 PostgreSQL 等等。使它们成为标准的是围绕它们构建的库、工具和服务的不断增长的生态系统，为成熟度、稳定性和未来的向后兼容性提供了很大程度的保证。但这些 API 本质上仅限于存储访问，并且通常需要开发人员解决应用程序代码中的分布式系统挑战。与堆栈上层软件的商品化一致，集成绑定作为服务提供。越来越多的无服务器云服务提供了额外的集成功能，除了数据访问之外，应用程序代码还可以绑定这些功能。&lt;/p&gt;
-&lt;p&gt;在此模型中，云绑定应用程序通常在无服务器计算基础设施上运行，遵循云原生原语。它与其他无服务器云服务绑定，用于服务编排、事件处理或同步交互，如下所示。&lt;/p&gt;
-&lt;p&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  id=&#34;figure-图-6云绑定应用程序生态系统&#34;&gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;图 6：云绑定应用程序生态系统&#34; srcset=&#34;
-               /blog/cloud-bound-applications/images/f6_hu1e86eafcfba8d4dffa02c73f45af2013_76906_35ee56a2e691d9b7bba3d99429bf64e4.webp 400w,
-               /blog/cloud-bound-applications/images/f6_hu1e86eafcfba8d4dffa02c73f45af2013_76906_63e570a1d2c6ffa2449e59860b1bfae2.webp 760w,
-               /blog/cloud-bound-applications/images/f6_hu1e86eafcfba8d4dffa02c73f45af2013_76906_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
-               src=&#34;https://lib.jimmysong.io/blog/cloud-bound-applications/images/f6_hu1e86eafcfba8d4dffa02c73f45af2013_76906_35ee56a2e691d9b7bba3d99429bf64e4.webp&#34;
-               width=&#34;760&#34;
-               height=&#34;638&#34;
-               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;figcaption&gt;
-      图 6：云绑定应用程序生态系统
-    &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/p&gt;
-&lt;p&gt;CNCF 的 &lt;a href=&#34;https://dapr.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Dapr&lt;/a&gt; 是一个将大部分集成绑定和开发人员关注点整合到一个开源 API 中的项目。它提供同步服务调用、有状态服务编排、异步事件驱动交互和特定技术连接器作为 API。类似于容器和 Kubernetes 如何充当计算抽象，Dapr 充当外部服务的抽象。Dapr 还提供了独立于底层云服务且往往必须在应用层实现的集成能力，例如弹性策略、死信队列、&lt;a href=&#34;https://github.com/dapr/dapr/issues/2675&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;延迟交付&lt;/a&gt;、跟踪、细粒度授权等。Dapr 被设计为多语言并在应用程序外部运行，从而可以轻松交换外部依赖项而无需更改应用程序的内部架构，如 Hexagon Architecture 中所述。虽然 Dapr 主要由实施应用程序的开发人员使用，但一旦引入，Dapr 就会增强分布式应用程序的可靠性和可见性，为运营和架构师团队提供 &lt;a href=&#34;https://www.diagrid.io/blog/dapr-as-a-10x-platform&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;整体利益&lt;/a&gt;。要了解有关此主题的更多信息，请在今年晚些时候亲自或以虚拟方式参加 QConLondon，我将在那里&lt;a href=&#34;https://qconlondon.com/presentation/mar2023/commoditization-software-stack-how-application-first-cloud-services-are&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;讨论&lt;/a&gt; “应用程序优先的云服务如何改变游戏规则”。&lt;/p&gt;
-&lt;h2 id=&#34;后云原生应用&#34;&gt;后云原生应用&lt;/h2&gt;
-&lt;p&gt;云绑定应用代表了云原生的进步，从只解决计算问题到管理应用层需求。应用程序堆栈中的云服务从基础设施扩展到应用程序优先服务，加速了这一趋势。我们可以在以开发人员为中心的云服务的爆炸式增长中观察到这种转变，包括状态协调、事件驱动的应用程序基础架构、同步交互、基于云的开发和测试环境以及无服务运行时。这种向应用程序优先的云服务的转变正在产生一种新的应用程序架构，越来越多的应用程序逻辑在云服务中运行。应用程序与第三方云服务的这种混合允许开发人员分担更多责任，但是，它可能会限制不断变化的业务需求所需的灵活性和敏捷性。为了保持应用程序的内部和外部架构独立，应用程序和云服务需要在开发时通过清晰的边界解耦，并在运行时使用定义良好的开放 API 和格式进行深度绑定。正如容器和 Kubernetes 为计算提供了开放的 API，我们需要为应用程序集成抽象提供开放的 API。这将使操作实践和工具以及开发模式、功能和实践的可移植性和重用成为可能。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;WebAssembly，也称为 Wasm，是一种编译用一种编程语言（例如 C 或 Rust）编写的代码并在不同的运行时（例如 Web 浏览器或微服务）上运行它的方法。 这使得它成为编写插件、扩展以及在安全沙箱环境中运行任意用户定义代码的绝佳选择。&lt;/p&gt;
+&lt;p&gt;WebAssembly 经常被误认为是一种仅限浏览器的技术，而实际上 Wasm 是一种跨平台的二进制文件，可以由任何 WebAssembly 运行时执行。 从历史上看，Go 程序员没有太多好的选择，但这种情况已经改变。&lt;/p&gt;
+&lt;p&gt;本文介绍了 &lt;a href=&#34;https://wazero.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;wazero&lt;/a&gt;，它在用 Go 编程语言编写的基础设施中很重要，并涵盖了其最引人注目的功能。&lt;/p&gt;
+&lt;h2 id=&#34;在-go-中运行-webassembly-的简史&#34;&gt;在 Go 中运行 WebAssembly 的简史&lt;/h2&gt;
+&lt;p&gt;最初，大多数 WebAssembly 运行时是用 C/C++ 和 Rust 编程语言编写的。 许多云原生项目，包括 Docker、Istio 和 Kubernetes 都是用 Go 编写的。 不是用 Go 编写的运行时可通过称为 CGO 的机制获得。 然而，CGO 不是 Go，通过选择 CGO，您就放弃了 Go 运行时的许多杀手级功能，例如对广泛平台交叉编译的一流支持。围绕 CGO 的复杂性，尤其是隐含的本机库，是将 wasm 扩展到 Kubernetes 调度程序的请求被拒绝的原因。 总之，Go 缺乏原生运行时延迟或限制了将 WebAssembly 引入核心基础设施。&lt;/p&gt;
+&lt;h2 id=&#34;wazero-是为-go-开发人员编写的&#34;&gt;wazero 是为 Go 开发人员编写的&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://wazero.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;wazero&lt;/a&gt; 是唯一用 Go 编写的&lt;strong&gt;零依赖 WebAssembly 运行时&lt;/strong&gt;。 这个开源项目最初是由 &lt;strong&gt;Takeshi Yoneda&lt;/strong&gt; 作为爱好开始的。 2021 年底，Tetrate 认识到其战略价值并投入了几名全职员工，以期有朝一日发布 1.0 版。&lt;/p&gt;
+&lt;p&gt;在过去的几个月里，该团队孜孜不倦地工作以支持多种平台、架构和编程接口。 我们很高兴地宣布 wazero 1.0 发布！&lt;/p&gt;
+&lt;p&gt;Wazero 是一个功能齐全、符合标准、丰富且经过实战检验的 WebAssembly 运行时，它与 Go 运行时的最佳特性无缝集成，例如安全并发和上下文传播。 它包括一个面向 Go 开发人员的编程接口和一个面向那些只想运行 Wasm 的人的 CLI。&lt;/p&gt;
+&lt;h2 id=&#34;wazero-有什么不同之处&#34;&gt;Wazero 有什么不同之处？&lt;/h2&gt;
+&lt;p&gt;你可能想知道 wazero 的优势在哪里，考虑到 Go 与其他语言具有良好的互操作性。 这允许您通过 CGO 选择多个不是用 Go 编写的运行时。 以下是考虑 Wazero 的五个理由：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;最佳 Go 支持&lt;/strong&gt;。Wazero 是纯 Go 语言，不引入任何依赖，但支持更进一步。 Wazero 包括惯用的 Go 函数，例如上下文集成。 这允许您重用传入的截止日期，例如来自 gRPC 请求以限制在 wasm 函数中花费的时间。 运行时是专门为 Go 设计的，因此在 Go 开发人员关注的问题（例如 goroutine security /wazero）方面&lt;a href=&#34;https://pkg.go.dev/github.com/tetratelabs&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;记录很好&lt;/a&gt;。比如很多库可以同时使用 wazero 而不互相冲突，这些都是在 Go 中测试过的。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;API 兼容性&lt;/strong&gt;。 WebAssembly 运行时嵌入在项目的底层位置，因此兼容性的变化可能会导致版本锁定，尤其是在中间件中。 Wazero 是唯一已知的提供语义版本控制的运行时。 函数可以制作成 1.1 版本，它们不会破坏 1.0 用户。 Wazero 承诺保持零依赖并与 Go 的前两个版本一起工作。 总之，wazero 的兼容性方法是模仿 Go 本身，为其用户引入最少的维护问题。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;平台兼容性&lt;/strong&gt;。wazero 完全支持 amd64、arm64、FreeBSD、Linux、macOS 和 Windows 在最新三个版本的 Go 上的任意组合。 它还通过其 “解释器运行时” 将对 Go 的支持扩展到其他平台，它的执行速度比本机 “编译器运行时” 慢。 wazero 在 Windows 上非常棒，因为它不仅是一流的平台，而且我们还在发布时生成签名的 MSI 安装程序。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;坚如磐石的测试方法&lt;/strong&gt;。 Wazero 通过多项规范测试来测试平台支持，包括 WebAssembly 核心规范的 1.0 和 2.0 草案版本以及用于测试 I/O 功能的 WASI 测试套件。 我们还运行由 Zig 和 TinyGo 编写的标准库测试。 最后，我们运行基准测试并对每个更改进行 “模糊测试”。 所有这些都使得 wazero 的错误易于识别和修复。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;活跃的终端用户社区。&lt;/strong&gt; wazero 的社区包括许多公司的极强的开发人员。我们涉及一些与 Go 支持 WebAssembly 有关的方面，并为 Go 和 TinyGo 编译器做出贡献。请查看我们的&lt;a href=&#34;https://wazero.io/community/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;社区&lt;/a&gt;和&lt;a href=&#34;https://wazero.io/community/users/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;用户&lt;/a&gt;页面，了解更多关于我们以及您如何融入其中的信息！&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;将-wazero-嵌入您的项目中&#34;&gt;将 wazero 嵌入您的项目中&lt;/h2&gt;
+&lt;p&gt;Wazero 显然也是一个 Go 库，其主要目标是让您与运行时环境无缝集成，并使用 WebAssembly 扩展您的 Go 应用程序。例如，假设您想运行&lt;a href=&#34;https://en.wikipedia.org/wiki/Cowsay&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;经典的 Unix 程序 cowsay&lt;/a&gt;（最初是用 Perl 编写的）。那么您可以输入：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Download the executable from:
+// https://github.com/evacchi/cowsay/releases/download/0.1.0/cowsay.wasm
+//go:embed &amp;#34;cowsay.wasm&amp;#34;
+var cowsay []byte
+
+func main() {
+	ctx := context.Background()
+	r := wazero.NewRuntime(ctx)
+	wasi_snapshot_preview1.MustInstantiate(ctx, r)
+	r.InstantiateWithConfig(ctx, cowsay,
+		wazero.NewModuleConfig().
+			WithArgs(&amp;#34;cowsay&amp;#34;, // first arg is usually the executable name
+				&amp;#34;wazero is awesome!&amp;#34;).
+			WithStdout(os.Stdout))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;运行它会显示：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt; ____________________
+&amp;lt; wazero is awesome! &amp;gt;
+ --------------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+               ||----w |
+                ||     ||
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;使用-wazero-cli-入门&#34;&gt;使用 wazero CLI 入门&lt;/h2&gt;
+&lt;p&gt;该项目现在包括一个 CLI，用于运行 WebAssembly 二进制文件。我们发现许多用户无论使用哪种编程语言都选择它，因此我们决定使用这个例子。&lt;/p&gt;
+&lt;p&gt;现在，您可以使用一个简单的命令下载和安装 wazero CLI：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ curl https://wazero.io/install.sh | sh
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;或者在 Windows 上，您可以&lt;a href=&#34;https://github.com/tetratelabs/wazero/releases/download/v1.0.0-rc.2/wazero_1.0.0-rc.2_windows_amd64.msi&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;下载有 MSI 签名的&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;然后您可以使用以下命令运行您的 WebAssembly 二进制文件：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ ./bin/wazero run someApp.wasm
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;例如，假设您想在 CLI 上运行 cowsay，那么只需键入&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ curl -LO https://github.com/evacchi/cowsay/releases/download/0.1.0/cowsay.wasm
+$ wazero run cowsay.wasm wazero is awesome!
+ ____________________
+&amp;lt; wazero is awesome! &amp;gt;
+ --------------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+               ||----w |
+                ||     ||
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;或者，也许你更想玩 1977 年的 Infocom 文本冒险游戏 Zork。&lt;/p&gt;
+&lt;p&gt;你可以从 &lt;a href=&#34;https://github.com/evacchi/zork-1/releases/tag/v0.0.1&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://github.com/evacchi/zork-1/releases/tag/v0.0.1&lt;/a&gt; 获取一个 Wasm 二进制文件，然后使用以下命令调用：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ curl -L https://github.com/evacchi/zork-1/releases/download/v0.0.1/zork-wasm-wasi.tgz | tar xzf -
+$ wazero run -mount=.:/ zork.wasm
+Welcome to Dungeon.			This version created 11-MAR-91.
+You are in an open field west of a big white house with a boarded
+front door.
+There is a small mailbox here.
+&amp;gt;open mailbox
+Opening the mailbox reveals:
+  A leaflet.
+&amp;gt;read leaflet
+Taken.
+		    Welcome to Dungeon!
+
+   Dungeon is a game of adventure, danger, and low cunning.  In it
+you will explore some of the most amazing territory ever seen by mortal
+man.  Hardened adventurers have run screaming from the terrors contained
+within.
+
+   In Dungeon, the intrepid explorer delves into the forgotten secrets
+of a lost labyrinth deep in the bowels of the earth, searching for
+vast treasures long hidden from prying eyes, treasures guarded by
+fearsome monsters and diabolical traps!
+
+   No DECsystem should be without one!
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;尽情玩吧！&lt;/p&gt;
+&lt;h2 id=&#34;最后的话&#34;&gt;最后的话&lt;/h2&gt;
+&lt;p&gt;这是我们的第一个重大发布，但我们才刚刚开始！&lt;strong&gt;有许多值得期待的事情&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;WebAssembly 规范正在不断更新，我们将密切关注它：例如，&lt;a href=&#34;https://github.com/WebAssembly/tail-call/blob/main/README.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;tail call proposal&lt;/a&gt; 刚刚进入第 4 阶段，&lt;a href=&#34;https://github.com/WebAssembly/gc/blob/master/proposals/gc/Overview.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;GC proposal&lt;/a&gt; 则是许多编程语言（如 Java）的支持者，最近进入了第 3 阶段。 Wazero 将继续通过所有测试，随着 WebAssembly 的发展而发展。&lt;/p&gt;
+&lt;p&gt;我们还希望作为您 WebAssembly 运行时的战略性选择。您可以期待持续致力于性能，可观测性和可扩展性。一个例子是我们即将推出的低级文件系统插件。它支持比 Go 的 fs.FS 更多的功能，现在就可以使用，例如创建目录和文件。该设计支持自定义审计和访问控制，并可用于第三方主机函数。&lt;/p&gt;
+&lt;p&gt;最后，如果您在 3 月 23 日和 24 日参加巴塞罗那的 Wasm I/O 活动，就有机会认识我们团队的一部分！&lt;/p&gt;
+&lt;p&gt;如果您在会议结束后留在那里，或者您只是在那个晚上在城市里，&lt;strong&gt;在 3 月 24 日星期五&lt;/strong&gt;，我们也很高兴&lt;a href=&#34;https://www.eventbrite.com/e/wazero-10-launch-party-tickets-585204150367&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;邀请您参加 wazero 1.0 自己的官方发布派对&lt;/a&gt;。我们将提供小吃，饮料和许多社区贡献者，他们将展示他们如何使用我们所钟爱的 WebAssembly 运行时！一位幸运的参会者将有机会按下 1.0 的发布按钮！&lt;/p&gt;
+&lt;p&gt;我们很兴奋地看到您将如何使用 Wazero 构建项目。&lt;a href=&#34;https://wazero.io/community/users/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;加入我们不断增长的社区用户列表&lt;/a&gt;，并让我们知道您正在创造什么！&lt;/p&gt;
 </description>
     </item>
     
