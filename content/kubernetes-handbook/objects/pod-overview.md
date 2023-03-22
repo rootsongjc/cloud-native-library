@@ -60,9 +60,9 @@ Controller 可以创建和管理多个 Pod，提供副本管理、滚动升级�
 
 包含一个或者多个 Pod 的 Controller 示例：
 
-- [Deployment](../deployment)
-- [StatefulSet](../statefulset)
-- [DaemonSet](../daemonset)
+- [Deployment](../../controllers/deployment)
+- [StatefulSet](../../controllers/statefulset)
+- [DaemonSet](../../controllers/daemonset)
 
 通常，Controller 会用你提供的 Pod Template 来创建相应的 Pod。
 
