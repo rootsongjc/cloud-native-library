@@ -13,6 +13,224 @@
     </image>
     
     <item>
+      <title>JWT 组件详解</title>
+      <link>https://lib.jimmysong.io/blog/jwt-components-explained/</link>
+      <pubDate>Mon, 27 Mar 2023 17:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/blog/jwt-components-explained/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;译者注：本文译自 &lt;a href=&#34;https://fusionauth.io/learn/expert-advice/tokens/jwt-components-explained&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Fusion Auth Developer&lt;/a&gt;。JSON Web Token（通常缩写为 JWT）是一种通常与 OAuth2 等标准协议一起使用的令牌。本文解释了 JWT 的组成部分和工作原理。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;在我们继续之前，重要的是要注意 JWT 通常被错误地称为 &lt;code&gt;JWT Tokens&lt;/code&gt;。在末尾添加 &lt;code&gt;Token&lt;/code&gt; 将会使其变成 &lt;code&gt;JSON Web Token Token&lt;/code&gt;。因此，在本文中，我们省略末尾的 &lt;code&gt;Token&lt;/code&gt; 并简单地称之为 &lt;code&gt;JWT&lt;/code&gt;，因为这是更正确的名称。同样地，由于 JWT 通常用作身份验证和授权过程的一部分，一些人将其称为 &lt;code&gt;Authentication Tokens&lt;/code&gt; 或 &lt;code&gt;JWT Authentication Tokens&lt;/code&gt;。从技术上讲，JWT 只是一个包含 Base64 编码的 JSON 的令牌。它可以用于许多不同的用例，&lt;em&gt;包括&lt;/em&gt;身份验证和授权。因此，在本文中，我们不使用这个术语，而是讨论如何在身份验证过程中使用 JWT。&lt;/p&gt;
+&lt;p&gt;让我们开始吧！这是一个新生成的 JWT。为清楚起见添加了换行符，但它们通常不存在。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImY1ODg5MGQxOSJ9.eyJhdWQiO
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;iI4NWEwMzg2Ny1kY2NmLTQ4ODItYWRkZS0xYTc5YWVlYzUwZGYiLCJleHAiOjE2NDQ4ODQ
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;xODUsImlhdCI6MTY0NDg4MDU4NSwiaXNzIjoiYWNtZS5jb20iLCJzdWIiOiIwMDAwMDAwM
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;C0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJqdGkiOiIzZGQ2NDM0ZC03OWE5LTR
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kMTUtOThiNS03YjUxZGJiMmNkMzEiLCJhdXRoZW50aWNhdGlvblR5cGUiOiJQQVNTV09SR
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;CIsImVtYWlsIjoiYWRtaW5AZnVzaW9uYXV0aC5pbyIsImVtYWlsX3ZlcmlmaWVkIjp0cnV
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;lLCJhcHBsaWNhdGlvbklkIjoiODVhMDM4NjctZGNjZi00ODgyLWFkZGUtMWE3OWFlZWM1M
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;GRmIiwicm9sZXMiOlsiY2VvIl19.dee-Ke6RzR0G9avaLNRZf1GUCDfe8Zbk9L2c7yaqKME
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;这可能看起来像是一堆乱码，但随着您对 JWT 以及它们在 OAuth2 或身份验证过程中的使用方式了解得更多，它开始变得更有意义了。&lt;/p&gt;
+&lt;p&gt;有几种类型的 JSON Web 令牌，但我将重点介绍已签名的 JWT，因为它们是最常见的。签名的 JWT 也可以称为 JWS。它由三个部分组成，以句号分隔。&lt;/p&gt;
+&lt;p&gt;有一个标头，在上面的JWT中以&lt;code&gt;eyJhbGc&lt;/code&gt;开头。然后有一个主体或有效载荷，上面以&lt;code&gt;eyJhdWQ&lt;/code&gt;开头。最后有一个签名，在示例JWT中以&lt;code&gt;dee-K&lt;/code&gt;开头。&lt;/p&gt;
+&lt;p&gt;JWT如何工作？让我们拆开这个示例JWT并深入了解一下。&lt;/p&gt;
+&lt;h2 id=&#34;jwt-标头解释&#34;&gt;JWT 标头解释&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImY1ODg5MGQxOSJ9&lt;/code&gt;是 JWT 的标头。JWT 标头包含有关 JWT 的元数据，包括密钥标识符、用于登录的算法和其他信息。&lt;/p&gt;
+&lt;p&gt;如果您通过 base64 解码器运行上述标头：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;echo&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImY1ODg5MGQxOSJ9&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;base64 -d
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;你会看到这个 JSON：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;alg&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;HS256&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;typ&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;JWT&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;kid&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;f58890d19&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;%&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;HS256&lt;/code&gt;表示 JWT 是使用对称算法签名的，特别是使用 SHA-256 的 HMAC。&lt;/p&gt;
+&lt;p&gt;算法列表和实现支持级别如下。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;“alg” Param Value&lt;/th&gt;
+&lt;th&gt;Digital Signature or MAC Algorithm&lt;/th&gt;
+&lt;th&gt;Implementation Requirements&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;HS256&lt;/td&gt;
+&lt;td&gt;HMAC using SHA-256&lt;/td&gt;
+&lt;td&gt;Required&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;HS384&lt;/td&gt;
+&lt;td&gt;HMAC using SHA-384&lt;/td&gt;
+&lt;td&gt;Optional&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;HS512&lt;/td&gt;
+&lt;td&gt;HMAC using SHA-512&lt;/td&gt;
+&lt;td&gt;Optional&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;RS256&lt;/td&gt;
+&lt;td&gt;RSASSA-PKCS1-v1_5 using SHA-256&lt;/td&gt;
+&lt;td&gt;Recommended&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;RS384&lt;/td&gt;
+&lt;td&gt;RSASSA-PKCS1-v1_5 using SHA-384&lt;/td&gt;
+&lt;td&gt;Optional&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;RS512&lt;/td&gt;
+&lt;td&gt;RSASSA-PKCS1-v1_5 using SHA-512&lt;/td&gt;
+&lt;td&gt;Optional&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;ES256&lt;/td&gt;
+&lt;td&gt;ECDSA using P-256 and SHA-256&lt;/td&gt;
+&lt;td&gt;Recommended+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;ES384&lt;/td&gt;
+&lt;td&gt;ECDSA using P-384 and SHA-384&lt;/td&gt;
+&lt;td&gt;Optional&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;ES512&lt;/td&gt;
+&lt;td&gt;ECDSA using P-521 and SHA-512&lt;/td&gt;
+&lt;td&gt;Optional&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;PS256&lt;/td&gt;
+&lt;td&gt;RSASSA-PSS using SHA-256 and MGF1 with SHA-256&lt;/td&gt;
+&lt;td&gt;Optional&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;PS384&lt;/td&gt;
+&lt;td&gt;RSASSA-PSS using SHA-384 and MGF1 with SHA-384&lt;/td&gt;
+&lt;td&gt;Optional&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;PS512&lt;/td&gt;
+&lt;td&gt;RSASSA-PSS using SHA-512 and MGF1 with SHA-512&lt;/td&gt;
+&lt;td&gt;Optional&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;none&lt;/td&gt;
+&lt;td&gt;No digital signature or MAC performed&lt;/td&gt;
+&lt;td&gt;Optional&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;此表取自 RFC 7518。由于仅 HS256 需要符合规范，请查阅用于创建 JWT 的软件或库以获取有关受支持算法的详细信息。&lt;/p&gt;
+&lt;p&gt;其他元数据也存储在 JWT 的这一部分中。&lt;code&gt;typ&lt;/code&gt;标头指示 JWT 的类型。在本例中，该值为&lt;code&gt;JWT&lt;/code&gt;，但其他值均有效。例如，如果 JWT 符合 RFC 9068，它可能具有&lt;code&gt;at+JWT&lt;/code&gt;指示它是访问令牌的值。&lt;/p&gt;
+&lt;p&gt;该&lt;code&gt;kid&lt;/code&gt;值指示用于签署 JWT 的密钥。对于对称密钥，&lt;code&gt;kid&lt;/code&gt;可用于在秘密保险库中查找值。对于非对称签名算法，此值让 JWT 的消费者查找与签署此 JWT 的私钥相对应的正确公钥。正确处理此值对于签名验证和 JWT 负载的完整性至关重要。&lt;/p&gt;
+&lt;p&gt;通常情况下，将标头值的大部分处理过程转移到库中。有许多优秀的开源 JWT 处理库。您应该了解这些库的价值，但可能不必实现实际处理。&lt;/p&gt;
+&lt;h2 id=&#34;jwt-令牌主体&#34;&gt;JWT 令牌主体&lt;/h2&gt;
+&lt;p&gt;有效载荷或主体是使 JWT 变得有趣的地方。此部分包含创建 JWT 以传输的数据。例如，如果 JWT 表示授权访问某些数据或功能的用户，则有效载荷包含用户数据，例如角色或其他授权信息。&lt;/p&gt;
+&lt;p&gt;这是来自示例 JWT 的有效负载：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;eyJhdWQiOiI&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;4&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;NWEwMzg&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;Ny&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;kY&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;NmLTQ&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;4&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;ODItYWRkZS&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;xYTc&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;YWVlYzUwZGYiLCJleHAiOjE&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;NDQ&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;4&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;ODQxODUsImlhdCI&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;6&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;MTY&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;NDg&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;4&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;MDU&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;4&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;NSwiaXNzIjoiYWNtZS&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;jb&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;20&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;iLCJzdWIiOiIwMDAwMDAwMC&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;wMDAwLTAwMDAtMDAwMC&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;wMDAwMDAwMDAwMDEiLCJqdGkiOiIzZGQ&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;NDM&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;ZC&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;03&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;OWE&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;LTRkMTUtOThiNS&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;03&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;YjUxZGJiMmNkMzEiLCJhdXRoZW&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;50&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;aWNhdGlvblR&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;cGUiOiJQQVNTV&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;09&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;SRCIsImVtYWlsIjoiYWRtaW&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;AZnVzaW&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;9&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;uYXV&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;aC&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;pbyIsImVtYWlsX&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;ZlcmlmaWVkIjp&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;cnVlLCJhcHBsaWNhdGlvbklkIjoiODVhMDM&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;4&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;NjctZGNjZi&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;00&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;ODgyLWFkZGUtMWE&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;OWFlZWM&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;MGRmIiwicm&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;9&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;sZXMiOlsiY&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;VvIl&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;19&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果您通过 base64 解码器运行示例负载：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;echo&lt;/span&gt; &lt;span class=&#34;s1&#34;&gt;&amp;#39;eyJhdWQiOiI4NWEwMzg2Ny1kY2NmLTQ4ODItYWRkZS0xYTc5YWVlYzUwZGYiLCJleHAiOjE2NDQ4ODQxODUsImlhdCI6MTY0NDg4MDU4NSwiaXNzIjoiYWNtZS5jb20iLCJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJqdGkiOiIzZGQ2NDM0ZC03OWE5LTRkMTUtOThiNS03YjUxZGJiMmNkMzEiLCJhdXRoZW50aWNhdGlvblR5cGUiOiJQQVNTV09SRCIsImVtYWlsIjoiYWRtaW5AZnVzaW9uYXV0aC5pbyIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJhcHBsaWNhdGlvbklkIjoiODVhMDM4NjctZGNjZi00ODgyLWFkZGUtMWE3OWFlZWM1MGRmIiwicm9sZXMiOlsiY2VvIl19&amp;#39;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;base64 -d
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;你会看到这个 JSON：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;aud&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;85a03867-dccf-4882-adde-1a79aeec50df&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;exp&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1644884185&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;iat&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1644880585&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;iss&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;acme.com&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;sub&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;00000000-0000-0000-0000-000000000001&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;jti&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;3dd6434d-79a9-4d15-98b5-7b51dbb2cd31&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;authenticationType&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;PASSWORD&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;email&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;admin@fusionauth.io&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;email_verified&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;applicationId&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;85a03867-dccf-4882-adde-1a79aeec50df&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;roles&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;ceo&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请注意，创建签名 JWT 的算法可以删除 base64 填充，因此 JWT 末尾可能缺少符号。您可能需要将其添加回去才能解码 JWT 令牌。这取决于内容的长度。您可以&lt;a href=&#34;https://datatracker.ietf.org/doc/html/rfc7515#appendix-C&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;在此处了解更多信息&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;如上所述，负载是您的应用程序所关心的，所以让我们更仔细地看一下这个 JSON。对象的每个键都称为 “声明”（Claim）。&lt;/p&gt;
+&lt;p&gt;一些声明是众所周知的，其含义由 IETF 等标准机构规定。您可以在此处查看&lt;a href=&#34;https://www.iana.org/assignments/jwt/jwt.xhtml&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;此类声明的示例&lt;/a&gt;。这些包括示例令牌中的&lt;code&gt;iss&lt;/code&gt;和&lt;code&gt;aud&lt;/code&gt;声明。当它们出现在 JWT 的有效负载中时，这两者都具有定义的含义。&lt;/p&gt;
+&lt;p&gt;还有其他非标准声明，例如&lt;code&gt;authenticationType&lt;/code&gt;。这些声明可能代表业务领域或自定义数据。例如，&lt;code&gt;authenticationType&lt;/code&gt;是 FusionAuth 使用的专有声明，用于指示身份验证方法，例如密码、刷新令牌或通过无密码链接。&lt;/p&gt;
+&lt;p&gt;您可以向 JWT 添加您想要的任何声明，包括对 JWT 的下游消费者有用的数据。从&lt;code&gt;roles&lt;/code&gt;声明中可以看出，声明不必是简单的 JSON 原语。它们可以是任何可以用 JSON 表示的数据结构。&lt;/p&gt;
+&lt;h2 id=&#34;声明验证&#34;&gt;声明验证&lt;/h2&gt;
+&lt;p&gt;当代码与 JWT 一起出现时，它应该验证某些声明。至少，应检查这些声明：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;iss&lt;/code&gt;标识 JWT 的发行者。只要 JWT 的发行者和消费者就有效值达成一致，并且消费者验证声明与已知的良好值相匹配，这个字符串到底是什么并不重要（UUID、域名、URL 或其他内容）。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;aud&lt;/code&gt;标识令牌的受众，即谁应该使用它。可以是标量或数组值。同样，JWT 的发行者和消费者应该就可接受的特定值达成一致。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;nbf&lt;/code&gt; 和 &lt;code&gt;exp&lt;/code&gt;。这些声明确定令牌有效的时间范围。如果您要发行令牌以供将来使用，则该声明可能很有用。应始终设置 &lt;code&gt;exp&lt;/code&gt; 声明，即 JWT 不再有效的时间。与其他声明不同，它们具有定义的值格式：自 unix 纪元以来的秒数。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;除了这些之外，还要验证业务领域特定的声明。例如，使用上述 JWT 的人可以在&lt;code&gt;authenticationType&lt;/code&gt;未知值时拒绝访问。&lt;/p&gt;
+&lt;p&gt;避免将未使用的声明放入 JWT。虽然 JWT 的大小没有限制，但通常它们越大，签名和验证它们所需的 CPU 就越多，传输它们所需的时间也就越多。Benchmark 期望 JWT 了解性能特征。&lt;/p&gt;
+&lt;h2 id=&#34;声明和安全&#34;&gt;声明和安全&lt;/h2&gt;
+&lt;p&gt;拥有令牌的任何人都可以看到已签名 JWT 的声明。&lt;/p&gt;
+&lt;p&gt;正如您在上面看到的，要以明文形式查看声明，您只需要一个 base64 解码器，它可以在每个命令行和互联网上的任何地方使用。&lt;/p&gt;
+&lt;p&gt;因此，您不应将任何应该保密的内容放入 JWT 中。这包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;私人信息，例如政府 ID&lt;/li&gt;
+&lt;li&gt;密码之类的秘密&lt;/li&gt;
+&lt;li&gt;任何会泄露信息的东西，比如整数 id&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;另一个安全问题与&lt;code&gt;aud&lt;/code&gt;声明的验证有关。由于消费代码已经拥有令牌，验证&lt;code&gt;aud&lt;/code&gt;声明是否多此一举？&lt;code&gt;aud&lt;/code&gt;声明表明谁应该接收这个 JWT，但代码已经有了它。不，总是验证声明。&lt;/p&gt;
+&lt;p&gt;为什么？&lt;/p&gt;
+&lt;p&gt;想象一下您有两个不同 API 的场景。一个是创建和管理待办事项，另一个是计费 API，用于转账。这两个 API 都期望一些用户具有&lt;code&gt;admin&lt;/code&gt;角色。然而，就可以采取的行动而言，该角色意味着截然不同的事情。&lt;/p&gt;
+&lt;p&gt;如果待办事项 API 和计费 API 均未验证是否为它们创建了任何给定的 JWT，则攻击者可以从具有该&lt;code&gt;admin&lt;/code&gt;角色的待办事项 API 中获取 JWT，并将其呈现给计费 API。&lt;/p&gt;
+&lt;p&gt;这最多是一个错误，最坏的情况是特权升级，对银行账户产生负面影响。&lt;/p&gt;
+&lt;h2 id=&#34;jwt-签名&#34;&gt;&lt;strong&gt;JWT 签名&lt;/strong&gt;&lt;/h2&gt;
+&lt;p&gt;JWT 的签名很关键，因为它保证了负载和标头的完整性。验证签名必须是 JWT 的任何消费者执行的第一步。如果签名不匹配，则不应进行进一步处理。&lt;/p&gt;
+&lt;p&gt;虽然您可以阅读&lt;a href=&#34;https://datatracker.ietf.org/doc/html/rfc7515#page-15&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;规范的相关部分&lt;/a&gt;以了解签名是如何生成的，但高级概述是：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;标头变成了 base64 URL 编码的字符串&lt;/li&gt;
+&lt;li&gt;负载被转换为 base64 URL 编码的字符串&lt;/li&gt;
+&lt;li&gt;它们由&lt;code&gt;.&lt;/code&gt; 连接&lt;/li&gt;
+&lt;li&gt;生成的字符串通过所选的加密算法运行，连同相应的密钥&lt;/li&gt;
+&lt;li&gt;签名是 base64 URL 编码的&lt;/li&gt;
+&lt;li&gt;编码后的签名以 &lt;code&gt;.&lt;/code&gt; 作为分隔符附加到字符串&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;当收到 JWT 时，可以执行相同的操作。如果生成的签名正确，则 JWT 的内容与创建时没有变化。&lt;/p&gt;
+&lt;h2 id=&#34;json-web-令牌限制&#34;&gt;&lt;strong&gt;JSON Web 令牌限制&lt;/strong&gt;&lt;/h2&gt;
+&lt;p&gt;在规范中，JSON Web Tokens 的长度没有硬性限制。实际上，考虑一下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;你打算在哪里存储 JWT&lt;/li&gt;
+&lt;li&gt;大型 JWT 的性能损失是什么&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;存储&#34;&gt;存储&lt;/h2&gt;
+&lt;p&gt;JWT 可以在 HTTP 标头中发送，存储在 cookie 中，并放置在表单参数中。在这些场景中，存储决定了 JWT 的最大长度。&lt;/p&gt;
+&lt;p&gt;例如，浏览器中 cookie 的典型存储限制通常为 4096 字节，包括名称。HTTP 标头的限制因软件组件而异，但 8192 字节似乎是一个常见值。&lt;/p&gt;
+&lt;p&gt;请查阅相关规范或其他资源以了解特定用例的限制，但请放心，JWT 没有固有的大小限制。&lt;/p&gt;
+&lt;h2 id=&#34;性能影响&#34;&gt;性能影响&lt;/h2&gt;
+&lt;p&gt;由于 JWT 可以包含许多不同类型的用户信息，因此开发人员可能会忍不住在其中放入太多信息。这会降低签名和验证步骤以及传输中的性能。&lt;/p&gt;
+&lt;p&gt;对于前者的示例，以下是签署和验证两个不同 JWT 的基准测试结果。每个操作进行了 50,000 次。&lt;/p&gt;
+&lt;p&gt;第一个 JWT 的正文长度约为 180 个字符；总编码令牌长度在 300 到 600 之间，具体取决于所使用的签名算法。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;hmac sign
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  1.632396   0.011794   1.644190 &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;  1.656177&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;hmac verify
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  2.452983   0.015723   2.468706 &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;  2.487930&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;rsa sign
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; 28.409793   0.117695  28.527488 &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt; 28.697615&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;rsa verify
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  3.086154   0.011869   3.098023 &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;  3.109780&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;ecc sign
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  4.248960   0.017153   4.266113 &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;  4.285231&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;ecc verify
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  7.057758   0.027116   7.084874 &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;  7.113594&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;下一个 JWT 负载大约有 1800 个字符，因此是前一个令牌大小的十倍。这具有 2400 到 2700 个字符的总令牌长度。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;hmac sign
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  3.356960   0.018175   3.375135 &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;  3.389963&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;hmac verify
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  4.283810   0.018320   4.302130 &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;  4.321095&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;rsa sign
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; 32.703723   0.172346  32.876069 &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt; 33.072665&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;rsa verify
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  5.300321   0.027455   5.327776 &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;  5.358079&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;ecc sign
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  6.557596   0.032239   6.589835 &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;  6.624320&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;ecc verify
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  9.184033   0.035617   9.219650 &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;  9.259225&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;您可以看到，对于较长的 JWT，总时间增加了，但通常不是线性的。所用时间的增加范围从 RSA 签名的大约 20% 到 HMAC 签名的大约 100%。&lt;/p&gt;
+&lt;p&gt;请注意传输更长的 JWT 所花费的额外时间；这可以用与任何其他 API 或 HTML 内容相同的方式进行测试和优化。&lt;/p&gt;
+&lt;h2 id=&#34;结论&#34;&gt;结论&lt;/h2&gt;
+&lt;p&gt;已签名的 JWT 具有标头、正文和签名。每个都在确保 JWT 可用于安全地存储和传输关键信息（无论是否与身份有关）方面发挥着至关重要的身份验证作用。了解所有这三个组件对于正确使用 JWT 也至关重要。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
       <title>Tetrate 开源项目 Wazero 简介</title>
       <link>https://lib.jimmysong.io/blog/introducing-wazero-from-tetrate/</link>
       <pubDate>Mon, 20 Mar 2023 12:00:00 +0800</pubDate>
