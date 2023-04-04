@@ -1,0 +1,1704 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="宋净超" />
+
+  
+  
+  
+    
+  
+  <meta name="description" content="本文介绍了 Istio 的新的目的地导向的 waypoint 代理，它可以简化和扩展 Istio 的功能。文章介绍了 waypoint 代理的架构，部署方式，以及如何将源代理的配置转移到目的地代理，从而提高可扩展性，可调试性，一致性和安全性。文章还展示了如何使用 Istio 的策略和遥测来管理和监控 waypoint 代理。文章的来源是 Istio 官方博客。" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://lib.jimmysong.io/blog/waypoint-proxy-made-simple/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/css/wowchemy.b26eb9b802629dccab300faa82cc98c7.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MP490FS739"></script>
+
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', "G-MP490FS739");
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2a4b7f65b1839466beaa48d633aa60c1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://lib.jimmysong.io/blog/waypoint-proxy-made-simple/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary_large_image" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://lib.jimmysong.io/blog/waypoint-proxy-made-simple/" />
+  <meta property="og:title" content="Istio Ambient 模式使用 Waypoint 代理简化 Istio 部署 | 云原生资料库" />
+  <meta property="og:description" content="本文介绍了 Istio 的新的目的地导向的 waypoint 代理，它可以简化和扩展 Istio 的功能。文章介绍了 waypoint 代理的架构，部署方式，以及如何将源代理的配置转移到目的地代理，从而提高可扩展性，可调试性，一致性和安全性。文章还展示了如何使用 Istio 的策略和遥测来管理和监控 waypoint 代理。文章的来源是 Istio 官方博客。" /><meta property="og:image" content="https://lib.jimmysong.io/media/sharing.png" />
+    <meta property="twitter:image" content="https://lib.jimmysong.io/media/sharing.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2023-04-04T08:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2023-04-04T11:40:10&#43;08:00">
+  
+
+  
+
+
+    
+
+
+
+
+
+
+  
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://lib.jimmysong.io/blog/waypoint-proxy-made-simple/"
+  },
+  "headline": "Istio Ambient 模式使用 Waypoint 代理简化 Istio 部署",
+  
+  "datePublished": "2023-04-04T08:00:00+08:00",
+  "dateModified": "2023-04-04T11:40:10+08:00",
+  
+  "author": {
+    "@type": "Person",
+    "name": "Istio"
+  },
+  
+  "publisher": {
+    "@type": "Organization",
+    "name": "云原生社区",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://lib.jimmysong.io/media/logo.svg"
+    }
+  },
+  "description": "本文介绍了 Istio 的新的目的地导向的 waypoint 代理，它可以简化和扩展 Istio 的功能。文章介绍了 waypoint 代理的架构，部署方式，以及如何将源代理的配置转移到目的地代理，从而提高可扩展性，可调试性，一致性和安全性。文章还展示了如何使用 Istio 的策略和遥测来管理和监控 waypoint 代理。文章的来源是 Istio 官方博客。"
+}
+</script>
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>Istio Ambient 模式使用 Waypoint 代理简化 Istio 部署 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="169cdcd7c79ae3aab8a3a63d486798f2" >
+  <button onclick="topFunction()" id="backTopBtn" title="Go to top"><i class="fa-solid fa-circle-up" aria-hidden="true"></i></button>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/js/wowchemy-init.min.62d6f8dfe8493f1c68557dde65bec362.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6 search-title">
+          <p>搜索</p>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/"><img src="/media/logo.svg" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/"><img src="/media/logo.svg" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#books"><span>图书</span></a>
+          </li>
+
+          
+          
+
+          
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"><span>教程</span><span class="caret"></span>
+            </a>
+            <div class="dropdown-menu">
+              
+                <a class="dropdown-item" href="/kubernetes-handbook"><span>Kubernetes 基础教程</span></a>
+              
+                <a class="dropdown-item" href="https://academy.tetrate.io/courses/istio-fundamentals-zh"><span>Istio 基础教程</span></a>
+              
+                <a class="dropdown-item" href="https://academy.tetrate.io/courses/envoy-fundamentals-zh"><span>Envoy 基础教程</span></a>
+              
+            </div>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link  active" href="/blog"><span>译文</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#feed"><span>更新</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#tags"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>Jimmy Song</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://jimmysong.io/contact/" data-toggle="tooltip" data-placement="bottom" title="联系" target="_blank" rel="noopener" aria-label="联系">
+                <i class="fab fa-weixin" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://twitter.com/jimmysongio" data-toggle="tooltip" data-placement="bottom" title="关注" target="_blank" rel="noopener" aria-label="关注">
+                <i class="fab fa-twitter" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+        
+
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://jimmysong.io" target="_blank" rel="noopener" data-toggle="tooltip" data-placement="bottom" title="主站" aria-label="主站"><i class="fas fa-home" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link js-search" href="#" data-toggle="tooltip" data-placement="bottom" title="搜索" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item d-none d-lg-inline-flex">
+            <a class="nav-link" href="https://github.com/rootsongjc/cloud-native-library/" target="_blank" rel="noopener" data-toggle="tooltip" data-placement="bottom" title="查看源码" aria-label="查看源码" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+        <li class="nav-item">
+          <a href="#" class="nav-link set-theme">
+            <i class="fa fa-sun" aria-hidden="true" id="theme-icon"></i>
+          </a>
+        </li>
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    <div class="container-xl">
+    <div class="post-container">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  
+  
+<div class="article-container pt-3">
+  <h1>Istio Ambient 模式使用 Waypoint 代理简化 Istio 部署</h1>
+
+  
+
+  
+    
+
+
+<div class="article-metadata">
+
+  <div>
+  
+  
+  
+  
+    <i class="fa-solid fa-feather"></i>
+    
+
+  <span >
+      <a href="/author/istio/">Istio</a></span>
+    
+    <span class="middot-divider"></span>
+    
+  
+  
+  
+  
+  
+  
+  <span class="article-categories">
+    <i class="fas fa-folder mr-1"></i><a href="/category/istio/" class="text-capitalize">Istio</a></span>
+  
+  </div>
+
+  
+  <span class="article-date">
+    
+    
+      
+          
+          发布于
+      
+    
+    2023-04-04
+  </span>
+  
+
+  
+
+  
+  <span class="middot-divider"></span>
+  字数 3057
+  <span class="middot-divider"></span>
+  <span class="article-reading-time">
+      阅读时长 14 分钟
+  </span>
+  
+
+  
+  
+  
+  
+
+</div>
+
+    
+
+
+
+
+<div class="btn-links mb-2">
+  
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  <a class="btn btn-outline-primary btn-page-header" href="https://istio.io/latest/blog/2023/waypoint-proxy-made-simple/" target="_blank" rel="noopener">
+    <i class="fa fa-globe mr-1"></i>原文</a>
+
+
+</div>
+
+
+  
+</div>
+
+
+    </div>
+    <div class="border-bottom mb-2"></div>
+    <div class="row flex-xl-nowrap">
+        <div class="col-3 d-none d-xl-block docs-toc">
+            <!-- toc -->
+            
+<div class="">
+    <ul class="nav toc-top">
+        <li>
+            <a href="#" id="back_to_top" class="docs-toc-title">目录</a>
+        </li>
+    </ul>
+  <nav id="TableOfContents">
+  <ul>
+    <li><a href="#waypoint-代理的架构">Waypoint 代理的架构</a></li>
+    <li><a href="#将源代理配置转移到目标代理">将源代理配置转移到目标代理</a></li>
+    <li><a href="#如果我的目的地没有-waypoint-代理怎么办">如果我的目的地没有 waypoint 代理怎么办？</a></li>
+    <li><a href="#深入了解-waypoint-代理配置">深入了解 waypoint 代理配置</a></li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+</div>
+
+            <!-- /toc -->
+            
+            <div class="subscribe-module col-12 mt-1">
+    <img src="/img/wechat.webp" alt="image" title="Jimmy Song的微信公众号"/>
+    <p class="text-center pt-1">关注「几米宋」微信公众号，获取本站更新</p>
+    
+    
+     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4029167986768912"
+     crossorigin="anonymous"></script>
+     <ins class="adsbygoogle"
+       style="display:block"
+       data-ad-client="ca-pub-4029167986768912"
+       data-ad-slot="6856371908"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
+    <script>
+       (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+    
+    
+</div>
+
+            
+        </div>
+        <main class="article-body col-9 container docs-content" role="main">
+            <article class="article">
+                <div class="article-style">
+                    
+                    <details class="toc-inpage d-print-none d-show-block mb-0">
+  <summary class="font-weight-bold">点击查看目录</summary>
+  <nav id="TableOfContents">
+  <ul>
+    <li><a href="#waypoint-代理的架构">Waypoint 代理的架构</a></li>
+    <li><a href="#将源代理配置转移到目标代理">将源代理配置转移到目标代理</a></li>
+    <li><a href="#如果我的目的地没有-waypoint-代理怎么办">如果我的目的地没有 waypoint 代理怎么办？</a></li>
+    <li><a href="#深入了解-waypoint-代理配置">深入了解 waypoint 代理配置</a></li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+</details>
+
+                    
+                    <blockquote>
+<p>译者注：本文介绍了 Istio 的新的目的地导向的 waypoint 代理，它可以简化和扩展 Istio 的功能。文章介绍了 waypoint 代理的架构，部署方式，以及如何将源代理的配置转移到目的地代理，从而提高可扩展性，可调试性，一致性和安全性。文章还展示了如何使用 Istio 的策略和遥测来管理和监控 waypoint 代理。文章的来源是 Istio 官方博客。</p>
+</blockquote>
+<p>Ambient 将 Istio 的功能分为两个不同的层，一个安全覆盖层和一个七层流量处理层。Waypoint 代理是一个可选组件，它基于 Envoy 并为其管理的工作负载进行七层流量处理。自 2022 年<a href="https://istio.io/latest/blog/2022/introducing-ambient-mesh/" target="_blank" rel="noopener">首次启动 Ambient</a> 以来，我们进行了重大更改以简化路点配置、可调试性和可扩展性。</p>
+<h2 id="waypoint-代理的架构">Waypoint 代理的架构</h2>
+<p>与 sidecar 类似，waypoint 代理也是基于 Envoy 的，由 Istio 动态配置以服务于您的应用程序。Waypoint 代理的独特之处在于它运行每个命名空间（默认）或每个服务账户。通过在应用程序 pod 之外运行，waypoint 代理可以独立于应用程序安装、升级和扩展，并降低运营成本。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-waypoint-代理架构">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="Waypoint 代理架构" srcset="
+               /blog/waypoint-proxy-made-simple/waypoint-architecture_huf9e387b42bc15a1bf3e2a731b7c68241_83375_d1acd59837e7cd806a9762e47c63ec04.webp 400w,
+               /blog/waypoint-proxy-made-simple/waypoint-architecture_huf9e387b42bc15a1bf3e2a731b7c68241_83375_0ede77487612ad4b2c493a175cc988e3.webp 760w,
+               /blog/waypoint-proxy-made-simple/waypoint-architecture_huf9e387b42bc15a1bf3e2a731b7c68241_83375_1200x1200_fit_q75_h2_lanczos_3.webp 1200w"
+               src="/blog/waypoint-proxy-made-simple/waypoint-architecture_huf9e387b42bc15a1bf3e2a731b7c68241_83375_d1acd59837e7cd806a9762e47c63ec04.webp"
+               width="760"
+               height="333"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      Waypoint 代理架构
+    </figcaption></figure>
+</p>
+<p>使用 Kubernetes Gateway 资源或 <code>istioctl</code> 命令以声明方式部署 waypoint 代理：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ istioctl experimental waypoint generate
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">apiVersion: gateway.networking.k8s.io/v1beta1
+</span></span><span class="line"><span class="cl">kind: Gateway
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: namespace
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  gatewayClassName: istio-waypoint
+</span></span><span class="line"><span class="cl">  listeners:
+</span></span><span class="line"><span class="cl">  - name: mesh
+</span></span><span class="line"><span class="cl">    port: <span class="m">15008</span>
+</span></span><span class="line"><span class="cl">    protocol: HBONE
+</span></span></code></pre></div><p>Istiod 将监控这些资源并自动为用户部署和管理相应的 waypoint 部署。</p>
+<h2 id="将源代理配置转移到目标代理">将源代理配置转移到目标代理</h2>
+<p>在现有的 sidecar 架构中，大多数流量整形（例如<a href="https://istio.io/latest/docs/tasks/traffic-management/request-routing/" target="_blank" rel="noopener">请求路由</a>或<a href="https://istio.io/latest/docs/tasks/traffic-management/traffic-shifting/" target="_blank" rel="noopener">流量转移</a>或<a href="https://istio.io/latest/docs/tasks/traffic-management/fault-injection/" target="_blank" rel="noopener">故障注入</a>）策略由源（客户端）代理实现，而大多数安全策略由目标（服务器）代理实现。这导致了一些担忧：</p>
+<ul>
+<li>缩放 —— 每个源 sidecar 都需要知道关于网格中每个其他目的地的信息。这是一个多项式缩放问题。更糟糕的是，如果任何目标配置发生变化，我们需要立即通知所有 sidecar。</li>
+<li>调试 —— 因为策略执行在客户端和服务器 sidecar 之间分开，所以在故障排除时很难理解系统的行为。</li>
+<li>混合环境 —— 如果我们的系统不是所有客户端都是网格的一部分，我们就会得到不一致的行为。例如，非网格客户端不会遵守金丝雀部署策略，从而导致意外的流量分配。</li>
+<li>所有权和归属 —— 理想情况下，在一个命名空间中编写的策略应该只影响在同一命名空间中运行的代理。然而，在这个模型中，它是由每个 sidecar 分发和执行的。尽管 Istio 已围绕此约束进行设计以确保其安全，但它仍然不是最佳选择。</li>
+</ul>
+<p>在 Ambient 中，所有策略都由目的地 waypoint 代理强制执行。在许多方面，waypoint 充当进入命名空间（默认范围）或服务账户的网关。Istio 强制所有进入命名空间的流量都经过 waypoint，然后该 waypoint 执行该命名空间的所有策略。因此，每个 waypoint 只需要了解其自己命名空间的配置。</p>
+<p>可扩展性问题对于在大型集群中运行的用户来说尤其麻烦。如果我们将其可视化，我们可以看到新架构的改进有多大。</p>
+<p>考虑一个简单的部署，我们有 2 个命名空间，每个命名空间有 2 个（颜色编码）部署。对 sidecar 进行编程所需的 Envoy (XDS) 配置显示为圆圈：</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-每个-sidecar-都有关于所有其他-sidecar-的配置">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="每个 sidecar 都有关于所有其他 sidecar 的配置" srcset="
+               /blog/waypoint-proxy-made-simple/sidecar-config_hu8648b791ad721e3e594a7a063837d2cf_174640_7c97170989bbe31fca6fb0037b2d8ea1.webp 400w,
+               /blog/waypoint-proxy-made-simple/sidecar-config_hu8648b791ad721e3e594a7a063837d2cf_174640_f38de497c2780df7b05a75c61def0fa8.webp 760w,
+               /blog/waypoint-proxy-made-simple/sidecar-config_hu8648b791ad721e3e594a7a063837d2cf_174640_1200x1200_fit_q75_h2_lanczos_3.webp 1200w"
+               src="/blog/waypoint-proxy-made-simple/sidecar-config_hu8648b791ad721e3e594a7a063837d2cf_174640_7c97170989bbe31fca6fb0037b2d8ea1.webp"
+               width="753"
+               height="760"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      每个 sidecar 都有关于所有其他 sidecar 的配置
+    </figcaption></figure>
+</p>
+<p>在 sidecar 模型中，我们有 4 个工作负载，每个工作负载有 4 组配置。如果这些配置中的任何一个发生更改，则所有这些配置都需要更新。总共有 16 个配置分布。</p>
+<p>然而，在 waypoint 架构中，配置得到了极大的简化：</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-每个-waypoint-只有自己的命名空间的配置">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="每个 waypoint 只有自己的命名空间的配置" srcset="
+               /blog/waypoint-proxy-made-simple/waypoint-config_hu62982d013ddaec3e67542431a4d3bb72_84800_354dc375d7d8866a69a0fcf5ff05479b.webp 400w,
+               /blog/waypoint-proxy-made-simple/waypoint-config_hu62982d013ddaec3e67542431a4d3bb72_84800_c8f6106c05f3f083f49409380fa10920.webp 760w,
+               /blog/waypoint-proxy-made-simple/waypoint-config_hu62982d013ddaec3e67542431a4d3bb72_84800_1200x1200_fit_q75_h2_lanczos_3.webp 1200w"
+               src="/blog/waypoint-proxy-made-simple/waypoint-config_hu62982d013ddaec3e67542431a4d3bb72_84800_354dc375d7d8866a69a0fcf5ff05479b.webp"
+               width="760"
+               height="456"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      每个 waypoint 只有自己的命名空间的配置
+    </figcaption></figure>
+</p>
+<p>在这里，我们看到了一个截然不同的故事。我们只有 2 个waypoint 代理，因为每个代理都能够为整个命名空间提供服务，并且每个代理只需要为自己的命名空间进行配置。总的来说，我们发送了 25% 的配置，即使是一个简单的例子。</p>
+<p>如果我们将每个命名空间扩展到最多 25 个部署，每个部署有 10 个 pod，每个 waypoint 部署有 2 个 pod 以实现高可用性，这些数字会更令人印象深刻 —— waypoint 配置分布只需要 sidecar 配置分布的 0.8%，如表下面说明！</p>
+<table>
+<thead>
+<tr>
+<th>配置分发</th>
+<th>命名空间 1</th>
+<th>命名空间 2</th>
+<th>总数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sidecar</td>
+<td>25 种配置 * 250 个 sidecar</td>
+<td>25 种配置 * 250 个 sidecar</td>
+<td>12500</td>
+</tr>
+<tr>
+<td>Waypoint</td>
+<td>25 种配置 * 2 个 waypoint</td>
+<td>25 种配置 * 2 个 waypoint</td>
+<td>100</td>
+</tr>
+<tr>
+<td>Waypoint/Sidecar</td>
+<td>0.8%</td>
+<td>0.8%</td>
+<td>0.8%</td>
+</tr>
+</tbody>
+</table>
+<p>虽然我们使用命名空间范围的 waypoint 代理来说明上面的简化，但当您将其应用于服务账户 waypoint 代理时，简化是相似的。</p>
+<p>这种减少的配置意味着控制平面和数据平面的资源使用率（CPU、RAM 和网络带宽）较低。虽然今天的用户可以通过谨慎使用 <code>exportTo</code> Istio 网络资源或 <a href="https://istio.io/latest/docs/reference/config/networking/sidecar/" target="_blank" rel="noopener">Sidecar</a> API 看到类似的改进，但在 Ambient 模式下不再需要这样做，从而使扩展变得轻而易举。</p>
+<h2 id="如果我的目的地没有-waypoint-代理怎么办">如果我的目的地没有 waypoint 代理怎么办？</h2>
+<p>Ambient 模式的设计围绕这样一个假设，即大多数配置最好由服务生产者而不是服务消费者实施。然而，情况并非总是如此 —— 有时我们需要为我们无法控制的目的地配置流量管理。一个常见的例子是连接到具有更高弹性的外部服务，以处理偶尔的连接问题（例如，为 <code>example.com</code> 调用添加超时）。</p>
+<p>这是社区中正在积极开发的一个领域，我们在其中设计如何将流量路由到您的出口网关，以及您如何使用所需的策略配置出口网关。留意这方面的未来博客文章！</p>
+<h2 id="深入了解-waypoint-代理配置">深入了解 waypoint 代理配置</h2>
+<p>假设您已遵循 <a href="http://preliminary.istio.io/latest/docs/ops/ambient/getting-started/" target="_blank" rel="noopener">Ambient 入门指南</a>直至并包括<a href="http://preliminary.istio.io/latest/docs/ops/ambient/getting-started/#control" target="_blank" rel="noopener">控制流量部分</a>，您已经为 bookinfo-reviews 服务账户部署了一个waypoint 代理，以将 90% 的流量引导至 reviews v1，将 10% 的流量引导至 reviews v2。</p>
+<p>使用 <code>istioctl</code>检索 <code>reviews</code> waypoint 代理的监听器：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ istioctl proxy-config listener deploy/bookinfo-reviews-istio-waypoint --waypoint
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">LISTENER              CHAIN                                                 MATCH                                         DESTINATION
+</span></span><span class="line"><span class="cl">envoy://connect_originate                                                       ALL                                           Cluster: connect_originate
+</span></span><span class="line"><span class="cl">envoy://main_internal inbound-vip<span class="p">|</span>9080<span class="o">||</span>reviews.default.svc.cluster.local-http  <span class="nv">ip</span><span class="o">=</span>10.96.104.108 -&gt; <span class="nv">port</span><span class="o">=</span><span class="m">9080</span>                 Inline Route: /*
+</span></span><span class="line"><span class="cl">envoy://main_internal direct-tcp                                            <span class="nv">ip</span><span class="o">=</span>10.244.2.14 -&gt; ANY                         Cluster: encap
+</span></span><span class="line"><span class="cl">envoy://main_internal direct-tcp                                            <span class="nv">ip</span><span class="o">=</span>10.244.1.6 -&gt; ANY                          Cluster: encap
+</span></span><span class="line"><span class="cl">envoy://main_internal direct-tcp                                            <span class="nv">ip</span><span class="o">=</span>10.244.2.11 -&gt; ANY                         Cluster: encap
+</span></span><span class="line"><span class="cl">envoy://main_internal direct-http                                           <span class="nv">ip</span><span class="o">=</span>10.244.2.11 -&gt; application-protocol<span class="o">=</span><span class="s1">&#39;h2c&#39;</span>  Cluster: encap
+</span></span><span class="line"><span class="cl">envoy://main_internal direct-http                                           <span class="nv">ip</span><span class="o">=</span>10.244.2.11 -&gt; application-protocol<span class="o">=</span><span class="s1">&#39;http/1.1&#39;</span> Cluster: encap
+</span></span><span class="line"><span class="cl">envoy://main_internal direct-http                                           <span class="nv">ip</span><span class="o">=</span>10.244.2.14 -&gt; application-protocol<span class="o">=</span><span class="s1">&#39;http/1.1&#39;</span> Cluster: encap
+</span></span><span class="line"><span class="cl">envoy://main_internal direct-http                                           <span class="nv">ip</span><span class="o">=</span>10.244.2.14 -&gt; application-protocol<span class="o">=</span><span class="s1">&#39;h2c&#39;</span>  Cluster: encap
+</span></span><span class="line"><span class="cl">envoy://main_internal direct-http                                           <span class="nv">ip</span><span class="o">=</span>10.244.1.6 -&gt; application-protocol<span class="o">=</span><span class="s1">&#39;h2c&#39;</span>   Cluster: encap
+</span></span><span class="line"><span class="cl">envoy://main_internal direct-http                                           <span class="nv">ip</span><span class="o">=</span>10.244.1.6 -&gt; application-protocol<span class="o">=</span><span class="s1">&#39;http/1.1&#39;</span>  Cluster: encap
+</span></span><span class="line"><span class="cl">envoy://connect_terminate default                                               ALL                                           Inline Route:
+</span></span></code></pre></div><p>对于到达端口 <code>15008</code> 的请求，默认为 Istio 的入站 HBONE 端口，waypoint 代理终止 HBONE 连接并将请求转发到 <code>main_internal</code> 监听器以执行任何工作负载策略，如 AuthorizationPolicy。如果您不熟悉<a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/other_features/internal_listener" target="_blank" rel="noopener">内部监听器</a>，它们是 Envoy 监听器，可以接受用户空间连接，而不使用系统网络 API。以上添加到 <code>istioctl proxy-config</code> 命令的 <code>--waypoint</code> 标志指示它显示 <code>main_internal</code> 监听器的详细信息、其过滤器链、链匹配和目标。</p>
+<p>注意 <code>10.96.104.108</code> 是 reviews 服务 VIP，而 <code>10.244.x.x</code> 是 reviews v1/v2/v3 pod IP，您可以使用 <code>kubectl get svc,pod -o wide</code> 命令查看集群。对于纯文本或 HBONE 终止的入站流量，它将匹配服务 VIP 和端口 9080 以供 reviews 使用，或者通过 pod IP 地址和应用程序协议（ANY、h2c 或 http/1.1）。</p>
+<p>检查 reviews waypoint 代理的集群，您会得到 <code>main_internal</code> 集群以及一些入站集群。除了基础架构的集群之外，创建的唯一 Envoy 集群是运行在同一服务账户中的服务和 pod 的集群。没有为其他地方运行的服务或 pod 创建集群。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ istioctl proxy-config clusters deploy/bookinfo-reviews-istio-waypoint
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">SERVICE FQDN                         PORT SUBSET  DIRECTION   TYPE         DESTINATION RULE
+</span></span><span class="line"><span class="cl">agent                                -    -       -           STATIC
+</span></span><span class="line"><span class="cl">connect_originate                    -    -       -           ORIGINAL_DST
+</span></span><span class="line"><span class="cl">encap                                -    -       -           STATIC
+</span></span><span class="line"><span class="cl">kubernetes.default.svc.cluster.local <span class="m">443</span>  tcp     inbound-vip EDS
+</span></span><span class="line"><span class="cl">main_internal                        -    -       -           STATIC
+</span></span><span class="line"><span class="cl">prometheus_stats                     -    -       -           STATIC
+</span></span><span class="line"><span class="cl">reviews.default.svc.cluster.local    <span class="m">9080</span> http    inbound-vip EDS
+</span></span><span class="line"><span class="cl">reviews.default.svc.cluster.local    <span class="m">9080</span> http/v1 inbound-vip EDS
+</span></span><span class="line"><span class="cl">reviews.default.svc.cluster.local    <span class="m">9080</span> http/v2 inbound-vip EDS
+</span></span><span class="line"><span class="cl">reviews.default.svc.cluster.local    <span class="m">9080</span> http/v3 inbound-vip EDS
+</span></span><span class="line"><span class="cl">sds-grpc                             -    -       -           STATIC
+</span></span><span class="line"><span class="cl">xds-grpc                             -    -       -           STATIC
+</span></span><span class="line"><span class="cl">zipkin                               -    -       -           STRICT_DNS
+</span></span></code></pre></div><p>请注意列表中没有 <code>outbound</code> 集群，您可以使用 <code>istioctl proxy-config cluster deploy/bookinfo-reviews-istio-waypoint --direction outbound</code> 进行确认！很好的一点是，您不需要在任何其他 bookinfo 服务（例如<code>productpage</code> 或 <code>ratings</code> 服务）上配置 <code>exportTo</code>。换句话说，<code>reviews</code> waypoint 不会意识到任何不必要的集群，而您不需要进行任何额外的手动配置。</p>
+<p>显示 <code>reviews</code> waypoint 代理的路由列表：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ istioctl proxy-config routes deploy/bookinfo-reviews-istio-waypoint
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">NAME                                                    DOMAINS MATCH              VIRTUAL SERVICE
+</span></span><span class="line"><span class="cl">encap                                                   *       /*
+</span></span><span class="line"><span class="cl">inbound-vip<span class="p">|</span>9080<span class="p">|</span>http<span class="p">|</span>reviews.default.svc.cluster.local *       /*                 reviews.default
+</span></span><span class="line"><span class="cl">default
+</span></span></code></pre></div><p>回顾下，您没有配置任何 sidecar 资源或 Istio 网络资源上的 <code>exportTo</code> 配置。 但是，您部署了 <code>bookinfo-productpage</code> 路由来配置入口网关以路由到 productpage，但 reviews waypoint 没有意识到任何此类不相关的路由。</p>
+<p>显示 <code>inbound-vip|9080|http|reviews.default.svc.cluster.local</code> 路由的详细信息，您会看到基于权重的路由配置将 90％的流量定向到 <code>reviews</code> v1，将 10％的流量定向到 <code>reviews</code> v2，以及一些 Istio 的默认重试和超时配置。 这证实了之前讨论的流量和弹性策略从源头转移到目标导向的 waypoint。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ istioctl proxy-config routes deploy/bookinfo-reviews-istio-waypoint --name <span class="s2">&#34;inbound-vip|9080|http|reviews.default.svc.cluster.local&#34;</span> -o yaml
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">- name: inbound-vip<span class="p">|</span>9080<span class="p">|</span>http<span class="p">|</span>reviews.default.svc.cluster.local
+</span></span><span class="line"><span class="cl"> validateClusters: <span class="nb">false</span>
+</span></span><span class="line"><span class="cl"> virtualHosts:
+</span></span><span class="line"><span class="cl"> - domains:
+</span></span><span class="line"><span class="cl">   - <span class="s1">&#39;*&#39;</span>
+</span></span><span class="line"><span class="cl">   name: inbound<span class="p">|</span>http<span class="p">|</span><span class="m">9080</span>
+</span></span><span class="line"><span class="cl">   routes:
+</span></span><span class="line"><span class="cl">   - decorator:
+</span></span><span class="line"><span class="cl">       operation: reviews:9080/*
+</span></span><span class="line"><span class="cl">     match:
+</span></span><span class="line"><span class="cl">       prefix: /
+</span></span><span class="line"><span class="cl">     metadata:
+</span></span><span class="line"><span class="cl">       filterMetadata:
+</span></span><span class="line"><span class="cl">         istio:
+</span></span><span class="line"><span class="cl">           config: /apis/networking.istio.io/v1alpha3/namespaces/default/virtual-service/reviews
+</span></span><span class="line"><span class="cl">     route:
+</span></span><span class="line"><span class="cl">       maxGrpcTimeout: 0s
+</span></span><span class="line"><span class="cl">       retryPolicy:
+</span></span><span class="line"><span class="cl">         hostSelectionRetryMaxAttempts: <span class="s2">&#34;5&#34;</span>
+</span></span><span class="line"><span class="cl">         numRetries: <span class="m">2</span>
+</span></span><span class="line"><span class="cl">         retriableStatusCodes:
+</span></span><span class="line"><span class="cl">         - <span class="m">503</span>
+</span></span><span class="line"><span class="cl">         retryHostPredicate:
+</span></span><span class="line"><span class="cl">         - name: envoy.retry_host_predicates.previous_hosts
+</span></span><span class="line"><span class="cl">           typedConfig:
+</span></span><span class="line"><span class="cl">             <span class="s1">&#39;@type&#39;</span>: type.googleapis.com/envoy.extensions.retry.host.previous_hosts.v3.PreviousHostsPredicate
+</span></span><span class="line"><span class="cl">         retryOn: connect-failure,refused-stream,unavailable,cancelled,retriable-status-codes
+</span></span><span class="line"><span class="cl">       timeout: 0s
+</span></span><span class="line"><span class="cl">       weightedClusters:
+</span></span><span class="line"><span class="cl">         clusters:
+</span></span><span class="line"><span class="cl">         - name: inbound-vip<span class="p">|</span>9080<span class="p">|</span>http/v1<span class="p">|</span>reviews.default.svc.cluster.local
+</span></span><span class="line"><span class="cl">           weight: <span class="m">90</span>
+</span></span><span class="line"><span class="cl">         - name: inbound-vip<span class="p">|</span>9080<span class="p">|</span>http/v2<span class="p">|</span>reviews.default.svc.cluster.local
+</span></span><span class="line"><span class="cl">           weight: <span class="m">10</span>
+</span></span></code></pre></div><p>检查<code>reviews</code> waypoint 代理的端点：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ istioctl proxy-config endpoints deploy/bookinfo-reviews-istio-waypoint
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">ENDPOINT                                            STATUS  OUTLIER CHECK CLUSTER
+</span></span><span class="line"><span class="cl">127.0.0.1:15000                                     HEALTHY OK            prometheus_stats
+</span></span><span class="line"><span class="cl">127.0.0.1:15020                                     HEALTHY OK            agent
+</span></span><span class="line"><span class="cl">envoy://connect_originate/                          HEALTHY OK            encap
+</span></span><span class="line"><span class="cl">envoy://connect_originate/10.244.1.6:9080           HEALTHY OK            inbound-vip<span class="p">|</span>9080<span class="p">|</span>http/v2<span class="p">|</span>reviews.default.svc.cluster.local
+</span></span><span class="line"><span class="cl">envoy://connect_originate/10.244.1.6:9080           HEALTHY OK            inbound-vip<span class="p">|</span>9080<span class="p">|</span>http<span class="p">|</span>reviews.default.svc.cluster.local
+</span></span><span class="line"><span class="cl">envoy://connect_originate/10.244.2.11:9080          HEALTHY OK            inbound-vip<span class="p">|</span>9080<span class="p">|</span>http/v1<span class="p">|</span>reviews.default.svc.cluster.local
+</span></span><span class="line"><span class="cl">envoy://connect_originate/10.244.2.11:9080          HEALTHY OK            inbound-vip<span class="p">|</span>9080<span class="p">|</span>http<span class="p">|</span>reviews.default.svc.cluster.local
+</span></span><span class="line"><span class="cl">envoy://connect_originate/10.244.2.14:9080          HEALTHY OK            inbound-vip<span class="p">|</span>9080<span class="p">|</span>http/v3<span class="p">|</span>reviews.default.svc.cluster.local
+</span></span><span class="line"><span class="cl">envoy://connect_originate/10.244.2.14:9080          HEALTHY OK            inbound-vip<span class="p">|</span>9080<span class="p">|</span>http<span class="p">|</span>reviews.default.svc.cluster.local
+</span></span><span class="line"><span class="cl">envoy://main_internal/                              HEALTHY OK            main_internal
+</span></span><span class="line"><span class="cl">unix://./etc/istio/proxy/XDS                        HEALTHY OK            xds-grpc
+</span></span><span class="line"><span class="cl">unix://./var/run/secrets/workload-spiffe-uds/socket HEALTHY OK            sds-grpc
+</span></span></code></pre></div><p>请注意，您不会获得与 reviews 以外的任何服务相关的任何端点，即使您在 <code>default</code> 和 <code>istio-system</code> 命名空间中还有一些其他服务。</p>
+<h2 id="总结">总结</h2>
+<p>我们对专注于面向目的地的 waypoint 代理的简化感到非常兴奋。这是朝着简化 Istio 的可用性、可扩展性和可调试性迈出的又一重要步骤，这些是 Istio 路线图上的重中之重。按照我们的<a href="http://preliminary.istio.io/latest/docs/ops/ambient/getting-started/" target="_blank" rel="noopener">入门指南</a>立即尝试环境 alpha 构建并体验简化的waypoint 代理！</p>
+
+                </div>
+                
+
+<div class="article-tags">
+  
+  <a class="badge badge-light" href="/tag/istio/">Istio</a>
+  
+  <a class="badge badge-light" href="/tag/waypoint/">Waypoint</a>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+
+
+
+  
+  
+  
+  
+  
+  <div class="media author-card content-widget-hr mb-4">
+    
+      
+      <a href="/author/istio/"><img class="avatar mr-3 avatar-circle" src="/author/istio/avatar_hua55550e6532f142b60895d906d8ec485_9531_270x270_fill_q75_lanczos_center.jpg" alt="Istio"></a>
+    
+
+    <div class="media-body">
+      <p class="card-title"><a href="/author/istio/">Istio</a></p>
+      <p class="card-subtitle">Istio 服务网格团队</p>
+      
+      
+    </div>
+  </div>
+
+
+  
+
+
+
+
+
+<div class="article-widget">
+  
+<div class="container-xl row post-nav">
+  
+  
+  
+  <a class="col-6 post-nav-item btn btn-lg mb-md-1"  href="/blog/wasm-containers/" rel="prev">
+    <div class="meta-nav">上一页</div>
+    <p>使用 OCI 容器运行 WebAssembly 工作负载</p></a>
+  
+</div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/cloud-native-library//edit/master/content/blog/waypoint-proxy-made-simple/index.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+
+  
+  
+  <div class="article-widget content-widget-hr">
+    <p class="related-title">相关推荐</p>
+    <ul>
+      
+      <li><a href="/blog/rust-based-ztunnel/">Istio Ambient Mesh 中基于 Rust 的 Ztunnel 组件介绍</a></li>
+      
+      <li><a href="/blog/optimize-traffic-management-and-security-with-these-service-mesh-best-practices/">服务网格安全性优化最佳实践</a></li>
+      
+      <li><a href="/blog/service-mesh-deployment-best-practices-for-security-and-high-availability/">服务网格安全性和高可用性部署最佳实践</a></li>
+      
+      <li><a href="/blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/">如何将服务网格作为安全模型的一部分，以分层形式将微服务安全与传统安全结合起来</a></li>
+      
+      <li><a href="/blog/automate-istio-ca-rotation-in-production-at-scale/">在生产中大规模自动化 Istio CA 轮换</a></li>
+      
+    </ul>
+  </div>
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments" class="mb-3 pt-0">
+    <script>
+  let themeNumber = localStorage.getItem('wcTheme');
+  var giscusTheme = "light";
+  if (themeNumber == 1){
+    giscusTheme = "dark";
+  }
+  console.log(giscusTheme)
+  let giscusAttributes = {
+    "src": "https://giscus.app/client.js",
+    "data-theme": giscusTheme,
+    "data-repo":"rootsongjc/cloud-native-library",
+    "data-repo-id":"MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg=",
+    "data-category":"Announcements",
+    "data-category-id":"DIC_kwDODMrxWM4CPL7J",
+    "data-mapping":"pathname",
+    "data-reactions-enabled":"1",
+    "data-emit-metadata":"0",
+    "data-input-position":"top",
+    "data-theme":giscusTheme,
+    "data-lang":"zh-CN",
+    "data-loading":"lazy",
+    "crossorigin":"anonymous",
+    "origins":"https://jimmysong.io",
+    "originsRegex":"http://localhost:[0-9]+",
+    "async": "",
+  };
+
+  let giscusScript = document.createElement("script");
+  Object.entries(giscusAttributes).forEach(([key, value]) => giscusScript.setAttribute(key, value));
+  document.querySelector('#comments').appendChild(giscusScript);
+</script>
+
+  </section>
+  
+
+
+
+            </article>
+        </main>
+    </div>
+</div>
+  </div>
+
+  <div class="page-footer">
+    
+    
+    <div class="container">
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2023 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+    </div>
+    
+  </div>
+
+  
+
+
+<script src="/js/vendor-bundle.min.46271ef31da3f018e9cd1b59300aa265.js"></script>
+
+
+
+
+  
+
+  
+  
+
+  
+
+  
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+    
+    
+  
+
+
+
+
+
+
+
+
+
+
+  
+  <script id="search-hit-fuse-template" type="text/x-template">
+    <div class="search-hit" id="summary-{{key}}">
+      <div class="search-hit-content">
+        <div class="search-hit-name">
+          <div class="article-metadata search-hit-type">{{relpermalink}}</div>
+          <a href="{{relpermalink}}">{{title}}</a>
+          <p class="search-hit-description">{{snippet}}</p>
+        </div>
+      </div>
+    </div>
+  </script>
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+
+
+
+
+
+
+
+<script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+<script src="/zh/js/wowchemy.min.24983018b0e5661cd5fe1822254286ea.js"></script>
+
+
+
+
+
+
+
+  
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script src="/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+<script>
+
+var mybutton = document.getElementById("backTopBtn");
+
+
+window.onscroll = function() {scrollFunction()};
+
+function scrollFunction() {
+  if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+    mybutton.style.display = "block";
+  } else {
+    mybutton.style.display = "none";
+  }
+}
+
+
+function topFunction() {
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
+}
+</script>
+
+
+
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+<script>
+  anchors.add();
+</script>
+
+
+
+<script>
+
+
+
+(function() {
+  'use strict';
+
+  if(!document.queryCommandSupported('copy')) {
+    return;
+  }
+
+  function flashCopyMessage(el, msg) {
+    el.className = "highlight-copy-btn";
+    el.textContent = msg;
+    setTimeout(function() {
+      el.textContent = "";
+      el.className = "highlight-copy-btn fa fa-copy";
+    }, 1000);
+  }
+
+  function selectText(node) {
+    var selection = window.getSelection();
+    var range = document.createRange();
+    range.selectNodeContents(node);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    return selection;
+  }
+
+  function addCopyButton(containerEl) {
+    var copyBtn = document.createElement("button");
+    copyBtn.className = "highlight-copy-btn fa fa-copy";
+    copyBtn.textContent = "";
+
+    var codeEl = containerEl.firstElementChild;
+    copyBtn.addEventListener('click', function() {
+      try {
+        var selection = selectText(codeEl);
+        document.execCommand('copy');
+        selection.removeAllRanges();
+        
+        flashCopyMessage(copyBtn, '已复制')
+        
+      } catch(e) {
+        console && console.log(e);
+        flashCopyMessage(copyBtn, 'Failed :\'(')
+      }
+    });
+
+    containerEl.appendChild(copyBtn);
+  }
+
+  
+  var highlightBlocks = document.getElementsByClassName('highlight');
+  Array.prototype.forEach.call(highlightBlocks, addCopyButton);
+})();
+</script>
+
+
+
+<script>
+
+function Collapse(e){
+  var node = document.getElementById(e);
+  if (node.className.indexOf('fa-angle-down') > -1){
+    node.setAttribute("class", "fa-solid fa-angle-right");
+    }else{
+    node.setAttribute("class", "fa-solid fa-angle-down");
+    }
+}
+</script>
+
+
+</body>
+</html>
