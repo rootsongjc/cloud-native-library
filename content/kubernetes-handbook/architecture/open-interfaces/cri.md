@@ -21,100 +21,7 @@ Container Runtime 实现了 CRI gRPC Server，包括 `RuntimeService` 和 `Image
 
 ## CRI 接口
 
-Kubernetes 1.9 中的 CRI 接口在 `api.proto` 中的定义如下：
-
-```protobuf
-// Runtime service defines the public APIs for remote container runtimes
-service RuntimeService {
-    // Version returns the runtime name, runtime version, and runtime API version.
-    rpc Version (VersionRequest) returns (VersionResponse) {}
-
-    // RunPodSandbox creates and starts a pod-level sandbox. Runtimes must ensure
-    //the sandbox is in the ready state on success.
-    rpc RunPodSandbox (RunPodSandboxRequest) returns (RunPodSandboxResponse) {}
-    // StopPodSandbox stops any running process that is part of the sandbox and
-    //reclaims network resources (e.g., IP addresses) allocated to the sandbox.
-    // If there are any running containers in the sandbox, they must be forcibly
-    //terminated.
-    // This call is idempotent, and must not return an error if all relevant
-    //resources have already been reclaimed. kubelet will call StopPodSandbox
-    //at least once before calling RemovePodSandbox. It will also attempt to
-    //reclaim resources eagerly, as soon as a sandbox is not needed. Hence,
-    //multiple StopPodSandbox calls are expected.
-    rpc StopPodSandbox (StopPodSandboxRequest) returns (StopPodSandboxResponse) {}
-    // RemovePodSandbox removes the sandbox. If there are any running containers
-    //in the sandbox, they must be forcibly terminated and removed.
-    // This call is idempotent, and must not return an error if the sandbox has
-    //already been removed.
-    rpc RemovePodSandbox (RemovePodSandboxRequest) returns (RemovePodSandboxResponse) {}
-    // PodSandboxStatus returns the status of the PodSandbox. If the PodSandbox is not
-    //present, returns an error.
-    rpc PodSandboxStatus (PodSandboxStatusRequest) returns (PodSandboxStatusResponse) {}
-    // ListPodSandbox returns a list of PodSandboxes.
-    rpc ListPodSandbox (ListPodSandboxRequest) returns (ListPodSandboxResponse) {}
-
-    // CreateContainer creates a new container in specified PodSandbox
-    rpc CreateContainer (CreateContainerRequest) returns (CreateContainerResponse) {}
-    // StartContainer starts the container.
-    rpc StartContainer (StartContainerRequest) returns (StartContainerResponse) {}
-    // StopContainer stops a running container with a grace period (i.e., timeout).
-    // This call is idempotent, and must not return an error if the container has
-    //already been stopped.
-    // TODO: what must the runtime do after the grace period is reached?
-    rpc StopContainer (StopContainerRequest) returns (StopContainerResponse) {}
-    // RemoveContainer removes the container. If the container is running, the
-    //container must be forcibly removed.
-    // This call is idempotent, and must not return an error if the container has
-    //already been removed.
-    rpc RemoveContainer (RemoveContainerRequest) returns (RemoveContainerResponse) {}
-    // ListContainers lists all containers by filters.
-    rpc ListContainers (ListContainersRequest) returns (ListContainersResponse) {}
-    // ContainerStatus returns status of the container. If the container is not
-    //present, returns an error.
-    rpc ContainerStatus (ContainerStatusRequest) returns (ContainerStatusResponse) {}
-    // UpdateContainerResources updates ContainerConfig of the container.
-    rpc UpdateContainerResources (UpdateContainerResourcesRequest) returns (UpdateContainerResourcesResponse) {}
-
-    // ExecSync runs a command in a container synchronously.
-    rpc ExecSync (ExecSyncRequest) returns (ExecSyncResponse) {}
-    // Exec prepares a streaming endpoint to execute a command in the container.
-    rpc Exec (ExecRequest) returns (ExecResponse) {}
-    // Attach prepares a streaming endpoint to attach to a running container.
-    rpc Attach (AttachRequest) returns (AttachResponse) {}
-    // PortForward prepares a streaming endpoint to forward ports from a PodSandbox.
-    rpc PortForward (PortForwardRequest) returns (PortForwardResponse) {}
-
-    // ContainerStats returns stats of the container. If the container does not
-    //exist, the call returns an error.
-    rpc ContainerStats (ContainerStatsRequest) returns (ContainerStatsResponse) {}
-    // ListContainerStats returns stats of all running containers.
-    rpc ListContainerStats (ListContainerStatsRequest) returns (ListContainerStatsResponse) {}
-
-    // UpdateRuntimeConfig updates the runtime configuration based on the given request.
-    rpc UpdateRuntimeConfig (UpdateRuntimeConfigRequest) returns (UpdateRuntimeConfigResponse) {}
-
-    // Status returns the status of the runtime.
-    rpc Status (StatusRequest) returns (StatusResponse) {}}
-
-// ImageService defines the public APIs for managing images.
-service ImageService {
-    // ListImages lists existing images.
-    rpc ListImages (ListImagesRequest) returns (ListImagesResponse) {}
-    // ImageStatus returns the status of the image. If the image is not
-    //present, returns a response with ImageStatusResponse.Image set to
-    //nil.
-    rpc ImageStatus (ImageStatusRequest) returns (ImageStatusResponse) {}
-    // PullImage pulls an image with authentication config.
-    rpc PullImage (PullImageRequest) returns (PullImageResponse) {}
-    // RemoveImage removes the image.
-    // This call is idempotent, and must not return an error if the image has
-    //already been removed.
-    rpc RemoveImage (RemoveImageRequest) returns (RemoveImageResponse) {}
-    // ImageFSInfo returns information of the filesystem that is used to store images.
-    rpc ImageFsInfo (ImageFsInfoRequest) returns (ImageFsInfoResponse) {}}
-```
-
-这其中包含了两个 gRPC 服务：
+Kubernetes 1.9 中的 CRI 接口在 `api.proto` 中的定义，其中包含了两个 gRPC 服务：
 
 - **RuntimeService**：容器和 Sandbox 运行时管理。
 - **ImageService**：提供了从镜像仓库拉取、查看、和移除镜像的 RPC。
@@ -123,11 +30,15 @@ service ImageService {
 
 我们最初在使用 Kubernetes 时通常会默认使用 Docker 作为容器运行时，其实从 Kubernetes 1.5 开始已经支持 CRI，通过 CRI 接口可以指定使用其它容器运行时作为 Pod 的后端，目前支持 CRI 的后端有：
 
-- [cri-o](https://github.com/kubernetes-incubator/cri-o)：cri-o 是 Kubernetes 的 CRI 标准的实现，并且允许 Kubernetes 间接使用 OCI 兼容的容器运行时，可以把 cri-o 看成 Kubernetes 使用 OCI 兼容的容器运行时的中间层。
-- [containerd](https://github.com/containerd/containerd)：Kubernetes CRI 实现
+- [cri-o](https://github.com/kubernetes-incubator/cri-o)：cri-o 是 Kubernetes 的 CRI 标准的实现，并且允许 Kubernetes 间接使用 OCI 兼容的容器运行时，可以把 cri-o 看成 Kubernetes 使用 OCI 兼容的容器运行时的中间层。主要由 Red Hat 公司贡献开源。
+- [containerd](https://github.com/containerd/containerd)：Kubernetes CRI 默认实现，由 Docker 公司贡献开源。
 
-- [Kata Containers](https://katacontainers.io/)：符合 OCI 规范，曾与 Clear Containers 合并。
-- [gVisor](https://github.com/google/gvisor)：由谷歌推出的容器运行时沙箱 (Experimental)。
+另外，还有两个容器运行时值得一提——katacontainers 和 gvisor 都没有直接实现 CRI 接口。它们都是通过在容器运行时和宿主机之间添加一个虚拟化层来增强安全性能的。具体来说：
+
+- [Kata Containers](https://katacontainers.io/)：katacontainers 是一种轻量级的虚拟化技术，曾合并了 Clear Containers。它通过在容器和操作系统之间添加一个轻量级的虚拟化层来提供额外的安全性和隔离性。它可以与 Kubernetes 集成，但需要通过一些额外的工具来实现与 CRI 的交互。
+- [gVisor](https://github.com/google/gvisor)：gvisor 是一种轻量级的沙箱技术，由 Google 公司开源。它通过在容器运行时和操作系统之间添加一个沙箱层来提供额外的安全性和隔离性。gvisor 可以与 Docker 和 Kubernetes 集成，但是也需要通过一些额外的工具来实现与 CRI 的交互。
+
+总之，虽然 katacontainers 和 gvisor 都不能直接实现 CRI 接口，但它们都是为容器提供增强安全性和隔离性的重要技术，并且可以与 Kubernetes 集成来实现容器管理和调度。
 
 
 ## 参考
