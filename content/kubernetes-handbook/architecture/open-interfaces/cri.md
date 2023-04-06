@@ -124,20 +124,10 @@ service ImageService {
 我们最初在使用 Kubernetes 时通常会默认使用 Docker 作为容器运行时，其实从 Kubernetes 1.5 开始已经支持 CRI，通过 CRI 接口可以指定使用其它容器运行时作为 Pod 的后端，目前支持 CRI 的后端有：
 
 - [cri-o](https://github.com/kubernetes-incubator/cri-o)：cri-o 是 Kubernetes 的 CRI 标准的实现，并且允许 Kubernetes 间接使用 OCI 兼容的容器运行时，可以把 cri-o 看成 Kubernetes 使用 OCI 兼容的容器运行时的中间层。
-- [cri-containerd](https://github.com/containerd/cri-containerd)：基于 [Containerd](https://github.com/containerd/containerd) 的 Kubernetes CRI 实现
-- [rkt](https://coreos.com/rkt/)：由 CoreOS 主推的用来跟 docker 抗衡的容器运行时
-- [frakti](https://github.com/kubernetes/frakti)：基于 hypervisor 的 CRI
-- [docker](https://www.docker.com)：Kuberentes 最初就开始支持的容器运行时，目前还没完全从 kubelet 中解耦，Docker 公司同时推广了 [OCI](https://www.opencontainers.org/) 标准
+- [containerd](https://github.com/containerd/containerd)：Kubernetes CRI 实现
 
-CRI 是由 [SIG-Node](https://kubernetes.slack.com/archives/sig-node) 来维护的。
-
-## 当前通过 CRI-O 间接支持 CRI 的后端
-
-当前同样存在一些只实现了 [OCI](https://www.opencontainers.org/) 标准的容器，但是它们可以通过 CRI-O 来作为 Kubernetes 的容器运行时。CRI-O 是 Kubernetes 的 CRI 标准的实现，并且允许 Kubernetes 间接使用 OCI 兼容的容器运行时。
-
-- [Clear Containers](https://github.com/clearcontainers)：由 Intel 推出的兼容 OCI 容器运行时，可以通过 CRI-O 来兼容 CRI。
-- [Kata Containers](https://katacontainers.io/)：符合 OCI 规范，可以通过 CRI-O 或 [Containerd CRI Plugin](https://github.com/containerd/cri) 来兼容 CRI。
-- [gVisor](https://github.com/google/gvisor)：由谷歌推出的容器运行时沙箱 (Experimental)，可以通过 CRI-O 来兼容 CRI。
+- [Kata Containers](https://katacontainers.io/)：符合 OCI 规范，曾与 Clear Containers 合并。
+- [gVisor](https://github.com/google/gvisor)：由谷歌推出的容器运行时沙箱 (Experimental)。
 
 
 ## 参考
