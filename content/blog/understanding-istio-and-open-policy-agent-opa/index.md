@@ -1,5 +1,5 @@
 ---
-title: "了解 Istio 和 Open Policy Agent（OPA）"
+title: "Istio 中的外部授权过滤器：使用 OPA 实现灵活的授权策略"
 date: 2023-03-28T12:00:00+08:00
 draft: false
 authors: ["Tetrate"]
