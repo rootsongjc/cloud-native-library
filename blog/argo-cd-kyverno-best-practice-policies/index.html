@@ -1,0 +1,1683 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="宋净超" />
+
+  
+  
+  
+    
+  
+  <meta name="description" content="本文介绍了如何使用 Kyverno 和 Argo CD 来强制执行 Kubernetes 的最佳实践。Kyverno 是一个 Kubernetes 原生的策略引擎，可以用来定义和执行安全和合规的规则。Argo CD 是一个 GitOps 的持续交付解决方案，可以用来管理 Kubernetes 集群的状态。文章通过一个具体的示例，展示了如何使用 Argo CD 来部署 Kyverno 和策略，以及如何处理策略违规的情况。" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://lib.jimmysong.io/blog/argo-cd-kyverno-best-practice-policies/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/css/wowchemy.b26eb9b802629dccab300faa82cc98c7.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MP490FS739"></script>
+
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', "G-MP490FS739");
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2a4b7f65b1839466beaa48d633aa60c1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://lib.jimmysong.io/blog/argo-cd-kyverno-best-practice-policies/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary_large_image" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://lib.jimmysong.io/blog/argo-cd-kyverno-best-practice-policies/" />
+  <meta property="og:title" content="使用 Kyverno 和 Argo CD 实施 Kubernetes 最佳实践 | 云原生资料库" />
+  <meta property="og:description" content="本文介绍了如何使用 Kyverno 和 Argo CD 来强制执行 Kubernetes 的最佳实践。Kyverno 是一个 Kubernetes 原生的策略引擎，可以用来定义和执行安全和合规的规则。Argo CD 是一个 GitOps 的持续交付解决方案，可以用来管理 Kubernetes 集群的状态。文章通过一个具体的示例，展示了如何使用 Argo CD 来部署 Kyverno 和策略，以及如何处理策略违规的情况。" /><meta property="og:image" content="https://lib.jimmysong.io/media/sharing.png" />
+    <meta property="twitter:image" content="https://lib.jimmysong.io/media/sharing.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2023-04-10T22:44:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2023-04-10T22:45:28&#43;08:00">
+  
+
+  
+
+
+    
+
+
+
+
+
+
+  
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://lib.jimmysong.io/blog/argo-cd-kyverno-best-practice-policies/"
+  },
+  "headline": "使用 Kyverno 和 Argo CD 实施 Kubernetes 最佳实践",
+  
+  "datePublished": "2023-04-10T22:44:00+08:00",
+  "dateModified": "2023-04-10T22:45:28+08:00",
+  
+  "author": {
+    "@type": "Person",
+    "name": "Nicholas Morey"
+  },
+  
+  "publisher": {
+    "@type": "Organization",
+    "name": "云原生社区",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://lib.jimmysong.io/media/logo.svg"
+    }
+  },
+  "description": "本文介绍了如何使用 Kyverno 和 Argo CD 来强制执行 Kubernetes 的最佳实践。Kyverno 是一个 Kubernetes 原生的策略引擎，可以用来定义和执行安全和合规的规则。Argo CD 是一个 GitOps 的持续交付解决方案，可以用来管理 Kubernetes 集群的状态。文章通过一个具体的示例，展示了如何使用 Argo CD 来部署 Kyverno 和策略，以及如何处理策略违规的情况。"
+}
+</script>
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>使用 Kyverno 和 Argo CD 实施 Kubernetes 最佳实践 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="9021d73f8e5d2eee013e2ced56387890" >
+  <button onclick="topFunction()" id="backTopBtn" title="Go to top"><i class="fa-solid fa-circle-up" aria-hidden="true"></i></button>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/js/wowchemy-init.min.62d6f8dfe8493f1c68557dde65bec362.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6 search-title">
+          <p>搜索</p>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/"><img src="/media/logo.svg" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/"><img src="/media/logo.svg" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#books"><span>图书</span></a>
+          </li>
+
+          
+          
+
+          
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"><span>教程</span><span class="caret"></span>
+            </a>
+            <div class="dropdown-menu">
+              
+                <a class="dropdown-item" href="/kubernetes-handbook"><span>Kubernetes 基础教程</span></a>
+              
+                <a class="dropdown-item" href="https://academy.tetrate.io/courses/istio-fundamentals-zh"><span>Istio 基础教程</span></a>
+              
+                <a class="dropdown-item" href="https://academy.tetrate.io/courses/envoy-fundamentals-zh"><span>Envoy 基础教程</span></a>
+              
+            </div>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link  active" href="/blog"><span>译文</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#feed"><span>更新</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#tags"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>Jimmy Song</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://jimmysong.io/contact/" data-toggle="tooltip" data-placement="bottom" title="联系" target="_blank" rel="noopener" aria-label="联系">
+                <i class="fab fa-weixin" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://twitter.com/jimmysongio" data-toggle="tooltip" data-placement="bottom" title="关注" target="_blank" rel="noopener" aria-label="关注">
+                <i class="fab fa-twitter" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+        
+
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://jimmysong.io" target="_blank" rel="noopener" data-toggle="tooltip" data-placement="bottom" title="主站" aria-label="主站"><i class="fas fa-home" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link js-search" href="#" data-toggle="tooltip" data-placement="bottom" title="搜索" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item d-none d-lg-inline-flex">
+            <a class="nav-link" href="https://github.com/rootsongjc/cloud-native-library/" target="_blank" rel="noopener" data-toggle="tooltip" data-placement="bottom" title="查看源码" aria-label="查看源码" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+        <li class="nav-item">
+          <a href="#" class="nav-link set-theme">
+            <i class="fa fa-sun" aria-hidden="true" id="theme-icon"></i>
+          </a>
+        </li>
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    <div class="container-xl">
+    <div class="post-container">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  
+  
+<div class="article-container pt-3">
+  <h1>使用 Kyverno 和 Argo CD 实施 Kubernetes 最佳实践</h1>
+
+  
+
+  
+    
+
+
+<div class="article-metadata">
+
+  <div>
+  
+  
+  
+  
+    <i class="fa-solid fa-feather"></i>
+    
+
+  <span >
+      <a href="/author/nicholas-morey/">Nicholas Morey</a></span>
+    
+    <span class="middot-divider"></span>
+    
+  
+  
+  
+  
+  
+  
+  <span class="article-categories">
+    <i class="fas fa-folder mr-1"></i><a href="/category/kubernetes/" class="text-capitalize">Kubernetes</a></span>
+  
+  </div>
+
+  
+  <span class="article-date">
+    
+    
+      
+          
+          发布于
+      
+    
+    2023-04-10
+  </span>
+  
+
+  
+
+  
+  <span class="middot-divider"></span>
+  字数 2302
+  <span class="middot-divider"></span>
+  <span class="article-reading-time">
+      阅读时长 10 分钟
+  </span>
+  
+
+  
+  
+  
+  
+
+</div>
+
+    
+
+
+
+
+<div class="btn-links mb-2">
+  
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  <a class="btn btn-outline-primary btn-page-header" href="https://akuity.io/blog/argo-cd-kyverno-best-practice-policies" target="_blank" rel="noopener">
+    <i class="fa fa-globe mr-1"></i>原文</a>
+
+
+</div>
+
+
+  
+</div>
+
+
+    </div>
+    <div class="border-bottom mb-2"></div>
+    <div class="row flex-xl-nowrap">
+        <div class="col-3 d-none d-xl-block docs-toc">
+            <!-- toc -->
+            
+<div class="">
+    <ul class="nav toc-top">
+        <li>
+            <a href="#" id="back_to_top" class="docs-toc-title">目录</a>
+        </li>
+    </ul>
+  <nav id="TableOfContents">
+  <ul>
+    <li><a href="#kyverno">Kyverno</a></li>
+    <li><a href="#gitops--argo-cd">GitOps / Argo CD</a></li>
+    <li><a href="#kyverno-最佳实践策略">Kyverno 最佳实践策略</a></li>
+    <li><a href="#结论">结论</a></li>
+  </ul>
+</nav>
+</div>
+
+            <!-- /toc -->
+            
+            <div class="subscribe-module col-12 mt-1">
+    <img src="/img/wechat.webp" alt="image" title="Jimmy Song的微信公众号"/>
+    <p class="text-center pt-1">关注「几米宋」微信公众号，获取本站更新</p>
+    
+    
+     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4029167986768912"
+     crossorigin="anonymous"></script>
+     <ins class="adsbygoogle"
+       style="display:block"
+       data-ad-client="ca-pub-4029167986768912"
+       data-ad-slot="6856371908"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
+    <script>
+       (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+    
+    
+</div>
+
+            
+        </div>
+        <main class="article-body col-9 container docs-content" role="main">
+            <article class="article">
+                <div class="article-style">
+                    
+                    <details class="toc-inpage d-print-none d-show-block mb-0">
+  <summary class="font-weight-bold">点击查看目录</summary>
+  <nav id="TableOfContents">
+  <ul>
+    <li><a href="#kyverno">Kyverno</a></li>
+    <li><a href="#gitops--argo-cd">GitOps / Argo CD</a></li>
+    <li><a href="#kyverno-最佳实践策略">Kyverno 最佳实践策略</a></li>
+    <li><a href="#结论">结论</a></li>
+  </ul>
+</nav>
+</details>
+
+                    
+                    <p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  >
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="" srcset="
+               /blog/argo-cd-kyverno-best-practice-policies/kyverno-argo_hu1b0a20ed8ba0ac85b8a6958a1470d1b8_110111_8b26e2d514a269f2dacc3aaf5a5a70d4.webp 400w,
+               /blog/argo-cd-kyverno-best-practice-policies/kyverno-argo_hu1b0a20ed8ba0ac85b8a6958a1470d1b8_110111_f6ebc9691c2c289ecf61adea2c0572ce.webp 760w,
+               /blog/argo-cd-kyverno-best-practice-policies/kyverno-argo_hu1b0a20ed8ba0ac85b8a6958a1470d1b8_110111_1200x1200_fit_q75_h2_lanczos.webp 1200w"
+               src="/blog/argo-cd-kyverno-best-practice-policies/kyverno-argo_hu1b0a20ed8ba0ac85b8a6958a1470d1b8_110111_8b26e2d514a269f2dacc3aaf5a5a70d4.webp"
+               width="760"
+               height="428"
+               loading="lazy" data-zoomable /></div>
+  </div></figure>
+</p>
+<p>如果你正在阅读这篇博客文章，我假设你已经熟悉 Kubernetes 并且知道它是一个容器编排平台。在创建新的应用程序版本时，你的容器构建过程已经很好了。Kubernetes 提供了广泛的功能，使用户能够执行复杂的部署策略。挑战在于根据你的环境，有正确和错误的使用方式。</p>
+<p>你组织中的平台工程师很可能非常熟悉 Kubernetes，了解将应用程序部署到集群中的正确和错误方式。挑战在于向平台的所有用户传递这些信息。</p>
+<p>大多数运维人员的理解很可能来自于正式培训或花费很多时间构建平台并从错误中学习。要求所有打算与平台交互的应用程序开发人员具有相同的经验是不现实的。这对组织来说在时间、精力和对产品和客户的潜在影响方面都是昂贵的，因为这些经验是从错误中学到的。</p>
+<p>在每个组织内，用户使用内部开发平台的策略和标准是已知的或需要遵循的。挑战在于许多组织使用文档和广泛的沟通来确保用户遵循这些标准。这在人们偏离预期标准并学习正确方法之间提供了长时间的反馈循环。</p>
+<h2 id="kyverno">Kyverno</h2>
+<p>这就是 <a href="https://kyverno.io/" target="_blank" rel="noopener">Kyverno</a> 的用武之地，它是一个基于 Kubernetes 的策略引擎，提供了一种将平台管理员学到的经验编码化的方式。Kyverno 直接部署到 Kubernetes 集群中，并使用自定义资源来定义策略。使用 admission webhook，Kyverno 可以审计策略违规或甚至阻止尝试进入集群的请求。</p>
+<p>策略引擎可以大大缩短在 Kubernetes 中尝试应用更改并学习部署不符合平台管理员设置的标准时的反馈循环。当应用程序开发人员与集群交互时，策略会立即提供反馈，指出他们是否偏离了平台团队制定的最佳实践。</p>
+<p>例如，一个刚开始熟悉 Kubernetes 的开发人员决定部署应用程序的 <code>latest</code> 标记。这似乎是无害的，但他们不知道使用可变标记的危险。在此错误被集群管理员捕捉并向用户报告之前，这段时间可能造成很大的损失。</p>
+<p>相反，当用户尝试将 <code>latest</code> 标记部署到集群中时，他们可以立即收到一个清晰的消息，解释为什么不允许这样做，并提供纠正策略违规的步骤。这使他们可以继续实现他们想要完成的目标，将他们的应用程序部署到集群中。</p>
+<p>组织甚至可以将策略集成到 CI/CD 工作流程中，以更早地捕捉任何违规行为。如果某些违规行为在集群中得以实现，Kyverno 可以阻止 admission 请求以强制执行该策略，甚至可以在应用它们时改变资源，使它们符合最佳实践。</p>
+<h2 id="gitops--argo-cd">GitOps / Argo CD</h2>
+<p>作为 Kubernetes 管理员，你可能好奇如何管理这些策略，这就是 Argo CD 和 GitOps 的作用。</p>
+<p><a href="https://akuity.io/gitops/" target="_blank" rel="noopener">GitOps</a> 将应用程序开发的最佳实践（如版本控制、协作、合规性和工具）应用于 Kubernetes。集群中使用的 Kubernetes 资源的清单存储在 Git 中，这提供了所需状态的不可变版本。</p>
+<p><a href="https://akuity.io/what-is-argo/" target="_blank" rel="noopener">Argo CD</a> 充当 GitOps 代理，不断地将期望状态与集群的实际状态进行比较。它将 Git 中的任何更改应用于 Kubernetes 集群。</p>
+<p>与任何 Kubernetes 清单一样，Kyverno 策略可以通过 Git 存储和管理。这使它们可以遵循透明的批准流程，并提供策略何时以及为什么发生更改的审计跟踪。</p>
+<h2 id="kyverno-最佳实践策略">Kyverno 最佳实践策略</h2>
+<p>让我们看一下使用 Kyverno 策略实施 Kubernetes 最佳实践的典型示例。我们将从使用 Argo CD 向集群添加策略开始。对于此示例，Kyverno 和 Argo CD 已安装在集群中。</p>
+<p>在 <a href="https://github.com/morey-tech/argo-cd-kyverno" target="_blank" rel="noopener">GitOps 仓库</a> 中，添加 <code>require-resource-requests</code> 策略，该策略要求 pod 具有定义的资源请求。这对 Kubernetes 能够将 pod <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#how-pods-with-resource-requests-are-scheduled" target="_blank" rel="noopener">安排到具有足够资源的节点上</a>至关重要。如果没有这些资源请求，从资源可用性的角度来看，Kubernetes 将盲目地将 pod 安排到节点上。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">kyverno.io/v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ClusterPolicy</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">require-resource-requests</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">annotations</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">policies.kyverno.io/title</span><span class="p">:</span><span class="w"> </span><span class="l">Require Resource Requests</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">policies.kyverno.io/category</span><span class="p">:</span><span class="w"> </span><span class="l">Best Practices</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">policies.kyverno.io/severity</span><span class="p">:</span><span class="w"> </span><span class="l">medium</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">policies.kyverno.io/subject</span><span class="p">:</span><span class="w"> </span><span class="l">Pod</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">policies.kyverno.io/minversion</span><span class="p">:</span><span class="w"> </span><span class="m">1.6.0</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">policies.kyverno.io/description</span><span class="p">:</span><span class="w"> </span><span class="p">&gt;-</span><span class="sd">
+</span></span></span><span class="line"><span class="cl"><span class="sd">      As application workloads share cluster resources, it is important to specify resources
+</span></span></span><span class="line"><span class="cl"><span class="sd">      requested and consumed by each Pod. Requiring resource requests per Pod is recommended,
+</span></span></span><span class="line"><span class="cl"><span class="sd">      especially for memory and CPU. If a Namespace level request is specified, defaults will
+</span></span></span><span class="line"><span class="cl"><span class="sd">      automatically be applied to each Pod based on the LimitRange configuration. This policy
+</span></span></span><span class="line"><span class="cl"><span class="sd">      validates that all containers have something specified for memory and CPU requests.</span><span class="w">      
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">validationFailureAction</span><span class="p">:</span><span class="w"> </span><span class="l">enforce</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">background</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">rules</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">validate-resource-requests</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">match</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">any</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">resources</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">kinds</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span>- <span class="l">Pod</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">namespaces</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span>- <span class="l">dev</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">validate</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">message</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;CPU and memory resource requests are required.&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">pattern</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span>- <span class="nt">resources</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">requests</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="nt">memory</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;?*&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;?*&#34;</span><span class="w">
+</span></span></span></code></pre></div><p><code>validationFailureAction</code> 字段确定 Kyverno 如何响应失败的验证检查的行为。<code>require-resource-requests</code> 策略设置为强制执行规则失败，阻止任何违反它们的请求。当发生这种情况时，它将在负责的策略资源上记录一个 <code>fail (blocked)</code> 事件。</p>
+<p><code>validate-resource-requests</code> 规则将匹配 <code>dev</code> 命名空间中的任何 <code>Pod</code> 资源，即使是从更高级别的资源（如 Deployment 或 ReplicaSet）生成的。它将验证 pod 中的容器上的 <code>cpu</code> 和 <code>memory</code> 资源请求字段是否定义了值。当策略验证失败时，它将包括规则中定义的 <code>message</code>。</p>
+<p>我们将添加一个应用程序到 Argo CD，该应用程序指向包含策略的仓库中的目录。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">argoproj.io/v1alpha1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Application</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">policies</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">destination</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">kind</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">kyverno</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="l">default</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">source</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l">policies</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">repoURL</span><span class="p">:</span><span class="w"> </span><span class="l">https://github.com/morey-tech/argo-cd-kyverno.git</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">targetRevision</span><span class="p">:</span><span class="w"> </span><span class="l">main</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">directory</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">recurse</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span></span></span></code></pre></div><p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-kyverno-策略在-argo-cd-中同步">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="Kyverno 策略在 Argo CD 中同步。" srcset="
+               /blog/argo-cd-kyverno-best-practice-policies/argo-cd-kyverno-policy-synced_hubcdfe03d92550fd0740ce8923a69fc21_39261_de669a792a4b8f0c40288333f0ecda67.webp 400w,
+               /blog/argo-cd-kyverno-best-practice-policies/argo-cd-kyverno-policy-synced_hubcdfe03d92550fd0740ce8923a69fc21_39261_b83e28f75bc90e75423bb946185c7e2f.webp 760w,
+               /blog/argo-cd-kyverno-best-practice-policies/argo-cd-kyverno-policy-synced_hubcdfe03d92550fd0740ce8923a69fc21_39261_1200x1200_fit_q75_h2_lanczos_3.webp 1200w"
+               src="/blog/argo-cd-kyverno-best-practice-policies/argo-cd-kyverno-policy-synced_hubcdfe03d92550fd0740ce8923a69fc21_39261_de669a792a4b8f0c40288333f0ecda67.webp"
+               width="760"
+               height="356"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      Kyverno 策略在 Argo CD 中同步。
+    </figcaption></figure>
+</p>
+<p>随着策略同步到集群中，我们将部署另一个 Argo CD 应用程序，其中包含两个 <code>nginx</code> pod，一个将通过策略验证，另一个将因缺少资源请求而失败。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-应用程序同步失败因为-kyverno-策略阻止了-pod-的创建">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="应用程序同步失败，因为 Kyverno 策略阻止了 pod 的创建。" srcset="
+               /blog/argo-cd-kyverno-best-practice-policies/argo-cd-sync-failed-blocked-pod_hu12313ed828e4ff10b68b2e9760424db9_57231_d9e80bbae66968bf3f19d9db3ec95a07.webp 400w,
+               /blog/argo-cd-kyverno-best-practice-policies/argo-cd-sync-failed-blocked-pod_hu12313ed828e4ff10b68b2e9760424db9_57231_6c840ffd1b8cb2dc740ab81a9a472075.webp 760w,
+               /blog/argo-cd-kyverno-best-practice-policies/argo-cd-sync-failed-blocked-pod_hu12313ed828e4ff10b68b2e9760424db9_57231_1200x1200_fit_q75_h2_lanczos_3.webp 1200w"
+               src="/blog/argo-cd-kyverno-best-practice-policies/argo-cd-sync-failed-blocked-pod_hu12313ed828e4ff10b68b2e9760424db9_57231_d9e80bbae66968bf3f19d9db3ec95a07.webp"
+               width="760"
+               height="312"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      应用程序同步失败，因为 Kyverno 策略阻止了 pod 的创建。
+    </figcaption></figure>
+</p>
+<p>同步最终将失败，因为该策略设置为阻止创建任何包含违规的资源。查看 Argo CD 中的同步状态时，用户可以看到消息中的 Kyverno 策略失败和规则解释失败原因。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-应用程序同步摘要其中包含来自-kyverno-策略的消息">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="应用程序同步摘要，其中包含来自 Kyverno 策略的消息。" srcset="
+               /blog/argo-cd-kyverno-best-practice-policies/argo-cd-sync-summary_hu87ccf1fcd9089e762f58d8d7d7984761_32267_edccda517b1512b82fdc7eb5d1ca73d5.webp 400w,
+               /blog/argo-cd-kyverno-best-practice-policies/argo-cd-sync-summary_hu87ccf1fcd9089e762f58d8d7d7984761_32267_ca9c769c3bf87b93d71e3c32c0af19b6.webp 760w,
+               /blog/argo-cd-kyverno-best-practice-policies/argo-cd-sync-summary_hu87ccf1fcd9089e762f58d8d7d7984761_32267_1200x1200_fit_q75_h2_lanczos_3.webp 1200w"
+               src="/blog/argo-cd-kyverno-best-practice-policies/argo-cd-sync-summary_hu87ccf1fcd9089e762f58d8d7d7984761_32267_edccda517b1512b82fdc7eb5d1ca73d5.webp"
+               width="760"
+               height="235"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      应用程序同步摘要，其中包含来自 Kyverno 策略的消息。
+    </figcaption></figure>
+</p>
+<p>同步状态还将每个资源的结果分解，使用户清楚地了解哪个资源失败以及原因。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-应用程序同步结果显示同步状态和资源上的-kyverno-策略消息">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="应用程序同步结果，显示同步状态和资源上的 Kyverno 策略消息。" srcset="
+               /blog/argo-cd-kyverno-best-practice-policies/argo-cd-sync-result-resources_hu891e7dba28516662dd7cc02bbbf54860_42866_82be77147cd5272320a7cf5c1323c0f7.webp 400w,
+               /blog/argo-cd-kyverno-best-practice-policies/argo-cd-sync-result-resources_hu891e7dba28516662dd7cc02bbbf54860_42866_67b6e3bdd08866489d9aa064aa71c64b.webp 760w,
+               /blog/argo-cd-kyverno-best-practice-policies/argo-cd-sync-result-resources_hu891e7dba28516662dd7cc02bbbf54860_42866_1200x1200_fit_q75_h2_lanczos_3.webp 1200w"
+               src="/blog/argo-cd-kyverno-best-practice-policies/argo-cd-sync-result-resources_hu891e7dba28516662dd7cc02bbbf54860_42866_82be77147cd5272320a7cf5c1323c0f7.webp"
+               width="760"
+               height="184"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      应用程序同步结果，显示同步状态和资源上的 Kyverno 策略消息。
+    </figcaption></figure>
+</p>
+<p>在策略资源上，事件也会显示违规行为。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-kyverno-策略事件在-argo-cd-中">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="Kyverno 策略事件在 Argo CD 中。" srcset="
+               /blog/argo-cd-kyverno-best-practice-policies/argo-cd-kyverno-policy-events_hu32494ed063c23044f030329602ae7774_38272_1de7d1989438cd0ca9a39eb5e01ddf30.webp 400w,
+               /blog/argo-cd-kyverno-best-practice-policies/argo-cd-kyverno-policy-events_hu32494ed063c23044f030329602ae7774_38272_8c132c5b47ca73b876a76457bdb50abe.webp 760w,
+               /blog/argo-cd-kyverno-best-practice-policies/argo-cd-kyverno-policy-events_hu32494ed063c23044f030329602ae7774_38272_1200x1200_fit_q75_h2_lanczos_3.webp 1200w"
+               src="/blog/argo-cd-kyverno-best-practice-policies/argo-cd-kyverno-policy-events_hu32494ed063c23044f030329602ae7774_38272_1de7d1989438cd0ca9a39eb5e01ddf30.webp"
+               width="760"
+               height="305"
+               loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      Kyverno 策略事件在 Argo CD 中。
+    </figcaption></figure>
+</p>
+<p>一旦资源的策略违规得到解决，Argo CD 应用程序就能将该资源同步到集群中。</p>
+<h2 id="结论">结论</h2>
+<p>Kyverno 作为策略引擎，是向内部开发者平台用户提供实现平台团队制定的最佳实践的清晰反馈的强大工具。然而，这只是 Kyverno 能力的冰山一角。本文中的示例演示了注入控制功能，但策略也可以、生成和清理资源。这样就可以通过自动更新资源来强制执行策略，使其符合进入集群的资源，或者构建一个自助式平台，响应在集群中创建的资源，创建新的集群并使用 Argo CD 引导它们。</p>
+<p>遵循 GitOps 原则并使用 Argo CD 管理部署时，管理集群的策略变得更加简单。Argo CD UI 明确了通过策略验证阻止的任何资源，使用户易于理解如何使资源符合标准。</p>
+<p>Kyverno 和 Argo CD 一起开辟了一个全新的集群管理世界，可以根据您组织的需求进行扩展。有关使用 Argo CD 和 Kyverno 的更多最佳实践，请参阅 Nirmata 博客上的<a href="https://nirmata.com/2023/03/09/3-essential-tips-for-using-argo-cd-and-kyverno/" target="_blank" rel="noopener">“使用 Argo CD 和 Kyverno 的 3 个基本技巧” 。</a></p>
+
+                </div>
+                
+
+<div class="article-tags">
+  
+  <a class="badge badge-light" href="/tag/kubernetes/">Kubernetes</a>
+  
+  <a class="badge badge-light" href="/tag/argocd/">ArgoCD</a>
+  
+  <a class="badge badge-light" href="/tag/kyverno/">Kyverno</a>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+
+
+
+
+  
+
+
+
+
+
+<div class="article-widget">
+  
+<div class="container-xl row post-nav">
+  
+  
+  
+  <a class="col-6 post-nav-item btn btn-lg mb-md-1"  href="/blog/waypoint-proxy-made-simple/" rel="prev">
+    <div class="meta-nav">上一页</div>
+    <p>Istio Ambient 模式使用 Waypoint 代理简化 Istio 部署</p></a>
+  
+</div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/cloud-native-library//edit/master/content/blog/argo-cd-kyverno-best-practice-policies/index.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+
+  
+  
+  <div class="article-widget content-widget-hr">
+    <p class="related-title">相关推荐</p>
+    <ul>
+      
+      <li><a href="/kubernetes-handbook/multi-cluster/federation/">集群联邦（Cluster Federation）</a></li>
+      
+      <li><a href="/kubernetes-handbook/develop/operator/">Operator</a></li>
+      
+      <li><a href="/kubernetes-handbook/auth/spire/">SPIRE</a></li>
+      
+      <li><a href="/kubernetes-handbook/auth/spire-k8s-workload-registar/">SPIRE Kubernetes 工作负载注册器</a></li>
+      
+      <li><a href="/kubernetes-handbook/controllers/hpa/custom-metrics-hpa/">自定义指标 HPA</a></li>
+      
+    </ul>
+  </div>
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments" class="mb-3 pt-0">
+    <script>
+  let themeNumber = localStorage.getItem('wcTheme');
+  var giscusTheme = "light";
+  if (themeNumber == 1){
+    giscusTheme = "dark";
+  }
+  console.log(giscusTheme)
+  let giscusAttributes = {
+    "src": "https://giscus.app/client.js",
+    "data-theme": giscusTheme,
+    "data-repo":"rootsongjc/cloud-native-library",
+    "data-repo-id":"MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg=",
+    "data-category":"Announcements",
+    "data-category-id":"DIC_kwDODMrxWM4CPL7J",
+    "data-mapping":"pathname",
+    "data-reactions-enabled":"1",
+    "data-emit-metadata":"0",
+    "data-input-position":"top",
+    "data-theme":giscusTheme,
+    "data-lang":"zh-CN",
+    "data-loading":"lazy",
+    "crossorigin":"anonymous",
+    "origins":"https://jimmysong.io",
+    "originsRegex":"http://localhost:[0-9]+",
+    "async": "",
+  };
+
+  let giscusScript = document.createElement("script");
+  Object.entries(giscusAttributes).forEach(([key, value]) => giscusScript.setAttribute(key, value));
+  document.querySelector('#comments').appendChild(giscusScript);
+</script>
+
+  </section>
+  
+
+
+
+            </article>
+        </main>
+    </div>
+</div>
+  </div>
+
+  <div class="page-footer">
+    
+    
+    <div class="container">
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2023 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+    </div>
+    
+  </div>
+
+  
+
+
+<script src="/js/vendor-bundle.min.46271ef31da3f018e9cd1b59300aa265.js"></script>
+
+
+
+
+  
+
+  
+  
+
+  
+
+  
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+    
+    
+  
+
+
+
+
+
+
+
+
+
+
+  
+  <script id="search-hit-fuse-template" type="text/x-template">
+    <div class="search-hit" id="summary-{{key}}">
+      <div class="search-hit-content">
+        <div class="search-hit-name">
+          <div class="article-metadata search-hit-type">{{relpermalink}}</div>
+          <a href="{{relpermalink}}">{{title}}</a>
+          <p class="search-hit-description">{{snippet}}</p>
+        </div>
+      </div>
+    </div>
+  </script>
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+
+
+
+
+
+
+
+<script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+<script src="/zh/js/wowchemy.min.24983018b0e5661cd5fe1822254286ea.js"></script>
+
+
+
+
+
+
+
+  
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script src="/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+<script>
+
+var mybutton = document.getElementById("backTopBtn");
+
+
+window.onscroll = function() {scrollFunction()};
+
+function scrollFunction() {
+  if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+    mybutton.style.display = "block";
+  } else {
+    mybutton.style.display = "none";
+  }
+}
+
+
+function topFunction() {
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
+}
+</script>
+
+
+
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+<script>
+  anchors.add();
+</script>
+
+
+
+<script>
+
+
+
+(function() {
+  'use strict';
+
+  if(!document.queryCommandSupported('copy')) {
+    return;
+  }
+
+  function flashCopyMessage(el, msg) {
+    el.className = "highlight-copy-btn";
+    el.textContent = msg;
+    setTimeout(function() {
+      el.textContent = "";
+      el.className = "highlight-copy-btn fa fa-copy";
+    }, 1000);
+  }
+
+  function selectText(node) {
+    var selection = window.getSelection();
+    var range = document.createRange();
+    range.selectNodeContents(node);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    return selection;
+  }
+
+  function addCopyButton(containerEl) {
+    var copyBtn = document.createElement("button");
+    copyBtn.className = "highlight-copy-btn fa fa-copy";
+    copyBtn.textContent = "";
+
+    var codeEl = containerEl.firstElementChild;
+    copyBtn.addEventListener('click', function() {
+      try {
+        var selection = selectText(codeEl);
+        document.execCommand('copy');
+        selection.removeAllRanges();
+        
+        flashCopyMessage(copyBtn, '已复制')
+        
+      } catch(e) {
+        console && console.log(e);
+        flashCopyMessage(copyBtn, 'Failed :\'(')
+      }
+    });
+
+    containerEl.appendChild(copyBtn);
+  }
+
+  
+  var highlightBlocks = document.getElementsByClassName('highlight');
+  Array.prototype.forEach.call(highlightBlocks, addCopyButton);
+})();
+</script>
+
+
+
+<script>
+
+function Collapse(e){
+  var node = document.getElementById(e);
+  if (node.className.indexOf('fa-angle-down') > -1){
+    node.setAttribute("class", "fa-solid fa-angle-right");
+    }else{
+    node.setAttribute("class", "fa-solid fa-angle-down");
+    }
+}
+</script>
+
+
+</body>
+</html>
