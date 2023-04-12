@@ -13,6 +13,418 @@
     </image>
     
     <item>
+      <title>如何在 Kubernetes 中实现多租户隔离：命名空间、RBAC 和网络策略的应用</title>
+      <link>https://lib.jimmysong.io/blog/multi-tenancy-in-kubernetes/</link>
+      <pubDate>Wed, 12 Apr 2023 22:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/blog/multi-tenancy-in-kubernetes/</guid>
+      <description>&lt;p&gt;您是否应该让多个团队使用同一个 Kubernetes 集群?&lt;/p&gt;
+&lt;p&gt;您是否可以安全地运行来自不信任用户的不信任工作负载?&lt;/p&gt;
+&lt;p&gt;Kubernetes 是否具备多租户功能?&lt;/p&gt;
+&lt;p&gt;本文将探讨在运行具有多个租户的集群时面临的挑战。&lt;/p&gt;
+&lt;p&gt;多租户可分为:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;软多租户&lt;/strong&gt;，适用于信任您的租户 - 比如与同一家公司的团队共享集群时。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;硬多租户&lt;/strong&gt;，适用于您不信任的租户。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;您还可以混合使用！&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/multi-tenancy-in-kubernetes/yRCnld69tr4ZRhkL_hub010b799c9cb055081923208ac003d1d_88441_d576c4e4a9368a8002820e56f510f7da.webp 400w,
+               /blog/multi-tenancy-in-kubernetes/yRCnld69tr4ZRhkL_hub010b799c9cb055081923208ac003d1d_88441_dd38e1391ae5e9038a536706bb7681c5.webp 760w,
+               /blog/multi-tenancy-in-kubernetes/yRCnld69tr4ZRhkL_hub010b799c9cb055081923208ac003d1d_88441_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/multi-tenancy-in-kubernetes/yRCnld69tr4ZRhkL_hub010b799c9cb055081923208ac003d1d_88441_d576c4e4a9368a8002820e56f510f7da.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;570&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;在租户之间共享集群的基本构建块是命名空间。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;命名空间在逻辑上对资源进行分组，它们不提供任何安全机制，也不能保证所有资源都部署在同一节点上。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/multi-tenancy-in-kubernetes/T3__HQKEY_oJEoHs_hue5183d55ea9a19a120924a5df46e5c59_35674_62a5d33397e9c83c74741d446a7cae19.webp 400w,
+               /blog/multi-tenancy-in-kubernetes/T3__HQKEY_oJEoHs_hue5183d55ea9a19a120924a5df46e5c59_35674_ea2f761f76344d59f1c75560ddf52a65.webp 760w,
+               /blog/multi-tenancy-in-kubernetes/T3__HQKEY_oJEoHs_hue5183d55ea9a19a120924a5df46e5c59_35674_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/multi-tenancy-in-kubernetes/T3__HQKEY_oJEoHs_hue5183d55ea9a19a120924a5df46e5c59_35674_62a5d33397e9c83c74741d446a7cae19.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;570&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;命名空间中的 Pod 仍然可以与集群中的所有其他 Pod 通信，向 API 发出请求并使用它们想要的任何资源。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;默认情况下，任何用户都可以访问任何命名空间。&lt;/p&gt;
+&lt;p&gt;那应该怎么阻止它？&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/multi-tenancy-in-kubernetes/1Jf8RtdWJL9CCaxH_hue36364efba01cc4a5dfa2af0f3cd4abf_111900_1d52e65678e6e4e9f9ad4bf2ae2e6a5d.webp 400w,
+               /blog/multi-tenancy-in-kubernetes/1Jf8RtdWJL9CCaxH_hue36364efba01cc4a5dfa2af0f3cd4abf_111900_10568d3f33880b07bead8fd61ebc8082.webp 760w,
+               /blog/multi-tenancy-in-kubernetes/1Jf8RtdWJL9CCaxH_hue36364efba01cc4a5dfa2af0f3cd4abf_111900_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/multi-tenancy-in-kubernetes/1Jf8RtdWJL9CCaxH_hue36364efba01cc4a5dfa2af0f3cd4abf_111900_1d52e65678e6e4e9f9ad4bf2ae2e6a5d.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;570&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://learnk8s.io/rbac-kubernetes&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;通过 RBAC，您可以限制用户和应用程序对命名空间内和命名空间中的内容所能做的事情。&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;常见的操作是授予有限用户权限。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/multi-tenancy-in-kubernetes/awA5hkChCzvg_RhE_hu72fb626d99050de6945ee1c6eeed2b34_95587_9eb9c962081a6ca4cb60507459366aba.webp 400w,
+               /blog/multi-tenancy-in-kubernetes/awA5hkChCzvg_RhE_hu72fb626d99050de6945ee1c6eeed2b34_95587_13b31a9c80ce3d4ca0ebf06ff3d93e0f.webp 760w,
+               /blog/multi-tenancy-in-kubernetes/awA5hkChCzvg_RhE_hu72fb626d99050de6945ee1c6eeed2b34_95587_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/multi-tenancy-in-kubernetes/awA5hkChCzvg_RhE_hu72fb626d99050de6945ee1c6eeed2b34_95587_9eb9c962081a6ca4cb60507459366aba.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;570&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://kubernetes.io/docs/concepts/policy/resource-quotas/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;使用 Quotas 和 LimitRanges，您可以限制命名空间中部署的资源以及可以使用的内存、CPU 等。&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;如果您想限制租户对其命名空间所能做的事情，这是一个绝妙的想法。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/multi-tenancy-in-kubernetes/1eKUcWlrgf3WRoKw_hu1788e08c1f15c87a9464addb74ea20bb_144656_c39d829ef16ab0340cdf1d2a9223cbbe.webp 400w,
+               /blog/multi-tenancy-in-kubernetes/1eKUcWlrgf3WRoKw_hu1788e08c1f15c87a9464addb74ea20bb_144656_5db6714ed9dba595374a81442a16a011.webp 760w,
+               /blog/multi-tenancy-in-kubernetes/1eKUcWlrgf3WRoKw_hu1788e08c1f15c87a9464addb74ea20bb_144656_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/multi-tenancy-in-kubernetes/1eKUcWlrgf3WRoKw_hu1788e08c1f15c87a9464addb74ea20bb_144656_c39d829ef16ab0340cdf1d2a9223cbbe.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;570&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;默认情况下，所有 Pod 都可以与 Kubernetes 中的任何 Pod 通信。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;对于多租户来说这不是很好，但您可以使用 &lt;a href=&#34;https://github.com/ahmetb/kubernetes-network-policy-recipes&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Network Policies&lt;/a&gt; 来更正。&lt;/p&gt;
+&lt;p&gt;网络策略类似于防火墙规则，可让您隔离出站和入站流量。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/multi-tenancy-in-kubernetes/YfWvh92I6Hsts7sd_hu4afccc99d7039c800d62e45641a8928b_48860_dfbee1650cbbbdd9f8bb7aec6e6c1f02.webp 400w,
+               /blog/multi-tenancy-in-kubernetes/YfWvh92I6Hsts7sd_hu4afccc99d7039c800d62e45641a8928b_48860_b0bf921e13e04d4b2f09d6c9b3407e0e.webp 760w,
+               /blog/multi-tenancy-in-kubernetes/YfWvh92I6Hsts7sd_hu4afccc99d7039c800d62e45641a8928b_48860_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/multi-tenancy-in-kubernetes/YfWvh92I6Hsts7sd_hu4afccc99d7039c800d62e45641a8928b_48860_dfbee1650cbbbdd9f8bb7aec6e6c1f02.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;570&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;太好了，命名空间现在安全了吗？&lt;/p&gt;
+&lt;p&gt;不要这么快。&lt;/p&gt;
+&lt;p&gt;虽然 RBAC、Network Policies、Quotas 等为多租户提供了基本构建块，但这还不够。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Kubernetes 有几个共享组件。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;一个很好的例子是 Ingress 控制器，通常每个集群部署一个。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;如果您提交了一个具有相同路径的 Ingress 模板，则最后一个会覆盖定义，只有一个会起作用。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/multi-tenancy-in-kubernetes/uBeRl3rFvMWSgbmy_hudf4281ee95003b421757dfce56e23eb3_62514_f3c81ef2e5ff56f2a8e007d12d1977d0.webp 400w,
+               /blog/multi-tenancy-in-kubernetes/uBeRl3rFvMWSgbmy_hudf4281ee95003b421757dfce56e23eb3_62514_3b436bfb4e480475d48f37d3af7e3284.webp 760w,
+               /blog/multi-tenancy-in-kubernetes/uBeRl3rFvMWSgbmy_hudf4281ee95003b421757dfce56e23eb3_62514_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/multi-tenancy-in-kubernetes/uBeRl3rFvMWSgbmy_hudf4281ee95003b421757dfce56e23eb3_62514_f3c81ef2e5ff56f2a8e007d12d1977d0.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;570&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;最好的方法是在每个命名空间中部署一个控制器。&lt;/p&gt;
+&lt;p&gt;另一个有趣的挑战是 CoreDNS。&lt;/p&gt;
+&lt;p&gt;如果其中一个租户滥用 DNS 怎么办？&lt;/p&gt;
+&lt;p&gt;整个集群也会受到影响。&lt;/p&gt;
+&lt;p&gt;您可以使用额外的插件 &lt;a href=&#34;https://github.com/coredns/policy&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://github.com/coredns/policy&lt;/a&gt; 限制请求。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/multi-tenancy-in-kubernetes/UT5lmCmp4MexR2lH_hu1abef7a39a22165491f952cddcbb2c5f_112695_f90b6ac8a230aa8f037cb60fe6eeaf3a.webp 400w,
+               /blog/multi-tenancy-in-kubernetes/UT5lmCmp4MexR2lH_hu1abef7a39a22165491f952cddcbb2c5f_112695_f0e3da9c4e152104fa693bde02bafe16.webp 760w,
+               /blog/multi-tenancy-in-kubernetes/UT5lmCmp4MexR2lH_hu1abef7a39a22165491f952cddcbb2c5f_112695_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/multi-tenancy-in-kubernetes/UT5lmCmp4MexR2lH_hu1abef7a39a22165491f952cddcbb2c5f_112695_f90b6ac8a230aa8f037cb60fe6eeaf3a.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;570&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;同样的挑战也适用于 Kubernetes API 服务器。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Kubernetes 不知道租户，如果 API 收到太多请求，将对所有人进行限流。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;我不知道是否有解决方法！&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/multi-tenancy-in-kubernetes/jgNWr8FHxpMJEbgO_hu70c75ceeb6640946cf88a03f02be4976_114945_43630fe2a15d70399d9e0e4fcfa400a6.webp 400w,
+               /blog/multi-tenancy-in-kubernetes/jgNWr8FHxpMJEbgO_hu70c75ceeb6640946cf88a03f02be4976_114945_6f8fbb631b85f23d491883671bac2dc2.webp 760w,
+               /blog/multi-tenancy-in-kubernetes/jgNWr8FHxpMJEbgO_hu70c75ceeb6640946cf88a03f02be4976_114945_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/multi-tenancy-in-kubernetes/jgNWr8FHxpMJEbgO_hu70c75ceeb6640946cf88a03f02be4976_114945_43630fe2a15d70399d9e0e4fcfa400a6.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;570&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;假设您成功解决了共享资源的问题，还有 kubelet 和工作负载的挑战。&lt;/p&gt;
+&lt;p&gt;正如 Philippe Bogaerts 在&lt;a href=&#34;https://xxradar.medium.com/exploiting-applications-using-livenessprobes-in-kubernetes-cdff6329d320&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这篇文章&lt;/a&gt;中所解释的那样，一个租户可以通过 (滥) 使用活动探针来接管集群中的节点。&lt;/p&gt;
+&lt;p&gt;修复不是微不足道的。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/multi-tenancy-in-kubernetes/Dpb22PpgZsVBy2x6_huc50a61880589eaa2e837d6f78884e0d6_94001_47cb236fa30e124d7b8d9892e172247a.webp 400w,
+               /blog/multi-tenancy-in-kubernetes/Dpb22PpgZsVBy2x6_huc50a61880589eaa2e837d6f78884e0d6_94001_08bd79ddb873507e0cf2d13a0c27fb92.webp 760w,
+               /blog/multi-tenancy-in-kubernetes/Dpb22PpgZsVBy2x6_huc50a61880589eaa2e837d6f78884e0d6_94001_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/multi-tenancy-in-kubernetes/Dpb22PpgZsVBy2x6_huc50a61880589eaa2e837d6f78884e0d6_94001_47cb236fa30e124d7b8d9892e172247a.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;570&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;您可以将代码质量检查器作为 CI/CD 过程的一部分，或使用准入控制器验证提交到集群的资源是否安全。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/open-policy-agent/gatekeeper-library&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这里是 Open Policy Agent 的规则库。&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/multi-tenancy-in-kubernetes/ZLOk37wghFUia8_3_hub0ef7c32137f97cd270248acc6f35448_73962_3991315df7389654d6d2861c5fd60efc.webp 400w,
+               /blog/multi-tenancy-in-kubernetes/ZLOk37wghFUia8_3_hub0ef7c32137f97cd270248acc6f35448_73962_99cce50458f1688c52e8e4c433c861a7.webp 760w,
+               /blog/multi-tenancy-in-kubernetes/ZLOk37wghFUia8_3_hub0ef7c32137f97cd270248acc6f35448_73962_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/multi-tenancy-in-kubernetes/ZLOk37wghFUia8_3_hub0ef7c32137f97cd270248acc6f35448_73962_3991315df7389654d6d2861c5fd60efc.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;570&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;容器也提供了比虚拟机更弱的隔离机制。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.youtube.com/watch?v=JaMJJTb_bEE&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Lewis Denham-Parry 在这个视频中展示了如何从容器中逃脱。&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;该怎么办？&lt;/p&gt;
+&lt;p&gt;您可以使用容器沙箱，例如 &lt;a href=&#34;https://gvisor.dev/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;gVisor&lt;/a&gt;、轻量级虚拟机作为容器 (&lt;a href=&#34;https://katacontainers.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kata containers&lt;/a&gt;、&lt;a href=&#34;https://github.com/firecracker-microvm/firecracker-containerd&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;firecracker + containerd&lt;/a&gt;) 或全虚拟机 (&lt;a href=&#34;https://github.com/Mirantis/virtlet&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;virtlet 作为 CRI&lt;/a&gt;)。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/multi-tenancy-in-kubernetes/qZ9knDpHO6boX7nt_hua6929bd8dcf1355d38154899830558c6_91319_722cc434b3de0cc032605267be9a1358.webp 400w,
+               /blog/multi-tenancy-in-kubernetes/qZ9knDpHO6boX7nt_hua6929bd8dcf1355d38154899830558c6_91319_d54fefbae85862986915813b7e3bd46c.webp 760w,
+               /blog/multi-tenancy-in-kubernetes/qZ9knDpHO6boX7nt_hua6929bd8dcf1355d38154899830558c6_91319_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/multi-tenancy-in-kubernetes/qZ9knDpHO6boX7nt_hua6929bd8dcf1355d38154899830558c6_91319_722cc434b3de0cc032605267be9a1358.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;570&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;希望您已经意识到了这个主题的复杂性以及在 Kubernetes 中提供严格的网络、工作负载和控制器之间的分隔边界的难度。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://blog.jessfraz.com/post/hard-multi-tenancy-in-kubernetes/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这就是为什么不建议在 Kubernetes 中提供硬多租户。&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;如果您需要硬多租户，则建议使用多个集群或 Cluster-as-a-Service 工具。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/kubernetes-sigs/cluster-api&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Cluster API&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/openshift/hypershift&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;HyperShift&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/clastix/kamaji&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kamaji&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://gardener.cloud/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Gardener&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;如果您可以容忍较弱的多租户模型，以换取简单和便利，则可以推出您的 RBAC、Quotas 等规则。&lt;/p&gt;
+&lt;p&gt;但是，有一些工具可以为您抽象出这些问题：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/kubernetes-sigs/cluster-api-provider-nested/tree/main/virtualcluster&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Virtual Cluster (wg-multitenancy)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.vcluster.com/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Vcluster&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/clastix/capsule&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Capsule&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/loft-sh/kiosk&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kiosk&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;最后，如果您喜欢这个主题，您可能还会喜欢：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Learnk8s 在运行的 Kubernetes 工作坊 &lt;a href=&#34;https://learnk8s.io/training&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://learnk8s.io/training&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;过去的主题集合 &lt;a href=&#34;https://twitter.com/danielepolencic/status/1298543151901155330&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://twitter.com/danielepolencic/status/1298543151901155330&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;我每周发布的 Kubernetes 通讯 &lt;a href=&#34;https://learnk8s.io/learn-kubernetes-weekly&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://learnk8s.io/learn-kubernetes-weekly&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
       <title>从 Siri 到 ChatGPT：大数据公司如何迎接 AI 新浪潮</title>
       <link>https://lib.jimmysong.io/blog/the-next-wave-of-big-data-companies-in-the-age-of-chatgpt/</link>
       <pubDate>Tue, 11 Apr 2023 21:20:00 +0800</pubDate>
