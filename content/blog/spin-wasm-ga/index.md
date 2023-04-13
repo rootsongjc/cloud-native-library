@@ -33,7 +33,7 @@ links:
     url: https://www.infoq.com/news/2023/04/first-version-spin-wasm/
 ---
 
-本文译自：[Startup Fermyon Releases Spin 1.0 for WebAssembly Serverless Applications](https://www.notion.so/Startup-Fermyon-Releases-Spin-1-0-for-WebAssembly-Serverless-Applications-4e9b1daa3f8b431193ecd4ea30e40404) 
+本文译自：[Startup Fermyon Releases Spin 1.0 for WebAssembly Serverless Applications](https://www.infoq.com/news/2023/04/first-version-spin-wasm/)。 
 
 [Fermyon](https://www.fermyon.com/) 最近宣布推出 [Spin 1.0](https://github.com/fermyon/spin/releases/tag/v1.0.0)，这是一个用于使用 [WebAssembly](https://webassembly.org/) (Wasm) 开发无服务器应用的开源开发者工具和框架。
 
