@@ -1,0 +1,1570 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="宋净超" />
+
+  
+  
+  
+    
+  
+  <meta name="description" content="本文介绍了使用Docker和WebAssembly创建容器的过程。通过比较标准Docker容器和WebAssembly容器，作者指出WebAssembly容器具有性能优势、架构中立等优点，但也存在不成熟的问题。WebAssembly容器有望彻底改变容器化应用程序的方式。" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://lib.jimmysong.io/blog/docker-wasm-quick-intro/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/css/wowchemy.b26eb9b802629dccab300faa82cc98c7.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MP490FS739"></script>
+
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', "G-MP490FS739");
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2a4b7f65b1839466beaa48d633aa60c1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://lib.jimmysong.io/blog/docker-wasm-quick-intro/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary_large_image" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://lib.jimmysong.io/blog/docker-wasm-quick-intro/" />
+  <meta property="og:title" content="用Docker和WebAssembly打造容器的新时代！ | 云原生资料库" />
+  <meta property="og:description" content="本文介绍了使用Docker和WebAssembly创建容器的过程。通过比较标准Docker容器和WebAssembly容器，作者指出WebAssembly容器具有性能优势、架构中立等优点，但也存在不成熟的问题。WebAssembly容器有望彻底改变容器化应用程序的方式。" /><meta property="og:image" content="https://lib.jimmysong.io/media/sharing.png" />
+    <meta property="twitter:image" content="https://lib.jimmysong.io/media/sharing.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2023-04-17T10:27:22&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2023-04-17T10:47:55&#43;08:00">
+  
+
+  
+
+
+    
+
+
+
+
+
+
+  
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://lib.jimmysong.io/blog/docker-wasm-quick-intro/"
+  },
+  "headline": "用Docker和WebAssembly打造容器的新时代！",
+  
+  "datePublished": "2023-04-17T10:27:22+08:00",
+  "dateModified": "2023-04-17T10:47:55+08:00",
+  
+  "author": {
+    "@type": "Person",
+    "name": "Fabrizio Guglielmino"
+  },
+  
+  "publisher": {
+    "@type": "Organization",
+    "name": "云原生社区",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://lib.jimmysong.io/media/logo.svg"
+    }
+  },
+  "description": "本文介绍了使用Docker和WebAssembly创建容器的过程。通过比较标准Docker容器和WebAssembly容器，作者指出WebAssembly容器具有性能优势、架构中立等优点，但也存在不成熟的问题。WebAssembly容器有望彻底改变容器化应用程序的方式。"
+}
+</script>
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>用Docker和WebAssembly打造容器的新时代！ | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="9adc5b88ae6d5c8159c157c7738eea02" >
+  <button onclick="topFunction()" id="backTopBtn" title="Go to top"><i class="fa-solid fa-circle-up" aria-hidden="true"></i></button>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/js/wowchemy-init.min.62d6f8dfe8493f1c68557dde65bec362.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6 search-title">
+          <p>搜索</p>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/"><img src="/media/logo.svg" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/"><img src="/media/logo.svg" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#books"><span>图书</span></a>
+          </li>
+
+          
+          
+
+          
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"><span>教程</span><span class="caret"></span>
+            </a>
+            <div class="dropdown-menu">
+              
+                <a class="dropdown-item" href="/kubernetes-handbook"><span>Kubernetes 基础教程</span></a>
+              
+                <a class="dropdown-item" href="https://academy.tetrate.io/courses/istio-fundamentals-zh"><span>Istio 基础教程</span></a>
+              
+                <a class="dropdown-item" href="https://academy.tetrate.io/courses/envoy-fundamentals-zh"><span>Envoy 基础教程</span></a>
+              
+            </div>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link  active" href="/blog"><span>译文</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#feed"><span>更新</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#tags"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>Jimmy Song</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://jimmysong.io/contact/" data-toggle="tooltip" data-placement="bottom" title="联系" target="_blank" rel="noopener" aria-label="联系">
+                <i class="fab fa-weixin" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://twitter.com/jimmysongio" data-toggle="tooltip" data-placement="bottom" title="关注" target="_blank" rel="noopener" aria-label="关注">
+                <i class="fab fa-twitter" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+        
+
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://jimmysong.io" target="_blank" rel="noopener" data-toggle="tooltip" data-placement="bottom" title="主站" aria-label="主站"><i class="fas fa-home" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link js-search" href="#" data-toggle="tooltip" data-placement="bottom" title="搜索" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item d-none d-lg-inline-flex">
+            <a class="nav-link" href="https://github.com/rootsongjc/cloud-native-library/" target="_blank" rel="noopener" data-toggle="tooltip" data-placement="bottom" title="查看源码" aria-label="查看源码" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+        <li class="nav-item">
+          <a href="#" class="nav-link set-theme">
+            <i class="fa fa-sun" aria-hidden="true" id="theme-icon"></i>
+          </a>
+        </li>
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    <div class="container-xl">
+    <div class="post-container">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  
+  
+<div class="article-container pt-3">
+  <h1>用Docker和WebAssembly打造容器的新时代！</h1>
+
+  
+  <p class="page-subtitle">Docker+WebAssembly 快速介绍</p>
+  
+
+  
+    
+
+
+<div class="article-metadata">
+
+  <div>
+  
+  
+  
+  
+    <i class="fa-solid fa-feather"></i>
+    
+
+  <span >
+      <a href="/author/fabrizio-guglielmino/">Fabrizio Guglielmino</a></span>
+    
+    <span class="middot-divider"></span>
+    
+  
+  
+  
+  
+  
+  
+  <span class="article-categories">
+    <i class="fas fa-folder mr-1"></i><a href="/category/webassembly/" class="text-capitalize">WebAssembly</a></span>
+  
+  </div>
+
+  
+  <span class="article-date">
+    
+    
+      
+          
+          发布于
+      
+    
+    2023-04-17
+  </span>
+  
+
+  
+
+  
+  <span class="middot-divider"></span>
+  字数 3373
+  <span class="middot-divider"></span>
+  <span class="article-reading-time">
+      阅读时长 15 分钟
+  </span>
+  
+
+  
+  
+  
+  
+
+</div>
+
+    
+
+
+
+
+<div class="btn-links mb-2">
+  
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  <a class="btn btn-outline-primary btn-page-header" href="https://www.infoq.com/news/2023/04/first-version-spin-wasm/" target="_blank" rel="noopener">
+    <i class="fa fa-language mr-1"></i>阅读英文版原文</a>
+
+
+</div>
+
+
+  
+</div>
+
+
+    </div>
+    <div class="border-bottom mb-2"></div>
+    <div class="row flex-xl-nowrap">
+        <div class="col-3 d-none d-xl-block docs-toc">
+            <!-- toc -->
+            
+<div class="">
+    <ul class="nav toc-top">
+        <li>
+            <a href="#" id="back_to_top" class="docs-toc-title">目录</a>
+        </li>
+    </ul>
+  <nav id="TableOfContents">
+  <ul>
+    <li><a href="#为什么是-webassembly-容器">为什么是 WebAssembly 容器？</a></li>
+    <li><a href="#让我们开始吧">让我们开始吧</a></li>
+    <li><a href="#常见的-docker-方式">常见的 Docker 方式</a></li>
+    <li><a href="#走进-webassembly">走进 WebAssembly</a></li>
+    <li><a href="#webassembly-运行时将-wasm-带到各处">WebAssembly 运行时：将 WASM 带到各处</a></li>
+    <li><a href="#启用-dockerwasm-集成">启用 Docker+WASM 集成</a></li>
+    <li><a href="#准备创建-无操作系统-的容器">准备创建 “无操作系统 “的容器</a></li>
+    <li><a href="#结论"><strong>结论</strong></a></li>
+  </ul>
+</nav>
+</div>
+
+            <!-- /toc -->
+            
+            <div class="subscribe-module col-12 mt-1">
+    <img src="/img/wechat.webp" alt="image" title="Jimmy Song的微信公众号"/>
+    <p class="text-center pt-1">关注「几米宋」微信公众号，获取本站更新</p>
+    
+    
+     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4029167986768912"
+     crossorigin="anonymous"></script>
+     <ins class="adsbygoogle"
+       style="display:block"
+       data-ad-client="ca-pub-4029167986768912"
+       data-ad-slot="6856371908"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
+    <script>
+       (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+    
+    
+</div>
+
+            
+        </div>
+        <main class="article-body col-9 container docs-content" role="main">
+            <article class="article">
+                <div class="article-style">
+                    
+                    <details class="toc-inpage d-print-none d-show-block mb-0">
+  <summary class="font-weight-bold">点击查看目录</summary>
+  <nav id="TableOfContents">
+  <ul>
+    <li><a href="#为什么是-webassembly-容器">为什么是 WebAssembly 容器？</a></li>
+    <li><a href="#让我们开始吧">让我们开始吧</a></li>
+    <li><a href="#常见的-docker-方式">常见的 Docker 方式</a></li>
+    <li><a href="#走进-webassembly">走进 WebAssembly</a></li>
+    <li><a href="#webassembly-运行时将-wasm-带到各处">WebAssembly 运行时：将 WASM 带到各处</a></li>
+    <li><a href="#启用-dockerwasm-集成">启用 Docker+WASM 集成</a></li>
+    <li><a href="#准备创建-无操作系统-的容器">准备创建 “无操作系统 “的容器</a></li>
+    <li><a href="#结论"><strong>结论</strong></a></li>
+  </ul>
+</nav>
+</details>
+
+                    
+                    <blockquote>
+<p>译者注：本文译自 <a href="https://medium.com/@guglielmino/docker-webassembly-a-quick-intro-730c38e8390c" target="_blank" rel="noopener">Docker + WebAssembly: a quick intro | by Fabrizio Guglielmino | Medium</a>，本文介绍了使用 Docker 和 WebAssembly 创建容器的过程。通过比较标准 Docker 容器和 WebAssembly 容器，作者指出 WebAssembly 容器具有性能优势、架构中立等优点，但也存在不成熟的问题。WebAssembly 容器有望彻底改变容器化应用程序的方式。</p>
+</blockquote>
+<p>今天，我想展示一种实用且有趣的使用 Docker 的方式：在容器中使用 WebAssembly。</p>
+<p>我说 “实用的方式”，这就是为什么我假设您有一些经验：</p>
+<ol>
+<li>Docker（当然）</li>
+<li>Rust（实际上，只是为了理解 “Hello World”）</li>
+<li>WebAssembly；只需要对其有一个基本的了解（注意：我将在讨论中交替使用 WASM 和 WebAssembly 这两个术语）</li>
+</ol>
+<p>关于我即将展示的内容，简单说一下：一个 Docker 容器是一个包含运行环境的映像的运行实例。运行环境通常是一个操作系统，大多数情况下是 Linux。操作系统是运行应用程序的必要条件。</p>
+<p>如果我们能够在最小化依赖关系的情况下运行应用程序，甚至不需要任何依赖关系，会怎样呢？</p>
+<p>这就是我想谈论的想法：使用 WASM，以及 Docker 中（目前测试版）的支持，我们将创建一个不含任何操作系统基础镜像的容器。</p>
+<h2 id="为什么是-webassembly-容器">为什么是 WebAssembly 容器？</h2>
+<p>引用 Docker 的作者 Solomon Hykes 的话：</p>
+<blockquote>
+<p>“如果 WASM+WASI 在 2008 年就存在了，我们就不需要创造 Docker 了。”</p>
+</blockquote>
+<p>这可能足够了，但让我们列举一些具体的好处：</p>
+<ul>
+<li><strong>安全性</strong>：仅部署我们的代码可以减少 “攻击面”，从而提高整体安全性</li>
+<li><strong>大小</strong>：我们可以创建比等效于带有操作系统的应用程序更小得多的容器</li>
+<li><strong>性能</strong>：如您所料，没有操作系统层，WASM 容器可以表现出更好的性能（不总是正确的，但平均而言是正确的）</li>
+<li><strong>架构中立性</strong>：Docker 容器是为特定目标架构（arm、x86 等）编译的，只能在具有相同架构的主机上运行。相比之下，WebAssembly 是架构中立的，这意味着只要运行时可用，应用程序就可以在任何底层架构上运行。这提供了几个优点，例如在不需要重新编译的情况下在多个平台上运行相同的代码以及在以前不受支持的平台上运行代码的能力。</li>
+</ul>
+<p>总之，使用 WebAssembly 容器有一些有趣的好处！</p>
+<h2 id="让我们开始吧">让我们开始吧</h2>
+<p>本文将高度实用，只涉及该主题的表面，并留下许多细节。这些细节将在将来的文章中深入探讨，尽管已经有许多很好的资源可用。</p>
+<p>让我们从一个基本应用程序开始。尽管在这个例子中是用 Rust 编写的，但使用的语言并不重要，只要它支持 WebAssembly 作为编译目标即可。</p>
+<p>假设在计算机上已经安装了 Rust（<a href="https://www.rust-lang.org/tools/install" target="_blank" rel="noopener">如果没有</a>），让我们使用 <code>cargo new rust-wasm-docker</code> 创建一个新的 Rust 应用程序</p>
+<p>这将创建最小化的 Rust 应用程序结构。</p>
+<pre tabindex="0"><code>total 8
+drwxr-xr-x@ 3 fabrizio  staff   96 Jan 12 20:55 src
+-rw-r--r--@ 1 fabrizio  staff  186 Jan 12 20:55 Cargo.toml
+</code></pre><p>我们可以保留提供的最小应用程序代码，这是一个相当常见和易读的 “Hello World”。</p>
+<pre tabindex="0"><code># cat src/main.rs
+fn main() {
+    println!(&#34;Hello, world!&#34;);
+}
+</code></pre><p>让我们尝试使用 <code>cargo run</code> 运行，输出应该是 “Hello, world!”。</p>
+<h2 id="常见的-docker-方式">常见的 Docker 方式</h2>
+<p>如果没有 WebAssembly 的方法，我们将创建一个 Docker 镜像：</p>
+<pre tabindex="0"><code>FROM rust:latest
+
+WORKDIR /usr/src/myapp
+COPY . .
+
+RUN cargo install --path .
+
+CMD [&#34;wasm-docker-hello&#34;]
+</code></pre><p>这是一个非常简单的 <code>Dockerfile</code> ，它使用 Docker Hub 的 <code>rust</code> 基本镜像，将源从当前主机目录复制到镜像中的 <code>/usr/src/myapp</code> ，运行 <code>cargo install</code> 来编译应用程序，最终将应用程序二进制文件定义为容器命令。</p>
+<p>假设 Docker 已经安装在计算机上（<a href="https://docs.docker.com/get-docker/" target="_blank" rel="noopener">如果没有</a>），我们可以使用以下命令创建一个镜像： <code>docker build -t hello-docker .</code> 该命令使用当前目录中的 Dockerfile 构建镜像，并将其标记为 “hello-docker”。</p>
+<p>然后，在构建镜像后，我们可以使用 <code>docker run hello-world</code> 运行它。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># docker run hello-docker</span>
+</span></span><span class="line"><span class="cl">Hello, world!
+</span></span></code></pre></div><p>现在，让我们尝试进行另一个快速测试，稍后在本文中更清楚地说明 WebAssembly 容器的区别。我们可以使用 <code>bash</code> shell 覆盖默认命令来运行我们的镜像。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run -it hello-docker bash
+</span></span><span class="line"><span class="cl">root@be1902d5e9b6:/usr/src/myapp#
+</span></span></code></pre></div><p>输出可能略有不同，因为容器 ID（be1902d5e9b6）在每次运行容器时都是随机生成的。无论如何，这里的重要点是，您可以获取一个 shell 与之交互，就像在任何常见的 Linux 机器上一样。</p>
+<h2 id="走进-webassembly">走进 WebAssembly</h2>
+<p>现在，让我回顾一下我们到目前为止所做的事情：</p>
+<ol>
+<li>我们创建了一个非常（非常）简单的 Rust 应用程序</li>
+<li>我们在主机机器上构建和运行了该应用程序</li>
+<li>我们创建了一个 <code>Dockerfile</code> 来构建应用程序和镜像</li>
+<li>我们通过成功运行它来测试了 Docker 镜像的功能</li>
+</ol>
+<p>接下来呢？目标是仅使用我们的应用程序创建一个 docker 镜像。要非常明确：这意味着一个不含任何操作系统的镜像作为运行环境。实际上，我运行了 <code>docker run -it hello-docker bash</code> 来展示我们创建的镜像实际上是一个带有我们的应用程序捆绑的 Linux 运行环境。</p>
+<p>在继续之前，我们需要配置一些工具。首先，我们必须设置编译 WebAssembly + WASI 的能力，然后启用实验性的 Docker 功能以运行 WASM 容器。</p>
+<p>让我们开始使用 <code>rustup target add wasm32-wasi</code> 安装 WASI。</p>
+<blockquote>
+<p>WASI（WebAssembly 系统接口）是一组规范和 API，提供了执行 WebAssembly 代码的标准接口，这些代码不在 Web 浏览器中运行，例如在服务器或独立应用程序中运行。它允许 WebAssembly 模块访问系统资源，如文件系统和网络，并提供安全的沙箱环境。它提供了使 WebAssembly 成为独立可执行格式所需的关键功能，使其能够用于各种超越 Web 的场景。</p>
+</blockquote>
+<p>到目前为止一切顺利！现在可以运行 <code>cargo build --target wasm32-wasi</code> 编译 WebAssembly。如果尝试，我们将在 <code>target/wasm32-wasi/debug</code> 目录中获得一个名为 <code>wasm-docker-hello.wasm</code> 的文件。很好，但是我们该如何运行此二进制文件？尝试像普通可执行文件一样执行它，如 <code>. ./target/wasm32-wasi/debug/wasm-docker-hello.wasm</code>，我们会收到错误，为什么？实际上，错误是不言自明的：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">zsh: <span class="nb">exec</span> format error: ./target/wasm32-wasi/debug/wasm-docker-hello.wasm
+</span></span></code></pre></div><p>wasm 文件不是为我们主机的本机架构（无论是 x86_64、arm 还是其他）构建的。我们需要一个 <strong>WebAssembly 运行时</strong>。</p>
+<h2 id="webassembly-运行时将-wasm-带到各处">WebAssembly 运行时：将 WASM 带到各处</h2>
+<p>有许多 WASM 运行时。WebAssembly 最初是为在 Web 浏览器中使用而设计的，在这种情况下，运行时不需要，因为 <strong>浏览器充当运行时</strong>。但是，在创建命令行应用程序的情况下，需要运行时，对于完整的应用程序、服务器等也是如此。</p>
+<p>我们将安装 <strong>WasmEdge</strong>，这是 Docker 用于执行我们的 WASM 镜像的运行时。如果您在 Mac OS 或 Linux 机器上，可以使用以下命令进行安装：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -sSf &lt;https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh&gt; <span class="p">|</span> bash
+</span></span></code></pre></div><p>如需完整的安装说明（包括 Windows），请在此处查看 <a href="https://wasmedge.org/book/en/quick_start/install.html" target="_blank" rel="noopener">https://wasmedge.org/book/en/quick_start/install.html</a>。</p>
+<h2 id="启用-dockerwasm-集成">启用 Docker+WASM 集成</h2>
+<p>最后一步是启用 Docker 中的 WASM 支持，这是目前的实验性功能。可以通过启用 containerd 镜像存储库来完成此操作。</p>
+<p>使用 Docker Desktop，只需在设置页面中打开该功能即可。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  >
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="" srcset="
+               /blog/docker-wasm-quick-intro/ui_hu7acff1d0e23df74e45aa6d23581f4f5f_337397_ac3a4658f110ff47aa29132f9182934f.webp 400w,
+               /blog/docker-wasm-quick-intro/ui_hu7acff1d0e23df74e45aa6d23581f4f5f_337397_f14c34ba2225e1cecaef98439707b8ea.webp 760w,
+               /blog/docker-wasm-quick-intro/ui_hu7acff1d0e23df74e45aa6d23581f4f5f_337397_1200x1200_fit_q75_h2_lanczos_3.webp 1200w"
+               src="/blog/docker-wasm-quick-intro/ui_hu7acff1d0e23df74e45aa6d23581f4f5f_337397_ac3a4658f110ff47aa29132f9182934f.webp"
+               width="760"
+               height="357"
+               loading="lazy" data-zoomable /></div>
+  </div></figure>
+</p>
+<p>详细说明可以在此处找到 <a href="https://docs.docker.com/desktop/wasm/" target="_blank" rel="noopener">https://docs.docker.com/desktop/wasm/</a>。</p>
+<h2 id="准备创建-无操作系统-的容器">准备创建 “无操作系统 “的容器</h2>
+<p>现在我们已经准备好创建一个新的 Dockerfile（我们将其命名为 <code>Dockerfile.wasm</code> 以区分它与以前的文件），内容如下。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">FROM scratch
+</span></span><span class="line"><span class="cl">COPY target/wasm32-wasi/debug/wasm-docker-hello.wasm /app.wasm
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">ENTRYPOINT <span class="o">[</span> <span class="s2">&#34;app.wasm&#34;</span> <span class="o">]</span>
+</span></span></code></pre></div><p>它非常简短和易懂，但有几个要点需要强调：</p>
+<ol>
+<li>它以 “FROM scratch” 开始，表示该镜像是从头开始构建的，不会继承任何操作系统环境</li>
+<li>我们将编译后的二进制文件复制到镜像中，在前一个示例中，我们复制了源文件并在构建镜像过程中对其进行了编译，这里我们使用已经编译好的（在主机上）wasm 二进制文件</li>
+<li><code>ENTRYPOINT</code> 是二进制文件本身，这里没有指定运行时</li>
+</ol>
+<p>构建我们的镜像，方式与我们为 “通用” 镜像所做的方式相同。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker build -t wasm-docker -f Dockerfile.wasm .
+</span></span></code></pre></div><p>也许有人已经注意到了一个有趣的点：Docker 如何知道在 ENTRYPOINT 指向.wasm 二进制文件的镜像中使用 <strong>WasmEdge</strong> 作为运行时？我们已经测试过，直接运行.wasm 文件不起作用。</p>
+<p>实际上没有，我们需要在启动容器时指定运行时。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run --runtime<span class="o">=</span>io.containerd.wasmedge.v1 --platform<span class="o">=</span>wasi/wasm32 b678ba11b941
+</span></span></code></pre></div><p>我们指定 <code>--runtime</code> 告诉 Docker 使用 WasmEdge 作为运行时，并指定 <code>--platform</code> 使用 WASI 接口作为平台。就这样，如果您按照所有步骤操作，您应该看到一个令人兴奋的 “Hello, world!”。</p>
+<p>当然，我是开玩笑的，比较镜像大小使用 <code>docker images</code> 命令可以看到更有趣的结果。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">REPOSITORY                  TAG       IMAGE ID       CREATED         SIZE
+</span></span><span class="line"><span class="cl">hello-docker                latest    e9ed5014b408   <span class="m">7</span> seconds ago   544MB
+</span></span><span class="line"><span class="cl">wasm-docker                 latest    b678ba11b941   <span class="m">2</span> seconds ago   507kB
+</span></span></code></pre></div><p><code>hello-docker</code> 是我们在开始时构建的镜像，尺寸差异巨大。</p>
+<h2 id="结论"><strong>结论</strong></h2>
+<p>在本文中，我们比较了标准 Docker 容器和 WASM 容器。标准 Docker 容器和 WebAssembly 容器都有各自独特的优点和限制，但 WASM 正在展示成为一种高度有前途的容器化技术，尤其是对于某些用例。与标准 Docker 容器相比，WebAssembly 提供了性能优势，例如更快的启动时间、更低的内存使用率以及代码和主机系统之间更好的隔离。此外，WebAssembly 是架构中立的，这意味着只要运行时可用，应用程序就可以在任何底层架构上运行。这提供了多种优势，例如在多个平台上运行相同的代码而无需重新编译，并能在以前不支持的平台上运行代码。甚至可以在诸如物联网、边缘计算等受限设备上扩展容器的使用。</p>
+<p>然而，值得注意的是，WebAssembly 仍处于早期阶段，尚不成熟，尚不具备广泛采用的条件。尽管如此，重要的是要关注这项技术，因为它有潜力彻底改变我们容器化应用程序的方式。</p>
+
+                </div>
+                
+
+<div class="article-tags">
+  
+  <a class="badge badge-light" href="/tag/webassembly/">WebAssembly</a>
+  
+  <a class="badge badge-light" href="/tag/docker/">Docker</a>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+
+
+
+
+  
+
+
+
+
+
+<div class="article-widget">
+  
+<div class="container-xl row post-nav">
+  
+  
+  
+  <a class="col-6 post-nav-item btn btn-lg mb-md-1"  href="/blog/cncf-platforms-white-paper/" rel="prev">
+    <div class="meta-nav">上一页</div>
+    <p> CNCF 平台白皮书</p></a>
+  
+</div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/cloud-native-library//edit/master/content/blog/docker-wasm-quick-intro/index.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+
+  
+  
+  <div class="article-widget content-widget-hr">
+    <p class="related-title">相关推荐</p>
+    <ul>
+      
+      <li><a href="/blog/spin-wasm-ga/">初创公司 Fermyon 发布 Spin 1.0 用于 WebAssembly 无服务器应用</a></li>
+      
+      <li><a href="/blog/wasm-containers/">使用 OCI 容器运行 WebAssembly 工作负载</a></li>
+      
+      <li><a href="/blog/introducing-wazero-from-tetrate/">Tetrate 开源项目 Wazero 简介</a></li>
+      
+      <li><a href="/blog/is-webassembly-really-the-future/">WebAssembly 真的代表着未来吗？</a></li>
+      
+      <li><a href="/blog/rust-to-wasm/">Rust 编译 WebAssembly 指南</a></li>
+      
+    </ul>
+  </div>
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments" class="mb-3 pt-0">
+    <script>
+  let themeNumber = localStorage.getItem('wcTheme');
+  var giscusTheme = "light";
+  if (themeNumber == 1){
+    giscusTheme = "dark";
+  }
+  console.log(giscusTheme)
+  let giscusAttributes = {
+    "src": "https://giscus.app/client.js",
+    "data-theme": giscusTheme,
+    "data-repo":"rootsongjc/cloud-native-library",
+    "data-repo-id":"MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg=",
+    "data-category":"Announcements",
+    "data-category-id":"DIC_kwDODMrxWM4CPL7J",
+    "data-mapping":"pathname",
+    "data-reactions-enabled":"1",
+    "data-emit-metadata":"0",
+    "data-input-position":"top",
+    "data-theme":giscusTheme,
+    "data-lang":"zh-CN",
+    "data-loading":"lazy",
+    "crossorigin":"anonymous",
+    "origins":"https://jimmysong.io",
+    "originsRegex":"http://localhost:[0-9]+",
+    "async": "",
+  };
+
+  let giscusScript = document.createElement("script");
+  Object.entries(giscusAttributes).forEach(([key, value]) => giscusScript.setAttribute(key, value));
+  document.querySelector('#comments').appendChild(giscusScript);
+</script>
+
+  </section>
+  
+
+
+
+            </article>
+        </main>
+    </div>
+</div>
+  </div>
+
+  <div class="page-footer">
+    
+    
+    <div class="container">
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2023 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+    </div>
+    
+  </div>
+
+  
+
+
+<script src="/js/vendor-bundle.min.46271ef31da3f018e9cd1b59300aa265.js"></script>
+
+
+
+
+  
+
+  
+  
+
+  
+
+  
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+    
+    
+  
+
+
+
+
+
+
+
+
+
+
+  
+  <script id="search-hit-fuse-template" type="text/x-template">
+    <div class="search-hit" id="summary-{{key}}">
+      <div class="search-hit-content">
+        <div class="search-hit-name">
+          <div class="article-metadata search-hit-type">{{relpermalink}}</div>
+          <a href="{{relpermalink}}">{{title}}</a>
+          <p class="search-hit-description">{{snippet}}</p>
+        </div>
+      </div>
+    </div>
+  </script>
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+
+
+
+
+
+
+
+<script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+<script src="/zh/js/wowchemy.min.24983018b0e5661cd5fe1822254286ea.js"></script>
+
+
+
+
+
+
+
+  
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script src="/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+<script>
+
+var mybutton = document.getElementById("backTopBtn");
+
+
+window.onscroll = function() {scrollFunction()};
+
+function scrollFunction() {
+  if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+    mybutton.style.display = "block";
+  } else {
+    mybutton.style.display = "none";
+  }
+}
+
+
+function topFunction() {
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
+}
+</script>
+
+
+
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+<script>
+  anchors.add();
+</script>
+
+
+
+<script>
+
+
+
+(function() {
+  'use strict';
+
+  if(!document.queryCommandSupported('copy')) {
+    return;
+  }
+
+  function flashCopyMessage(el, msg) {
+    el.className = "highlight-copy-btn";
+    el.textContent = msg;
+    setTimeout(function() {
+      el.textContent = "";
+      el.className = "highlight-copy-btn fa fa-copy";
+    }, 1000);
+  }
+
+  function selectText(node) {
+    var selection = window.getSelection();
+    var range = document.createRange();
+    range.selectNodeContents(node);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    return selection;
+  }
+
+  function addCopyButton(containerEl) {
+    var copyBtn = document.createElement("button");
+    copyBtn.className = "highlight-copy-btn fa fa-copy";
+    copyBtn.textContent = "";
+
+    var codeEl = containerEl.firstElementChild;
+    copyBtn.addEventListener('click', function() {
+      try {
+        var selection = selectText(codeEl);
+        document.execCommand('copy');
+        selection.removeAllRanges();
+        
+        flashCopyMessage(copyBtn, '已复制')
+        
+      } catch(e) {
+        console && console.log(e);
+        flashCopyMessage(copyBtn, 'Failed :\'(')
+      }
+    });
+
+    containerEl.appendChild(copyBtn);
+  }
+
+  
+  var highlightBlocks = document.getElementsByClassName('highlight');
+  Array.prototype.forEach.call(highlightBlocks, addCopyButton);
+})();
+</script>
+
+
+
+<script>
+
+function Collapse(e){
+  var node = document.getElementById(e);
+  if (node.className.indexOf('fa-angle-down') > -1){
+    node.setAttribute("class", "fa-solid fa-angle-right");
+    }else{
+    node.setAttribute("class", "fa-solid fa-angle-down");
+    }
+}
+</script>
+
+
+</body>
+</html>
