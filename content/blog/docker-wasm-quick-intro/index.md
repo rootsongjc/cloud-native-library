@@ -30,7 +30,7 @@ links:
   - icon: language
     icon_pack: fa
     name: 阅读英文版原文
-    url: https://www.infoq.com/news/2023/04/first-version-spin-wasm/
+    url: https://medium.com/@guglielmino/docker-webassembly-a-quick-intro-730c38e8390c
 ---
 
 > 译者注：本文译自 [Docker + WebAssembly: a quick intro | by Fabrizio Guglielmino | Medium](https://medium.com/@guglielmino/docker-webassembly-a-quick-intro-730c38e8390c)，本文介绍了使用 Docker 和 WebAssembly 创建容器的过程。通过比较标准 Docker 容器和 WebAssembly 容器，作者指出 WebAssembly 容器具有性能优势、架构中立等优点，但也存在不成熟的问题。WebAssembly 容器有望彻底改变容器化应用程序的方式。

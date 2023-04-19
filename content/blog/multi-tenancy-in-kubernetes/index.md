@@ -28,13 +28,13 @@ Kubernetes 是否具备多租户功能?
 
 您还可以混合使用！
 
-![](yRCnld69tr4ZRhkL.png)
+![](1.png)
 
 **在租户之间共享集群的基本构建块是命名空间。**
 
 命名空间在逻辑上对资源进行分组，它们不提供任何安全机制，也不能保证所有资源都部署在同一节点上。
 
-![](T3__HQKEY_oJEoHs.png)
+![](2.png)
 
 **命名空间中的 Pod 仍然可以与集群中的所有其他 Pod 通信，向 API 发出请求并使用它们想要的任何资源。**
 
@@ -42,19 +42,19 @@ Kubernetes 是否具备多租户功能?
 
 那应该怎么阻止它？
 
-![](1Jf8RtdWJL9CCaxH.png)
+![](3.png)
 
 [通过 RBAC，您可以限制用户和应用程序对命名空间内和命名空间中的内容所能做的事情。](https://learnk8s.io/rbac-kubernetes)
 
 常见的操作是授予有限用户权限。
 
-![](awA5hkChCzvg_RhE.png)
+![](4.png)
 
 [使用 Quotas 和 LimitRanges，您可以限制命名空间中部署的资源以及可以使用的内存、CPU 等。](https://kubernetes.io/docs/concepts/policy/resource-quotas/)
 
 **如果您想限制租户对其命名空间所能做的事情，这是一个绝妙的想法。**
 
-![](1eKUcWlrgf3WRoKw.png)
+![](5.png)
 
 **默认情况下，所有 Pod 都可以与 Kubernetes 中的任何 Pod 通信。**
 
@@ -62,7 +62,7 @@ Kubernetes 是否具备多租户功能?
 
 网络策略类似于防火墙规则，可让您隔离出站和入站流量。
 
-![](YfWvh92I6Hsts7sd.png)
+![](6.png)
 
 太好了，命名空间现在安全了吗？
 
@@ -76,7 +76,7 @@ Kubernetes 是否具备多租户功能?
 
 **如果您提交了一个具有相同路径的 Ingress 模板，则最后一个会覆盖定义，只有一个会起作用。**
 
-![](uBeRl3rFvMWSgbmy.png)
+![](7.png)
 
 最好的方法是在每个命名空间中部署一个控制器。
 
@@ -88,7 +88,7 @@ Kubernetes 是否具备多租户功能?
 
 您可以使用额外的插件 [https://github.com/coredns/policy](https://github.com/coredns/policy) 限制请求。
 
-![](UT5lmCmp4MexR2lH.png)
+![](8.png)
 
 同样的挑战也适用于 Kubernetes API 服务器。
 
@@ -96,7 +96,7 @@ Kubernetes 是否具备多租户功能?
 
 我不知道是否有解决方法！
 
-![](jgNWr8FHxpMJEbgO.png)
+![](9.png)
 
 假设您成功解决了共享资源的问题，还有 kubelet 和工作负载的挑战。
 
@@ -104,13 +104,13 @@ Kubernetes 是否具备多租户功能?
 
 修复不是微不足道的。
 
-![](Dpb22PpgZsVBy2x6.png)
+![](10.png)
 
 您可以将代码质量检查器作为 CI/CD 过程的一部分，或使用准入控制器验证提交到集群的资源是否安全。
 
 [这里是 Open Policy Agent 的规则库。](https://github.com/open-policy-agent/gatekeeper-library)
 
-![](ZLOk37wghFUia8_3.png)
+![](11.png)
 
 **容器也提供了比虚拟机更弱的隔离机制。**
 
@@ -120,7 +120,7 @@ Kubernetes 是否具备多租户功能?
 
 您可以使用容器沙箱，例如 [gVisor](https://gvisor.dev/)、轻量级虚拟机作为容器 ([Kata containers](https://katacontainers.io/)、[firecracker + containerd](https://github.com/firecracker-microvm/firecracker-containerd)) 或全虚拟机 ([virtlet 作为 CRI](https://github.com/Mirantis/virtlet))。
 
-![](qZ9knDpHO6boX7nt.png)
+![](12.png)
 
 希望您已经意识到了这个主题的复杂性以及在 Kubernetes 中提供严格的网络、工作负载和控制器之间的分隔边界的难度。
 
