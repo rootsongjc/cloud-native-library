@@ -1,0 +1,648 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Asen Alexandrov | 云原生资料库</title>
+    <link>https://lib.jimmysong.io/author/asen-alexandrov/</link>
+      <atom:link href="https://lib.jimmysong.io/author/asen-alexandrov/index.xml" rel="self" type="application/rss+xml" />
+    <description>Asen Alexandrov</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Thu, 27 Apr 2023 06:27:22 +0800</lastBuildDate>
+    <image>
+      <url>https://lib.jimmysong.io/media/sharing.png</url>
+      <title>Asen Alexandrov</title>
+      <link>https://lib.jimmysong.io/author/asen-alexandrov/</link>
+    </image>
+    
+    <item>
+      <title>WebAssembly：无需容器就能运行 Docker！</title>
+      <link>https://lib.jimmysong.io/blog/docker-without-containers/</link>
+      <pubDate>Thu, 27 Apr 2023 06:27:22 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/blog/docker-without-containers/</guid>
+      <description>&lt;p&gt;最近，Docker 宣布与 WasmEdge 合作，在 Docker 生态系统中支持 &lt;a href=&#34;https://docs.docker.com/desktop/wasm/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;WebAssembly&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;本文将介绍什么是 WebAssembly，以及为什么它与 Docker 生态系统相关，并提供一些实践示例。我们假设您熟悉 Docker 工具集。我们将使用我们的 &lt;a href=&#34;https://wasmlabs.dev/articles/php-wasm32-wasi-port/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;WebAssembly PHP 的端口&lt;/a&gt; 来演示如何构建 PHP 解释器，将其打包为 OCI 镜像的一部分，并使用 Docker 运行它。&lt;/p&gt;
+&lt;p&gt;请注意，本文的重点是获得实践经验，而不是讨论技术细节。您可以复制以下示例，也可以只读到最后，因为我们还将提供输出。&lt;/p&gt;
+&lt;h2 id=&#34;webassembly---什么为什么&#34;&gt;WebAssembly - 什么？为什么？&lt;/h2&gt;
+&lt;p&gt;这是一个非常基本的介绍。如果您已经熟悉该技术，则可以跳到动手环节。&lt;/p&gt;
+&lt;h3 id=&#34;什么是-webassembly&#34;&gt;什么是 WebAssembly？&lt;/h3&gt;
+&lt;p&gt;WebAssembly（或 Wasm）是一个开放标准，定义了一种二进制指令格式，可以从不同的源语言创建可移植的二进制可执行文件。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/docker-without-containers/1_hu9f2ff678deb0c6bb75e5edef2989001d_8504_7443fbab0b1c3dbf6b3518459e639ea5.webp 400w,
+               /blog/docker-without-containers/1_hu9f2ff678deb0c6bb75e5edef2989001d_8504_c3ad77e21a39ed3c4d0c4f35d6a627f0.webp 760w,
+               /blog/docker-without-containers/1_hu9f2ff678deb0c6bb75e5edef2989001d_8504_1200x1200_fit_q75_h2_lanczos_2.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/docker-without-containers/1_hu9f2ff678deb0c6bb75e5edef2989001d_8504_7443fbab0b1c3dbf6b3518459e639ea5.webp&#34;
+               width=&#34;757&#34;
+               height=&#34;181&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;这些二进制文件可以在各种环境中运行。它起源于 web，并得到所有主要浏览器的支持。&lt;/p&gt;
+&lt;h3 id=&#34;wasm-在浏览器中是如何工作的&#34;&gt;Wasm 在浏览器中是如何工作的？&lt;/h3&gt;
+&lt;p&gt;浏览器引擎集成了一个 Wasm 虚拟机，通常称为 Wasm 运行时，它可以运行 Wasm 二进制指令。有编译器工具链（如 Emscripten）可以将源代码编译为 Wasm 目标。这允许将传统应用程序移植到浏览器，并直接与在客户端 Web 应用程序中运行的 JS 代码通信。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/docker-without-containers/2_hufcd9523e703b2890ed50bf80e0b5cf14_11104_f73936d5271f85b379a4f681382ec832.webp 400w,
+               /blog/docker-without-containers/2_hufcd9523e703b2890ed50bf80e0b5cf14_11104_d1465a0108af12ea500f4705188478a2.webp 760w,
+               /blog/docker-without-containers/2_hufcd9523e703b2890ed50bf80e0b5cf14_11104_1200x1200_fit_q75_h2_lanczos_2.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/docker-without-containers/2_hufcd9523e703b2890ed50bf80e0b5cf14_11104_f73936d5271f85b379a4f681382ec832.webp&#34;
+               width=&#34;757&#34;
+               height=&#34;312&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;这些技术使传统桌面应用程序可以在浏览器中运行。现在它们可以在任何您拥有浏览器的设备上运行。一些著名的例子是 &lt;a href=&#34;https://earth.google.com/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Google Earth&lt;/a&gt; 和计算机视觉的 &lt;a href=&#34;https://opencv.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Open CV&lt;/a&gt; 库。&lt;/p&gt;
+&lt;h3 id=&#34;wasm-在服务器上是如何工作的&#34;&gt;Wasm 在服务器上是如何工作的？&lt;/h3&gt;
+&lt;p&gt;有一些 Wasm 运行时可以在浏览器之外运行，包括传统操作系统，如 Linux、Windows 和 macOS。由于它们不能依赖于 JavaScript 引擎的可用性，它们使用不同的接口（例如 WASI，&lt;a href=&#34;https://wasi.dev/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;WebAssembly 系统接口&lt;/a&gt;）与外界通信。这些运行时允许 Wasm 应用程序以与 POSIX 类似（但不完全相同）的方式与其主机系统交互。像 WASI SDK 和 wasi-libc 这样的项目可以帮助人们将现有的 POSIX 兼容应用程序编译到 WebAssembly。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/docker-without-containers/3_hub847a4647ba520c473fa897afead2bca_12792_ef9be3b0ec16df39f23f570fb99a9496.webp 400w,
+               /blog/docker-without-containers/3_hub847a4647ba520c473fa897afead2bca_12792_15f421a0d3b29d92aecd27d31b86635c.webp 760w,
+               /blog/docker-without-containers/3_hub847a4647ba520c473fa897afead2bca_12792_1200x1200_fit_q75_h2_lanczos_2.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/docker-without-containers/3_hub847a4647ba520c473fa897afead2bca_12792_ef9be3b0ec16df39f23f570fb99a9496.webp&#34;
+               width=&#34;757&#34;
+               height=&#34;306&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;您只需要将应用程序编译为 Wasm 模块一次，然后就可以在任何地方运行完全相同的二进制文件。&lt;/p&gt;
+&lt;h3 id=&#34;什么使-wasm-如此出色&#34;&gt;什么使 Wasm 如此出色？&lt;/h3&gt;
+&lt;p&gt;一些使 Wasm 在浏览器中出色的功能也使其对服务器端开发非常有吸引力：&lt;/p&gt;
+&lt;p&gt;🌐 开放 - 它是行业广泛采用的标准。与过去的浏览器之争不同，主要公司正在协作标准化 WASI 和 WebAssembly 应用程序。&lt;/p&gt;
+&lt;p&gt;🚀 快速 - 它可以通过大多数运行时的 JIT/AOT 能力提供类似本机的速度。不像启动 VM 或启动容器那样有冷启动。&lt;/p&gt;
+&lt;p&gt;🔒 安全 - Wasm 运行时默认情况下是隔离的，并允许安全地访问内存。基于能力的模型确保 Wasm 应用程序仅能访问其明确允许的内容。安全的供应链。&lt;/p&gt;
+&lt;p&gt;💼 可移植 - 在几个主要运行时中，支持大多数 CPU（x86、ARM、RISC-V）和大多数操作系统，包括 Linux、Windows、macOS、Android、ESXi，甚至非 POSIX 的操作系统。&lt;/p&gt;
+&lt;p&gt;🔋 高效 - Wasm 应用程序可以通过最小的内存占用和 CPU 要求运行。&lt;/p&gt;
+&lt;p&gt;🗣️ 多语言支持 - 40 多种语言可以编译为 Wasm，并具有现代的、不断改进的工具链。&lt;/p&gt;
+&lt;h3 id=&#34;服务器平台演进的下一步&#34;&gt;服务器平台演进的下一步？&lt;/h3&gt;
+&lt;p&gt;您可能已经看到过 Docker 的共同创始人之一 Solomon Hykes 的这段 &lt;a href=&#34;https://twitter.com/solomonstre/status/1111004913222324225&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;引述&lt;/a&gt;：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;如果 WASM+WASI 在 2008 年存在，我们就不需要创建 Docker 了。这就是它的重要性。WebAssembly 在服务器上是计算的未来。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;确实，WASM+WASI 似乎是服务器端软件基础架构演进的下一步。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;在过去，我们有物理硬件可用。我们会在每个盒子上仔细安装操作系统和应用程序，并逐个维护它们。&lt;/li&gt;
+&lt;li&gt;然后，随着由 VMware 开创的 VM 的采用，事情变得更容易了。人们可以复制、克隆和移动 VM 跨硬件盒。但这仍然需要在 VM 中安装操作系统和应用程序。&lt;/li&gt;
+&lt;li&gt;然后，容器出现了，由 Docker 推广，它使得在极简的包装上下文中运行应用程序配置变得更加容易，而不会影响主机操作系统上的任何其他应用程序。然而，这仍然需要分发应用程序与其运行时和必要的库捆绑在一起。安全边界由 Linux 内核提供。&lt;/li&gt;
+&lt;li&gt;我们现在有了 WebAssembly。它的技术特点和可移植性使得分发应用程序变得可能，无需运输 OS 级别的依赖项，并且可以在严格的安全约束下运行。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;考虑到所有这些，开发人员通常会将 WebAssembly 视为容器的“继承者”和基础架构部署的下一个逻辑步骤。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/docker-without-containers/4_hu9788ea4c0c901b7b2eb7d58fbe5dad83_10584_f43c822b68d570a7b5779e3c139e0dae.webp 400w,
+               /blog/docker-without-containers/4_hu9788ea4c0c901b7b2eb7d58fbe5dad83_10584_4b074fec995ab7c24c2c089476791611.webp 760w,
+               /blog/docker-without-containers/4_hu9788ea4c0c901b7b2eb7d58fbe5dad83_10584_1200x1200_fit_q75_h2_lanczos_2.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/docker-without-containers/4_hu9788ea4c0c901b7b2eb7d58fbe5dad83_10584_f43c822b68d570a7b5779e3c139e0dae.webp&#34;
+               width=&#34;757&#34;
+               height=&#34;212&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;然而，另一种看待 WebAssembly 的方式是作为 Docker 工具链的替代“后端”。您可以使用相同的命令行工具和工作流程，但是，而不是使用 Linux 容器，它是使用基于 WebAssembly 的容器等价物实现的。本文的其余部分探讨了这个概念，这就是我们所说的“没有容器的 Docker”标题。&lt;/p&gt;
+&lt;h3 id=&#34;wasm-如何与-docker-配合使用&#34;&gt;Wasm 如何与 Docker 配合使用？&lt;/h3&gt;
+&lt;p&gt;Docker Desktop 现在包括对 WebAssembly 的支持。它是使用一个称为 &lt;a href=&#34;https://github.com/WasmEdge/Wasmedge&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;WasmEdge&lt;/a&gt; 的 Wasm 运行时运行 Wasm 应用程序的 containerd shim 实现的。这意味着，与运行容器镜像中的二进制文件的单独进程不同，您现在可以在 WasmEdge 运行时中运行 Wasm 应用程序，模拟容器。&lt;/p&gt;
+&lt;p&gt;因此，容器镜像不需要包含正在运行的应用程序的 OS 或运行时上下文——单个 Wasm 二进制文件就足够了。&lt;/p&gt;
+&lt;p&gt;这在 Docker 的 &lt;a href=&#34;https://www.docker.com/blog/docker-wasm-technical-preview/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Wasm 技术预览文章&lt;/a&gt; 中有详细说明。&lt;/p&gt;
+&lt;h3 id=&#34;什么是-wasmedge&#34;&gt;什么是 WasmEdge？&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/WasmEdge/Wasmedge&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;WasmEdge&lt;/a&gt; 是一个高性能的 WebAssembly 运行时，具有以下特点：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;是开源的，是 &lt;a href=&#34;https://cncf.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CNCF&lt;/a&gt; 的一部分。&lt;/li&gt;
+&lt;li&gt;支持所有主要的 CPU 架构（x86、ARM、RISC-V）。&lt;/li&gt;
+&lt;li&gt;支持所有主要的操作系统（Linux、Windows、macOS），以及其他操作系统，如 seL4 RTOS、Android。&lt;/li&gt;
+&lt;li&gt;为云原生和 Edge 应用程序进行了优化。&lt;/li&gt;
+&lt;li&gt;是可扩展的，支持标准和新兴技术
+&lt;ul&gt;
+&lt;li&gt;与 Tensorflow、OpenVINO、PyTorch 一起进行 AI 推理&lt;/li&gt;
+&lt;li&gt;支持使用 Tokio 进行异步网络。支持微服务、数据库客户端、消息队列等。&lt;/li&gt;
+&lt;li&gt;与容器生态系统、Docker 和 Kubernetes 完美集成（正如本文所示！）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;解释性语言呢&#34;&gt;解释性语言呢？&lt;/h3&gt;
+&lt;p&gt;到目前为止，我们只提到了编译语言（如 C 和 Rust）可以针对 WebAssembly。对于解释性语言（如 Python、Ruby 和 PHP），方法是不同的：它们的解释器是用 C 编写的，可以编译为 WebAssembly。然后，这个解释器编译为 Wasm，可以用于执行源代码文件，通常以 .py、.rb、.php 等结尾。一旦编译为 Wasm，任何具有 Wasm 运行时的平台都将能够运行那些解释性语言，即使实际的解释器从未原生地编译为该平台。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/docker-without-containers/5_hu5a9157eb590a188a516bf31fcc5f6574_17576_7f5852950c743a00a2c16df966ee1ae5.webp 400w,
+               /blog/docker-without-containers/5_hu5a9157eb590a188a516bf31fcc5f6574_17576_e9524f19de783d7048ab3fdd930fe98c.webp 760w,
+               /blog/docker-without-containers/5_hu5a9157eb590a188a516bf31fcc5f6574_17576_1200x1200_fit_q75_h2_lanczos_2.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/docker-without-containers/5_hu5a9157eb590a188a516bf31fcc5f6574_17576_7f5852950c743a00a2c16df966ee1ae5.webp&#34;
+               width=&#34;757&#34;
+               height=&#34;332&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h2 id=&#34;实际演示&#34;&gt;实际演示&lt;/h2&gt;
+&lt;p&gt;让我们开始吧！在实际演示中，我们将使用编译为 Wasm 的 PHP 解释器。我们将：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;构建一个 &lt;a href=&#34;https://wasmlabs.dev/articles/docker-without-containers/#building-a-wasm-container&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Wasm 容器&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;比较 &lt;a href=&#34;https://wasmlabs.dev/articles/docker-without-containers/#native-vs-wasm&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Wasm 和本地&lt;/a&gt; 二进制文件。&lt;/li&gt;
+&lt;li&gt;比较 &lt;a href=&#34;https://wasmlabs.dev/articles/docker-without-containers/#traditional-vs-wasm-containers&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;传统和 Wasm&lt;/a&gt; 容器。&lt;/li&gt;
+&lt;li&gt;展示了 &lt;a href=&#34;https://wasmlabs.dev/articles/docker-without-containers/#wasm-portability&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Wasm 的可移植性&lt;/a&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;先决条件&#34;&gt;先决条件&lt;/h2&gt;
+&lt;p&gt;如果您想在本地复制演示，您需要准备一些或全部以下内容的环境：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;WASI SDK - 从旧 C 代码构建 WebAssembly 应用程序&lt;/li&gt;
+&lt;li&gt;PHP - 为了进行本地 PHP 二进制文件比较&lt;/li&gt;
+&lt;li&gt;WasmEdge 运行时 - 运行 WebAssembly 应用程序&lt;/li&gt;
+&lt;li&gt;Docker Desktop + Wasm（在撰写本文时，可在 &lt;a href=&#34;https://docs.docker.com/desktop/release-notes/#4150&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;版本 4.15&lt;/a&gt; 中稳定测试版中使用）以能够运行 Wasm 容器&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;我们还利用了&lt;a href=&#34;https://github.com/vmware-labs/webassembly-language-runtimes&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;“Wasm 语言运行时”&lt;/a&gt;存储库，该存储库提供了将 PHP 解释器构建为 WebAssembly 应用程序的方法。&lt;/p&gt;
+&lt;p&gt;您可以通过以下方式开始检查演示分支：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;git clone --depth&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;1&lt;/span&gt; -b php-wasmedge-demo &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   &amp;lt;https://github.com/vmware-labs/webassembly-language-runtimes.git&amp;gt; wlr-demo
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;cd&lt;/span&gt; wlr-demo
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;构建一个-wasm-容器&#34;&gt;构建一个 Wasm 容器&lt;/h2&gt;
+&lt;p&gt;首先，我们将展示如何构建一个类似于 PHP 解释器的基于 C 的应用程序。&lt;/p&gt;
+&lt;p&gt;构建过程使用 WASI-SDK 工具集。它包括一个可以构建为 wasm32-wasi 目标的 clang 编译器，以及实现在 WASI 上的基本 POSIX 系统调用接口的 wasi-libc。使用 WASI SDK，我们可以从 PHP 的 C 代码库构建 Wasm 模块。然后，我们只需要一个基于 scratch 的非常简单的 Dockerfile 就可以制作一个 OCI 镜像，该镜像可以使用 Docker+Wasm 运行。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/docker-without-containers/6_hu09c3c81615d15c15b2c4990eab505366_7474_a770315ff19ee5fff595df258c944f44.webp 400w,
+               /blog/docker-without-containers/6_hu09c3c81615d15c15b2c4990eab505366_7474_31643b73bf31a881706d6cab275b27f8.webp 760w,
+               /blog/docker-without-containers/6_hu09c3c81615d15c15b2c4990eab505366_7474_1200x1200_fit_q75_h2_lanczos_2.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/docker-without-containers/6_hu09c3c81615d15c15b2c4990eab505366_7474_a770315ff19ee5fff595df258c944f44.webp&#34;
+               width=&#34;757&#34;
+               height=&#34;212&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;构建-wasm-二进制文件&#34;&gt;构建 WASM 二进制文件&lt;/h3&gt;
+&lt;p&gt;假设你在 &lt;code&gt;wlr-demo&lt;/code&gt; 文件夹中，你可以运行以下命令来构建 Wasm 二进制文件。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;export&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;WASI_SDK_ROOT&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;/opt/wasi-sdk/
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;export&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;WASMLABS_RUNTIME&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;wasmedge
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;./wl-make.sh php/php-7.4.32/ &lt;span class=&#34;o&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; tree build-output/php/php-7.4.32/bin/
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;... &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt; a few minutes and hundreds of build log lines&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;build-output/php/php-7.4.32/bin/
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;├── php-cgi-wasmedge
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;└── php-wasmedge
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;PHP 是使用 &lt;em&gt;autoconf&lt;/em&gt; 和 &lt;em&gt;make&lt;/em&gt; 构建的。因此，如果你查看 &lt;code&gt;scripts/wl-build.sh&lt;/code&gt; 脚本，你会注意到我们设置了所有相关变量，如 &lt;code&gt;CC&lt;/code&gt;、&lt;code&gt;LD&lt;/code&gt;、&lt;code&gt;CXX&lt;/code&gt; 等，以使用来自 WASI_SDK 的编译器。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;export&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;WASI_SYSROOT&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;WASI_SDK_ROOT&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;/share/wasi-sysroot&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;export&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;CC&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;WASI_SDK_ROOT&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;/bin/clang
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;export&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;LD&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;WASI_SDK_ROOT&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;/bin/wasm-ld
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;export&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;CXX&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;WASI_SDK_ROOT&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;/bin/clang++
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;export&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;NM&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;WASI_SDK_ROOT&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;/bin/llvm-nm
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;export&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;AR&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;WASI_SDK_ROOT&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;/bin/llvm-ar
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;export&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;RANLIB&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;WASI_SDK_ROOT&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;/bin/llvm-ranlib
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;然后，进一步研究 &lt;code&gt;php/php-7.4.32/wl-build.sh&lt;/code&gt;，你可以看到我们像往常一样使用 &lt;em&gt;autoconf&lt;/em&gt; 构建过程。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;./configure --host&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;wasm32-wasi &lt;span class=&#34;nv&#34;&gt;host_alias&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;wasm32-musl-wasi &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   --target&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;wasm32-wasi &lt;span class=&#34;nv&#34;&gt;target_alias&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;wasm32-musl-wasi &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   &lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;PHP_CONFIGURE&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;||&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;exit&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;...
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;make -j &lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;MAKE_TARGETS&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;||&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;exit&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;WASI 还在不断发展，许多 POSIX 调用仍然无法在其上实现。因此，为了构建 PHP，我们不得不在原始代码库的基础上应用几个补丁。&lt;/p&gt;
+&lt;p&gt;我们在上面看到了输出二进制文件到 &lt;code&gt;build-output/php/php-7.4.32&lt;/code&gt;。在接下来的例子中，我们将使用专门为 WasmEdge 构建的 &lt;code&gt;php-wasmedge&lt;/code&gt; 二进制文件，因为它提供了服务器端套接字支持，这还不是 WASI 的一部分。&lt;/p&gt;
+&lt;h3 id=&#34;优化二进制文件&#34;&gt;优化二进制文件&lt;/h3&gt;
+&lt;p&gt;Wasm 是一种虚拟指令集，因此任何运行时的默认行为都是实时解释这些指令。当然，在某些情况下这可能会使事情变慢。因此，为了在 WasmEdge 中获得最佳性能，您可以创建一个 AOT（ahead-of-time）优化二进制文件，该文件在当前机器上本地运行，但仍可以在其他机器上解释。&lt;/p&gt;
+&lt;p&gt;要创建该优化二进制文件，请运行以下命令：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;wasmedgec --enable-all --optimize &lt;span class=&#34;m&#34;&gt;3&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   build-output/php/php-7.4.32/bin/php-wasmedge &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   build-output/php/php-7.4.32/bin/php-wasmedge-aot
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;我们将在以下示例中使用此 &lt;code&gt;build-output/php/php-7.4.32/bin/php-wasmedge-aot&lt;/code&gt; 二进制文件。要了解有关 WasmEdge AOT 优化二进制文件的更多信息，请查看 &lt;a href=&#34;https://wasmlabs.dev/articles/docker-without-containers/build-output/php/php-7.4.32/bin/php-wasmedge-aot&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;此处&lt;/a&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;构建-oci-镜像&#34;&gt;构建 OCI 镜像&lt;/h3&gt;
+&lt;p&gt;现在我们有了二进制文件，我们可以将其包装在 OCI 镜像中。&lt;/p&gt;
+&lt;p&gt;让我们来看看 &lt;code&gt;images/php/Dockerfile.cli&lt;/code&gt;。我们只需要复制 Wasm 二进制文件并将其设置为 &lt;code&gt;ENTRYPOINT&lt;/code&gt; 就可以了。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-dockerfile&#34; data-lang=&#34;dockerfile&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;k&#34;&gt;FROM&lt;/span&gt;&lt;span class=&#34;s&#34;&gt; scratch&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;ARG&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;PHP_TAG&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;php-7.4.32&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;ARG&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;PHP_BINARY&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;php
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;k&#34;&gt;COPY&lt;/span&gt; build-output/php/&lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;PHP_TAG&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;/bin/&lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;PHP_BINARY&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt; /php.wasm&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;ENTRYPOINT&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;php.wasm&amp;#34;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;我们还可以向镜像添加更多内容，当 Wasm 二进制文件在 Docker 中运行时，这些内容将可访问。例如，在 &lt;code&gt;images/php/Dockerfile.server&lt;/code&gt; 中，我们还添加了一些 docroot 内容，以便在容器启动时由 &lt;code&gt;php.wasm&lt;/code&gt; 服务。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-dockerfile&#34; data-lang=&#34;dockerfile&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;k&#34;&gt;FROM&lt;/span&gt;&lt;span class=&#34;s&#34;&gt; scratch&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;ARG&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;PHP_TAG&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;php-7.4.32&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;ARG&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;PHP_BINARY&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;php
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;k&#34;&gt;COPY&lt;/span&gt; build-output/php/&lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;PHP_TAG&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;/bin/&lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;PHP_BINARY&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt; /php.wasm&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;COPY&lt;/span&gt; images/php/docroot /docroot&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;ENTRYPOINT&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;php.wasm&amp;#34;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;-S&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;0.0.0.0:8080&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;-t&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;/docroot&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;基于上述文件，我们可以轻松地在本地构建我们的 &lt;code&gt;php-wasm&lt;/code&gt; 镜像。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker build --build-arg &lt;span class=&#34;nv&#34;&gt;PHP_BINARY&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;php-wasmedge-aot -t ghcr.io/vmware-labs/php-wasm:7.4.32-cli-aot -f images/php/Dockerfile.cli .
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker build --build-arg &lt;span class=&#34;nv&#34;&gt;PHP_BINARY&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;php-wasmedge-aot -t ghcr.io/vmware-labs/php-wasm:7.4.32-server-aot -f images/php/Dockerfile.server .
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;原生-vs-wasm&#34;&gt;原生 vs Wasm&lt;/h2&gt;
+&lt;p&gt;现在让我们将原生 PHP 二进制文件与 Wasm 二进制文件进行比较。在本地和 Docker 容器中都使用相同的 &lt;code&gt;index.php&lt;/code&gt; 文件运行它，并比较我们运行它时得到的结果：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;php&lt;/code&gt;,&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;php-wasmedge-aot&lt;/code&gt;,&lt;/li&gt;
+&lt;li&gt;传统容器中的 &lt;code&gt;php&lt;/code&gt;,&lt;/li&gt;
+&lt;li&gt;Wasm 容器中的 &lt;code&gt;php-wasmedge-aot&lt;/code&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/docker-without-containers/7_huf174193c110986bd0ba7a4ddc91dc46e_15602_0537e3890ca0221fc322322dcfdb21fb.webp 400w,
+               /blog/docker-without-containers/7_huf174193c110986bd0ba7a4ddc91dc46e_15602_ee61058e8d23d35fa7aa788a8b3d3bc4.webp 760w,
+               /blog/docker-without-containers/7_huf174193c110986bd0ba7a4ddc91dc46e_15602_1200x1200_fit_q75_h2_lanczos_2.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/docker-without-containers/7_huf174193c110986bd0ba7a4ddc91dc46e_15602_0537e3890ca0221fc322322dcfdb21fb.webp&#34;
+               width=&#34;757&#34;
+               height=&#34;326&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;在以下所有示例中，我们都使用相同的 &lt;code&gt;images/php/docroot/index.php&lt;/code&gt; 文件，因此让我们来看看。简而言之，此脚本将：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;使用 &lt;code&gt;phpversion&lt;/code&gt; 和 &lt;code&gt;php_uname&lt;/code&gt; 显示解释器版本和正在运行的平台&lt;/li&gt;
+&lt;li&gt;打印脚本可以访问的所有环境变量的名称&lt;/li&gt;
+&lt;li&gt;使用当前时间和日期打印一个 hello 消息&lt;/li&gt;
+&lt;li&gt;列出根目录 &lt;code&gt;/&lt;/code&gt; 的内容&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-html&#34; data-lang=&#34;html&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;html&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;body&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;h1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;Hello from PHP &lt;span class=&#34;cp&#34;&gt;&amp;lt;?php echo phpversion() ?&amp;gt;&lt;/span&gt; running on &amp;#34;&lt;span class=&#34;cp&#34;&gt;&amp;lt;?php echo php_uname()?&amp;gt;&lt;/span&gt;&amp;#34;&lt;span class=&#34;p&#34;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;h1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;h2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;List env variable names&lt;span class=&#34;p&#34;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;h2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;&amp;lt;?php
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;$php_env_vars_count = count(getenv());
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;echo &amp;#34;Running with $php_env_vars_count environment variables:\\n&amp;#34;;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;foreach (getenv() as $key =&amp;gt; $value) {
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;    echo  $key . &amp;#34; &amp;#34;;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;echo &amp;#34;\\n&amp;#34;;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;?&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;h2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;Hello&lt;span class=&#34;p&#34;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;h2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;&amp;lt;?php
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;$date = getdate();
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;$message = &amp;#34;Today, &amp;#34; . $date[&amp;#39;weekday&amp;#39;] . &amp;#34;, &amp;#34; . $date[&amp;#39;year&amp;#39;] . &amp;#34;-&amp;#34; . $date[&amp;#39;mon&amp;#39;] . &amp;#34;-&amp;#34; . $date[&amp;#39;mday&amp;#39;];
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;$message .= &amp;#34;, at &amp;#34; . $date[&amp;#39;hours&amp;#39;] . &amp;#34;:&amp;#34; . $date[&amp;#39;minutes&amp;#39;] . &amp;#34;:&amp;#34; . $date[&amp;#39;seconds&amp;#39;];
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;$message .= &amp;#34; we greet you with this message!\\n&amp;#34;;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;echo $message;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;?&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;h2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;Contents of &amp;#39;/&amp;#39;&lt;span class=&#34;p&#34;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;h2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;&amp;lt;?php
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;foreach (array_diff(scandir(&amp;#39;/&amp;#39;), array(&amp;#39;.&amp;#39;, &amp;#39;..&amp;#39;)) as $key =&amp;gt; $value) {
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;    echo  $value . &amp;#34; &amp;#34;;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;echo &amp;#34;\\n&amp;#34;;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;?&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;body&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;html&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;原生运行-indexphp-的-php&#34;&gt;原生运行 index.php 的 PHP&lt;/h3&gt;
+&lt;p&gt;当我们使用原生的 &lt;code&gt;php&lt;/code&gt; 二进制文件时，我们会看到&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;基于 Linux 的平台&lt;/li&gt;
+&lt;li&gt;脚本可以访问的 58 个环境变量列表（如果需要的话）&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;/&lt;/code&gt; 中所有文件和文件夹的列表，这些都是脚本可以访问的&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ php -f images/php/docroot/index.php
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;html&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;body&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h1&amp;gt;Hello from PHP 7.4.3 running on &lt;span class=&#34;s2&#34;&gt;&amp;#34;Linux alexandrov-z01 5.15.79.1-microsoft-standard-WSL2 #1 SMP Wed Nov 23 01:01:46 UTC 2022 x86_64&amp;#34;&lt;/span&gt;&amp;lt;/h1&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h2&amp;gt;List env variable names&amp;lt;/h2&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Running with &lt;span class=&#34;m&#34;&gt;58&lt;/span&gt; environment variables:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;SHELL NVM_INC WSL2_GUI_APPS_ENABLED rvm_prefix WSL_DISTRO_NAME TMUX rvm_stored_umask TMUX_PLUGIN_MANAGER_PATH MY_RUBY_HOME NAME RUBY_VERSION PWD NIX_PROFILES LOGNAME rvm_version rvm_user_install_flag MOTD_SHOWN HOME LANG WSL_INTEROP LS_COLORS WASMTIME_HOME WAYLAND_DISPLAY NIX_SSL_CERT_FILE PROMPT_COMMAND NVM_DIR rvm_bin_path GEM_PATH GEM_HOME LESSCLOSE TERM CPLUS_INCLUDE_PATH LESSOPEN USER TMUX_PANE LIBRARY_PATH rvm_loaded_flag DISPLAY SHLVL NVM_CD_FLAGS LD_LIBRARY_PATH XDG_RUNTIME_DIR PS1 WSLENV XDG_DATA_DIRS PATH DBUS_SESSION_BUS_ADDRESS C_INCLUDE_PATH NVM_BIN HOSTTYPE WASMER_CACHE_DIR IRBRC PULSE_SERVER rvm_path WASMER_DIR OLDPWD BASH_FUNC_cr-open%% _
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h2&amp;gt;Hello&amp;lt;/h2&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Today, Wednesday, 2022-12-14, at 12:0:36 we greet you with this message!
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h2&amp;gt;Contents of &lt;span class=&#34;s1&#34;&gt;&amp;#39;/&amp;#39;&lt;/span&gt;&amp;lt;/h2&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;apps bin boot dev docroot etc home init lib lib32 lib64 libx32 lost+found media mnt nix opt path proc root run sbin snap srv sys tmp usr var wsl.localhost
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;/body&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;/html&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;php-aot-wasm-运行-indexphp&#34;&gt;php-aot-wasm 运行 index.php&lt;/h3&gt;
+&lt;p&gt;当我们使用&lt;code&gt;php-aot-wasm&lt;/code&gt;与Wasmedge结合使用时，我们发现&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;wasi/wasm32平台&lt;/li&gt;
+&lt;li&gt;没有环境变量，因为没有将任何环境变量显式暴露给 Wasm 应用程序&lt;/li&gt;
+&lt;li&gt;Wasm 应用程序没有被明确授权访问&lt;code&gt;/&lt;/code&gt;，因此尝试列出其内容时会出现错误&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;当然，要使&lt;code&gt;php-wasmedge-aot&lt;/code&gt;可以访问读取&lt;code&gt;index.php&lt;/code&gt;文件，我们必须明确说明我们想要预先打开&lt;code&gt;images/php/docroot&lt;/code&gt;以便WasmEdge可以访问它作为Wasm应用程序上下文中的&lt;code&gt;/docroot&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;这很容易显示了Wasm除了可移植性之外的最大优点之一。我们获得了更好的安全性，因为除非明确说明，否则没有任何内容是可访问的。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ wasmedge --dir /docroot:&lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;pwd&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;/images/php/docroot &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   build-output/php/php-7.4.32/bin/php-wasmedge-aot -f /docroot/index.php
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;html&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;body&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h1&amp;gt;Hello from PHP 7.4.32 running on &lt;span class=&#34;s2&#34;&gt;&amp;#34;wasi (none) 0.0.0 0.0.0 wasm32&amp;#34;&lt;/span&gt;&amp;lt;/h1&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h2&amp;gt;List env variable names&amp;lt;/h2&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Running with &lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; environment variables:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h2&amp;gt;Hello&amp;lt;/h2&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Today, Wednesday, 2022-12-14, at 10:8:46 we greet you with this message!
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h2&amp;gt;Contents of &lt;span class=&#34;s1&#34;&gt;&amp;#39;/&amp;#39;&lt;/span&gt;&amp;lt;/h2&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Warning: scandir&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;/&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;: failed to open dir: Capabilities insufficient in /docroot/index.php on line &lt;span class=&#34;m&#34;&gt;27&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Warning: scandir&lt;span class=&#34;o&#34;&gt;()&lt;/span&gt;: &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;errno 76&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;: Capabilities insufficient in /docroot/index.php on line &lt;span class=&#34;m&#34;&gt;27&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Warning: array_diff&lt;span class=&#34;o&#34;&gt;()&lt;/span&gt;: Expected parameter &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt; to be an array, bool given in /docroot/index.php on line &lt;span class=&#34;m&#34;&gt;27&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Warning: Invalid argument supplied &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; foreach&lt;span class=&#34;o&#34;&gt;()&lt;/span&gt; in /docroot/index.php on line &lt;span class=&#34;m&#34;&gt;27&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;/body&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;/html&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;容器中运行-indexphp-的-php&#34;&gt;容器中运行 index.php 的 PHP&lt;/h3&gt;
+&lt;p&gt;当我们使用传统容器中的“php”时，我们会看到&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;基于Linux的平台&lt;/li&gt;
+&lt;li&gt;脚本具有访问权限的14个环境变量列表&lt;/li&gt;
+&lt;li&gt;带有当前时间和日期的问候消息&lt;/li&gt;
+&lt;li&gt;根文件夹&lt;code&gt;/&lt;/code&gt;的内容列表&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;与在主机上使用“php”的情况相比，这已经有所改善。由于环境变量和&lt;code&gt;/&lt;/code&gt;的内容是“虚拟”的，因此仅存在于容器内。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker run --rm &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   -v &lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;pwd&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;/images/php/docroot:/docroot &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   php:7.4.32-cli &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   php -f /docroot/index.php
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;html&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;body&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h1&amp;gt;Hello from PHP 7.4.32 running on &lt;span class=&#34;s2&#34;&gt;&amp;#34;Linux 227b2bc2f611 5.15.79.1-microsoft-standard-WSL2 #1 SMP Wed Nov 23 01:01:46 UTC 2022 x86_64&amp;#34;&lt;/span&gt;&amp;lt;/h1&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h2&amp;gt;List env variable names&amp;lt;/h2&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Running with &lt;span class=&#34;m&#34;&gt;14&lt;/span&gt; environment variables:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;HOSTNAME PHP_INI_DIR HOME PHP_LDFLAGS PHP_CFLAGS PHP_VERSION GPG_KEYS PHP_CPPFLAGS PHP_ASC_URL PHP_URL PATH PHPIZE_DEPS PWD PHP_SHA256
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h2&amp;gt;Hello&amp;lt;/h2&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Today, Wednesday, 2022-12-14, at 10:15:35 we greet you with this message!
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h2&amp;gt;Contents of &lt;span class=&#34;s1&#34;&gt;&amp;#39;/&amp;#39;&lt;/span&gt;&amp;lt;/h2&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;bin boot dev docroot etc home lib lib64 media mnt opt proc root run sbin srv sys tmp usr var
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;/body&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;/html&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;容器中运行-indexphp-的-php-aot-wasm&#34;&gt;容器中运行 index.php 的 php-aot-wasm&lt;/h3&gt;
+&lt;p&gt;当我们使用&lt;code&gt;php-aot-wasm&lt;/code&gt;与Wasmedge结合使用时，我们发现&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;wasi / wasm32平台&lt;/li&gt;
+&lt;li&gt;只有2个基础架构环境变量，使用运行在containerd中的WasmEdge shim预设&lt;/li&gt;
+&lt;li&gt;显示了容器中&lt;code&gt;/&lt;/code&gt;中的所有文件和文件夹的列表，这是Wasm应用程序明确预先打开以便访问的（WasmEdge shim中的逻辑的一部分）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;注意：如果您更加细心，您将会看到为了从此镜像运行容器，我们必须：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;通过&lt;code&gt;runtime=io.containerd.wasmedge.v1&lt;/code&gt;明确地指定运行时&lt;/li&gt;
+&lt;li&gt;直接传递命令行参数到&lt;code&gt;php.wasm&lt;/code&gt;，而不包括二进制文件本身。向上滚动并查看传统PHP容器，包括&lt;code&gt;php&lt;/code&gt;二进制文件（并不是必要的）。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;最后，即使是在Docker中，Wasm也加强了运行index.php的安全性，因为暴露给它的东西要少得多。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker run --rm &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   --runtime&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;io.containerd.wasmedge.v1 &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   -v &lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;pwd&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;/images/php/docroot:/docroot &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   ghcr.io/vmware-labs/php-wasm:7.4.32-cli-aot &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   -f /docroot/index.php
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;html&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;body&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h1&amp;gt;Hello from PHP 7.4.32 running on &lt;span class=&#34;s2&#34;&gt;&amp;#34;wasi (none) 0.0.0 0.0.0 wasm32&amp;#34;&lt;/span&gt;&amp;lt;/h1&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h2&amp;gt;List env variable names&amp;lt;/h2&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Running with &lt;span class=&#34;m&#34;&gt;2&lt;/span&gt; environment variables:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;PATH HOSTNAME
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h2&amp;gt;Hello&amp;lt;/h2&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Today, Wednesday, 2022-12-14, at 11:33:10 we greet you with this message!
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;h2&amp;gt;Contents of &lt;span class=&#34;s1&#34;&gt;&amp;#39;/&amp;#39;&lt;/span&gt;&amp;lt;/h2&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docroot etc php.wasm
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;/body&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt;/html&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;传统容器与wasm容器&#34;&gt;传统容器与wasm容器&lt;/h2&gt;
+&lt;p&gt;我们成功地构建和运行了一个Wasm二进制文件，并将其作为容器运行。我们看到了Wasm容器和传统容器之间的输出差异以及Wasm带来的高级“沙盒”性能。让我们看看我们可以轻松看到的两种容器类型之间的其他差异。&lt;/p&gt;
+&lt;p&gt;首先，我们将运行两个守护程序容器，并查看如何解释有关它们的一些统计信息。然后，我们将检查容器镜像中的差异。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/docker-without-containers/8_hua853562afea5ac88706362ca3bdf32f6_18506_f23dfaa3d922c2d1dab5e70606f287d5.webp 400w,
+               /blog/docker-without-containers/8_hua853562afea5ac88706362ca3bdf32f6_18506_98aca8d6a0624071b11809e6800b3ca9.webp 760w,
+               /blog/docker-without-containers/8_hua853562afea5ac88706362ca3bdf32f6_18506_1200x1200_fit_q75_h2_lanczos_2.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/docker-without-containers/8_hua853562afea5ac88706362ca3bdf32f6_18506_f23dfaa3d922c2d1dab5e70606f287d5.webp&#34;
+               width=&#34;757&#34;
+               height=&#34;465&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;容器统计&#34;&gt;容器统计&lt;/h3&gt;
+&lt;p&gt;我们将运行两个守护程序容器-一个来自传统的&lt;code&gt;php&lt;/code&gt;镜像，另一个来自&lt;code&gt;php-wasm&lt;/code&gt;镜像。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker run --rm -d &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   -p 8083:8080 -v &lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;pwd&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;/images/php/docroot:/docroot &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   php:7.4.32-cli &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   -S 0.0.0.0:8080 -t /docroot
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker run --rm -d &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   --runtime&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;io.containerd.wasmedge.v1 &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   -p 8082:8080 -v &lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;pwd&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;/images/php/docroot:/docroot &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   ghcr.io/vmware-labs/php-wasm:7.4.32-cli-aot
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   -S 0.0.0.0:8080 -t /docroot
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;但是，如果我们查看&lt;code&gt;docker stats&lt;/code&gt;，我们将只看到传统容器的统计信息。由于Docker+Wasm是beta功能，这可能会发生变化。因此，如果想要查看正在发生的情况，可以监视控制组。每个传统容器都有自己的控制组，如&lt;code&gt;docker/ee44...&lt;/code&gt;所示。另一方面，Wasm容器包含在&lt;code&gt;podruntime/docker&lt;/code&gt;控制组中，您可以间接观察它们的CPU或内存消耗。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ systemd-cgtop -kP --depth&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;10&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Control Group           Tasks    %CPU     Memory
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;podruntime              &lt;span class=&#34;m&#34;&gt;145&lt;/span&gt;      0.1      636.3M
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;podruntime/docker       &lt;span class=&#34;m&#34;&gt;145&lt;/span&gt;      0.1      636.3M
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker                  &lt;span class=&#34;m&#34;&gt;2&lt;/span&gt;        0.0      39.7M
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker/ee444b...        &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;        0.0      6.7M
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;镜像大小&#34;&gt;镜像大小&lt;/h3&gt;
+&lt;p&gt;首先，探索镜像时，我们会发现Wasm容器镜像比传统容器镜像小得多。即使是“php”容器的&lt;code&gt;alpine&lt;/code&gt;版本也比Wasm容器大。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ docker images
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;REPOSITORY                     TAG                 IMAGE ID       CREATED          SIZE
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;php                            7.4.32-cli          680c4ba36f1b   &lt;span class=&#34;m&#34;&gt;2&lt;/span&gt; hours ago      166MB
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;php                            7.4.32-cli-alpine   a785f7973660   &lt;span class=&#34;m&#34;&gt;2&lt;/span&gt; minutes ago    30.1MB
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;ghcr.io/vmware-labs/php-wasm   7.4.32-cli-aot      63460740f6d5   &lt;span class=&#34;m&#34;&gt;44&lt;/span&gt; minutes ago   5.35MB
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;这是因为使用 Wasm 时，我们只需要将可执行二进制文件放入容器中，而传统容器还需要一些来自操作系统的基本库和文件。&lt;/p&gt;
+&lt;p&gt;这种大小上的差异对第一次拉取镜像的速度以及镜像在本地仓库中所占用的空间都有很大的益处。&lt;/p&gt;
+&lt;h2 id=&#34;wasm-的可移植性&#34;&gt;Wasm 的可移植性&lt;/h2&gt;
+&lt;p&gt;Wasm 最好的一点就是可移植性。当我们想要一个可移植的应用程序时，Docker 已经成为了传统容器的首选。然而，除了镜像大小之外，传统容器还绑定在它们运行的平台的架构上。我们中的许多人都经历过为支持不同架构构建软件的版本并将其打包到每个架构的不同镜像中的起伏。&lt;/p&gt;
+&lt;p&gt;WebAssembly 带来了真正的可移植性。您可以编译一次二进制文件并在任何地方运行它。为了证明这种可移植性，我们准备了几个示例，演示了如何通过我们为 WebAssembly 构建的 PHP 解释器运行 WordPress。&lt;/p&gt;
+&lt;p&gt;当它以独立的 Wasm 应用程序运行时，PHP 将为 WordPress 提供服务。同样地，它也可以在 Docker+Wasm 容器中运行。它还可以在嵌入 Wasm 运行时的任何应用程序中运行。在我们的示例中，这是 apache httpd，它通过 mod_wasm 可以将 Wasm 应用程序用作内容处理程序。最后，PHP.wasm 也可以在浏览器中运行。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/docker-without-containers/9_huccfef052a73a2282fb41a9c8da0ded43_16880_012759d24c78f85dcb3ca47051f55c95.webp 400w,
+               /blog/docker-without-containers/9_huccfef052a73a2282fb41a9c8da0ded43_16880_1118ab866415ad1a44cd869277461e8c.webp 760w,
+               /blog/docker-without-containers/9_huccfef052a73a2282fb41a9c8da0ded43_16880_1200x1200_fit_q75_h2_lanczos_2.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/docker-without-containers/9_huccfef052a73a2282fb41a9c8da0ded43_16880_012759d24c78f85dcb3ca47051f55c95.webp&#34;
+               width=&#34;757&#34;
+               height=&#34;308&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;通过-wasmedge-提供-wordpress&#34;&gt;通过 WasmEdge 提供 WordPress&lt;/h3&gt;
+&lt;p&gt;我们为此演示准备了一个紧凑的 WordPress+Sqlite 示例。由于它是 &lt;code&gt;ghcr.io/vmware-labs/php-wasm:7.4.32-server-wordpress&lt;/code&gt; 容器映像的一部分，因此让我们首先将其下载到本地。&lt;/p&gt;
+&lt;p&gt;这条命令只会创建一个临时容器（拉取镜像），将 WordPress 文件复制到 &lt;code&gt;/tmp/wp/docroot&lt;/code&gt; 中，然后删除容器。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;container_id&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;docker create ghcr.io/vmware-labs/php-wasm:7.4.32-server-wordpress&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   mkdir /tmp/wp &lt;span class=&#34;o&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   docker cp &lt;span class=&#34;nv&#34;&gt;$container_id&lt;/span&gt;:/docroot /tmp/wp/ &lt;span class=&#34;o&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   docker rm &lt;span class=&#34;nv&#34;&gt;$container_id&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;现在我们有了 WordPress，让我们使用以下命令提供服务：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;wasmedge --dir /docroot:/tmp/wp/docroot &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   build-output/php/php-7.4.32/bin/php-wasmedge-aot &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   -S 0.0.0.0:8085 -t /docroot
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;您可以转到 &lt;a href=&#34;http://localhost:8085/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;http://localhost:8085&lt;/a&gt; 并享受由 PHP Wasm 解释器提供的 WordPress。&lt;/p&gt;
+&lt;h3 id=&#34;通过-dockerwasm-提供-wordpress&#34;&gt;通过 Docker+Wasm 提供 WordPress&lt;/h3&gt;
+&lt;p&gt;当然，使用 Docker，事情要简单得多。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker run --rm --runtime&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;io.containerd.wasmedge.v1 &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   -p 8086:8080 -v /tmp/wp/docroot/:/docroot/ &lt;span class=&#34;se&#34;&gt;\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   ghcr.io/vmware-labs/php-wasm:7.4.32-cli-aot
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   -S 0.0.0.0:8080 -t /docroot
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;您可以转到 &lt;a href=&#34;http://localhost:8086/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;http://localhost:8086&lt;/a&gt; 并享受由 PHP Wasm 解释器提供的 WordPress，这一次它在 Docker 容器中运行。&lt;/p&gt;
+&lt;h3 id=&#34;通过-apache-httpd-中的-mod_wasm-提供-wordpress&#34;&gt;通过 Apache HTTPD 中的 mod_wasm 提供 WordPress&lt;/h3&gt;
+&lt;p&gt;Apache HTTPD 是最广泛使用的 HTTP 服务器之一。现在，通过 mod_wasm，它也可以运行 WebAssembly 应用程序。为了避免在本地安装和配置它，我们准备了一个容器，其中包含 Apache HTTPD、mod_wasm 和 WordPress。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker run -p 8087:8080 projects.registry.vmware.com/wasmlabs/containers/php-mod-wasm:wordpress
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;您可以转到 &lt;a href=&#34;http://localhost:8087/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;http://localhost:8087&lt;/a&gt; 并享受由 Apache HTTPD 中加载的 mod_wasm 提供的 PHP Wasm 解释器提供的 WordPress。&lt;/p&gt;
+&lt;h3 id=&#34;直接在浏览器中提供-wordpress&#34;&gt;直接在浏览器中提供 WordPress&lt;/h3&gt;
+&lt;p&gt;只需转到 [&lt;a href=&#34;https://wordpress.wasmlabs.dev/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://wordpress.wasmlabs.dev&lt;/a&gt;] 查看示例。您将看到一个框架，其中 PHP Wasm 解释器正在现场渲染 WordPress。&lt;/p&gt;
+&lt;h2 id=&#34;结论&#34;&gt;结论&lt;/h2&gt;
+&lt;p&gt;感谢您阅读本文。这是很多内容要消化，但我们希望它有助于了解 WebAssembly 的功能以及它如何与您现有的代码库和工具（包括 Docker）一起使用。期待看到您使用 Wasm 构建的内容！&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
