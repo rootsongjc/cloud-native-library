@@ -339,7 +339,7 @@
         content="2022-06-02T12:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2023-04-27T08:39:27&#43;08:00">
+    <meta property="article:modified_time" content="2023-05-04T23:05:41&#43;08:00">
   
 
   
@@ -1044,7 +1044,7 @@
 <p>如果内核和用户空间的代码都要访问同一个映射，它们需要对存储在该映射中的数据结构体有一个共同的理解。这可以通过在用户空间和内核代码中加入定义这些数据结构体的头文件来实现，但是如果这些代码不是用相同的语言编写的，作者将需要仔细创建逐个字节兼容的结构体定义。</p>
 <p>我们已经讨论了 eBPF 工具的主要组成部分：在内核中运行的 eBPF 程序，加载和与这些程序交互的用户空间代码，以及允许程序共享数据的 map 。为了更具体化，让我们看一个例子。</p>
 <h2 id="opensnoop-示例">Opensnoop 示例</h2>
-<p>在 eBPF 程序的例子中，我选择了 <code>opennoop</code>，一个可以显示任何进程所打开的文件的工具。这个工具的原始版本是 Brendan Gregg 最初在 <a href="https://github.com/iovisor/bcc/blob/master/tools/opensnoop.py" target="_blank" rel="noopener">BCC 项目</a>中编写的许多 BPF 工具之一，你可以在 GitHub 上找到。它后来被重写为 <code>libbpf</code>（你将在下一章见到它），在这个例子中，我使用 <code>libbpf-tools</code> 目录下的较新版本。</p>
+<p>在 eBPF 程序的例子中，我选择了 <code>opesnnoop</code>，一个可以显示任何进程所打开的文件的工具。这个工具的原始版本是 Brendan Gregg 最初在 <a href="https://github.com/iovisor/bcc/blob/master/tools/opensnoop.py" target="_blank" rel="noopener">BCC 项目</a>中编写的许多 BPF 工具之一，你可以在 GitHub 上找到。它后来被重写为 <code>libbpf</code>（你将在下一章见到它），在这个例子中，我使用 <code>libbpf-tools</code> 目录下的较新版本。</p>
 <p>当你运行 <code>opensnoop</code> 时，你将看到的输出在很大程度上取决于当时在虚拟机上发生了什么，但它应该看起来像这样。</p>
 <pre tabindex="0"><code>PID    COMM	FD	ERR	PATH
 93965  cat	3	0	/etc/ld.so.cache
@@ -1099,7 +1099,7 @@
 </span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="n">tracepoint__syscalls__sys_enter_openat</span><span class="p">(</span><span class="k">struct</span>
 </span></span><span class="line"><span class="cl">    <span class="n">trace_event_raw_sys_enter</span><span class="o">*</span> <span class="n">ctx</span><span class="p">)</span>
 </span></span></code></pre></div><p>有两个不同的系统调用用于打开文件 <sup id="fnref:8"><a href="#fn:8" class="footnote-ref" role="doc-noteref">8</a></sup>：<code>openat()</code> 和
-<code>open()</code>。它们是相同的，除了 <code>openat()</code> 有一个额外的参数是目录文件描述符，而且要打开的文件的路径名是相对于该目录而言的。同样，除了处理参数上的差异，opennoop 中的两个函数也是相同的。</p>
+<code>open()</code>。它们是相同的，除了 <code>openat()</code> 有一个额外的参数是目录文件描述符，而且要打开的文件的路径名是相对于该目录而言的。同样，除了处理参数上的差异，opensnoop 中的两个函数也是相同的。</p>
 <p>正如你所看到的，它们都需要一个参数，即一个指向名为 <code>trace_event_raw_sys_enter</code> 结构体的指针。你可以在你运行的特定内核生成的 <code>vmlinux</code> 头文件中找到这个结构体的定义。编写 eBPF 程序之道包括找出每个程序接收的结构体作为其上下文，以及如何访问其中的信息。</p>
 <p>这两个函数使用一个 BPF 辅助函数来检索调用这个 syscall 的进程 ID：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">u64</span> <span class="n">id</span> <span class="o">=</span> <span class="n">bpf_get_current_pid_tgid</span><span class="p">();</span>
@@ -1150,8 +1150,8 @@
 <h3 id="opensnoop-用户空间代码">Opensnoop 用户空间代码</h3>
 <p>如前所述，与 eBPF 代码交互的用户空间代码几乎可以用任何编程语言编写。我们在本节讨论的例子是用 C 语言写的，但如果你有兴趣，你可以把它与用 Python 写的原始 BCC 版本相比较，你可以在 <a href="https://github.com/iovisor/bcc/blob/master/tools/opensnoop.py" target="_blank" rel="noopener">bcc/tools</a> 中找到。</p>
 <p>用户空间的代码在 <code>opensnoop.c</code> 文件中。文件的前半部分有 <code>#include</code> 指令（其中之一是自动生成的 <code>opensnoop.skel.h</code> 文件），各种定义，以及处理不同命令行选项的代码，我们在此不再赘述。我们还将略过 <code>print_event()</code> 等函数，该函数将一个事件的信息显示到屏幕上。从 eBPF 的角度来看，所有有趣的代码都在 <code>main()</code> 函数中。</p>
-<p>你会看到像 <code>opennoop_bpf__open()</code>、<code>open snoop_bpf__load()</code> 和 <code>opensnoop_bpf__attach()</code> 这样的函数。这些都是在由 <code>bpftool gen skeleton</code> <sup id="fnref:10"><a href="#fn:10" class="footnote-ref" role="doc-noteref">10</a></sup>  自动生成的代码中定义的。这个自动生成的代码处理所有在 eBPF 对象文件中定义的单个 eBPF 程序、map 和附着点。</p>
-<p>opennoop 启动和运行后，它的工作就是监听 <code>events</code> 的 perf
+<p>你会看到像 <code>opensnoop_bpf__open()</code>、<code>opensnoop_bpf__load()</code> 和 <code>opensnoop_bpf__attach()</code> 这样的函数。这些都是在由 <code>bpftool gen skeleton</code> <sup id="fnref:10"><a href="#fn:10" class="footnote-ref" role="doc-noteref">10</a></sup>  自动生成的代码中定义的。这个自动生成的代码处理所有在 eBPF 对象文件中定义的单个 eBPF 程序、map 和附着点。</p>
+<p>opensnoop 启动和运行后，它的工作就是监听 <code>events</code> 的 perf
 buffer，并将每个事件中包含的信息写到屏幕上。首先，它打开与 perf buffer 相关的文件描述符，并将 <code>handle_event()</code> 设置为新事件到来时要调用的函数：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">pb</span> <span class="o">=</span> <span class="n">perf_buffer__new</span><span class="p">(</span><span class="n">bpf_map__fd</span><span class="p">(</span><span class="n">obj</span><span class="o">-&gt;</span><span class="n">maps</span><span class="p">.</span><span class="n">events</span><span class="p">),</span>
 </span></span><span class="line"><span class="cl">	<span class="n">PERF_BUFFER_PAGES</span><span class="p">,</span> <span class="n">handle_event</span><span class="p">,</span> <span class="n">handle_lost_events</span><span class="p">,</span>
@@ -1238,7 +1238,7 @@ buffer，并将每个事件中包含的信息写到屏幕上。首先，它打�
           
 
         <div class="body-footer">
-          <p>最近更新于 2023-04-27</p>
+          <p>最近更新于 2023-05-04</p>
 
           
 
