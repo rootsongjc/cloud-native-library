@@ -73,7 +73,7 @@ map 是与 eBPF 程序一起定义的数据结构体。有各种不同类型的 
 
 ## Opensnoop 示例
 
-在 eBPF 程序的例子中，我选择了 `opennoop`，一个可以显示任何进程所打开的文件的工具。这个工具的原始版本是 Brendan Gregg 最初在 [BCC 项目](https://github.com/iovisor/bcc/blob/master/tools/opensnoop.py)中编写的许多 BPF 工具之一，你可以在 GitHub 上找到。它后来被重写为 `libbpf`（你将在下一章见到它），在这个例子中，我使用 `libbpf-tools` 目录下的较新版本。
+在 eBPF 程序的例子中，我选择了 `opesnnoop`，一个可以显示任何进程所打开的文件的工具。这个工具的原始版本是 Brendan Gregg 最初在 [BCC 项目](https://github.com/iovisor/bcc/blob/master/tools/opensnoop.py)中编写的许多 BPF 工具之一，你可以在 GitHub 上找到。它后来被重写为 `libbpf`（你将在下一章见到它），在这个例子中，我使用 `libbpf-tools` 目录下的较新版本。
 
 当你运行 `opensnoop` 时，你将看到的输出在很大程度上取决于当时在虚拟机上发生了什么，但它应该看起来像这样。
 
@@ -130,7 +130,7 @@ int tracepoint__syscalls__sys_enter_openat(struct
 ```
 
 有两个不同的系统调用用于打开文件 [^8]：`openat()` 和
-`open()`。它们是相同的，除了 `openat()` 有一个额外的参数是目录文件描述符，而且要打开的文件的路径名是相对于该目录而言的。同样，除了处理参数上的差异，opennoop 中的两个函数也是相同的。
+`open()`。它们是相同的，除了 `openat()` 有一个额外的参数是目录文件描述符，而且要打开的文件的路径名是相对于该目录而言的。同样，除了处理参数上的差异，opensnoop 中的两个函数也是相同的。
 
 正如你所看到的，它们都需要一个参数，即一个指向名为 `trace_event_raw_sys_enter` 结构体的指针。你可以在你运行的特定内核生成的 `vmlinux` 头文件中找到这个结构体的定义。编写 eBPF 程序之道包括找出每个程序接收的结构体作为其上下文，以及如何访问其中的信息。
 
@@ -246,9 +246,9 @@ $(Q)$(CC) $(CFLAGS) $^ $(LDFLAGS) -lelf -lz -o $@
 
 用户空间的代码在 `opensnoop.c` 文件中。文件的前半部分有 `#include` 指令（其中之一是自动生成的 `opensnoop.skel.h` 文件），各种定义，以及处理不同命令行选项的代码，我们在此不再赘述。我们还将略过 `print_event()` 等函数，该函数将一个事件的信息显示到屏幕上。从 eBPF 的角度来看，所有有趣的代码都在 `main()` 函数中。
 
-你会看到像 `opennoop_bpf__open()`、`open snoop_bpf__load()` 和 `opensnoop_bpf__attach()` 这样的函数。这些都是在由 `bpftool gen skeleton` [^10]  自动生成的代码中定义的。这个自动生成的代码处理所有在 eBPF 对象文件中定义的单个 eBPF 程序、map 和附着点。
+你会看到像 `opensnoop_bpf__open()`、`opensnoop_bpf__load()` 和 `opensnoop_bpf__attach()` 这样的函数。这些都是在由 `bpftool gen skeleton` [^10]  自动生成的代码中定义的。这个自动生成的代码处理所有在 eBPF 对象文件中定义的单个 eBPF 程序、map 和附着点。
 
-opennoop 启动和运行后，它的工作就是监听 `events` 的 perf
+opensnoop 启动和运行后，它的工作就是监听 `events` 的 perf
 buffer，并将每个事件中包含的信息写到屏幕上。首先，它打开与 perf buffer 相关的文件描述符，并将 `handle_event()` 设置为新事件到来时要调用的函数：
 
 ```c
