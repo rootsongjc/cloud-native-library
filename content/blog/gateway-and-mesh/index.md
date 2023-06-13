@@ -1,7 +1,7 @@
 ---
 title: "API 网关、Kubernetes 网关和 Service Mesh 综合指南"
 subtitle: ""
-summary: "本文介绍了将 DevOps 和 Kubernetes 视为图形的方法，以提高效率和弹性。通过将 Kubernetes 部署中的不同组件建模为图中的节点，组织可以更好地了解不同组件的交互方式以及一个区域的更改如何影响整个系统。这可以帮助组织采取更为主动、战略性的 DevOps 方法，而不仅仅是在问题出现时做出反应。"
+summary: "本文介绍了API网关、Kubernetes网关和服务网格的综合指南。API网关和Kubernetes网关解决了边缘问题和API抽象化，而服务网格解决了服务之间的通信挑战。文章还介绍了如何在不同的网关中配置金丝雀部署，并讨论了Kubernetes Gateway API的发展和服务网格接口（SMI）规范。最后，文章提供了一些关于何时使用哪种网关的建议。"
 authors: ["Navendu Pottekkat"]
 tags: ["Kubernetes","API 网关","网关","服务网格"]
 categories: ["网关"]
