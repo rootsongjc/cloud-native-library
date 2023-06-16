@@ -268,7 +268,7 @@ spec:
 
 该配置示意图如下所示。
 
-![RSP](../../images/kubefed-rsp.png "RSP")
+![RSP](../../images/kubefed-rsp.jpg "RSP")
 
 当该范例建立后，RSP Controller 会收到资源，并匹配对应 namespace/name 的 FederatedDeployment 与 FederatedReplicaSet 是否存在，若存在的话，会根据设定的策略计算出每个集群预期的副本数，之后覆写 Federated 资源中的 `spec.overrides` 内容以修改每个集群的副本数，最后再由 KubeFed Sync Controller 来同步至每个集群的 Deployment。以上面为例，结果会是 ap-northeast 集群会拥有 3 个 Pod，us-east 跟 us-west 则分别会有 6 个 Pod。
 

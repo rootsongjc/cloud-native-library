@@ -154,6 +154,6 @@ kubectl apply -n default -f <(istioctl kube-inject -f k8s-app-monitor-istio-all-
 
 访问 `http://zipkin.istio.jimmysong.io` 可以选择查看 `k8s-app-monitor-agent` 应用的追踪信息。
 
-![Zipkin页面](../../images/k8s-app-monitor-istio-zipkin.png "Zipkin页面")
+![Zipkin页面](../../images/k8s-app-monitor-istio-zipkin.jpg "Zipkin页面")
 
 至此从代码提交到上线到 Kubernetes 集群上并集成 Istio 服务网格的过程就全部完成了。
