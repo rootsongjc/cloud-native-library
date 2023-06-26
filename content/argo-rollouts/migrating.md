@@ -49,7 +49,7 @@ type: book
 
 🔔 注意：在迁移已经提供实时生产流量的 Deployment 时，应先在 Deployment 旁边运行 Rollout，然后再删除 Deployment 或缩小 Deployment。 不遵循此方法可能导致停机。这也允许在删除原始部署之前测试 Rollout。
 
-## 从 Rollout 引用 Deployment
+### 从 Rollout 引用 Deployment
 
 不要删除 Deployment，而是将其缩小为零，并从 Rollout 资源中引用它：
 
@@ -110,32 +110,32 @@ type: book
 
 创建 Rollout 后，它会与 Deployment Pod 并排启动所需数量的 Pod。Rollout 不会尝试管理现有的 Deployment Pod。这意味着你可以安全地将 Rollout 添加到生产环境中而不会中断任何操作，但是在迁移期间会运行两倍的 Pod。
 
-Argo-rollouts 控制器使用注释 `rollout.argoproj.io/workload-generation` 对 Rollout 对象的 spec 进行修补，该注释等于引用部署的生成。用户可以通过检查 Rollout 状态中的`workloadObservedGeneration`来检测 Rollout 是否与所需的部署生成匹配。
+Argo-rollouts 控制器使用注解 `rollout.argoproj.io/workload-generation` 对 Rollout 对象的 spec 进行修补，该注解等于引用部署的生成。用户可以通过检查 Rollout 状态中的`workloadObservedGeneration`来检测 Rollout 是否与所需的部署生成匹配。
 
 ### 迁移期间的流量管理
 
-Rollout 提供流量管理功能，可管理路由规则并将流量流向应用程序的不同版本。例如，蓝绿部署策略操纵 Kubernetes 服务选择器并仅将生产流量定向到“绿色”实例。
+Rollout 提供流量管理功能，可管理路由规则并将流量流向应用程序的不同版本。例如，[蓝绿部署策略](../rollout/deployment-strategies/bluegreen/)操纵 Kubernetes 服务选择器并仅将生产流量定向到“绿色”实例。
 
-如果你正在使用此功能，则 Rollout 将切换生产流量到其管理的 Pod。切换发生 仅在所需数量的 Pod 正在运行且健康时才会发生，因此在生产环境中是安全的。然而，如果你 想要更加小心，请考虑创建一个临时的 Service 或 Ingress 对象来验证 Rollout 行为。一旦完成测试，删除临时 Service / Ingress 并将 Rollout 切换到生产模式。
+如果你正在使用此功能，则 Rollout 将切换生产流量到其管理的 Pod。切换发生 仅在所需数量的 Pod 正在运行且健康时才会发生，因此在生产环境中是安全的。然而，如果你想要更加小心，请考虑创建一个临时的 Service 或 Ingress 对象来验证 Rollout 行为。一旦完成测试，删除临时 Service/Ingress 并将 Rollout 切换到生产模式。
 
-# 迁移到部署
+## 回滚到 Deployment
 
-如果用户想要回滚到从 Rollout 到部署类型，那么与 Migrating to Rollouts 中的情况相一致，有两种情况。
+如果用户想要从 Rollout 回滚到 Deployment 类型，那么与迁移到 Rollouts 中的情况相一致，有两种情况：
 
 - 将 Rollout 资源转换为 Deployment 资源。
 - 使用 `workloadRef` 字段从 Rollout 引用现有的 Deployment。
 
-## 将 Rollout 转换为 Deployment
+### 将 Rollout 转换为 Deployment
 
 将 Rollout 转换为 Deployment 时，需要更改三个字段：
 
-1. [将 apiVersion 从 argoproj.io/v1alpha1 更改为 apps/v1](http://xn--apiversionargoproj-o642ao74q.io/v1alpha1更改为apps/v1)
+1. 将 `apiVersion 从 argoproj.io/v1alpha1` 更改为 `apps/v1`
 2. 将 kind 从 Rollout 更改为 Deployment
 3. 在 `spec.strategy.canary` 或 `spec.strategy.blueGreen` 中删除 Rollout 策略
 
 🔔 注意：在迁移已经提供实时生产流量的 Rollout 时，应先在 Rollout 旁边运行 Deployment，然后再删除 Rollout 或缩小 Rollout。 不遵循此方法可能导致停机。这也允许在删除原始 Rollout 之前测试 Deployment。
 
-## 从 Rollout 引用 Deployment
+### 从 Rollout 引用 Deployment
 
 当 Rollout 引用部署时：
 
