@@ -339,7 +339,7 @@
         content="2023-06-21T16:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2023-06-26T14:43:45&#43;08:00">
+    <meta property="article:modified_time" content="2023-06-26T21:38:21&#43;08:00">
   
 
   
@@ -1578,170 +1578,155 @@
 </span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l">http://prometheus.example.com:9090</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">query</span><span class="p">:</span><span class="w"> </span><span class="l">...</span><span class="w">
 </span></span></span></code></pre></div><h2 id="clusteranalysistemplates">ClusterAnalysisTemplates</h2>
-<p>!!! important 从 v0.9.0 开始可用</p>
+<p>🔔 重要提示：从 v0.9.0 开始可用</p>
 <p>Rollout 可以引用一个名为 ClusterAnalysisTemplate 的集群作用域 AnalysisTemplate。当你希望在多个 Rollout 中共享 AnalysisTemplate 时，这可能非常有用。在不同的命名空间中，避免在每个命名空间中重复相同的模板。使用 <code>clusterScope: true</code> 字段引用 ClusterAnalysisTemplate 而不是 AnalysisTemplate。</p>
 <p>Rollout</p>
-<pre><code>```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Rollout
-metadata:
-  name: guestbook
-spec:
-...
-  strategy:
-    canary:
-      steps:
-      - setWeight: 20
-      - pause: {duration: 5m}
-      - analysis:
-          templates:
-          - templateName: success-rate
-            clusterScope: true
-          args:
-          - name: service-name
-            value: guestbook-svc.default.svc.cluster.local
-```
-</code></pre>
-<p>ClusterAnalysisTemplate</p>
-<pre><code>```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: ClusterAnalysisTemplate
-metadata:
-  name: success-rate
-spec:
-  args:
-  - name: service-name
-  - name: prometheus-port
-    value: 9090
-  metrics:
-  - name: success-rate
-    successCondition: result[0] &gt;= 0.95
-    provider:
-      prometheus:
-        address: &quot;http://prometheus.example.com:{{args.prometheus-port}}&quot;
-        query: |
-          sum(irate(
-            istio_requests_total{reporter=&quot;source&quot;,destination_service=~&quot;{{args.service-name}}&quot;,response_code!~&quot;5.*&quot;}[5m]
-          )) /
-          sum(irate(
-            istio_requests_total{reporter=&quot;source&quot;,destination_service=~&quot;{{args.service-name}}&quot;}[5m]
-          ))
-```
-</code></pre>
-<p>🔔 注意：结果的 <code>AnalysisRun</code> 仍将在 <code>Rollout</code> 的命名空间中运行</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">argoproj.io/v1alpha1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Rollout</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">guestbook</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">strategy</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">canary</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">steps</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">setWeight</span><span class="p">:</span><span class="w"> </span><span class="m">20</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">pause</span><span class="p">:</span><span class="w"> </span>{<span class="nt">duration</span><span class="p">:</span><span class="w"> </span><span class="l">5m}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">analysis</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">templates</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span>- <span class="nt">templateName</span><span class="p">:</span><span class="w"> </span><span class="l">success-rate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">clusterScope</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">args</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">service-name</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l">guestbook-svc.default.svc.cluster.local</span><span class="w">
+</span></span></span></code></pre></div><p>ClusterAnalysisTemplate</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">argoproj.io/v1alpha1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ClusterAnalysisTemplate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">success-rate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">args</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">service-name</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">prometheus-port</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="m">9090</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">metrics</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">success-rate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">successCondition</span><span class="p">:</span><span class="w"> </span><span class="l">result[0] &gt;= 0.95</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">prometheus</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;http://prometheus.example.com:{{args.prometheus-port}}&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">query</span><span class="p">:</span><span class="w"> </span><span class="p">|</span><span class="sd">
+</span></span></span><span class="line"><span class="cl"><span class="sd">          sum(irate(
+</span></span></span><span class="line"><span class="cl"><span class="sd">            istio_requests_total{reporter=&#34;source&#34;,destination_service=~&#34;{{args.service-name}}&#34;,response_code!~&#34;5.*&#34;}[5m]
+</span></span></span><span class="line"><span class="cl"><span class="sd">          )) /
+</span></span></span><span class="line"><span class="cl"><span class="sd">          sum(irate(
+</span></span></span><span class="line"><span class="cl"><span class="sd">            istio_requests_total{reporter=&#34;source&#34;,destination_service=~&#34;{{args.service-name}}&#34;}[5m]
+</span></span></span><span class="line"><span class="cl"><span class="sd">          ))</span><span class="w">          
+</span></span></span></code></pre></div><p>🔔 注意：结果的 <code>AnalysisRun</code> 仍将在 <code>Rollout</code> 的命名空间中运行</p>
 <h2 id="使用多个模板的分析">使用多个模板的分析</h2>
 <p>Rollout 可以在构建 AnalysisRun 时引用多个 AnalysisTemplates。这允许用户从多个 AnalysisTemplate 中组合分析。如果引用了多个模板，则控制器将合并这些模板。控制器组合所有模板的 <code>metrics</code> 和 <code>args</code> 字段。</p>
 <p>Rollout</p>
-<pre><code>```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Rollout
-metadata:
-  name: guestbook
-spec:
-...
-  strategy:
-    canary:
-      analysis:
-        templates:
-        - templateName: success-rate
-        - templateName: error-rate
-        args:
-        - name: service-name
-          value: guestbook-svc.default.svc.cluster.local
-```
-</code></pre>
-<p>AnalysisTemplate</p>
-<pre><code>```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: AnalysisTemplate
-metadata:
-  name: success-rate
-spec:
-  args:
-  - name: service-name
-  metrics:
-  - name: success-rate
-    interval: 5m
-    successCondition: result[0] &gt;= 0.95
-    failureLimit: 3
-    provider:
-      prometheus:
-        address: http://prometheus.example.com:9090
-        query: |
-          sum(irate(
-            istio_requests_total{reporter=&quot;source&quot;,destination_service=~&quot;{{args.service-name}}&quot;,response_code!~&quot;5.*&quot;}[5m]
-          )) /
-          sum(irate(
-            istio_requests_total{reporter=&quot;source&quot;,destination_service=~&quot;{{args.service-name}}&quot;}[5m]
-          ))
----
-apiVersion: argoproj.io/v1alpha1
-kind: AnalysisTemplate
-metadata:
-  name: error-rate
-spec:
-  args:
-  - name: service-name
-  metrics:
-  - name: error-rate
-    interval: 5m
-    successCondition: result[0] &lt;= 0.95
-    failureLimit: 3
-    provider:
-      prometheus:
-        address: http://prometheus.example.com:9090
-        query: |
-          sum(irate(
-            istio_requests_total{reporter=&quot;source&quot;,destination_service=~&quot;{{args.service-name}}&quot;,response_code=~&quot;5.*&quot;}[5m]
-          )) /
-          sum(irate(
-            istio_requests_total{reporter=&quot;source&quot;,destination_service=~&quot;{{args.service-name}}&quot;}[5m]
-          ))
-```
-</code></pre>
-<p>AnalysisRun</p>
-<pre><code>```yaml
-# NOTE: Generated AnalysisRun from the multiple templates
-apiVersion: argoproj.io/v1alpha1
-kind: AnalysisRun
-metadata:
-  name: guestbook-CurrentPodHash-multiple-templates
-spec:
-  args:
-  - name: service-name
-    value: guestbook-svc.default.svc.cluster.local
-  metrics:
-  - name: success-rate
-    interval: 5m
-    successCondition: result[0] &gt;= 0.95
-    failureLimit: 3
-    provider:
-      prometheus:
-        address: http://prometheus.example.com:9090
-        query: |
-          sum(irate(
-            istio_requests_total{reporter=&quot;source&quot;,destination_service=~&quot;{{args.service-name}}&quot;,response_code!~&quot;5.*&quot;}[5m]
-          )) /
-          sum(irate(
-            istio_requests_total{reporter=&quot;source&quot;,destination_service=~&quot;{{args.service-name}}&quot;}[5m]
-          ))
-  - name: error-rate
-    interval: 5m
-    successCondition: result[0] &lt;= 0.95
-    failureLimit: 3
-    provider:
-      prometheus:
-        address: http://prometheus.example.com:9090
-        query: |
-          sum(irate(
-            istio_requests_total{reporter=&quot;source&quot;,destination_service=~&quot;{{args.service-name}}&quot;,response_code=~&quot;5.*&quot;}[5m]
-          )) /
-          sum(irate(
-            istio_requests_total{reporter=&quot;source&quot;,destination_service=~&quot;{{args.service-name}}&quot;}[5m]
-          ))
-```
-</code></pre>
-<p>🔔 注意：当合并模板时，如果：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">argoproj.io/v1alpha1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Rollout</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">guestbook</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">strategy</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">canary</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">analysis</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">templates</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">templateName</span><span class="p">:</span><span class="w"> </span><span class="l">success-rate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">templateName</span><span class="p">:</span><span class="w"> </span><span class="l">error-rate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">args</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">service-name</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l">guestbook-svc.default.svc.cluster.local</span><span class="w">
+</span></span></span></code></pre></div><p>AnalysisTemplate</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">argoproj.io/v1alpha1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">AnalysisTemplate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">success-rate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">args</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">service-name</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">metrics</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">success-rate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">interval</span><span class="p">:</span><span class="w"> </span><span class="l">5m</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">successCondition</span><span class="p">:</span><span class="w"> </span><span class="l">result[0] &gt;= 0.95</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">failureLimit</span><span class="p">:</span><span class="w"> </span><span class="m">3</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">prometheus</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l">http://prometheus.example.com:9090</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">query</span><span class="p">:</span><span class="w"> </span><span class="p">|</span><span class="sd">
+</span></span></span><span class="line"><span class="cl"><span class="sd">          sum(irate(
+</span></span></span><span class="line"><span class="cl"><span class="sd">            istio_requests_total{reporter=&#34;source&#34;,destination_service=~&#34;{{args.service-name}}&#34;,response_code!~&#34;5.*&#34;}[5m]
+</span></span></span><span class="line"><span class="cl"><span class="sd">          )) /
+</span></span></span><span class="line"><span class="cl"><span class="sd">          sum(irate(
+</span></span></span><span class="line"><span class="cl"><span class="sd">            istio_requests_total{reporter=&#34;source&#34;,destination_service=~&#34;{{args.service-name}}&#34;}[5m]
+</span></span></span><span class="line"><span class="cl"><span class="sd">          ))</span><span class="w">          
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">---</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">argoproj.io/v1alpha1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">AnalysisTemplate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">error-rate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">args</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">service-name</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">metrics</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">error-rate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">interval</span><span class="p">:</span><span class="w"> </span><span class="l">5m</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">successCondition</span><span class="p">:</span><span class="w"> </span><span class="l">result[0] &lt;= 0.95</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">failureLimit</span><span class="p">:</span><span class="w"> </span><span class="m">3</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">prometheus</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l">http://prometheus.example.com:9090</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">query</span><span class="p">:</span><span class="w"> </span><span class="p">|</span><span class="sd">
+</span></span></span><span class="line"><span class="cl"><span class="sd">          sum(irate(
+</span></span></span><span class="line"><span class="cl"><span class="sd">            istio_requests_total{reporter=&#34;source&#34;,destination_service=~&#34;{{args.service-name}}&#34;,response_code=~&#34;5.*&#34;}[5m]
+</span></span></span><span class="line"><span class="cl"><span class="sd">          )) /
+</span></span></span><span class="line"><span class="cl"><span class="sd">          sum(irate(
+</span></span></span><span class="line"><span class="cl"><span class="sd">            istio_requests_total{reporter=&#34;source&#34;,destination_service=~&#34;{{args.service-name}}&#34;}[5m]
+</span></span></span><span class="line"><span class="cl"><span class="sd">          ))</span><span class="w">          
+</span></span></span></code></pre></div><p>AnalysisRun</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="c"># NOTE: Generated AnalysisRun from the multiple templates</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">argoproj.io/v1alpha1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">AnalysisRun</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">guestbook-CurrentPodHash-multiple-templates</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">args</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">service-name</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l">guestbook-svc.default.svc.cluster.local</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">metrics</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">success-rate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">interval</span><span class="p">:</span><span class="w"> </span><span class="l">5m</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">successCondition</span><span class="p">:</span><span class="w"> </span><span class="l">result[0] &gt;= 0.95</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">failureLimit</span><span class="p">:</span><span class="w"> </span><span class="m">3</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">prometheus</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l">http://prometheus.example.com:9090</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">query</span><span class="p">:</span><span class="w"> </span><span class="p">|</span><span class="sd">
+</span></span></span><span class="line"><span class="cl"><span class="sd">          sum(irate(
+</span></span></span><span class="line"><span class="cl"><span class="sd">            istio_requests_total{reporter=&#34;source&#34;,destination_service=~&#34;{{args.service-name}}&#34;,response_code!~&#34;5.*&#34;}[5m]
+</span></span></span><span class="line"><span class="cl"><span class="sd">          )) /
+</span></span></span><span class="line"><span class="cl"><span class="sd">          sum(irate(
+</span></span></span><span class="line"><span class="cl"><span class="sd">            istio_requests_total{reporter=&#34;source&#34;,destination_service=~&#34;{{args.service-name}}&#34;}[5m]
+</span></span></span><span class="line"><span class="cl"><span class="sd">          ))</span><span class="w">          
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">error-rate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">interval</span><span class="p">:</span><span class="w"> </span><span class="l">5m</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">successCondition</span><span class="p">:</span><span class="w"> </span><span class="l">result[0] &lt;= 0.95</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">failureLimit</span><span class="p">:</span><span class="w"> </span><span class="m">3</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">prometheus</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l">http://prometheus.example.com:9090</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">query</span><span class="p">:</span><span class="w"> </span><span class="p">|</span><span class="sd">
+</span></span></span><span class="line"><span class="cl"><span class="sd">          sum(irate(
+</span></span></span><span class="line"><span class="cl"><span class="sd">            istio_requests_total{reporter=&#34;source&#34;,destination_service=~&#34;{{args.service-name}}&#34;,response_code=~&#34;5.*&#34;}[5m]
+</span></span></span><span class="line"><span class="cl"><span class="sd">          )) /
+</span></span></span><span class="line"><span class="cl"><span class="sd">          sum(irate(
+</span></span></span><span class="line"><span class="cl"><span class="sd">            istio_requests_total{reporter=&#34;source&#34;,destination_service=~&#34;{{args.service-name}}&#34;}[5m]
+</span></span></span><span class="line"><span class="cl"><span class="sd">          ))</span><span class="w">          
+</span></span></span></code></pre></div><p>🔔 注意：当合并模板时，如果：</p>
 <ul>
 <li>模板中的多个指标具有相同的名称</li>
 <li>拥有相同名称的两个参数具有不同的默认值，无论 Rollout 中的参数值如何</li>
