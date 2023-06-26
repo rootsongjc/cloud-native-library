@@ -24,7 +24,7 @@ tags: ["Ambassador","Argo Rollouts"]
 
 如果你的集群中没有 Ambassador，可以按照 [Edge Stack 文档](https://www.getambassador.io/docs/latest/topics/install/) 进行安装。
 
-默认情况下，Edge Stack 通过 Kubernetes 服务路由。为了获得更好的金丝雀性能，我们建议你使用端点路由。通过将以下配置保存在名为 `resolver.yaml` 的文件中，启用群集上的端点路由：
+默认情况下，Edge Stack 通过 Kubernetes 服务路由。为了获得更好的金丝雀性能，我们建议你使用端点路由。通过将以下配置保存在名为 `resolver.yaml` 的文件中，启用集群上的端点路由：
 
 ```yaml
  apiVersion: getambassador.io/v2
@@ -142,7 +142,7 @@ tags: ["Ambassador","Argo Rollouts"]
 
 ## 4. 测试服务
 
-现在，我们将测试此部署是否按预期工作。打开一个新的终端窗口。我们将使用它来发送请求到群集。获取 Edge Stack 的外部 IP 地址：
+现在，我们将测试此部署是否按预期工作。打开一个新的终端窗口。我们将使用它来发送请求到集群。获取 Edge Stack 的外部 IP 地址：
 
 ```bash
  export AMBASSADOR_LB_ENDPOINT=$(kubectl -n ambassador get svc ambassador -o "go-template={{range .status.loadBalancer.ingress}}{{or .ip .hostname}}{{end}}")

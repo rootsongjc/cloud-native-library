@@ -42,7 +42,7 @@ kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-rollouts/master
 
 任何 Rollout 的初始创建都将立即将副本扩展到 100％（跳过任何金丝雀升级步骤、分析等），因为没有进行升级。
 
-Argo Rollouts kubectl 插件允许你可视化 Rollout 及其相关资源（ReplicaSets、Pods、AnalysisRuns），并呈现随着其发生的实时状态更改。要观察部署过程，请从插件运行 `get rollout --watch` 命令：
+Argo Rollouts kubectl 插件允许你可视化 Rollout 及其相关资源（ReplicaSet、Pod、AnalysisRun），并呈现随着其发生的实时状态更改。要观察部署过程，请从插件运行 `get rollout --watch` 命令：
 
 ```bash
 kubectl argo rollouts get rollout rollouts-demo --watch
@@ -52,13 +52,13 @@ kubectl argo rollouts get rollout rollouts-demo --watch
 
 ## 2. 更新 Rollout
 
-接下来是执行更新。与部署一样，对 Pod 模板字段（`spec.template`）的任何更改都会导致部署新版本（即 ReplicaSet）。更新 Rollout 涉及修改 Rollout 规范，通常使用新版本更改容器镜像字段，然后对新清单运行 `kubectl apply`。作为方便，rollouts 插件提供了一个 `set image` 命令，它针对现场 Rollout 对象执行这些步骤。运行以下命令，使用容器的“yellow”版本更新 `rollouts-demo` Rollout：
+接下来是执行更新。与 Deployment 一样，对 Pod 模板字段（`spec.template`）的任何更改都会导致部署新版本（即 ReplicaSet）。更新 Rollout 涉及修改 Rollout 规范，通常使用新版本更改容器镜像字段，然后对新清单运行 `kubectl apply`。作为方便，rollouts 插件提供了一个 `set image` 命令，它针对现场 Rollout 对象执行这些步骤。运行以下命令，使用容器的“yellow”版本更新 `rollouts-demo` Rollout：
 
 ```bash
 kubectl argo rollouts set image rollouts-demo rollouts-demo=argoproj/rollouts-demo:yellow
 ```
 
-在升级过程中，控制器将按照 Rollout 的升级策略的定义进行进度。示例 Rollout 将 20％的流量权重设置为金丝雀，暂停升级，并无限期地保持暂停状态，直到采取用户操作来取消暂停 / 推广 Rollout。更新镜像后，请再次观察 Rollout，直到其达到暂停状态：
+在升级过程中，控制器将按照 Rollout 的升级策略的定义进行。示例 Rollout 将 20％的流量权重设置为金丝雀，暂停升级，并无限期地保持暂停状态，直到用户操作来取消暂停/推广 Rollout。更新镜像后，请再次观察 Rollout，直到其达到暂停状态：
 
 ```bash
 kubectl argo rollouts get rollout rollouts-demo --watch
@@ -70,7 +70,7 @@ kubectl argo rollouts get rollout rollouts-demo --watch
 
 ## 3. 推广 Rollout
 
-现在 Rollout 处于暂停状态。当 Rollout 到达没有持续时间的 `pause` 步骤时，它将一直保持暂停状态，直到恢复 / 推广为止。要手动将 Rollout 推广到下一步，请运行插件的 `promote` 命令：
+现在 Rollout 处于暂停状态。当 Rollout 到达没有持续时间的 `pause` 步骤时，它将一直保持暂停状态，直到恢复/推广为止。要手动将 Rollout 推广到下一步，请运行插件的 `promote` 命令：
 
 ```bash
 kubectl argo rollouts promote rollouts-demo
@@ -88,7 +88,7 @@ kubectl argo rollouts get rollout rollouts-demo --watch
 
 `promote` 命令还支持使用 `--full` 标志跳过所有剩余步骤和分析的能力。
 
-一旦所有步骤成功完成，新的 ReplicaSet 将被标记为“稳定”的 ReplicaSet。每当 Rollout 在更新期间中止（自动通过失败的金丝雀分析或手动通过用户），Rollout 将回退到 `stable` 版本。
+一旦所有步骤成功完成，新的 ReplicaSet 将被标记为 `stable` 的 ReplicaSet。每当 Rollout 在更新期间中止（自动通过失败的金丝雀分析或用户手动），Rollout 将回退到 `stable` 版本。
 
 ## 4. 终止 Rollout
 
@@ -106,7 +106,7 @@ kubectl argo rollouts set image rollouts-demo rollouts-demo=argoproj/rollouts-de
 kubectl argo rollouts abort rollouts-demo
 ```
 
-当 Rollout 中止时，它将扩展 `stable` 版本的 ReplicaSet（在本例中为黄色镜像），并缩小任何其他版本。尽管 ReplicaSet 的稳定版本正在运行并且健康，但仍将整体 Rollout 视为 `降级`，因为所需版本（红色镜像）不是实际运行的版本。
+当 Rollout 中止时，它将扩展 `stable` 版本的 ReplicaSet（在本例中为黄色镜像），并缩小任何其他版本。尽管 ReplicaSet 的稳定版本正在运行并且健康，但仍将整体 Rollout 视为 `Degraded`，因为所需版本（红色镜像）不是实际运行的版本。
 
 ![退出 Rollout](aborted-rollout.png)
 
@@ -135,10 +135,8 @@ kubectl argo rollouts set image rollouts-demo rollouts-demo=argoproj/rollouts-de
 
 请按照流量路由指南之一，查看 Argo Rollouts 如何利用网络提供程序实现更高级的流量整形。
 
-- [ALB 指南](alb/)
-- [App Mesh 指南](appmesh/)
-- [Ambassador 指南](ambassador/)
-- [Istio 指南](istio/)
-- [多个提供程序指南](mixed/)
-- [NGINX 指南](nginx/)
-- [SMI 指南](smi/)
+- [ALB 指南](../alb/)
+- [App Mesh 指南](../appmesh/)
+- [Ambassador 指南](../ambassador/)
+- [Istio 指南](../istio/)
+- [NGINX 指南](../nginx/)

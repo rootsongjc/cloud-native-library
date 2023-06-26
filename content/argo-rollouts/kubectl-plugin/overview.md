@@ -22,9 +22,9 @@ Argo Rollouts 提供了一个 Kubectl 插件来丰富 Rollouts、Experiments 和
 
 ## 可视化 Rollouts 和 Experiments
 
-除了封装许多常规命令之外，Argo Rollouts kubectl 插件还支持使用 get 命令可视化 rollouts 和 experiments。get 命令提供了一个干净的表示形式，用于表示在群集中运行的 rollouts 或 experiments。它返回关于资源的大量元数据，以及父资源创建的子资源的树状视图。以下是使用 get 命令检索到的一个 rollout 的示例：
+除了封装许多常规命令之外，Argo Rollouts kubectl 插件还支持使用 get 命令可视化 rollouts 和 experiments。get 命令提供了一个干净的表示形式，用于表示在集群中运行的 rollouts 或 experiments。它返回关于资源的大量元数据，以及父资源创建的子资源的树状视图。以下是使用 get 命令检索到的一个 rollout 的示例：
 
-![kubectl argo rollouts 命令行示例](images/kubectl-get-rollout.png)
+![kubectl argo rollouts 命令行示例](../images/kubectl-get-rollout.png)
 
 下面是一个表格，解释了树视图上的一些图标：
 

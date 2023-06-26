@@ -46,4 +46,4 @@ Rollout 是 Kubernetes 工作负载资源，相当于 Kubernetes Deployment 对�
 
 ![金丝雀部署示意图](../images/canary-deployments.png)
 
-上图显示了具有两个阶段（10％和 33％的流量流向新版本）的金丝雀，但这仅是一个示例。使用 Argo Rollouts，你可以根据你的用例定义确切数量的阶段和流量百分比。
+上图显示了具有两个阶段（10％和 33％的流量流向新版本）的金丝雀，但这仅是一个示例。使用 Argo Rollouts，可以根据你的用例定义确切数量的阶段和流量百分比。

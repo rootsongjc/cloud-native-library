@@ -1,6 +1,6 @@
 ---
 weight: 16
-tle: Argo Rollouts 的安全策略
+title: Argo Rollouts 的安全策略
 linkTitle: 安全
 date: '2023-06-21T16:00:00+08:00'
 type: book

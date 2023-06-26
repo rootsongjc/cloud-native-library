@@ -161,59 +161,59 @@ spec:
 
 ## ClusterAnalysisTemplates
 
-!!! important 从 v0.9.0 开始可用
+🔔 重要提示：从 v0.9.0 开始可用
 
 Rollout 可以引用一个名为 ClusterAnalysisTemplate 的集群作用域 AnalysisTemplate。当你希望在多个 Rollout 中共享 AnalysisTemplate 时，这可能非常有用。在不同的命名空间中，避免在每个命名空间中重复相同的模板。使用 `clusterScope: true` 字段引用 ClusterAnalysisTemplate 而不是 AnalysisTemplate。
 
 Rollout
 
-    ```yaml
-    apiVersion: argoproj.io/v1alpha1
-    kind: Rollout
-    metadata:
-      name: guestbook
-    spec:
-    ...
-      strategy:
-        canary:
-          steps:
-          - setWeight: 20
-          - pause: {duration: 5m}
-          - analysis:
-              templates:
-              - templateName: success-rate
-                clusterScope: true
-              args:
-              - name: service-name
-                value: guestbook-svc.default.svc.cluster.local
-    ```
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: guestbook
+spec:
+...
+  strategy:
+    canary:
+      steps:
+      - setWeight: 20
+      - pause: {duration: 5m}
+      - analysis:
+          templates:
+          - templateName: success-rate
+            clusterScope: true
+          args:
+          - name: service-name
+            value: guestbook-svc.default.svc.cluster.local
+```
 
 ClusterAnalysisTemplate
 
-    ```yaml
-    apiVersion: argoproj.io/v1alpha1
-    kind: ClusterAnalysisTemplate
-    metadata:
-      name: success-rate
-    spec:
-      args:
-      - name: service-name
-      - name: prometheus-port
-        value: 9090
-      metrics:
-      - name: success-rate
-        successCondition: result[0] >= 0.95
-        provider:
-          prometheus:
-            address: "http://prometheus.example.com:{{args.prometheus-port}}"
-            query: |
-              sum(irate(
-                istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code!~"5.*"}[5m]
-              )) /
-              sum(irate(
-                istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}"}[5m]
-              ))
-    ```
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterAnalysisTemplate
+metadata:
+  name: success-rate
+spec:
+  args:
+  - name: service-name
+  - name: prometheus-port
+    value: 9090
+  metrics:
+  - name: success-rate
+    successCondition: result[0] >= 0.95
+    provider:
+      prometheus:
+        address: "http://prometheus.example.com:{{args.prometheus-port}}"
+        query: |
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code!~"5.*"}[5m]
+          )) /
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}"}[5m]
+          ))
+```
 
 🔔 注意：结果的 `AnalysisRun` 仍将在 `Rollout` 的命名空间中运行
 
@@ -223,116 +223,116 @@ Rollout 可以在构建 AnalysisRun 时引用多个 AnalysisTemplates。这允�
 
 Rollout
 
-    ```yaml
-    apiVersion: argoproj.io/v1alpha1
-    kind: Rollout
-    metadata:
-      name: guestbook
-    spec:
-    ...
-      strategy:
-        canary:
-          analysis:
-            templates:
-            - templateName: success-rate
-            - templateName: error-rate
-            args:
-            - name: service-name
-              value: guestbook-svc.default.svc.cluster.local
-    ```
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: guestbook
+spec:
+...
+  strategy:
+    canary:
+      analysis:
+        templates:
+        - templateName: success-rate
+        - templateName: error-rate
+        args:
+        - name: service-name
+          value: guestbook-svc.default.svc.cluster.local
+```
 
 AnalysisTemplate
 
-    ```yaml
-    apiVersion: argoproj.io/v1alpha1
-    kind: AnalysisTemplate
-    metadata:
-      name: success-rate
-    spec:
-      args:
-      - name: service-name
-      metrics:
-      - name: success-rate
-        interval: 5m
-        successCondition: result[0] >= 0.95
-        failureLimit: 3
-        provider:
-          prometheus:
-            address: http://prometheus.example.com:9090
-            query: |
-              sum(irate(
-                istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code!~"5.*"}[5m]
-              )) /
-              sum(irate(
-                istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}"}[5m]
-              ))
-    ---
-    apiVersion: argoproj.io/v1alpha1
-    kind: AnalysisTemplate
-    metadata:
-      name: error-rate
-    spec:
-      args:
-      - name: service-name
-      metrics:
-      - name: error-rate
-        interval: 5m
-        successCondition: result[0] <= 0.95
-        failureLimit: 3
-        provider:
-          prometheus:
-            address: http://prometheus.example.com:9090
-            query: |
-              sum(irate(
-                istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code=~"5.*"}[5m]
-              )) /
-              sum(irate(
-                istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}"}[5m]
-              ))
-    ```
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: success-rate
+spec:
+  args:
+  - name: service-name
+  metrics:
+  - name: success-rate
+    interval: 5m
+    successCondition: result[0] >= 0.95
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus.example.com:9090
+        query: |
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code!~"5.*"}[5m]
+          )) /
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}"}[5m]
+          ))
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: error-rate
+spec:
+  args:
+  - name: service-name
+  metrics:
+  - name: error-rate
+    interval: 5m
+    successCondition: result[0] <= 0.95
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus.example.com:9090
+        query: |
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code=~"5.*"}[5m]
+          )) /
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}"}[5m]
+          ))
+```
 
 AnalysisRun
 
-    ```yaml
-    # NOTE: Generated AnalysisRun from the multiple templates
-    apiVersion: argoproj.io/v1alpha1
-    kind: AnalysisRun
-    metadata:
-      name: guestbook-CurrentPodHash-multiple-templates
-    spec:
-      args:
-      - name: service-name
-        value: guestbook-svc.default.svc.cluster.local
-      metrics:
-      - name: success-rate
-        interval: 5m
-        successCondition: result[0] >= 0.95
-        failureLimit: 3
-        provider:
-          prometheus:
-            address: http://prometheus.example.com:9090
-            query: |
-              sum(irate(
-                istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code!~"5.*"}[5m]
-              )) /
-              sum(irate(
-                istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}"}[5m]
-              ))
-      - name: error-rate
-        interval: 5m
-        successCondition: result[0] <= 0.95
-        failureLimit: 3
-        provider:
-          prometheus:
-            address: http://prometheus.example.com:9090
-            query: |
-              sum(irate(
-                istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code=~"5.*"}[5m]
-              )) /
-              sum(irate(
-                istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}"}[5m]
-              ))
-    ```
+```yaml
+# NOTE: Generated AnalysisRun from the multiple templates
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisRun
+metadata:
+  name: guestbook-CurrentPodHash-multiple-templates
+spec:
+  args:
+  - name: service-name
+    value: guestbook-svc.default.svc.cluster.local
+  metrics:
+  - name: success-rate
+    interval: 5m
+    successCondition: result[0] >= 0.95
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus.example.com:9090
+        query: |
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code!~"5.*"}[5m]
+          )) /
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}"}[5m]
+          ))
+  - name: error-rate
+    interval: 5m
+    successCondition: result[0] <= 0.95
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus.example.com:9090
+        query: |
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code=~"5.*"}[5m]
+          )) /
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}"}[5m]
+          ))
+```
 
 🔔 注意：当合并模板时，如果：
 

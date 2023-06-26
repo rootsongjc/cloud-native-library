@@ -14,19 +14,20 @@ type: book
 
 ```bash
 kubectl create namespace argo-rollouts
-kubectl apply -n argo-rollouts -f <https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml>
+kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
 ```
 
 这将创建一个新的命名空间 `argo-rollouts`，在其中运行 Argo Rollouts 控制器。
 
-🔔 提示：如果你使用的是其他命名空间名称，请更新 `install.yaml` 群集角色绑定的服务帐户命名空间名称。
+🔔 提示：如果你使用的是其他命名空间名称，请更新 `install.yaml` 集群角色绑定的服务账户命名空间名称。
 
 🔔 提示：在 Kubernetes v1.14 或更低版本上安装 Argo Rollouts 时，CRD 清单必须使用 `--validate = false` 选项进行 `kubectl apply`。这是由于在 v1.15 中引入的新 CRD 字段的使用，在较低的 API 服务器中默认被拒绝。
 
-🔔 提示：在 GKE 上，你需要授予你的帐户创建新集群角色的权限：
+🔔 提示：在 GKE 上，你需要授予你的账户创建新集群角色的权限：
 
 ```bash
-kubectl create clusterrolebinding YOURNAME-cluster-admin-binding --clusterrole=cluster-admin --user=YOUREMAIL@gmail.com
+kubectl create clusterrolebinding YOURNAME-cluster-admin-binding \
+--clusterrole=cluster-admin --user=YOUREMAIL@gmail.com
 ```
 
 - [namespace-install.yaml](https://github.com/argoproj/argo-rollouts/blob/master/manifests/namespace-install.yaml) - 安装 Argo Rollouts，仅需要命名空间级别的特权。使用此安装方法的示例用途是在同一集群上的不同命名空间中运行多个 Argo Rollouts 控制器实例。
@@ -54,7 +55,7 @@ brew install argoproj/tap/kubectl-argo-rollouts
 1. 使用 curl 安装 [Argo Rollouts Kubectl 插件](https://github.com/argoproj/argo-rollouts/releases)。
 
    ```bash
-   curl -LO <https://github.com/argoproj/argo-rollouts/releases/latest/download/kubectl-argo-rollouts-darwin-amd64>
+   curl -LO https://github.com/argoproj/argo-rollouts/releases/latest/download/kubectl-argo-rollouts-darwin-amd64
    ```
 
    🔔 提示：对于 Linux 发行版，请将 `darwin` 替换为 `linux`
@@ -93,7 +94,7 @@ CLI 也可以作为容器镜像在 https://quay.io/repository/argoproj/kubectl-a
 
 你可以像任何其他 Docker 镜像一样运行它，或在支持 Docker 镜像的任何 CI 平台中使用它。
 
-```
+```bash
 docker run quay.io/argoproj/kubectl-argo-rollouts:master version
 ```
 
@@ -113,7 +114,7 @@ Argo Rollouts 是一个不持有任何外部状态的 Kubernetes 控制器。只
 要升级 Argo Rollouts：
 
 1. 尝试找到没有部署发生的时间段；
-2. 删除控制器的先前版本并应用 / 安装新版本；
+2. 删除控制器的先前版本并应用/安装新版本；
 3. 发生新的 Rollout 时，新控制器将被激活。
 
 如果你在升级控制器时进行部署，则不应有任何停机时间。当前的 Rollouts 将被暂停，一旦新控制器变为活动状态，它将恢复所有正在进行的部署。

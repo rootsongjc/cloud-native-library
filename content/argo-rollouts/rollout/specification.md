@@ -124,7 +124,7 @@ spec:
 
       # 在缩放之前添加延迟以缩小先前的 ReplicaSet。如果省略，
       # Rollout 将在缩小先前的 ReplicaSet 之前等待 30 秒。建议至少等待 30 秒，
-      # 以确保在群集中的节点之间进行 IP 表传播。
+      # 以确保在集群中的节点之间进行 IP 表传播。
       scaleDownDelaySeconds: 30
 
       # 在被缩放之前可运行的旧 RS 的数量限制。

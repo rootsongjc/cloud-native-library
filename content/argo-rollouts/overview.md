@@ -45,18 +45,18 @@ Kubernetes Deployment 对象支持滚动更新策略，该策略提供了一组�
 
 ```bash
 kubectl create namespace argo-rollouts
-kubectl apply -n argo-rollouts -f <https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml>
+kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
 ```
 
-请按照完整的 [入门指南](getting-started/)，演示创建并更新一个滚动对象。
+请按照完整的 [入门指南](../getting-started/)，演示创建并更新一个滚动对象。
 
 ## 它是如何工作的？
 
 与 [Deployment 对象](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) 类似，Argo Rollouts 控制器将管理 [ReplicaSet](https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/) 的创建、扩展和删除。这些 ReplicaSet 是由 Rollout 资源中的 `spec.template` 字段定义的，该字段使用与 Deployment 对象相同的 pod 模板。
 
-当更改 `spec.template` 时，这表明 Argo Rollouts 控制器将引入一个新的 ReplicaSet。该控制器将使用 `spec.strategy` 字段中设置的策略来确定如何从旧 ReplicaSet 进行滚动更新到新 ReplicaSet。一旦新 ReplicaSet 缩放（并可选地通过 [Analysis](https://argoproj.github.io/argo-rollouts/features/analysis/)），控制器将将其标记为“稳定”。
+当更改 `spec.template` 时，这表明 Argo Rollouts 控制器将引入一个新的 ReplicaSet。该控制器将使用 `spec.strategy` 字段中设置的策略来确定如何从旧 ReplicaSet 进行滚动更新到新 ReplicaSet。一旦新 ReplicaSet 缩放（并可选地通过 [分析](../analysis/)），控制器将将其标记为“stable”。
 
-如果在从稳定的 ReplicaSet 到新的 ReplicaSet 的转换过程中 `spec.template` 发生其他更改（即，在滚动更新过程中更改应用程序版本），则先前的新 ReplicaSet 将被缩小，控制器将尝试推进反映更新的 `spec.template` 字段的 ReplicasSet。有关每个策略行为的更多信息，请参见 [spec](https://argoproj.github.io/argo-rollouts/features/specification/) 部分。
+如果在从稳定的 ReplicaSet 到新的 ReplicaSet 的转换过程中 `spec.template` 发生其他更改（即，在滚动更新过程中更改应用程序版本），则先前的新 ReplicaSet 将被缩小，控制器将尝试推进反映更新的 `spec.template` 字段的 ReplicasSet。有关每个策略行为的更多信息，请参见 [Rollout 规范](../rollout/specification/) 部分。
 
 ## Argo Rollouts 的用例
 

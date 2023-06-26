@@ -11,7 +11,7 @@ tags: ["Nginx","Argo Rollouts"]
 
 ## 要求
 
-- 安装了 NGINX Ingress 控制器的 Kubernetes 群集
+- 安装了 NGINX Ingress 控制器的 Kubernetes 集群
 
 🔔 提示：请参阅 [NGINX 环境设置指南](https://argo-rollouts.readthedocs.io/en/stable/getting-started/setup/#nginx-ingress-controller-setup) 以了解如何使用 nginx 设置本地 minikube 环境。
 
@@ -72,7 +72,7 @@ kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-rollouts/master
 kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-rollouts/master/docs/getting-started/nginx/ingress.yaml
 ```
 
-应用清单后，你应该在群集中看到以下滚动、服务和 Ingress 资源：
+应用清单后，你应该在集群中看到以下滚动、服务和 Ingress 资源：
 
 ```bash
 $ kubectl get ro
