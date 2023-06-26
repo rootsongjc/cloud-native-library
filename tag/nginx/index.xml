@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Nginx | 云原生资料库</title>
+    <link>https://lib.jimmysong.io/tag/nginx/</link>
+      <atom:link href="https://lib.jimmysong.io/tag/nginx/index.xml" rel="self" type="application/rss+xml" />
+    <description>Nginx</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Wed, 21 Jun 2023 16:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://lib.jimmysong.io/media/sharing.png</url>
+      <title>Nginx</title>
+      <link>https://lib.jimmysong.io/tag/nginx/</link>
+    </image>
+    
+    <item>
+      <title>Nginx Ingress 快速开始</title>
+      <link>https://lib.jimmysong.io/argo-rollouts/getting-started/nginx/</link>
+      <pubDate>Wed, 21 Jun 2023 16:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/argo-rollouts/getting-started/nginx/</guid>
+      <description>&lt;p&gt;本指南介绍了 Argo Rollouts 如何与 &lt;a href=&#34;https://github.com/kubernetes/ingress-nginx&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;NGINX Ingress Controller&lt;/a&gt; 集成进行流量整形。本指南基于 &lt;a href=&#34;../basic-usage/&#34;&gt;基本入门指南&lt;/a&gt; 的概念。&lt;/p&gt;
+&lt;h2 id=&#34;要求&#34;&gt;要求&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;安装了 NGINX Ingress 控制器的 Kubernetes 群集&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;🔔 提示：请参阅 &lt;a href=&#34;https://argo-rollouts.readthedocs.io/en/stable/getting-started/setup/#nginx-ingress-controller-setup&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;NGINX 环境设置指南&lt;/a&gt; 以了解如何使用 nginx 设置本地 minikube 环境。&lt;/p&gt;
+&lt;h2 id=&#34;1-部署-rollout服务和-ingress&#34;&gt;1. 部署 Rollout、服务和 Ingress&lt;/h2&gt;
+&lt;p&gt;当使用 NGINX Ingress 作为流量路由器时，Rollout 金丝雀策略必须定义以下强制字段：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Rollout&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rollouts-demo&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;strategy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;canary&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 引用控制器将更新并指向金丝雀 ReplicaSet 的服务&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;canaryService&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rollouts-demo-canary&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 引用控制器将更新并指向稳定 ReplicaSet 的服务&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;stableService&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rollouts-demo-stable&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;trafficRouting&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;         &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;nginx&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;           &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 引用一个 Ingress，该 Ingress 具有指向稳定服务（例如 rollouts-demo-stable）的规则&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;           &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 为了实现 NGINX 流量分割，此 ingress 将被克隆为一个新名称。&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;           &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;stableIngress&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rollouts-demo-stable&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在 &lt;code&gt;canary.trafficRouting.nginx.stableIngress&lt;/code&gt; 中引用的 Ingress 必须具有后端，该后端指向 &lt;code&gt;canary.stableService&lt;/code&gt; 下引用的服务。在我们的示例中，该稳定服务的名称为 &lt;code&gt;rollouts-demo-stable&lt;/code&gt;：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt; apiVersion: networking.k8s.io/v1beta1
+ kind: Ingress
+ metadata:
+   name: rollouts-demo-stable
+   annotations:
+     kubernetes.io/ingress.class: nginx
+ spec:
+   rules:
+   - host: rollouts-demo.local
+     http:
+       paths:
+       - path: /
+         backend:
+           # 引用一个服务名称，也在 Rollout 规范的 `strategy.canary.stableService` 中指定
+           serviceName: rollouts-demo-stable
+           servicePort: 80
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;运行以下命令以部署：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;一个 Rollout&lt;/li&gt;
+&lt;li&gt;两个服务（稳定和金丝雀）&lt;/li&gt;
+&lt;li&gt;一个 Ingress&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-rollouts/master/docs/getting-started/nginx/rollout.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-rollouts/master/docs/getting-started/nginx/services.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-rollouts/master/docs/getting-started/nginx/ingress.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;应用清单后，你应该在群集中看到以下滚动、服务和 Ingress 资源：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl get ro
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;NAME            DESIRED   CURRENT   UP-TO-DATE   AVAILABLE
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;rollouts-demo   &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;         &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;         &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;            &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl get svc
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;NAME                   TYPE        CLUSTER-IP      EXTERNAL-IP   PORT&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;S&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;   AGE
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;rollouts-demo-canary   ClusterIP   10.96.6.241     &amp;lt;none&amp;gt;        80/TCP    33s
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;rollouts-demo-stable   ClusterIP   10.102.229.83   &amp;lt;none&amp;gt;        80/TCP    33s
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl get ing
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;NAME                                        CLASS    HOSTS                 ADDRESS        PORTS   AGE
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;rollouts-demo-stable                        &amp;lt;none&amp;gt;   rollouts-demo.local   192.168.64.2   &lt;span class=&#34;m&#34;&gt;80&lt;/span&gt;      36s
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;rollouts-demo-rollouts-demo-stable-canary   &amp;lt;none&amp;gt;   rollouts-demo.local   192.168.64.2   &lt;span class=&#34;m&#34;&gt;80&lt;/span&gt;      35s
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;你还应该注意到由 rollouts 控制器创建的第二个 Ingress，&lt;code&gt;rollouts-demo-rollouts-demo-stable-canary&lt;/code&gt;。这个 Ingress 是“金丝雀 Ingress”，是用户管理的 Ingress 的克隆，其引用在 &lt;code&gt;nginx.stableIngress&lt;/code&gt; 下。它由 nginx ingress 控制器用于实现金丝雀流量分割。生成的 ingress 名称使用 &lt;code&gt;&amp;lt;ROLLOUT-NAME&amp;gt;-&amp;lt;INGRESS-NAME&amp;gt;-canary&lt;/code&gt; 进行公式化。有关第二个 Ingress 的更多详细信息在下一节中讨论。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl argo rollouts get rollout rollouts-demo
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-rollout-nginx&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;Rollout Nginx&#34; srcset=&#34;
+               /argo-rollouts/getting-started/nginx/images/rollout-nginx_hu7fcf573354653835275469788061165a_115599_bead1b84f6cffb99b8368584712e2b93.webp 400w,
+               /argo-rollouts/getting-started/nginx/images/rollout-nginx_hu7fcf573354653835275469788061165a_115599_6bc66780b4c1b76b697e2d4dedd19308.webp 760w,
+               /argo-rollouts/getting-started/nginx/images/rollout-nginx_hu7fcf573354653835275469788061165a_115599_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/argo-rollouts/getting-started/nginx/images/rollout-nginx_hu7fcf573354653835275469788061165a_115599_bead1b84f6cffb99b8368584712e2b93.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;401&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Rollout Nginx
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h2 id=&#34;2-执行更新&#34;&gt;2. 执行更新&lt;/h2&gt;
+&lt;p&gt;通过更改镜像来更新 rollout，并等待其达到暂停状态。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl argo rollouts &lt;span class=&#34;nb&#34;&gt;set&lt;/span&gt; image rollouts-demo rollouts-demo&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;argoproj/rollouts-demo:yellow
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl argo rollouts get rollout rollouts-demo
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-rollout-nginx-已暂停&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;Rollout Nginx 已暂停&#34; srcset=&#34;
+               /argo-rollouts/getting-started/nginx/images/paused-rollout-nginx_hu0612d377ddf3e2d1bf24db904b588dcf_371192_ac65e0d246cabe13ba36854bb6c8366f.webp 400w,
+               /argo-rollouts/getting-started/nginx/images/paused-rollout-nginx_hu0612d377ddf3e2d1bf24db904b588dcf_371192_54bfa53e70573bffbb4b75b90af3332c.webp 760w,
+               /argo-rollouts/getting-started/nginx/images/paused-rollout-nginx_hu0612d377ddf3e2d1bf24db904b588dcf_371192_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/argo-rollouts/getting-started/nginx/images/paused-rollout-nginx_hu0612d377ddf3e2d1bf24db904b588dcf_371192_ac65e0d246cabe13ba36854bb6c8366f.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;474&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Rollout Nginx 已暂停
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;此时，Rollout 的金丝雀和稳定版本都正在运行，其中 5% 的流量定向到金丝雀。需要注意的是，尽管只运行了两个 pod，但是 Rollout 能够实现 5% 的金丝雀权重。这可以通过在 ingress 控制器中发生流量分割（而不是加权副本计数和 kube-proxy）来实现。&lt;/p&gt;
+&lt;p&gt;在检查 Rollout 控制器生成的 Ingress 副本时，我们发现它与原始 Ingress 相比具有以下更改：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;添加了两个附加的 &lt;a href=&#34;https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#canary&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;NGINX 特定的金丝雀注释&lt;/a&gt; 到注释中。&lt;/li&gt;
+&lt;li&gt;Ingress 规则将具有指向 &lt;em&gt;金丝雀&lt;/em&gt; 服务的规则。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;extensions/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Ingress&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rollouts-demo-rollouts-demo-stable-canary&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kubernetes.io/ingress.class&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;nginx&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;nginx.ingress.kubernetes.io/canary&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;true&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;nginx.ingress.kubernetes.io/canary-weight&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;5&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;rules&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;host&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rollouts-demo.local&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;http&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;paths&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;backend&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;serviceName&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rollouts-demo-canary&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;servicePort&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;80&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;随着 Rollout 通过步骤进行，&lt;code&gt;canary-weight&lt;/code&gt; 注释将根据步骤的 &lt;code&gt;setWeight&lt;/code&gt; 调整。NGINX Ingress 控制器检查原始 Ingress、金丝雀 Ingress 和 &lt;code&gt;canary-weight&lt;/code&gt; 注释，以确定在两个 Ingress 之间拆分多少流量。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Nginx</title>
+      <link>https://lib.jimmysong.io/argo-rollouts/traffic-management/nginx/</link>
+      <pubDate>Wed, 21 Jun 2023 16:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/argo-rollouts/traffic-management/nginx/</guid>
+      <description>&lt;p&gt;&lt;a href=&#34;https://kubernetes.github.io/ingress-nginx/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Nginx Ingress Controller&lt;/a&gt; 允许通过一个或多个 Ingress 对象进行流量管理，以配置直接将流量路由到 Pod 的 Nginx 部署。每个 Nginx Ingress 都包含多个注释，可以修改 Nginx 部署的行为。对于应用程序不同版本之间的流量管理，Nginx Ingress 控制器提供了通过引入第二个 Ingress 对象（称为金丝雀 Ingress）进行流量拆分的功能。你可以在官方的 &lt;a href=&#34;https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#canary&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;金丝雀注释文档页面&lt;/a&gt; 上阅读更多关于这些金丝雀注释的信息。金丝雀 Ingress 忽略任何其他非金丝雀 nginx 注释。取而代之，它利用来自主要 Ingress 的注释设置。&lt;/p&gt;
+&lt;p&gt;Rollout 控制器始终会在金丝雀 Ingress 上设置以下两个注释（使用你配置的或默认的 &lt;code&gt;nginx.ingress.kubernetes.io&lt;/code&gt; 前缀）：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;canary: true&lt;/code&gt; 表示这是金丝雀 Ingress&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;canary-weight: &amp;lt;num&amp;gt;&lt;/code&gt; 表示将发送到金丝雀的流量百分比。如果所有流量都路由到稳定服务，则设置为 &lt;code&gt;0&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;你可以通过 &lt;code&gt;additionalIngressAnnotations&lt;/code&gt; 字段提供其他注释以添加到金丝雀 Ingress，以启用按标头或 cookie 进行路由等功能。&lt;/p&gt;
+&lt;h2 id=&#34;与-argo-rollouts-集成&#34;&gt;与 Argo Rollouts 集成&lt;/h2&gt;
+&lt;p&gt;使用 Nginx 发送版本间的分割流量需要在 Rollout 中有几个必需字段。以下是一个带有这些字段的 Rollout 示例：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Rollout&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;strategy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;canary&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;canaryService&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;canary-service &lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 必需&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;stableService&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;stable-service &lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 必需&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;trafficRouting&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;         &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;nginx&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;           &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 必须配置 stableIngress 或 stableIngress 中的一个，但不能同时配置。&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;           &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;stableIngress&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;primary-ingress&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;           &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;stableIngresses&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;             &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;primary-ingress&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;             &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;secondary-ingress&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;             &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;tertiary-ingress&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;           &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotationPrefix&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;customingress.nginx.ingress.kubernetes.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 可选的&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;           &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;additionalIngressAnnotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 可选的&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;             &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;canary-by-header&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;X-Canary&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;             &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;canary-by-header-value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;iwantsit&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;稳定 Ingress 字段是对 Rollout 同一命名空间中的 Ingress 的引用。Rollout 需要主要 Ingress 将流量路由到稳定服务。Rollout 通过确认 Ingress 是否具有与 Rollout 的 stableService 匹配的后端来检查该条件。&lt;/p&gt;
+&lt;p&gt;控制器通过创建具有金丝雀注释的第二个 Ingress 来将流量路由到金丝雀服务。随着 Rollout 经过金丝雀步骤，控制器更新金丝雀 Ingress 的金丝雀注释，以反映 Rollout 的所需状态，从而实现两个不同版本之间的流量分配。&lt;/p&gt;
+&lt;p&gt;由于 Nginx Ingress 控制器允许用户配置用于 Ingress 控制器的注释前缀，因此 Rollout 可以指定可选的 &lt;code&gt;annotationPrefix&lt;/code&gt; 字段。如果设置了该字段，则金丝雀 Ingress 将使用该前缀而不是默认的 &lt;code&gt;nginx.ingress.kubernetes.io&lt;/code&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;在一个服务中使用多个-nginx-ingress-控制器与-argo-rollouts&#34;&gt;在一个服务中使用多个 NGINX Ingress 控制器与 Argo Rollouts&lt;/h2&gt;
+&lt;p&gt;从 v1.5 开始，argo rollouts 支持多个 Nginx Ingress 控制器指向具有金丝雀部署的一个服务。如果只需要一个 Ingress 控制器，请使用现有的键 &lt;code&gt;stableIngress&lt;/code&gt;。如果需要多个 Ingress 控制器（例如，分离内部和外部流量），请改用键 &lt;code&gt;stableIngresses&lt;/code&gt;。它接受一个字符串值数组，这些字符串值是 Ingress 控制器的名称。金丝雀步骤在所有 Ingress 控制器上应用相同的方式。&lt;/p&gt;
+&lt;h2 id=&#34;在自定义-nginx-ingress-控制器名称中使用-argo-rollouts&#34;&gt;在自定义 NGINX ingress 控制器名称中使用 Argo Rollouts&lt;/h2&gt;
+&lt;p&gt;默认情况下，Argo Rollouts 控制器仅在具有 &lt;code&gt;kubernetes.io/ingress.class&lt;/code&gt; 注释或 &lt;code&gt;spec.ingressClassName&lt;/code&gt; 设置为 &lt;code&gt;nginx&lt;/code&gt; 的 Ingress 上运行。用户可以通过指定 &lt;code&gt;--nginx-ingress-classes&lt;/code&gt; 标志将控制器配置为在具有不同类名的 Ingress 上运行。如果 Argo Rollouts 控制器应该在多个值上运行，则用户可以多次列出 &lt;code&gt;--nginx-ingress-classes&lt;/code&gt; 标志。这解决了集群具有在不同类值上运行的多个 Ingress 控制器的情况。&lt;/p&gt;
+&lt;p&gt;如果用户希望控制器在没有 &lt;code&gt;kubernetes.io/ingress.class&lt;/code&gt; 注释或 &lt;code&gt;spec.ingressClassName&lt;/code&gt; 的任何 Ingress 上运行，则用户应添加以下内容 &lt;code&gt;--nginx-ingress-classes &#39;&#39;&lt;/code&gt;。&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

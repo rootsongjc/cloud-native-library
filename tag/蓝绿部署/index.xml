@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>蓝绿部署 | 云原生资料库</title>
+    <link>https://lib.jimmysong.io/tag/%E8%93%9D%E7%BB%BF%E9%83%A8%E7%BD%B2/</link>
+      <atom:link href="https://lib.jimmysong.io/tag/%E8%93%9D%E7%BB%BF%E9%83%A8%E7%BD%B2/index.xml" rel="self" type="application/rss+xml" />
+    <description>蓝绿部署</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Wed, 21 Jun 2023 16:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://lib.jimmysong.io/media/sharing.png</url>
+      <title>蓝绿部署</title>
+      <link>https://lib.jimmysong.io/tag/%E8%93%9D%E7%BB%BF%E9%83%A8%E7%BD%B2/</link>
+    </image>
+    
+    <item>
+      <title>蓝绿部署策略</title>
+      <link>https://lib.jimmysong.io/argo-rollouts/rollout/deployment-strategies/bluegreen/</link>
+      <pubDate>Wed, 21 Jun 2023 16:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/argo-rollouts/rollout/deployment-strategies/bluegreen/</guid>
+      <description>&lt;p&gt;蓝绿部署允许用户减少同时运行多个版本的时间。&lt;/p&gt;
+&lt;h2 id=&#34;概述&#34;&gt;概述&lt;/h2&gt;
+&lt;p&gt;除了管理 ReplicaSet 外，在 &lt;code&gt;BlueGreenUpdate&lt;/code&gt; 策略期间，Rollout 控制器还将修改 Service 资源。Rollout 规范要求用户在同一命名空间中指定对活动服务的引用以及可选的预览服务。活动服务用于将常规应用程序流量发送到旧版本，而预览服务用于将流量漏斗到新版本。Rollout 控制器通过向这些服务的选择器注入 ReplicaSet 的唯一哈希来确保正确的流量路由。这允许 Rollout 定义一个活动和预览堆栈以及从预览到活动的过程。&lt;/p&gt;
+&lt;p&gt;当 Rollout 的 &lt;code&gt;.spec.template&lt;/code&gt; 字段发生更改时，控制器将创建新的 ReplicaSet。如果活动服务没有将流量发送到 ReplicaSet，则控制器将立即开始将流量发送到 ReplicaSet。否则，活动服务将指向旧 ReplicaSet，而 ReplicaSet 变得可用。一旦新的 ReplicaSet 变得可用，控制器将修改活动服务以指向新的 ReplicaSet。在等待 &lt;code&gt;.spec.strategy.blueGreen.scaleDownDelaySeconds&lt;/code&gt; 配置的一些时间之后，控制器将缩小旧 ReplicaSet。&lt;/p&gt;
+&lt;p&gt;🔔 重要：当 Rollout 在服务上更改选择器时，所有节点更新其 IP 表以将流量发送到新的 Pod 而不是旧的 Pod 之前存在传播延迟。在此延迟期间，如果节点尚未更新，则流量将被定向到旧 Pod。为了防止将数据包发送到杀死旧 Pod 的节点，Rollout 使用 &lt;code&gt;scaleDownDelaySeconds&lt;/code&gt; 字段为节点提供足够的时间来广播 IP 表更改。&lt;/p&gt;
+&lt;h2 id=&#34;示例&#34;&gt;示例&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Rollout&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rollout-bluegreen&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;replicas&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;revisionHistoryLimit&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;selector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;matchLabels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rollout-bluegreen&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;template&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;labels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rollout-bluegreen&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;containers&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rollouts-demo&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;image&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj/rollouts-demo:blue&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;imagePullPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Always&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;ports&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;containerPort&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;8080&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;strategy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;blueGreen&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# activeService 指定要在升级时使用新模板哈希更新的服务。&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 对于蓝绿更新策略，此字段为必填字段。&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;activeService&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rollout-bluegreen-active&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# previewService 指定要在推广之前使用新模板哈希更新的服务。&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 这使得预览栈可以在不提供生产流量的情况下可达。&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 此字段为可选字段。&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;previewService&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rollout-bluegreen-preview&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# autoPromotionEnabled 通过在推广之前立即暂停 Rollout 来禁用新堆栈的自动推广。&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 如果省略，默认行为是在 ReplicaSet 完全准备/可用后立即推广新堆栈。&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 可以使用以下命令恢复 Rollout：`kubectl argo rollouts promote ROLLOUT`&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;autoPromotionEnabled&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;false&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;可配置的特性&#34;&gt;可配置的特性&lt;/h2&gt;
+&lt;p&gt;以下是将更改 BlueGreen 部署行为的可选字段：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;  spec:
+    strategy:
+      blueGreen:
+        autoPromotionEnabled: boolean
+        autoPromotionSeconds: *int32
+        antiAffinity: object
+        previewService: string
+        prePromotionAnalysis: object
+        postPromotionAnalysis: object
+        previewReplicaCount: *int32
+        scaleDownDelaySeconds: *int32
+        scaleDownDelayRevisionLimit: *int32
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;事件序列&#34;&gt;事件序列&lt;/h2&gt;
+&lt;p&gt;以下描述了蓝绿更新期间发生的事件序列。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;从完全推广的稳定状态开始，使用修订版本 1 的 ReplicaSet 指向 &lt;code&gt;activeService&lt;/code&gt; 和 &lt;code&gt;previewService&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;用户通过修改 Pod 模板 (&lt;code&gt;spec.template.spec&lt;/code&gt;) 启动更新。&lt;/li&gt;
+&lt;li&gt;创建大小为 0 的修订版本 2 ReplicaSet。&lt;/li&gt;
+&lt;li&gt;修改预览服务以指向修订版本 2 ReplicaSet。&lt;code&gt;activeService&lt;/code&gt; 仍指向修订版本 1。&lt;/li&gt;
+&lt;li&gt;如果使用了 &lt;code&gt;previewReplicaCount&lt;/code&gt;，则将修订版本 2 ReplicaSet 缩放到 &lt;code&gt;spec.replicas&lt;/code&gt; 或 &lt;code&gt;previewReplicaCount&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;一旦修订版本 2 ReplicaSet Pod 完全可用，&lt;code&gt;prePromotionAnalysis&lt;/code&gt; 就会开始。&lt;/li&gt;
+&lt;li&gt;在 &lt;code&gt;prePromotionAnalysis&lt;/code&gt; 成功后，如果 &lt;code&gt;autoPromotionEnabled&lt;/code&gt; 为 false 或 &lt;code&gt;autoPromotionSeconds&lt;/code&gt; 不为零，则蓝绿色暂停。&lt;/li&gt;
+&lt;li&gt;通过手动或自动超过 &lt;code&gt;autoPromotionSeconds&lt;/code&gt; 来恢复 Rollout。&lt;/li&gt;
+&lt;li&gt;如果使用了 &lt;code&gt;previewReplicaCount&lt;/code&gt;，则将修订版本 2 ReplicaSet 缩放到 &lt;code&gt;spec.replicas&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;Rollout 通过将 &lt;code&gt;activeService&lt;/code&gt; 更新为指向新的 ReplicaSet 来“推广”修订版本 2 ReplicaSet。此时，没有服务指向修订版本 1&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;postPromotionAnalysis&lt;/code&gt; 分析开始&lt;/li&gt;
+&lt;li&gt;一旦 &lt;code&gt;postPromotionAnalysis&lt;/code&gt; 成功完成，更新成功，修订版本 2 ReplicaSet 被标记为稳定。Rollout 被认为是完全推广。&lt;/li&gt;
+&lt;li&gt;在等待 &lt;code&gt;scaleDownDelaySeconds&lt;/code&gt;（默认为 30 秒）之后，修订版本 1 ReplicaSet 被缩小。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;autopromotionenabled&#34;&gt;autoPromotionEnabled&lt;/h3&gt;
+&lt;p&gt;AutoPromotionEnabled 将使 Rollout 在新的 ReplicaSet 健康后自动将其推广到活动服务。如果未指定，该字段的默认值为 true。&lt;/p&gt;
+&lt;p&gt;默认为 true&lt;/p&gt;
+&lt;h3 id=&#34;autopromotionseconds&#34;&gt;autoPromotionSeconds&lt;/h3&gt;
+&lt;p&gt;AutoPromotionSeconds 将使 Rollout 在自动暂停状态下进入 AutoPromotionSeconds 时间后自动将新的 ReplicaSet 推广到活动服务。如果 &lt;code&gt;AutoPromotionEnabled&lt;/code&gt; 字段设置为 false，则将忽略此字段。&lt;/p&gt;
+&lt;p&gt;默认为 nil&lt;/p&gt;
+&lt;h3 id=&#34;antiaffinity&#34;&gt;antiAffinity&lt;/h3&gt;
+&lt;p&gt;有关更多信息，请查看 Anti Affinity 文档。&lt;/p&gt;
+&lt;p&gt;默认为 nil&lt;/p&gt;
+&lt;h3 id=&#34;maxunavailable&#34;&gt;maxUnavailable&lt;/h3&gt;
+&lt;p&gt;在更新期间可以不可用的 Pod 的最大数量。该值可以是绝对数字（例如：5）或所需 Pod 的百分比（例如：10%）。如果 MaxSurge 为 0，则不能为 0。&lt;/p&gt;
+&lt;p&gt;默认为 0&lt;/p&gt;
+&lt;h3 id=&#34;prepromotionanalysis&#34;&gt;prePromotionAnalysis&lt;/h3&gt;
+&lt;p&gt;在将流量切换到新版本之前，配置 Analysis。AnalysisRun 可用于在 AnalysisRun 成功完成之前阻止 Service 选择器切换。分析运行的成功或失败决定 Rollout 是否切换流量，或完全中止 Rollout。&lt;/p&gt;
+&lt;p&gt;默认为 nil&lt;/p&gt;
+&lt;h3 id=&#34;postpromotionanalysis&#34;&gt;postPromotionAnalysis&lt;/h3&gt;
+&lt;p&gt;在将流量切换到新版本后配置 Analysis。如果分析运行失败或出错，则 Rollout 进入中止状态并将流量切换回以前的稳定 Replicaset。如果指定了 &lt;code&gt;scaleDownDelaySeconds&lt;/code&gt;，控制器将在 &lt;code&gt;scaleDownDelay&lt;/code&gt; 时取消任何 AnalysisRuns 以缩小 ReplicaSet。如果省略它，并且指定了后期分析，则仅在 AnalysisRun 完成后缩小 ReplicaSet（最少为 30 秒）。&lt;/p&gt;
+&lt;p&gt;默认为 nil&lt;/p&gt;
+&lt;h3 id=&#34;previewservice&#34;&gt;previewService&lt;/h3&gt;
+&lt;p&gt;PreviewService 字段引用将被修改以在新 ReplicaSet 之前发送流量的 Service。一旦新 ReplicaSet 开始接收来自活动服务的流量，预览服务也将被修改以将流量发送到新 ReplicaSet。Rollout 始终确保预览服务将流量发送到最新的 ReplicaSet。因此，如果在将旧版本推广到活动服务之前引入新版本，则控制器将立即切换到全新的版本。&lt;/p&gt;
+&lt;p&gt;此功能用于提供可以用于测试应用程序的新版本的终点。&lt;/p&gt;
+&lt;p&gt;默认为空字符串&lt;/p&gt;
+&lt;h3 id=&#34;previewreplicacount&#34;&gt;previewReplicaCount&lt;/h3&gt;
+&lt;p&gt;PreviewReplicaCount 字段将指示新版本的应用程序应运行的副本数。一旦应用程序准备好推广到活动服务，控制器将扩展新的 ReplicaSet 到 &lt;code&gt;spec.replicas&lt;/code&gt; 的值。在测试阶段期间，此功能的主要用途是节省资源。如果应用程序不需要完全缩放应用程序进行测试，则此功能可以帮助节省一些资源。&lt;/p&gt;
+&lt;p&gt;如果省略，则预览 ReplicaSet 堆栈将缩放到 100% 的副本。&lt;/p&gt;
+&lt;h3 id=&#34;scaledowndelayseconds&#34;&gt;scaleDownDelaySeconds&lt;/h3&gt;
+&lt;p&gt;ScaleDownDelaySeconds 用于在将活动服务切换到新 ReplicaSet 后延迟缩小旧 ReplicaSet。&lt;/p&gt;
+&lt;p&gt;默认为 30&lt;/p&gt;
+&lt;h3 id=&#34;scaledowndelayrevisionlimit&#34;&gt;scaleDownDelayRevisionLimit&lt;/h3&gt;
+&lt;p&gt;ScaleDownDelayRevisionLimit 限制保留在活动服务中的旧 ReplicaSet 数量，直到从活动服务中删除后的 scaleDownDelay。如果省略，则将保留所有 ReplicaSets 以供指定的 scaleDownDelay。&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
