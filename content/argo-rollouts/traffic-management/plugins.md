@@ -8,7 +8,7 @@ type: book
 
 🔔 提醒：自 1.5 版本起可用 - 状态：Alpha
 
-Argo Rollouts 支持通过第三方插件系统获取分析指标。这允许用户扩展 Rollouts 的功能以支持本机不支持的度量提供者。Rollouts 使用一个名为 go-plugin 的插件库来实现这一点。你可以在这里找到一个示例插件：rollouts-plugin-trafficrouter-sample-nginx
+Argo Rollouts 支持通过第三方插件系统获取分析指标。这允许用户扩展 Rollouts 的功能以支持原生不支持的度量提供者。Rollouts 使用一个名为 go-plugin 的插件库来实现这一点。你可以在这里找到一个示例插件：rollouts-plugin-trafficrouter-sample-nginx
 
 ## 使用 Traffic Router 插件
 

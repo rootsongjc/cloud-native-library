@@ -422,4 +422,4 @@ Argo CD 还有一个[开放问题](https://github.com/argoproj/argo-cd/issues/29
 
 ### 通过 [SMI Adapter for Istio](https://github.com/servicemeshinterface/smi-adapter-istio) 支持 Istio
 
-[SMI](https://smi-spec.io/) 是服务网格接口，它作为服务网格所有常见特性的标准接口。该功能对 GitOps 友好，但本机 Istio 具有 SMI 目前不提供的额外功能。
+[SMI](https://smi-spec.io/) 是服务网格接口，它作为服务网格所有常见特性的标准接口。该功能对 GitOps 友好，但原生 Istio 具有 SMI 目前不提供的额外功能。
