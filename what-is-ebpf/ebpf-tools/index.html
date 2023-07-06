@@ -339,7 +339,7 @@
         content="2022-06-02T12:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2023-07-06T21:37:05&#43;08:00">
+    <meta property="article:modified_time" content="2023-07-07T00:35:26&#43;08:00">
   
 
   
@@ -1097,7 +1097,7 @@
 <h3 id="网络安全">网络安全</h3>
 <p>由于 eBPF 可以检查和操纵网络数据包，它在网络安全方面有许多用途。基本原理是，如果一个网络数据包被认为是恶意的或有问题的，因为它不符合一些安全验证标准，就可以被简单地丢弃。eBPF 可以很高效的来验证这一点，因为它可以钩住内核中网络堆栈的相关部分，甚至在网卡上 <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>。这意味着策略外的或恶意的数据包可以在产生网络堆栈处理和传递到用户空间的处理成本之前被丢弃。</p>
 <p>这里有一个 eBPF 早期在生产中大规模使用的一个例子 —— <a href="https://blog.cloudflare.com/how-to-drop-10-million-packets/" target="_blank" rel="noopener">Cloudflare</a> 的 DDoS（分布式拒绝服务）保护。DDoS 攻击者用许多网络信息淹没目标机，希望目标机忙于处理这些信息，导致无法提供有效工作。Cloudflare 的工程师使用 eBPF 程序，在数据包到达后立即对其进行检查，并迅速确定一个数据包是否是这种攻击的一部分，如果是，则将其丢弃。数据包不必通过内核的网络堆栈，因此需要的处理资源要少得多，而且目标可以应对更大规模的恶意流量。</p>
-<p>eBPF 程序也被用于动态缓解 ”死亡数据包“ 的内核漏洞 <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>。攻击者以这样的方式制作一个网络工作数据包——利用了内核中的一个错误，使其无法正确处理该数据包。与其等待内核补丁的推出，不如通过加载一个 eBPF 程序来缓解攻击，该程序可以寻找这些特别制作的数据包并将其丢弃。这一点的真正好处是，eBPF 程序可以动态加载，而不必改变机器上的任何东西。</p>
+<p>eBPF 程序也被用于动态缓解”死亡数据包“的内核漏洞 <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>。攻击者以这样的方式制作一个网络工作数据包——利用了内核中的一个错误，使其无法正确处理该数据包。与其等待内核补丁的推出，不如通过加载一个 eBPF 程序来缓解攻击，该程序可以寻找这些特别制作的数据包并将其丢弃。这一点的真正好处是，eBPF 程序可以动态加载，而不必改变机器上的任何东西。</p>
 <p>在 Kubernetes 中，<a href="https://networkpolicy.io/" target="_blank" rel="noopener">网络策略</a> 是一等资源，但它是由网络插件来执行的。一些 CNI，包括 Cilium 和 Calico，为更强大的规则提供了扩展的网络策略功能，例如允许或禁止流量到一个由完全限定域名而不是仅仅由 IP 地址指定的目的地。在 <a href="https://app.networkpolicy.io/" target="_blank" rel="noopener">app.networkpolicy.io</a> 有一个探索网络策略及其效果的好工具，如 <a href="#figure-f-6-5">图 6-5</a> 所示。</p>
 
 
@@ -1125,9 +1125,9 @@
 <p>eBPF 也可以被用来提供透明的加密，无论是通过 WireGuard 还是 IPsec <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup>。在这里，<strong>透明</strong> 意味着应用程序不需要任何修改 —— 事实上，应用程序可以完全不知道其网络流量是被加密的。</p>
 <h3 id="运行时安全">运行时安全</h3>
 <p>eBPF 也被用来构建工具，检测恶意程序，防止恶意行为。这些恶意程序包括访问未经许可的文件，运行可执行程序，或试图获得额外的权限。</p>
-<p>事实上，你很可能已经以 seccomp 的形式使用了基于 BPF 的安全策略，这是一个Linux 功能，限制应用程序可以调用的系统调用集。</p>
-<p>CNCF 项目 <a href="https://falco.org/" target="_blank" rel="noopener">Falco</a> 扩展了这种限制应用程序可以进行系统调用的想法。Falco 的规则定义是用 YAML 创建的，这比 seccomp 配置文件更容易阅读和理解。默认的 Falco 驱动是一个内核模块，但也有一个 eBPF 探针驱动，它与 ”原始系统调用“ 事件相联系。它不会阻止这些系统调用的完成，但它可以生成日志或其他通知，提醒操作人员注意潜在的恶意程序。</p>
-<p>正如我们在 <a href="../ebpf-programs">第三章</a> 中看到的，eBPF 程序可以附加到 LSM 接口上，以防止恶意行为或修复已知的漏洞。例如，Denis Efremov 写了一个 <a href="https://github.com/evdenis/lsm_bpf_check_argc0" target="_blank" rel="noopener">eBPF 程序</a> 来防止 <code>exec()</code> 系统调用在没有传递任何参数的情况下运行，以修复 PwnKit <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup> 的高危漏洞。eBPF也可用于缓解投机执行的 ”Spectre“ 攻击 <sup id="fnref:6"><a href="#fn:6" class="footnote-ref" role="doc-noteref">6</a></sup>。</p>
+<p>事实上，你很可能已经以 seccomp 的形式使用了基于 BPF 的安全策略，这是一个 Linux 功能，限制应用程序可以调用的系统调用集。</p>
+<p>CNCF 项目 <a href="https://falco.org/" target="_blank" rel="noopener">Falco</a> 扩展了这种限制应用程序可以进行系统调用的想法。Falco 的规则定义是用 YAML 创建的，这比 seccomp 配置文件更容易阅读和理解。默认的 Falco 驱动是一个内核模块，但也有一个 eBPF 探针驱动，它与”原始系统调用“事件相联系。它不会阻止这些系统调用的完成，但它可以生成日志或其他通知，提醒操作人员注意潜在的恶意程序。</p>
+<p>正如我们在 <a href="../ebpf-programs">第三章</a> 中看到的，eBPF 程序可以附加到 LSM 接口上，以防止恶意行为或修复已知的漏洞。例如，Denis Efremov 写了一个 <a href="https://github.com/evdenis/lsm_bpf_check_argc0" target="_blank" rel="noopener">eBPF 程序</a> 来防止 <code>exec()</code> 系统调用在没有传递任何参数的情况下运行，以修复 PwnKit <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup> 的高危漏洞。eBPF 也可用于缓解投机执行的”Spectre“攻击 <sup id="fnref:6"><a href="#fn:6" class="footnote-ref" role="doc-noteref">6</a></sup>。</p>
 <p><a href="https://github.com/aquasecurity/tracee" target="_blank" rel="noopener">Tracee</a> 是另一个使用 eBPF 的运行时安全开源项目。除了基于系统调用的检查之外，它还使用 LSM 接口。这有助于避免受到 <a href="https://lwn.net/Articles/245630/" target="_blank" rel="noopener">TOCTTOU 竞争</a> 条件的影响，因为只检查系统调用时可能会出现这种情况。Tracee 支持用 Open Policy Agent 的 Rego 语言定义的规则，也允许用 Go 定义的插件规则。</p>
 <p>Cilium 的 <a href="https://github.com/cilium/tetragon" target="_blank" rel="noopener">Tetragon</a> 组件提供了另一种强大的方法，使用 eBPF 来监控 <strong>容器安全可观测性的四个黄金信号</strong>：进程执行、网络套接字、文件访问和七层网络身份。这使操作人员能够准确地看到所有恶意或可疑事件，直击特定 pod 中的可执行文件名称和用户身份。例如，如果你受到加密货币挖矿的攻击，你可以看到到底是什么可执行程序打开了与矿池的网络连接，什么时候，从哪个 pod。这些取证是非常有价值的，可以了解漏洞是如何发生的，并使其容易建立安全策略，以防止类似的攻击再次发生。</p>
 <p>如果你想更深入地了解 eBPF 的安全可观测性这一主题，请查看 Natália Ivánkó 和 Jed Salazar 的报告 <sup id="fnref:7"><a href="#fn:7" class="footnote-ref" role="doc-noteref">7</a></sup>。请关注云原生 eBPF 领域，因为不久之后我们就会看到利用 BPF LSM 和其他 eBPF 定制的工具来提供安全执行和可以观测能力。</p>
@@ -1201,7 +1201,7 @@
           
 
         <div class="body-footer">
-          <p>最近更新于 2023-07-06</p>
+          <p>最近更新于 2023-07-07</p>
 
           
 

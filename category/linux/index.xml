@@ -41,7 +41,7 @@
 &lt;p&gt;Thomas Graf，《Cilium——使用 BPF 和 XDP 的网络和应用安全》（DockerCon 2017 年 4 月 17-20 日）&amp;#160;&lt;a href=&#34;#fnref:1&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
 &lt;/li&gt;
 &lt;li id=&#34;fn:2&#34;&gt;
-&lt;p&gt;Steven McCanne 和 Van Jacobson，《BSD数据包过滤器：用户级数据包捕获的新架构》（工作文件，劳伦斯伯克利国家实验室，伯克利，1992 年 12 月 19 日）。&amp;#160;&lt;a href=&#34;#fnref:2&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Steven McCanne 和 Van Jacobson，《BSD 数据包过滤器：用户级数据包捕获的新架构》（工作文件，劳伦斯伯克利国家实验室，伯克利，1992 年 12 月 19 日）。&amp;#160;&lt;a href=&#34;#fnref:2&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
 &lt;/li&gt;
 &lt;li id=&#34;fn:3&#34;&gt;
 &lt;p&gt;perf 是一个 Linux 子系统，用于收集性能数据。&amp;#160;&lt;a href=&#34;#fnref:3&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
@@ -220,14 +220,14 @@
 &lt;p&gt;一些功能可以单独用 eBPF 程序实现，但在许多情况下，我们希望 eBPF 代码能从用户空间的应用程序接收信息，或将数据传递给用户空间的应用程序。允许数据在 eBPF 程序和用户空间之间，或在不同的 eBPF 程序之间传递的机制被称为 &lt;strong&gt;map&lt;/strong&gt;。&lt;/p&gt;
 &lt;h2 id=&#34;ebpf-map&#34;&gt;eBPF Map&lt;/h2&gt;
 &lt;p&gt;map 的开发是 eBPF 缩略语中的 &lt;strong&gt;e&lt;/strong&gt; 代表 &lt;strong&gt;extended&lt;/strong&gt; 重要区别之一。&lt;/p&gt;
-&lt;p&gt;map 是与 eBPF 程序一起定义的数据结构体。有各种不同类型的 map ，但它们本质上都是键值存储。eBPF 程序可以读取和写入 map，用户空间代码也可以。map 的常见用途包括：&lt;/p&gt;
+&lt;p&gt;map 是与 eBPF 程序一起定义的数据结构体。有各种不同类型的 map，但它们本质上都是键值存储。eBPF 程序可以读取和写入 map，用户空间代码也可以。map 的常见用途包括：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;eBPF 程序写入关于事件的指标和其他数据，供用户空间代码以后检索。&lt;/li&gt;
 &lt;li&gt;用户空间代码编写配置信息，供 eBPF 程序读取并作出相应的行为。&lt;/li&gt;
-&lt;li&gt;eBPF 程序将数据写入 map ，供另一个 eBPF 程序以后检索，允许跨多个内核事件的信息协调。&lt;/li&gt;
+&lt;li&gt;eBPF 程序将数据写入 map，供另一个 eBPF 程序以后检索，允许跨多个内核事件的信息协调。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;如果内核和用户空间的代码都要访问同一个映射，它们需要对存储在该映射中的数据结构体有一个共同的理解。这可以通过在用户空间和内核代码中加入定义这些数据结构体的头文件来实现，但是如果这些代码不是用相同的语言编写的，作者将需要仔细创建逐个字节兼容的结构体定义。&lt;/p&gt;
-&lt;p&gt;我们已经讨论了 eBPF 工具的主要组成部分：在内核中运行的 eBPF 程序，加载和与这些程序交互的用户空间代码，以及允许程序共享数据的 map 。为了更具体化，让我们看一个例子。&lt;/p&gt;
+&lt;p&gt;我们已经讨论了 eBPF 工具的主要组成部分：在内核中运行的 eBPF 程序，加载和与这些程序交互的用户空间代码，以及允许程序共享数据的 map。为了更具体化，让我们看一个例子。&lt;/p&gt;
 &lt;h2 id=&#34;opensnoop-示例&#34;&gt;Opensnoop 示例&lt;/h2&gt;
 &lt;p&gt;在 eBPF 程序的例子中，我选择了 &lt;code&gt;opesnnoop&lt;/code&gt;，一个可以显示任何进程所打开的文件的工具。这个工具的原始版本是 Brendan Gregg 最初在 &lt;a href=&#34;https://github.com/iovisor/bcc/blob/master/tools/opensnoop.py&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;BCC 项目&lt;/a&gt;中编写的许多 BPF 工具之一，你可以在 GitHub 上找到。它后来被重写为 &lt;code&gt;libbpf&lt;/code&gt;（你将在下一章见到它），在这个例子中，我使用 &lt;code&gt;libbpf-tools&lt;/code&gt; 目录下的较新版本。&lt;/p&gt;
 &lt;p&gt;当你运行 &lt;code&gt;opensnoop&lt;/code&gt; 时，你将看到的输出在很大程度上取决于当时在虚拟机上发生了什么，但它应该看起来像这样。&lt;/p&gt;
@@ -347,7 +347,7 @@ buffer，并将每个事件中包含的信息写到屏幕上。首先，它打�
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;...&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;传递给 &lt;code&gt;handle_event()&lt;/code&gt; 的数据参数指向 eBPF 程序为该事件写进 map 的事件结构体。&lt;/p&gt;
 &lt;p&gt;用户空间的代码可以检索这些信息，将其格式化并写出来给用户看。&lt;/p&gt;
-&lt;p&gt;正如你所看到的，opensnoop 注册了 eBPF 程序，每当有应用程序进行 &lt;code&gt;open()&lt;/code&gt; 或 &lt;code&gt;openat()&lt;/code&gt; 系统调用时都会被调用。这些运行在内核中的 eBPF 程序收集有关该系统调用的上下文信息 —— 可执行文件名和进程 ID—— 以及被打开的文件的信息。这些信息被写进一个 map ，用户空间可以从中读取并显示给用户。&lt;/p&gt;
+&lt;p&gt;正如你所看到的，opensnoop 注册了 eBPF 程序，每当有应用程序进行 &lt;code&gt;open()&lt;/code&gt; 或 &lt;code&gt;openat()&lt;/code&gt; 系统调用时都会被调用。这些运行在内核中的 eBPF 程序收集有关该系统调用的上下文信息 —— 可执行文件名和进程 ID—— 以及被打开的文件的信息。这些信息被写进一个 map，用户空间可以从中读取并显示给用户。&lt;/p&gt;
 &lt;p&gt;你会在 &lt;code&gt;libbpf-tools&lt;/code&gt; 目录中找到几十个这样的 eBPF 工具的例子，每个例子通常都是一个系统调用，或者是一系列相关的系统调用，如 &lt;code&gt;open()&lt;/code&gt; 和 &lt;code&gt;openat()&lt;/code&gt;。&lt;/p&gt;
 &lt;p&gt;系统调用是一个稳定的内核接口，它提供了一个非常强大的方式来观察（虚拟）机器上正在发生的事情。但是，不要以为 eBPF 编程只能用于拦截系统调用。还有很多其他的固定接口，包括 LSM 和网络堆栈中的各种点，eBPF 可以连接到这些接口。如果你愿意承担内核版本变更的风险，eBPF 程序可以附加的范围是绝对宽广的。&lt;/p&gt;
 &lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
@@ -402,7 +402,7 @@ buffer，并将每个事件中包含的信息写到屏幕上。首先，它打�
 &lt;p&gt;为了解决跨内核的可移植性问题，BCC &lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;（BPF 编译器集合，BPF Compiler Collection）项目采取了在运行时编译 eBPF 代码的方法，在目标机器上就地进行。这意味着编译工具链需要安装到每个你想让代码运行 &lt;sup id=&#34;fnref:2&#34;&gt;&lt;a href=&#34;#fn:2&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;2&lt;/a&gt;&lt;/sup&gt; 的目标机器上，而且你必须在工具启动之前等待编译完成，而且文件系统上必须有内核头文件（实际上并不总是这样）。这就引出了 BPF CO-RE。&lt;/p&gt;
 &lt;h3 id=&#34;co-re&#34;&gt;CO-RE&lt;/h3&gt;
 &lt;p&gt;CO-RE（Compile Once, Run Everyone，编译一次，到处运行）方法由以下元素组成。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;BTF（BPF Type Format）&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;BTF (BPF Type Format)&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;这是一种用于表达数据结构和函数签名布局的格式。现代 Linux 内核支持 BTF，因此你可以从运行中的系统中生成一个名为 &lt;code&gt;vmlinux.h&lt;/code&gt; 的头文件，其中包含一个 BPF 程序可能需要的关于内核的所有数据结构信息。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;libbpf，BPF 库&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;libbpf 一方面提供了加载 eBPF 程序和映射到内核的功能，另一方面也在可移植性方面也起着重要的作用：它依靠 BTF 信息来调整 eBPF 代码，以弥补其编译时的数据结构与目标机器上的数据结构之间的差异。&lt;/p&gt;
@@ -513,7 +513,7 @@ buffer，并将每个事件中包含的信息写到屏幕上。首先，它打�
 &lt;p&gt;存在于 Linux 系统中的安全控制措施假定内核本身是可以信任的。它们的存在是为了防止在用户空间运行的代码产生不良行为。&lt;/p&gt;
 &lt;p&gt;我们在 &lt;a href=&#34;../changing-the-kernel-is-hard&#34;&gt;第二章&lt;/a&gt; 中看到，eBPF 检查器确保 eBPF 程序只能访问它有权限的内存。检查器检查程序时不可能超出其职权范围，包括确保内存为当前进程所拥有或为当前网络包的一部分。这意味着 eBPF 代码比它周围的内核代码受到更严格的控制，内核代码不需要通过任何类型的检查器。&lt;/p&gt;
 &lt;p&gt;如果攻击者逃脱了容器化的应用程序而到了节点上，而且还能够提升权限，那么该攻击者就可以危害到同一节点上的其他应用程序。由于这些逃逸是未知的，作为一个容器安全专家，我不建议在没有额外安全工具的情况下，在共享机器上与不受信任的应用程序或用户一起运行敏感的应用程序。对于高度敏感的数据，你甚至可能不希望在虚拟机中与不受信任的用户在同一裸机上运行。但是，如果你准备在同一台虚拟机上并行运行应用程序（这在许多不是特别敏感的应用程序中是完全合理的），那么 eBPF 就不会在共享内核已经存在的风险之上增加额外的风险。&lt;/p&gt;
-&lt;p&gt;当然，恶意的 eBPF 程序可能造成各种破坏，当然也很容易写出劣迹的 eBPF 代码 —— 例如，复制每个网络数据包并将其发送给窃听者。默认情况下，非 root 用户没有加载 eBPF 程序 &lt;sup id=&#34;fnref:2&#34;&gt;&lt;a href=&#34;#fn:2&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;2&lt;/a&gt;&lt;/sup&gt; 的权限， 只有当你真正信任他们时，你才应该授予用户或软件系统这种权限，就像 root 权限一样。因此，必须小心你所运行的代码的出处（有一个倡议正在进行中，以支持 eBPF 程序的签名检查来帮助解决这个问题）。你也可以使用 eBPF 程序来监视其他的 eBPF 程序！现在你已经对为什么 eBPF 是云原生工具的强大基础有了一个概念，下一章给你举一些来自云原生生态系统中的 eBPF 工具的具体例子。&lt;/p&gt;
+&lt;p&gt;当然，恶意的 eBPF 程序可能造成各种破坏，当然也很容易写出劣迹的 eBPF 代码 —— 例如，复制每个网络数据包并将其发送给窃听者。默认情况下，非 root 用户没有加载 eBPF 程序 &lt;sup id=&#34;fnref:2&#34;&gt;&lt;a href=&#34;#fn:2&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;2&lt;/a&gt;&lt;/sup&gt; 的权限，只有当你真正信任他们时，你才应该授予用户或软件系统这种权限，就像 root 权限一样。因此，必须小心你所运行的代码的出处（有一个倡议正在进行中，以支持 eBPF 程序的签名检查来帮助解决这个问题）。你也可以使用 eBPF 程序来监视其他的 eBPF 程序！现在你已经对为什么 eBPF 是云原生工具的强大基础有了一个概念，下一章给你举一些来自云原生生态系统中的 eBPF 工具的具体例子。&lt;/p&gt;
 &lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
 &lt;div class=&#34;footnotes&#34; role=&#34;doc-endnotes&#34;&gt;
 &lt;hr&gt;
@@ -650,7 +650,7 @@ buffer，并将每个事件中包含的信息写到屏幕上。首先，它打�
 &lt;h3 id=&#34;网络安全&#34;&gt;网络安全&lt;/h3&gt;
 &lt;p&gt;由于 eBPF 可以检查和操纵网络数据包，它在网络安全方面有许多用途。基本原理是，如果一个网络数据包被认为是恶意的或有问题的，因为它不符合一些安全验证标准，就可以被简单地丢弃。eBPF 可以很高效的来验证这一点，因为它可以钩住内核中网络堆栈的相关部分，甚至在网卡上 &lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;。这意味着策略外的或恶意的数据包可以在产生网络堆栈处理和传递到用户空间的处理成本之前被丢弃。&lt;/p&gt;
 &lt;p&gt;这里有一个 eBPF 早期在生产中大规模使用的一个例子 —— &lt;a href=&#34;https://blog.cloudflare.com/how-to-drop-10-million-packets/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Cloudflare&lt;/a&gt; 的 DDoS（分布式拒绝服务）保护。DDoS 攻击者用许多网络信息淹没目标机，希望目标机忙于处理这些信息，导致无法提供有效工作。Cloudflare 的工程师使用 eBPF 程序，在数据包到达后立即对其进行检查，并迅速确定一个数据包是否是这种攻击的一部分，如果是，则将其丢弃。数据包不必通过内核的网络堆栈，因此需要的处理资源要少得多，而且目标可以应对更大规模的恶意流量。&lt;/p&gt;
-&lt;p&gt;eBPF 程序也被用于动态缓解 ”死亡数据包“ 的内核漏洞 &lt;sup id=&#34;fnref:2&#34;&gt;&lt;a href=&#34;#fn:2&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;2&lt;/a&gt;&lt;/sup&gt;。攻击者以这样的方式制作一个网络工作数据包——利用了内核中的一个错误，使其无法正确处理该数据包。与其等待内核补丁的推出，不如通过加载一个 eBPF 程序来缓解攻击，该程序可以寻找这些特别制作的数据包并将其丢弃。这一点的真正好处是，eBPF 程序可以动态加载，而不必改变机器上的任何东西。&lt;/p&gt;
+&lt;p&gt;eBPF 程序也被用于动态缓解”死亡数据包“的内核漏洞 &lt;sup id=&#34;fnref:2&#34;&gt;&lt;a href=&#34;#fn:2&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;2&lt;/a&gt;&lt;/sup&gt;。攻击者以这样的方式制作一个网络工作数据包——利用了内核中的一个错误，使其无法正确处理该数据包。与其等待内核补丁的推出，不如通过加载一个 eBPF 程序来缓解攻击，该程序可以寻找这些特别制作的数据包并将其丢弃。这一点的真正好处是，eBPF 程序可以动态加载，而不必改变机器上的任何东西。&lt;/p&gt;
 &lt;p&gt;在 Kubernetes 中，&lt;a href=&#34;https://networkpolicy.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;网络策略&lt;/a&gt; 是一等资源，但它是由网络插件来执行的。一些 CNI，包括 Cilium 和 Calico，为更强大的规则提供了扩展的网络策略功能，例如允许或禁止流量到一个由完全限定域名而不是仅仅由 IP 地址指定的目的地。在 &lt;a href=&#34;https://app.networkpolicy.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;app.networkpolicy.io&lt;/a&gt; 有一个探索网络策略及其效果的好工具，如 &lt;a href=&#34;#figure-f-6-5&#34;&gt;图 6-5&lt;/a&gt; 所示。&lt;/p&gt;
 
 
@@ -678,9 +678,9 @@ buffer，并将每个事件中包含的信息写到屏幕上。首先，它打�
 &lt;p&gt;eBPF 也可以被用来提供透明的加密，无论是通过 WireGuard 还是 IPsec &lt;sup id=&#34;fnref:4&#34;&gt;&lt;a href=&#34;#fn:4&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;4&lt;/a&gt;&lt;/sup&gt;。在这里，&lt;strong&gt;透明&lt;/strong&gt; 意味着应用程序不需要任何修改 —— 事实上，应用程序可以完全不知道其网络流量是被加密的。&lt;/p&gt;
 &lt;h3 id=&#34;运行时安全&#34;&gt;运行时安全&lt;/h3&gt;
 &lt;p&gt;eBPF 也被用来构建工具，检测恶意程序，防止恶意行为。这些恶意程序包括访问未经许可的文件，运行可执行程序，或试图获得额外的权限。&lt;/p&gt;
-&lt;p&gt;事实上，你很可能已经以 seccomp 的形式使用了基于 BPF 的安全策略，这是一个Linux 功能，限制应用程序可以调用的系统调用集。&lt;/p&gt;
-&lt;p&gt;CNCF 项目 &lt;a href=&#34;https://falco.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Falco&lt;/a&gt; 扩展了这种限制应用程序可以进行系统调用的想法。Falco 的规则定义是用 YAML 创建的，这比 seccomp 配置文件更容易阅读和理解。默认的 Falco 驱动是一个内核模块，但也有一个 eBPF 探针驱动，它与 ”原始系统调用“ 事件相联系。它不会阻止这些系统调用的完成，但它可以生成日志或其他通知，提醒操作人员注意潜在的恶意程序。&lt;/p&gt;
-&lt;p&gt;正如我们在 &lt;a href=&#34;../ebpf-programs&#34;&gt;第三章&lt;/a&gt; 中看到的，eBPF 程序可以附加到 LSM 接口上，以防止恶意行为或修复已知的漏洞。例如，Denis Efremov 写了一个 &lt;a href=&#34;https://github.com/evdenis/lsm_bpf_check_argc0&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;eBPF 程序&lt;/a&gt; 来防止 &lt;code&gt;exec()&lt;/code&gt; 系统调用在没有传递任何参数的情况下运行，以修复 PwnKit &lt;sup id=&#34;fnref:5&#34;&gt;&lt;a href=&#34;#fn:5&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;5&lt;/a&gt;&lt;/sup&gt; 的高危漏洞。eBPF也可用于缓解投机执行的 ”Spectre“ 攻击 &lt;sup id=&#34;fnref:6&#34;&gt;&lt;a href=&#34;#fn:6&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;6&lt;/a&gt;&lt;/sup&gt;。&lt;/p&gt;
+&lt;p&gt;事实上，你很可能已经以 seccomp 的形式使用了基于 BPF 的安全策略，这是一个 Linux 功能，限制应用程序可以调用的系统调用集。&lt;/p&gt;
+&lt;p&gt;CNCF 项目 &lt;a href=&#34;https://falco.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Falco&lt;/a&gt; 扩展了这种限制应用程序可以进行系统调用的想法。Falco 的规则定义是用 YAML 创建的，这比 seccomp 配置文件更容易阅读和理解。默认的 Falco 驱动是一个内核模块，但也有一个 eBPF 探针驱动，它与”原始系统调用“事件相联系。它不会阻止这些系统调用的完成，但它可以生成日志或其他通知，提醒操作人员注意潜在的恶意程序。&lt;/p&gt;
+&lt;p&gt;正如我们在 &lt;a href=&#34;../ebpf-programs&#34;&gt;第三章&lt;/a&gt; 中看到的，eBPF 程序可以附加到 LSM 接口上，以防止恶意行为或修复已知的漏洞。例如，Denis Efremov 写了一个 &lt;a href=&#34;https://github.com/evdenis/lsm_bpf_check_argc0&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;eBPF 程序&lt;/a&gt; 来防止 &lt;code&gt;exec()&lt;/code&gt; 系统调用在没有传递任何参数的情况下运行，以修复 PwnKit &lt;sup id=&#34;fnref:5&#34;&gt;&lt;a href=&#34;#fn:5&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;5&lt;/a&gt;&lt;/sup&gt; 的高危漏洞。eBPF 也可用于缓解投机执行的”Spectre“攻击 &lt;sup id=&#34;fnref:6&#34;&gt;&lt;a href=&#34;#fn:6&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;6&lt;/a&gt;&lt;/sup&gt;。&lt;/p&gt;
 &lt;p&gt;&lt;a href=&#34;https://github.com/aquasecurity/tracee&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tracee&lt;/a&gt; 是另一个使用 eBPF 的运行时安全开源项目。除了基于系统调用的检查之外，它还使用 LSM 接口。这有助于避免受到 &lt;a href=&#34;https://lwn.net/Articles/245630/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;TOCTTOU 竞争&lt;/a&gt; 条件的影响，因为只检查系统调用时可能会出现这种情况。Tracee 支持用 Open Policy Agent 的 Rego 语言定义的规则，也允许用 Go 定义的插件规则。&lt;/p&gt;
 &lt;p&gt;Cilium 的 &lt;a href=&#34;https://github.com/cilium/tetragon&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetragon&lt;/a&gt; 组件提供了另一种强大的方法，使用 eBPF 来监控 &lt;strong&gt;容器安全可观测性的四个黄金信号&lt;/strong&gt;：进程执行、网络套接字、文件访问和七层网络身份。这使操作人员能够准确地看到所有恶意或可疑事件，直击特定 pod 中的可执行文件名称和用户身份。例如，如果你受到加密货币挖矿的攻击，你可以看到到底是什么可执行程序打开了与矿池的网络连接，什么时候，从哪个 pod。这些取证是非常有价值的，可以了解漏洞是如何发生的，并使其容易建立安全策略，以防止类似的攻击再次发生。&lt;/p&gt;
 &lt;p&gt;如果你想更深入地了解 eBPF 的安全可观测性这一主题，请查看 Natália Ivánkó 和 Jed Salazar 的报告 &lt;sup id=&#34;fnref:7&#34;&gt;&lt;a href=&#34;#fn:7&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;7&lt;/a&gt;&lt;/sup&gt;。请关注云原生 eBPF 领域，因为不久之后我们就会看到利用 BPF LSM 和其他 eBPF 定制的工具来提供安全执行和可以观测能力。&lt;/p&gt;

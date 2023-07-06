@@ -99,13 +99,13 @@
 &lt;li&gt;容器运行时必须按顺序为每个网络执行相应的插件，将容器添加到每个网络中。&lt;/li&gt;
 &lt;li&gt;在完成容器生命周期后，运行时必须以相反的顺序执行插件（相对于执行添加容器的顺序）以将容器与网络断开连接。&lt;/li&gt;
 &lt;li&gt;容器运行时不能为同一容器调用并行操作，但可以为不同的容器调用并行操作。&lt;/li&gt;
-&lt;li&gt;容器运行时必须为容器订阅 ADD 和 DEL 操作，这样 ADD 后面总是跟着相应的 DEL。 DEL 可能跟着额外的 DEL，但是，插件应该允许处理多个 DEL（即插件 DEL 应该是幂等的）。&lt;/li&gt;
+&lt;li&gt;容器运行时必须为容器订阅 ADD 和 DEL 操作，这样 ADD 后面总是跟着相应的 DEL。DEL 可能跟着额外的 DEL，但是，插件应该允许处理多个 DEL（即插件 DEL 应该是幂等的）。&lt;/li&gt;
 &lt;li&gt;容器必须由 ContainerID 唯一标识。存储状态的插件应该使用（网络名称，容器 ID）的主键来完成。&lt;/li&gt;
 &lt;li&gt;运行时不能调用同一个网络名称或容器 ID 执行两次 ADD（没有相应的 DEL）。换句话说，给定的容器 ID 必须只能添加到特定的网络一次。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;cni-插件&#34;&gt;CNI 插件&lt;/h2&gt;
 &lt;p&gt;CNI 插件必须实现一个可执行文件，这个文件可以被容器管理系统（例如 rkt 或 Kubernetes）调用。&lt;/p&gt;
-&lt;p&gt;CNI 插件负责将网络接口插入容器网络命名空间（例如，veth 对的一端），并在主机上进行任何必要的改变（例如将 veth 的另一端连接到网桥）。然后将 IP 分配给接口，并通过调用适当的 IPAM 插件来设置与 “IP 地址管理” 部分一致的路由。&lt;/p&gt;
+&lt;p&gt;CNI 插件负责将网络接口插入容器网络命名空间（例如，veth 对的一端），并在主机上进行任何必要的改变（例如将 veth 的另一端连接到网桥）。然后将 IP 分配给接口，并通过调用适当的 IPAM 插件来设置与“IP 地址管理”部分一致的路由。&lt;/p&gt;
 &lt;h3 id=&#34;参数&#34;&gt;参数&lt;/h3&gt;
 &lt;p&gt;CNI 插件必须支持以下操作：&lt;/p&gt;
 &lt;h4 id=&#34;将容器添加到网络&#34;&gt;将容器添加到网络&lt;/h4&gt;
@@ -163,9 +163,9 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;CNI 插件的详细说明请参考：&lt;a href=&#34;https://github.com/containernetworking/cni/blob/master/SPEC.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CNI SPEC&lt;/a&gt;。&lt;/p&gt;
 &lt;h3 id=&#34;ip-分配&#34;&gt;IP 分配&lt;/h3&gt;
 &lt;p&gt;作为容器网络管理的一部分，CNI 插件需要为接口分配（并维护）IP 地址，并安装与该接口相关的所有必要路由。这给了 CNI 插件很大的灵活性，但也给它带来了很大的负担。众多的 CNI 插件需要编写相同的代码来支持用户需要的多种 IP 管理方案（例如 dhcp、host-local）。&lt;/p&gt;
-&lt;p&gt;为了减轻负担，使 IP 管理策略与 CNI 插件类型解耦，我们定义了 IP 地址管理插件（IPAM 插件）。CNI 插件的职责是在执行时恰当地调用 IPAM 插件。 IPAM 插件必须确定接口 IP/subnet，网关和路由，并将此信息返回到 “主” 插件来应用配置。 IPAM 插件可以通过协议（例如 dhcp）、存储在本地文件系统上的数据、网络配置文件的 “ipam” 部分或上述的组合来获得信息。&lt;/p&gt;
+&lt;p&gt;为了减轻负担，使 IP 管理策略与 CNI 插件类型解耦，我们定义了 IP 地址管理插件（IPAM 插件）。CNI 插件的职责是在执行时恰当地调用 IPAM 插件。IPAM 插件必须确定接口 IP/subnet，网关和路由，并将此信息返回到“主”插件来应用配置。IPAM 插件可以通过协议（例如 dhcp）、存储在本地文件系统上的数据、网络配置文件的“ipam”部分或上述的组合来获得信息。&lt;/p&gt;
 &lt;h4 id=&#34;ipam-插件&#34;&gt;IPAM 插件&lt;/h4&gt;
-&lt;p&gt;像 CNI 插件一样，调用 IPAM 插件的可执行文件。可执行文件位于预定义的路径列表中，通过 &lt;code&gt;CNI_PATH&lt;/code&gt; 指示给 CNI 插件。 IPAM 插件必须接收所有传入 CNI 插件的相同环境变量。就像 CNI 插件一样，IPAM 插件通过 stdin 接收网络配置。&lt;/p&gt;
+&lt;p&gt;像 CNI 插件一样，调用 IPAM 插件的可执行文件。可执行文件位于预定义的路径列表中，通过 &lt;code&gt;CNI_PATH&lt;/code&gt; 指示给 CNI 插件。IPAM 插件必须接收所有传入 CNI 插件的相同环境变量。就像 CNI 插件一样，IPAM 插件通过 stdin 接收网络配置。&lt;/p&gt;
 &lt;h2 id=&#34;可用插件&#34;&gt;可用插件&lt;/h2&gt;
 &lt;h3 id=&#34;main接口创建&#34;&gt;Main：接口创建&lt;/h3&gt;
 &lt;ul&gt;
@@ -203,19 +203,19 @@
       <pubDate>Sat, 21 May 2022 00:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/kubernetes-handbook/architecture/open-interfaces/csi/</guid>
       <description>&lt;p&gt;容器存储接口（Container Storage Interface），简称 CSI，CSI 试图建立一个行业标准接口的规范，借助 CSI 容器编排系统（CO）可以将任意存储系统暴露给自己的容器工作负载。有关详细信息，请查看&lt;a href=&#34;https://github.com/kubernetes/community/blob/master/contributors/design-proposals/storage/container-storage-interface.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;设计方案&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;csi&lt;/code&gt; 卷类型是一种 out-tree（即跟其它存储插件在同一个代码路径下，随 Kubernetes 的代码同时编译的） 的 CSI 卷插件，用于 Pod 与在同一节点上运行的外部 CSI 卷驱动程序交互。部署 CSI 兼容卷驱动后，用户可以使用 &lt;code&gt;csi&lt;/code&gt; 作为卷类型来挂载驱动提供的存储。&lt;/p&gt;
-&lt;p&gt;CSI 持久化卷支持是在 Kubernetes v1.9 中引入的，作为一个 alpha 特性，必须由集群管理员明确启用。换句话说，集群管理员需要在 apiserver、controller-manager 和 kubelet 组件的 “&lt;code&gt;--feature-gates =&lt;/code&gt;” 标志中加上 “&lt;code&gt;CSIPersistentVolume = true&lt;/code&gt;”。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;csi&lt;/code&gt; 卷类型是一种 out-tree（即跟其它存储插件在同一个代码路径下，随 Kubernetes 的代码同时编译的）的 CSI 卷插件，用于 Pod 与在同一节点上运行的外部 CSI 卷驱动程序交互。部署 CSI 兼容卷驱动后，用户可以使用 &lt;code&gt;csi&lt;/code&gt; 作为卷类型来挂载驱动提供的存储。&lt;/p&gt;
+&lt;p&gt;CSI 持久化卷支持是在 Kubernetes v1.9 中引入的，作为一个 alpha 特性，必须由集群管理员明确启用。换句话说，集群管理员需要在 apiserver、controller-manager 和 kubelet 组件的“&lt;code&gt;--feature-gates =&lt;/code&gt;”标志中加上“&lt;code&gt;CSIPersistentVolume = true&lt;/code&gt;”。&lt;/p&gt;
 &lt;p&gt;CSI 持久化卷具有以下字段可供用户指定：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;code&gt;driver&lt;/code&gt;：一个字符串值，指定要使用的卷驱动程序的名称。必须少于 63 个字符，并以一个字符开头。驱动程序名称可以包含 “。”、“ - ”、“_” 或数字。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;driver&lt;/code&gt;：一个字符串值，指定要使用的卷驱动程序的名称。必须少于 63 个字符，并以一个字符开头。驱动程序名称可以包含“。”、“ - ”、“_”或数字。&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;volumeHandle&lt;/code&gt;：一个字符串值，唯一标识从 CSI 卷插件的 &lt;code&gt;CreateVolume&lt;/code&gt; 调用返回的卷名。随后在卷驱动程序的所有后续调用中使用卷句柄来引用该卷。&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;readOnly&lt;/code&gt;：一个可选的布尔值，指示卷是否被发布为只读。默认是 false。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;使用说明&#34;&gt;使用说明&lt;/h2&gt;
 &lt;p&gt;下面将介绍如何使用 CSI。&lt;/p&gt;
 &lt;h3 id=&#34;动态配置&#34;&gt;动态配置&lt;/h3&gt;
-&lt;p&gt;可以通过为 CSI 创建插件 &lt;code&gt;StorageClass&lt;/code&gt; 来支持动态配置的 CSI Storage 插件启用自动创建/删除 。&lt;/p&gt;
-&lt;p&gt;例如，以下 &lt;code&gt;StorageClass&lt;/code&gt; 允许通过名为 &lt;code&gt;com.example.team/csi-driver&lt;/code&gt; 的 CSI Volume Plugin 动态创建 “fast-storage” Volume。&lt;/p&gt;
+&lt;p&gt;可以通过为 CSI 创建插件 &lt;code&gt;StorageClass&lt;/code&gt; 来支持动态配置的 CSI Storage 插件启用自动创建/删除。&lt;/p&gt;
+&lt;p&gt;例如，以下 &lt;code&gt;StorageClass&lt;/code&gt; 允许通过名为 &lt;code&gt;com.example.team/csi-driver&lt;/code&gt; 的 CSI Volume Plugin 动态创建“fast-storage”Volume。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;StorageClass&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;storage.k8s.io/v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -235,7 +235,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;requests&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;storage&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;5Gi&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;storageClassName&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;fast-storage&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当动态创建 Volume 时，通过 CreateVolume 调用，将参数 &lt;code&gt;type：pd-ssd&lt;/code&gt; 传递给 CSI 插件 &lt;code&gt;com.example.team/csi-driver&lt;/code&gt; 。作为响应，外部 Volume 插件会创建一个新 Volume，然后自动创建一个 &lt;code&gt;PersistentVolume&lt;/code&gt; 对象来对应前面的 PVC 。然后，Kubernetes 会将新的 &lt;code&gt;PersistentVolume&lt;/code&gt; 对象绑定到 &lt;code&gt;PersistentVolumeClaim&lt;/code&gt;，使其可以使用。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当动态创建 Volume 时，通过 CreateVolume 调用，将参数 &lt;code&gt;type：pd-ssd&lt;/code&gt; 传递给 CSI 插件 &lt;code&gt;com.example.team/csi-driver&lt;/code&gt; 。作为响应，外部 Volume 插件会创建一个新 Volume，然后自动创建一个 &lt;code&gt;PersistentVolume&lt;/code&gt; 对象来对应前面的 PVC。然后，Kubernetes 会将新的 &lt;code&gt;PersistentVolume&lt;/code&gt; 对象绑定到 &lt;code&gt;PersistentVolumeClaim&lt;/code&gt;，使其可以使用。&lt;/p&gt;
 &lt;p&gt;如果 &lt;code&gt;fast-storage&lt;/code&gt; StorageClass 被标记为默认值，则不需要在 &lt;code&gt;PersistentVolumeClaim&lt;/code&gt; 中包含 StorageClassName，它将被默认使用。&lt;/p&gt;
 &lt;h3 id=&#34;预配置-volume&#34;&gt;预配置 Volume&lt;/h3&gt;
 &lt;p&gt;您可以通过手动创建一个 &lt;code&gt;PersistentVolume&lt;/code&gt; 对象来展示现有 Volumes，从而在 Kubernetes 中暴露预先存在的 Volume。例如，暴露属于 &lt;code&gt;com.example.team/csi-driver&lt;/code&gt; 这个 CSI 插件的 &lt;code&gt;existingVolumeName Volume&lt;/code&gt;：&lt;/p&gt;
@@ -271,7 +271,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;my-csi-volume&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;persistentVolumeClaim&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;claimName&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;my-request-for-storage&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当一个引用了 CSI Volume 的 pod 被调度时， Kubernetes 将针对外部 CSI 插件进行相应的操作，以确保特定的 Volume 被 attached、mounted， 并且能被 pod 中的容器使用。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当一个引用了 CSI Volume 的 pod 被调度时，Kubernetes 将针对外部 CSI 插件进行相应的操作，以确保特定的 Volume 被 attached、mounted，并且能被 pod 中的容器使用。&lt;/p&gt;
 &lt;p&gt;关于 CSI 实现的详细信息请参考&lt;a href=&#34;https://github.com/kubernetes/community/blob/master/contributors/design-proposals/storage/container-storage-interface.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;设计文档&lt;/a&gt;。&lt;/p&gt;
 &lt;h2 id=&#34;创建-csi-驱动&#34;&gt;创建 CSI 驱动&lt;/h2&gt;
 &lt;p&gt;Kubernetes 尽可能少地指定 CSI Volume 驱动程序的打包和部署规范。&lt;a href=&#34;https://github.com/kubernetes/community/blob/master/contributors/design-proposals/storage/container-storage-interface.md#third-party-csi-volume-drivers&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这里&lt;/a&gt;记录了在 Kubernetes 上部署 CSI Volume 驱动程序的最低要求。&lt;/p&gt;
@@ -280,11 +280,11 @@
 &lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;a href=&#34;https://github.com/kubernetes-csi/external-attacher&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;External-attacher&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;可监听 Kubernetes VolumeAttachment 对象并触发 ControllerPublish 和 ControllerUnPublish 操作的 sidecar 容器，通过 CSI endpoint 触发 ；&lt;/p&gt;
+&lt;p&gt;可监听 Kubernetes VolumeAttachment 对象并触发 ControllerPublish 和 ControllerUnPublish 操作的 sidecar 容器，通过 CSI endpoint 触发；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;a href=&#34;https://github.com/kubernetes-csi/external-provisioner&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;External-provisioner&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;监听 Kubernetes PersistentVolumeClaim 对象的 sidecar 容器，并触发对 CSI 端点的 CreateVolume 和DeleteVolume 操作；&lt;/p&gt;
+&lt;p&gt;监听 Kubernetes PersistentVolumeClaim 对象的 sidecar 容器，并触发对 CSI 端点的 CreateVolume 和 DeleteVolume 操作；&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;a href=&#34;https://github.com/kubernetes-csi/driver-registrar&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Driver-registrar&lt;/a&gt;(DEPRECATED)&lt;/p&gt;

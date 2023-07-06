@@ -140,7 +140,7 @@
       每个 waypoint 只有自己的命名空间的配置
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
-&lt;p&gt;在这里，我们看到了一个截然不同的故事。我们只有 2 个waypoint 代理，因为每个代理都能够为整个命名空间提供服务，并且每个代理只需要为自己的命名空间进行配置。总的来说，我们发送了 25% 的配置，即使是一个简单的例子。&lt;/p&gt;
+&lt;p&gt;在这里，我们看到了一个截然不同的故事。我们只有 2 个 waypoint 代理，因为每个代理都能够为整个命名空间提供服务，并且每个代理只需要为自己的命名空间进行配置。总的来说，我们发送了 25% 的配置，即使是一个简单的例子。&lt;/p&gt;
 &lt;p&gt;如果我们将每个命名空间扩展到最多 25 个部署，每个部署有 10 个 pod，每个 waypoint 部署有 2 个 pod 以实现高可用性，这些数字会更令人印象深刻 —— waypoint 配置分布只需要 sidecar 配置分布的 0.8%，如表下面说明！&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;
@@ -178,7 +178,7 @@
 &lt;p&gt;Ambient 模式的设计围绕这样一个假设，即大多数配置最好由服务生产者而不是服务消费者实施。然而，情况并非总是如此 —— 有时我们需要为我们无法控制的目的地配置流量管理。一个常见的例子是连接到具有更高弹性的外部服务，以处理偶尔的连接问题（例如，为 &lt;code&gt;example.com&lt;/code&gt; 调用添加超时）。&lt;/p&gt;
 &lt;p&gt;这是社区中正在积极开发的一个领域，我们在其中设计如何将流量路由到您的出口网关，以及您如何使用所需的策略配置出口网关。留意这方面的未来博客文章！&lt;/p&gt;
 &lt;h2 id=&#34;深入了解-waypoint-代理配置&#34;&gt;深入了解 waypoint 代理配置&lt;/h2&gt;
-&lt;p&gt;假设您已遵循 &lt;a href=&#34;http://preliminary.istio.io/latest/docs/ops/ambient/getting-started/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Ambient 入门指南&lt;/a&gt;直至并包括&lt;a href=&#34;http://preliminary.istio.io/latest/docs/ops/ambient/getting-started/#control&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;控制流量部分&lt;/a&gt;，您已经为 bookinfo-reviews 服务账户部署了一个waypoint 代理，以将 90% 的流量引导至 reviews v1，将 10% 的流量引导至 reviews v2。&lt;/p&gt;
+&lt;p&gt;假设您已遵循 &lt;a href=&#34;http://preliminary.istio.io/latest/docs/ops/ambient/getting-started/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Ambient 入门指南&lt;/a&gt;直至并包括&lt;a href=&#34;http://preliminary.istio.io/latest/docs/ops/ambient/getting-started/#control&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;控制流量部分&lt;/a&gt;，您已经为 bookinfo-reviews 服务账户部署了一个 waypoint 代理，以将 90% 的流量引导至 reviews v1，将 10% 的流量引导至 reviews v2。&lt;/p&gt;
 &lt;p&gt;使用 &lt;code&gt;istioctl&lt;/code&gt;检索 &lt;code&gt;reviews&lt;/code&gt; waypoint 代理的监听器：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ istioctl proxy-config listener deploy/bookinfo-reviews-istio-waypoint --waypoint
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
@@ -222,8 +222,8 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;encap                                                   *       /*
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;inbound-vip&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;9080&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;http&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;reviews.default.svc.cluster.local *       /*                 reviews.default
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;default
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;回顾下，您没有配置任何 sidecar 资源或 Istio 网络资源上的 &lt;code&gt;exportTo&lt;/code&gt; 配置。 但是，您部署了 &lt;code&gt;bookinfo-productpage&lt;/code&gt; 路由来配置入口网关以路由到 productpage，但 reviews waypoint 没有意识到任何此类不相关的路由。&lt;/p&gt;
-&lt;p&gt;显示 &lt;code&gt;inbound-vip|9080|http|reviews.default.svc.cluster.local&lt;/code&gt; 路由的详细信息，您会看到基于权重的路由配置将 90％的流量定向到 &lt;code&gt;reviews&lt;/code&gt; v1，将 10％的流量定向到 &lt;code&gt;reviews&lt;/code&gt; v2，以及一些 Istio 的默认重试和超时配置。 这证实了之前讨论的流量和弹性策略从源头转移到目标导向的 waypoint。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;回顾下，您没有配置任何 sidecar 资源或 Istio 网络资源上的 &lt;code&gt;exportTo&lt;/code&gt; 配置。但是，您部署了 &lt;code&gt;bookinfo-productpage&lt;/code&gt; 路由来配置入口网关以路由到 productpage，但 reviews waypoint 没有意识到任何此类不相关的路由。&lt;/p&gt;
+&lt;p&gt;显示 &lt;code&gt;inbound-vip|9080|http|reviews.default.svc.cluster.local&lt;/code&gt; 路由的详细信息，您会看到基于权重的路由配置将 90％的流量定向到 &lt;code&gt;reviews&lt;/code&gt; v1，将 10％的流量定向到 &lt;code&gt;reviews&lt;/code&gt; v2，以及一些 Istio 的默认重试和超时配置。这证实了之前讨论的流量和弹性策略从源头转移到目标导向的 waypoint。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ istioctl proxy-config routes deploy/bookinfo-reviews-istio-waypoint --name &lt;span class=&#34;s2&#34;&gt;&amp;#34;inbound-vip|9080|http|reviews.default.svc.cluster.local&amp;#34;&lt;/span&gt; -o yaml
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- name: inbound-vip&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;9080&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;http&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;reviews.default.svc.cluster.local
@@ -278,7 +278,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;unix://./var/run/secrets/workload-spiffe-uds/socket HEALTHY OK            sds-grpc
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请注意，您不会获得与 reviews 以外的任何服务相关的任何端点，即使您在 &lt;code&gt;default&lt;/code&gt; 和 &lt;code&gt;istio-system&lt;/code&gt; 命名空间中还有一些其他服务。&lt;/p&gt;
 &lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
-&lt;p&gt;我们对专注于面向目的地的 waypoint 代理的简化感到非常兴奋。这是朝着简化 Istio 的可用性、可扩展性和可调试性迈出的又一重要步骤，这些是 Istio 路线图上的重中之重。按照我们的&lt;a href=&#34;http://preliminary.istio.io/latest/docs/ops/ambient/getting-started/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;入门指南&lt;/a&gt;立即尝试环境 alpha 构建并体验简化的waypoint 代理！&lt;/p&gt;
+&lt;p&gt;我们对专注于面向目的地的 waypoint 代理的简化感到非常兴奋。这是朝着简化 Istio 的可用性、可扩展性和可调试性迈出的又一重要步骤，这些是 Istio 路线图上的重中之重。按照我们的&lt;a href=&#34;http://preliminary.istio.io/latest/docs/ops/ambient/getting-started/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;入门指南&lt;/a&gt;立即尝试环境 alpha 构建并体验简化的 waypoint 代理！&lt;/p&gt;
 </description>
     </item>
     
@@ -334,7 +334,7 @@
 &lt;p&gt;当 Istio Ambient Mesh 于 2022 年 9 月 7 日发布时，ztunnel 是使用 Envoy 代理实现的。鉴于我们将 Envoy 用于 Istio 的其余部分——sidecar、网关和 Waypoint Proxy——我们开始使用 Envoy 实施 ztunnel 是很自然的选择。&lt;/p&gt;
 &lt;p&gt;然而，我们发现虽然 Envoy 非常适合其他用例，但在 Envoy 中实现 ztunnel 具有挑战性，因为许多权衡、要求和用例与 sidecar 代理或入口网关有很大不同。此外，大多数使 Envoy 非常适合其他用例的东西，例如其丰富的 L7 功能集和可扩展性，都浪费在不需要这些功能的 ztunnel 中。&lt;/p&gt;
 &lt;h2 id=&#34;专门构建的-ztunnel&#34;&gt;专门构建的 ztunnel&lt;/h2&gt;
-&lt;p&gt;在 Envoy 因我们的需求而失败后，我们开始考虑构建 ztunnel 的专用实现。我们的假设是，通过从一开始就考虑一个单一的重点用例进行设计，我们可以开发一个比将通用项目塑造成自定义用例更简单、性能更高的解决方案。使 ztunnel 简单化的明确决定是这一假设的关键； 例如，类似的逻辑不适用于具有大量支持功能和集成的重写网关。&lt;/p&gt;
+&lt;p&gt;在 Envoy 因我们的需求而失败后，我们开始考虑构建 ztunnel 的专用实现。我们的假设是，通过从一开始就考虑一个单一的重点用例进行设计，我们可以开发一个比将通用项目塑造成自定义用例更简单、性能更高的解决方案。使 ztunnel 简单化的明确决定是这一假设的关键；例如，类似的逻辑不适用于具有大量支持功能和集成的重写网关。&lt;/p&gt;
 &lt;p&gt;这个专门建造的 ztunnel 涉及两个关键领域：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;ztunnel 与其 Istiod 之间的配置协议&lt;/li&gt;
@@ -356,7 +356,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;workloadName&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;helloworld-v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;workloadType&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;deployment&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;此信息通过 xDS 传输 API 传输，但使用特定于环境的自定义类型。请参阅&lt;a href=&#34;https://preliminary.istio.io/latest/blog/2023/rust-based-ztunnel/#workload-xds-configuration&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;工作负载 xDS 配置部分&lt;/a&gt; 以了解有关配置详细信息的更多信息。&lt;/p&gt;
-&lt;p&gt;使用专门构建的 API，我们可以将逻辑推送到代理中，而不是在 Envoy 配置中。例如，要在 Envoy 中配置 mTLS，我们需要添加相同的大型配置集来调整每个服务的精确 TLS 设置； 使用 ztunnel，我们只需要一个枚举来声明是否应该使用 mTLS。其余的复杂逻辑直接嵌入到 ztunnel 代码中。&lt;/p&gt;
+&lt;p&gt;使用专门构建的 API，我们可以将逻辑推送到代理中，而不是在 Envoy 配置中。例如，要在 Envoy 中配置 mTLS，我们需要添加相同的大型配置集来调整每个服务的精确 TLS 设置；使用 ztunnel，我们只需要一个枚举来声明是否应该使用 mTLS。其余的复杂逻辑直接嵌入到 ztunnel 代码中。&lt;/p&gt;
 &lt;p&gt;借助 Istiod 和 ztunnel 之间的这种高效 API，我们发现我们可以使用有关大型网格（例如具有 100,000 个 pod 的网格）的信息来配置 ztunnel，配置数量减少几个数量级，这意味着 CPU、内存和网络成本更低。&lt;/p&gt;
 &lt;h3 id=&#34;运行时实现&#34;&gt;运行时实现&lt;/h3&gt;
 &lt;p&gt;顾名思义，ztunnel 使用 &lt;a href=&#34;https://preliminary.istio.io/latest/blog/2022/introducing-ambient-mesh/#building-an-ambient-mesh&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;HTTPS 隧道&lt;/a&gt; 承载用户请求。虽然 Envoy 支持这种隧道，但我们发现配置模型限制了我们的需求。简单地说，Envoy 的工作方式是通过一系列“过滤器”发送请求，从接受请求开始到发送结束。根据我们的要求，它有多层请求（隧道本身和用户的请求），以及负载均衡后需要应用 per-pod 策略，我们发现每个连接需要循环通过这些过滤器 4 次才能实现我们的基于在 Envoy 上当 ztunnel。虽然 Envoy 对内存中的“向自身发送请求”进行了 &lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/configuration/other_features/internal_listener&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;一些优化 &lt;/a&gt;，但这仍然非常复杂且昂贵。&lt;/p&gt;
@@ -387,7 +387,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Pod 被包含在 ambient 中后（默认将命名空间标记为 &lt;code&gt;istio.io/dataplane-mode=ambient&lt;/code&gt; ）， protocol 值将被替换为 HBONE ，表示 ztunnel 将来自所有 helloworld -v1 pod 传入和传出通信升级到 HBONE。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Pod 被包含在 ambient 中后（默认将命名空间标记为 &lt;code&gt;istio.io/dataplane-mode=ambient&lt;/code&gt; ），protocol 值将被替换为 HBONE，表示 ztunnel 将来自所有 helloworld -v1 pod 传入和传出通信升级到 HBONE。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;workloads&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;nt&#34;&gt;&amp;#34;10.244.2.8&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
@@ -510,9 +510,9 @@
 &lt;p&gt;&lt;strong&gt;每个命名空间的 Sidecar 资源配置&lt;/strong&gt;。Istio 的 &lt;code&gt;Sidecar&lt;/code&gt; （API）资源控制 Istio 将哪些配置发送到每个命名空间中的 Sidecar。为了获得最佳性能和最低开销，您应该为每个命名空间管理一个配置，并管理 egress 部分以仅包括服务必须与之通信的主机。这将导致 Istio 向该命名空间中的 Envoy 实例发送更少的配置，从而减少它们的内存和 CPU 消耗。结合仅注册表出站流量策略（见下一条），Sidecar 资源还可以帮助限制攻击者通过 Envoy 的表面区域，因为不在 Sidecar 的 egress 部分的主机将是该 Envoy 实例的 &amp;ldquo;出站流量&amp;rdquo;。这本身并不是一个足够的安全策略（见下面的安全部分），而是增加了一个攻击者必须穿越的额外防御层。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;编写明确的出站（egress）流量策略&lt;/strong&gt;。Istio 提供了一些选项来配置它如何处理网格中的服务，该服务试图与 Istio 未知的端点进行通信：&lt;a href=&#34;https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-OutboundTrafficPolicy-Mode&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Outbound Traffic Policy&lt;/a&gt;。Istio 可以允许所有流量，也可以将流量限制在网格已知的服务上。你应该在安装时配置 Istio，只允许连接到注册表中的服务。此外，你应该将所有需要与之通信的外部服务建模为 Mesh 中的 ServiceEntries（例如，SaaS 服务的 DNS 解析等），使用 DestinationRules 来配置与它们通信的 TLS。这些外部服务应该由安全团队集中管理，或者由平台团队代表他们管理。&lt;/p&gt;
 &lt;h2 id=&#34;运行时流量管理配置&#34;&gt;运行时流量管理配置&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;为服务使用一致的全局名称，并使用 Istio 将它们映射到本地实例&lt;/strong&gt;。您应该使用一致的全局名称来访问服务。您可以使用 Istio 将这些全局名称映射到本地实例。例如，&lt;code&gt;payments.tetrate.internal&lt;/code&gt; 可以被所有内部应用程序使用，而 Istio 可以用来将该名称映射到服务实例，例如 “在 &lt;code&gt;us-east-2&lt;/code&gt; Kubernetes 集群中的 &lt;code&gt;payments.default.svc.cluster.local&lt;/code&gt; 服务”。这种全局命名方案使开发人员可以像 SaaS 一样考虑所有服务，而无需仔细考虑运行时拓扑的细节，并且可以轻松地执行故障转移、金丝雀和跨集群路由等操作，作为您的网格使用成熟或组织需求演变。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;为服务使用一致的全局名称，并使用 Istio 将它们映射到本地实例&lt;/strong&gt;。您应该使用一致的全局名称来访问服务。您可以使用 Istio 将这些全局名称映射到本地实例。例如，&lt;code&gt;payments.tetrate.internal&lt;/code&gt; 可以被所有内部应用程序使用，而 Istio 可以用来将该名称映射到服务实例，例如“在 &lt;code&gt;us-east-2&lt;/code&gt; Kubernetes 集群中的 &lt;code&gt;payments.default.svc.cluster.local&lt;/code&gt; 服务”。这种全局命名方案使开发人员可以像 SaaS 一样考虑所有服务，而无需仔细考虑运行时拓扑的细节，并且可以轻松地执行故障转移、金丝雀和跨集群路由等操作，作为您的网格使用成熟或组织需求演变。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;在根配置中定义粗略的默认弹性设置&lt;/strong&gt;。您应该为网格中的所有服务定义粗略的超时、重试、熔断和异常值检测设置。您可以在根配置命名空间中使用 &lt;code&gt;VirtualService&lt;/code&gt; 来实现此目的。各个团队应在其本地命名空间中指定自己的名称以覆盖默认值。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;为应用程序团队提供简化的 “低 / 中 / 高” 弹性设置&lt;/strong&gt;。将网格的底层 API 隐藏在更高级别接口后面的系统中，为配置默认断路和异常值检测设置的应用程序开发人员提供简化的 “低 / 中 / 高” 旋钮很有价值，因为很多领域容易配置错误，导致该应用程序性能不佳。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;为应用程序团队提供简化的“低 / 中 / 高”弹性设置&lt;/strong&gt;。将网格的底层 API 隐藏在更高级别接口后面的系统中，为配置默认断路和异常值检测设置的应用程序开发人员提供简化的“低 / 中 / 高”旋钮很有价值，因为很多领域容易配置错误，导致该应用程序性能不佳。&lt;/p&gt;
 &lt;h2 id=&#34;运行时安全配置&#34;&gt;运行时安全配置&lt;/h2&gt;
 &lt;p&gt;以下安全建议来自我们为微服务应用程序建立美国安全标准的工作，该标准由美国国家标准与技术研究院（NIST）在 &lt;a href=&#34;https://tetrate.io/blog/nist-standards-for-zero-trust-the-sp-800-204-series/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SP 800-204 系列&lt;/a&gt; 中发布。&lt;a href=&#34;https://tetrate.io/tetrates-guide-to-federal-security-requirements-for-microservices/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;您可以在我们的综合指南&lt;/a&gt; 中阅读 NIST 针对微服务应用程序的所有安全建议。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;最小控制&lt;/strong&gt;。运行时的零信任至少需要以下五个控制：&lt;/p&gt;
@@ -566,7 +566,7 @@
       <link>https://lib.jimmysong.io/blog/service-mesh-deployment-best-practices-for-security-and-high-availability/</link>
       <pubDate>Mon, 30 Jan 2023 11:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/blog/service-mesh-deployment-best-practices-for-security-and-high-availability/</guid>
-      <description>&lt;p&gt;这是 &lt;a href=&#34;https://tetrate.io/blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;服务网格最佳实践系列文章&lt;/a&gt; 中的第二篇，摘自 Tetrate 创始工程师 Zack Butcher 即将出版的书籍 Istio in Production 。&lt;/p&gt;
+      <description>&lt;p&gt;这是 &lt;a href=&#34;https://tetrate.io/blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;服务网格最佳实践系列文章&lt;/a&gt; 中的第二篇，摘自 Tetrate 创始工程师 Zack Butcher 即将出版的书籍 Istio in Production。&lt;/p&gt;
 &lt;p&gt;当涉及到在多集群的基础设施中部署服务网格时，有一些可移动的部分。这里主要想强调的是控制平面应该如何部署在应用程序附近，入口应该如何部署以促进安全性和敏捷性，如何使用 Envoy 促进跨集群负载均衡，以及网格内部如何使用证书。&lt;/p&gt;
 &lt;h2 id=&#34;使服务网格控制平面与故障域保持一致&#34;&gt;使服务网格控制平面与故障域保持一致&lt;/h2&gt;
 &lt;p&gt;&lt;strong&gt;建议：围绕故障域部署松散耦合的控制平面以实现高可用性。&lt;/strong&gt;&lt;/p&gt;
@@ -596,9 +596,9 @@
 
 
 
-&lt;figure  id=&#34;figure-图-1-基于-envoy-的应用程序边缘网关&#34;&gt;
+&lt;figure  id=&#34;figure-图-1基于-envoy-的应用程序边缘网关&#34;&gt;
   &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;图 1： 基于 Envoy 的应用程序边缘网关。&#34; srcset=&#34;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;图 1：基于 Envoy 的应用程序边缘网关。&#34; srcset=&#34;
                /blog/service-mesh-deployment-best-practices-for-security-and-high-availability/f1_hu4e0af13941a7213066b93c4df427cd8b_40712_a448cc91266eb47109ac05d244d771af.webp 400w,
                /blog/service-mesh-deployment-best-practices-for-security-and-high-availability/f1_hu4e0af13941a7213066b93c4df427cd8b_40712_7bc3e1cf719370fafad06d040ee934b0.webp 760w,
                /blog/service-mesh-deployment-best-practices-for-security-and-high-availability/f1_hu4e0af13941a7213066b93c4df427cd8b_40712_1200x1200_fit_q75_h2_lanczos_3.webp 1200w&#34;
@@ -607,14 +607,14 @@
                height=&#34;680&#34;
                loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
   &lt;/div&gt;&lt;figcaption&gt;
-      图 1： 基于 Envoy 的应用程序边缘网关。
+      图 1：基于 Envoy 的应用程序边缘网关。
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
 &lt;p&gt;我们经常看到客户需要跨多个集群分配入口流量。例如，他们可能希望启用蓝 / 绿基础设施升级，以促进跨区域故障转移，或者通过使用 Envoy 的 L7 功能将流量从单体迁移到微服务来实现扼杀模式。我们称这些为应用程序边缘网关。&lt;/p&gt;
 &lt;p&gt;为了实现这个用例，我们将部署 Envoy—— 在专用的 Kubernetes 集群中或作为一组虚拟机 —— 来接收外部流量。这些 Envoy 实例将通过其 Kubernetes 入口或 VM VIP 将流量转发到您的应用程序。这与 ingress-per-team 方法协同工作：多集群网关为客户端提供一个单一地址以供使用，根据您的基础设施需要提供尽可能多的应用程序网关和集群。&lt;/p&gt;
 &lt;p&gt;虽然此网关确实存在共享故障域，但其配置远比每个应用程序一个入口网关的配置简单。因此，作为共享基础架构运行起来更容易，也更安全。每个集群都有一个应用程序入口网关的共享应用程序边缘网关是一种强大而灵活的模型，用于在网格上部署和操作应用程序，还可以更轻松地操作底层基础设施。&lt;/p&gt;
 &lt;h2 id=&#34;证书和公钥基础设施-pki-的建议&#34;&gt;证书和公钥基础设施 (PKI) 的建议&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;建议： 从您现有的企业根目录为网格 mTLS 创建一个中间签名证书。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;建议：从您现有的企业根目录为网格 mTLS 创建一个中间签名证书。&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;Istio 使用常规 X.509 证书进行身份验证并在网格中启用传输加密。我们建议为现有企业根目录中的所有网格 mTLS 创建一个网格中间签名证书。如果每个环境都有一个根，请为每个环境创建一个网格中间签名证书。使用该网格中间颁发证书为每个 Istio 安装创建一个签名证书。我们建议创建一个网格中间签名证书，以便在任何特定环境中网格的整个 PKI 是一棵树，如果需要可以一起失效。成本是一些额外的证书管理，与控制平面签名证书相比，在管理网格中间签名证书的生命周期时需要更加小心。&lt;/p&gt;
 &lt;p&gt;
 
@@ -689,7 +689,7 @@
       <pubDate>Thu, 05 Jan 2023 14:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/</guid>
       <description>&lt;p&gt;本文是 Tetrate 即将出版的《Istio in Production》一书中摘录的服务网格最佳实践系列的第一篇，作者是 Tetrate 创始工程师 Zack Butcher。&lt;/p&gt;
-&lt;p&gt;我们接到许多实施网格的企业的问题，其中之一是 “我还需要哪些控制，而网格提供哪些控制？” 换句话说，他们想知道网格如何适应现有的安全模型。我们发现，网格最适合作为一组安全控制的内圈，这些控制从物理网络到应用本身的每一层都被实施。&lt;/p&gt;
+&lt;p&gt;我们接到许多实施网格的企业的问题，其中之一是“我还需要哪些控制，而网格提供哪些控制？”换句话说，他们想知道网格如何适应现有的安全模型。我们发现，网格最适合作为一组安全控制的内圈，这些控制从物理网络到应用本身的每一层都被实施。&lt;/p&gt;
 &lt;h2 id=&#34;服务网格作为通用策略执行点&#34;&gt;服务网格作为通用策略执行点&lt;/h2&gt;
 &lt;p&gt;我们看到网格的 Sidecar 作为通用策略执行点（&lt;a href=&#34;https://csrc.nist.gov/publications/detail/sp/800-204b/final&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;NIST SP 800-204B：使用服务网格的基于属性的访问控制&lt;/a&gt;）。由于它拦截了所有进出应用程序的流量，Sidecar 为我们提供了一个强大的位置来实现各种策略。我们可以实现传统的安全策略，如基于应用程序标识而非网络位置的更高保证的应用程序之间的授权。但我们也可以实施之前不切实际或需要与应用程序深度参与的策略。例如，网格允许您编写以下策略：“后端可以从数据库读取（使用应用级身份进行身份验证和授权），但前提是请求具有有效的最终用户凭证并具有读取范围（使用最终用户身份进行身份验证和授权）。”&lt;/p&gt;
 &lt;p&gt;虽然服务网格提供了一个强大，动态和一致的安全基线，您可以在其上构建应用程序安全模型，但网格本身永远无法提供应用程序所需的 100% 运行时安全。例如，由于 Sidecar 位于用户空间中，网格在减轻许多类型的网络拒绝服务攻击方面不如传统防火墙机制。另一方面，由于同样的原因，网格在减轻许多应用级拒绝服务攻击方面比传统基础设施更有效。&lt;/p&gt;
@@ -770,13 +770,13 @@
 &lt;h2 id=&#34;l3-层的敏捷性粗粒度的入口和出口策略以及-l7-的细粒度控制&#34;&gt;L3 层的敏捷性：粗粒度的入口和出口策略以及 L7 的细粒度控制&lt;/h2&gt;
 &lt;p&gt;在边缘的 L3 控制（如防火墙）在粗粒度的入口和出口策略方面仍然有效，但通常会减慢应用程序开发敏捷性。由于网格提供了细粒度的服务间授权，所以可以在 L3 上设置更广泛的策略，为平台、安全和应用程序团队提供更多敏捷性。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;实施对外部服务的访问控制&lt;/strong&gt;。网格的出口代理特别适用于实施应用程序到外部服务的控制，而只有出口代理本身被外出防火墙 allow-listed：这为平台或安全团队在管理哪些应用程序允许与企业基础架构之外的通信提供了很多敏捷性，同时保持现有的基于周界的模型。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;使用加密和动态访问控制代替 “可达性即授权”&lt;/strong&gt;。网格可以开始有效地取代 VPN 和基于 IPSec 的网络“可达性即授权”模式，提供传输中的加密，以及每个应用而不是每个主机的认证和授权。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;使用加密和动态访问控制代替“可达性即授权”&lt;/strong&gt;。网格可以开始有效地取代 VPN 和基于 IPSec 的网络“可达性即授权”模式，提供传输中的加密，以及每个应用而不是每个主机的认证和授权。&lt;/p&gt;
 &lt;h2 id=&#34;l4-层的改进更扁平和易于管理的网络微分段&#34;&gt;L4 层的改进：更扁平和易于管理的网络微分段&lt;/h2&gt;
 &lt;p&gt;微分段之类的控制可以通过网格进一步改进：尽管我们可能允许整个（小）子网在基于分段的策略中进行通信，但我们可以使用网格按方法和动词对单独的服务间通信进行控制。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;补充现有的微分段同时展平网络&lt;/strong&gt;。通过提供细粒度的服务间控制，网格往往会补充现有的微分段策略，同时使得组织更容易管理的较平的网络得以采用（例如，在云环境中）。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;使用工作负载身份启用传输期间的加密（mTLS）和服务级别访问控制&lt;/strong&gt;。传输层几乎总是处理加密传输，网格通过根据 SPIFFE 规范发布和轮换短期（&amp;lt;24 小时）工作负载身份证书来为应用程序实现此功能，从而允许传输期间的加密以及服务级别的身份验证和授权。&lt;/p&gt;
 &lt;h2 id=&#34;l7-层的增强无处不在的边缘和访问控制&#34;&gt;L7 层的增强：无处不在的边缘和访问控制&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;为所有流量提供边缘控制&lt;/strong&gt;。L7 控制，如 Web 应用程序防火墙（WAF）以及 “API 网关功能”（如流量限制）几乎总是在边缘实施。网格可以通过为网格中所有流量（包括内部的 “东西” 通信）启用相同的功能来增强这些现有部署。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;为所有流量提供边缘控制&lt;/strong&gt;。L7 控制，如 Web 应用程序防火墙（WAF）以及“API 网关功能”（如流量限制）几乎总是在边缘实施。网格可以通过为网格中所有流量（包括内部的“东西”通信）启用相同的功能来增强这些现有部署。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;简化应用程序的访问控制&lt;/strong&gt;。除了使边缘控制无处不在之外，网格还可以在应用程序看到请求之前执行端用户身份验证和粗粒度授权，从而大大简化应用程序本身必须执行的访问控制。在未来，我们将看到越来越多的访问控制功能从应用程序迁移到网格中。&lt;/p&gt;
 &lt;h2 id=&#34;总结和展望&#34;&gt;总结和展望&lt;/h2&gt;
 &lt;p&gt;我们认为，服务网格最适合作为现有安全模型的一部分，通过在传统安全控制之上添加更细粒度的安全策略来实现。作为一个通用策略执行点，网格在更改最困难的较低层提供了更松散的策略，将敏捷性推向堆栈的顶部，其中更多的上下文允许在更高层实现更特定的控制。这种强大的安全层对于大多数组织来说都是采用分层防御深度方法的最佳选择。&lt;/p&gt;
@@ -785,7 +785,7 @@
 &lt;ul&gt;
 &lt;li&gt;控制平面应如何部署在应用程序附近。&lt;/li&gt;
 &lt;li&gt;应该如何部署入口，以促进安全和敏捷性。&lt;/li&gt;
-&lt;li&gt;如何使用Envoy促进跨集群的负载平衡。&lt;/li&gt;
+&lt;li&gt;如何使用 Envoy 促进跨集群的负载平衡。&lt;/li&gt;
 &lt;li&gt;证书在网格中应该是什么样子的。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;hr&gt;
@@ -1163,7 +1163,7 @@
 &lt;ul&gt;
 &lt;li&gt;如果 &lt;code&gt;istio-system&lt;/code&gt; 中存在 &lt;code&gt;cacerts&lt;/code&gt; 秘密，将被挂载。它可能包含一个可选的 &lt;code&gt;root-cert.pem&lt;/code&gt;，
 带有额外的根和可选的 &lt;code&gt;{ca-key, ca-cert, cert-chain}.pem&lt;/code&gt; 由用户提供的根 CA。&lt;/li&gt;
-&lt;li&gt;如果未找到用户提供的根 CA，则使用 &lt;code&gt;istio-ca-secret&lt;/code&gt; Secret ，以及 &lt;code&gt;ca-cert.pem&lt;/code&gt; 和 &lt;code&gt;ca-key.pem&lt;/code&gt; 文件。&lt;/li&gt;
+&lt;li&gt;如果未找到用户提供的根 CA，则使用 &lt;code&gt;istio-ca-secret&lt;/code&gt; Secret，以及 &lt;code&gt;ca-cert.pem&lt;/code&gt; 和 &lt;code&gt;ca-key.pem&lt;/code&gt; 文件。&lt;/li&gt;
 &lt;li&gt;如果两者均未找到，将创建 &lt;code&gt;istio-ca-secret&lt;/code&gt;。&lt;/li&gt;
 &lt;li&gt;带有 &lt;code&gt;caTLSRootCert&lt;/code&gt; 文件的 &lt;code&gt;istio-security&lt;/code&gt; ConfigMap 将用于根证书，并在需要时创建。该 ConfigMap 由节点代理使用，不再可能在 sds-agent 中使用，但我们仍保留它以向后兼容。将与 node-agent 一起删除。sds-agent 使用 K8S root 直接调用 &lt;code&gt;NewCitadelClient&lt;/code&gt; 。&lt;/li&gt;
 &lt;/ul&gt;
@@ -1527,21 +1527,21 @@ vault-inject-agent-injector-5776975795-9vjnx   1/1     Running   0          91s
       <link>https://lib.jimmysong.io/blog/what-is-ambient-mesh/</link>
       <pubDate>Wed, 28 Sep 2022 10:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/blog/what-is-ambient-mesh/</guid>
-      <description>&lt;p&gt;Istio&lt;a href=&#34;https://istio.io/latest/blog/2022/introducing-ambient-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;最近宣布了 “Ambient Mesh”&lt;/a&gt; —— 一种用于 Istio 的实验性 “无sidecar” 部署模型。我们最近在&lt;a href=&#34;https://www.tetrate.io/blog/ebpf-and-sidecars-getting-the-most-performance-and-resiliency-out-of-the-service-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;从服务网格中获得最大性能和弹性&lt;/a&gt;的背景下写了关于 sidecar 与 sidecar-less 的文章。在本文中，我们将特别介绍我们对 Ambient Mesh 的看法。&lt;/p&gt;
+      <description>&lt;p&gt;Istio&lt;a href=&#34;https://istio.io/latest/blog/2022/introducing-ambient-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;最近宣布了“Ambient Mesh”&lt;/a&gt; —— 一种用于 Istio 的实验性“无 sidecar”部署模型。我们最近在&lt;a href=&#34;https://www.tetrate.io/blog/ebpf-and-sidecars-getting-the-most-performance-and-resiliency-out-of-the-service-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;从服务网格中获得最大性能和弹性&lt;/a&gt;的背景下写了关于 sidecar 与 sidecar-less 的文章。在本文中，我们将特别介绍我们对 Ambient Mesh 的看法。&lt;/p&gt;
 &lt;p&gt;如果你想立即开始使用可用于生产的 Istio 发行版，请尝试&lt;a href=&#34;https://istio.tetratelabs.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate Istio Distro (TID)&lt;/a&gt;。TID 是经过审查的 Istio 上游发行版，它易于安装、管理和升级，基于适用于 FedRAMP 环境的 FIPS 认证构建。如果你需要一种统一且一致的方式来保护和管理一组应用程序中的服务，请查看&lt;a href=&#34;https://www.tetrate.io/tetrate-service-bridge/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate Service Bridge (TSB)&lt;/a&gt;，这是我们基于 Istio 和 Envoy 构建的全面的边缘到工作负载应用程序连接平台。&lt;/p&gt;
 &lt;h2 id=&#34;什么是-ambient-mesh&#34;&gt;什么是 Ambient Mesh？&lt;/h2&gt;
-&lt;p&gt;Ambient Mesh 是最近引入 Istio 的一种实验性新部署模型。它将 Envoy sidecar 当前执行的职责分为两个独立的组件：一个用于加密的节点级组件（称为 “ztunnel”）和一个为每个服务账户部署的 L7 Envoy 实例，用于所有其他处理（称为 “waypoint”）。Ambient Mesh模型试图在潜在改进的生命周期和资源管理中获得一些效率 —— 至少，这是动机。&lt;/p&gt;
-&lt;h2 id=&#34;我为什么要关心ambient-mesh&#34;&gt;我为什么要关心Ambient Mesh？&lt;/h2&gt;
-&lt;p&gt;对于大多数服务网格用户来说，Istio 数据平面的确切部署模型是你可能不需要考虑太多的选择。默认可能没问题。对于&lt;em&gt;一些&lt;/em&gt;服务网格用户，特别是那些拥有少量服务的大规模水平扩展足迹的用户（waypoint 架构获得最高效率的地方），Ambient Mesh模型将在成熟为生产就绪的基础设施软件时很有用。&lt;/p&gt;
+&lt;p&gt;Ambient Mesh 是最近引入 Istio 的一种实验性新部署模型。它将 Envoy sidecar 当前执行的职责分为两个独立的组件：一个用于加密的节点级组件（称为“ztunnel”）和一个为每个服务账户部署的 L7 Envoy 实例，用于所有其他处理（称为“waypoint”）。Ambient Mesh 模型试图在潜在改进的生命周期和资源管理中获得一些效率 —— 至少，这是动机。&lt;/p&gt;
+&lt;h2 id=&#34;我为什么要关心-ambient-mesh&#34;&gt;我为什么要关心 Ambient Mesh？&lt;/h2&gt;
+&lt;p&gt;对于大多数服务网格用户来说，Istio 数据平面的确切部署模型是你可能不需要考虑太多的选择。默认可能没问题。对于&lt;em&gt;一些&lt;/em&gt;服务网格用户，特别是那些拥有少量服务的大规模水平扩展足迹的用户（waypoint 架构获得最高效率的地方），Ambient Mesh 模型将在成熟为生产就绪的基础设施软件时很有用。&lt;/p&gt;
 &lt;h2 id=&#34;本文主旨&#34;&gt;本文主旨&lt;/h2&gt;
 &lt;ul&gt;
-&lt;li&gt;Ambient Mesh部署模型与sidecar模型进行了一些权衡，特别是在生命周期管理、资源利用、故障排除和安全状况方面。它们之间不分伯仲。&lt;/li&gt;
-&lt;li&gt;Ambient Mesh目前还在实验阶段，最早要到 2023 年才能投入生产 —— 也就是说，&lt;strong&gt;暂时不要在此基础上进行构建&lt;/strong&gt;。现在，它的性能差，功能更少，并且对于已广泛使用的技术（如 CNI）具有未定义的行为。但是，我们预计随着未来几个月的实现，这种情况将迅速改善。&lt;/li&gt;
-&lt;li&gt;你关心的大部分网格功能（如按请求流量管理和安全控制、分布式追踪和应用程序级 RED 指标）都发生在 L7 中。目前尚不清楚Ambient Mesh的仅 L4 部分的适用范围有多大，以及打破这些数据平面职责将在多大程度上有助于推动网格的采用。&lt;/li&gt;
+&lt;li&gt;Ambient Mesh 部署模型与 sidecar 模型进行了一些权衡，特别是在生命周期管理、资源利用、故障排除和安全状况方面。它们之间不分伯仲。&lt;/li&gt;
+&lt;li&gt;Ambient Mesh 目前还在实验阶段，最早要到 2023 年才能投入生产 —— 也就是说，&lt;strong&gt;暂时不要在此基础上进行构建&lt;/strong&gt;。现在，它的性能差，功能更少，并且对于已广泛使用的技术（如 CNI）具有未定义的行为。但是，我们预计随着未来几个月的实现，这种情况将迅速改善。&lt;/li&gt;
+&lt;li&gt;你关心的大部分网格功能（如按请求流量管理和安全控制、分布式追踪和应用程序级 RED 指标）都发生在 L7 中。目前尚不清楚 Ambient Mesh 的仅 L4 部分的适用范围有多大，以及打破这些数据平面职责将在多大程度上有助于推动网格的采用。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;这篇文章的其余部分是我们对环境模型与 Istio 现有的 Sidecar 部署模型的权衡，看看哪一个适合你以及何时适合你。&lt;/p&gt;
 &lt;h2 id=&#34;istio-中的-l4-和-l7-处理如何工作&#34;&gt;Istio 中的 L4 和 L7 处理如何工作？&lt;/h2&gt;
-&lt;p&gt;由于Ambient Mesh分割了 L4 和 L7 处理，因此准确了解每一层中发生的网格行为非常重要：&lt;/p&gt;
+&lt;p&gt;由于 Ambient Mesh 分割了 L4 和 L7 处理，因此准确了解每一层中发生的网格行为非常重要：&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;
 &lt;tr&gt;
@@ -1563,8 +1563,8 @@ vault-inject-agent-injector-5776975795-9vjnx   1/1     Running   0          91s
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;服务间授权&lt;/td&gt;
-&lt;td&gt;基于网络的授权，加上基于身份的策略，例如：A 只能接受来自 “10.2.0.0/16” 的调用；A 可以调用 B。&lt;/td&gt;
-&lt;td&gt;完整的策略，例如：A 只能使用包含 READ 范围的有效最终用户凭据在 B 上获取 /foo 。&lt;/td&gt;
+&lt;td&gt;基于网络的授权，加上基于身份的策略，例如：A 只能接受来自“10.2.0.0/16”的调用；A 可以调用 B。&lt;/td&gt;
+&lt;td&gt;完整的策略，例如：A 只能使用包含 READ 范围的有效最终用户凭据在 B 上获取 /foo。&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;最终用户身份验证&lt;/td&gt;
@@ -1648,12 +1648,12 @@ vault-inject-agent-injector-5776975795-9vjnx   1/1     Running   0          91s
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
-&lt;p&gt;值得记住的是，运行在 L7 的代理可以执行 L4 和 L7 列中的所有操作，而运行在 L4 的代理只能执行 L4 列。通过清楚地了解发生的情况以及 L4 与 L7 的局限性，我们可以查看Ambient Mesh与sidecar模型相比所做的权衡。&lt;/p&gt;
-&lt;h2 id=&#34;现在我们应该使用ambient-mesh吗还不可以&#34;&gt;现在我们应该使用Ambient Mesh吗？（还不可以）&lt;/h2&gt;
-&lt;p&gt;截至 2022 年 9 月宣布，Ambient Mesh是概念的实验证明。从&lt;a href=&#34;https://github.com/istio/istio/tree/experimental-ambient#limitations&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;几乎每一个指标&lt;/a&gt;来看，它的性能都比sidecar 模型差，而且它有很多&lt;a href=&#34;https://github.com/istio/istio/tree/experimental-ambient#limitations&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;限制&lt;/a&gt;。Ambient Mesh还&lt;strong&gt;没有准备好&lt;/strong&gt;在生产环境中使用（对于我们的客户 —— 大型企业的平台团队 —— 应用程序开发和测试环境也算作生产环境）。&lt;/p&gt;
-&lt;p&gt;但是，我们预计随着社区中的工程师致力于部署模型，这种状态会相对迅速地发生变化。它将像&lt;a href=&#34;https://istio.io/latest/docs/releases/feature-stages/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;所有其他 Istio 功能&lt;/a&gt;一样通过功能阶段进行。查看&lt;a href=&#34;https://istio.io/latest/docs/releases/feature-stages/#istio-features&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Istio 功能列表&lt;/a&gt;，Ambient Mesh将在 2023 年某个时候升级为 Alpha 状态。我们预计它会在 2023 年末或 2024 年初进入 Beta 版 —— 在此之前我们不建议将其用于生产用途。&lt;/p&gt;
-&lt;h2 id=&#34;关于-service-mesh-和-istio-的ambient-mesh假设&#34;&gt;关于 Service Mesh 和 Istio 的Ambient Mesh假设&lt;/h2&gt;
-&lt;p&gt;总结Ambient Mesh公告博客文章，该架构的核心动机是假设：&lt;/p&gt;
+&lt;p&gt;值得记住的是，运行在 L7 的代理可以执行 L4 和 L7 列中的所有操作，而运行在 L4 的代理只能执行 L4 列。通过清楚地了解发生的情况以及 L4 与 L7 的局限性，我们可以查看 Ambient Mesh 与 sidecar 模型相比所做的权衡。&lt;/p&gt;
+&lt;h2 id=&#34;现在我们应该使用-ambient-mesh-吗还不可以&#34;&gt;现在我们应该使用 Ambient Mesh 吗？（还不可以）&lt;/h2&gt;
+&lt;p&gt;截至 2022 年 9 月宣布，Ambient Mesh 是概念的实验证明。从&lt;a href=&#34;https://github.com/istio/istio/tree/experimental-ambient#limitations&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;几乎每一个指标&lt;/a&gt;来看，它的性能都比 sidecar 模型差，而且它有很多&lt;a href=&#34;https://github.com/istio/istio/tree/experimental-ambient#limitations&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;限制&lt;/a&gt;。Ambient Mesh 还&lt;strong&gt;没有准备好&lt;/strong&gt;在生产环境中使用（对于我们的客户 —— 大型企业的平台团队 —— 应用程序开发和测试环境也算作生产环境）。&lt;/p&gt;
+&lt;p&gt;但是，我们预计随着社区中的工程师致力于部署模型，这种状态会相对迅速地发生变化。它将像&lt;a href=&#34;https://istio.io/latest/docs/releases/feature-stages/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;所有其他 Istio 功能&lt;/a&gt;一样通过功能阶段进行。查看&lt;a href=&#34;https://istio.io/latest/docs/releases/feature-stages/#istio-features&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Istio 功能列表&lt;/a&gt;，Ambient Mesh 将在 2023 年某个时候升级为 Alpha 状态。我们预计它会在 2023 年末或 2024 年初进入 Beta 版 —— 在此之前我们不建议将其用于生产用途。&lt;/p&gt;
+&lt;h2 id=&#34;关于-service-mesh-和-istio-的-ambient-mesh-假设&#34;&gt;关于 Service Mesh 和 Istio 的 Ambient Mesh 假设&lt;/h2&gt;
+&lt;p&gt;总结 Ambient Mesh 公告博客文章，该架构的核心动机是假设：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;&lt;strong&gt;假设&lt;/strong&gt;Envoy 的 L7 功能使得将新应用程序加入网格变得具有挑战性。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;假设&lt;/strong&gt;Envoy 的 L7 功能是发现 CVE 的地方（绝大多数 Envoy CVE 在 L7 代码中，而不是在处理 TLS 和连接的 L4 代码中），因此在严格的 L4 代理中在节点级别持有多个 Pod 的证书是可以接受的，而在节点级别执行 L7 则不是。&lt;/li&gt;
@@ -1661,11 +1661,11 @@ vault-inject-agent-injector-5776975795-9vjnx   1/1     Running   0          91s
 &lt;li&gt;&lt;strong&gt;假设&lt;/strong&gt;一个额外的网络跃点比一个执行 L7 计算的 Envoy 便宜（从两个 L7 sidecar 移动到一个 L7 路点增加了一个跃点，但删除了一个执行 L7 处理的 Envoy）。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;假设&lt;/strong&gt;Istio 最有价值的特性是传输中的加密，因此优化以简化该用例是很有价值的。&lt;/li&gt;
 &lt;/ol&gt;
-&lt;h2 id=&#34;ambient-mesh假设如何匹配我们与实际客户的经验&#34;&gt;Ambient Mesh假设如何匹配我们与实际客户的经验&lt;/h2&gt;
+&lt;h2 id=&#34;ambient-mesh-假设如何匹配我们与实际客户的经验&#34;&gt;Ambient Mesh 假设如何匹配我们与实际客户的经验&lt;/h2&gt;
 &lt;p&gt;我们与世界上一些最大的企业密切合作以实现服务网格采用的经验并&lt;strong&gt;不能完全&lt;/strong&gt;证明这些激励想法：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;L7 功能&lt;/strong&gt;：网格的某些 L7 功能&lt;strong&gt;可能&lt;/strong&gt;会使应用程序更难采用，但根据我们的经验，由于连接寿命的变化或双重加密问题，应用程序载入中会出现更多的中断。无论 sidecar 或节点级代理如何，这些问题都会类似地表现出来，但对于应用程序团队在节点部署模型中进行故障排除更具挑战性（他们通常缺乏检查特权 / 节点级组件日志的权限）。要更深入地了解&lt;a href=&#34;https://www.tetrate.io/blog/ebpf-and-sidecars-getting-the-most-performance-and-resiliency-out-of-the-service-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;节点级代理与sidecar&lt;/a&gt;，请参阅我们上面提到的博客文章。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;L7 功能&lt;/strong&gt;：网格的某些 L7 功能&lt;strong&gt;可能&lt;/strong&gt;会使应用程序更难采用，但根据我们的经验，由于连接寿命的变化或双重加密问题，应用程序载入中会出现更多的中断。无论 sidecar 或节点级代理如何，这些问题都会类似地表现出来，但对于应用程序团队在节点部署模型中进行故障排除更具挑战性（他们通常缺乏检查特权 / 节点级组件日志的权限）。要更深入地了解&lt;a href=&#34;https://www.tetrate.io/blog/ebpf-and-sidecars-getting-the-most-performance-and-resiliency-out-of-the-service-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;节点级代理与 sidecar&lt;/a&gt;，请参阅我们上面提到的博客文章。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;L7 CVE&lt;/strong&gt;，&lt;a href=&#34;https://www.cvedetails.com/vulnerability-list/vendor_id-19794/product_id-53798/Envoyproxy-Envoy.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;查看它们&lt;/a&gt;，我们看到：&lt;/p&gt;
@@ -1674,22 +1674,22 @@ vault-inject-agent-injector-5776975795-9vjnx   1/1     Running   0          91s
 &lt;li&gt;剩下的 12 个是 L4 或 Envoy 固有的（连接处理、证书处理、嘈杂的邻居 DOS、缓冲区溢出等）。&lt;/li&gt;
 &lt;li&gt;L7 CVE 的平均严重性高于非 L7 CVE。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;与 L7 Envoy 相比，仅 L4 的 Envoy &lt;strong&gt;确实&lt;/strong&gt;提供了更小的攻击面，因为可以利用的代码（和 CVE）更少。攻击面是否足够低以证明持有节点上每个 pod 的身份是合理的，还有待观察。Ambient Mesh安全模型的关键在于我们对 ztunnel 组件的信任程度 —— 这是社区打算首先关注的组件。总体而言，与sidecar模型相比，ambient 的安全模型充其量是横向的一步，但在将其融入现有安全模型时，边界更难推理。&lt;/p&gt;
+&lt;p&gt;与 L7 Envoy 相比，仅 L4 的 Envoy &lt;strong&gt;确实&lt;/strong&gt;提供了更小的攻击面，因为可以利用的代码（和 CVE）更少。攻击面是否足够低以证明持有节点上每个 pod 的身份是合理的，还有待观察。Ambient Mesh 安全模型的关键在于我们对 ztunnel 组件的信任程度 —— 这是社区打算首先关注的组件。总体而言，与 sidecar 模型相比，ambient 的安全模型充其量是横向的一步，但在将其融入现有安全模型时，边界更难推理。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;strong&gt;资源利用率&lt;/strong&gt;：确实，如果未配置 pod 资源请求，并且未使用&lt;a href=&#34;https://istio.io/latest/docs/ops/best-practices/traffic-management/#cross-namespace-configuration&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;配置资源可见性&lt;/a&gt;或&lt;a href=&#34;https://istio.io/latest/docs/reference/config/networking/sidecar/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Sidecar API 资源&lt;/a&gt;等技术，sidecar 会导致资源利用率低下。但是，我们通过 Sidecar API 资源严格控制资源可见性和限制配置范围的 Istio 部署的经验是，sidecar 资源利用率非常低，并且我们可以为每个 sidecar 设置比 Istio 的默认配置文件更小的资源请求。为这种类型的配置手动维护 Sidecar API 资源非常具有挑战性 —— 这就是 &lt;a href=&#34;https://www.tetrate.io/tetrate-service-bridge/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate Service Bridge&lt;/a&gt; 根据更高级别的访问结构自动生成它的原因。&lt;/p&gt;
-&lt;p&gt;我们很高兴看到 Ambient 部署模型如何提高资源利用率 —— 为相同的网格行为部署更少的 Envoy 具有很大的潜力，因为独立的 Watpoint Envoy 通常可以处理比单个服务实例（及其sidecar）更多的流量。&lt;/p&gt;
+&lt;p&gt;我们很高兴看到 Ambient 部署模型如何提高资源利用率 —— 为相同的网格行为部署更少的 Envoy 具有很大的潜力，因为独立的 Watpoint Envoy 通常可以处理比单个服务实例（及其 sidecar）更多的流量。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;额外的网络跃点与 sidecar&lt;/strong&gt;：Ambient 的部署模型提供的最有趣的可能性之一是在 sidecar 架构中移除额外的 L7 Envoy。因为网格中的通信是 sidecar-to-sidecar，并且客户端和服务器都应用 L7 策略，我们必须对每个请求进行两次 L7 处理。在Ambient模式下，该策略将由服务器的 Waypoint 执行 —— 因此 L7 处理每个请求只发生一次。但是，在连接的两侧仍然有一个 ztunnel 进行 L4 处理。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;额外的网络跃点与 sidecar&lt;/strong&gt;：Ambient 的部署模型提供的最有趣的可能性之一是在 sidecar 架构中移除额外的 L7 Envoy。因为网格中的通信是 sidecar-to-sidecar，并且客户端和服务器都应用 L7 策略，我们必须对每个请求进行两次 L7 处理。在 Ambient 模式下，该策略将由服务器的 Waypoint 执行 —— 因此 L7 处理每个请求只发生一次。但是，在连接的两侧仍然有一个 ztunnel 进行 L4 处理。&lt;/p&gt;
 &lt;p&gt;这种权衡 —— 网络跳跃而不是 Envoy 进行 L7 处理 —— 总体上是否值得，还有待观察。当然，在延迟低且连接可靠的同一可用区的云提供商网络中，这可能是值得的。但是，我们的许多客户在本地和各种看起来不像云提供商网络的物理站点上部署了服务网格。&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;&lt;strong&gt;mTLS&lt;/strong&gt;：Istio 的传输加密毫无疑问是其最强大的功能之一。它用于（&lt;a href=&#34;https://www.tetrate.io/blog/tetrate-istio-distro-achieves-fips-certification/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;以 FIPS 验证的形式&lt;/a&gt;）用于&lt;a href=&#34;https://www.tetrate.io/blog/tetrate-first-to-provide-hardened-istio-to-dods-iron-bank/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;FIPS 合规性&lt;/a&gt;、&lt;a href=&#34;https://www.tetrate.io/blog/case-study-fico-encryption-pci-compliance-with-istio-service-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;PCI 合规性&lt;/a&gt;，以及在各种其他安全第一的环境中。但是，当我们查看网格的功能时，单独采用加密的原因并不常见：通常是加密与 L7 策略（包括流量控制）和可观测性相结合，激发了对该技术的投资。查看上表，很明显这些功能无法仅通过 ztunnel 实现 —— 它们需要 L7 Envoy。事实上，我们今天看到的大多数网格使用都需要 L7 Envoy。我们对任何能够使服务网格的采用更加容易的事情都充满热情，但我们还不确定Ambient Mesh的部署模型能否能兑现这一承诺。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;mTLS&lt;/strong&gt;：Istio 的传输加密毫无疑问是其最强大的功能之一。它用于（&lt;a href=&#34;https://www.tetrate.io/blog/tetrate-istio-distro-achieves-fips-certification/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;以 FIPS 验证的形式&lt;/a&gt;）用于&lt;a href=&#34;https://www.tetrate.io/blog/tetrate-first-to-provide-hardened-istio-to-dods-iron-bank/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;FIPS 合规性&lt;/a&gt;、&lt;a href=&#34;https://www.tetrate.io/blog/case-study-fico-encryption-pci-compliance-with-istio-service-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;PCI 合规性&lt;/a&gt;，以及在各种其他安全第一的环境中。但是，当我们查看网格的功能时，单独采用加密的原因并不常见：通常是加密与 L7 策略（包括流量控制）和可观测性相结合，激发了对该技术的投资。查看上表，很明显这些功能无法仅通过 ztunnel 实现 —— 它们需要 L7 Envoy。事实上，我们今天看到的大多数网格使用都需要 L7 Envoy。我们对任何能够使服务网格的采用更加容易的事情都充满热情，但我们还不确定 Ambient Mesh 的部署模型能否能兑现这一承诺。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ol&gt;
-&lt;h2 id=&#34;关于ambient-mesh的分离思考&#34;&gt;关于Ambient Mesh的分离思考&lt;/h2&gt;
-&lt;p&gt;Ambient Mesh是对无sidecar服务网格模型的一个有趣的尝试。我们很高兴看到它是如何发展的，特别是如果它有助于更容易地采用网格。在某些特定的用例中，我们预计这种方法会产生好处，但现在还处于早期阶段，而且还没有决定权衡是否值得。无论哪种方式，Ambient Mesh可能需要一段时间才能考虑投入生产。在那之前，正如他们所说，注意这个空间。&lt;/p&gt;
+&lt;h2 id=&#34;关于-ambient-mesh-的分离思考&#34;&gt;关于 Ambient Mesh 的分离思考&lt;/h2&gt;
+&lt;p&gt;Ambient Mesh 是对无 sidecar 服务网格模型的一个有趣的尝试。我们很高兴看到它是如何发展的，特别是如果它有助于更容易地采用网格。在某些特定的用例中，我们预计这种方法会产生好处，但现在还处于早期阶段，而且还没有决定权衡是否值得。无论哪种方式，Ambient Mesh 可能需要一段时间才能考虑投入生产。在那之前，正如他们所说，注意这个空间。&lt;/p&gt;
 &lt;p&gt;要&lt;a href=&#34;https://istio.tetratelabs.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;立即开始使用服务网格，Tetrate Istio Distro&lt;/a&gt;是安装、管理和升级 Istio 的最简单方法。它提供了经过审查的 Istio 上游发行版，该发行版已由 Tetrate 为特定平台进行测试和优化，以及一个便于获取、安装和配置多个 Istio 版本的 CLI。Tetrate Istio Distro 还为 FedRAMP 环境提供&lt;a href=&#34;https://www.tetrate.io/blog/tetrate-istio-distro-achieves-fips-certification/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;FIPS 认证的 Istio 构建&lt;/a&gt;。&lt;/p&gt;
 &lt;p&gt;对于需要统一且一致的方式来保护和管理复杂、异构部署环境中的服务和传统工作负载的企业，我们提供&lt;a href=&#34;https://www.tetrate.io/tetrate-service-bridge/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate Service Bridge&lt;/a&gt;，这是我们基于 Istio 和 Envoy 构建的旗舰边缘到工作负载应用程序连接平台。&lt;/p&gt;
 </description>
@@ -1735,9 +1735,9 @@ vault-inject-agent-injector-5776975795-9vjnx   1/1     Running   0          91s
 &lt;li&gt;Sidecar 仍然是首选的部署模式之一&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;应用程序和数据平面分离&#34;&gt;应用程序和数据平面分离&lt;/h2&gt;
-&lt;p&gt;尽管 Ambient Mesh 的主要目标是简化服务网格的操作，但它也确实有助于提高安全性。复杂性会滋生漏洞，企业应用程序（及其传递依赖项、库和框架）极其复杂且容易出现漏洞。从处理复杂的业务逻辑到利用 OSS 库或有缺陷的内部共享库，攻击者（来自内部或外部）的主要目标是用户的应用程序代码。如果应用程序遭到破坏，凭据、机密和密钥就会暴露给攻击者，包括那些安装或存储在内存中的数据。在查看 sidecar 模型时，sidecar 接管应用程序中的身份/密钥材料。 在 Istio ambient 模式下，数据平面组件不会与应用程序运行在同一个 pod 中，因此，应用程序的中的秘密不会泄露给数据平面。&lt;/p&gt;
+&lt;p&gt;尽管 Ambient Mesh 的主要目标是简化服务网格的操作，但它也确实有助于提高安全性。复杂性会滋生漏洞，企业应用程序（及其传递依赖项、库和框架）极其复杂且容易出现漏洞。从处理复杂的业务逻辑到利用 OSS 库或有缺陷的内部共享库，攻击者（来自内部或外部）的主要目标是用户的应用程序代码。如果应用程序遭到破坏，凭据、机密和密钥就会暴露给攻击者，包括那些安装或存储在内存中的数据。在查看 sidecar 模型时，sidecar 接管应用程序中的身份/密钥材料。在 Istio ambient 模式下，数据平面组件不会与应用程序运行在同一个 pod 中，因此，应用程序的中的秘密不会泄露给数据平面。&lt;/p&gt;
 &lt;p&gt;作为漏洞的潜在目标，Envoy Proxy 怎么样？Envoy 是一个经过严格审查的极其坚固的基础设施，并&lt;a href=&#34;https://www.infoq.com/news/2018/12/envoycon-service-mesh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;在关键环境中大规模运行&lt;/a&gt;（例如，&lt;a href=&#34;https://cloud.google.com/load-balancing/docs/https&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;用于生产以支持 Google 的网络&lt;/a&gt;）。然而，由于 Envoy 是软件，它不能免受漏洞的影响。当漏洞出现时，Envoy 有一个强大的 CVE 流程来识别快速修复它们，并在它们产生广泛影响之前将补丁推送给客户。&lt;/p&gt;
-&lt;p&gt;回到前面 “复杂性滋生漏洞” 的评论，Envoy Proxy 最复杂的部分在于其 L7 处理，事实上，历史上 Envoy 的大多数漏洞都在其 L7 处理堆栈中。但是，如果你只将 Istio 用于 mTLS 会怎样？当你不使用该功能时，为什么要冒险部署一个更容易发生 CVE 的成熟 L7 代理？分离 L4 和 L7 网格功能在这里很有用。在 Sidecar 部署中，你采用所有代理，即使你只使用一小部分功能，在 ambient 模式下，我们可以通过提供安全覆盖并仅根据需要在 L7 中分层来限制暴露。此外，L7 组件完全独立于应用程序运行，不会暴露供攻击面。&lt;/p&gt;
+&lt;p&gt;回到前面“复杂性滋生漏洞”的评论，Envoy Proxy 最复杂的部分在于其 L7 处理，事实上，历史上 Envoy 的大多数漏洞都在其 L7 处理堆栈中。但是，如果你只将 Istio 用于 mTLS 会怎样？当你不使用该功能时，为什么要冒险部署一个更容易发生 CVE 的成熟 L7 代理？分离 L4 和 L7 网格功能在这里很有用。在 Sidecar 部署中，你采用所有代理，即使你只使用一小部分功能，在 ambient 模式下，我们可以通过提供安全覆盖并仅根据需要在 L7 中分层来限制暴露。此外，L7 组件完全独立于应用程序运行，不会暴露供攻击面。&lt;/p&gt;
 &lt;h2 id=&#34;将-l4-下推到-cni&#34;&gt;将 L4 下推到 CNI&lt;/h2&gt;
 &lt;p&gt;Ambient 数据平面的 L4 组件作为 DaemonSet 运行，或者说每个节点一个。这意味着它是在特定节点上运行的所有 Pod 的共享基础架构。这个组件特别敏感，应该与节点上的任何其他共享组件（例如任何 CNI 代理、kube-proxy、kubelet 甚至 Linux 内核）处于同一级别。来自工作负载的流量被重定向到 ztunnel，ztunnel 然后识别工作负载并选择正确的证书来代表 mTLS 连接中的工作负载。&lt;/p&gt;
 &lt;p&gt;ztunnel 为每个 pod 使用一个独特的凭证，只有当 pod 在当前节点上运行时才会被发出。这确保了被破坏的 ztunnel 的爆炸半径——只有调度到当前节点上的 pod 的凭证可以被盗。这是一个类似于其他实现良好的共享节点基础设施的属性，包括其他安全 CNI 实现。ztunnel 不使用集群范围或每个节点的凭证，如果被盗，可能会立即危及集群中的所有应用流量，除非这些应用也实施复杂的二级授权机制。&lt;/p&gt;
@@ -1902,9 +1902,9 @@ vault-inject-agent-injector-5776975795-9vjnx   1/1     Running   0          91s
 
 
 
-&lt;figure  id=&#34;figure-当需要额外的功能时ambient-mesh-会部署路径代理ztunnel通过这些代理进行连接以执行策略&#34;&gt;
+&lt;figure  id=&#34;figure-当需要额外的功能时ambient-mesh-会部署路径代理ztunnel-通过这些代理进行连接以执行策略&#34;&gt;
   &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;当需要额外的功能时，Ambient Mesh 会部署路径代理，Ztunnel通过这些代理进行连接以执行策略。&#34; srcset=&#34;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;当需要额外的功能时，Ambient Mesh 会部署路径代理，Ztunnel 通过这些代理进行连接以执行策略。&#34; srcset=&#34;
                /blog/introducing-ambient-mesh/e6c9d24ely1h5yzsd8vv8j21wj0u00vx_hud24c97983a2dff171a980de76f593f78_126284_385fd31aa658cae43db3d254509df0d2.webp 400w,
                /blog/introducing-ambient-mesh/e6c9d24ely1h5yzsd8vv8j21wj0u00vx_hud24c97983a2dff171a980de76f593f78_126284_680b4da92881d3c919a63a2b7754f59c.webp 760w,
                /blog/introducing-ambient-mesh/e6c9d24ely1h5yzsd8vv8j21wj0u00vx_hud24c97983a2dff171a980de76f593f78_126284_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
@@ -1913,7 +1913,7 @@ vault-inject-agent-injector-5776975795-9vjnx   1/1     Running   0          91s
                height=&#34;333&#34;
                loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
   &lt;/div&gt;&lt;figcaption&gt;
-      当需要额外的功能时，Ambient Mesh 会部署路径代理，Ztunnel通过这些代理进行连接以执行策略。
+      当需要额外的功能时，Ambient Mesh 会部署路径代理，Ztunnel 通过这些代理进行连接以执行策略。
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
 &lt;p&gt;Ambient Mesh 使用 &lt;strong&gt;HTTP CONNECT over mTLS&lt;/strong&gt; 来实现其安全隧道，并在路径中插入 waypoint 代理，这种模式我们称之为 &lt;strong&gt;HBONE&lt;/strong&gt;（HTTP-Based Overlay Network Environment，基于 HTTP 的重叠网络环境）。HBONE 提供了比 TLS 本身更干净的流量封装，同时实现了与普通负载均衡器基础设施的互操作性。默认使用 FIPS 构建，以满足合规性需求。关于 HBONE 的更多细节，其基于标准的方法，以及 UDP 和其他非 TCP 协议的计划，将在未来的博客中提供。&lt;/p&gt;
@@ -2543,9 +2543,9 @@ vault-inject-agent-injector-5776975795-9vjnx   1/1     Running   0          91s
 
 
 
-&lt;figure  id=&#34;figure-grpc服务如何与istiod通信的示意图&#34;&gt;
+&lt;figure  id=&#34;figure-grpc-服务如何与-istiod-通信的示意图&#34;&gt;
   &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;gRPC服务如何与istiod通信的示意图&#34; srcset=&#34;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;gRPC 服务如何与 istiod 通信的示意图&#34; srcset=&#34;
                /blog/grpc-proxyless-service-mesh/008i3skNly1gwp3lh9za5j311q0hm75n_hub13183ce8bf635668b5180d6a8999e71_59258_93b5fc3be37bb2885005a55419c3b69e.webp 400w,
                /blog/grpc-proxyless-service-mesh/008i3skNly1gwp3lh9za5j311q0hm75n_hub13183ce8bf635668b5180d6a8999e71_59258_865bf197a56648593ab7bcb88c72344f.webp 760w,
                /blog/grpc-proxyless-service-mesh/008i3skNly1gwp3lh9za5j311q0hm75n_hub13183ce8bf635668b5180d6a8999e71_59258_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
@@ -2554,7 +2554,7 @@ vault-inject-agent-injector-5776975795-9vjnx   1/1     Running   0          91s
                height=&#34;355&#34;
                loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
   &lt;/div&gt;&lt;figcaption&gt;
-      gRPC服务如何与istiod通信的示意图
+      gRPC 服务如何与 istiod 通信的示意图
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
 &lt;p&gt;虽然不使用 proxy 进行数据面通信，但它仍然需要一个 agent 来进行初始化和与控制面的通信。首先，agent 在启动时生成一个&lt;a href=&#34;https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md#xdsclient-and-bootstrap-file&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;引导文件&lt;/a&gt;，与为 Envoy 生成引导文件的方式相同。这告诉 gRPC 库如何连接到 istiod，在哪里可以找到数据面通信的证书，以及向控制面发送什么元数据。接下来，agent 作为一个 xDS proxy，代表应用程序与 istiod 进行连接和认证。最后，agent 获取并轮换数据平面通信中使用的证书。&lt;/p&gt;
@@ -2790,9 +2790,9 @@ vault-inject-agent-injector-5776975795-9vjnx   1/1     Running   0          91s
 
 
 
-&lt;figure  id=&#34;figure-p50延迟对比图&#34;&gt;
+&lt;figure  id=&#34;figure-p50-延迟对比图&#34;&gt;
   &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;P50延迟对比图&#34; srcset=&#34;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;P50 延迟对比图&#34; srcset=&#34;
                /blog/grpc-proxyless-service-mesh/008i3skNly1gwp512szlvj31260rgq57_hud5c09da40d95e95911a10d442fdf1c43_91356_f0c76512696b26ddd8e19da497734612.webp 400w,
                /blog/grpc-proxyless-service-mesh/008i3skNly1gwp512szlvj31260rgq57_hud5c09da40d95e95911a10d442fdf1c43_91356_da37d4b02ce09f50eb75aed6f535dd18.webp 760w,
                /blog/grpc-proxyless-service-mesh/008i3skNly1gwp512szlvj31260rgq57_hud5c09da40d95e95911a10d442fdf1c43_91356_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
@@ -2801,7 +2801,7 @@ vault-inject-agent-injector-5776975795-9vjnx   1/1     Running   0          91s
                height=&#34;547&#34;
                loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
   &lt;/div&gt;&lt;figcaption&gt;
-      P50延迟对比图
+      P50 延迟对比图
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
 &lt;p&gt;
@@ -2820,9 +2820,9 @@ vault-inject-agent-injector-5776975795-9vjnx   1/1     Running   0          91s
 
 
 
-&lt;figure  id=&#34;figure-p99延迟对比图&#34;&gt;
+&lt;figure  id=&#34;figure-p99-延迟对比图&#34;&gt;
   &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;P99延迟对比图&#34; srcset=&#34;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;P99 延迟对比图&#34; srcset=&#34;
                /blog/grpc-proxyless-service-mesh/008i3skNly1gwp51zjxqaj312q0r2jtl_hu547659c633be4fb1b9f48f5325ea357d_89875_1e2c0a5a55cdc024ed19cf1769a16061.webp 400w,
                /blog/grpc-proxyless-service-mesh/008i3skNly1gwp51zjxqaj312q0r2jtl_hu547659c633be4fb1b9f48f5325ea357d_89875_bad6ddf9387104a5bc25014ce56eaeee.webp 760w,
                /blog/grpc-proxyless-service-mesh/008i3skNly1gwp51zjxqaj312q0r2jtl_hu547659c633be4fb1b9f48f5325ea357d_89875_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
@@ -2831,7 +2831,7 @@ vault-inject-agent-injector-5776975795-9vjnx   1/1     Running   0          91s
                height=&#34;531&#34;
                loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
   &lt;/div&gt;&lt;figcaption&gt;
-      P99延迟对比图
+      P99 延迟对比图
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
 &lt;p&gt;在使用无代理的 gRPC 解析器时，延迟会有微小的增加。与 Envoy 相比，这是一个巨大的改进，仍然可以实现先进的流量管理功能和 mTLS。&lt;/p&gt;
@@ -3049,7 +3049,7 @@ vault-inject-agent-injector-5776975795-9vjnx   1/1     Running   0          91s
 &lt;p&gt;一个常见的误解是，像 &lt;a href=&#34;https://istio.io/latest/docs/tasks/traffic-management/egress/egress-control/#envoy-passthrough-to-external-services&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;outboundTrafficPolicy: REGISTRY_ONLY&lt;/code&gt;&lt;/a&gt; 作为一个安全策略，防止所有对未申报服务的访问。然而，如上所述，这并不是一个强大的安全边界，应该被认为是尽力而为。&lt;/p&gt;
 &lt;p&gt;虽然这对防止意外的依赖性很有用，但如果你想保证出口流量的安全，并强制要求所有出站流量通过代理，你应该依靠 &lt;a href=&#34;https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Egress Gateway&lt;/a&gt;。当与&lt;a href=&#34;https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway/#apply-kubernetes-network-policies&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;网络策略&lt;/a&gt;相结合时，你可以强制所有的流量，或一些子集，通过出口网关。这确保了即使客户意外地或恶意地绕过他们的 sidecar，该请求也会被阻止。&lt;/p&gt;
 &lt;h2 id=&#34;当使用-tls-发起时在目的地规则中配置-tls-验证&#34;&gt;当使用 TLS 发起时，在目的地规则中配置 TLS 验证&lt;/h2&gt;
-&lt;p&gt;Istio 提供了从一个 sidecar 代理或网关&lt;a href=&#34;https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;发起 TLS&lt;/a&gt; 的能力。这使得发送纯文本 HTTP 流量的应用程序能够透明地 “升级 “到 HTTPS。&lt;/p&gt;
+&lt;p&gt;Istio 提供了从一个 sidecar 代理或网关&lt;a href=&#34;https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;发起 TLS&lt;/a&gt; 的能力。这使得发送纯文本 HTTP 流量的应用程序能够透明地“升级“到 HTTPS。&lt;/p&gt;
 &lt;p&gt;在配置 &lt;code&gt;DestinationRule&lt;/code&gt; 的 &lt;code&gt;tls&lt;/code&gt; 设置时，必须注意指定 &lt;code&gt;caCertificates&lt;/code&gt; 字段。如果没有设置，服务器的证书将不会被验证。&lt;/p&gt;
 &lt;p&gt;例如：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;networking.istio.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;

@@ -339,7 +339,7 @@
         content="2022-06-02T12:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2023-07-06T21:37:05&#43;08:00">
+    <meta property="article:modified_time" content="2023-07-07T00:35:26&#43;08:00">
   
 
   
@@ -1035,14 +1035,14 @@
 <p>一些功能可以单独用 eBPF 程序实现，但在许多情况下，我们希望 eBPF 代码能从用户空间的应用程序接收信息，或将数据传递给用户空间的应用程序。允许数据在 eBPF 程序和用户空间之间，或在不同的 eBPF 程序之间传递的机制被称为 <strong>map</strong>。</p>
 <h2 id="ebpf-map">eBPF Map</h2>
 <p>map 的开发是 eBPF 缩略语中的 <strong>e</strong> 代表 <strong>extended</strong> 重要区别之一。</p>
-<p>map 是与 eBPF 程序一起定义的数据结构体。有各种不同类型的 map ，但它们本质上都是键值存储。eBPF 程序可以读取和写入 map，用户空间代码也可以。map 的常见用途包括：</p>
+<p>map 是与 eBPF 程序一起定义的数据结构体。有各种不同类型的 map，但它们本质上都是键值存储。eBPF 程序可以读取和写入 map，用户空间代码也可以。map 的常见用途包括：</p>
 <ul>
 <li>eBPF 程序写入关于事件的指标和其他数据，供用户空间代码以后检索。</li>
 <li>用户空间代码编写配置信息，供 eBPF 程序读取并作出相应的行为。</li>
-<li>eBPF 程序将数据写入 map ，供另一个 eBPF 程序以后检索，允许跨多个内核事件的信息协调。</li>
+<li>eBPF 程序将数据写入 map，供另一个 eBPF 程序以后检索，允许跨多个内核事件的信息协调。</li>
 </ul>
 <p>如果内核和用户空间的代码都要访问同一个映射，它们需要对存储在该映射中的数据结构体有一个共同的理解。这可以通过在用户空间和内核代码中加入定义这些数据结构体的头文件来实现，但是如果这些代码不是用相同的语言编写的，作者将需要仔细创建逐个字节兼容的结构体定义。</p>
-<p>我们已经讨论了 eBPF 工具的主要组成部分：在内核中运行的 eBPF 程序，加载和与这些程序交互的用户空间代码，以及允许程序共享数据的 map 。为了更具体化，让我们看一个例子。</p>
+<p>我们已经讨论了 eBPF 工具的主要组成部分：在内核中运行的 eBPF 程序，加载和与这些程序交互的用户空间代码，以及允许程序共享数据的 map。为了更具体化，让我们看一个例子。</p>
 <h2 id="opensnoop-示例">Opensnoop 示例</h2>
 <p>在 eBPF 程序的例子中，我选择了 <code>opesnnoop</code>，一个可以显示任何进程所打开的文件的工具。这个工具的原始版本是 Brendan Gregg 最初在 <a href="https://github.com/iovisor/bcc/blob/master/tools/opensnoop.py" target="_blank" rel="noopener">BCC 项目</a>中编写的许多 BPF 工具之一，你可以在 GitHub 上找到。它后来被重写为 <code>libbpf</code>（你将在下一章见到它），在这个例子中，我使用 <code>libbpf-tools</code> 目录下的较新版本。</p>
 <p>当你运行 <code>opensnoop</code> 时，你将看到的输出在很大程度上取决于当时在虚拟机上发生了什么，但它应该看起来像这样。</p>
@@ -1162,7 +1162,7 @@ buffer，并将每个事件中包含的信息写到屏幕上。首先，它打�
 </span></span><span class="line"><span class="cl"><span class="p">...</span> <span class="p">}</span>
 </span></span></code></pre></div><p>传递给 <code>handle_event()</code> 的数据参数指向 eBPF 程序为该事件写进 map 的事件结构体。</p>
 <p>用户空间的代码可以检索这些信息，将其格式化并写出来给用户看。</p>
-<p>正如你所看到的，opensnoop 注册了 eBPF 程序，每当有应用程序进行 <code>open()</code> 或 <code>openat()</code> 系统调用时都会被调用。这些运行在内核中的 eBPF 程序收集有关该系统调用的上下文信息 —— 可执行文件名和进程 ID—— 以及被打开的文件的信息。这些信息被写进一个 map ，用户空间可以从中读取并显示给用户。</p>
+<p>正如你所看到的，opensnoop 注册了 eBPF 程序，每当有应用程序进行 <code>open()</code> 或 <code>openat()</code> 系统调用时都会被调用。这些运行在内核中的 eBPF 程序收集有关该系统调用的上下文信息 —— 可执行文件名和进程 ID—— 以及被打开的文件的信息。这些信息被写进一个 map，用户空间可以从中读取并显示给用户。</p>
 <p>你会在 <code>libbpf-tools</code> 目录中找到几十个这样的 eBPF 工具的例子，每个例子通常都是一个系统调用，或者是一系列相关的系统调用，如 <code>open()</code> 和 <code>openat()</code>。</p>
 <p>系统调用是一个稳定的内核接口，它提供了一个非常强大的方式来观察（虚拟）机器上正在发生的事情。但是，不要以为 eBPF 编程只能用于拦截系统调用。还有很多其他的固定接口，包括 LSM 和网络堆栈中的各种点，eBPF 可以连接到这些接口。如果你愿意承担内核版本变更的风险，eBPF 程序可以附加的范围是绝对宽广的。</p>
 <h2 id="参考">参考</h2>
@@ -1238,7 +1238,7 @@ buffer，并将每个事件中包含的信息写到屏幕上。首先，它打�
           
 
         <div class="body-footer">
-          <p>最近更新于 2023-07-06</p>
+          <p>最近更新于 2023-07-07</p>
 
           
 

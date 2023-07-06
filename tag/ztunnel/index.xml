@@ -64,7 +64,7 @@
 &lt;p&gt;当 Istio Ambient Mesh 于 2022 年 9 月 7 日发布时，ztunnel 是使用 Envoy 代理实现的。鉴于我们将 Envoy 用于 Istio 的其余部分——sidecar、网关和 Waypoint Proxy——我们开始使用 Envoy 实施 ztunnel 是很自然的选择。&lt;/p&gt;
 &lt;p&gt;然而，我们发现虽然 Envoy 非常适合其他用例，但在 Envoy 中实现 ztunnel 具有挑战性，因为许多权衡、要求和用例与 sidecar 代理或入口网关有很大不同。此外，大多数使 Envoy 非常适合其他用例的东西，例如其丰富的 L7 功能集和可扩展性，都浪费在不需要这些功能的 ztunnel 中。&lt;/p&gt;
 &lt;h2 id=&#34;专门构建的-ztunnel&#34;&gt;专门构建的 ztunnel&lt;/h2&gt;
-&lt;p&gt;在 Envoy 因我们的需求而失败后，我们开始考虑构建 ztunnel 的专用实现。我们的假设是，通过从一开始就考虑一个单一的重点用例进行设计，我们可以开发一个比将通用项目塑造成自定义用例更简单、性能更高的解决方案。使 ztunnel 简单化的明确决定是这一假设的关键； 例如，类似的逻辑不适用于具有大量支持功能和集成的重写网关。&lt;/p&gt;
+&lt;p&gt;在 Envoy 因我们的需求而失败后，我们开始考虑构建 ztunnel 的专用实现。我们的假设是，通过从一开始就考虑一个单一的重点用例进行设计，我们可以开发一个比将通用项目塑造成自定义用例更简单、性能更高的解决方案。使 ztunnel 简单化的明确决定是这一假设的关键；例如，类似的逻辑不适用于具有大量支持功能和集成的重写网关。&lt;/p&gt;
 &lt;p&gt;这个专门建造的 ztunnel 涉及两个关键领域：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;ztunnel 与其 Istiod 之间的配置协议&lt;/li&gt;
@@ -86,7 +86,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;workloadName&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;helloworld-v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;workloadType&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;deployment&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;此信息通过 xDS 传输 API 传输，但使用特定于环境的自定义类型。请参阅&lt;a href=&#34;https://preliminary.istio.io/latest/blog/2023/rust-based-ztunnel/#workload-xds-configuration&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;工作负载 xDS 配置部分&lt;/a&gt; 以了解有关配置详细信息的更多信息。&lt;/p&gt;
-&lt;p&gt;使用专门构建的 API，我们可以将逻辑推送到代理中，而不是在 Envoy 配置中。例如，要在 Envoy 中配置 mTLS，我们需要添加相同的大型配置集来调整每个服务的精确 TLS 设置； 使用 ztunnel，我们只需要一个枚举来声明是否应该使用 mTLS。其余的复杂逻辑直接嵌入到 ztunnel 代码中。&lt;/p&gt;
+&lt;p&gt;使用专门构建的 API，我们可以将逻辑推送到代理中，而不是在 Envoy 配置中。例如，要在 Envoy 中配置 mTLS，我们需要添加相同的大型配置集来调整每个服务的精确 TLS 设置；使用 ztunnel，我们只需要一个枚举来声明是否应该使用 mTLS。其余的复杂逻辑直接嵌入到 ztunnel 代码中。&lt;/p&gt;
 &lt;p&gt;借助 Istiod 和 ztunnel 之间的这种高效 API，我们发现我们可以使用有关大型网格（例如具有 100,000 个 pod 的网格）的信息来配置 ztunnel，配置数量减少几个数量级，这意味着 CPU、内存和网络成本更低。&lt;/p&gt;
 &lt;h3 id=&#34;运行时实现&#34;&gt;运行时实现&lt;/h3&gt;
 &lt;p&gt;顾名思义，ztunnel 使用 &lt;a href=&#34;https://preliminary.istio.io/latest/blog/2022/introducing-ambient-mesh/#building-an-ambient-mesh&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;HTTPS 隧道&lt;/a&gt; 承载用户请求。虽然 Envoy 支持这种隧道，但我们发现配置模型限制了我们的需求。简单地说，Envoy 的工作方式是通过一系列“过滤器”发送请求，从接受请求开始到发送结束。根据我们的要求，它有多层请求（隧道本身和用户的请求），以及负载均衡后需要应用 per-pod 策略，我们发现每个连接需要循环通过这些过滤器 4 次才能实现我们的基于在 Envoy 上当 ztunnel。虽然 Envoy 对内存中的“向自身发送请求”进行了 &lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/configuration/other_features/internal_listener&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;一些优化 &lt;/a&gt;，但这仍然非常复杂且昂贵。&lt;/p&gt;
@@ -117,7 +117,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Pod 被包含在 ambient 中后（默认将命名空间标记为 &lt;code&gt;istio.io/dataplane-mode=ambient&lt;/code&gt; ）， protocol 值将被替换为 HBONE ，表示 ztunnel 将来自所有 helloworld -v1 pod 传入和传出通信升级到 HBONE。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Pod 被包含在 ambient 中后（默认将命名空间标记为 &lt;code&gt;istio.io/dataplane-mode=ambient&lt;/code&gt; ），protocol 值将被替换为 HBONE，表示 ztunnel 将来自所有 helloworld -v1 pod 传入和传出通信升级到 HBONE。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;workloads&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;nt&#34;&gt;&amp;#34;10.244.2.8&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;

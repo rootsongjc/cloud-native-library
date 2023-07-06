@@ -19,12 +19,12 @@
       <guid>https://lib.jimmysong.io/kubernetes-handbook/security/managing-tls-in-a-cluster/</guid>
       <description>&lt;p&gt;在使用二进制文件部署 Kubernetes 集群的时候，很多人在进行到部署证书时遇到各种各样千奇百怪的问题，这一步是创建集群的基础，我们有必要详细了解一下其背后的流程和原理。&lt;/p&gt;
 &lt;h2 id=&#34;概览&#34;&gt;概览&lt;/h2&gt;
-&lt;p&gt;每个 Kubernetes 集群都有一个集群根证书颁发机构（CA）。 集群中的组件通常使用 CA 来验证 API server 的证书，由 API 服务器验证 kubelet 客户端证书等。为了支持这一点，CA 证书包被分发到集群中的每个节点，并作为一个 secret 附加分发到默认 service account 上。 或者，你的 workload 可以使用此 CA 建立信任。 你的应用程序可以使用类似于 &lt;a href=&#34;https://github.com/ietf-wg-acme/acme/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;ACME 草案&lt;/a&gt;的协议，使用 &lt;code&gt;certificates.k8s.io&lt;/code&gt; API 请求证书签名。&lt;/p&gt;
+&lt;p&gt;每个 Kubernetes 集群都有一个集群根证书颁发机构（CA）。集群中的组件通常使用 CA 来验证 API server 的证书，由 API 服务器验证 kubelet 客户端证书等。为了支持这一点，CA 证书包被分发到集群中的每个节点，并作为一个 secret 附加分发到默认 service account 上。或者，你的 workload 可以使用此 CA 建立信任。你的应用程序可以使用类似于 &lt;a href=&#34;https://github.com/ietf-wg-acme/acme/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;ACME 草案&lt;/a&gt;的协议，使用 &lt;code&gt;certificates.k8s.io&lt;/code&gt; API 请求证书签名。&lt;/p&gt;
 &lt;h2 id=&#34;集群中的-tls-信任&#34;&gt;集群中的 TLS 信任&lt;/h2&gt;
-&lt;p&gt;让 Pod 中运行的应用程序信任集群根 CA 通常需要一些额外的应用程序配置。 您将需要将 CA 证书包添加到 TLS 客户端或服务器信任的 CA 证书列表中。 例如，您可以使用 golang TLS 配置通过解析证书链并将解析的证书添加到 &lt;a href=&#34;https://godoc.org/crypto/tls#Config&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;tls.Config&lt;/code&gt;&lt;/a&gt;结构中的 &lt;code&gt;Certificates&lt;/code&gt; 字段中，CA 证书捆绑包将使用默认服务账户自动加载到 pod 中，路径为 &lt;code&gt;/var/run/secrets/kubernetes.io/serviceaccount/ca.crt&lt;/code&gt;。 如果您没有使用默认服务账户，请请求集群管理员构建包含您有权访问使用的证书包的 configmap。&lt;/p&gt;
+&lt;p&gt;让 Pod 中运行的应用程序信任集群根 CA 通常需要一些额外的应用程序配置。您将需要将 CA 证书包添加到 TLS 客户端或服务器信任的 CA 证书列表中。例如，您可以使用 golang TLS 配置通过解析证书链并将解析的证书添加到 &lt;a href=&#34;https://godoc.org/crypto/tls#Config&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;tls.Config&lt;/code&gt;&lt;/a&gt;结构中的 &lt;code&gt;Certificates&lt;/code&gt; 字段中，CA 证书捆绑包将使用默认服务账户自动加载到 pod 中，路径为 &lt;code&gt;/var/run/secrets/kubernetes.io/serviceaccount/ca.crt&lt;/code&gt;。如果您没有使用默认服务账户，请请求集群管理员构建包含您有权访问使用的证书包的 configmap。&lt;/p&gt;
 &lt;h2 id=&#34;请求认证&#34;&gt;请求认证&lt;/h2&gt;
 &lt;p&gt;以下部分演示如何为通过 DNS 访问的 Kubernetes 服务创建 TLS 证书。&lt;/p&gt;
-&lt;h3 id=&#34;下载安装ssl&#34;&gt;下载安装SSL&lt;/h3&gt;
+&lt;h3 id=&#34;下载安装-ssl&#34;&gt;下载安装 SSL&lt;/h3&gt;
 &lt;p&gt;&lt;a href=&#34;https://pkg.cfssl.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;下载 cfssl 工具&lt;/a&gt;。&lt;/p&gt;
 &lt;h3 id=&#34;创建证书签名请求&#34;&gt;创建证书签名请求&lt;/h3&gt;
 &lt;p&gt;通过运行以下命令生成私钥和证书签名请求（或 CSR）：&lt;/p&gt;
@@ -65,7 +65,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  - key encipherment
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;  - server auth
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;EOF&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请注意，在步骤 1 中创建的 &lt;code&gt;server.csr&lt;/code&gt; 文件是 base64 编码并存储在&lt;code&gt;.spec.request&lt;/code&gt; 字段中。 我们还要求提供 “数字签名”，“密钥加密” 和 “服务器身份验证” 密钥用途的证书。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请注意，在步骤 1 中创建的 &lt;code&gt;server.csr&lt;/code&gt; 文件是 base64 编码并存储在&lt;code&gt;.spec.request&lt;/code&gt; 字段中。我们还要求提供“数字签名”，“密钥加密”和“服务器身份验证”密钥用途的证书。&lt;/p&gt;
 &lt;p&gt;在 API server 中可以看到这些 CSR 处于 pending 状态。执行下面的命令你将可以看到：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl describe csr my-svc.my-namespace
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Name:                   my-svc.my-namespace
@@ -83,7 +83,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                        10.0.34.2
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Events: &amp;lt;none&amp;gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;获取证书签名请求&#34;&gt;获取证书签名请求&lt;/h3&gt;
-&lt;p&gt;批准证书签名请求是通过自动批准过程完成的，或由集群管理员一次完成。 有关这方面涉及的更多信息，请参见下文。&lt;/p&gt;
+&lt;p&gt;批准证书签名请求是通过自动批准过程完成的，或由集群管理员一次完成。有关这方面涉及的更多信息，请参见下文。&lt;/p&gt;
 &lt;h3 id=&#34;下载签名并使用&#34;&gt;下载签名并使用&lt;/h3&gt;
 &lt;p&gt;一旦 CSR 被签署并获得批准，您应该看到以下内容：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl get csr
@@ -102,7 +102,7 @@
 &lt;/ol&gt;
 &lt;p&gt;当且仅当满足这两个要求时，审批者应该批准 CSR，否则拒绝 CSR。&lt;/p&gt;
 &lt;h2 id=&#34;给集群管理员的一个建议&#34;&gt;给集群管理员的一个建议&lt;/h2&gt;
-&lt;p&gt;本教程假设将 signer 设置为服务证书 API。Kubernetes controller manager 提供了一个 signer 的默认实现。 要启用它，请将 &lt;code&gt;--cluster-signing-cert-file&lt;/code&gt; 和 &lt;code&gt;--cluster-signing-key-file&lt;/code&gt; 参数传递给 controller manager，并配置具有证书颁发机构的密钥对的路径。&lt;/p&gt;
+&lt;p&gt;本教程假设将 signer 设置为服务证书 API。Kubernetes controller manager 提供了一个 signer 的默认实现。要启用它，请将 &lt;code&gt;--cluster-signing-cert-file&lt;/code&gt; 和 &lt;code&gt;--cluster-signing-key-file&lt;/code&gt; 参数传递给 controller manager，并配置具有证书颁发机构的密钥对的路径。&lt;/p&gt;
 </description>
     </item>
     
@@ -234,7 +234,7 @@
       <description>&lt;p&gt;本文档介绍如何为 kubelet 设置 TLS 客户端证书引导（bootstrap）。&lt;/p&gt;
 &lt;p&gt;Kubernetes 1.4 引入了一个用于从集群级证书颁发机构（CA）请求证书的 API。此 API 的原始目的是为 kubelet 提供 TLS 客户端证书。可以在 &lt;a href=&#34;https://github.com/kubernetes/kubernetes/pull/20439&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这里&lt;/a&gt; 找到该提议，在 &lt;a href=&#34;https://github.com/kubernetes/features/issues/43&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;feature #43&lt;/a&gt; 追踪该功能的进度。&lt;/p&gt;
 &lt;h2 id=&#34;kube-apiserver-配置&#34;&gt;kube-apiserver 配置&lt;/h2&gt;
-&lt;p&gt;您必须提供一个 token 文件，该文件中指定了至少一个分配给 kubelet 特定 bootstrap 组的 “bootstrap token”。&lt;/p&gt;
+&lt;p&gt;您必须提供一个 token 文件，该文件中指定了至少一个分配给 kubelet 特定 bootstrap 组的“bootstrap token”。&lt;/p&gt;
 &lt;p&gt;该组将作为 controller manager 配置中的默认批准控制器而用于审批。随着此功能的成熟，您应该确保 token 被绑定到基于角色的访问控制（RBAC）策略上，该策略严格限制了与证书配置相关的客户端请求（使用 bootstrap token）。使用 RBAC，将 token 范围划分为组可以带来很大的灵活性（例如，当您配置完成节点后，您可以禁用特定引导组的访问）。&lt;/p&gt;
 &lt;h3 id=&#34;token-认证文件&#34;&gt;Token 认证文件&lt;/h3&gt;
 &lt;p&gt;Token 可以是任意的，但应该可以表示为从安全随机数生成器（例如大多数现代操作系统中的 /dev/urandom）导出的至少128位熵。生成 token 有很多中方式。例如：&lt;/p&gt;
@@ -256,7 +256,7 @@
 &lt;p&gt;Kube-controller-manager 标志为：&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;--cluster-signing-cert-file=&amp;#34;/etc/path/to/kubernetes/ca/ca.crt&amp;#34; --cluster-signing-key-file=&amp;#34;/etc/path/to/kubernetes/ca/ca.key&amp;#34;
 &lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;审批控制器&#34;&gt;审批控制器&lt;/h3&gt;
-&lt;p&gt;在 kubernetes 1.7 版本中，实验性的 “组自动批准” 控制器被弃用，新的 &lt;code&gt;csrapproving&lt;/code&gt; 控制器将作为 &lt;a href=&#34;https://kubernetes.io/docs/admin/kube-controller-manager&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;kube-controller-manager&lt;/a&gt; 的一部分，被默认启用。&lt;/p&gt;
+&lt;p&gt;在 kubernetes 1.7 版本中，实验性的“组自动批准”控制器被弃用，新的 &lt;code&gt;csrapproving&lt;/code&gt; 控制器将作为 &lt;a href=&#34;https://kubernetes.io/docs/admin/kube-controller-manager&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;kube-controller-manager&lt;/a&gt; 的一部分，被默认启用。&lt;/p&gt;
 &lt;p&gt;控制器使用 &lt;a href=&#34;https://kubernetes.io/docs/admin/authorization/#checking-api-access&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;SubjectAccessReview&lt;/code&gt; API&lt;/a&gt; 来确定给定用户是否已被授权允许请求 CSR，然后根据授权结果进行批准。为了防止与其他批准者冲突，内置审批者没有明确地拒绝 CSR，只是忽略未经授权的请求。&lt;/p&gt;
 &lt;p&gt;控制器将 CSR 分为三个子资源：&lt;/p&gt;
 &lt;ol&gt;
@@ -336,13 +336,13 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;启动 kubelet 时，如果 &lt;code&gt;--kubeconfig&lt;/code&gt; 指定的文件不存在，则使用 bootstrap kubeconfig 向 API server 请求客户端证书。在批准 &lt;code&gt;kubelet&lt;/code&gt; 的证书请求和回执时，将包含了生成的密钥和证书的 kubeconfig 文件写入由 &lt;code&gt;-kubeconfig&lt;/code&gt; 指定的路径。证书和密钥文件将被放置在由 &lt;code&gt;--cert-dir&lt;/code&gt; 指定的目录中。&lt;/p&gt;
 &lt;p&gt;启动 kubelet 时启用 bootstrap 用到的标志：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;--experimental-bootstrap-kubeconfig&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;/path/to/bootstrap/kubeconfig&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;此外，在1.7中，kubelet 实现了 &lt;strong&gt;Alpha&lt;/strong&gt; 功能，使其客户端和/或服务器都能轮转提供证书。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;此外，在 1.7 中，kubelet 实现了 &lt;strong&gt;Alpha&lt;/strong&gt; 功能，使其客户端和/或服务器都能轮转提供证书。&lt;/p&gt;
 &lt;p&gt;可以分别通过 kubelet 中的 &lt;code&gt;RotateKubeletClientCertificate&lt;/code&gt; 和 &lt;code&gt;RotateKubeletServerCertificate&lt;/code&gt; 功能标志启用此功能，但在未来版本中可能会以向后兼容的方式发生变化。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;--feature-gates&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;RotateKubeletClientCertificate&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;true,RotateKubeletServerCertificate&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;true&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;RotateKubeletClientCertificate&lt;/code&gt; 可以让 kubelet 在其现有凭据到期时通过创建新的 CSR 来轮换其客户端证书。 &lt;code&gt;RotateKubeletServerCertificate&lt;/code&gt; 可以让 kubelet 在其引导客户端凭据后还可以请求服务证书，并轮换该证书。服务证书目前不要求 DNS 或 IP SANs。&lt;/p&gt;
 &lt;h2 id=&#34;kubectl-审批&#34;&gt;kubectl 审批&lt;/h2&gt;
-&lt;p&gt;签名控制器不会立即签署所有证书请求。相反，它会一直等待直到适当特权的用户被标记为 “已批准” 状态。这最终将是由外部审批控制器来处理的自动化过程，但是对于 alpha 版本的 API 来说，可以由集群管理员通过 kubectl 命令手动完成。&lt;/p&gt;
-&lt;p&gt;管理员可以使用 &lt;code&gt;kubectl get csr&lt;/code&gt; 命令列出所有的 CSR，使用 &lt;code&gt;kubectl describe csr &amp;lt;name&amp;gt;&lt;/code&gt; 命令描述某个 CSR的详细信息。在 1.6 版本以前，&lt;a href=&#34;https://github.com/kubernetes/kubernetes/issues/30163&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;没有直接的批准/拒绝命令&lt;/a&gt; ，因此审批者需要直接更新 Status 信息（&lt;a href=&#34;https://github.com/gtank/csrctl&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;查看如何实现&lt;/a&gt;）。此后的 Kubernetes 版本中提供了 &lt;code&gt;kubectl certificate approve &amp;lt;name&amp;gt;&lt;/code&gt; 和 &lt;code&gt;kubectl certificate deny &amp;lt;name&amp;gt;&lt;/code&gt; 命令。&lt;/p&gt;
+&lt;p&gt;签名控制器不会立即签署所有证书请求。相反，它会一直等待直到适当特权的用户被标记为“已批准”状态。这最终将是由外部审批控制器来处理的自动化过程，但是对于 alpha 版本的 API 来说，可以由集群管理员通过 kubectl 命令手动完成。&lt;/p&gt;
+&lt;p&gt;管理员可以使用 &lt;code&gt;kubectl get csr&lt;/code&gt; 命令列出所有的 CSR，使用 &lt;code&gt;kubectl describe csr &amp;lt;name&amp;gt;&lt;/code&gt; 命令描述某个 CSR 的详细信息。在 1.6 版本以前，&lt;a href=&#34;https://github.com/kubernetes/kubernetes/issues/30163&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;没有直接的批准/拒绝命令&lt;/a&gt; ，因此审批者需要直接更新 Status 信息（&lt;a href=&#34;https://github.com/gtank/csrctl&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;查看如何实现&lt;/a&gt;）。此后的 Kubernetes 版本中提供了 &lt;code&gt;kubectl certificate approve &amp;lt;name&amp;gt;&lt;/code&gt; 和 &lt;code&gt;kubectl certificate deny &amp;lt;name&amp;gt;&lt;/code&gt; 命令。&lt;/p&gt;
 </description>
     </item>
     
@@ -356,7 +356,7 @@
 &lt;p&gt;要创建 ip-masq-agent，运行下面的 kubectl 命令：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create -f https://raw.githubusercontent.com/kubernetes-incubator/ip-masq-agent/master/ip-masq-agent.yaml
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;关于 ip-masq-agent 的更多信息请参考 &lt;a href=&#34;https://github.com/kubernetes-incubator/ip-masq-agent&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;该文档&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;在大多数情况下，默认的一套规则应该是足够的；但是，如果内置的规则不适用于您的集群，您可以创建并应用 ConfigMap 来自定义受影响的 IP 范围。例如，为了仅允许 ip-masq-agent 考虑 10.0.0.0/8，您可以在名为 “config” 的文件中创建以下 ConfigMap。&lt;/p&gt;
+&lt;p&gt;在大多数情况下，默认的一套规则应该是足够的；但是，如果内置的规则不适用于您的集群，您可以创建并应用 ConfigMap 来自定义受影响的 IP 范围。例如，为了仅允许 ip-masq-agent 考虑 10.0.0.0/8，您可以在名为“config”的文件中创建以下 ConfigMap。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;nonMasqueradeCIDRs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;m&#34;&gt;10.0.0.0&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;/8&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resyncInterval&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;60s&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -396,7 +396,7 @@
 &lt;p&gt;本地链路地址是仅能在主机连接的网段或广播域内进行有效通信的网络地址。IPv4 的链路本地地址在 CIDR 表示法定义的地址块是 169.254.0.0/16。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;Ip-masq-agent 在将流量发送到集群 node 节点的 IP 和 Cluster IP 范围之外的目的地时，会配置 iptables 规则来处理伪装的 node/pod IP 地址。这基本上将 pod 的 IP 地址隐藏在了集群 node 节点的 IP 地址后面。在某些环境中，到 “外部” 地址的流量必须来自已知的机器地址。例如，在 Google Cloud 中，到互联网的任何流量必须来自虚拟机的 IP。当使用容器时，如在GKE中，Pod IP 将被拒绝作为出口。为了避免这种情况，我们必须将 Pod IP 隐藏在 VM 自己的 IP 地址之后——通常被称为 “伪装”。默认情况下，配置代理将指定的三个专用 IP 范围视为非伪装 &lt;a href=&#34;https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CIDR&lt;/a&gt;。范围包括 10.0.0.0/8、172.16.0.0/12 和 192.168.0.0/16。默认情况下，代理还将本地链路（169.254.0.0/16）视为非伪装 CIDR。代理配置为每隔60秒从 &lt;em&gt;/etc/config/ip-masq-agent&lt;/em&gt; 位置重新加载其配置，这也是可配置的。&lt;/p&gt;
+&lt;p&gt;Ip-masq-agent 在将流量发送到集群 node 节点的 IP 和 Cluster IP 范围之外的目的地时，会配置 iptables 规则来处理伪装的 node/pod IP 地址。这基本上将 pod 的 IP 地址隐藏在了集群 node 节点的 IP 地址后面。在某些环境中，到“外部”地址的流量必须来自已知的机器地址。例如，在 Google Cloud 中，到互联网的任何流量必须来自虚拟机的 IP。当使用容器时，如在 GKE 中，Pod IP 将被拒绝作为出口。为了避免这种情况，我们必须将 Pod IP 隐藏在 VM 自己的 IP 地址之后——通常被称为“伪装”。默认情况下，配置代理将指定的三个专用 IP 范围视为非伪装 &lt;a href=&#34;https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CIDR&lt;/a&gt;。范围包括 10.0.0.0/8、172.16.0.0/12 和 192.168.0.0/16。默认情况下，代理还将本地链路（169.254.0.0/16）视为非伪装 CIDR。代理配置为每隔 60 秒从 &lt;em&gt;/etc/config/ip-masq-agent&lt;/em&gt; 位置重新加载其配置，这也是可配置的。&lt;/p&gt;
 &lt;p&gt;
 
 
@@ -413,18 +413,18 @@
 
 
 
-&lt;figure  id=&#34;figure-ip伪装代理示意图&#34;&gt;
+&lt;figure  id=&#34;figure-ip-伪装代理示意图&#34;&gt;
   &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/ip-masq.png&#34; alt=&#34;IP伪装代理示意图&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/ip-masq.png&#34; alt=&#34;IP 伪装代理示意图&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
   &lt;/div&gt;&lt;figcaption&gt;
-      IP伪装代理示意图
+      IP 伪装代理示意图
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
 &lt;p&gt;代理的配置文件必须使用 yaml 或 json 语法，并且包含以下三个可选的 key：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;nonMasqueradeCIDRs&lt;/strong&gt;：使用 &lt;a href=&#34;https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CIDR&lt;/a&gt; 表示法指定的非伪装范围的字符串列表。&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;masqLinkLocal&lt;/strong&gt;：一个布尔值（true/false），表示是否将流量伪装成本地链路前缀 169.254.0.0/16。默认为false。&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;resyncInterval&lt;/strong&gt;：代理尝试从磁盘重新加载配置的时间间隔。例如 ’30s’ 其中 ‘s’ 是秒，’ms’ 是毫秒等…&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;masqLinkLocal&lt;/strong&gt;：一个布尔值（true/false），表示是否将流量伪装成本地链路前缀 169.254.0.0/16。默认为 false。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;resyncInterval&lt;/strong&gt;：代理尝试从磁盘重新加载配置的时间间隔。例如’30s’其中‘s’是秒，’ms’是毫秒等…&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;到 10.0.0.0/8、172.16.0.0/12 和 192.168.0.0/16 范围的流量将不会被伪装。任何其他流量（假定是互联网）将被伪装。这里有个例子，来自 pod 的本地目的地址可以是其节点的 IP 地址、其他节点的地址或 Cluster IP 范围中的一个 IP 地址。其他任何流量都将默认伪装。以下条目显示 ip-masq-agent 应用的默认规则集：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-http&#34; data-lang=&#34;http&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;iptables -t nat -L IP-MASQ-AGENT
@@ -516,7 +516,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;显示的用户仍然是 admin，这是因为 kubectl 使用了 &lt;code&gt;$HOME/.kube/config&lt;/code&gt; 文件作为了默认的 context 配置，我们只需要将其用刚生成的 &lt;code&gt;devuser.kubeconfig&lt;/code&gt; 文件替换即可。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;cp -f ./devuser.kubeconfig /root/.kube/config
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;rolebinding&#34;&gt;RoleBinding&lt;/h2&gt;
-&lt;p&gt;如果我们想限制 devuser 用户的行为，需要使用 RBAC创建角色绑定以将该用户的行为限制在某个或某几个 namespace 空间范围内，例如：&lt;/p&gt;
+&lt;p&gt;如果我们想限制 devuser 用户的行为，需要使用 RBAC 创建角色绑定以将该用户的行为限制在某个或某几个 namespace 空间范围内，例如：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create rolebinding devuser-admin-binding --clusterrole&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;admin --user&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;devuser --namespace&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;dev
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create rolebinding devuser-admin-binding --clusterrole&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;admin --user&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;devuser --namespace&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;test&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;这样 devuser 用户对 dev 和 test 两个 namespace 具有完全访问权限。&lt;/p&gt;
@@ -544,14 +544,14 @@
       <link>https://lib.jimmysong.io/kubernetes-handbook/security/auth-with-kubeconfig-or-token/</link>
       <pubDate>Sat, 21 May 2022 00:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/kubernetes-handbook/security/auth-with-kubeconfig-or-token/</guid>
-      <description>&lt;p&gt;在开启了 TLS 的集群中，每当与集群交互的时候少不了的是身份认证，使用 kubeconfig（即证书） 和 token 两种认证方式是最简单也最通用的认证方式，在 dashboard 的登录功能就可以使用这两种登录功能。&lt;/p&gt;
+      <description>&lt;p&gt;在开启了 TLS 的集群中，每当与集群交互的时候少不了的是身份认证，使用 kubeconfig（即证书）和 token 两种认证方式是最简单也最通用的认证方式，在 dashboard 的登录功能就可以使用这两种登录功能。&lt;/p&gt;
 &lt;p&gt;下文分两块以示例的方式来讲解两种登陆认证方式：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;为 brand 命名空间下的 brand 用户创建 kubeconfig 文件&lt;/li&gt;
 &lt;li&gt;为集群的管理员（拥有所有命名空间的 amdin 权限）创建 token&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;使用-kubeconfig&#34;&gt;使用 kubeconfig&lt;/h2&gt;
-&lt;p&gt;如何生成&lt;code&gt;kubeconfig&lt;/code&gt;文件请参考&lt;a href=&#34;../../guide/kubectl-user-authentication-authorization&#34;&gt;创建用户认证授权的kubeconfig文件&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;如何生成&lt;code&gt;kubeconfig&lt;/code&gt;文件请参考&lt;a href=&#34;../../guide/kubectl-user-authentication-authorization&#34;&gt;创建用户认证授权的 kubeconfig 文件&lt;/a&gt;。&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;注意我们生成的 kubeconfig 文件中没有 token 字段，需要手动添加该字段。&lt;/p&gt;
 &lt;/blockquote&gt;
@@ -572,17 +572,17 @@
 
 
 
-&lt;figure  id=&#34;figure-kubeconfig文件&#34;&gt;
+&lt;figure  id=&#34;figure-kubeconfig-文件&#34;&gt;
   &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/brand-kubeconfig-yaml.jpg&#34; alt=&#34;kubeconfig文件&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/brand-kubeconfig-yaml.jpg&#34; alt=&#34;kubeconfig 文件&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
   &lt;/div&gt;&lt;figcaption&gt;
-      kubeconfig文件
+      kubeconfig 文件
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
 &lt;p&gt;对于访问 dashboard 时候的使用 kubeconfig 文件如&lt;code&gt;brand.kubeconfig&lt;/code&gt; 必须追到 &lt;code&gt;token&lt;/code&gt; 字段，否则认证不会通过。而使用 kubectl 命令时的用的 kubeconfig 文件则不需要包含 &lt;code&gt;token&lt;/code&gt; 字段。&lt;/p&gt;
 &lt;h2 id=&#34;生成-token&#34;&gt;生成 token&lt;/h2&gt;
-&lt;p&gt;需要创建一个admin用户并授予admin角色绑定，使用下面的yaml文件创建admin用户并赋予他管理员权限，然后可以通过token访问kubernetes，该文件见&lt;a href=&#34;https://github.com/rootsongjc/kubernetes-handbook/tree/master/manifests/dashboard-1.7.1/admin-role.yaml&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;admin-role.yaml&lt;/a&gt;。&lt;/p&gt;
-&lt;h3 id=&#34;生成kubernetes集群最高权限admin用户的token&#34;&gt;生成kubernetes集群最高权限admin用户的token&lt;/h3&gt;
+&lt;p&gt;需要创建一个 admin 用户并授予 admin 角色绑定，使用下面的 yaml 文件创建 admin 用户并赋予他管理员权限，然后可以通过 token 访问 kubernetes，该文件见&lt;a href=&#34;https://github.com/rootsongjc/kubernetes-handbook/tree/master/manifests/dashboard-1.7.1/admin-role.yaml&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;admin-role.yaml&lt;/a&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;生成-kubernetes-集群最高权限-admin-用户的-token&#34;&gt;生成 kubernetes 集群最高权限 admin 用户的 token&lt;/h3&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ClusterRoleBinding&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -608,7 +608,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;addonmanager.kubernetes.io/mode&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Reconcile&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;然后执行下面的命令创建 serviceaccount 和角色绑定，&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create -f admin-role.yaml
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;创建完成后获取secret中token的值。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;创建完成后获取 secret 中 token 的值。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 获取admin-token的secret名字&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl -n kube-system get secret&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;grep admin-token
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;admin-token-nwphb                          kubernetes.io/service-account-token   &lt;span class=&#34;m&#34;&gt;3&lt;/span&gt;         6m
@@ -631,16 +631,16 @@
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n kube-system get secret admin-token-nwphb -o &lt;span class=&#34;nv&#34;&gt;jsonpath&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;={&lt;/span&gt;.data.token&lt;span class=&#34;o&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;base64 -d
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：yaml 输出里的那个 token 值是进行 base64 编码后的结果，一定要将 kubectl 的输出中的 token 值进行 &lt;code&gt;base64&lt;/code&gt; 解码，在线解码工具 &lt;a href=&#34;https://www.base64decode.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;base64decode&lt;/a&gt;，Linux 和 Mac 有自带的 &lt;code&gt;base64&lt;/code&gt; 命令也可以直接使用，输入  &lt;code&gt;base64&lt;/code&gt; 是进行编码，Linux 中&lt;code&gt;base64 -d&lt;/code&gt; 表示解码，Mac 中使用 &lt;code&gt;base64 -D&lt;/code&gt;。&lt;/p&gt;
 &lt;p&gt;我们使用了 base64 对其重新解码，因为 secret 都是经过 base64 编码的，如果直接使用 kubectl 中查看到的 &lt;code&gt;token&lt;/code&gt; 值会认证失败，详见 &lt;a href=&#34;../../guide/secret-configuration&#34;&gt;secret 配置&lt;/a&gt;。关于 JSONPath 的使用请参考 &lt;a href=&#34;https://kubernetes.io/docs/user-guide/jsonpath/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;JSONPath 手册&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;更简单的方式是直接使用&lt;code&gt;kubectl describe&lt;/code&gt;命令获取token的内容（经过base64解码之后）：&lt;/p&gt;
+&lt;p&gt;更简单的方式是直接使用&lt;code&gt;kubectl describe&lt;/code&gt;命令获取 token 的内容（经过 base64 解码之后）：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl describe secret admin-token-nwphb 
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;为普通用户生成token&#34;&gt;为普通用户生成token&lt;/h3&gt;
-&lt;p&gt;为指定namespace分配该namespace的最高权限，这通常是在为某个用户（组织或者个人）划分了namespace之后，需要给该用户创建token登陆kubernetes dashboard或者调用kubernetes API的时候使用。&lt;/p&gt;
-&lt;p&gt;每次创建了新的namespace下都会生成一个默认的token，名为&lt;code&gt;default-token-xxxx&lt;/code&gt;。&lt;code&gt;default&lt;/code&gt;就相当于该namespace下的一个用户，可以使用下面的命令给该用户分配该namespace的管理员权限。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;为普通用户生成-token&#34;&gt;为普通用户生成 token&lt;/h3&gt;
+&lt;p&gt;为指定 namespace 分配该 namespace 的最高权限，这通常是在为某个用户（组织或者个人）划分了 namespace 之后，需要给该用户创建 token 登陆 kubernetes dashboard 或者调用 kubernetes API 的时候使用。&lt;/p&gt;
+&lt;p&gt;每次创建了新的 namespace 下都会生成一个默认的 token，名为&lt;code&gt;default-token-xxxx&lt;/code&gt;。&lt;code&gt;default&lt;/code&gt;就相当于该 namespace 下的一个用户，可以使用下面的命令给该用户分配该 namespace 的管理员权限。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create rolebinding &lt;span class=&#34;nv&#34;&gt;$ROLEBINDING_NAME&lt;/span&gt; --clusterrole&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;admin --serviceaccount&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$NAMESPACE&lt;/span&gt;:default --namespace&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$NAMESPACE&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;$ROLEBINDING_NAME&lt;/code&gt;必须是该namespace下的唯一的&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;admin&lt;/code&gt;表示用户该namespace的管理员权限，关于使用&lt;code&gt;clusterrole&lt;/code&gt;进行更细粒度的权限控制请参考&lt;a href=&#34;../../concepts/rbac&#34;&gt;RBAC——基于角色的访问控制&lt;/a&gt;。&lt;/li&gt;
-&lt;li&gt;我们给默认的serviceaccount &lt;code&gt;default&lt;/code&gt;分配admin权限，这样就不要再创建新的serviceaccount，当然你也可以自己创建新的serviceaccount，然后给它admin权限&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;$ROLEBINDING_NAME&lt;/code&gt;必须是该 namespace 下的唯一的&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;admin&lt;/code&gt;表示用户该 namespace 的管理员权限，关于使用&lt;code&gt;clusterrole&lt;/code&gt;进行更细粒度的权限控制请参考&lt;a href=&#34;../../concepts/rbac&#34;&gt;RBAC——基于角色的访问控制&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;我们给默认的 serviceaccount &lt;code&gt;default&lt;/code&gt;分配 admin 权限，这样就不要再创建新的 serviceaccount，当然你也可以自己创建新的 serviceaccount，然后给它 admin 权限&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
 &lt;ul&gt;
@@ -656,7 +656,7 @@
       <pubDate>Sat, 21 May 2022 00:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/kubernetes-handbook/security/authentication/</guid>
       <description>&lt;p&gt;在安装集群的时候我们在 master 节点上生成了一堆证书、token，还在 kubelet 的配置中用到了 bootstrap token，安装各种应用时，为了能够与 API server 通信创建了各种 service account，在 Dashboard 中使用了 kubeconfig 或 token 登陆，那么这些都属于什么认证方式？如何区分用户的？我特地翻译了下这篇官方文档，想你看了之后你将找到答案。&lt;/p&gt;
-&lt;p&gt;重点查看 bearer token 和 HTTP 认证中的 token 使用，我们已经有所应用，如 &lt;a href=&#34;auth-with-kubeconfig-or-token.md&#34;&gt;使用kubeconfig或token进行用户身份认证&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;重点查看 bearer token 和 HTTP 认证中的 token 使用，我们已经有所应用，如 &lt;a href=&#34;auth-with-kubeconfig-or-token.md&#34;&gt;使用 kubeconfig 或 token 进行用户身份认证&lt;/a&gt;。&lt;/p&gt;
 &lt;h2 id=&#34;认识-kubernetes-中的用户&#34;&gt;认识 Kubernetes 中的用户&lt;/h2&gt;
 &lt;p&gt;Kubernetes 集群中包含两类用户：一类是由 Kubernetes 管理的 service account，另一类是普通用户。&lt;/p&gt;
 &lt;p&gt;普通用户被假定为由外部独立服务管理。管理员分发私钥，用户存储（如 Keystone 或 Google 帐户），甚至包含用户名和密码列表的文件。在这方面，&lt;em&gt;Kubernetes 没有代表普通用户帐户的对象&lt;/em&gt;。无法通过 API 调用的方式向集群中添加普通用户。&lt;/p&gt;
@@ -678,12 +678,12 @@
 &lt;/ul&gt;
 &lt;p&gt;当启用了多个认证模块时，第一个认证模块成功认证后将短路请求，不会进行第二个模块的认证。API server 不会保证认证的顺序。&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;system:authenticated&lt;/code&gt; 组包含在所有已验证用户的组列表中。&lt;/p&gt;
-&lt;p&gt;与其他身份验证协议（LDAP、SAML、Kerberos、x509 方案等）的集成可以使用身份验证代理或身份验证 webhook来实现。&lt;/p&gt;
+&lt;p&gt;与其他身份验证协议（LDAP、SAML、Kerberos、x509 方案等）的集成可以使用身份验证代理或身份验证 webhook 来实现。&lt;/p&gt;
 &lt;h3 id=&#34;x509-客户端证书&#34;&gt;X509 客户端证书&lt;/h3&gt;
-&lt;p&gt;通过将 &lt;code&gt;--client-ca-file=SOMEFILE&lt;/code&gt; 选项传递给 API server 来启用客户端证书认证。引用的文件必须包含一个或多个证书颁发机构，用于验证提交给 API server 的客户端证书。如果客户端证书已提交并验证，则使用 subject 的 Common Name（CN）作为请求的用户名。从 Kubernetes 1.4开始，客户端证书还可以使用证书的 organization 字段来指示用户的组成员身份。要为用户包含多个组成员身份，请在证书中包含多个 organization 字段。&lt;/p&gt;
+&lt;p&gt;通过将 &lt;code&gt;--client-ca-file=SOMEFILE&lt;/code&gt; 选项传递给 API server 来启用客户端证书认证。引用的文件必须包含一个或多个证书颁发机构，用于验证提交给 API server 的客户端证书。如果客户端证书已提交并验证，则使用 subject 的 Common Name（CN）作为请求的用户名。从 Kubernetes 1.4 开始，客户端证书还可以使用证书的 organization 字段来指示用户的组成员身份。要为用户包含多个组成员身份，请在证书中包含多个 organization 字段。&lt;/p&gt;
 &lt;p&gt;例如，使用 &lt;code&gt;openssl&lt;/code&gt; 命令工具生成用于签名认证请求的证书：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;openssl req -new -key jbeda.pem -out jbeda-csr.pem -subj &lt;span class=&#34;s2&#34;&gt;&amp;#34;/CN=jbeda/O=app1/O=app2&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;这将为一个用户名为 ”jbeda“ 的 CSR，属于两个组“app1”和“app2”。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;这将为一个用户名为”jbeda“的 CSR，属于两个组“app1”和“app2”。&lt;/p&gt;
 &lt;h3 id=&#34;静态-token-文件&#34;&gt;静态 Token 文件&lt;/h3&gt;
 &lt;p&gt;当在命令行上指定 &lt;code&gt;--token-auth-file=SOMEFILE&lt;/code&gt; 选项时，API server 从文件读取 bearer token。目前，token 会无限期地持续下去，并且不重新启动 API server 的话就无法更改令牌列表。&lt;/p&gt;
 &lt;p&gt;token 文件是一个 csv 文件，每行至少包含三列：token、用户名、用户 uid，其次是可选的组名。请注意，如果您有多个组，则该列必须使用双引号。&lt;/p&gt;
@@ -700,8 +700,8 @@
 &lt;p&gt;认证者认证为 &lt;code&gt;system:bootstrap:&amp;lt;Token ID&amp;gt;&lt;/code&gt; 。被包含在 &lt;code&gt;system:bootstrappers&lt;/code&gt; 组中。命名和组是有意限制用户使用过去的 bootstap token。可以使用用户名和组（&lt;code&gt;kubeadm&lt;/code&gt; 使用）来制定适当的授权策略以支持引导集群。&lt;/p&gt;
 &lt;p&gt;有关 Bootstrap Token 身份验证器和控制器的更深入的文档，以及如何使用 &lt;code&gt;kubeadm&lt;/code&gt; 管理这些令牌，请参阅 &lt;a href=&#34;https://kubernetes.io/docs/admin/bootstrap-tokens/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Bootstrap Token&lt;/a&gt;。&lt;/p&gt;
 &lt;h3 id=&#34;静态密码文件&#34;&gt;静态密码文件&lt;/h3&gt;
-&lt;p&gt;通过将 &lt;code&gt;--basic-auth-file=SOMEFILE&lt;/code&gt; 选项传递给 API server 来启用基本身份验证。目前，基本身份验证凭证将无限期地保留，并且密码在不重新启动API服务器的情况下无法更改。请注意，为了方便起见，目前支持基本身份验证，而上述模式更安全更容易使用。&lt;/p&gt;
-&lt;p&gt;基本身份认证是一个 csv 文件，至少包含3列：密码、用户名和用户 ID。在 Kubernetes 1.6 和更高版本中，可以指定包含以逗号分隔的组名称的可选第四列。如果您有多个组，则必须将第四列值用双引号（“）括起来，请参阅以下示例：&lt;/p&gt;
+&lt;p&gt;通过将 &lt;code&gt;--basic-auth-file=SOMEFILE&lt;/code&gt; 选项传递给 API server 来启用基本身份验证。目前，基本身份验证凭证将无限期地保留，并且密码在不重新启动 API 服务器的情况下无法更改。请注意，为了方便起见，目前支持基本身份验证，而上述模式更安全更容易使用。&lt;/p&gt;
+&lt;p&gt;基本身份认证是一个 csv 文件，至少包含 3 列：密码、用户名和用户 ID。在 Kubernetes 1.6 和更高版本中，可以指定包含以逗号分隔的组名称的可选第四列。如果您有多个组，则必须将第四列值用双引号（“）括起来，请参阅以下示例：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;na&#34;&gt;password,user,uid,&amp;#34;group1,group2,group3&amp;#34;&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当使用来自 HTTP 客户端的基本身份验证时，API server 需要&lt;code&gt; Authorization&lt;/code&gt; header 中包含 &lt;code&gt;Basic BASE64ENCODED(USER:PASSWORD)&lt;/code&gt; 的值。&lt;/p&gt;
 &lt;h3 id=&#34;service-account-token&#34;&gt;Service Account Token&lt;/h3&gt;
@@ -710,7 +710,7 @@
 &lt;li&gt;&lt;code&gt;--service-account-key-file&lt;/code&gt;  一个包含签名 bearer token 的 PEM 编码文件。如果未指定，将使用 API server 的 TLS 私钥。&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;--service-account-lookup&lt;/code&gt; 如果启用，从 API 中删除掉的 token 将被撤销。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;Service account 通常 API server 自动创建，并通过 &lt;code&gt;ServiceAccount&lt;/code&gt; &lt;a href=&#34;https://kubernetes.io/docs/admin/admission-controllers/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;注入控制器&lt;/a&gt; 关联到集群中运行的 Pod 上。Bearer token 挂载到 pod 中众所周知的位置，并允许集群进程与 API server 通信。 帐户可以使用 &lt;code&gt;PodSpec&lt;/code&gt; 的 &lt;code&gt;serviceAccountName&lt;/code&gt; 字段显式地与Pod关联。&lt;/p&gt;
+&lt;p&gt;Service account 通常 API server 自动创建，并通过 &lt;code&gt;ServiceAccount&lt;/code&gt; &lt;a href=&#34;https://kubernetes.io/docs/admin/admission-controllers/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;注入控制器&lt;/a&gt; 关联到集群中运行的 Pod 上。Bearer token 挂载到 pod 中众所周知的位置，并允许集群进程与 API server 通信。帐户可以使用 &lt;code&gt;PodSpec&lt;/code&gt; 的 &lt;code&gt;serviceAccountName&lt;/code&gt; 字段显式地与 Pod 关联。&lt;/p&gt;
 &lt;p&gt;注意： &lt;code&gt;serviceAccountName&lt;/code&gt; 通常被省略，因为这会自动生成。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;apps/v1beta2&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Deployment&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -789,9 +789,9 @@
 &lt;li&gt;授权 API server 后向 &lt;code&gt;kubectl&lt;/code&gt;&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;kubectl&lt;/code&gt; 向用户提供反馈&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;由于所有需要验证您身份的数据都在 &lt;code&gt;id_token&lt;/code&gt; 中，Kubernetes 不需要向身份提供商 “phone home”。在每个请求都是无状态的模型中，这为认证提供了非常可扩展的解决方案。它确实提供了一些挑战：&lt;/p&gt;
+&lt;p&gt;由于所有需要验证您身份的数据都在 &lt;code&gt;id_token&lt;/code&gt; 中，Kubernetes 不需要向身份提供商“phone home”。在每个请求都是无状态的模型中，这为认证提供了非常可扩展的解决方案。它确实提供了一些挑战：&lt;/p&gt;
 &lt;ol&gt;
-&lt;li&gt;Kubernetes 没有 ”web 接口“ 来出发验证进程。没有浏览器或界面来收集凭据，这就是为什么您需要首先认证您的身份提供商。&lt;/li&gt;
+&lt;li&gt;Kubernetes 没有”web 接口“来出发验证进程。没有浏览器或界面来收集凭据，这就是为什么您需要首先认证您的身份提供商。&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;id_token&lt;/code&gt; 无法撤销，就像一个证书，所以它应该是短暂的（只有几分钟），所以每隔几分钟就得到一个新的令牌是非常烦人的。&lt;/li&gt;
 &lt;li&gt;没有使用 &lt;code&gt;kubectl proxy&lt;/code&gt; 命令或注入 &lt;code&gt;id_token&lt;/code&gt; 的反向代理，无法简单地对 Kubernetes dashboard 进行身份验证。&lt;/li&gt;
 &lt;/ol&gt;
@@ -809,7 +809,7 @@
 &lt;tbody&gt;
 &lt;tr&gt;
 &lt;td&gt;&lt;code&gt;--oidc-issuer-url&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;允许 API server 发现公共签名密钥的提供者的 URL。只接受使用 &lt;code&gt;https://&lt;/code&gt; 的方案。通常是提供商的 URL 地址，不包含路径，例如“&lt;a href=&#34;https://accounts.google.com&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://accounts.google.com&lt;/a&gt;” 或者 “&lt;a href=&#34;https://login.salesforce.com&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://login.salesforce.com&lt;/a&gt;”。这个 URL 应该指向下面的 .well-known/openid-configuration&lt;/td&gt;
+&lt;td&gt;允许 API server 发现公共签名密钥的提供者的 URL。只接受使用 &lt;code&gt;https://&lt;/code&gt; 的方案。通常是提供商的 URL 地址，不包含路径，例如“&lt;a href=&#34;https://accounts.google.com&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://accounts.google.com&lt;/a&gt;”或者“&lt;a href=&#34;https://login.salesforce.com&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://login.salesforce.com&lt;/a&gt;”。这个 URL 应该指向下面的 .well-known/openid-configuration&lt;/td&gt;
 &lt;td&gt;如果发现 URL 是 &lt;code&gt;https://accounts.google.com/.well-known/openid-configuration&lt;/code&gt;，值应该是&lt;code&gt;https://accounts.google.com&lt;/code&gt;&lt;/td&gt;
 &lt;td&gt;是&lt;/td&gt;
 &lt;/tr&gt;
@@ -821,13 +821,13 @@
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;&lt;code&gt;--oidc-username-claim&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;JWT声明使用的用户名。默认情况下，&lt;code&gt;sub&lt;/code&gt; 是最终用户的唯一标识符。管理员可以选择其他声明，如&lt;code&gt; email&lt;/code&gt; 或 &lt;code&gt;name&lt;/code&gt;，具体取决于他们的提供者。不过，&lt;code&gt;email&lt;/code&gt; 以外的其他声明将以发行者的 URL 作为前缀，以防止与其他插件命名冲突。&lt;/td&gt;
+&lt;td&gt;JWT 声明使用的用户名。默认情况下，&lt;code&gt;sub&lt;/code&gt; 是最终用户的唯一标识符。管理员可以选择其他声明，如&lt;code&gt; email&lt;/code&gt; 或 &lt;code&gt;name&lt;/code&gt;，具体取决于他们的提供者。不过，&lt;code&gt;email&lt;/code&gt; 以外的其他声明将以发行者的 URL 作为前缀，以防止与其他插件命名冲突。&lt;/td&gt;
 &lt;td&gt;sub&lt;/td&gt;
 &lt;td&gt;否&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td&gt;&lt;code&gt;--oidc-groups-claim&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;JWT声明使用的用户组。如果生命存在，它必须是一个字符串数组。&lt;/td&gt;
+&lt;td&gt;JWT 声明使用的用户组。如果生命存在，它必须是一个字符串数组。&lt;/td&gt;
 &lt;td&gt;groups&lt;/td&gt;
 &lt;td&gt;否&lt;/td&gt;
 &lt;/tr&gt;
@@ -842,14 +842,14 @@
 &lt;p&gt;如果为 &lt;code&gt;--oidc-username-claim&lt;/code&gt; 选择了除 &lt;code&gt;email&lt;/code&gt; 以外的其他声明，则该值将以 &lt;code&gt;--oidc-issuer-url&lt;/code&gt; 作为前缀，以防止与现有 Kubernetes 名称（例如 &lt;code&gt;system:users&lt;/code&gt;）冲突。例如，如果提供商网址是 &lt;a href=&#34;https://accounts.google.com&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://accounts.google.com&lt;/a&gt;，而用户名声明映射到 &lt;code&gt;jane&lt;/code&gt;，则插件会将用户身份验证为：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-http&#34; data-lang=&#34;http&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;https://accounts.google.com#jane
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;重要的是，API server 不是 OAuth2 客户端，而只能配置为信任单个发行者。这允许使用 Google 等公共提供者，而不必信任第三方发行的凭据。希望利用多个 OAuth 客户端的管理员应该探索支持 &lt;code&gt;azp&lt;/code&gt;（授权方）声明的提供者，这是允许一个客户端代表另一个客户端发放令牌的机制。&lt;/p&gt;
-&lt;p&gt;Kubernetes不提供 OpenID Connect 身份提供商。您可以使用现有的公共 OpenID Connect 标识提供程序（例如Google 或 &lt;a href=&#34;http://connect2id.com/products/nimbus-oauth-openid-connect-sdk/openid-connect-providers&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;其他&lt;/a&gt;）。或者，您可以运行自己的身份提供程序，例如 CoreOS &lt;a href=&#34;https://github.com/coreos/dex&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;dex&lt;/a&gt;、&lt;a href=&#34;https://github.com/keycloak/keycloak&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Keycloak&lt;/a&gt;、CloudFoundry &lt;a href=&#34;https://github.com/cloudfoundry/uaa&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;UAA&lt;/a&gt; 或 Tremolo Security 的 &lt;a href=&#34;https://github.com/tremolosecurity/openunison&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;OpenUnison&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;Kubernetes 不提供 OpenID Connect 身份提供商。您可以使用现有的公共 OpenID Connect 标识提供程序（例如 Google 或 &lt;a href=&#34;http://connect2id.com/products/nimbus-oauth-openid-connect-sdk/openid-connect-providers&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;其他&lt;/a&gt;）。或者，您可以运行自己的身份提供程序，例如 CoreOS &lt;a href=&#34;https://github.com/coreos/dex&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;dex&lt;/a&gt;、&lt;a href=&#34;https://github.com/keycloak/keycloak&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Keycloak&lt;/a&gt;、CloudFoundry &lt;a href=&#34;https://github.com/cloudfoundry/uaa&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;UAA&lt;/a&gt; 或 Tremolo Security 的 &lt;a href=&#34;https://github.com/tremolosecurity/openunison&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;OpenUnison&lt;/a&gt;。&lt;/p&gt;
 &lt;p&gt;对于身份提供商能够适用于 Kubernetes，必须满足如下条件：Kubernetes it must:&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;支持 &lt;a href=&#34;https://openid.net/specs/openid-connect-discovery-1_0.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;OpenID connect 发现&lt;/a&gt;；不必是全部。&lt;/li&gt;
-&lt;li&gt;使用非过时密码在TLS中运行&lt;/li&gt;
+&lt;li&gt;使用非过时密码在 TLS 中运行&lt;/li&gt;
 &lt;li&gt;拥有 CA 签名证书（即使 CA 不是商业 CA 或自签名）&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;有关上述要求3的说明，需要 CA 签名证书。如果您部署自己的身份提供商（而不是像 Google 或 Microsoft 之类的云提供商），则必须让您的身份提供商的 Web 服务器证书由 CA 标志设置为 TRUE 的证书签名，即使是自签名的。这是由于 GoLang 的 TLS 客户端实现对证书验证的标准非常严格。如果您没有 &lt;code&gt;CA&lt;/code&gt;，可以使用 &lt;code&gt;CoreOS&lt;/code&gt; 团队的 &lt;a href=&#34;https://github.com/coreos/dex/blob/1ee5920c54f5926d6468d2607c728b71cfe98092/examples/k8s/gencert.sh&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这个脚本&lt;/a&gt; 创建一个简单的 CA 和一个签名的证书和密钥对。&lt;/p&gt;
+&lt;p&gt;有关上述要求 3 的说明，需要 CA 签名证书。如果您部署自己的身份提供商（而不是像 Google 或 Microsoft 之类的云提供商），则必须让您的身份提供商的 Web 服务器证书由 CA 标志设置为 TRUE 的证书签名，即使是自签名的。这是由于 GoLang 的 TLS 客户端实现对证书验证的标准非常严格。如果您没有 &lt;code&gt;CA&lt;/code&gt;，可以使用 &lt;code&gt;CoreOS&lt;/code&gt; 团队的 &lt;a href=&#34;https://github.com/coreos/dex/blob/1ee5920c54f5926d6468d2607c728b71cfe98092/examples/k8s/gencert.sh&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这个脚本&lt;/a&gt; 创建一个简单的 CA 和一个签名的证书和密钥对。&lt;/p&gt;
 &lt;p&gt;针对特定系统的安装说明：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;https://apigee.com/about/blog/engineering/kubernetes-authentication-enterprise&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;UAA&lt;/a&gt;&lt;/li&gt;
@@ -902,7 +902,7 @@
 &lt;li&gt;&lt;code&gt;--authentication-token-webhook-config-file&lt;/code&gt; 是一个用来描述如何访问远程 webhook 服务的 kubeconfig 文件。&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;--authentication-token-webhook-cache-ttl&lt;/code&gt; 缓存身份验证策略的时间。默认为两分钟。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;配置文件使用 &lt;a href=&#34;https://kubernetes.io/docs/concepts/cluster-administration/authenticate-across-clusters-kubeconfig/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;kubeconfig&lt;/a&gt; 文件格式。文件中的 ”user“ 指的是 API server 的 webhook，”clusters“ 是指远程服务。见下面的例子：&lt;/p&gt;
+&lt;p&gt;配置文件使用 &lt;a href=&#34;https://kubernetes.io/docs/concepts/cluster-administration/authenticate-across-clusters-kubeconfig/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;kubeconfig&lt;/a&gt; 文件格式。文件中的”user“指的是 API server 的 webhook，”clusters“是指远程服务。见下面的例子：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# clusters refers to the remote service.&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;clusters&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;name-of-remote-authn-service&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -924,8 +924,8 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;cluster&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;name-of-remote-authn-service&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;user&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;name-of-api-sever&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;webhook&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当客户端尝试使用 bearer token 与API server 进行认证是，如上论述，认证 webhook 用饱含该 token 的对象查询远程服务。Kubernetes 不会挑战缺少该 header 的请求。&lt;/p&gt;
-&lt;p&gt;请注意，webhook API对象与其他 Kubernetes API 对象具有相同的 &lt;a href=&#34;https://kubernetes.io/docs/concepts/overview/kubernetes-api/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;版本控制兼容性规则&lt;/a&gt;。实现者应该意识到 Beta 对象的宽松兼容性承诺，并检查请求的 “apiVersion” 字段以确保正确的反序列化。此外，API server 必须启用 &lt;code&gt;authentication.k8s.io/v1beta1&lt;/code&gt; API 扩展组（&lt;code&gt;--runtime config =authentication.k8s.io/v1beta1=true&lt;/code&gt;）。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当客户端尝试使用 bearer token 与 API server 进行认证是，如上论述，认证 webhook 用饱含该 token 的对象查询远程服务。Kubernetes 不会挑战缺少该 header 的请求。&lt;/p&gt;
+&lt;p&gt;请注意，webhook API 对象与其他 Kubernetes API 对象具有相同的 &lt;a href=&#34;https://kubernetes.io/docs/concepts/overview/kubernetes-api/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;版本控制兼容性规则&lt;/a&gt;。实现者应该意识到 Beta 对象的宽松兼容性承诺，并检查请求的“apiVersion”字段以确保正确的反序列化。此外，API server 必须启用 &lt;code&gt;authentication.k8s.io/v1beta1&lt;/code&gt; API 扩展组（&lt;code&gt;--runtime config =authentication.k8s.io/v1beta1=true&lt;/code&gt;）。&lt;/p&gt;
 &lt;p&gt;The request body will be of the following format:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;apiVersion&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;authentication.k8s.io/v1beta1&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
@@ -964,13 +964,13 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;nt&#34;&gt;&amp;#34;authenticated&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;false&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;HTTP状态代码可以用来提供额外的错误上下文。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;HTTP 状态代码可以用来提供额外的错误上下文。&lt;/p&gt;
 &lt;h3 id=&#34;认证代理&#34;&gt;认证代理&lt;/h3&gt;
 &lt;p&gt;可以配置 API server 从请求 header 的值中识别用户，例如 &lt;code&gt;X-Remote-User&lt;/code&gt;。这样的设计是用来与请求 header 值的验证代理结合使用。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;--requestheader-username-headers&lt;/code&gt; 必需，大小写敏感。按 header 名称和顺序检查用户标识。包含值的第一个 header 将被作为用户名。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;--requestheader-group-headers&lt;/code&gt; 1.6 以上版本。可选。大小写敏感。建议为 “X-Remote-Group”。按 header 名称和顺序检查用户组。所有指定的 header 中的所有值都将作为组名。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;--requestheader-extra-headers-prefix&lt;/code&gt; 1.6 以上版本。可选，大小写敏感。建议为 “X-Remote-Extra-”。标题前缀可用于查找有关用户的额外信息（通常由配置的授权插件使用）。以任何指定的前缀开头的 header 都会删除前缀，header 名称的其余部分将成为额外的键值，而 header 值则是额外的值。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--requestheader-group-headers&lt;/code&gt; 1.6 以上版本。可选。大小写敏感。建议为“X-Remote-Group”。按 header 名称和顺序检查用户组。所有指定的 header 中的所有值都将作为组名。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--requestheader-extra-headers-prefix&lt;/code&gt; 1.6 以上版本。可选，大小写敏感。建议为“X-Remote-Extra-”。标题前缀可用于查找有关用户的额外信息（通常由配置的授权插件使用）。以任何指定的前缀开头的 header 都会删除前缀，header 名称的其余部分将成为额外的键值，而 header 值则是额外的值。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;例如下面的配置：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;--requestheader-username-headers&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;X-Remote-User
@@ -995,7 +995,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;为了防止 header 欺骗，验证代理需要在验证请求 header 之前向 API server 提供有效的客户端证书，以对照指定的 CA 进行验证。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;--requestheader-client-ca-file&lt;/code&gt; 必需。PEM 编码的证书包。在检查用户名的请求 header 之前，必须针对指定文件中的证书颁发机构提交并验证有效的客户端证书。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;--requestheader-allowed-names&lt;/code&gt; 可选。Common Name （cn）列表。如果设置了，则在检查用户名的请求 header 之前， 必须提供指定列表中 Common Name（cn）的有效客户端证书。如果为空，则允许使用任何 Common Name。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--requestheader-allowed-names&lt;/code&gt; 可选。Common Name（cn）列表。如果设置了，则在检查用户名的请求 header 之前，必须提供指定列表中 Common Name（cn）的有效客户端证书。如果为空，则允许使用任何 Common Name。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h3 id=&#34;keystone-密码&#34;&gt;Keystone 密码&lt;/h3&gt;
 &lt;p&gt;通过在启动过程中将 &lt;code&gt;--experimental-keystone-url=&amp;lt;AuthURL&amp;gt;&lt;/code&gt; 选项传递给 API server 来启用 Keystone 认证。该插件在 &lt;code&gt;plugin/pkg/auth/authenticator/password/keystone/keystone.go&lt;/code&gt; 中实现，目前使用基本身份验证通过用户名和密码验证用户。&lt;/p&gt;
@@ -1006,7 +1006,7 @@
 &lt;p&gt;启用时，未被其他已配置身份验证方法拒绝的请求将被视为匿名请求，并给予 &lt;code&gt;system:anonymous&lt;/code&gt; 的用户名和&lt;code&gt; system:unuthenticated&lt;/code&gt; 的组名。&lt;/p&gt;
 &lt;p&gt;例如，在配置了令牌认证和启用了匿名访问的服务器上，提供无效的 bearer token 的请求将收到 &lt;code&gt;401 Unauthorized&lt;/code&gt; 错误。提供 bearer token 的请求将被视为匿名请求。&lt;/p&gt;
 &lt;p&gt;在 1.5.1 - 1.5.x 版本中，默认情况下命名访问是被禁用的，可以通过传递 &lt;code&gt;--anonymous-auth=false&lt;/code&gt; 选项给 API server 来启用。&lt;/p&gt;
-&lt;p&gt;在 1.6+ 版本中，如果使用 &lt;code&gt;AlwaysAllow&lt;/code&gt; 以外的授权模式，则默认启用匿名访问，并且可以通过将 &lt;code&gt;--anonymous-auth=false&lt;/code&gt;选项传递给API服务器来禁用。从 1.6 开始，ABAC 和 RBAC 授权人需要明确授权 &lt;code&gt;system:annoymous&lt;/code&gt; 或 &lt;code&gt;system:unauthenticated&lt;/code&gt; 组，因此授予对 &lt;code&gt;*&lt;/code&gt; 用户或 &lt;code&gt;*&lt;/code&gt; 组访问权的传统策略规则不包括匿名用户。&lt;/p&gt;
+&lt;p&gt;在 1.6+ 版本中，如果使用 &lt;code&gt;AlwaysAllow&lt;/code&gt; 以外的授权模式，则默认启用匿名访问，并且可以通过将 &lt;code&gt;--anonymous-auth=false&lt;/code&gt;选项传递给 API 服务器来禁用。从 1.6 开始，ABAC 和 RBAC 授权人需要明确授权 &lt;code&gt;system:annoymous&lt;/code&gt; 或 &lt;code&gt;system:unauthenticated&lt;/code&gt; 组，因此授予对 &lt;code&gt;*&lt;/code&gt; 用户或 &lt;code&gt;*&lt;/code&gt; 组访问权的传统策略规则不包括匿名用户。&lt;/p&gt;
 &lt;h2 id=&#34;用户模拟&#34;&gt;用户模拟&lt;/h2&gt;
 &lt;p&gt;用户可以通过模拟 header 充当另一个用户。该请求会覆盖请求认证的用户信息。例如，管理员可以使用此功能通过暂时模拟其他用户并查看请求是否被拒绝来调试授权策略。&lt;/p&gt;
 &lt;p&gt;模拟请求首先认证为请求用户，然后切换到模拟的用户信息。&lt;/p&gt;
@@ -1020,8 +1020,8 @@
 &lt;p&gt;以下 HTTP header 可用户执行模拟请求：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;Impersonate-User&lt;/code&gt;：充当的用户名&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;Impersonate-Group&lt;/code&gt;：作为组名。可以多次使用来设置多个组。可选的，需要 “Impersonate-User”&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;Impersonate-Extra-( extra name )&lt;/code&gt;：用于将额外字段与用户关联的动态 header。可选。需要 “Impersonate-User”&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Impersonate-Group&lt;/code&gt;：作为组名。可以多次使用来设置多个组。可选的，需要“Impersonate-User”&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Impersonate-Extra-( extra name )&lt;/code&gt;：用于将额外字段与用户关联的动态 header。可选。需要“Impersonate-User”&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;一组示例 header：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-http&#34; data-lang=&#34;http&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;Impersonate-User: jane.doe@example.com
@@ -1046,7 +1046,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiGroups&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;resources&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;users&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;groups&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;serviceaccounts&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;verbs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;impersonate&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;额外的字段被评估为资源 “userextras” 的子资源。为了允许用户使用额外字段 “scope” 的模拟 header，应授予用户以下角色：&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;额外的字段被评估为资源“userextras”的子资源。为了允许用户使用额外字段“scope”的模拟 header，应授予用户以下角色：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;rbac.authorization.k8s.io/v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ClusterRole&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -1083,7 +1083,7 @@
 &lt;p&gt;使用客户端证书进行身份验证时，可以使用现有的部署脚本或通过 &lt;code&gt;easyrsa&lt;/code&gt; 或 &lt;code&gt;openssl&lt;/code&gt; 手动生成证书。&lt;/p&gt;
 &lt;h4 id=&#34;使用已有的部署脚本&#34;&gt;使用已有的部署脚本&lt;/h4&gt;
 &lt;p&gt;&lt;strong&gt;已有的部署脚本&lt;/strong&gt; 在 &lt;code&gt;cluster/saltbase/salt/generate-cert/make-ca-cert.sh&lt;/code&gt;。&lt;/p&gt;
-&lt;p&gt;执行该脚本时需要传递两个参数。第一个参数是 API server 的 IP地址。第二个参数是 IP 形式的主题备用名称列表： &lt;code&gt;IP:&amp;lt;ip-address&amp;gt;&lt;/code&gt; 或 &lt;code&gt;DNS:&amp;lt;dns-name&amp;gt;&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;执行该脚本时需要传递两个参数。第一个参数是 API server 的 IP 地址。第二个参数是 IP 形式的主题备用名称列表： &lt;code&gt;IP:&amp;lt;ip-address&amp;gt;&lt;/code&gt; 或 &lt;code&gt;DNS:&amp;lt;dns-name&amp;gt;&lt;/code&gt;。&lt;/p&gt;
 &lt;p&gt;该脚本将生成三个文件： &lt;code&gt;ca.crt&lt;/code&gt;、&lt;code&gt;server.crt&lt;/code&gt; 和 &lt;code&gt;server.key&lt;/code&gt;。&lt;/p&gt;
 &lt;p&gt;最后，将一下参数添加到 API server 的启动参数中：&lt;/p&gt;
 &lt;ul&gt;
@@ -1095,7 +1095,7 @@
 &lt;p&gt;&lt;strong&gt;easyrsa&lt;/strong&gt; 可以用来手动为集群生成证书。&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;
-&lt;p&gt;下载，解压，并初始化修补版本的easyrsa3。&lt;/p&gt;
+&lt;p&gt;下载，解压，并初始化修补版本的 easyrsa3。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -L -O https://storage.googleapis.com/kubernetes-release/easy-rsa/easy-rsa.tar.gz
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tar xzf easy-rsa.tar.gz
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;cd&lt;/span&gt; easy-rsa-master/easyrsa3
@@ -1149,7 +1149,7 @@
 &lt;/ol&gt;
 &lt;p&gt;最后，不要忘了向 API server 的启动参数中增加配置。&lt;/p&gt;
 &lt;h4 id=&#34;认证-api&#34;&gt;认证 API&lt;/h4&gt;
-&lt;p&gt;您可以使用 &lt;code&gt;certificates.k8s.io&lt;/code&gt; API将 x509 证书配置为用于身份验证，如 &lt;a href=&#34;https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;此处&lt;/a&gt; 所述。&lt;/p&gt;
+&lt;p&gt;您可以使用 &lt;code&gt;certificates.k8s.io&lt;/code&gt; API 将 x509 证书配置为用于身份验证，如 &lt;a href=&#34;https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;此处&lt;/a&gt; 所述。&lt;/p&gt;
 &lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;https://kubernetes.io/docs/reference/access-authn-authz/authentication/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Authenticating - kubernetes.io&lt;/a&gt;&lt;/li&gt;

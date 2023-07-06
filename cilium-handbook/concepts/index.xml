@@ -122,7 +122,7 @@
 &lt;p&gt;当使用标签选择资源时，键和值都必须匹配，例如，当一个策略应该应用于所有带有标签 &lt;code&gt;my.corp.foo&lt;/code&gt; 的端点时，标签 &lt;code&gt;my.corp.foo=bar&lt;/code&gt; 不会与该选择器匹配。&lt;/p&gt;
 &lt;h3 id=&#34;label-source&#34;&gt;标签来源&lt;/h3&gt;
 &lt;p&gt;标签可以来自各种来源。例如，&lt;a href=&#34;#endpoint&#34;&gt;端点&lt;/a&gt; 将通过本地容器运行时派生与容器关联的标签，以及与 Kubernetes 提供的 pod 关联的标签。由于这两个标签命名空间彼此不知道，这可能会导致标签键冲突。&lt;/p&gt;
-&lt;p&gt;为了解决这种潜在的冲突，Cilium 在导入标签时为所有标签键添加前缀 &lt;code&gt;source:&lt;/code&gt; 以指示标签的来源，例如 &lt;code&gt;k8s:role=frontend&lt;/code&gt;、&lt;code&gt;container:user=joe&lt;/code&gt;、&lt;code&gt;k8s:role=backend&lt;/code&gt;。这意味着当您使用 &lt;code&gt;docker run [...] -l foo=bar&lt;/code&gt; 运行 Docker 容器时，标签 &lt;code&gt;container:foo=bar&lt;/code&gt; 将出现在代表容器的 Cilium 端点上。类似地，以 &lt;code&gt;foo: bar&lt;/code&gt; 标签启动的 Kubernetes pod 将由与标签关联的 Cilium 端点表示 。为每个潜在来源分配一个唯一名称。当前支持以下标签源：&lt;/p&gt;
+&lt;p&gt;为了解决这种潜在的冲突，Cilium 在导入标签时为所有标签键添加前缀 &lt;code&gt;source:&lt;/code&gt; 以指示标签的来源，例如 &lt;code&gt;k8s:role=frontend&lt;/code&gt;、&lt;code&gt;container:user=joe&lt;/code&gt;、&lt;code&gt;k8s:role=backend&lt;/code&gt;。这意味着当您使用 &lt;code&gt;docker run [...] -l foo=bar&lt;/code&gt; 运行 Docker 容器时，标签 &lt;code&gt;container:foo=bar&lt;/code&gt; 将出现在代表容器的 Cilium 端点上。类似地，以 &lt;code&gt;foo: bar&lt;/code&gt; 标签启动的 Kubernetes pod 将由与标签关联的 Cilium 端点表示。为每个潜在来源分配一个唯一名称。当前支持以下标签源：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;container:&lt;/code&gt; 对于从本地容器运行时派生的标签&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;k8s:&lt;/code&gt; 对于从 Kubernetes 派生的标签&lt;/li&gt;
@@ -172,7 +172,7 @@
 &lt;h3 id=&#34;what-is-an-identity&#34;&gt;什么是身份？&lt;/h3&gt;
 &lt;p&gt;端点的身份是基于与派生到 &lt;a href=&#34;#endpoint&#34;&gt;端点&lt;/a&gt; 的 pod 或容器关联的 &lt;a href=&#34;#labels&#34;&gt;标签&lt;/a&gt; 派生的。当一个 pod 或容器启动时，Cilium 会根据容器运行时收到的事件创建一个 &lt;a href=&#34;#endpoint&#34;&gt;端点&lt;/a&gt; 来代表网络上的 pod 或容器。下一步，Cilium 将解析 &lt;a href=&#34;#endpoint&#34;&gt;端点&lt;/a&gt; 创建的身份。每当 Pod 或容器的 &lt;a href=&#34;#labels&#34;&gt;标签&lt;/a&gt; 发生变化时，都会重新确认身份并根据需要自动修改。&lt;/p&gt;
 &lt;h3 id=&#34;security-relevant-labels&#34;&gt;安全相关标签&lt;/h3&gt;
-&lt;p&gt;在派生 &lt;a href=&#34;#identity&#34;&gt;身份&lt;/a&gt; 时，并非所有与容器或 pod 关联的 &lt;a href=&#34;#labels&#34;&gt;标签&lt;/a&gt; 都有意义。标签可用于存储元数据，例如容器启动时的时间戳。Cilium 需要知道哪些标签是有意义的，知道在推导身份时需要考虑哪些标签。为此，用户需要指定有意义标签的字符串前缀列表。标准行为是包含所有以 &lt;code&gt;id&lt;/code&gt; 为前缀开头的标签， 例如，&lt;code&gt;id.service1&lt;/code&gt;、&lt;code&gt;id.service2&lt;/code&gt;、&lt;code&gt;id.groupA.service44&lt;/code&gt;。启动代理时可以指定有意义的标签前缀列表。&lt;/p&gt;
+&lt;p&gt;在派生 &lt;a href=&#34;#identity&#34;&gt;身份&lt;/a&gt; 时，并非所有与容器或 pod 关联的 &lt;a href=&#34;#labels&#34;&gt;标签&lt;/a&gt; 都有意义。标签可用于存储元数据，例如容器启动时的时间戳。Cilium 需要知道哪些标签是有意义的，知道在推导身份时需要考虑哪些标签。为此，用户需要指定有意义标签的字符串前缀列表。标准行为是包含所有以 &lt;code&gt;id&lt;/code&gt; 为前缀开头的标签，例如，&lt;code&gt;id.service1&lt;/code&gt;、&lt;code&gt;id.service2&lt;/code&gt;、&lt;code&gt;id.groupA.service44&lt;/code&gt;。启动代理时可以指定有意义的标签前缀列表。&lt;/p&gt;
 &lt;h3 id=&#34;special-identities&#34;&gt;特殊身份&lt;/h3&gt;
 &lt;p&gt;Cilium 管理的所有端点都将被分配一个身份。为了允许与不由 Cilium 管理的网络端点进行通信，存在特殊的身份来表示它们。特殊保留标识以 &lt;code&gt;reserved:&lt;/code&gt; 字符串为前缀。&lt;/p&gt;
 &lt;table&gt;

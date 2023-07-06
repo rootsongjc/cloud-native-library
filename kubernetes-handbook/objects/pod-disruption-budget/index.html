@@ -339,7 +339,7 @@
         content="2022-05-21T00:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2023-07-06T21:37:05&#43;08:00">
+    <meta property="article:modified_time" content="2023-07-07T00:35:26&#43;08:00">
   
 
   
@@ -1915,7 +1915,7 @@
 
 
 
-  <li class="child level1 "><a href="/kubernetes-handbook/devops/using-statefulset/">使用StatefulSet部署有状态应用</a></li>
+  <li class="child level1 "><a href="/kubernetes-handbook/devops/using-statefulset/">使用 StatefulSet 部署有状态应用</a></li>
 
 
 
@@ -2180,17 +2180,17 @@
 <p>自愿中断的频率各不相同。在 Kubernetes 集群上，根本没有自愿的中断。但是，您的集群管理员或托管提供商可能会运行一些导致自愿中断的附加服务。例如，节点软件更新可能导致自愿更新。另外，集群（节点）自动缩放的某些实现可能会导致碎片整理和紧缩节点的自愿中断。您的集群管理员或主机提供商应该已经记录了期望的自愿中断级别（如果有的话）。</p>
 <p>Kubernetes 提供的功能可以满足在频繁地自动中断的同时运行高可用的应用程序。我们称之为“中断预算”。</p>
 <h2 id="中断预算的工作原理">中断预算的工作原理</h2>
-<p>应用程序所有者可以为每个应用程序创建一个 <code>PodDisruptionBudget</code> 对象（PDB）。 PDB 将限制在同一时间自愿中断的复制应用程序中宕机的 Pod 的数量。例如，基于定额的应用程序希望确保运行的副本数量永远不会低于仲裁所需的数量。Web 前端可能希望确保提供负载的副本的数量永远不会低于总数的某个百分比。</p>
+<p>应用程序所有者可以为每个应用程序创建一个 <code>PodDisruptionBudget</code> 对象（PDB）。PDB 将限制在同一时间自愿中断的复制应用程序中宕机的 Pod 的数量。例如，基于定额的应用程序希望确保运行的副本数量永远不会低于仲裁所需的数量。Web 前端可能希望确保提供负载的副本的数量永远不会低于总数的某个百分比。</p>
 <p>集群管理器和托管提供商应使用遵循 <code>Pod Disruption Budgets</code> 的工具，方法是调用<a href="https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/#the-eviction-api" target="_blank" rel="noopener">Eviction API</a>而不是直接删除 Pod。例如 <code>kubectl drain</code> 命令和 Kubernetes-on-GCE 集群升级脚本（<code>cluster/gce/upgrade.sh</code>）。</p>
 <p>当集群管理员想要排空节点时，可以使用 <code>kubectl drain</code> 命令。该命令会试图驱逐机器上的所有 pod。驱逐请求可能会暂时被拒绝，并且该工具会定期重试所有失败的请求，直到所有的 pod 都被终止，或者直到达到配置的超时时间。</p>
 <p>PDB 指定应用程序可以容忍的副本的数量，相对于应该有多少副本。例如，具有 <code>spec.replicas：5</code> 的 Deployment 在任何给定的时间都应该有 5 个 Pod。如果其 PDB 允许在某一时刻有 4 个副本，那么驱逐 API 将只允许仅有一个而不是两个 Pod 自愿中断。</p>
 <p>使用标签选择器来指定应用程序的一组 pod，这与应用程序的控制器（Deployment、StatefulSet 等）使用的相同。</p>
-<p>Pod 控制器的 <code>.spec.replicas</code> 计算“预期的” pod 数量。使用对象的 <code>.metadata.ownerReferences</code> 值从控制器获取。</p>
+<p>Pod 控制器的 <code>.spec.replicas</code> 计算“预期的”pod 数量。使用对象的 <code>.metadata.ownerReferences</code> 值从控制器获取。</p>
 <p>PDB 不能阻止<a href="https://kubernetes.io/docs/concepts/workloads/pods/disruptions/#voluntary-and-involuntary-disruptions" target="_blank" rel="noopener">非自愿中断</a>的发生，但是它们确实会影响预算。</p>
 <p>由于应用程序的滚动升级而被删除或不可用的 Pod 确实会计入中断预算，但控制器（如 Deployment 和 StatefulSet）在进行滚动升级时不受 PDB 的限制——在应用程序更新期间的故障处理是在控制器的规格（spec）中配置（了解<a href="https://kubernetes.io/docs/concepts/cluster-administration/manage-deployment/#updating-your-application-without-a-service-outage" target="_blank" rel="noopener">更新 Deployment</a>）。</p>
 <p>使用驱逐 API 驱逐 pod 时，pod 会被优雅地终止（请参阅 PodSpec 中的 <code>terminationGracePeriodSeconds</code>）。</p>
 <h2 id="pdb-示例">PDB 示例</h2>
-<p>假设集群有3个节点，<code>node-1</code> 到 <code>node-3</code>。集群中运行了一些应用，其中一个应用有3个副本，分别是 <code>pod-a</code>、<code>pod-b</code> 和 <code>pod-c</code>。另外，还有一个与它相关的不具有 PDB 的 pod，我们称为之为 <code>pod-x</code>。最初，所有 Pod 的分布如下：</p>
+<p>假设集群有 3 个节点，<code>node-1</code> 到 <code>node-3</code>。集群中运行了一些应用，其中一个应用有 3 个副本，分别是 <code>pod-a</code>、<code>pod-b</code> 和 <code>pod-c</code>。另外，还有一个与它相关的不具有 PDB 的 pod，我们称为之为 <code>pod-x</code>。最初，所有 Pod 的分布如下：</p>
 <table>
 <thead>
 <tr>
@@ -2212,7 +2212,7 @@
 </tr>
 </tbody>
 </table>
-<p>所有的3个 pod 都是 Deployment 中的一部分，并且它们共同拥有一个 PDB，要求至少有3个 pod 中的2个始终处于可用状态。</p>
+<p>所有的 3 个 pod 都是 Deployment 中的一部分，并且它们共同拥有一个 PDB，要求至少有 3 个 pod 中的 2 个始终处于可用状态。</p>
 <p>例如，假设集群管理员想要重启系统，升级内核版本来修复内核中的错误。集群管理员首先使用 <code>kubectl drain</code> 命令尝试排除 <code>node-1</code>。该工具试图驱逐 <code>pod-a</code> 和 <code>pod-x</code>。这立即成功。两个 Pod 同时进入终止状态。这时的集群处于这种状态：</p>
 <table>
 <thead>
@@ -2281,7 +2281,7 @@
 </tr>
 </tbody>
 </table>
-<p>此时，如果一个急躁的集群管理员试图排空（drain）<code>node-2</code> 或 <code>node-3</code>，drain 命令将被阻塞，因为对于 Deployment 只有2个可用的 pod，并且其 PDB 至少需要2个。经过一段时间，<code>pod-d</code> 变得可用。</p>
+<p>此时，如果一个急躁的集群管理员试图排空（drain）<code>node-2</code> 或 <code>node-3</code>，drain 命令将被阻塞，因为对于 Deployment 只有 2 个可用的 pod，并且其 PDB 至少需要 2 个。经过一段时间，<code>pod-d</code> 变得可用。</p>
 <table>
 <thead>
 <tr>
@@ -2344,7 +2344,7 @@
 <li>当有许多应用程序团队共享一个 Kubernetes 集群，并且有自然的专业角色</li>
 <li>使用第三方工具或服务来自动化集群管理</li>
 </ul>
-<p>Pod Disruption Budget（Pod 中断预算） 通过在角色之间提供接口来支持这种角色分离。</p>
+<p>Pod Disruption Budget（Pod 中断预算）通过在角色之间提供接口来支持这种角色分离。</p>
 <p>如果您的组织中没有这样的职责分离，则可能不需要使用 Pod 中断预算。</p>
 <h2 id="如何在集群上执行中断操作">如何在集群上执行中断操作</h2>
 <p>如果您是集群管理员，要对集群的所有节点执行中断操作，例如节点或系统软件升级，则可以使用以下选择：</p>
@@ -2408,7 +2408,7 @@
           
 
         <div class="body-footer">
-          <p>最近更新于 2023-07-06</p>
+          <p>最近更新于 2023-07-07</p>
 
           
 
