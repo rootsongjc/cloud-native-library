@@ -20,7 +20,7 @@ weight: 3
 OAM 的规范中定义了以下对象，它们既是 OAM 规范中的基本术语也是云原生应用的基本组成。
 
 - **Workload（工作负载）**：应用程序的工作负载类型，由平台提供。
-- **Component组件）**：定义了一个 `Workload` 的实例，并以基础设施中立的术语声明其运维特性。
+- **Component 组件）**：定义了一个 `Workload` 的实例，并以基础设施中立的术语声明其运维特性。
 - **Trait（特征）**：用于将运维特性分配给组件实例。
 - **ApplicationScope（应用作用域）**：用于将组件分组成具有共同特性的松散耦合的应用。
 - **ApplicationConfiguration（应用配置）**：描述 `Component` 的部署、`Trait` 和 `ApplicationScope`。

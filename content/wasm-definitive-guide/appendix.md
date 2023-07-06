@@ -70,7 +70,7 @@ Wasmtime 最初是一个 Mozilla 项目，但现在由 Bytecode Alliance 维护�
 
 这里有相当多的文档：<https://docs.wasmtime.dev>
 
-你可以在这里找到安装说明: <https://docs.wasmtime.dev/cli-install.html>
+你可以在这里找到安装说明：<https://docs.wasmtime.dev/cli-install.html>
 
 ## 安装 Wasmer
 

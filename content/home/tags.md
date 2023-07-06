@@ -30,7 +30,7 @@ content:
   filter_button:
     - name: All
       tag: '*'
-    - name: Handbook系列
+    - name: Handbook 系列
       tag: handbook
     - name: 出版物
       tag: printed

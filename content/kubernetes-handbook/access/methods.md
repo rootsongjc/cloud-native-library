@@ -26,7 +26,7 @@ Kubectl 处理对 apiserver 的定位和认证。如果您想直接访问 REST A
 - 以 proxy 模式运行 kubectl。
   - 推荐方法。
   - 使用已保存的 apiserver 位置信息。
-  - 使用自签名证书验证 apiserver 的身份。 没有 MITM（中间人攻击）的可能。
+  - 使用自签名证书验证 apiserver 的身份。没有 MITM（中间人攻击）的可能。
   - 认证到 apiserver。
   - 将来，可能会做智能的客户端负载均衡和故障转移。
 - 直接向 http 客户端提供位置和凭据。
@@ -36,7 +36,7 @@ Kubectl 处理对 apiserver 的定位和认证。如果您想直接访问 REST A
 
 ### 使用 kubectl proxy
 
-以下命令作为反向代理的模式运行 kubectl。 它处理对 apiserver 的定位并进行认证。
+以下命令作为反向代理的模式运行 kubectl。它处理对 apiserver 的定位并进行认证。
 
 像这样运行：
 
@@ -72,7 +72,7 @@ $ curl $APISERVER/api --header "Authorization: Bearer $TOKEN" --insecure
 
 ### 不使用 kubectl proxy（1.3.x 以后版本）
 
-在 Kubernetes 1.3 或更高版本中，`kubectl config view` 不再显示 token。 使用 `kubectl describe secret …` 获取 default service account 的 token，如下所示：
+在 Kubernetes 1.3 或更高版本中，`kubectl config view` 不再显示 token。使用 `kubectl describe secret …` 获取 default service account 的 token，如下所示：
 
 ```bash
 $ APISERVER=$(kubectl config view | grep server | cut -f 2- -d ":" | tr -d " ")
@@ -92,9 +92,9 @@ $ curl $APISERVER/api --header "Authorization: Bearer $TOKEN" --insecure
 }
 ```
 
-以上示例使用`--insecure` 标志。 这使得它容易受到 MITM 攻击。 当 kubectl 访问集群时，它使用存储的根证书和客户端证书来访问服务器。 （这些安装在`~/.kube`目录中）。 由于集群证书通常是自签名的，因此可能需要特殊配置才能让您的 http 客户端使用根证书。
+以上示例使用`--insecure` 标志。这使得它容易受到 MITM 攻击。当 kubectl 访问集群时，它使用存储的根证书和客户端证书来访问服务器。 （这些安装在`~/.kube`目录中）。由于集群证书通常是自签名的，因此可能需要特殊配置才能让您的 http 客户端使用根证书。
 
-对于某些群集，apiserver 可能不需要身份验证；可以选择在本地主机上服务，或者使用防火墙保护。 对此还没有一个标准。[配置对API的访问](https://kubernetes.io/docs/admin/accessing-the-api) 描述了群集管理员如何配置此操作。 这种方法可能与未来的高可用性支持相冲突。
+对于某些群集，apiserver 可能不需要身份验证；可以选择在本地主机上服务，或者使用防火墙保护。对此还没有一个标准。[配置对 API 的访问](https://kubernetes.io/docs/admin/accessing-the-api) 描述了群集管理员如何配置此操作。这种方法可能与未来的高可用性支持相冲突。
 
 ## 编程访问 API
 
@@ -121,7 +121,7 @@ Python 客户端可以使用与 kubectl 命令行工具相同的 [kubeconfig 文
 
 ## 在 Pod 中访问 API
 
-在 Pod 中访问 API 时，定位和认证到 API server 的方式有所不同。在 Pod 中找到 apiserver 地址的推荐方法是使用kubernetes DNS 名称，将它解析为服务 IP，后者又将被路由到 apiserver。
+在 Pod 中访问 API 时，定位和认证到 API server 的方式有所不同。在 Pod 中找到 apiserver 地址的推荐方法是使用 kubernetes DNS 名称，将它解析为服务 IP，后者又将被路由到 apiserver。
 
 向 apiserver 认证的推荐方法是使用 [service account](https://kubernetes.io/docs/user-guide/service-accounts) 凭据。通过 kube-system，pod 与 service account 相关联，并且将该 service account 的凭据（token）放入该 pod 中每个容器的文件系统树中，位于 `/var/run/secrets/kubernetes.io/serviceaccount/token`。
 
@@ -150,16 +150,16 @@ Python 客户端可以使用与 kubectl 命令行工具相同的 [kubeconfig 文
 - 通过 public IP 访问 service。
   - 使用 `NodePort` 和 `LoadBalancer` 类型的 service，以使 service 能够在集群外部被访问到。
   - 根据您的群集环境，这可能会将服务暴露给您的公司网络，或者可能会将其暴露在互联网上。想想暴露的服务是否安全。它是否自己进行身份验证？
-  - 将 pod 放在服务后面。 要从一组副本（例如为了调试）访问一个特定的 pod，请在 pod 上放置一个唯一的 label，并创建一个选择该 label 的新服务。
+  - 将 pod 放在服务后面。要从一组副本（例如为了调试）访问一个特定的 pod，请在 pod 上放置一个唯一的 label，并创建一个选择该 label 的新服务。
   - 在大多数情况下，应用程序开发人员不需要通过 node IP 直接访问节点。
 - 通过 Proxy 规则访问 service、node、pod。
-  - 在访问远程服务之前，请执行 apiserver 认证和授权。 如果服务不够安全，无法暴露给互联网，或者为了访问节点 IP 上的端口或进行调试，请使用这种方式。
+  - 在访问远程服务之前，请执行 apiserver 认证和授权。如果服务不够安全，无法暴露给互联网，或者为了访问节点 IP 上的端口或进行调试，请使用这种方式。
   - 代理可能会导致某些 Web 应用程序出现问题。
   - 仅适用于 HTTP/HTTPS。
   - [见此描述](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster.md#manually-constructing-apiserver-proxy-urls)。
 - 在集群内访问 node 和 pod。
   - 运行一个 pod，然后使用 kubectl exec 命令连接到 shell。从该 shell 中连接到其他 node、pod 和 service。
-  - 有些集群可能允许 ssh 到集群上的某个节点。 从那个节点您可以访问到集群中的服务。这是一个非标准的方法，它可能将在某些集群上奏效，而在某些集群不行。这些节点上可能安装了浏览器和其他工具也可能没有。群集 DNS 可能无法正常工作。
+  - 有些集群可能允许 ssh 到集群上的某个节点。从那个节点您可以访问到集群中的服务。这是一个非标准的方法，它可能将在某些集群上奏效，而在某些集群不行。这些节点上可能安装了浏览器和其他工具也可能没有。群集 DNS 可能无法正常工作。
 
 ### 访问内置服务
 
@@ -178,13 +178,13 @@ $ kubectl cluster-info
 
 这显示了访问每个服务的代理 URL。
 
-例如，此集群启用了集群级日志记录（使用Elasticsearch），如果传入合适的凭据，可以在该地址 `https://104.197.5.247/api/v1/namespaces/kube-system/services/elasticsearch-logging/proxy/` 访问到，或通过 kubectl 代理，例如：`http://localhost:8080/api/v1/namespaces/kube-system/services/elasticsearch-logging/proxy/`。
+例如，此集群启用了集群级日志记录（使用 Elasticsearch），如果传入合适的凭据，可以在该地址 `https://104.197.5.247/api/v1/namespaces/kube-system/services/elasticsearch-logging/proxy/` 访问到，或通过 kubectl 代理，例如：`http://localhost:8080/api/v1/namespaces/kube-system/services/elasticsearch-logging/proxy/`。
 
 （有关如何传递凭据和使用 kubectl 代理，请 [参阅上文](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster.md#accessing-the-cluster-api)）
 
 #### 手动构建 apiserver 代理 URL
 
-如上所述，您可以使用 `kubectl cluster-info` 命令来检索服务的代理 URL。要创建包含服务端点、后缀和参数的代理 URL，您只需附加到服务的代理URL：
+如上所述，您可以使用 `kubectl cluster-info` 命令来检索服务的代理 URL。要创建包含服务端点、后缀和参数的代理 URL，您只需附加到服务的代理 URL：
 
 `http://`*kubernetes_master_address*`/api/v1/namespaces/`*namespace_name*`/services/`*service_name[:port_name]*`/proxy`
 
@@ -212,14 +212,14 @@ $ kubectl cluster-info
 
 #### 使用 web 浏览器来访问集群中运行的服务
 
-您可以将 apiserver 代理网址放在浏览器的地址栏中。 然而：
+您可以将 apiserver 代理网址放在浏览器的地址栏中。然而：
 
-- Web 浏览器通常不能传递 token，因此您可能需要使用基本（密码）认证。 Apiserver 可以配置为接受基本认证，但您的集群可能未配置为接受基本认证。
+- Web 浏览器通常不能传递 token，因此您可能需要使用基本（密码）认证。Apiserver 可以配置为接受基本认证，但您的集群可能未配置为接受基本认证。
 - 某些网络应用程序可能无法正常工作，特别是那些在不知道代理路径前缀的情况下构造 URL 的客户端 JavaScript。
 
 ## 请求重定向
 
-重定向功能已被弃用和删除。 请改用代理（见下文）。
+重定向功能已被弃用和删除。请改用代理（见下文）。
 
 ## 多种代理
 
@@ -234,7 +234,7 @@ $ kubectl cluster-info
    - 添加身份验证 header
 2. [apiserver 代理](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster.md#discovering-builtin-services)：
    - 将一个堡垒机作为 apiserver
-   - 将群集之外的用户连接到群集IP，否则可能无法访问
+   - 将群集之外的用户连接到群集 IP，否则可能无法访问
    - 在 apiserver 进程中运行
    - 客户端到代理使用 HTTPS（或 http，如果 apiserver 如此配置）
    - 根据代理目标的可用信息由代理选择使用 HTTP 或 HTTPS

@@ -44,7 +44,7 @@ Slack 有一个全球客户群，在高峰期有数百万同时连接的用户�
 
 为了即时传递信息，我们使用 [websocket 连接](https://tools.ietf.org/html/rfc6455)，这是一种双向的通信链接，负责让你看到 "有几个人在打字......"，然后是他们打的东西，速度几乎是光速的。websocket 连接被摄取到一个叫做 "wss"（WebSocket 服务）的系统中，可以通过 `wss-primary.slack.com` 和 `wss-backup.slack.com`（这不是网站，如果去访问，只会得到一个 HTTP 404）从互联网上访问。
 
-![显示websockets工作原理的图表](e6c9d24ely1h1277posyqj20cg0b8dfz.jpg "显示websockets工作原理的图表")
+![显示 websockets 工作原理的图表](e6c9d24ely1h1277posyqj20cg0b8dfz.jpg "显示websockets工作原理的图表")
 
 Websocket 连接一开始是普通的 HTTPS 连接，然后客户端发出协议切换请求，将连接升级为 Websocket。在 Slack，我们有不同的 websocket 服务，专门用于消息、在线（列出哪些联系人在线）和其他服务。其中一个 websocket 端点是专门为需要与 Slack 互动的应用程序制作的（因为应用程序也想要实时通信）。
 
@@ -95,7 +95,7 @@ Slack 的配置管理主要是通过 [Chef](https://www.chef.io/) 完成的。�
 
 这个例子展示了我们如何创建一个有两条路由的 HTTP 监听器，将流量路由到两个[动态](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/service_discovery#endpoint-discovery-service-eds)集群。
 
-![调用Chef资源以创建带有集群和路由的监听器的例子](e6c9d24ely1h1277otk25j20hs0ao74o.jpg "调用Chef资源以创建带有集群和路由的监听器的例子")
+![调用 Chef 资源以创建带有集群和路由的监听器的例子](e6c9d24ely1h1277otk25j20hs0ao74o.jpg "调用Chef资源以创建带有集群和路由的监听器的例子")
 
 要在 Envoy 中复制我们复杂的 HAProxy 配置需要一些努力。大部分需要的功能在 Envoy 中已经有了，所以只需要在 chef 库中加入对它的支持就可以了。我们实现了一些缺失的 Envoy 功能（有些是[上游](https://github.com/envoyproxy/envoy/pull/12206)贡献的，有些是内部维护的扩展）。
 
@@ -139,7 +139,7 @@ Envoy 提供 JSON 格式的监听器日志。我们将这些日志录入我们�
 
 尽管迁移工作很顺利，没有出现故障，但还是出现了一些小问题，比如超时值和 header 的差异。在迁移过程中，我们多次恢复、修复，并再次上线。
 
-![流程图显示DNS迁移过程中涉及的组件和步骤](e6c9d24ely1h1277p8k19j20hs07c3yp.jpg "流程图显示DNS迁移过程中涉及的组件和步骤")
+![流程图显示 DNS 迁移过程中涉及的组件和步骤](e6c9d24ely1h1277p8k19j20hs07c3yp.jpg "流程图显示DNS迁移过程中涉及的组件和步骤")
 
 经过漫长而激动人心的 6 个月，迁移完成了，整个 HAProxy websocket 堆栈在全球范围内被 Envoy Proxy 取代，对客户的**影响为零**。
 

@@ -1,6 +1,6 @@
 ---
 title: Envoy API Gateway——推动网关的进一步发展
-summary: 在我们看来，由于Envoy的设计、功能设置、安装基础和社区，它是业内最好的API网关。有了Envoy Gateway，企业可以在将Envoy嵌入其API管理策略方面增加信心。
+summary: 在我们看来，由于 Envoy 的设计、功能设置、安装基础和社区，它是业内最好的 API 网关。有了 Envoy Gateway，企业可以在将 Envoy 嵌入其 API 管理策略方面增加信心。
 projects: [""]
 date: '2022-05-17T11:00:00+08:00'
 lastmod: '2022-05-17T11:12:00+08:00'

@@ -20,7 +20,7 @@ type: book # Do not modify
 
 在上一章中，我们展示了使用常规的支持 WebAssembly 的 C 编译器（如 clang）和一些头和库的依赖性管理来实现基本的集成是可能的。然而，必须提供我们自己的标准库版本，并手动将 C 代码连接到所提供的 JavaScript 上，这样做很快就会过时。
 
-幸运的是，[Emscript 项目](https://emscripten.org/)奠定了基础，它比其他方式更容易。这并不奇怪，因为它的主要开发者 Alon Zakai 和 Luke Wagner 一直是这项工作的幕后推手，从 asm.js 开始，延伸到 WebAssembly MVP，再到推动规范的发展 ，一直持续到今天。Emscripten [^2] 工具链在这一过程中发挥了重要作用。
+幸运的是，[Emscript 项目](https://emscripten.org/)奠定了基础，它比其他方式更容易。这并不奇怪，因为它的主要开发者 Alon Zakai 和 Luke Wagner 一直是这项工作的幕后推手，从 asm.js 开始，延伸到 WebAssembly MVP，再到推动规范的发展，一直持续到今天。Emscripten [^2] 工具链在这一过程中发挥了重要作用。
 
 该项目是基于 LLVM 平台的。在前面的章节中，我指出它最初有一个自定义的后端，用来生成 asm.js 的可优化的 JavaScript 子集。一旦 WebAssembly 平台被定义，一个新的后端就能生成 Wasm 二进制文件。
 
@@ -117,7 +117,7 @@ return)
 ...
 ```
 
-最终，你会发现自己回到了生成的 JavaScript 文件。在那里有一个叫做`fd_write`的函数，如例 6-4 所示。它被添加到一个名为 `wasi_snapshot_preview1` 的命名空间 。顾名思义，这是一个我们将在后面的讨论中涉及的预览，但主要的一点是，Emscripten 工具链正在生成代码，以解决我们在前面章节中看到的一些底层麻烦。我们将在第 10 章中发现与 Rust 生态系统类似的工具链。
+最终，你会发现自己回到了生成的 JavaScript 文件。在那里有一个叫做`fd_write`的函数，如例 6-4 所示。它被添加到一个名为 `wasi_snapshot_preview1` 的命名空间。顾名思义，这是一个我们将在后面的讨论中涉及的预览，但主要的一点是，Emscripten 工具链正在生成代码，以解决我们在前面章节中看到的一些底层麻烦。我们将在第 10 章中发现与 Rust 生态系统类似的工具链。
 
 例 6-4. printf 解决方案的一部分
 
@@ -195,7 +195,7 @@ Emscripten 有大量的选项用于将第三方代码移植到 WebAssembly 中�
 
 我花了一些时间来寻找好的候选代码。我想找一些内容丰富但又不至于过于复杂的代码。最终，我在 [Arash Partow 的网站](https://www.partow.net/)上找到了他收集的优雅、干净、适当授权和有用的 C++ 代码。在那里你会发现相当多有趣的材料。我原本打算使用计算几何库，但 Bitmap 库更适合于这本书。
 
-首先，从 [Partow 的网站](http://www.partow.net/programming/bitmap/index.html)下载代码。下载 ZIP 文件， 解压缩，你会看到三个文件。Makefile 是一个老式的 Unix 构建文件，它有组装有关软件的指示。我们稍后将探讨这个过程 。`bitmap_image.hpp` 文件是主库，`bitmap_test.cpp` 是一个全面的测试集合，用于生成一堆有趣的 Windows 位图图像。这段代码不需要任何特定平台的库。
+首先，从 [Partow 的网站](http://www.partow.net/programming/bitmap/index.html)下载代码。下载 ZIP 文件，解压缩，你会看到三个文件。Makefile 是一个老式的 Unix 构建文件，它有组装有关软件的指示。我们稍后将探讨这个过程。`bitmap_image.hpp` 文件是主库，`bitmap_test.cpp` 是一个全面的测试集合，用于生成一堆有趣的 Windows 位图图像。这段代码不需要任何特定平台的库。
 
 ```bash
 brian@tweezer ~/g/w/s/c/bitmap> ls -alF 
@@ -342,7 +342,7 @@ var button = document.getElementById ("load"); button.onclick = function () {Mod
 
 幸运的是，在[第 4 章](../wasm-memory/)你已经具备了理解例 6-12 中的大部分内容的能力。我们把从 `FS.readFile ()` 函数中返回的 ArrayBuffer 传递给一个叫做 `getMBP ()` 的方法。这将在缓冲区周围创建一个 DataView，并在把它们塞进一个更容易理解的 JavaScript 表示法之前拉出各种图像细节。
 
-一旦读入位图文件，我们通过同一网站的 `convertToImageData ()` 函数将 JavaScript 结构转换成 ImageData 实例。之后 ，我们设置 `<canvas>` 的大小以匹配其高度和宽度，并使用其 `putImageData ()` 方法来渲染像素。
+一旦读入位图文件，我们通过同一网站的 `convertToImageData ()` 函数将 JavaScript 结构转换成 ImageData 实例。之后，我们设置 `<canvas>` 的大小以匹配其高度和宽度，并使用其 `putImageData ()` 方法来渲染像素。
 
 例 6-12. 用 JavaScript 读回我们的位图文件，并在 `<canvas>` 中渲染它
 

@@ -7,7 +7,7 @@ type: book
 
 本文是如何创建 CRD 来扩展 Kubernetes API 的教程。CRD 是用来扩展 Kubernetes 最常用的方式，在 Service Mesh 和 Operator 中也被大量使用。因此读者如果想在 Kubernetes 上做扩展和开发的话，是十分有必要了解 CRD 的。
 
-在阅读本文前您需要先了解[使用自定义资源扩展 API](../custom-resource)， 以下内容译自 [Kubernetes 官方文档](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/)，有删改，推荐阅读[如何从零开始编写一个 Kubernetes CRD](https://cloudnative.to/blog/kubernetes-crd-quick-start/)。
+在阅读本文前您需要先了解[使用自定义资源扩展 API](../custom-resource)，以下内容译自 [Kubernetes 官方文档](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/)，有删改，推荐阅读[如何从零开始编写一个 Kubernetes CRD](https://cloudnative.to/blog/kubernetes-crd-quick-start/)。
 
 ## 创建 CRD（CustomResourceDefinition）
 
@@ -22,9 +22,9 @@ metadata:
   # 名称必须符合下面的格式：<plural>.<group>
   name: crontabs.stable.example.com
 spec:
-  # REST API使用的组名称：/apis/<group>/<version>
+  # REST API 使用的组名称：/apis/<group>/<version>
   group: stable.example.com
-  # REST API使用的版本号：/apis/<group>/<version>
+  # REST API 使用的版本号：/apis/<group>/<version>
   versions:
     - name: v1
       # 可以通过 served 来开关每个 version
@@ -44,16 +44,16 @@ spec:
                   type: string
                 replicas:
                   type: integer
-  # Namespaced或Cluster
+  # Namespaced 或 Cluster
   scope: Namespaced
   names:
     # URL中使用的复数名称: /apis/<group>/<version>/<plural>
     plural: crontabs
-    # CLI中使用的单数名称
+    # CLI 中使用的单数名称
     singular: crontab
-    # CamelCased格式的单数类型。在清单文件中使用
+    # CamelCased 格式的单数类型。在清单文件中使用
     kind: CronTab
-    # CLI中使用的资源简称
+    # CLI 中使用的资源简称
     shortNames:
     - ct
 ```
@@ -175,7 +175,7 @@ metadata:
 
 终结器是任意字符串值，当存在时确保在资源存在时不可能进行硬删除。
 
-对具有终结器的对象的第一个删除请求设置该`metadata.deletionTimestamp`字段的值， 但不删除它。设置此值后，`finalizer` 只能删除列表中的条目。
+对具有终结器的对象的第一个删除请求设置该`metadata.deletionTimestamp`字段的值，但不删除它。设置此值后，`finalizer` 只能删除列表中的条目。
 
 如果设置了 `metadata.deletionTimestamp` 字段，控制器监控对象将执行它们所有的终结器，对该对象轮询更新请求。执行完所有终结器后，将删除该资源。
 
@@ -189,7 +189,7 @@ metadata:
 
 **功能状态：** `Kubernetes v1.12` [beta](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#)
 
-可以通过 [OpenAPI v3 schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#schemaObject)验证自定义对象是否符合标准 。此外，以下限制适用于 schema：
+可以通过 [OpenAPI v3 schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#schemaObject)验证自定义对象是否符合标准。此外，以下限制适用于 schema：
 
 - 字段`default`、`nullable`、`discriminator`、`readOnly`、`writeOnly`、`xml`、 `deprecated` 和 `$ref` 不能设置。
 - 该字段 `uniqueItems` 不能设置为 true。
@@ -251,9 +251,9 @@ kubectl create -f resourcedefinition.yaml
 `CronTab` 如果其字段中存在无效值，则将拒绝创建类型的自定义对象的请求。在以下示例中，自定义对象包含具有无效值的字段：
 
 - `spec.cronSpec` 与正则表达式不匹配。
-- `spec.replicas` 大于10。
+- `spec.replicas` 大于 10。
 
-如果您将以下YAML保存到`my-crontab.yaml`：
+如果您将以下 YAML 保存到`my-crontab.yaml`：
 
 ```yaml
 apiVersion: "stable.example.com/v1"
@@ -448,19 +448,19 @@ crontab "my-new-cron-object" created
 
 - `SpecReplicasPath` 在与之对应的自定义资源中定义 JSONPath `Scale.Spec.Replicas`。
   - 这是一个必需的值。
-  - `.spec`  只允许使用带点符号的 JSONPaths 。
-  - 如果 `SpecReplicasPath` 自定义资源中没有值，则 `/scale` 子资源将在GET上返回错误。
+  - `.spec`  只允许使用带点符号的 JSONPaths。
+  - 如果 `SpecReplicasPath` 自定义资源中没有值，则 `/scale` 子资源将在 GET 上返回错误。
 - `StatusReplicasPath` 在与之对应的自定义资源中定义 JSONPath `Scale.Status.Replicas`。
   - 这是一个必需的值。
-  - `.stutus` 只允许使用带点符号的 JSONPaths 。
+  - `.stutus` 只允许使用带点符号的 JSONPaths。
   - 如果 `StatusReplicasPath` 自定义资源中没有值，则子资源 `/scale` 中的状态副本值将默认为 0。
 - `LabelSelectorPath `在与之对应的自定义资源中定义 JSONPath `Scale.Status.Selector`。
   - 这是一个可选值。
   - 必须将其设置为与 HPA 一起使用。
-  - `.status` 只允许使用带点符号的 JSONPaths 。
+  - `.status` 只允许使用带点符号的 JSONPaths。
   - 如果 `LabelSelectorPath` 自定义资源中没有值，则子资源 `/scale` 中的状态选择器值将默认为空字符串。
 
-在以下示例中，启用了status 和 scale 子资源。
+在以下示例中，启用了 status 和 scale 子资源。
 
 将 CustomResourceDefinition 保存到`resourcedefinition.yaml`：
 
@@ -549,7 +549,7 @@ kubectl get crontabs my-new-cron-object -o jsonpath='{.spec.replicas}'
 
 类别是自定义资源所属的分组资源的列表（例如 `all`）。您可以使用 `kubectl get <category-name>` 列出属于该类别的资源。此功能是 **beta**，可用于 v1.10 中的自定义资源。
 
-以下示例添加 `all` CustomResourceDefinition 中的类别列表，并说明如何使用 `kubectl get all` 输出自定义资源 。
+以下示例添加 `all` CustomResourceDefinition 中的类别列表，并说明如何使用 `kubectl get all` 输出自定义资源。
 
 将以下 CustomResourceDefinition 保存到 `resourcedefinition.yaml`：
 

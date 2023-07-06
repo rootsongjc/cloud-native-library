@@ -5,7 +5,7 @@ date: '2022-06-17T12:00:00+08:00'
 type: book
 ---
 
-虽然[监控](https://docs.cilium.io/en/stable/operations/troubleshooting/#monitor)数据路径状态提供对数据路径状态的自省，但默认情况下它只会提供对三层/四层数据包事件的可视性。如果配置了 [七层示例](https://docs.cilium.io/en/stable/policy/language/#l7-policy)，则可以查看七层协议，但这需要编写每个选定端点的完整策略。 为了在不配置完整策略的情况下获得对应用程序的更多可视性，Cilium 提供了一种在与 Kubernetes 一起运行时通过[注解](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)来规定可视性的方法。
+虽然[监控](https://docs.cilium.io/en/stable/operations/troubleshooting/#monitor)数据路径状态提供对数据路径状态的自省，但默认情况下它只会提供对三层/四层数据包事件的可视性。如果配置了 [七层示例](https://docs.cilium.io/en/stable/policy/language/#l7-policy)，则可以查看七层协议，但这需要编写每个选定端点的完整策略。为了在不配置完整策略的情况下获得对应用程序的更多可视性，Cilium 提供了一种在与 Kubernetes 一起运行时通过[注解](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)来规定可视性的方法。
 
 可视性信息由注解中以逗号分隔的元组列表表示：
 
@@ -46,7 +46,7 @@ coredns-7d7f5b7685-wvzwb   1959          104           false                 fal
 如果七层可视性未出现在 `cilium monitor` 或 Hubble 组件中，则值得仔细检查：
 
 > - 没有在注解中指定的方向应用强制策略
-> - CiliumEndpoint 中的 “可视性策略” 列显示 `OK`。如果为空，则未配置注解；如果显示错误，则可视性注解存在问题。
+> - CiliumEndpoint 中的“可视性策略”列显示 `OK`。如果为空，则未配置注解；如果显示错误，则可视性注解存在问题。
 
 以下示例故意错误配置注解，以证明当可视性注解无法实现时，pod 的 CiliumEndpoint 会出现错误：
 

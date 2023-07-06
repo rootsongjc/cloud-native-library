@@ -13,7 +13,7 @@ links:
     url: https://tetrate.io/blog/service-mesh-deployment-best-practices-for-security-and-high-availability/
 ---
 
-这是 [服务网格最佳实践系列文章](https://tetrate.io/blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/) 中的第二篇，摘自 Tetrate 创始工程师 Zack Butcher 即将出版的书籍 Istio in Production 。
+这是 [服务网格最佳实践系列文章](https://tetrate.io/blog/how-service-mesh-layers-microservices-security-with-traditional-security-to-move-fast-safely/) 中的第二篇，摘自 Tetrate 创始工程师 Zack Butcher 即将出版的书籍 Istio in Production。
 
 当涉及到在多集群的基础设施中部署服务网格时，有一些可移动的部分。这里主要想强调的是控制平面应该如何部署在应用程序附近，入口应该如何部署以促进安全性和敏捷性，如何使用 Envoy 促进跨集群负载均衡，以及网格内部如何使用证书。
 
@@ -41,7 +41,7 @@ links:
 
 **建议：使用应用程序边缘网关为客户端提供单一地址，以供客户端使用并将流量分配到跨多个集群的应用程序入口网关。**
 
-![图 1： 基于 Envoy 的应用程序边缘网关。](f1.png)
+![图 1：基于 Envoy 的应用程序边缘网关。](f1.png)
 
 我们经常看到客户需要跨多个集群分配入口流量。例如，他们可能希望启用蓝 / 绿基础设施升级，以促进跨区域故障转移，或者通过使用 Envoy 的 L7 功能将流量从单体迁移到微服务来实现扼杀模式。我们称这些为应用程序边缘网关。
 
@@ -51,7 +51,7 @@ links:
 
 ## 证书和公钥基础设施 (PKI) 的建议
 
-**建议： 从您现有的企业根目录为网格 mTLS 创建一个中间签名证书。**
+**建议：从您现有的企业根目录为网格 mTLS 创建一个中间签名证书。**
 
 Istio 使用常规 X.509 证书进行身份验证并在网格中启用传输加密。我们建议为现有企业根目录中的所有网格 mTLS 创建一个网格中间签名证书。如果每个环境都有一个根，请为每个环境创建一个网格中间签名证书。使用该网格中间颁发证书为每个 Istio 安装创建一个签名证书。我们建议创建一个网格中间签名证书，以便在任何特定环境中网格的整个 PKI 是一棵树，如果需要可以一起失效。成本是一些额外的证书管理，与控制平面签名证书相比，在管理网格中间签名证书的生命周期时需要更加小心。
 

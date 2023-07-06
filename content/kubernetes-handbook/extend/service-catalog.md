@@ -37,7 +37,7 @@ Service Catalog 安装 servicecatalog.k8s.ioAPI 并提供以以下 Kubernetes �
 - ClusterServiceClass：由特定 service broker 提供的托管服务。将新 ClusterServiceBroker 资源添加到群集时，Service catalog controller 将连接到 service broker 以获取可用托管服务的列表清单。然后它会创建新的 ClusterServiceClass 资源，与每个托管服务相对应。
 - ClusterServicePlan：托管服务的特定产品。例如，托管服务可能有不同的可用套餐，例如免费套餐或付费套餐，或者可能有不同的配置选项，例如使用 SSD 存储或拥有更多资源。同向群集添加 ClusterServiceClass 一样，当添加一个新的 ClusterServiceBroker 时，Service Catalog 会创建一个新的 ClusterServicePlan 资源，与每个托管服务可用的每个服务套餐对应。
 - ServiceInstance：一个提供好的 ClusterServiceClass 实例。这些是由集群运营者创建的托管服务的特定实例，供一个或多个集群内应用程序使用。当创建一个新的 ServiceInstance 资源时，Service Catalog controller 连接到相应的服务代理并指示它提供服务实例。
-- ServiceBinding：访问 ServiceInstance 的凭据。由想让他们的应用利用 ServiceInstance 的集群集运营者创建。创建之后，Service Catalog controller 将创建一个与此服务实例对应的 Kubernetes 的 Secret，包含此服务实例的连接详细信息和凭证 ，可以挂载到 Pod 中。
+- ServiceBinding：访问 ServiceInstance 的凭据。由想让他们的应用利用 ServiceInstance 的集群集运营者创建。创建之后，Service Catalog controller 将创建一个与此服务实例对应的 Kubernetes 的 Secret，包含此服务实例的连接详细信息和凭证，可以挂载到 Pod 中。
 
 ### 鉴权认证
 
@@ -166,15 +166,15 @@ spec:
 
 ![Bind to a managed service](../../images/service-catalog-bind.jpg "绑定到托管服务")
 
-1. 在ServiceBinding创建后，Service Catalog给外部service broker发一个调用请求，获取与服务实例绑定所需的信息。
+1. 在 ServiceBinding 创建后，Service Catalog 给外部 service broker 发一个调用请求，获取与服务实例绑定所需的信息。
 
 2. service broker为相应的服务帐户启用应用程序权限/角色。
 
-3. service broker返回连接和访问托管服务实例所需的信息。根据不同的提供商和不同的服务，返回的信息可能在服务提供商和其管理服务之间有所不同。
+3. service broker 返回连接和访问托管服务实例所需的信息。根据不同的提供商和不同的服务，返回的信息可能在服务提供商和其管理服务之间有所不同。
 
 ### 映射连接凭证
 
-绑定后，最后一步是将连接凭证和服务特定的信息映射到应用程序中。这些信息存储在secret中，应用程序可以用来访问并与托管服务连接。
+绑定后，最后一步是将连接凭证和服务特定的信息映射到应用程序中。这些信息存储在 secret 中，应用程序可以用来访问并与托管服务连接。
 
 ![映射连接凭证](../../images/service-catalog-map.jpg "映射连接凭证")
 
@@ -215,7 +215,7 @@ spec:
 
 ## 下一步
 
-- 如果熟悉 Helm Charts ，使用 Helm 将 Service Catalog 安装到 Kubernetes 集群中。或者，可以使用 SC 工具安装服务目录。
+- 如果熟悉 Helm Charts，使用 Helm 将 Service Catalog 安装到 Kubernetes 集群中。或者，可以使用 SC 工具安装服务目录。
 - 查看 [sample service brokers](https://github.com/openservicebrokerapi/servicebroker/blob/master/gettingStarted.md#sample-service-brokers)。
 - 探索 [kubernetes-incubator/service-catalog](https://github.com/kubernetes-sigs/service-catalog) 项目。
 
@@ -273,7 +273,7 @@ chmod +x ./kubectl
 
 ### Helm
 
-使用 Helm 安装 Service Catalog ，需要 v2.7.0 或更高版本。请参阅以下步骤进行安装。
+使用 Helm 安装 Service Catalog，需要 v2.7.0 或更高版本。请参阅以下步骤进行安装。
 
 #### 如果还没有安装 Helm
 
@@ -283,13 +283,13 @@ chmod +x ./kubectl
 
 如果已经安装了 Helm，请运行 helm version 并确保客户端和服务器版本均为 v2.7.0 或更高。
 
-如果不是， 请安装[更新版本的 helm CLI](https://github.com/kubernetes/helm#install) 并运行 `helm init --upgrade`。
+如果不是，请安装[更新版本的 helm CLI](https://github.com/kubernetes/helm#install) 并运行 `helm init --upgrade`。
 
 有关安装的更多详细信息，请参阅 Helm 安装说明。
 
 #### Tiller 权限
 
-Tiller 是 Helm 的服务端组件。默认情况下， helm init 将 Tiller pod 安装到 kube-system 名称空间中，并将 Tiller 配置为使用 default 服务帐户（service account）。
+Tiller 是 Helm 的服务端组件。默认情况下，helm init 将 Tiller pod 安装到 kube-system 名称空间中，并将 Tiller 配置为使用 default 服务帐户（service account）。
 
 需要对 Tiller 进行配置 `cluster-admin` 权限，才能正确安装 Service Catalog：
 
@@ -301,7 +301,7 @@ kubectl create clusterrolebinding tiller-cluster-admin \
 
 ### Helm Repository 设置
 
-Service Catalog 很容易通过 Helm chart 安装 。
+Service Catalog 很容易通过 Helm chart 安装。
 
 此 chart 位于 chart repository 中。将此 repository 添加到本地计算机：
 

@@ -1,9 +1,9 @@
 ---
 # Documentation: https://wowchemy.com/docs/managing-content/
 
-title: "用Docker和WebAssembly打造容器的新时代！"
+title: "用 Docker 和 WebAssembly 打造容器的新时代！"
 subtitle: "Docker+WebAssembly 快速介绍"
-summary: "本文介绍了使用Docker和WebAssembly创建容器的过程。通过比较标准Docker容器和WebAssembly容器，作者指出WebAssembly容器具有性能优势、架构中立等优点，但也存在不成熟的问题。WebAssembly容器有望彻底改变容器化应用程序的方式。"
+summary: "本文介绍了使用 Docker 和 WebAssembly 创建容器的过程。通过比较标准 Docker 容器和 WebAssembly 容器，作者指出 WebAssembly 容器具有性能优势、架构中立等优点，但也存在不成熟的问题。WebAssembly 容器有望彻底改变容器化应用程序的方式。"
 authors: ["Fabrizio Guglielmino"]
 tags: ["WebAssembly","Docker"]
 categories: ["WebAssembly"]
@@ -37,10 +37,10 @@ links:
 
 今天，我想展示一种实用且有趣的使用 Docker 的方式：在容器中使用 WebAssembly。
 
-我说 “实用的方式”，这就是为什么我假设您有一些经验：
+我说“实用的方式”，这就是为什么我假设您有一些经验：
 
 1. Docker（当然）
-2. Rust（实际上，只是为了理解 “Hello World”）
+2. Rust（实际上，只是为了理解“Hello World”）
 3. WebAssembly；只需要对其有一个基本的了解（注意：我将在讨论中交替使用 WASM 和 WebAssembly 这两个术语）
 
 关于我即将展示的内容，简单说一下：一个 Docker 容器是一个包含运行环境的映像的运行实例。运行环境通常是一个操作系统，大多数情况下是 Linux。操作系统是运行应用程序的必要条件。
@@ -57,7 +57,7 @@ links:
 
 这可能足够了，但让我们列举一些具体的好处：
 
-- **安全性**：仅部署我们的代码可以减少 “攻击面”，从而提高整体安全性
+- **安全性**：仅部署我们的代码可以减少“攻击面”，从而提高整体安全性
 - **大小**：我们可以创建比等效于带有操作系统的应用程序更小得多的容器
 - **性能**：如您所料，没有操作系统层，WASM 容器可以表现出更好的性能（不总是正确的，但平均而言是正确的）
 - **架构中立性**：Docker 容器是为特定目标架构（arm、x86 等）编译的，只能在具有相同架构的主机上运行。相比之下，WebAssembly 是架构中立的，这意味着只要运行时可用，应用程序就可以在任何底层架构上运行。这提供了几个优点，例如在不需要重新编译的情况下在多个平台上运行相同的代码以及在以前不受支持的平台上运行代码的能力。
@@ -80,7 +80,7 @@ drwxr-xr-x@ 3 fabrizio  staff   96 Jan 12 20:55 src
 -rw-r--r--@ 1 fabrizio  staff  186 Jan 12 20:55 Cargo.toml
 ```
 
-我们可以保留提供的最小应用程序代码，这是一个相当常见和易读的 “Hello World”。
+我们可以保留提供的最小应用程序代码，这是一个相当常见和易读的“Hello World”。
 
 ```
 # cat src/main.rs
@@ -89,7 +89,7 @@ fn main() {
 }
 ```
 
-让我们尝试使用 `cargo run` 运行，输出应该是 “Hello, world!”。
+让我们尝试使用 `cargo run` 运行，输出应该是“Hello, world!”。
 
 ## 常见的 Docker 方式
 
@@ -108,7 +108,7 @@ CMD ["wasm-docker-hello"]
 
 这是一个非常简单的 `Dockerfile` ，它使用 Docker Hub 的 `rust` 基本镜像，将源从当前主机目录复制到镜像中的 `/usr/src/myapp` ，运行 `cargo install` 来编译应用程序，最终将应用程序二进制文件定义为容器命令。
 
-假设 Docker 已经安装在计算机上（[如果没有](https://docs.docker.com/get-docker/)），我们可以使用以下命令创建一个镜像： `docker build -t hello-docker .` 该命令使用当前目录中的 Dockerfile 构建镜像，并将其标记为 “hello-docker”。
+假设 Docker 已经安装在计算机上（[如果没有](https://docs.docker.com/get-docker/)），我们可以使用以下命令创建一个镜像： `docker build -t hello-docker .` 该命令使用当前目录中的 Dockerfile 构建镜像，并将其标记为“hello-docker”。
 
 然后，在构建镜像后，我们可以使用 `docker run hello-world` 运行它。
 
@@ -177,7 +177,7 @@ curl -sSf <https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/inst
 
 详细说明可以在此处找到 https://docs.docker.com/desktop/wasm/。
 
-## 准备创建 “无操作系统 “的容器
+## 准备创建“无操作系统“的容器
 
 现在我们已经准备好创建一个新的 Dockerfile（我们将其命名为 `Dockerfile.wasm` 以区分它与以前的文件），内容如下。
 
@@ -190,11 +190,11 @@ ENTRYPOINT [ "app.wasm" ]
 
 它非常简短和易懂，但有几个要点需要强调：
 
-1. 它以 “FROM scratch” 开始，表示该镜像是从头开始构建的，不会继承任何操作系统环境
+1. 它以“FROM scratch”开始，表示该镜像是从头开始构建的，不会继承任何操作系统环境
 2. 我们将编译后的二进制文件复制到镜像中，在前一个示例中，我们复制了源文件并在构建镜像过程中对其进行了编译，这里我们使用已经编译好的（在主机上）wasm 二进制文件
 3. `ENTRYPOINT` 是二进制文件本身，这里没有指定运行时
 
-构建我们的镜像，方式与我们为 “通用” 镜像所做的方式相同。
+构建我们的镜像，方式与我们为“通用”镜像所做的方式相同。
 
 ```bash
 docker build -t wasm-docker -f Dockerfile.wasm .
@@ -208,7 +208,7 @@ docker build -t wasm-docker -f Dockerfile.wasm .
 docker run --runtime=io.containerd.wasmedge.v1 --platform=wasi/wasm32 b678ba11b941
 ```
 
-我们指定 `--runtime` 告诉 Docker 使用 WasmEdge 作为运行时，并指定 `--platform` 使用 WASI 接口作为平台。就这样，如果您按照所有步骤操作，您应该看到一个令人兴奋的 “Hello, world!”。
+我们指定 `--runtime` 告诉 Docker 使用 WasmEdge 作为运行时，并指定 `--platform` 使用 WASI 接口作为平台。就这样，如果您按照所有步骤操作，您应该看到一个令人兴奋的“Hello, world!”。
 
 当然，我是开玩笑的，比较镜像大小使用 `docker images` 命令可以看到更有趣的结果。
 

@@ -3,7 +3,7 @@ title: Docker 指南
 draft: true
 summary: Docker 容器化实战手册
 tags:
-  - Handbook系列
+  - Handbook 系列
 date: 2017-10-11
 image_link: https://jimmysong.io/docker-handbook/
 type: publication
@@ -16,10 +16,10 @@ type: publication
 
 容器是微服务的最佳载体，Kubernetes 是微服务的最佳运行平台，[Istio](https://istio.io) 是 Kubernetes 上最佳的 service mesh。
 
-2017年4月 Docker 项目改名为 moby，10月的 DockerCon 在哥本哈根 Docker 公司宣布拥抱 Kubernetes，对于容器编排领域 Kubernetes 已经成为事实上的王者。
+2017 年 4 月 Docker 项目改名为 moby，10 月的 DockerCon 在哥本哈根 Docker 公司宣布拥抱 Kubernetes，对于容器编排领域 Kubernetes 已经成为事实上的王者。
 
 ### 关于
 
 本书中引用了一些公开的分享与链接并加以整理。
 
-**本书作于2017年初，现已停止更新。**
+**本书作于 2017 年初，现已停止更新。**

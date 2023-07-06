@@ -10,7 +10,7 @@ summary: 本文介绍了为工作负载颁发 X.509 SVID 身份的详细步骤�
 
 1. SPIRE 服务器启动。
 2. 除非用户配置了 `UpstreamAuthority` 插件，否则服务器会生成自签名证书（使用自己的私钥签名的证书）；服务器将使用此证书为该服务器信任域中的所有工作负载签署 SVID。
-3. 如果是第一次启动，服务器会自动生成一个信任包（trust bundle），其内容存储在你指定的 sql 数据存储中 —— 在[服务器插件：DataStore sql](https://github.com/spiffe/spire/blob/v1.3.0/doc/plugin_server_datastore_sql.md) 的 “内置插件” 部分中描述。
+3. 如果是第一次启动，服务器会自动生成一个信任包（trust bundle），其内容存储在你指定的 sql 数据存储中 —— 在[服务器插件：DataStore sql](https://github.com/spiffe/spire/blob/v1.3.0/doc/plugin_server_datastore_sql.md) 的“内置插件”部分中描述。
 4. 服务器打开其注册 API，以允许你注册工作负载。
 5. 工作负载节点上的 SPIRE 代理启动。
 6. 代理执行节点证明，向服务器证明它正在运行的节点的身份。例如，在 AWS EC2 实例上运行时，它通常会通过向服务器提供 [AWS 实例身份文档](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-identity-documents.html)来执行节点证明。
@@ -39,10 +39,10 @@ summary: 本文介绍了为工作负载颁发 X.509 SVID 身份的详细步骤�
 
 服务器只向代理发送授权的注册条目。服务器执行以下操作来获取这些授权条目：
 
-1. 查询数据库以查找将代理的 SPIFFE ID 列为其 “父 SPIFFE ID” 的任何注册条目。
+1. 查询数据库以查找将代理的 SPIFFE ID 列为其“父 SPIFFE ID”的任何注册条目。
 2. 在数据库中查询特定代理与哪些附加属性相关联（“节点选择器”）。
 3. 查询数据库以获取在任何这些节点选择器上声明选择的至少一个注册条目。
-4. 递归地查询数据库中的任何注册条目，这些条目声明了迄今为止获得的任何条目作为它们的 “父 SPIFFE ID”（下降到所有子节点）。
+4. 递归地查询数据库中的任何注册条目，这些条目声明了迄今为止获得的任何条目作为它们的“父 SPIFFE ID”（下降到所有子节点）。
 
 另请参阅[将工作负载映射到多个节点](https://spiffe.io/docs/latest/spire/using/registering/#mapping-workloads-to-multiple-nodes)。
 

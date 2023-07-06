@@ -164,7 +164,7 @@ type ConfigMapInterface interface {
 }
 ```
 
-在 `staging/src/k8s.io/client-go/kubernetes/typed/core/v1/configmap.go` 中创建 ConfigMap 的方法如下:
+在 `staging/src/k8s.io/client-go/kubernetes/typed/core/v1/configmap.go` 中创建 ConfigMap 的方法如下：
 
 ```go
 // Create takes the representation of a configMap and creates it.  Returns the server's representation of the configMap, and an error, if there is any.
@@ -356,7 +356,7 @@ DEBUG
 
 我们可以看到使用 ConfigMap 方式挂载的 Volume 的文件中的内容已经变成了 `DEBUG`。
 
-Known Issue： 如果使用 ConfigMap 的 **subPath** 挂载为 Container 的 Volume，Kubernetes 不会做自动热更新: https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#mounted-configmaps-are-updated-automatically
+Known Issue：如果使用 ConfigMap 的 **subPath** 挂载为 Container 的 Volume，Kubernetes 不会做自动热更新：https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#mounted-configmaps-are-updated-automatically
 
 ## ConfigMap 更新后滚动更新 Pod
 

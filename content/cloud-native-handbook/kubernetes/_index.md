@@ -1,6 +1,6 @@
 ---
 linktitle: Kubernetes
-summary: 关于Kubernetes。
+summary: 关于 Kubernetes。
 weight: 2
 title: Kubernetes
 date: '2022-05-03T00:00:00Z'

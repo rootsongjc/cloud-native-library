@@ -27,15 +27,15 @@ type: book
 
 下面是一些其他不太为人所知的配置资源 Pod 的方法：
 
-- Taint（污点）和 Toleration（容忍）：这些为节点“吸引”或“排斥” Pod 提供了一种方法。当需要将应用程序部署到特定硬件（例如用于科学计算的 GPU）时，经常使用它们。[阅读更多](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/)。
+- Taint（污点）和 Toleration（容忍）：这些为节点“吸引”或“排斥”Pod 提供了一种方法。当需要将应用程序部署到特定硬件（例如用于科学计算的 GPU）时，经常使用它们。[阅读更多](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/)。
 - **向下 API**：这允许您的容器使用有关自己或集群的信息，而不会过度耦合到 Kubernetes API server。这可以通过[环境变量](https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/) 或者 [DownwardAPIVolumeFiles](https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/)。
-- **Pod 预设**：通常，要将运行时需求（例如环境变量、ConfigMap 和 Secret）安装到资源中，可以在资源的配置文件中指定它们。PodPresets 允许您在创建资源时动态注入这些需求。例如，这允许团队 A 将任意数量的新Secret 安装到团队 B 和 C 创建的资源中，而不需要 B 和 C 的操作。
+- **Pod 预设**：通常，要将运行时需求（例如环境变量、ConfigMap 和 Secret）安装到资源中，可以在资源的配置文件中指定它们。PodPresets 允许您在创建资源时动态注入这些需求。例如，这允许团队 A 将任意数量的新 Secret 安装到团队 B 和 C 创建的资源中，而不需要 B 和 C 的操作。
 
 #### 其他 API 对象
 
 在设置以下资源之前，请检查这是否属于您组织的集群管理员的责任。
 
-- **Horizontal Pod Autoscaler (HPA)** ：这些资源是在CPU使用率或其他[自定义度量](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/instrumentation/custom-metrics-api.md)标准“秒杀”时自动化扩展应用程序的好方法。*[查看示例](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)*以了解如何设置HPA。
+- **Horizontal Pod Autoscaler (HPA)** ：这些资源是在 CPU 使用率或其他[自定义度量](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/instrumentation/custom-metrics-api.md)标准“秒杀”时自动化扩展应用程序的好方法。*[查看示例](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)*以了解如何设置 HPA。
 - **联合集群对象**：如果使用 *federation* 在多个 Kubernetes 集群上运行应用程序，则需要部署标准 Kubernetes API 对象的联合版本。
 
 ## 扩展 Kubernetes API
@@ -46,7 +46,7 @@ Kubernetes 在设计之初就考虑到了可扩展性。如果上面提到的 AP
 
 在进行任何自定义之前，了解 Kubernetes API 对象背后的一般抽象很重要。虽然 Deployment 和 Secret 看起来可能完全不同，但对于*任何*对象来说，以下概念都是正确的：
 
-- **Kubernetes对象是存储有关您的集群的结构化数据的一种方式。**
+- **Kubernetes 对象是存储有关您的集群的结构化数据的一种方式。**
 
   在 Deployment 的情况下，该数据代表期望的状态（例如“应该运行多少副本？”），但也可以是通用的元数据（例如数据库凭证）。
 
@@ -82,7 +82,7 @@ Kubernetes 在设计之初就考虑到了可扩展性。如果上面提到的 AP
 
 #### Service Catalog
 
-如果您想要使用或提供完整的服务（而不是单个资源），**Service Catalog** 为此提供了一个[规范](https://github.com/openservicebrokerapi/servicebroker)。这些服务使用 Service Broker注册（请参阅 [示例](https://github.com/openservicebrokerapi/servicebroker/blob/master/gettingStarted.md#example-service-brokers)）。
+如果您想要使用或提供完整的服务（而不是单个资源），**Service Catalog** 为此提供了一个[规范](https://github.com/openservicebrokerapi/servicebroker)。这些服务使用 Service Broker 注册（请参阅 [示例](https://github.com/openservicebrokerapi/servicebroker/blob/master/gettingStarted.md#example-service-brokers)）。
 
 如果您没有集群管理员来管理 Service Catalog 的安装，您可以使用 [Helm](https://kubernetes.io/docs/tasks/service-catalog/install-service-catalog-using-helm/) 或 [二进制安装器](https://kubernetes.io/docs/tasks/service-catalog/install-service-catalog-using-sc/)。
 
@@ -99,4 +99,4 @@ Kubernetes 在设计之初就考虑到了可扩展性。如果上面提到的 AP
 
 恭喜您完成了应用开发者之旅！您已经了解了 Kubernetes 提供的大部分功能。现在怎么办？
 
-- 如果您想推荐新功能或跟上Kubernetes应用开发的最新进展，请考虑加入 SIG，如 [SIG Apps](https://github.com/kubernetes/community/tree/master/sig-apps)。
+- 如果您想推荐新功能或跟上 Kubernetes 应用开发的最新进展，请考虑加入 SIG，如 [SIG Apps](https://github.com/kubernetes/community/tree/master/sig-apps)。

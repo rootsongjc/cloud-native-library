@@ -7,7 +7,7 @@ type: book
 
 在安装集群的时候我们在 master 节点上生成了一堆证书、token，还在 kubelet 的配置中用到了 bootstrap token，安装各种应用时，为了能够与 API server 通信创建了各种 service account，在 Dashboard 中使用了 kubeconfig 或 token 登陆，那么这些都属于什么认证方式？如何区分用户的？我特地翻译了下这篇官方文档，想你看了之后你将找到答案。
 
-重点查看 bearer token 和 HTTP 认证中的 token 使用，我们已经有所应用，如 [使用kubeconfig或token进行用户身份认证](auth-with-kubeconfig-or-token.md)。
+重点查看 bearer token 和 HTTP 认证中的 token 使用，我们已经有所应用，如 [使用 kubeconfig 或 token 进行用户身份认证](auth-with-kubeconfig-or-token.md)。
 
 ## 认识 Kubernetes 中的用户
 
@@ -39,11 +39,11 @@ Kubernetes 使用客户端证书、bearer token、身份验证代理或者 HTTP 
 
 `system:authenticated` 组包含在所有已验证用户的组列表中。
 
-与其他身份验证协议（LDAP、SAML、Kerberos、x509 方案等）的集成可以使用身份验证代理或身份验证 webhook来实现。
+与其他身份验证协议（LDAP、SAML、Kerberos、x509 方案等）的集成可以使用身份验证代理或身份验证 webhook 来实现。
 
 ### X509 客户端证书
 
-通过将 `--client-ca-file=SOMEFILE` 选项传递给 API server 来启用客户端证书认证。引用的文件必须包含一个或多个证书颁发机构，用于验证提交给 API server 的客户端证书。如果客户端证书已提交并验证，则使用 subject 的 Common Name（CN）作为请求的用户名。从 Kubernetes 1.4开始，客户端证书还可以使用证书的 organization 字段来指示用户的组成员身份。要为用户包含多个组成员身份，请在证书中包含多个 organization 字段。
+通过将 `--client-ca-file=SOMEFILE` 选项传递给 API server 来启用客户端证书认证。引用的文件必须包含一个或多个证书颁发机构，用于验证提交给 API server 的客户端证书。如果客户端证书已提交并验证，则使用 subject 的 Common Name（CN）作为请求的用户名。从 Kubernetes 1.4 开始，客户端证书还可以使用证书的 organization 字段来指示用户的组成员身份。要为用户包含多个组成员身份，请在证书中包含多个 organization 字段。
 
 例如，使用 `openssl` 命令工具生成用于签名认证请求的证书：
 
@@ -51,7 +51,7 @@ Kubernetes 使用客户端证书、bearer token、身份验证代理或者 HTTP 
 openssl req -new -key jbeda.pem -out jbeda-csr.pem -subj "/CN=jbeda/O=app1/O=app2"
 ```
 
-这将为一个用户名为 ”jbeda“ 的 CSR，属于两个组“app1”和“app2”。
+这将为一个用户名为”jbeda“的 CSR，属于两个组“app1”和“app2”。
 
 ### 静态 Token 文件
 
@@ -91,9 +91,9 @@ Authorization: Bearer 781292.db7bc3a58fc5f07e
 
 ### 静态密码文件
 
-通过将 `--basic-auth-file=SOMEFILE` 选项传递给 API server 来启用基本身份验证。目前，基本身份验证凭证将无限期地保留，并且密码在不重新启动API服务器的情况下无法更改。请注意，为了方便起见，目前支持基本身份验证，而上述模式更安全更容易使用。
+通过将 `--basic-auth-file=SOMEFILE` 选项传递给 API server 来启用基本身份验证。目前，基本身份验证凭证将无限期地保留，并且密码在不重新启动 API 服务器的情况下无法更改。请注意，为了方便起见，目前支持基本身份验证，而上述模式更安全更容易使用。
 
-基本身份认证是一个 csv 文件，至少包含3列：密码、用户名和用户 ID。在 Kubernetes 1.6 和更高版本中，可以指定包含以逗号分隔的组名称的可选第四列。如果您有多个组，则必须将第四列值用双引号（“）括起来，请参阅以下示例：
+基本身份认证是一个 csv 文件，至少包含 3 列：密码、用户名和用户 ID。在 Kubernetes 1.6 和更高版本中，可以指定包含以逗号分隔的组名称的可选第四列。如果您有多个组，则必须将第四列值用双引号（“）括起来，请参阅以下示例：
 
 ```ini
 password,user,uid,"group1,group2,group3"
@@ -108,7 +108,7 @@ Service account 是一个自动启用的验证器，它使用签名的 bearer to
 - `--service-account-key-file`  一个包含签名 bearer token 的 PEM 编码文件。如果未指定，将使用 API server 的 TLS 私钥。
 - `--service-account-lookup` 如果启用，从 API 中删除掉的 token 将被撤销。
 
-Service account 通常 API server 自动创建，并通过 `ServiceAccount` [注入控制器](https://kubernetes.io/docs/admin/admission-controllers/) 关联到集群中运行的 Pod 上。Bearer token 挂载到 pod 中众所周知的位置，并允许集群进程与 API server 通信。 帐户可以使用 `PodSpec` 的 `serviceAccountName` 字段显式地与Pod关联。
+Service account 通常 API server 自动创建，并通过 `ServiceAccount` [注入控制器](https://kubernetes.io/docs/admin/admission-controllers/) 关联到集群中运行的 Pod 上。Bearer token 挂载到 pod 中众所周知的位置，并允许集群进程与 API server 通信。帐户可以使用 `PodSpec` 的 `serviceAccountName` 字段显式地与 Pod 关联。
 
 注意： `serviceAccountName` 通常被省略，因为这会自动生成。
 
@@ -185,9 +185,9 @@ Service account 验证时用户名 `system:serviceaccount:(NAMESPACE):(SERVICEAC
 8. 授权 API server 后向 `kubectl` 
 9. `kubectl` 向用户提供反馈
 
-由于所有需要验证您身份的数据都在 `id_token` 中，Kubernetes 不需要向身份提供商 “phone home”。在每个请求都是无状态的模型中，这为认证提供了非常可扩展的解决方案。它确实提供了一些挑战：
+由于所有需要验证您身份的数据都在 `id_token` 中，Kubernetes 不需要向身份提供商“phone home”。在每个请求都是无状态的模型中，这为认证提供了非常可扩展的解决方案。它确实提供了一些挑战：
 
-1. Kubernetes 没有 ”web 接口“ 来出发验证进程。没有浏览器或界面来收集凭据，这就是为什么您需要首先认证您的身份提供商。
+1. Kubernetes 没有”web 接口“来出发验证进程。没有浏览器或界面来收集凭据，这就是为什么您需要首先认证您的身份提供商。
 2. `id_token` 无法撤销，就像一个证书，所以它应该是短暂的（只有几分钟），所以每隔几分钟就得到一个新的令牌是非常烦人的。
 3. 没有使用 `kubectl proxy` 命令或注入 `id_token` 的反向代理，无法简单地对 Kubernetes dashboard 进行身份验证。
 
@@ -197,10 +197,10 @@ Service account 验证时用户名 `system:serviceaccount:(NAMESPACE):(SERVICEAC
 
 | 参数                    | 描述                                                         | 示例                                                         | 是否必需 |
 | ----------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | -------- |
-| `--oidc-issuer-url`     | 允许 API server 发现公共签名密钥的提供者的 URL。只接受使用 `https://` 的方案。通常是提供商的 URL 地址，不包含路径，例如“<https://accounts.google.com>” 或者 “<https://login.salesforce.com>”。这个 URL 应该指向下面的 .well-known/openid-configuration | 如果发现 URL 是 `https://accounts.google.com/.well-known/openid-configuration`，值应该是`https://accounts.google.com` | 是       |
+| `--oidc-issuer-url`     | 允许 API server 发现公共签名密钥的提供者的 URL。只接受使用 `https://` 的方案。通常是提供商的 URL 地址，不包含路径，例如“<https://accounts.google.com>”或者“<https://login.salesforce.com>”。这个 URL 应该指向下面的 .well-known/openid-configuration | 如果发现 URL 是 `https://accounts.google.com/.well-known/openid-configuration`，值应该是`https://accounts.google.com` | 是       |
 | `--oidc-client-id`      | 所有的 token 必须为其颁发的客户端 ID                         | kubernetes                                                   | 是       |
-| `--oidc-username-claim` | JWT声明使用的用户名。默认情况下，`sub` 是最终用户的唯一标识符。管理员可以选择其他声明，如` email` 或 `name`，具体取决于他们的提供者。不过，`email` 以外的其他声明将以发行者的 URL 作为前缀，以防止与其他插件命名冲突。 | sub                                                          | 否       |
-| `--oidc-groups-claim`   | JWT声明使用的用户组。如果生命存在，它必须是一个字符串数组。  | groups                                                       | 否       |
+| `--oidc-username-claim` | JWT 声明使用的用户名。默认情况下，`sub` 是最终用户的唯一标识符。管理员可以选择其他声明，如` email` 或 `name`，具体取决于他们的提供者。不过，`email` 以外的其他声明将以发行者的 URL 作为前缀，以防止与其他插件命名冲突。 | sub                                                          | 否       |
+| `--oidc-groups-claim`   | JWT 声明使用的用户组。如果生命存在，它必须是一个字符串数组。  | groups                                                       | 否       |
 | `--oidc-ca-file`        | 用来签名您的身份提供商的网络 CA 证书的路径。默认为主机的跟 CA。 | `/etc/kubernetes/ssl/kc-ca.pem`                              | 否       |
 
 如果为 `--oidc-username-claim` 选择了除 `email` 以外的其他声明，则该值将以 `--oidc-issuer-url` 作为前缀，以防止与现有 Kubernetes 名称（例如 `system:users`）冲突。例如，如果提供商网址是 https://accounts.google.com，而用户名声明映射到 `jane`，则插件会将用户身份验证为：
@@ -211,15 +211,15 @@ https://accounts.google.com#jane
 
 重要的是，API server 不是 OAuth2 客户端，而只能配置为信任单个发行者。这允许使用 Google 等公共提供者，而不必信任第三方发行的凭据。希望利用多个 OAuth 客户端的管理员应该探索支持 `azp`（授权方）声明的提供者，这是允许一个客户端代表另一个客户端发放令牌的机制。
 
-Kubernetes不提供 OpenID Connect 身份提供商。您可以使用现有的公共 OpenID Connect 标识提供程序（例如Google 或 [其他](http://connect2id.com/products/nimbus-oauth-openid-connect-sdk/openid-connect-providers)）。或者，您可以运行自己的身份提供程序，例如 CoreOS [dex](https://github.com/coreos/dex)、[Keycloak](https://github.com/keycloak/keycloak)、CloudFoundry [UAA](https://github.com/cloudfoundry/uaa) 或 Tremolo Security 的 [OpenUnison](https://github.com/tremolosecurity/openunison)。
+Kubernetes 不提供 OpenID Connect 身份提供商。您可以使用现有的公共 OpenID Connect 标识提供程序（例如 Google 或 [其他](http://connect2id.com/products/nimbus-oauth-openid-connect-sdk/openid-connect-providers)）。或者，您可以运行自己的身份提供程序，例如 CoreOS [dex](https://github.com/coreos/dex)、[Keycloak](https://github.com/keycloak/keycloak)、CloudFoundry [UAA](https://github.com/cloudfoundry/uaa) 或 Tremolo Security 的 [OpenUnison](https://github.com/tremolosecurity/openunison)。
 
 对于身份提供商能够适用于 Kubernetes，必须满足如下条件：Kubernetes it must:
 
 1. 支持 [OpenID connect 发现](https://openid.net/specs/openid-connect-discovery-1_0.html)；不必是全部。
-2. 使用非过时密码在TLS中运行
+2. 使用非过时密码在 TLS 中运行
 3. 拥有 CA 签名证书（即使 CA 不是商业 CA 或自签名）
 
-有关上述要求3的说明，需要 CA 签名证书。如果您部署自己的身份提供商（而不是像 Google 或 Microsoft 之类的云提供商），则必须让您的身份提供商的 Web 服务器证书由 CA 标志设置为 TRUE 的证书签名，即使是自签名的。这是由于 GoLang 的 TLS 客户端实现对证书验证的标准非常严格。如果您没有 `CA`，可以使用 `CoreOS` 团队的 [这个脚本](https://github.com/coreos/dex/blob/1ee5920c54f5926d6468d2607c728b71cfe98092/examples/k8s/gencert.sh) 创建一个简单的 CA 和一个签名的证书和密钥对。
+有关上述要求 3 的说明，需要 CA 签名证书。如果您部署自己的身份提供商（而不是像 Google 或 Microsoft 之类的云提供商），则必须让您的身份提供商的 Web 服务器证书由 CA 标志设置为 TRUE 的证书签名，即使是自签名的。这是由于 GoLang 的 TLS 客户端实现对证书验证的标准非常严格。如果您没有 `CA`，可以使用 `CoreOS` 团队的 [这个脚本](https://github.com/coreos/dex/blob/1ee5920c54f5926d6468d2607c728b71cfe98092/examples/k8s/gencert.sh) 创建一个简单的 CA 和一个签名的证书和密钥对。
 
 针对特定系统的安装说明：
 
@@ -294,7 +294,7 @@ Webhook 认证是用来认证 bearer token 的 hook。
 - `--authentication-token-webhook-config-file` 是一个用来描述如何访问远程 webhook 服务的 kubeconfig 文件。
 - `--authentication-token-webhook-cache-ttl` 缓存身份验证策略的时间。默认为两分钟。
 
-配置文件使用 [kubeconfig](https://kubernetes.io/docs/concepts/cluster-administration/authenticate-across-clusters-kubeconfig/) 文件格式。文件中的 ”user“ 指的是 API server 的 webhook，”clusters“ 是指远程服务。见下面的例子：
+配置文件使用 [kubeconfig](https://kubernetes.io/docs/concepts/cluster-administration/authenticate-across-clusters-kubeconfig/) 文件格式。文件中的”user“指的是 API server 的 webhook，”clusters“是指远程服务。见下面的例子：
 
 ```yaml
 # clusters refers to the remote service.
@@ -320,9 +320,9 @@ contexts:
   name: webhook
 ```
 
-当客户端尝试使用 bearer token 与API server 进行认证是，如上论述，认证 webhook 用饱含该 token 的对象查询远程服务。Kubernetes 不会挑战缺少该 header 的请求。
+当客户端尝试使用 bearer token 与 API server 进行认证是，如上论述，认证 webhook 用饱含该 token 的对象查询远程服务。Kubernetes 不会挑战缺少该 header 的请求。
 
-请注意，webhook API对象与其他 Kubernetes API 对象具有相同的 [版本控制兼容性规则](https://kubernetes.io/docs/concepts/overview/kubernetes-api/)。实现者应该意识到 Beta 对象的宽松兼容性承诺，并检查请求的 “apiVersion” 字段以确保正确的反序列化。此外，API server 必须启用 `authentication.k8s.io/v1beta1` API 扩展组（`--runtime config =authentication.k8s.io/v1beta1=true`）。
+请注意，webhook API 对象与其他 Kubernetes API 对象具有相同的 [版本控制兼容性规则](https://kubernetes.io/docs/concepts/overview/kubernetes-api/)。实现者应该意识到 Beta 对象的宽松兼容性承诺，并检查请求的“apiVersion”字段以确保正确的反序列化。此外，API server 必须启用 `authentication.k8s.io/v1beta1` API 扩展组（`--runtime config =authentication.k8s.io/v1beta1=true`）。
 
 The request body will be of the following format:
 
@@ -374,15 +374,15 @@ The request body will be of the following format:
 }
 ```
 
-HTTP状态代码可以用来提供额外的错误上下文。
+HTTP 状态代码可以用来提供额外的错误上下文。
 
 ### 认证代理
 
 可以配置 API server 从请求 header 的值中识别用户，例如 `X-Remote-User`。这样的设计是用来与请求 header 值的验证代理结合使用。
 
 - `--requestheader-username-headers` 必需，大小写敏感。按 header 名称和顺序检查用户标识。包含值的第一个 header 将被作为用户名。
-- `--requestheader-group-headers` 1.6 以上版本。可选。大小写敏感。建议为 “X-Remote-Group”。按 header 名称和顺序检查用户组。所有指定的 header 中的所有值都将作为组名。 
-- `--requestheader-extra-headers-prefix` 1.6 以上版本。可选，大小写敏感。建议为 “X-Remote-Extra-”。标题前缀可用于查找有关用户的额外信息（通常由配置的授权插件使用）。以任何指定的前缀开头的 header 都会删除前缀，header 名称的其余部分将成为额外的键值，而 header 值则是额外的值。
+- `--requestheader-group-headers` 1.6 以上版本。可选。大小写敏感。建议为“X-Remote-Group”。按 header 名称和顺序检查用户组。所有指定的 header 中的所有值都将作为组名。 
+- `--requestheader-extra-headers-prefix` 1.6 以上版本。可选，大小写敏感。建议为“X-Remote-Extra-”。标题前缀可用于查找有关用户的额外信息（通常由配置的授权插件使用）。以任何指定的前缀开头的 header 都会删除前缀，header 名称的其余部分将成为额外的键值，而 header 值则是额外的值。
 
 例如下面的配置：
 
@@ -419,7 +419,7 @@ extra:
 为了防止 header 欺骗，验证代理需要在验证请求 header 之前向 API server 提供有效的客户端证书，以对照指定的 CA 进行验证。
 
 - `--requestheader-client-ca-file` 必需。PEM 编码的证书包。在检查用户名的请求 header 之前，必须针对指定文件中的证书颁发机构提交并验证有效的客户端证书。
-- `--requestheader-allowed-names` 可选。Common Name （cn）列表。如果设置了，则在检查用户名的请求 header 之前， 必须提供指定列表中 Common Name（cn）的有效客户端证书。如果为空，则允许使用任何 Common Name。
+- `--requestheader-allowed-names` 可选。Common Name（cn）列表。如果设置了，则在检查用户名的请求 header 之前，必须提供指定列表中 Common Name（cn）的有效客户端证书。如果为空，则允许使用任何 Common Name。
 
 ### Keystone 密码
 
@@ -439,7 +439,7 @@ extra:
 
 在 1.5.1 - 1.5.x 版本中，默认情况下命名访问是被禁用的，可以通过传递 `--anonymous-auth=false` 选项给 API server 来启用。
 
-在 1.6+ 版本中，如果使用 `AlwaysAllow` 以外的授权模式，则默认启用匿名访问，并且可以通过将 `--anonymous-auth=false`选项传递给API服务器来禁用。从 1.6 开始，ABAC 和 RBAC 授权人需要明确授权 `system:annoymous` 或 `system:unauthenticated` 组，因此授予对 `*` 用户或 `*` 组访问权的传统策略规则不包括匿名用户。
+在 1.6+ 版本中，如果使用 `AlwaysAllow` 以外的授权模式，则默认启用匿名访问，并且可以通过将 `--anonymous-auth=false`选项传递给 API 服务器来禁用。从 1.6 开始，ABAC 和 RBAC 授权人需要明确授权 `system:annoymous` 或 `system:unauthenticated` 组，因此授予对 `*` 用户或 `*` 组访问权的传统策略规则不包括匿名用户。
 
 ## 用户模拟
 
@@ -456,8 +456,8 @@ extra:
 以下 HTTP header 可用户执行模拟请求：
 
 - `Impersonate-User`：充当的用户名
-- `Impersonate-Group`：作为组名。可以多次使用来设置多个组。可选的，需要 “Impersonate-User”
-- `Impersonate-Extra-( extra name )`：用于将额外字段与用户关联的动态 header。可选。需要 “Impersonate-User”
+- `Impersonate-Group`：作为组名。可以多次使用来设置多个组。可选的，需要“Impersonate-User”
+- `Impersonate-Extra-( extra name )`：用于将额外字段与用户关联的动态 header。可选。需要“Impersonate-User”
 
 一组示例 header：
 
@@ -494,7 +494,7 @@ rules:
   verbs: ["impersonate"]
 ```
 
-额外的字段被评估为资源 “userextras” 的子资源。为了允许用户使用额外字段 “scope” 的模拟 header，应授予用户以下角色：
+额外的字段被评估为资源“userextras”的子资源。为了允许用户使用额外字段“scope”的模拟 header，应授予用户以下角色：
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -544,7 +544,7 @@ rules:
 
 **已有的部署脚本** 在 `cluster/saltbase/salt/generate-cert/make-ca-cert.sh`。
 
-执行该脚本时需要传递两个参数。第一个参数是 API server 的 IP地址。第二个参数是 IP 形式的主题备用名称列表： `IP:<ip-address>` 或 `DNS:<dns-name>`。
+执行该脚本时需要传递两个参数。第一个参数是 API server 的 IP 地址。第二个参数是 IP 形式的主题备用名称列表： `IP:<ip-address>` 或 `DNS:<dns-name>`。
 
 该脚本将生成三个文件： `ca.crt`、`server.crt` 和 `server.key`。
 
@@ -558,7 +558,7 @@ rules:
 
 **easyrsa** 可以用来手动为集群生成证书。
 
-1. 下载，解压，并初始化修补版本的easyrsa3。
+1. 下载，解压，并初始化修补版本的 easyrsa3。
 
    ```bash
    curl -L -O https://storage.googleapis.com/kubernetes-release/easy-rsa/easy-rsa.tar.gz
@@ -633,7 +633,7 @@ rules:
 
 #### 认证 API
 
-您可以使用 `certificates.k8s.io` API将 x509 证书配置为用于身份验证，如 [此处](https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster) 所述。
+您可以使用 `certificates.k8s.io` API 将 x509 证书配置为用于身份验证，如 [此处](https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster) 所述。
 
 ## 参考
 

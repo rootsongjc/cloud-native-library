@@ -12,4 +12,4 @@ publication_type: "ebook"
 
 ### 关于本书
 
-本书译自 O'Reilly Report “What is eBPF”，作者 Liz Rice，英文原版可以在 [O'Reilly 网站](https://www.oreilly.com/library/view/what-is-ebpf/9781492097266/)上获取，英文版发布于 2022 年 4 月，中文版发布于 2022 年 6 月。
+本书译自 O'Reilly Report“What is eBPF”，作者 Liz Rice，英文原版可以在 [O'Reilly 网站](https://www.oreilly.com/library/view/what-is-ebpf/9781492097266/)上获取，英文版发布于 2022 年 4 月，中文版发布于 2022 年 6 月。

@@ -11,7 +11,7 @@ Kubernetes 1.4 引入了一个用于从集群级证书颁发机构（CA）请求
 
 ## kube-apiserver 配置
 
-您必须提供一个 token 文件，该文件中指定了至少一个分配给 kubelet 特定 bootstrap 组的 “bootstrap token”。
+您必须提供一个 token 文件，该文件中指定了至少一个分配给 kubelet 特定 bootstrap 组的“bootstrap token”。
 
 该组将作为 controller manager 配置中的默认批准控制器而用于审批。随着此功能的成熟，您应该确保 token 被绑定到基于角色的访问控制（RBAC）策略上，该策略严格限制了与证书配置相关的客户端请求（使用 bootstrap token）。使用 RBAC，将 token 范围划分为组可以带来很大的灵活性（例如，当您配置完成节点后，您可以禁用特定引导组的访问）。
 
@@ -59,7 +59,7 @@ Kube-controller-manager 标志为：
 
 ### 审批控制器
 
-在 kubernetes 1.7 版本中，实验性的 “组自动批准” 控制器被弃用，新的 `csrapproving` 控制器将作为 [kube-controller-manager](https://kubernetes.io/docs/admin/kube-controller-manager) 的一部分，被默认启用。
+在 kubernetes 1.7 版本中，实验性的“组自动批准”控制器被弃用，新的 `csrapproving` 控制器将作为 [kube-controller-manager](https://kubernetes.io/docs/admin/kube-controller-manager) 的一部分，被默认启用。
 
 控制器使用 [`SubjectAccessReview` API](https://kubernetes.io/docs/admin/authorization/#checking-api-access) 来确定给定用户是否已被授权允许请求 CSR，然后根据授权结果进行批准。为了防止与其他批准者冲突，内置审批者没有明确地拒绝 CSR，只是忽略未经授权的请求。
 
@@ -172,7 +172,7 @@ kubectl config set-credentials kubelet-bootstrap --token=${BOOTSTRAP_TOKEN} --ku
 --experimental-bootstrap-kubeconfig="/path/to/bootstrap/kubeconfig"
 ```
 
-此外，在1.7中，kubelet 实现了 **Alpha** 功能，使其客户端和/或服务器都能轮转提供证书。
+此外，在 1.7 中，kubelet 实现了 **Alpha** 功能，使其客户端和/或服务器都能轮转提供证书。
 
 可以分别通过 kubelet 中的 `RotateKubeletClientCertificate` 和 `RotateKubeletServerCertificate` 功能标志启用此功能，但在未来版本中可能会以向后兼容的方式发生变化。
 
@@ -184,6 +184,6 @@ kubectl config set-credentials kubelet-bootstrap --token=${BOOTSTRAP_TOKEN} --ku
 
 ## kubectl 审批
 
-签名控制器不会立即签署所有证书请求。相反，它会一直等待直到适当特权的用户被标记为 “已批准” 状态。这最终将是由外部审批控制器来处理的自动化过程，但是对于 alpha 版本的 API 来说，可以由集群管理员通过 kubectl 命令手动完成。
+签名控制器不会立即签署所有证书请求。相反，它会一直等待直到适当特权的用户被标记为“已批准”状态。这最终将是由外部审批控制器来处理的自动化过程，但是对于 alpha 版本的 API 来说，可以由集群管理员通过 kubectl 命令手动完成。
 
-管理员可以使用 `kubectl get csr` 命令列出所有的 CSR，使用 `kubectl describe csr <name>` 命令描述某个 CSR的详细信息。在 1.6 版本以前，[没有直接的批准/拒绝命令](https://github.com/kubernetes/kubernetes/issues/30163) ，因此审批者需要直接更新 Status 信息（[查看如何实现](https://github.com/gtank/csrctl)）。此后的 Kubernetes 版本中提供了 `kubectl certificate approve <name>` 和 `kubectl certificate deny <name>` 命令。
+管理员可以使用 `kubectl get csr` 命令列出所有的 CSR，使用 `kubectl describe csr <name>` 命令描述某个 CSR 的详细信息。在 1.6 版本以前，[没有直接的批准/拒绝命令](https://github.com/kubernetes/kubernetes/issues/30163) ，因此审批者需要直接更新 Status 信息（[查看如何实现](https://github.com/gtank/csrctl)）。此后的 Kubernetes 版本中提供了 `kubectl certificate approve <name>` 和 `kubectl certificate deny <name>` 命令。

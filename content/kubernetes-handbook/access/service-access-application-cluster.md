@@ -84,7 +84,7 @@ type: book
 
 7. 获取正在运行 Hello World 应用程序的 Pod 的其中一个节点的 public IP 地址。如何得到这个地址取决于您的集群设置。例如，如果您使用 Minikube，可以通过运行 `kubectl cluster-info` 查看节点地址。如果您是使用 Google Compute Engine 实例，可以使用 `gcloud compute instances list` 命令查看您的公共地址节点。
 
-8. 在您选择的节点上，在您的节点端口上例如创建允许 TCP 流量的防火墙规则，如果您的服务 NodePort 值为 31568，创建防火墙规则，允许端口 31568 上的TCP流量。
+8. 在您选择的节点上，在您的节点端口上例如创建允许 TCP 流量的防火墙规则，如果您的服务 NodePort 值为 31568，创建防火墙规则，允许端口 31568 上的 TCP 流量。
 
 9. 使用节点地址和节点端口访问 Hello World 应用程序：
 
@@ -92,7 +92,7 @@ type: book
    curl http://<public-node-ip>:<node-port>
    ```
 
-   其中 `<public-node-ip>` 是您节点的 public IP地址，而 `<node-port>` 是您服务的 NodePort 值。
+   其中 `<public-node-ip>` 是您节点的 public IP 地址，而 `<node-port>` 是您服务的 NodePort 值。
 
    对成功请求的响应是一个 hello 消息：
 

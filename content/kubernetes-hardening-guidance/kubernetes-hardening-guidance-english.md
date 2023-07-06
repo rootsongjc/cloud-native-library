@@ -642,7 +642,7 @@ Once created, resources cannot be moved between namespaces. The resource must be
 
 ## Appendix E: Example network policy
 
-Network policies differ depending on the network plugin used. The following is an example network policy to limit access to the nginx service to Pods with the label access using the Kubernetes documentation: <https://kubernetes.io/docs/tasks/administer-cluster/declare-network-policy/>。
+Network policies differ depending on the network plugin used. The following is an example network policy to limit access to the nginx service to Pods with the label access using the Kubernetes documentation: <https://kubernetes.io/docs/tasks/administer-cluster/declare-network-policy/>.
 
 ```yaml
 apiVersion: networking.k8s.io/v1

@@ -11,7 +11,7 @@ type: book
 
 对于管理计算资源来说，管理存储资源明显是另一个问题。`PersistentVolume` 子系统为用户和管理员提供了一个 API，该 API 将如何提供存储的细节抽象了出来。为此，我们引入两个新的 API 资源：`PersistentVolume` 和 `PersistentVolumeClaim`。
 
-`PersistentVolume`（PV）是由管理员设置的存储，它是群集的一部分。就像节点是集群中的资源一样，PV 也是集群中的资源。 PV 是 Volume 之类的卷插件，但具有独立于使用 PV 的 Pod 的生命周期。此 API 对象包含存储实现的细节，即 NFS、iSCSI 或特定于云供应商的存储系统。
+`PersistentVolume`（PV）是由管理员设置的存储，它是群集的一部分。就像节点是集群中的资源一样，PV 也是集群中的资源。PV 是 Volume 之类的卷插件，但具有独立于使用 PV 的 Pod 的生命周期。此 API 对象包含存储实现的细节，即 NFS、iSCSI 或特定于云供应商的存储系统。
 
 `PersistentVolumeClaim`（PVC）是用户存储的请求。它与 Pod 相似。Pod 消耗节点资源，PVC 消耗 PV 资源。Pod 可以请求特定级别的资源（CPU 和内存）。声明可以请求特定的大小和访问模式（例如，可以以读/写一次或 只读多次模式挂载）。
 
@@ -21,7 +21,7 @@ type: book
 
 ## 卷和声明的生命周期
 
-PV 属于集群中的资源。PVC 是对这些资源的请求，也作为对资源的请求的检查。 PV 和 PVC 之间的相互作用遵循这样的生命周期：
+PV 属于集群中的资源。PVC 是对这些资源的请求，也作为对资源的请求的检查。PV 和 PVC 之间的相互作用遵循这样的生命周期：
 
 ### 配置（Provision）
 
@@ -37,9 +37,9 @@ PV 属于集群中的资源。PVC 是对这些资源的请求，也作为对资�
 
 ### 绑定
 
-在动态配置的情况下，用户创建或已经创建了具有特定存储量的 `PersistentVolumeClaim` 以及某些访问模式。master 中的控制环路监视新的 PVC，寻找匹配的 PV（如果可能），并将它们绑定在一起。如果为新的 PVC 动态调配 PV，则该环路将始终将该 PV 绑定到 PVC。否则，用户总会得到他们所请求的存储，但是容量可能超出要求的数量。一旦 PV 和 PVC 绑定后，`PersistentVolumeClaim` 绑定是排他性的，不管它们是如何绑定的。 PVC 跟 PV 绑定是一对一的映射。
+在动态配置的情况下，用户创建或已经创建了具有特定存储量的 `PersistentVolumeClaim` 以及某些访问模式。master 中的控制环路监视新的 PVC，寻找匹配的 PV（如果可能），并将它们绑定在一起。如果为新的 PVC 动态调配 PV，则该环路将始终将该 PV 绑定到 PVC。否则，用户总会得到他们所请求的存储，但是容量可能超出要求的数量。一旦 PV 和 PVC 绑定后，`PersistentVolumeClaim` 绑定是排他性的，不管它们是如何绑定的。PVC 跟 PV 绑定是一对一的映射。
 
-如果没有匹配的卷，声明将无限期地保持未绑定状态。随着匹配卷的可用，声明将被绑定。例如，配置了许多 50Gi PV的集群将不会匹配请求 100Gi 的PVC。将100Gi PV 添加到群集时，可以绑定 PVC。
+如果没有匹配的卷，声明将无限期地保持未绑定状态。随着匹配卷的可用，声明将被绑定。例如，配置了许多 50Gi PV 的集群将不会匹配请求 100Gi 的 PVC。将 100Gi PV 添加到群集时，可以绑定 PVC。
 
 ### 使用
 
@@ -53,7 +53,7 @@ PVC 保护的目的是确保由 pod 正在使用的 PVC 不会从系统中移除
 
 注意：当 pod 状态为 `Pending` 并且 pod 已经分配给节点或 pod 为 `Running` 状态时，PVC 处于活动状态。
 
-当启用PVC 保护 alpha 功能时，如果用户删除了一个 pod 正在使用的 PVC，则该 PVC 不会被立即删除。PVC 的删除将被推迟，直到 PVC 不再被任何 pod 使用。
+当启用 PVC 保护 alpha 功能时，如果用户删除了一个 pod 正在使用的 PVC，则该 PVC 不会被立即删除。PVC 的删除将被推迟，直到 PVC 不再被任何 pod 使用。
 
 您可以看到，当 PVC 的状态为 `Teminatiing` 时，PVC 受到保护，`Finalizers` 列表中包含 `kubernetes.io/pvc-protection`：
 
@@ -85,7 +85,7 @@ Finalizers:    [kubernetes.io/pvc-protection]
 
 #### 回收
 
-如果存储卷插件支持，回收策略会在 volume上执行基本擦除（`rm -rf / thevolume / *`），可被再次声明使用。
+如果存储卷插件支持，回收策略会在 volume 上执行基本擦除（`rm -rf / thevolume / *`），可被再次声明使用。
 
 但是，管理员可以使用如[此处](https://kubernetes.io/docs/admin/kube-controller-manager/)所述的 Kubernetes controller manager 命令行参数来配置自定义回收站 pod 模板。自定义回收站 pod 模板必须包含 `volumes` 规范，如下面的示例所示：
 
@@ -126,7 +126,7 @@ Kubernetes 1.8 增加了对扩展持久化存储卷的 Alpha 支持。在 v1.9 �
 - glusterfs
 - rbd
 
-管理员可以通过将 `ExpandPersistentVolumes` 特性门设置为true来允许扩展持久卷声明。管理员还应该启用[`PersistentVolumeClaimResize` 准入控制插件](https://kubernetes.io/docs/admin/admission-controllers/#persistentvolumeclaimresize)来执行对可调整大小的卷的其他验证。
+管理员可以通过将 `ExpandPersistentVolumes` 特性门设置为 true 来允许扩展持久卷声明。管理员还应该启用[`PersistentVolumeClaimResize` 准入控制插件](https://kubernetes.io/docs/admin/admission-controllers/#persistentvolumeclaimresize)来执行对可调整大小的卷的其他验证。
 
 一旦 `PersistentVolumeClaimResize` 准入插件已打开，将只允许其 `allowVolumeExpansion` 字段设置为 true 的存储类进行大小调整。
 
@@ -146,14 +146,14 @@ allowVolumeExpansion: true
 
 一旦功能门和前述准入插件打开后，用户就可以通过简单地编辑声明以请求更大的 `PersistentVolumeClaim` 卷。这反过来将触发 `PersistentVolume` 后端的卷扩展。
 
-在任何情况下都不会创建新的 `PersistentVolume` 来满足声明。 Kubernetes 将尝试调整现有 volume 来满足声明的要求。
+在任何情况下都不会创建新的 `PersistentVolume` 来满足声明。Kubernetes 将尝试调整现有 volume 来满足声明的要求。
 
-对于扩展包含文件系统的卷，只有在 ReadWrite 模式下使用 `PersistentVolumeClaim` 启动新的 Pod 时，才会执行文件系统调整大小。换句话说，如果正在扩展的卷在 pod 或部署中使用，则需要删除并重新创建要进行文件系统调整大小的pod。此外，文件系统调整大小仅适用于以下文件系统类型：
+对于扩展包含文件系统的卷，只有在 ReadWrite 模式下使用 `PersistentVolumeClaim` 启动新的 Pod 时，才会执行文件系统调整大小。换句话说，如果正在扩展的卷在 pod 或部署中使用，则需要删除并重新创建要进行文件系统调整大小的 pod。此外，文件系统调整大小仅适用于以下文件系统类型：
 
 - XFS
 - Ext3、Ext4
 
-**注意**：扩展 EBS 卷是一个耗时的操作。另外，每6个小时有一个修改卷的配额。
+**注意**：扩展 EBS 卷是一个耗时的操作。另外，每 6 个小时有一个修改卷的配额。
 
 ## 持久化卷类型
 
@@ -174,7 +174,7 @@ allowVolumeExpansion: true
 - Glusterfs
 - VsphereVolume
 - Quobyte Volumes
-- HostPath （仅限于但节点测试—— 不会以任何方式支持本地存储，也无法在多节点集群中工作）
+- HostPath（仅限于但节点测试—— 不会以任何方式支持本地存储，也无法在多节点集群中工作）
 - VMware Photon
 - Portworx Volumes
 - ScaleIO Volumes
@@ -215,9 +215,9 @@ spec:
 
 ### 卷模式
 
-在 v1.9 之前，所有卷插件的默认行为是在持久卷上创建一个文件系统。在 v1.9 中，用户可以指定一个 volumeMode，除了文件系统之外，它现在将支持原始块设备。 volumeMode 的有效值可以是“Filesystem”或“Block”。如果未指定，volumeMode 将默认为“Filesystem”。这是一个可选的 API 参数。
+在 v1.9 之前，所有卷插件的默认行为是在持久卷上创建一个文件系统。在 v1.9 中，用户可以指定一个 volumeMode，除了文件系统之外，它现在将支持原始块设备。volumeMode 的有效值可以是“Filesystem”或“Block”。如果未指定，volumeMode 将默认为“Filesystem”。这是一个可选的 API 参数。
 
-**注意**：该功能在 V1.9 中是 alpha的，未来可能会更改。
+**注意**：该功能在 V1.9 中是 alpha 的，未来可能会更改。
 
 ### 访问模式
 
@@ -293,7 +293,7 @@ Kubernetes 管理员可以指定在节点上为挂载持久卷指定挂载选项
 - iSCSI
 - RBD （Ceph Block Device）
 - CephFS
-- Cinder （OpenStack 卷存储）
+- Cinder（OpenStack 卷存储）
 - Glusterfs
 - VsphereVolume
 - Quobyte Volumes
@@ -365,7 +365,7 @@ spec:
 
 PVC 不一定要请求类。其 `storageClassName` 设置为 `""` 的 PVC 始终被解释为没有请求类的 PV，因此只能绑定到没有类的 PV（没有注解或 `""`）。没有 `storageClassName` 的 PVC 根据是否打开[`DefaultStorageClass` 准入控制插件](https://kubernetes.io/docs/admin/admission-controllers/#defaultstorageclass)，集群对其进行不同处理。
 
-- 如果打开了准入控制插件，管理员可以指定一个默认的 `StorageClass`。所有没有 `StorageClassName` 的 PVC 将被绑定到该默认的 PV。通过在 `StorageClass` 对象中将注解 `storageclass.kubernetes.io/is-default-class` 设置为 “true” 来指定默认的 `StorageClass`。如果管理员没有指定缺省值，那么集群会响应 PVC 创建，就好像关闭了准入控制插件一样。如果指定了多个默认值，则准入控制插件将禁止所有 PVC 创建。
+- 如果打开了准入控制插件，管理员可以指定一个默认的 `StorageClass`。所有没有 `StorageClassName` 的 PVC 将被绑定到该默认的 PV。通过在 `StorageClass` 对象中将注解 `storageclass.kubernetes.io/is-default-class` 设置为“true”来指定默认的 `StorageClass`。如果管理员没有指定缺省值，那么集群会响应 PVC 创建，就好像关闭了准入控制插件一样。如果指定了多个默认值，则准入控制插件将禁止所有 PVC 创建。
 - 如果准入控制插件被关闭，则没有默认 `StorageClass` 的概念。所有没有 `storageClassName` 的 PVC 只能绑定到没有类的 PV。在这种情况下，没有 `storageClassName` 的 PVC 的处理方式与 `storageClassName` 设置为 `""` 的 PVC 的处理方式相同。
 
 根据安装方法的不同，默认的 `StorageClass` 可以在安装过程中通过插件管理器部署到 Kubernetes 集群。
@@ -488,7 +488,7 @@ spec:
 
 如果您正在编写在多种集群上运行并需要持久存储的配置模板或示例，我们建议您使用以下模式：
 
-- 要在您的在配置组合中包含 `PersistentVolumeClaim` 对象（与 Deployment、ConfigMap等一起）。
+- 要在您的在配置组合中包含 `PersistentVolumeClaim` 对象（与 Deployment、ConfigMap 等一起）。
 - 不要在配置中包含 `PersistentVolume` 对象，因为用户实例化配置可能没有创建 `PersistentVolume` 的权限。
 - 给用户在实例化模板时提供存储类名称的选项。
   - 如果用户提供存储类名称，则将该值放入 `persistentVolumeClaim.storageClassName` 字段中。如果集群具有由管理员启用的 StorageClass，这将导致 PVC 匹配正确的存储类别。

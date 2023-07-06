@@ -22,4 +22,4 @@ publication_link: "/cloud-native-infra"
 
 ### 许可证
 
-本书英文版版权属于 O’Reilly，中文版版权归属于机械工业出版，基于[署名-非商业性使用-相同方式共享 4.0（CC BY-NC-SA 4.0）](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)分享，本书为本人自行翻译，目的在于学习和巩固云原生知识，如有需要请[购买纸质书](https://item.jd.com/12432007.html)。
+本书英文版版权属于 O’Reilly，中文版版权归属于机械工业出版，基于[署名 - 非商业性使用 - 相同方式共享 4.0（CC BY-NC-SA 4.0）](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)分享，本书为本人自行翻译，目的在于学习和巩固云原生知识，如有需要请[购买纸质书](https://item.jd.com/12432007.html)。

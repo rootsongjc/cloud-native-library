@@ -7,15 +7,15 @@ type: book
 
 Service account 为 Pod 中的进程提供身份信息。
 
-*本文是关于 Service Account 的用户指南，管理指南另见 Service Account 的集群管理指南 。*
+*本文是关于 Service Account 的用户指南，管理指南另见 Service Account 的集群管理指南。*
 
 *注意：本文档描述的关于 Service Account 的行为只有当您按照 Kubernetes 项目建议的方式搭建起集群的情况下才有效。您的集群管理员可能在您的集群中有自定义配置，这种情况下该文档可能并不适用。*
 
-当您（真人用户）访问集群（例如使用`kubectl`命令）时，apiserver 会将您认证为一个特定的 User Account（目前通常是`admin`，除非您的系统管理员自定义了集群配置）。Pod 容器中的进程也可以与 apiserver 联系。 当它们在联系 apiserver 的时候，它们会被认证为一个特定的 Service Account（例如`default`）。
+当您（真人用户）访问集群（例如使用`kubectl`命令）时，apiserver 会将您认证为一个特定的 User Account（目前通常是`admin`，除非您的系统管理员自定义了集群配置）。Pod 容器中的进程也可以与 apiserver 联系。当它们在联系 apiserver 的时候，它们会被认证为一个特定的 Service Account（例如`default`）。
 
 ## 使用默认的 Service Account 访问 API server
 
-当您创建 pod 的时候，如果您没有指定一个 service account，系统会自动得在与该pod 相同的 namespace 下为其指派一个`default` service account。如果您获取刚创建的 pod 的原始 json 或 yaml 信息（例如使用`kubectl get pods/podename -o yaml`命令），您将看到`spec.serviceAccountName`字段已经被设置为 automatically 。
+当您创建 pod 的时候，如果您没有指定一个 service account，系统会自动得在与该 pod 相同的 namespace 下为其指派一个`default` service account。如果您获取刚创建的 pod 的原始 json 或 yaml 信息（例如使用`kubectl get pods/podename -o yaml`命令），您将看到`spec.serviceAccountName`字段已经被设置为 automatically。
 
 您可以在 pod 中使用自动挂载的 service account 凭证来访问 API，如 [Accessing the Cluster](https://kubernetes.io/docs/user-guide/accessing-the-cluster/#accessing-the-api-from-a-pod) 中所描述。
 
@@ -54,7 +54,7 @@ spec:
 kubectl create serviceaccount sample-sc
 ```
 这时候我们将得到一个在 default namespace 的 serviceaccount 账号；
-我们运行`kubectl get serviceaccount sample-sc` 将得到如下结果:
+我们运行`kubectl get serviceaccount sample-sc` 将得到如下结果：
 ```yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -74,7 +74,7 @@ secrets:
 因为我们在使用 serviceaccount 账号配置 kubeconfig 的时候需要使用到 sample-sc 的 token，
 该 token 保存在该 serviceaccount 保存的 secret 中；
 
-我们运行`kubectl get secret sample-sc-token-9x7nk` 将会得到如下结果:
+我们运行`kubectl get secret sample-sc-token-9x7nk` 将会得到如下结果：
 ```yaml
 apiVersion: v1
 data:
@@ -146,9 +146,9 @@ subjects:
 
 ### 配置 kubeconfig
 经过以上的步骤，我们最开始创建的 serviceaccount 就可以用来访问我们的集群了，
-同时我们可以动态更改 `ClusterRole` 的授权来及时控制某个账号的权限(这也是使用 serviceaccount 的好处)；
+同时我们可以动态更改 `ClusterRole` 的授权来及时控制某个账号的权限 (这也是使用 serviceaccount 的好处)；
 
-配置应该如下:
+配置应该如下：
 ```yaml
 apiVersion: v1
 clusters:
@@ -172,7 +172,7 @@ users:
     token: eyJhbGciOiJSUzI1NiIsInR5dffg6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6Im1vZmFuZy12aWV3ZXItc2MtdG9rZW4tOXg3bmsiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoibW9mYW5nLXZpZXdlci1zYyIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjxZTEyOWRjLWFmMWQtMTFlOC05NDUzLTAwMTYzZTBlZmFiMCIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0Om1vZmFuZy12aWV3ZXItc2MifQ.AjnvvnytZXruRwRtBwKtEw6V72iYMo9B6-XwVi3EhQysN3mO-rotaIBvGPYM0fMT9VG5cLQJbbVRhKGArrU2CQMV_ICsin1s21qMryvx36oZo1XfJVfUU0KjylgtD453fYO8JQ_XQw8cpUg94a6Zvop6GqsF4hsOK1N1LhdkHPiXp8O4PS2zx1W6I_xk6eCAr51EZpJKDY6G2hfgP9zlQ8gOWmgm-DV6Og3hn2xPZkeI-VMgaAwjgEPkUdRCJwXFOPDnTqyjRkYW7KUMF-5CLwA46L6NOb2zaDtS-zfnauQp-WHpSPt3DtW4RdKd5Cg17gtFihQg27vujabM0jfBjw
 ```
 
-## 使用多个Service Account
+## 使用多个 Service Account
 
 每个 namespace 中都有一个默认的叫做 `default` 的 service account 资源。
 
@@ -218,7 +218,7 @@ secrets:
 
 您可以使用授权插件来 [设置 service account 的权限](https://kubernetes.io/docs/admin/authorization/#a-quick-note-on-service-accounts) 。
 
-设置非默认的 service account，只需要在 pod 的`spec.serviceAccountName` 字段中将name设置为您想要用的 service account 名字即可。
+设置非默认的 service account，只需要在 pod 的`spec.serviceAccountName` 字段中将 name 设置为您想要用的 service account 名字即可。
 
 在 pod 创建之初 service account 就必须已经存在，否则创建将被拒绝。
 
@@ -232,7 +232,7 @@ $ kubectl delete serviceaccount/build-robot
 
 ## 手动创建 service account 的 API token
 
-假设我们已经有了一个如上文提到的名为 ”build-robot“ 的 service account，我们手动创建一个新的 secret。
+假设我们已经有了一个如上文提到的名为”build-robot“的 service account，我们手动创建一个新的 secret。
 
 ```bash
 $ cat > /tmp/build-robot-secret.yaml <<EOF

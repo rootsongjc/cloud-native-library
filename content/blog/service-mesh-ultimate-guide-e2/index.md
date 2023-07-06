@@ -19,7 +19,7 @@ links:
 ## 主要收获
 
 - 了解采用服务网格技术的新兴架构趋势，特别是多云、多集群和多租户模式，如何在异构基础设施（裸机、虚拟机和 Kubernetes）中部署服务网格解决方案，以及从边缘计算层到网格的应用 / 服务连接。
-- 了解服务网格生态系统中的一些新模式，如多集群服务网格、媒体服务网格（Media Service Mesh）和混沌网格，以及经典的微服务反模式，如 “死星（Death Star） “架构。
+- 了解服务网格生态系统中的一些新模式，如多集群服务网格、媒体服务网格（Media Service Mesh）和混沌网格，以及经典的微服务反模式，如“死星（Death Star） “架构。
 - 获取最新的关于在部署领域使用服务网格的创新总结，在 Pod（K8s 集群）和 VM（非 K8s 集群）之间进行快速实验、混乱工程和金丝雀部署。
 - 探索服务网格扩展领域的创新，包括：增强身份管理，以确保微服务连接的安全性，包括自定义证书授权插件，自适应路由功能，以提高服务的可用性和可扩展性，以及增强 sidecar 代理。
 - 了解操作方面即将出现的情况，如配置多集群功能和将 Kubernetes 工作负载连接到托管在虚拟机基础设施上的服务器，以及管理多集群服务网格中所有功能和 API 的开发者门户。
@@ -63,13 +63,13 @@ links:
 
 ### 结构
 
-服务网格模式主要侧重于处理传统上被称为 “东西向 “的基于远程过程调用（RPC）的流量：请求 / 响应类型的通信，源自数据中心内部，在服务之间传播。这与 API 网关或边缘代理相反，后者被设计为处理 “南北 “流量。来自外部的通信，进入数据中心内的一个终端或服务。
+服务网格模式主要侧重于处理传统上被称为“东西向“的基于远程过程调用（RPC）的流量：请求 / 响应类型的通信，源自数据中心内部，在服务之间传播。这与 API 网关或边缘代理相反，后者被设计为处理“南北“流量。来自外部的通信，进入数据中心内的一个终端或服务。
 
 ## 服务网格的特点
 
 服务网格的实施通常会提供以下一个或多个功能：
 
-- 规范化命名并增加逻辑路由，（例如，将代码级名称 “用户服务 " 映射到平台特定位置 “AWS-us-east-1a/prod/users/v4”。
+- 规范化命名并增加逻辑路由，（例如，将代码级名称“用户服务 " 映射到平台特定位置“AWS-us-east-1a/prod/users/v4”。
 - 提供流量整形和流量转移
 - 保持负载均衡，通常采用可配置的算法
 - 提供服务发布控制（例如，金丝雀释放和流量分割）
@@ -118,11 +118,11 @@ links:
 
 ## 服务网格架构：内部原理
 
-服务网格由两部分组成：数据平面和控制平面。Matt Klein，[Envoy Proxy](https://www.envoyproxy.io/) 的作者，写了一篇关于 “ [服务网格数据平面与控制平面 ](https://blog.envoyproxy.io/service-mesh-data-plane-vs-control-plane-2774e720f7fc)“的深入探讨。
+服务网格由两部分组成：数据平面和控制平面。Matt Klein，[Envoy Proxy](https://www.envoyproxy.io/) 的作者，写了一篇关于“ [服务网格数据平面与控制平面 ](https://blog.envoyproxy.io/service-mesh-data-plane-vs-control-plane-2774e720f7fc)“的深入探讨。
 
-广义上讲，数据平面 “执行工作”，负责 “有条件地翻译、转发和观察流向和来自 [网络终端] 的每个网络数据包”。在现代系统中，数据平面通常以代理的形式实现，（如 Envoy、[HAProxy](http://www.haproxy.org/) 或 [MOSN](https://github.com/mosn/mosn)），它作为 "sidecar" 与每个服务一起在进程外运行。Linkerd 使用了一种 [微型代理](https://linkerd.io/2020/12/03/why-linkerd-doesnt-use-envoy/)方法，该方法针对服务网格的使用情况进行了优化。
+广义上讲，数据平面“执行工作”，负责“有条件地翻译、转发和观察流向和来自 [网络终端] 的每个网络数据包”。在现代系统中，数据平面通常以代理的形式实现，（如 Envoy、[HAProxy](http://www.haproxy.org/) 或 [MOSN](https://github.com/mosn/mosn)），它作为 "sidecar" 与每个服务一起在进程外运行。Linkerd 使用了一种 [微型代理](https://linkerd.io/2020/12/03/why-linkerd-doesnt-use-envoy/)方法，该方法针对服务网格的使用情况进行了优化。
 
-控制平面 “监督工作”，并将数据平面的所有单个实例 —— 一组孤立的无状态 sidecar 代理变成一个分布式系统。控制平面不接触系统中的任何数据包 / 请求，相反，它允许人类运维人员为网格中所有正在运行的数据平面提供策略和配置。控制平面还能够收集和集中数据平面的遥测数据，供运维人员使用。
+控制平面“监督工作”，并将数据平面的所有单个实例 —— 一组孤立的无状态 sidecar 代理变成一个分布式系统。控制平面不接触系统中的任何数据包 / 请求，相反，它允许人类运维人员为网格中所有正在运行的数据平面提供策略和配置。控制平面还能够收集和集中数据平面的遥测数据，供运维人员使用。
 
 控制平面和数据平面的结合提供了两方面的优势，即策略可以集中定义和管理，同时，同样的政策可以以分散的方式，在 Kubernetes 集群的每个 pod 中本地执行。这些策略可以与安全、路由、断路器或监控有关。
 
@@ -140,7 +140,7 @@ Istio 架构，展示了控制平面和代理数据平面的交互方式（由 [
 
 服务网格提供动态服务发现和流量管理，包括用于测试的流量影子（复制），以及用于金丝雀发布和 A/B 实验的流量分割。
 
-服务网格中使用的代理通常是 “应用层 " 感知的（在 OSI 网络堆栈的第 7 层运行）。这意味着流量路由决策和指标的标记可以利用 HTTP 头或其他应用层协议元数据。
+服务网格中使用的代理通常是“应用层 " 感知的（在 OSI 网络堆栈的第 7 层运行）。这意味着流量路由决策和指标的标记可以利用 HTTP 头或其他应用层协议元数据。
 
 ### 服务间通信可靠性
 
@@ -148,11 +148,11 @@ Istio 架构，展示了控制平面和代理数据平面的交互方式（由 [
 
 ### 流量的可观测性
 
-由于服务网格处于系统内处理的每个请求的关键路径上，它还可以提供额外的 “可观测性”，例如请求的分布式追踪、HTTP 错误代码的频率以及全局和服务间的延迟。虽然在企业领域是一个被过度使用的短语，但服务网格经常被提议作为一种方法来捕获所有必要的数据，以实现整个系统内流量的统一界面视图。
+由于服务网格处于系统内处理的每个请求的关键路径上，它还可以提供额外的“可观测性”，例如请求的分布式追踪、HTTP 错误代码的频率以及全局和服务间的延迟。虽然在企业领域是一个被过度使用的短语，但服务网格经常被提议作为一种方法来捕获所有必要的数据，以实现整个系统内流量的统一界面视图。
 
 ### 通信安全
 
-服务网格还支持跨领域安全要求的实施和执行，如提供服务身份（通过 x509 证书），实现应用级服务 / 网络分割（例如，“服务 A" 可以与 “服务 B “通信，但不能与 “服务 C “通信），确保所有通信都经过加密（通过 TLS），并确保存在有效的用户级身份令牌或 “[护照](https://qconsf.com/sf2019/presentation/user-device-identity-microservices-netflix-scale) "。
+服务网格还支持跨领域安全要求的实施和执行，如提供服务身份（通过 x509 证书），实现应用级服务 / 网络分割（例如，“服务 A" 可以与“服务 B“通信，但不能与“服务 C“通信），确保所有通信都经过加密（通过 TLS），并确保存在有效的用户级身份令牌或“[护照](https://qconsf.com/sf2019/presentation/user-device-identity-microservices-netflix-scale) "。
 
 ## 反模式
 
@@ -164,7 +164,7 @@ Istio 架构，展示了控制平面和代理数据平面的交互方式（由 [
 
 ### 服务网格银弹
 
-在 IT 领域没有 “银弹 “这样的东西，但供应商有时会被诱惑给新技术贴上这个标签。服务网格不会解决微服务、Kubernetes 等容器编排器或云网络的所有通信问题。服务网格的目的只是促进服务件（东西向）的通信，而且部署和运行服务网格有明显的运营成本。
+在 IT 领域没有“银弹“这样的东西，但供应商有时会被诱惑给新技术贴上这个标签。服务网格不会解决微服务、Kubernetes 等容器编排器或云网络的所有通信问题。服务网格的目的只是促进服务件（东西向）的通信，而且部署和运行服务网格有明显的运营成本。
 
 ### 企业服务总线（ESB）2.0
 
@@ -180,7 +180,7 @@ Istio 架构，展示了控制平面和代理数据平面的交互方式（由 [
 
 当企业采用微服务架构，开发团队开始创建新的微服务或在应用中利用现有的服务时，服务间的通信成为架构的一个关键部分。如果没有一个良好的治理模式，这可能会导致不同服务之间的紧密耦合。当整个系统在生产中出现问题时，也将很难确定哪个服务出现了问题。
 
-如果缺乏服务沟通战略和治理模式，该架构就会变成所谓的 “死星架构”。
+如果缺乏服务沟通战略和治理模式，该架构就会变成所谓的“死星架构”。
 
 关于这种架构反模式的更多信息，请查看关于云原生架构采用的[第一部分](https://www.infoq.com/articles/cloud-native-architecture-adoption-part1/)、[第二部分](https://www.infoq.com/articles/cloud-native-architecture-adoption-part2/)和[第三部分的](https://www.infoq.com/articles/cloud-native-architecture-adoption-part3/)文章。
 
@@ -233,15 +233,15 @@ InfoQ 一直建议服务网格的采用者对每个产品进行自己的尽职�
 
 ## 服务网格的历史
 
-自 2013 年底 Airbnb 发布 [SmartStack](https://medium.com/airbnb-engineering/smartstack-service-discovery-in-the-cloud-4b8a080de619)，为新兴的 “ [微服务 ](https://www.infoq.com/microservices/)“风格架构提供进程外服务发现机制（使用 [HAProxy](http://www.haproxy.org/)）以来，InfoQ 一直在跟踪这个我们现在称之为 [服务网格](https://www.infoq.com/servicemesh/)的话题。许多之前被贴上 “独角兽 “标签的组织在此之前就在研究类似的技术。从 21 世纪初开始，谷歌就在开发其 [Stubby ](https://grpc.io/blog/principles/)RPC 框架，该框架演变成了 [gRPC](https://cloud.google.com/blog/products/gcp/grpc-a-true-internet-scale-rpc-framework-is-now-1-and-ready-for-production-deployments)，以及 [谷歌前端（GFE）](https://landing.google.com/sre/sre-book/chapters/production-environment/)和全局软件负载均衡器（GSLB），在 [Istio](https://istio.io/) 中可以看到它们的特质。在 2010 年代早期，Twitter 开始了 Scala 驱动的 [Finagle](https://twitter.github.io/finagle/) 的工作，[Linkerd](https://linkerd.io/) 服务网格由此产生。
+自 2013 年底 Airbnb 发布 [SmartStack](https://medium.com/airbnb-engineering/smartstack-service-discovery-in-the-cloud-4b8a080de619)，为新兴的“ [微服务 ](https://www.infoq.com/microservices/)“风格架构提供进程外服务发现机制（使用 [HAProxy](http://www.haproxy.org/)）以来，InfoQ 一直在跟踪这个我们现在称之为 [服务网格](https://www.infoq.com/servicemesh/)的话题。许多之前被贴上“独角兽“标签的组织在此之前就在研究类似的技术。从 21 世纪初开始，谷歌就在开发其 [Stubby ](https://grpc.io/blog/principles/)RPC 框架，该框架演变成了 [gRPC](https://cloud.google.com/blog/products/gcp/grpc-a-true-internet-scale-rpc-framework-is-now-1-and-ready-for-production-deployments)，以及 [谷歌前端（GFE）](https://landing.google.com/sre/sre-book/chapters/production-environment/)和全局软件负载均衡器（GSLB），在 [Istio](https://istio.io/) 中可以看到它们的特质。在 2010 年代早期，Twitter 开始了 Scala 驱动的 [Finagle](https://twitter.github.io/finagle/) 的工作，[Linkerd](https://linkerd.io/) 服务网格由此产生。
 
-2014 年底，Netflix 发布了[一整套基于 JVM 的实用程序](https://netflix.github.io/)，包括 [Prana](https://www.infoq.com/news/2014/12/netflix-prana/)，一个 “sidecar “程序，允许用任何语言编写的应用服务通过 HTTP 与库的独立实例进行通信。2016 年，NGINX 团队开始谈论 “[Fabric 模型](https://www.nginx.com/blog/microservices-reference-architecture-nginx-fabric-model/) "，这与服务网格非常相似，但需要使用他们的商业 NGINX Plus 产品来实现。另外，Linkerd v0.2 在 2016 年 2 月[发布](https://linkerd.io/2016/02/18/linkerd-twitter-style-operability-for-microservices/)，尽管该团队直到后来才开始称它为服务网格。
+2014 年底，Netflix 发布了[一整套基于 JVM 的实用程序](https://netflix.github.io/)，包括 [Prana](https://www.infoq.com/news/2014/12/netflix-prana/)，一个“sidecar“程序，允许用任何语言编写的应用服务通过 HTTP 与库的独立实例进行通信。2016 年，NGINX 团队开始谈论“[Fabric 模型](https://www.nginx.com/blog/microservices-reference-architecture-nginx-fabric-model/) "，这与服务网格非常相似，但需要使用他们的商业 NGINX Plus 产品来实现。另外，Linkerd v0.2 在 2016 年 2 月[发布](https://linkerd.io/2016/02/18/linkerd-twitter-style-operability-for-microservices/)，尽管该团队直到后来才开始称它为服务网格。
 
 服务网格历史上的其他亮点包括 2017 年 5 月的 [Istio](https://istio.io/)、2018 年 7 月的 [Linkerd 2.0](https://linkerd.io/2018/09/18/announcing-linkerd-2-0/)、2018 年 11 月的 [Consul Connect](https://www.hashicorp.com/products/consul/service-mesh) 和 [Gloo Mesh](https://github.com/solo-io/supergloo)、2019 年 5 月的 [服务网格接口（SMI）](https://smi-spec.io/)，以及 2019 年 9 月的 Maesh（现在叫 Traefik Mesh）和 Kuma。
 
-即使是在独角兽企业之外出现的服务网格，如 HashiCorp 的 [Consul](https://www.consul.io/)，也从上述技术中获得了灵感，通常旨在实现 CoreOS 提出的 “[GIFEE ](https://github.com/linearregression/GIFEE)“概念；所有人可用的 Google 基础设施（Google infrastructure for everyone else）。
+即使是在独角兽企业之外出现的服务网格，如 HashiCorp 的 [Consul](https://www.consul.io/)，也从上述技术中获得了灵感，通常旨在实现 CoreOS 提出的“[GIFEE ](https://github.com/linearregression/GIFEE)“概念；所有人可用的 Google 基础设施（Google infrastructure for everyone else）。
 
-为了深入了解现代服务网格概念的演变历史，[Phil Calçado](https://philcalcado.com/) 写了一篇全面的文章 “ [模式：服务网格](https://philcalcado.com/2017/08/03/pattern_service_mesh.html) "。
+为了深入了解现代服务网格概念的演变历史，[Phil Calçado](https://philcalcado.com/) 写了一篇全面的文章“ [模式：服务网格](https://philcalcado.com/2017/08/03/pattern_service_mesh.html) "。
 
 ## 服务网格标准
 
@@ -286,17 +286,17 @@ SMI 规范是在 [Apache License 2.0 版本下](http://www.apache.org/licenses/)
 
 ## 探索服务网格的未来
 
-[Kasun Indrasiri](https://www.infoq.com/profile/Kasun-Indrasiri/) 探讨了 “ [为事件驱动的消息传递使用服务网格的潜力](https://www.infoq.com/articles/service-mesh-event-driven-messaging/) "，他在其中讨论了在服务网格中实现消息传递支持的两种主要的新兴架构模式：协议代理 sidecar 和 HTTP 桥接 sidecar。这是服务网格社区中一个活跃的发展领域，在 [Envoy 中](https://github.com/envoyproxy/envoy/issues/2852)支持 [Apache Kafka 的](https://github.com/envoyproxy/envoy/issues/2852)工作引起了相当多的关注。
+[Kasun Indrasiri](https://www.infoq.com/profile/Kasun-Indrasiri/) 探讨了“ [为事件驱动的消息传递使用服务网格的潜力](https://www.infoq.com/articles/service-mesh-event-driven-messaging/) "，他在其中讨论了在服务网格中实现消息传递支持的两种主要的新兴架构模式：协议代理 sidecar 和 HTTP 桥接 sidecar。这是服务网格社区中一个活跃的发展领域，在 [Envoy 中](https://github.com/envoyproxy/envoy/issues/2852)支持 [Apache Kafka 的](https://github.com/envoyproxy/envoy/issues/2852)工作引起了相当多的关注。
 
-Christian Posta 之前在 “[Towards a Unified, Standard API for Consolidating Service Meshes ](https://www.infoq.com/articles/service-mesh-api-federating/)中写过关于服务网格使用标准化的尝试。这篇文章还讨论了 2019 年微软和合作伙伴在 KubeCon EU 上宣布的[服务网格接口（SMI）](https://cloudblogs.microsoft.com/opensource/2019/05/21/service-mesh-interface-smi-release/)。SMI 定义了一套通用和可移植的 API，旨在为开发人员提供不同服务网格技术的互操作性，包括 Istio、Linkerd 和 Consul Connect。
+Christian Posta 之前在“[Towards a Unified, Standard API for Consolidating Service Meshes ](https://www.infoq.com/articles/service-mesh-api-federating/)中写过关于服务网格使用标准化的尝试。这篇文章还讨论了 2019 年微软和合作伙伴在 KubeCon EU 上宣布的[服务网格接口（SMI）](https://cloudblogs.microsoft.com/opensource/2019/05/21/service-mesh-interface-smi-release/)。SMI 定义了一套通用和可移植的 API，旨在为开发人员提供不同服务网格技术的互操作性，包括 Istio、Linkerd 和 Consul Connect。
 
 将服务网格与平台结构整合的主题可以进一步分为两个子主题。
 
-首先，正在进行的工作是减少由服务网格数据平面引入的网络开销。这包括[数据平面开发工具包（DPDK）](https://www.dpdk.org/)，它是一个[用户空间应用程序](https://www.linuxjournal.com/content/userspace-networking-dpdk)，“绕过了 Linux 内核网络堆栈，直接与网络硬件对话”。还有 [Cilium 团队的](https://www.infoq.com/news/2018/03/cilium-linux-bpf/)基于 Linux 的 BPF 解决方案，它利用 Linux 内核中的扩展[伯克利包过滤器（eBPF）功能](https://cilium.io/blog/istio/)来实现 “非常有效的网络、策略执行和负载均衡功能”。另一个团队正在用[网络服务网格（Network Service Mesh）](https://github.com/networkservicemesh/networkservicemesh/)将服务网格的概念映射到 L2/L3 有效载荷，试图 “以云原生的方式重新想象网络功能虚拟化（NFV）"。
+首先，正在进行的工作是减少由服务网格数据平面引入的网络开销。这包括[数据平面开发工具包（DPDK）](https://www.dpdk.org/)，它是一个[用户空间应用程序](https://www.linuxjournal.com/content/userspace-networking-dpdk)，“绕过了 Linux 内核网络堆栈，直接与网络硬件对话”。还有 [Cilium 团队的](https://www.infoq.com/news/2018/03/cilium-linux-bpf/)基于 Linux 的 BPF 解决方案，它利用 Linux 内核中的扩展[伯克利包过滤器（eBPF）功能](https://cilium.io/blog/istio/)来实现“非常有效的网络、策略执行和负载均衡功能”。另一个团队正在用[网络服务网格（Network Service Mesh）](https://github.com/networkservicemesh/networkservicemesh/)将服务网格的概念映射到 L2/L3 有效载荷，试图“以云原生的方式重新想象网络功能虚拟化（NFV）"。
 
 其次，有多项举措将服务网格与公共云平台更紧密地结合在一起，从 [AWS App Mesh](https://www.infoq.com/news/2019/01/aws-app-mesh/)、[GCP Traffic Director](https://www.infoq.com/news/2019/04/google-traffic-director/) 和 [Azure Service Fabric Mesh 的](https://www.infoq.com/articles/azure-service-fabric-mesh/)发布可见端倪。
 
-Buoyant 团队致力于为服务网格技术开发有效的以人为本的控制平面。他们最近发布了 [Buoyant Cloud](https://buoyant.io/cloud/)，一个基于 SaaS 的 “团队控制平面”，用于平台团队操作 Kubernetes。这个产品将在下面的章节中详细讨论。
+Buoyant 团队致力于为服务网格技术开发有效的以人为本的控制平面。他们最近发布了 [Buoyant Cloud](https://buoyant.io/cloud/)，一个基于 SaaS 的“团队控制平面”，用于平台团队操作 Kubernetes。这个产品将在下面的章节中详细讨论。
 
 自去年以来，在服务网格领域也有一些创新。
 
@@ -322,7 +322,7 @@ Chaos Mesh 隐藏了底层的实现细节，因此应用开发者可以专注于
 
 ### 服务网格作为一种服务
 
-一些服务网格供应商，如 Buoyant，正在提供管理服务网格或 “服务网格作为一种服务 “的解决方案。今年早些时候，Buoyant [宣布](https://buoyant.io/newsroom/buoyant-cloud-offers-managed-service-mesh/)公开测试发布一个名为 [Buoyant Cloud 的](http://buoyant.io/cloud) SaaS 应用程序，允许客户组织利用 Linkerd 服务网格的按需支持功能来管理服务网格。
+一些服务网格供应商，如 Buoyant，正在提供管理服务网格或“服务网格作为一种服务“的解决方案。今年早些时候，Buoyant [宣布](https://buoyant.io/newsroom/buoyant-cloud-offers-managed-service-mesh/)公开测试发布一个名为 [Buoyant Cloud 的](http://buoyant.io/cloud) SaaS 应用程序，允许客户组织利用 Linkerd 服务网格的按需支持功能来管理服务网格。
 
 Buoyant Cloud 解决方案提供的一些功能包括如下：
 
@@ -390,7 +390,7 @@ Buoyant Cloud 解决方案提供的一些功能包括如下：
 
 Envoy 是一个云原生代理，最初是由 Lyft 团队设计和构建的。Envoy 经常被用作服务网格的数据平面。然而，为了被认为是一个服务网格，Envoy 必须与控制平面一起使用，这样才能使这些技术集合成为一个服务网格。控制平面可以是简单的集中式配置文件库和指标收集器，也可以是全面 / 复杂的 Istio。
 
-### Istio 和 “服务网格 " 这两个词可以互换使用吗？
+### Istio 和“服务网格 " 这两个词可以互换使用吗？
 
 不，Istio 是服务网格的一种。由于 Istio 在服务网格类别出现时很受欢迎，一些人将 Istio 和服务网格混为一谈。这个混淆的问题并不是服务网格所独有的，同样的挑战发生在 Docker 和容器技术上。
 

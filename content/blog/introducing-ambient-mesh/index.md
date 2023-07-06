@@ -48,7 +48,7 @@ Ztunnel 实现了服务网格的核心功能：零信任。当为命名空间启
 
 在启用 Ambient Mesh 和创建安全覆盖后，可以配置命名空间以利用 L7 功能。这允许命名空间实现全套的 Istio 功能，包括 [Virtual Service API](https://istio.io/latest/docs/reference/config/networking/virtual-service/)、[L7 遥测](https://istio.io/latest/docs/reference/config/telemetry/)和 [L7 授权策略](https://istio.io/latest/docs/reference/config/security/authorization-policy/)。以这种模式运行的命名空间使用一个或多个基于 Envoy 的 **Waypoint proxy**（路径点代理）来处理该命名空间的工作负载的 L7 处理。Istio 的控制平面将集群中的 ztunnel 配置为通过 waypoint 代理传递所有需要 L7 处理的流量。重要的是，从 Kubernetes 的角度来看，waypoint 代理只是普通的 pod，可以像其他 Kubernetes 部署一样进行自动扩展。我们预计这将为用户节省大量资源，因为路径代理可以自动扩展，以适应它们所服务的命名空间的实时流量需求，而不是运营人员预期的最大最坏情况下的负载。
 
-![当需要额外的功能时，Ambient Mesh 会部署路径代理，Ztunnel通过这些代理进行连接以执行策略。](e6c9d24ely1h5yzsd8vv8j21wj0u00vx.jpg)
+![当需要额外的功能时，Ambient Mesh 会部署路径代理，Ztunnel 通过这些代理进行连接以执行策略。](e6c9d24ely1h5yzsd8vv8j21wj0u00vx.jpg)
 
 Ambient Mesh 使用 **HTTP CONNECT over mTLS** 来实现其安全隧道，并在路径中插入 waypoint 代理，这种模式我们称之为 **HBONE**（HTTP-Based Overlay Network Environment，基于 HTTP 的重叠网络环境）。HBONE 提供了比 TLS 本身更干净的流量封装，同时实现了与普通负载均衡器基础设施的互操作性。默认使用 FIPS 构建，以满足合规性需求。关于 HBONE 的更多细节，其基于标准的方法，以及 UDP 和其他非 TCP 协议的计划，将在未来的博客中提供。
 

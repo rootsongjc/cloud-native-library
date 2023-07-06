@@ -44,7 +44,7 @@ https://github.com/tetratelabs/istio-vault-ext-certs
 
 - 如果 `istio-system` 中存在 `cacerts` 秘密，将被挂载。它可能包含一个可选的 `root-cert.pem`，
 带有额外的根和可选的 `{ca-key, ca-cert, cert-chain}.pem` 由用户提供的根 CA。
-- 如果未找到用户提供的根 CA，则使用 `istio-ca-secret` Secret ，以及 `ca-cert.pem` 和 `ca-key.pem` 文件。
+- 如果未找到用户提供的根 CA，则使用 `istio-ca-secret` Secret，以及 `ca-cert.pem` 和 `ca-key.pem` 文件。
 - 如果两者均未找到，将创建 `istio-ca-secret`。
 - 带有 `caTLSRootCert` 文件的 `istio-security` ConfigMap 将用于根证书，并在需要时创建。该 ConfigMap 由节点代理使用，不再可能在 sds-agent 中使用，但我们仍保留它以向后兼容。将与 node-agent 一起删除。sds-agent 使用 K8S root 直接调用 `NewCitadelClient` 。
 

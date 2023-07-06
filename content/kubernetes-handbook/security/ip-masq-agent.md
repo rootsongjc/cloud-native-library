@@ -17,7 +17,7 @@ kubectl create -f https://raw.githubusercontent.com/kubernetes-incubator/ip-masq
 
 关于 ip-masq-agent 的更多信息请参考 [该文档](https://github.com/kubernetes-incubator/ip-masq-agent)。
 
-在大多数情况下，默认的一套规则应该是足够的；但是，如果内置的规则不适用于您的集群，您可以创建并应用 ConfigMap 来自定义受影响的 IP 范围。例如，为了仅允许 ip-masq-agent 考虑 10.0.0.0/8，您可以在名为 “config” 的文件中创建以下 ConfigMap。
+在大多数情况下，默认的一套规则应该是足够的；但是，如果内置的规则不适用于您的集群，您可以创建并应用 ConfigMap 来自定义受影响的 IP 范围。例如，为了仅允许 ip-masq-agent 考虑 10.0.0.0/8，您可以在名为“config”的文件中创建以下 ConfigMap。
 
 ```yaml
 nonMasqueradeCIDRs:
@@ -75,15 +75,15 @@ ip-masq-agent 用户配置 iptables 规则将 Pod 的 IP 地址隐藏在集群 n
 
   本地链路地址是仅能在主机连接的网段或广播域内进行有效通信的网络地址。IPv4 的链路本地地址在 CIDR 表示法定义的地址块是 169.254.0.0/16。
 
-Ip-masq-agent 在将流量发送到集群 node 节点的 IP 和 Cluster IP 范围之外的目的地时，会配置 iptables 规则来处理伪装的 node/pod IP 地址。这基本上将 pod 的 IP 地址隐藏在了集群 node 节点的 IP 地址后面。在某些环境中，到 “外部” 地址的流量必须来自已知的机器地址。例如，在 Google Cloud 中，到互联网的任何流量必须来自虚拟机的 IP。当使用容器时，如在GKE中，Pod IP 将被拒绝作为出口。为了避免这种情况，我们必须将 Pod IP 隐藏在 VM 自己的 IP 地址之后——通常被称为 “伪装”。默认情况下，配置代理将指定的三个专用 IP 范围视为非伪装 [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)。范围包括 10.0.0.0/8、172.16.0.0/12 和 192.168.0.0/16。默认情况下，代理还将本地链路（169.254.0.0/16）视为非伪装 CIDR。代理配置为每隔60秒从 */etc/config/ip-masq-agent* 位置重新加载其配置，这也是可配置的。
+Ip-masq-agent 在将流量发送到集群 node 节点的 IP 和 Cluster IP 范围之外的目的地时，会配置 iptables 规则来处理伪装的 node/pod IP 地址。这基本上将 pod 的 IP 地址隐藏在了集群 node 节点的 IP 地址后面。在某些环境中，到“外部”地址的流量必须来自已知的机器地址。例如，在 Google Cloud 中，到互联网的任何流量必须来自虚拟机的 IP。当使用容器时，如在 GKE 中，Pod IP 将被拒绝作为出口。为了避免这种情况，我们必须将 Pod IP 隐藏在 VM 自己的 IP 地址之后——通常被称为“伪装”。默认情况下，配置代理将指定的三个专用 IP 范围视为非伪装 [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)。范围包括 10.0.0.0/8、172.16.0.0/12 和 192.168.0.0/16。默认情况下，代理还将本地链路（169.254.0.0/16）视为非伪装 CIDR。代理配置为每隔 60 秒从 */etc/config/ip-masq-agent* 位置重新加载其配置，这也是可配置的。
 
-![IP伪装代理示意图](../../images/ip-masq.png "IP伪装代理示意图")
+![IP 伪装代理示意图](../../images/ip-masq.png "IP伪装代理示意图")
 
 代理的配置文件必须使用 yaml 或 json 语法，并且包含以下三个可选的 key：
 
 - **nonMasqueradeCIDRs**：使用 [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing) 表示法指定的非伪装范围的字符串列表。
-- **masqLinkLocal**：一个布尔值（true/false），表示是否将流量伪装成本地链路前缀 169.254.0.0/16。默认为false。
-- **resyncInterval**：代理尝试从磁盘重新加载配置的时间间隔。例如 ’30s’ 其中 ‘s’ 是秒，’ms’ 是毫秒等…
+- **masqLinkLocal**：一个布尔值（true/false），表示是否将流量伪装成本地链路前缀 169.254.0.0/16。默认为 false。
+- **resyncInterval**：代理尝试从磁盘重新加载配置的时间间隔。例如’30s’其中‘s’是秒，’ms’是毫秒等…
 
 到 10.0.0.0/8、172.16.0.0/12 和 192.168.0.0/16 范围的流量将不会被伪装。任何其他流量（假定是互联网）将被伪装。这里有个例子，来自 pod 的本地目的地址可以是其节点的 IP 地址、其他节点的地址或 Cluster IP 范围中的一个 IP 地址。其他任何流量都将默认伪装。以下条目显示 ip-masq-agent 应用的默认规则集：
 

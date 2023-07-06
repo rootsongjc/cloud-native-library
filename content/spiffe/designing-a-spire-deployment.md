@@ -195,7 +195,7 @@ SPIRE 代理包括一个 Kubernetes 工作负载验证器插件。该插件首�
 
 ### 增加 Sidecar
 
-对于尚未适应使用工作负载 API 的工作负载（见第 7 章：与其他机构的集成中的本地 SPIFFE 支持一节），Kubernetes 可以很容易地添加支持的 sidecar。Sidecar 可以是一个 SPIFFE 感知的代理，比如 Envoy。或者，它可以是一个与 SPIRE 一起开发的 sidecar，名为 “SPIFFE Helper"，它监控工作负载 API，并在其 SVID 发生变化时重新配置工作负载。
+对于尚未适应使用工作负载 API 的工作负载（见第 7 章：与其他机构的集成中的本地 SPIFFE 支持一节），Kubernetes 可以很容易地添加支持的 sidecar。Sidecar 可以是一个 SPIFFE 感知的代理，比如 Envoy。或者，它可以是一个与 SPIRE 一起开发的 sidecar，名为“SPIFFE Helper"，它监控工作负载 API，并在其 SVID 发生变化时重新配置工作负载。
 
 ![图 6.11：与 sidecar 容器一起部署的 Kubernetes 集群中的工作负载。](../images/f6-11.jpg)
 

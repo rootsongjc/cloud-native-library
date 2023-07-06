@@ -291,7 +291,7 @@ HTTPRoute 的规范中包括：
 
 `ReferenceGrant` 可用于在 Gateway API 中启用跨命名空间引用。特别是，路由可能会将流量转发到其他命名空间中的后端，或者 Gateway 可能会引用另一个命名空间中的 Secret。
 
-过去，我们已经看到跨命名空间边界转发流量是一种理想的功能，但如果没有 `ReferenceGrant` 之类的保护措施， 就会出现[漏洞](https://github.com/kubernetes/kubernetes/issues/103675)。
+过去，我们已经看到跨命名空间边界转发流量是一种理想的功能，但如果没有 `ReferenceGrant` 之类的保护措施，就会出现[漏洞](https://github.com/kubernetes/kubernetes/issues/103675)。
 
 如果从其命名空间外部引用一个对象，则该对象的所有者必须创建一个 `ReferenceGrant` 资源以显式允许该引用，否则跨命名空间引用是无效的。
 
@@ -302,7 +302,7 @@ HTTPRoute 的规范中包括：
 如何将 Route 附加到网关以实现不同的组织策略和责任范围有很大的灵活性。下面是 Gateway 和 Route 可以具有的关系：
 
 - **一对一**：Gateway 和 Route 可以由单个所有者部署和使用，具有一对一的关系。
-- **一对多**： Gateway 可以绑定许多 Route，这些 Route 由来自不同命名空间的不同团队拥有。
+- **一对多**：Gateway 可以绑定许多 Route，这些 Route 由来自不同命名空间的不同团队拥有。
 - **多对一**：Route 也可以绑定到多个 Gateway，允许单个 Route 同时控制跨不同 IP、负载均衡器或网络的应用程序。
 
 ### 路由绑定
@@ -467,7 +467,7 @@ spec:
 1. 客户端向 `http://foo.example.com` 发出请求。
 2. DNS 将该名称解析为 `Gateway` 地址。
 3. 反向代理在 `Listener` 上接收请求，并使用 `Host`  header 来匹配 `HTTPRoute`。
-4. 可选地，反向代理可以根据 `HTTPRoute` 中的 `match` 规则执行请求 header和 / 或路径匹配。
+4. 可选地，反向代理可以根据 `HTTPRoute` 中的 `match` 规则执行请求 header 和 / 或路径匹配。
 5. 可选地，反向代理可以根据 `HTTPRoute` 中的 `filter` 规则修改请求，即添加 / 删除 header。
 6. 最后，反向代理可以根据 `HTTPRoute` 中的 `forwardTo` 规则，将请求转发到集群中的一个或多个对象，即 `Service`。
 
@@ -494,7 +494,7 @@ spec:
 | TLS        | 终止     | TCPRoute       |
 | HTTPS      | 终止     | HTTPRoute      |
 
-请注意，在`Passthrough`（直通） TLS 模式下，没有 TLS 设置生效，因为来自客户端的 TLS 会话不会在网关处终止。本文的其余部分假定 TLS 在网关处终止，这是默认设置。
+请注意，在`Passthrough`（直通）TLS 模式下，没有 TLS 设置生效，因为来自客户端的 TLS 会话不会在网关处终止。本文的其余部分假定 TLS 在网关处终止，这是默认设置。
 
 ### 下游 TLS
 

@@ -9,7 +9,7 @@ type: book
 
 标准 Cilium Kubernetes 部署的配置包括几个 Kubernetes 资源：
 
-- `DaemonSet ` 资源：描述部署到每个 Kubernetes 节点的 Cilium pod 。这个 pod 运行 `cilium-agent` 和相关的守护进程。这个 DaemonSet 的配置包括指示 Cilium docker 容器的确切版本（例如 v1.0.0）的镜像标签和传递给 `cilium-agent` 的命令行选项。
+- `DaemonSet ` 资源：描述部署到每个 Kubernetes 节点的 Cilium pod。这个 pod 运行 `cilium-agent` 和相关的守护进程。这个 DaemonSet 的配置包括指示 Cilium docker 容器的确切版本（例如 v1.0.0）的镜像标签和传递给 `cilium-agent` 的命令行选项。
 - 资源：描述传递给 `cilium-agent` 的`ConfigMap` 常用配置值，例如 kvstore 端点和凭据、启用/禁用调试模式等。
 - `ServiceAccount`、`ClusterRole` 和 `ClusterRoleBindings 资源：当启用 Kubernetes RBAC 时，`cilium-agent` 用于访问 Kubernetes API 服务器的身份和权限。
 - 资源：如果 `Secret` 需要，描述用于访问 etcd kvstore 的凭据。

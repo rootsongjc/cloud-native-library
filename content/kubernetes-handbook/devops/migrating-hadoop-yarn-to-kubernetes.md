@@ -5,13 +5,13 @@ date: '2022-05-21T00:00:00+08:00'
 type: book
 ---
 
-本文档不是说明如何在 kubernetes 中开发和部署应用程序，如果您想要直接开发应用程序在 kubernetes 中运行可以参考 [适用于kubernetes的应用开发部署流程](../deploy-applications-in-kubernetes)。
+本文档不是说明如何在 kubernetes 中开发和部署应用程序，如果您想要直接开发应用程序在 kubernetes 中运行可以参考 [适用于 kubernetes 的应用开发部署流程](../deploy-applications-in-kubernetes)。
 
-本文旨在说明如何将已有的应用程序尤其是传统的分布式应用程序迁移到 kubernetes 中。如果该类应用程序符合云原生应用规范（如12因素法则）的话，那么迁移会比较顺利，否则会遇到一些麻烦甚至是阻碍。具体请参考 [迁移至云原生应用架构](../../../migrating-to-cloud-native-application-architectures)。
+本文旨在说明如何将已有的应用程序尤其是传统的分布式应用程序迁移到 kubernetes 中。如果该类应用程序符合云原生应用规范（如 12 因素法则）的话，那么迁移会比较顺利，否则会遇到一些麻烦甚至是阻碍。具体请参考 [迁移至云原生应用架构](../../../migrating-to-cloud-native-application-architectures)。
 
 下图是将单体应用迁移到云原生的步骤。
 
-![将单体应用迁移到云原生(图片来自 DevOpsDay Toronto)](../../images/migrating-monolith-to-kubernetes.jpg "将单体应用迁移到云原生(图片来自DevOpsDay Toronto)")
+![将单体应用迁移到云原生 (图片来自 DevOpsDay Toronto)](../../images/migrating-monolith-to-kubernetes.jpg "将单体应用迁移到云原生(图片来自DevOpsDay Toronto)")
 
 接下来我们将以 Spark on YARN with kubernetes 为例来说明，该例子足够复杂也很有典型性，了解了这个例子可以帮助大家将自己的应用迁移到 kubernetes 集群上去。
 
@@ -19,7 +19,7 @@ type: book
 
 ![spark on yarn with kubernetes](../../images/spark-on-yarn-with-kubernetes.png "spark on yarn with kubernetes")
 
-**注意： 该例子仅用来说明具体的步骤划分和复杂性，在生产环境应用还有待验证，请谨慎使用。**
+**注意：该例子仅用来说明具体的步骤划分和复杂性，在生产环境应用还有待验证，请谨慎使用。**
 
 ## 术语
 

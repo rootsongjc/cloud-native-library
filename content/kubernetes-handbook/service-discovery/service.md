@@ -5,7 +5,7 @@ date: '2022-05-21T00:00:00+08:00'
 type: book
 ---
 
-Kubernetes [`Pod`](https://kubernetes.io/docs/user-guide/pods) 是有生命周期的，它们可以被创建，也可以被销毁，然而一旦被销毁生命就永远结束。通过 [`ReplicationController`](https://kubernetes.io/docs/user-guide/replication-controller) 能够动态地创建和销毁 `Pod`。 每个 `Pod` 都会获取它自己的 IP 地址，即使这些 IP 地址不总是稳定可依赖的。这会导致一个问题：在 Kubernetes 集群中，如果一组 `Pod`（称为 backend）为其它 `Pod` （称为 frontend）提供服务，那么 frontend Pod 该如何发现和连接哪些 backend Pod 呢？
+Kubernetes [`Pod`](https://kubernetes.io/docs/user-guide/pods) 是有生命周期的，它们可以被创建，也可以被销毁，然而一旦被销毁生命就永远结束。通过 [`ReplicationController`](https://kubernetes.io/docs/user-guide/replication-controller) 能够动态地创建和销毁 `Pod`。每个 `Pod` 都会获取它自己的 IP 地址，即使这些 IP 地址不总是稳定可依赖的。这会导致一个问题：在 Kubernetes 集群中，如果一组 `Pod`（称为 backend）为其它 `Pod` （称为 frontend）提供服务，那么 frontend Pod 该如何发现和连接哪些 backend Pod 呢？
 
 ## 关于 `Service`
 
@@ -36,7 +36,7 @@ spec:
       targetPort: 9376
 ```
 
-上述配置将创建一个名称为 “my-service” 的 `Service` 对象，它会将请求代理到 9376 TCP 端口，具有标签 `"app=MyApp"` 的 `Pod` 上。这个 `Service` 将被指派一个 IP 地址（通常称为 “Cluster IP”），它会被服务的代理使用（见下面）。该 `Service` 的 selector 将会持续评估，处理结果将被 POST 到一个名称为 “my-service” 的 `Endpoints` 对象上。
+上述配置将创建一个名称为“my-service”的 `Service` 对象，它会将请求代理到 9376 TCP 端口，具有标签 `"app=MyApp"` 的 `Pod` 上。这个 `Service` 将被指派一个 IP 地址（通常称为“Cluster IP”），它会被服务的代理使用（见下面）。该 `Service` 的 selector 将会持续评估，处理结果将被 POST 到一个名称为“my-service”的 `Endpoints` 对象上。
 
 需要注意的是， `Service` 能够将一个接收端口映射到任意的 `targetPort`。默认情况下，`targetPort` 将被设置为与 `port` 字段相同的值。`targetPort` 可以是一个字符串，引用了 backend `Pod` 的端口的名称。但是，实际指派给该端口名称的端口号，在每个 backend `Pod` 中可能并不相同。对于部署和设计 `Service` ，这种方式会提供更大的灵活性。例如，可以在 backend 软件下一个版本中，修改 Pod 暴露的端口，并不会中断客户端的调用。
 
@@ -78,7 +78,7 @@ subsets:
       - port: 9376
 ```
 
-注意：Endpoint IP 地址不能是 loopback（127.0.0.0/8）、 link-local（169.254.0.0/16）、或者 link-local 多播（224.0.0.0/24）。
+注意：Endpoint IP 地址不能是 loopback（127.0.0.0/8）、link-local（169.254.0.0/16）、或者 link-local 多播（224.0.0.0/24）。
 
 访问没有 selector 的 `Service`，与有 selector 的 `Service` 的原理相同。请求将被路由到用户定义的 Endpoint（该示例中为 `1.2.3.4:9376`）。
 
@@ -101,20 +101,20 @@ spec:
 
 在 Kubernetes 集群中，每个 Node 运行一个 `kube-proxy` 进程。`kube-proxy` 负责为 `Service` 实现了一种 VIP（虚拟 IP）的形式，而不是 `ExternalName` 的形式。
 
-在 Kubernetes v1.0 版本，代理完全在 userspace，`Service` 是 “4层”（TCP/UDP over IP）概念。
+在 Kubernetes v1.0 版本，代理完全在 userspace，`Service` 是“4 层”（TCP/UDP over IP）概念。
 
-在 Kubernetes v1.1 版本，新增了 iptables 代理，但并不是默认的运行模式。新增了 `Ingress` API（beta 版），用来表示 “7层”（HTTP）服务。
+在 Kubernetes v1.1 版本，新增了 iptables 代理，但并不是默认的运行模式。新增了 `Ingress` API（beta 版），用来表示“7 层”（HTTP）服务。
 
 从 Kubernetes v1.2 起，默认就是 iptables 代理。
 
-在 Kubernetes v1.8.0-beta.0 中，添加了ipvs代理。
+在 Kubernetes v1.8.0-beta.0 中，添加了 ipvs 代理。
 
 ### userspace 代理模式
 
 这种模式，kube-proxy 会监视 Kubernetes master 对 `Service` 对象和 `Endpoints` 对象的添加和移除。
 对每个 `Service`，它会在本地 Node 上打开一个端口（随机选择）。
 
-任何连接到“代理端口”的请求，都会被代理到 `Service` 的backend `Pods` 中的某个上面（如 `Endpoints` 所报告的一样）。
+任何连接到“代理端口”的请求，都会被代理到 `Service` 的 backend `Pods` 中的某个上面（如 `Endpoints` 所报告的一样）。
 使用哪个 backend `Pod`，是基于 `Service` 的 `SessionAffinity` 来确定的。
 
 最后，它安装 iptables 规则，捕获到达该 `Service` 的 `clusterIP`（是虚拟 IP）和 `Port` 的请求，并重定向到代理端口，代理端口再代理请求到 backend `Pod`。
@@ -124,7 +124,7 @@ spec:
 默认的策略是，通过 round-robin 算法来选择 backend `Pod`。
 实现基于客户端 IP 的会话亲和性，可以通过设置 `service.spec.sessionAffinity` 的值为 `"ClientIP"` （默认值为 `"None"`）。
 
-![userspace代理模式下Service概览图](../../images/services-userspace-overview.jpg "userspace代理模式下Service概览图")
+![userspace 代理模式下 Service 概览图](../../images/services-userspace-overview.jpg "userspace代理模式下Service概览图")
 
 ### iptables 代理模式
 
@@ -137,13 +137,13 @@ spec:
 
 这应该比 userspace 代理更快、更可靠。然而，不像 userspace 代理，如果初始选择的 `Pod` 没有响应，iptables 代理不能自动地重试另一个 `Pod`，所以它需要依赖 [readiness probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#defining-readiness-probes)。
 
-![iptables代理模式下Service概览图](../../images/services-iptables-overview.jpg "iptables代理模式下Service概览图")
+![iptables 代理模式下 Service 概览图](../../images/services-iptables-overview.jpg "iptables代理模式下Service概览图")
 
 ### ipvs 代理模式
 
-这种模式，kube-proxy会监视Kubernetes `Service`对象和`Endpoints`，调用`netlink`接口以相应地创建ipvs规则并定期与Kubernetes `Service`对象和`Endpoints`对象同步ipvs规则，以确保ipvs状态与期望一致。访问服务时，流量将被重定向到其中一个后端Pod。
+这种模式，kube-proxy 会监视 Kubernetes `Service`对象和`Endpoints`，调用`netlink`接口以相应地创建 ipvs 规则并定期与 Kubernetes `Service`对象和`Endpoints`对象同步 ipvs 规则，以确保 ipvs 状态与期望一致。访问服务时，流量将被重定向到其中一个后端 Pod。
 
-与iptables类似，ipvs基于netfilter 的 hook 功能，但使用哈希表作为底层数据结构并在内核空间中工作。这意味着ipvs可以更快地重定向流量，并且在同步代理规则时具有更好的性能。此外，ipvs为负载均衡算法提供了更多选项，例如：
+与 iptables 类似，ipvs 基于 netfilter 的 hook 功能，但使用哈希表作为底层数据结构并在内核空间中工作。这意味着 ipvs 可以更快地重定向流量，并且在同步代理规则时具有更好的性能。此外，ipvs 为负载均衡算法提供了更多选项，例如：
 
 - `rr`：轮询调度
 - `lc`：最小连接数
@@ -152,9 +152,9 @@ spec:
 - `sed`：最短期望延迟
 - `nq`： 不排队调度
 
-**注意：** ipvs模式假定在运行kube-proxy之前在节点上都已经安装了IPVS内核模块。当kube-proxy以ipvs代理模式启动时，kube-proxy将验证节点上是否安装了IPVS模块，如果未安装，则kube-proxy将回退到iptables代理模式。
+**注意：** ipvs 模式假定在运行 kube-proxy 之前在节点上都已经安装了 IPVS 内核模块。当 kube-proxy 以 ipvs 代理模式启动时，kube-proxy 将验证节点上是否安装了 IPVS 模块，如果未安装，则 kube-proxy 将回退到 iptables 代理模式。
 
-![ipvs代理模式下Service概览图](../../images/service-ipvs-overview.png "ipvs代理模式下Service概览图")
+![ipvs 代理模式下 Service 概览图](../../images/service-ipvs-overview.png "ipvs代理模式下Service概览图")
 
 ## 多端口 Service
 
@@ -199,7 +199,7 @@ spec:
 
 ## 服务发现
 
-Kubernetes 支持2种基本的服务发现模式 —— 环境变量和 DNS。
+Kubernetes 支持 2 种基本的服务发现模式 —— 环境变量和 DNS。
 
 ### 环境变量
 
@@ -331,7 +331,7 @@ spec:
 
 对于一些常见的协议，包括 HTTP 和 HTTPS，你使用 ExternalName 可能会有问题。如果使用 ExternalName，那么你集群内的客户端使用的主机名与 ExternalName 引用的名称不同。
 
-对于使用主机名的协议，这种差异可能导致错误或意外的响应。HTTP请求将有一个源服务器不承认的 `Host: header`，TLS 服务器将不能提供与客户端连接的主机名相匹配的证书。
+对于使用主机名的协议，这种差异可能导致错误或意外的响应。HTTP 请求将有一个源服务器不承认的 `Host: header`，TLS 服务器将不能提供与客户端连接的主机名相匹配的证书。
 
 ### 外部 IP
 
@@ -362,11 +362,11 @@ spec:
 
 使用 userspace 代理，隐藏了访问 `Service` 的数据包的源 IP 地址。这使得一些类型的防火墙无法起作用。iptables 代理不会隐藏 Kubernetes 集群内部的 IP 地址，但却要求客户端请求必须通过一个负载均衡器或 Node 端口。
 
-`Type` 字段支持嵌套功能 —— 每一层需要添加到上一层里面。不会严格要求所有云提供商（例如，GCE 就没必要为了使一个 `LoadBalancer` 能工作而分配一个 `NodePort`，但是 AWS 需要 ），但当前 API 是强制要求的。
+`Type` 字段支持嵌套功能 —— 每一层需要添加到上一层里面。不会严格要求所有云提供商（例如，GCE 就没必要为了使一个 `LoadBalancer` 能工作而分配一个 `NodePort`，但是 AWS 需要），但当前 API 是强制要求的。
 
 ## 未来工作
 
-未来我们能预见到，代理策略可能会变得比简单的 round-robin 均衡策略有更多细微的差别，比如 master 选举或分片。我们也能想到，某些 `Service` 将具有 “真正” 的负载均衡器，这种情况下 VIP 将简化数据包的传输。
+未来我们能预见到，代理策略可能会变得比简单的 round-robin 均衡策略有更多细微的差别，比如 master 选举或分片。我们也能想到，某些 `Service` 将具有“真正”的负载均衡器，这种情况下 VIP 将简化数据包的传输。
 
 在未来的版本中，Kubernetes 打算改进对 L7（HTTP）`Service` 的支持。为 `Service` 实现更加灵活的请求进入模式，这些 `Service` 包含当前 `ClusterIP`、`NodePort` 和 `LoadBalancer` 模式等。
 
@@ -378,7 +378,7 @@ spec:
 
 Kubernetes 最主要的哲学之一，是用户不应该暴露那些能够导致他们操作失败、但又不是他们的过错的场景。这种场景下，让我们来看一下网络端口 —— 用户不应该必须选择一个端口号，而且该端口还有可能与其他用户的冲突。这就是说，在彼此隔离状态下仍然会出现失败。
 
-为了使用户能够为他们的 `Service` 选择一个端口号，我们必须确保不能有2个 `Service` 发生冲突。我们可以通过为每个 `Service` 分配它们自己的 IP 地址来实现。
+为了使用户能够为他们的 `Service` 选择一个端口号，我们必须确保不能有 2 个 `Service` 发生冲突。我们可以通过为每个 `Service` 分配它们自己的 IP 地址来实现。
 
 为了保证每个 `Service` 被分配到一个唯一的 IP，需要一个内部的分配器能够原子地更新 etcd 中的一个全局分配映射表，这个更新操作要先于创建每一个 `Service`。
 
@@ -387,13 +387,13 @@ Kubernetes 最主要的哲学之一，是用户不应该暴露那些能够导致
 
 ### IP 和 VIP
 
-不像 `Pod` 的 IP 地址，它实际路由到一个固定的目的地，`Service` 的 IP 实际上不能通过单个主机来进行应答。相反，我们使用 `iptables`（Linux 中的数据包处理逻辑）来定义一个虚拟IP地址（VIP），它可以根据需要透明地进行重定向。当客户端连接到 VIP 时，它们的流量会自动地传输到一个合适的 Endpoint。环境变量和 DNS，实际上会根据 `Service` 的 VIP 和端口来进行填充。
+不像 `Pod` 的 IP 地址，它实际路由到一个固定的目的地，`Service` 的 IP 实际上不能通过单个主机来进行应答。相反，我们使用 `iptables`（Linux 中的数据包处理逻辑）来定义一个虚拟 IP 地址（VIP），它可以根据需要透明地进行重定向。当客户端连接到 VIP 时，它们的流量会自动地传输到一个合适的 Endpoint。环境变量和 DNS，实际上会根据 `Service` 的 VIP 和端口来进行填充。
 
 #### Userspace
 
 作为一个例子，考虑前面提到的图片处理应用程序。
 
-当创建 backend `Service` 时，Kubernetes master 会给它指派一个虚拟 IP 地址，比如 10.0.0.1。假设 `Service` 的端口是 1234，该 `Service` 会被集群中所有的 `kube-proxy` 实例观察到。当代理看到一个新的 `Service`， 它会打开一个新的端口，建立一个从该 VIP 重定向到新端口的 iptables，并开始接收请求连接。
+当创建 backend `Service` 时，Kubernetes master 会给它指派一个虚拟 IP 地址，比如 10.0.0.1。假设 `Service` 的端口是 1234，该 `Service` 会被集群中所有的 `kube-proxy` 实例观察到。当代理看到一个新的 `Service`，它会打开一个新的端口，建立一个从该 VIP 重定向到新端口的 iptables，并开始接收请求连接。
 
 当一个客户端连接到一个 VIP，iptables 规则开始起作用，它会重定向该数据包到 `Service代理` 的端口。`Service代理` 选择一个 backend，并将客户端的流量代理到 backend 上。
 
@@ -403,7 +403,7 @@ Kubernetes 最主要的哲学之一，是用户不应该暴露那些能够导致
 
 再次考虑前面提到的图片处理应用程序。
 
-当创建 backend `Service` 时，Kubernetes master 会给它指派一个虚拟 IP 地址，比如 10.0.0.1。假设 `Service` 的端口是 1234，该 `Service` 会被集群中所有的 `kube-proxy` 实例观察到。当代理看到一个新的 `Service`， 它会安装一系列的 iptables 规则，从 VIP 重定向到 per-`Service` 规则。该 per-`Service` 规则连接到 per-`Endpoint` 规则，该 per-`Endpoint` 规则会重定向（目标 NAT）到 backend。
+当创建 backend `Service` 时，Kubernetes master 会给它指派一个虚拟 IP 地址，比如 10.0.0.1。假设 `Service` 的端口是 1234，该 `Service` 会被集群中所有的 `kube-proxy` 实例观察到。当代理看到一个新的 `Service`，它会安装一系列的 iptables 规则，从 VIP 重定向到 per-`Service` 规则。该 per-`Service` 规则连接到 per-`Endpoint` 规则，该 per-`Endpoint` 规则会重定向（目标 NAT）到 backend。
 
 当一个客户端连接到一个 VIP，iptables 规则开始起作用。一个 backend 会被选择（或者根据会话亲和性，或者随机），数据包被重定向到这个 backend。
 

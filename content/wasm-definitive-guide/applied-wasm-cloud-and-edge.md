@@ -30,7 +30,7 @@ type: book # Do not modify
 
 ## 我们的行业在不断发展
 
-在这样的背景下，当我谈到计算的“成本”时，我指的是时间成本、金钱成本、非弹性供应的机会成本、功耗成本和延迟成本。这些是我们最近试图最小化的成本。云计算是该战略的一部分，微服务和无服务器函数等架构设计也是如此。Apple 的 M1 设计是另一种。M1芯片中有两颗 CPU，一颗更注重性能，一颗更注重功耗。研究人员正在分析使用机器学习策略来命令 LLVM 操作以最大化性能或最小化功耗的复杂方法。应用程序代码没有改变，只是它的编译形式变了。
+在这样的背景下，当我谈到计算的“成本”时，我指的是时间成本、金钱成本、非弹性供应的机会成本、功耗成本和延迟成本。这些是我们最近试图最小化的成本。云计算是该战略的一部分，微服务和无服务器函数等架构设计也是如此。Apple 的 M1 设计是另一种。M1 芯片中有两颗 CPU，一颗更注重性能，一颗更注重功耗。研究人员正在分析使用机器学习策略来命令 LLVM 操作以最大化性能或最小化功耗的复杂方法。应用程序代码没有改变，只是它的编译形式变了。
 
 在何处以及如何使用计算资源来解决问题已成为成功 IT 战略的最重要方面之一。这包括高级和定制硬件，例如矢量化 CPU 指令[^2]、图形处理单元（GPU）、现场可编程门阵列（FPGA）[^3]、专用集成电路（ASIC）[^4] 和张量处理单元（TPU）[^5]。这些类型的硬件中的每一种都具有不同的功能、指令、成本和性能特征。将工作负载映射到这些元素将是以最小化一系列成本的方式进行编译的重要部分。
 
@@ -46,7 +46,7 @@ type: book # Do not modify
 
 我们有一个策略，通过基于容器的环境和 Kubernetes 驱动的基础设施在云中部署可扩展的基础设施。绝大多数在这方面做得很好的东西在移动设备或嵌入式系统中完全没有用。
 
-![图15-1. 区位和责任的连续性](../images/f15-1.png)
+![图 15-1. 区位和责任的连续性](../images/f15-1.png)
 
 WebAssembly 和 WASI 提供了一个很好的故事，涵盖了所有这些变化。我认为它们将在这个领域大放异彩。在撰写本文时，我想向你介绍一些领先的项目，但我希望这些项目在不久的将来会大幅扩展。
 
@@ -81,13 +81,13 @@ Lucet 运行时的一个特性是它能够在 50 微秒内实例化 WebAssembly 
 
 与 Compute@Edge 平台交互相当简单。你注册一个账户并获得对由令牌[^10]保护的 API 的访问权限。有一个命令行工具，用于启动项目并通过动态 DNS 条目将它们部署到生态系统中。目前，代码可以用 Rust、AssemblyScript 或 JavaScript 编写。许多功能目前处于测试阶段，但它们正在迅速发展并大量参与相关技术和标准的开发和管理。
 
-虽然需要注册才能在 Fastly 的系统上部署任意代码，但其基于 WebAssembly 的 Terrarium 平台很容易在浏览器中探索。它围绕 [WebAssembly StudioStudio](https://github.com/wasdk/WebAssemblyStudio)（译者注：该项目目前已于 2022 年 6 月 24 日归档） 构建，提供了一种简单的方法来体验在其平台上部署功能的便利性。
+虽然需要注册才能在 Fastly 的系统上部署任意代码，但其基于 WebAssembly 的 Terrarium 平台很容易在浏览器中探索。它围绕 [WebAssembly StudioStudio](https://github.com/wasdk/WebAssemblyStudio)（译者注：该项目目前已于 2022 年 6 月 24 日归档）构建，提供了一种简单的方法来体验在其平台上部署功能的便利性。
 
 访问 <https://wasm.fastlylabs.com> 开始构建。你应该会看到一个带有弹出窗口的网站，你可以从各种项目中进行选择。有用于 C、TypeScript 和基本 Wat 代码库的空项目。还有一些实际工作的 C 和 Rust 示例，例如通过 HTTPS 提交 DNS 查询、图像处理、获取远程数据的天气应用程序、与 GitHub 通信的 GraphQL 示例以及节流代理示例。
 
-选择其中一种项目类型后，浏览器将填充其关联结构。在本例中，我选择了C语言的图像处理实例。每个文件都可以浏览和编辑，但我只需单击如图 15-3 顶部的“Build & Deploy”按钮。请注意，为方便起见，它会为托管应用程序生成一个随机 DNS 名称。
+选择其中一种项目类型后，浏览器将填充其关联结构。在本例中，我选择了 C 语言的图像处理实例。每个文件都可以浏览和编辑，但我只需单击如图 15-3 顶部的“Build & Deploy”按钮。请注意，为方便起见，它会为托管应用程序生成一个随机 DNS 名称。
 
-![图 15-3. 编译部署C语言图像处理实例](../images/f15-3.png)
+![图 15-3. 编译部署 C 语言图像处理实例](../images/f15-3.png)
 
 如果你跟随生成的域，你将看到由所选文件 `main.c` 生成的 HTML，这只是为了清楚显示在图 15-4 中。
 
@@ -199,7 +199,7 @@ WasmEdge 提供的其他功能包括基于功能的安全性、RockDB 支持的�
 
 该示例包括指向 GitHub 存储库中实际代码的链接，以及通过命令行工具和浏览器构建、部署和调用此功能的过程的描述。提交 1927 年 Solvay 会议的著名图像的结果如图 15-6 所示[^13]。
 
-![图15-6. 在一张著名图片上调用 MTCNN 模型](../images/f15-6.png)
+![图 15-6. 在一张著名图片上调用 MTCNN 模型](../images/f15-6.png)
 
 从 REST API 调用复杂的函数本身并不令人震惊，令人震惊的是能够在可移植的高性能沙箱环境中安全地部署要运行的代码。从测试的角度来看，你可以在 Node.js 或其他地方本地运行相同的行为也很有用。
 
@@ -217,13 +217,13 @@ wasmCloud 提供了对基于云的基础设施的全面抽象。开发人员可�
 
 堆栈的底部是 WebAssembly 和 WASI。从这里开始，我们有一个可移植的安全架构，可以跨大量不同功能和资源的运行时和环境运行。与以前的沙盒环境不同，这使我们可以自由选择语言并获得高性能结果。该基础层如图 15-7 所示。
 
-![图15-7. wasmCloud 堆栈的 WebAssembly 基础](../images/f15-7.png)
+![图 15-7. wasmCloud 堆栈的 WebAssembly 基础](../images/f15-7.png)
 
 wasmCloud 扩展了 WebAssembly 的基础，包括签名包、减少样板代码、可组合角色模型以及水平和垂直可扩展性。它支持已部署业务功能的多租户无状态和隔离执行。这种层次结构的特征如图 15-8 所示。
 
 ![图 15-8. wasmCloud 的云层扩展了 WebAssembly 的基础](../images/f15-8.png)
 
-wasmCloud 基础的功能部分是参与者完成其执行模型所需的可热插拔的非功能依赖项。wasmCloud包含了一系列预定义的能力，比如数据存储、提供网络资源、消息队列等，这些都是可视化的，如图15-9 所示。
+wasmCloud 基础的功能部分是参与者完成其执行模型所需的可热插拔的非功能依赖项。wasmCloud 包含了一系列预定义的能力，比如数据存储、提供网络资源、消息队列等，这些都是可视化的，如图 15-9 所示。
 
 ![图 15-9. 能力为参与者提供非功能性需求](../images/f15-9.png)
 
@@ -244,7 +244,7 @@ wasmCloud 基础的功能部分是参与者完成其执行模型所需的可热�
 ## 注释
 
 [^1]: Parabon 目前专注于计算和 DNA 的交叉，用于下一代治疗和法医工具，例如用于解决悬案的工具。有一部基于它与 CeCe Moore 合作的热门电视节目，名为 The Genetic Detective。
-[^2]: 这包括一些技术，如[高级向量扩展 （AVX）](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions)  和[流式 SIMD 扩展（SSE）](https://en.wikipedia.org/wiki/Streaming_SIMD_Extensions)。
+[^2]: 这包括一些技术，如[高级向量扩展（AVX）](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions)  和[流式 SIMD 扩展（SSE）](https://en.wikipedia.org/wiki/Streaming_SIMD_Extensions)。
 [^3]: [FPGA](https://en.wikipedia.org/wiki/Field-programmable_gate_array) 允许根据需要将软件程序写到硬件上。
 [^4]: [ASIC](https://en.wikipedia.org/wiki/Application-specific_integrated_circuit) 代表高性能、低能耗、一次性使用的计算元件。
 [^5]: 谷歌开发了 [TPU](https://en.wikipedia.org/wiki/Tensor_Processing_Unit) 根据需要部署在需要提升性能的面向消费者的应用程序上。
@@ -253,7 +253,7 @@ wasmCloud 基础的功能部分是参与者完成其执行模型所需的可热�
 [^8]: 他在 [Twitter](https://twitter.com/solomonstre/status/1111004913222324225) 中这样说。
 [^9]: Fastly 公司开源的 [Lucet](https://www.fastly.com/blog/announcing-lucet-fastly-native-webassembly-compiler-runtime) 可以在网上找到。
 [^10]: 考虑到注册过程，我将不展示工作实例，但你可以在网上找到更多[细节](https://developer.fastly.com/learning/compute/)。
-[^11]: [DeisLabs 团队](https://deislabs.io/)主要由曾在Kubernetes软件包管理器Helm工作的人组成。
+[^11]: [DeisLabs 团队](https://deislabs.io/)主要由曾在 Kubernetes 软件包管理器 Helm 工作的人组成。
 [^12]: [httpie](https://httpie.io/) 是我最喜欢的 HTTP 命令行工具。
 [^13]: 很难强调这张照片中显示的集体智慧。其中有 17 位诺贝尔奖获得者。你可以在[维基百科](https://en.wikipedia.org/wiki/Solvay_Conference)上找到更多关于这张杰出照片及其来自集会的信息。
 [^14]: NATS 也是 CNCF 的一个官方孵化项目。

@@ -9,7 +9,7 @@ type: book
 
 ## ConfigMap 概览
 
-**ConfigMap API** 资源用来保存 **key-value pair** 配置数据，这个数据可以在 **pods** 里使用，或者被用来为像 **controller** 一样的系统组件存储配置数据。虽然 ConfigMap 跟 [Secrets](https://kubernetes.io/docs/user-guide/secrets/) 类似，但是 ConfigMap 更方便的处理不含敏感信息的字符串。 注意：ConfigMaps 不是属性配置文件的替代品。ConfigMaps 只是作为多个 properties 文件的引用。你可以把它理解为 Linux 系统中的 `/etc` 目录，专门用来存储配置文件的目录。下面举个例子，使用 ConfigMap 配置来创建 Kubernetes Volumes，ConfigMap 中的每个 data 项都会成为一个新文件。
+**ConfigMap API** 资源用来保存 **key-value pair** 配置数据，这个数据可以在 **pods** 里使用，或者被用来为像 **controller** 一样的系统组件存储配置数据。虽然 ConfigMap 跟 [Secrets](https://kubernetes.io/docs/user-guide/secrets/) 类似，但是 ConfigMap 更方便的处理不含敏感信息的字符串。注意：ConfigMaps 不是属性配置文件的替代品。ConfigMaps 只是作为多个 properties 文件的引用。你可以把它理解为 Linux 系统中的 `/etc` 目录，专门用来存储配置文件的目录。下面举个例子，使用 ConfigMap 配置来创建 Kubernetes Volumes，ConfigMap 中的每个 data 项都会成为一个新文件。
 
 ```yaml
 kind: ConfigMap
@@ -27,7 +27,7 @@ data:
     property.3=value-3
 ```
 
-`data` 一栏包括了配置数据，ConfigMap 可以被用来保存单个属性，也可以用来保存一个配置文件。 配置数据可以通过很多种方式在 Pods 里被使用。ConfigMaps 可以被用来：
+`data` 一栏包括了配置数据，ConfigMap 可以被用来保存单个属性，也可以用来保存一个配置文件。配置数据可以通过很多种方式在 Pods 里被使用。ConfigMaps 可以被用来：
 
 1. 设置环境变量的值
 2. 在容器里设置命令行参数
@@ -105,7 +105,7 @@ game.properties:        158 bytes
 ui.properties:          83 bytes
 ```
 
-我们可以看到那两个 key 是从 kubectl 指定的目录中的文件名。这些 key 的内容可能会很大，所以在 kubectl describe 的输出中，只能够看到键的名字和他们的大小。 如果想要看到键的值的话，可以使用 `kubectl get`：
+我们可以看到那两个 key 是从 kubectl 指定的目录中的文件名。这些 key 的内容可能会很大，所以在 kubectl describe 的输出中，只能够看到键的名字和他们的大小。如果想要看到键的值的话，可以使用 `kubectl get`：
 
 ```bash
 $ kubectl get configmaps game-config -o yaml

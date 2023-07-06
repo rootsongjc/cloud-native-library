@@ -3,7 +3,7 @@ title: Kubernetes 基础教程
 featured: true
 summary: 云原生应用架构实战手册
 tags:
-  - Handbook系列
+  - Handbook 系列
 date: 2017-03-10
 internal_link: kubernetes-handbook
 type: publication

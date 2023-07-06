@@ -34,9 +34,9 @@ GRmIiwicm9sZXMiOlsiY2VvIl19.dee-Ke6RzR0G9avaLNRZf1GUCDfe8Zbk9L2c7yaqKME
 
 有几种类型的 JSON Web 令牌，但我将重点介绍已签名的 JWT，因为它们是最常见的。签名的 JWT 也可以称为 JWS。它由三个部分组成，以句号分隔。
 
-有一个标头，在上面的JWT中以`eyJhbGc`开头。然后有一个主体或有效载荷，上面以`eyJhdWQ`开头。最后有一个签名，在示例JWT中以`dee-K`开头。
+有一个标头，在上面的 JWT 中以`eyJhbGc`开头。然后有一个主体或有效载荷，上面以`eyJhdWQ`开头。最后有一个签名，在示例 JWT 中以`dee-K`开头。
 
-JWT如何工作？让我们拆开这个示例JWT并深入了解一下。
+JWT 如何工作？让我们拆开这个示例 JWT 并深入了解一下。
 
 ##  JWT 标头解释
 
@@ -120,7 +120,7 @@ echo 'eyJhdWQiOiI4NWEwMzg2Ny1kY2NmLTQ4ODItYWRkZS0xYTc5YWVlYzUwZGYiLCJleHAiOjE2ND
 
 请注意，创建签名 JWT 的算法可以删除 base64 填充，因此 JWT 末尾可能缺少符号。您可能需要将其添加回去才能解码 JWT 令牌。这取决于内容的长度。您可以[在此处了解更多信息](https://datatracker.ietf.org/doc/html/rfc7515#appendix-C)。
 
-如上所述，负载是您的应用程序所关心的，所以让我们更仔细地看一下这个 JSON。对象的每个键都称为 “声明”（Claim）。
+如上所述，负载是您的应用程序所关心的，所以让我们更仔细地看一下这个 JSON。对象的每个键都称为“声明”（Claim）。
 
 一些声明是众所周知的，其含义由 IETF 等标准机构规定。您可以在此处查看[此类声明的示例](https://www.iana.org/assignments/jwt/jwt.xhtml)。这些包括示例令牌中的`iss`和`aud`声明。当它们出现在 JWT 的有效负载中时，这两者都具有定义的含义。
 

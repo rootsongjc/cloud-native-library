@@ -1,6 +1,6 @@
 ---
 weight: 22
-title: 附录K：RBAC RoleBinding 和 ClusterRoleBinding 示例
+title: 附录 K：RBAC RoleBinding 和 ClusterRoleBinding 示例
 date: '2022-05-18T00:00:00+08:00'
 type: book
 ---

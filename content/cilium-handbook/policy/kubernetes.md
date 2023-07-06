@@ -15,7 +15,7 @@ type: book
 - [通过 API 参考](https://docs.cilium.io/en/stable/api/#api-ref) 直接导入的网络策略适用于所有命名空间，除非如下所述指定命名空间选择器。
 
 {{<callout note 提示>}}
-虽然有意支持通过 `fromEndpoints` 和 `toEndpoints` 中的 `k8s:io.kubernetes.pod.namespace` 标签指定命名空间 。禁止在 `endpointSelector` 中指定命名空间，因为这将违反 Kubernetes 的命名空间隔离原则。`endpointSelector` 总是适用于与 `CiliumNetworkPolicy` 资源本身相关的命名空间的 pod。
+虽然有意支持通过 `fromEndpoints` 和 `toEndpoints` 中的 `k8s:io.kubernetes.pod.namespace` 标签指定命名空间。禁止在 `endpointSelector` 中指定命名空间，因为这将违反 Kubernetes 的命名空间隔离原则。`endpointSelector` 总是适用于与 `CiliumNetworkPolicy` 资源本身相关的命名空间的 pod。
 {{</callout>}}
 
 ###  示例：强制命名空间边界
@@ -103,7 +103,7 @@ spec:
 
 Kubernetes [服务账户](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/)用于将身份与 Kubernetes 管理的 pod 或进程相关联，并授予身份对 Kubernetes 资源和机密的访问权限。Cilium 支持基于 Pod 的服务账户身份来规范网络安全策略。
 
-Pod 的服务账户可以通过[服务账户准入控制器](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#serviceaccount)定义， 也可以直接在 Pod、Deployment、ReplicationController 资源中指定，如下所示：
+Pod 的服务账户可以通过[服务账户准入控制器](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#serviceaccount)定义，也可以直接在 Pod、Deployment、ReplicationController 资源中指定，如下所示：
 
 ```yaml
 apiVersion: v1
@@ -117,7 +117,7 @@ spec:
 
 ### 例子
 
-以下示例授予在 “luke” 服务账户下运行的任何 pod 向与 “leia” 服务账户关联的所有运行的 pod 发出 TCP 80 端口 80 上的 `HTTP GET /public` 请求。
+以下示例授予在“luke”服务账户下运行的任何 pod 向与“leia”服务账户关联的所有运行的 pod 发出 TCP 80 端口 80 上的 `HTTP GET /public` 请求。
 
 请参阅[示例 YAML 文件](https://raw.githubusercontent.com/cilium/cilium/1.11.6/examples/policies/kubernetes/serviceaccount/demo-pods.yaml) 以获取完整的功能示例，包括部署和服务账户资源。
 

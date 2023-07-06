@@ -37,4 +37,4 @@ Kubernetes 开发了服务抽象，它为用户提供了将网络流量负载平
 
 ## 延伸阅读
 
-Kubernetes 文档包含有关 [Kubernetes 网络模型](https://kubernetes.io/docs/concepts/cluster-administration/networking/)和 [Kubernetes 网络插件](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/)的更多背景信息 。
+Kubernetes 文档包含有关 [Kubernetes 网络模型](https://kubernetes.io/docs/concepts/cluster-administration/networking/)和 [Kubernetes 网络插件](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/)的更多背景信息。

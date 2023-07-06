@@ -26,7 +26,7 @@ API 文档见 [k8s-app-monitor-test](https://github.com/rootsongjc/k8s-app-monit
 
 我们知道 Kubernetes 在启动 Pod 的时候为容器注入环境变量，这些环境变量在所有的 namespace 中共享（环境变量是不断追加的，新启动的 Pod 中将拥有老的 Pod 中所有的环境变量，而老的 Pod 中的环境变量不变）。但是既然使用这些环境变量就已经可以访问到对应的 service，那么获取应用的地址信息，究竟是使用变量呢？还是直接使用 DNS 解析来发现？
 
-答案是使用 DNS，详细说明见 [Kubernetes中的服务发现与Docker容器间的环境变量传递源码探究](https://jimmysong.io/blog/exploring-kubernetes-env-with-docker/)。
+答案是使用 DNS，详细说明见 [Kubernetes 中的服务发现与 Docker 容器间的环境变量传递源码探究](https://jimmysong.io/blog/exploring-kubernetes-env-with-docker/)。
 
 ## 持续集成
 
@@ -34,7 +34,7 @@ API 文档见 [k8s-app-monitor-test](https://github.com/rootsongjc/k8s-app-monit
 
 构建流程见：https://app.wercker.com/jimmysong/k8s-app-monitor-agent/
 
-![wercker构建页面](../../images/k8s-app-monitor-agent-wercker.jpg "wercker构建页面")
+![wercker 构建页面](../../images/k8s-app-monitor-agent-wercker.jpg "wercker构建页面")
 
 生成了如下两个 docker 镜像：
 
@@ -146,7 +146,7 @@ kubectl apply -n default -f <(istioctl kube-inject -f k8s-app-monitor-istio-all-
 
 在对 *k8s-app-monitor-agent* 服务进行了 N 此访问之后，再访问 [`http://grafana.istio.jimmysong.io`](http://grafana.istio.jimmysong.io/) 可以看到 服务网格 的监控信息。
 
-![Grafana页面](../../images/k8s-app-monitor-istio-grafana.png "Grafana页面")
+![Grafana 页面](../../images/k8s-app-monitor-istio-grafana.png "Grafana页面")
 
 访问 `http://servicegraph.istio.jimmysong.io/dotviz` 可以看到服务的依赖和 QPS 信息。
 
@@ -154,6 +154,6 @@ kubectl apply -n default -f <(istioctl kube-inject -f k8s-app-monitor-istio-all-
 
 访问 `http://zipkin.istio.jimmysong.io` 可以选择查看 `k8s-app-monitor-agent` 应用的追踪信息。
 
-![Zipkin页面](../../images/k8s-app-monitor-istio-zipkin.jpg "Zipkin页面")
+![Zipkin 页面](../../images/k8s-app-monitor-istio-zipkin.jpg "Zipkin页面")
 
 至此从代码提交到上线到 Kubernetes 集群上并集成 Istio 服务网格的过程就全部完成了。

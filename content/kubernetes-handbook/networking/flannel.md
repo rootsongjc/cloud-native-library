@@ -64,7 +64,7 @@ Flannel 是作为一个二进制文件的方式部署在每个 node 上，主要
 
 **注意**：以上 IP 非本示例中的 IP，但是不影响读者理解。
 
-Node1 上的 flannel 配置如下:
+Node1 上的 flannel 配置如下：
 
 ```bash
 [root@node1 ~]# cat /usr/lib/systemd/system/flanneld.service
@@ -246,7 +246,7 @@ WantedBy=multi-user.target
 - eth1：bridge 网络，使用 vagrant 分配给虚拟机的地址，虚拟机之间和本地电脑都可以访问
 - eth2：bridge 网络，使用 DHCP 分配，用于访问互联网的网卡
 - docker0：bridge 网络，docker 默认使用的网卡，作为该节点上所有容器的虚拟交换机
-- veth295bef2@if6：veth pair，连接 docker0 和 Pod 中的容器。veth pair 可以理解为使用网线连接好的两个接口，把两个端口放到两个 namespace 中，那么这两个 namespace 就能打通。参考 [linux 网络虚拟化： network namespace 简介](http://cizixs.com/2017/02/10/network-virtualization-network-namespace)。
+- veth295bef2@if6：veth pair，连接 docker0 和 Pod 中的容器。veth pair 可以理解为使用网线连接好的两个接口，把两个端口放到两个 namespace 中，那么这两个 namespace 就能打通。参考 [linux 网络虚拟化：network namespace 简介](http://cizixs.com/2017/02/10/network-virtualization-network-namespace)。
 
 我们再看下该节点的 docker 上有哪些网络。
 

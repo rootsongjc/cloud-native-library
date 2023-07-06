@@ -1,6 +1,6 @@
 ---
 title: "eBPF 如何简化服务网格"
-summary: "本文探讨一下eBPF是如何让我们精简服务网格，使服务网格的数据平面更有效率，更容易部署。"
+summary: "本文探讨一下 eBPF 是如何让我们精简服务网格，使服务网格的数据平面更有效率，更容易部署。"
 authors: ["Liz Rice"]
 categories: ["Service Mesh"]
 tags: ["Service Mesh", "ebpf"]
@@ -26,7 +26,7 @@ links:
 
 每个代理使用的内存与它需要能够通信的服务数量有关。Pranay Singhal 写了他配置 Istio 的[经验](https://medium.com/geekculture/watch-out-for-this-istio-proxy-sidecar-memory-pitfall-8dbd99ea7e9d)，将每个代理的消耗从 1GB 左右减少到更合理的 60-70MB。但是，即使在我们的小环境中，在三个节点上有 100 个代理，这种优化配置仍然需要每个节点 2GB 左右。
 
-![来自[redhat.com/architect/why-when-service-mesh](https://redhat.com/architect/why-when-service-mesh)——每个微服务都有自己的代理sidecar](008i3skNly1gvtp69o74jj31w50u0jy8.jpg "来自[redhat.com/architect/why-when-service-mesh](https://redhat.com/architect/why-when-service-mesh)——每个微服务都有自己的代理sidecar") 
+![来自 [redhat.com/architect/why-when-service-mesh](https://redhat.com/architect/why-when-service-mesh)——每个微服务都有自己的代理 sidecar](008i3skNly1gvtp69o74jj31w50u0jy8.jpg "来自[redhat.com/architect/why-when-service-mesh](https://redhat.com/architect/why-when-service-mesh)——每个微服务都有自己的代理 sidecar") 
 
 为什么我们需要所有这些 sidecar？这种模式允许代理容器与 pod 中的应用容器共享一个网络命名空间。网络命名空间是 Linux 内核的结构，它允许容器和 pod 拥有自己独立的网络堆栈，将容器化的应用程序相互隔离。这使得应用之间互不相干，这就是为什么你可以让尽可能多的 pod 在 80 端口上运行一个 web 应用 —— 网络命名空间意味着它们各自拥有自己的 80 端口。代理必须共享相同的网络命名空间，这样它就可以拦截和处理进出应用容器的流量。
 
@@ -38,11 +38,11 @@ links:
 
 ![每台主机一个内核](008i3skNly1gvtp6c8mn9j31ea0u0n0t.jpg "每台主机一个内核") 
 
-这就是为什么 eBPF 对于 Kubernetes 中的任何一种 instrumentation 来说都是如此令人兴奋的技术 —— 你只需要在每个节点上添加一次 instrumentation ，所有的应用程序 pod 都会被覆盖。无论你是在寻求可观测性、安全性还是网络，由 eBPF 驱动的解决方案都可以在不需要 sidecar 的情况下对应用进行检测。
+这就是为什么 eBPF 对于 Kubernetes 中的任何一种 instrumentation 来说都是如此令人兴奋的技术 —— 你只需要在每个节点上添加一次 instrumentation，所有的应用程序 pod 都会被覆盖。无论你是在寻求可观测性、安全性还是网络，由 eBPF 驱动的解决方案都可以在不需要 sidecar 的情况下对应用进行检测。
 
-基于 eBPF 的 [Cilium](http://cilium.io/) 项目（最近 [以孵化级别加入云计算基金会](https://www.cncf.io/blog/2021/10/13/cilium-joins-cncf-as-an-incubating-project/)）将这种 “无 sidecar" 模式带到了服务网格的世界。除了传统的 sidecar 模型，Cilium 还支持每个节点使用一个 Envoy 代理实例运行服务网格的数据平面。使用我们前面的例子，这就把代理实例的数量从 100 个减少到只有 3 个。
+基于 eBPF 的 [Cilium](http://cilium.io/) 项目（最近 [以孵化级别加入云计算基金会](https://www.cncf.io/blog/2021/10/13/cilium-joins-cncf-as-an-incubating-project/)）将这种“无 sidecar" 模式带到了服务网格的世界。除了传统的 sidecar 模型，Cilium 还支持每个节点使用一个 Envoy 代理实例运行服务网格的数据平面。使用我们前面的例子，这就把代理实例的数量从 100 个减少到只有 3 个。
 
-![用无sidecar代理模式减少代理实例](008i3skNly1gvtp67ocjkj31xt0u0jvp.jpg "用无sidecar代理模式减少代理实例") 
+![用无 sidecar 代理模式减少代理实例](008i3skNly1gvtp67ocjkj31xt0u0jvp.jpg "用无sidecar代理模式减少代理实例") 
 
 ## 减少 YAML
 
@@ -60,7 +60,7 @@ links:
 
 支持 eBPF 的网络允许数据包走捷径，绕过内核的部分网络堆栈，这可以使 Kubernetes 网络的[性能得到显著改善](https://cilium.io/blog/2021/05/11/cni-benchmark)。让我们看看这在服务网格数据平面中是如何应用的。
 
-![在eBPF加速、无sidecar的服务网格模型中，网络数据包通过的路径要短得多](008i3skNly1gvtp6ao3lqj31q90u0gqw.jpg "在eBPF加速、无sidecar的服务网格模型中，网络数据包通过的路径要短得多") 
+![在 eBPF 加速、无 sidecar 的服务网格模型中，网络数据包通过的路径要短得多](008i3skNly1gvtp6ao3lqj31q90u0gqw.jpg "在eBPF加速、无sidecar的服务网格模型中，网络数据包通过的路径要短得多") 
 
 在服务网格的情况下，代理在传统网络中作为 sidecar 运行，数据包到达应用程序的路径相当曲折：入站数据包必须穿越主机 TCP/IP 栈，通过虚拟以太网连接到达 pod 的网络命名空间。从那里，数据包必须穿过 pod 的网络堆栈到达代理，代理将数据包通过回环接口转发到应用程序。考虑到流量必须在连接的两端流经代理，与非服务网格流量相比，这将导致延迟的[显著增加](https://linkerd.io/2021/05/27/linkerd-vs-istio-benchmarks/#latency-at-20-rps)。
 

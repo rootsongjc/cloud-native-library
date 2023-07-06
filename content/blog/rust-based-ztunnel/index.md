@@ -39,7 +39,7 @@ Ztunnel（零信任隧道）组件是为 Istio Ambient Mesh 专门构建的每�
 
 ## 专门构建的 ztunnel
 
-在 Envoy 因我们的需求而失败后，我们开始考虑构建 ztunnel 的专用实现。我们的假设是，通过从一开始就考虑一个单一的重点用例进行设计，我们可以开发一个比将通用项目塑造成自定义用例更简单、性能更高的解决方案。使 ztunnel 简单化的明确决定是这一假设的关键； 例如，类似的逻辑不适用于具有大量支持功能和集成的重写网关。
+在 Envoy 因我们的需求而失败后，我们开始考虑构建 ztunnel 的专用实现。我们的假设是，通过从一开始就考虑一个单一的重点用例进行设计，我们可以开发一个比将通用项目塑造成自定义用例更简单、性能更高的解决方案。使 ztunnel 简单化的明确决定是这一假设的关键；例如，类似的逻辑不适用于具有大量支持功能和集成的重写网关。
 
 这个专门建造的 ztunnel 涉及两个关键领域：
 
@@ -69,7 +69,7 @@ workloadType: deployment
 
 此信息通过 xDS 传输 API 传输，但使用特定于环境的自定义类型。请参阅[工作负载 xDS 配置部分](https://preliminary.istio.io/latest/blog/2023/rust-based-ztunnel/#workload-xds-configuration) 以了解有关配置详细信息的更多信息。
 
-使用专门构建的 API，我们可以将逻辑推送到代理中，而不是在 Envoy 配置中。例如，要在 Envoy 中配置 mTLS，我们需要添加相同的大型配置集来调整每个服务的精确 TLS 设置； 使用 ztunnel，我们只需要一个枚举来声明是否应该使用 mTLS。其余的复杂逻辑直接嵌入到 ztunnel 代码中。
+使用专门构建的 API，我们可以将逻辑推送到代理中，而不是在 Envoy 配置中。例如，要在 Envoy 中配置 mTLS，我们需要添加相同的大型配置集来调整每个服务的精确 TLS 设置；使用 ztunnel，我们只需要一个枚举来声明是否应该使用 mTLS。其余的复杂逻辑直接嵌入到 ztunnel 代码中。
 
 借助 Istiod 和 ztunnel 之间的这种高效 API，我们发现我们可以使用有关大型网格（例如具有 100,000 个 pod 的网格）的信息来配置 ztunnel，配置数量减少几个数量级，这意味着 CPU、内存和网络成本更低。
 
@@ -116,7 +116,7 @@ workloadType: deployment
 }
 ```
 
-Pod 被包含在 ambient 中后（默认将命名空间标记为 `istio.io/dataplane-mode=ambient` ）， protocol 值将被替换为 HBONE ，表示 ztunnel 将来自所有 helloworld -v1 pod 传入和传出通信升级到 HBONE。
+Pod 被包含在 ambient 中后（默认将命名空间标记为 `istio.io/dataplane-mode=ambient` ），protocol 值将被替换为 HBONE，表示 ztunnel 将来自所有 helloworld -v1 pod 传入和传出通信升级到 HBONE。
 
 ```json
 {

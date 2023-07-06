@@ -24,19 +24,19 @@ type: book # Do not modify
 
 从 TinyGo 的 [FAQ](https://tinygo.org/docs/concepts/faq/) 中我们看到它是一个基于标准库的解析器（因此可移植并且得到各种 WebAssembly 工具如 Emscripten 和 wasi-sdk 的良好支持）和 LLVM 的可重用优化支持。除其他事项外，FAQ 指出它包括编译器内部函数（帮助优化的规则）、内存分配器、调度程序、重新实现的通用包以及对字符串操作的支持。
 
-TinyGo 的 “Tiny” 部分旨在针对传统 Go 编译器不支持的微控制器。对于没有 LLVM 分层结构的许多开发人员来说，在后端添加此支持会很麻烦。LLVM 改变了努力的水平，从而开辟了各种新的可能性。普通 Go 工具链的另一个方面是它生成的大型二进制文件也不适合嵌入式系统和微控制器。解决这些问题的组合恰好很好地支持了 Go-to-WebAssembly 路径，这可能会继续取得成果并使 Go 能够以这种方式使用。
+TinyGo 的“Tiny”部分旨在针对传统 Go 编译器不支持的微控制器。对于没有 LLVM 分层结构的许多开发人员来说，在后端添加此支持会很麻烦。LLVM 改变了努力的水平，从而开辟了各种新的可能性。普通 Go 工具链的另一个方面是它生成的大型二进制文件也不适合嵌入式系统和微控制器。解决这些问题的组合恰好很好地支持了 Go-to-WebAssembly 路径，这可能会继续取得成果并使 Go 能够以这种方式使用。
 
 鉴于 Rust 和 Go 在许多人的心目中处于同一领域，并且 Rust 也对具有基于 LLVM 的工具链的嵌入式系统感兴趣，FAQ 继续介绍 Go 作为一个选择，因为它确实具有相对较平缓的学习曲线。它还通过 goroutines 和 channel 以及丰富的标准库提供线程无关的并发支持。在 Rust 中，其中一些功能由依赖的 Cargo 包支持。他们承认 Rust 有其长处和优势，但更重要的是，市场上有足够的需求来支持这两种语言，因此付出的努力是值得的。
 
 在图 17-1 中，我们在浏览器中看到了 TinyGo Playground。既然你了解了 WASI 和其他与 WebAssembly 运行时共享行为的方法，希望这个运行时 importObject 的先睹为快能引起你的共鸣。
 
-![图17-1. 浏览器中的TinyGo Playground](../images/f17-1.png)
+![图 17-1. 浏览器中的 TinyGo Playground](../images/f17-1.png)
 
 如果你克隆了 TinyGo 存储库，则有一些突出显示交互的示例，即使你不了解 Go，现在也应该对它的结构感到熟悉。
 
 如果你按照[附录](../appendix/)中的详细信息安装了编译器，你应该能够运行这些示例。在例 17-1 中，你可以在 `examples/wasm/main` 中看到 `main.go` 文件。
 
-例17-1. 基本的 TinyGo 例子
+例 17-1. 基本的 TinyGo 例子
 
 ```go
 package main
@@ -61,7 +61,7 @@ brian@tweezer ~/g/t/s/e/wasm> go run server.go
 
 图 17-2 展示了这个例子的输出。
 
-![图17-2. 浏览器中的 TinyGo 示例](../images/f17-2.png)
+![图 17-2. 浏览器中的 TinyGo 示例](../images/f17-2.png)
 
 我不打算在这里重现这个文件，但是考虑到你在本书其他地方读到的内容，看一下 `wasm_exec.js` 文件可能会有兴趣。TinyGo 的作者，他们创建了一个通用 API，用于在浏览器、Node.js、Electron 应用程序和 Parcel 中连续调用 Go。你可以在图 17-1 中看到该文件的一个片段。
 
@@ -108,7 +108,7 @@ cp ./slices/index.html ./html/
 
 复制的文件包括 `wasm_exec.js` 中的可重用 API，和以前一样。`index.html` 大部分是不显眼的，但我在例 17-3 下方展示了它，因此你可以看到 input 和 div 元素。
 
-例17-3. Go 切片的简单 HTML 文件示例
+例 17-3. Go 切片的简单 HTML 文件示例
 
 ```html
 <!DOCTYPE html>
@@ -130,7 +130,7 @@ cp ./slices/index.html ./html/
 
 正如我所说的，这个 HTML 文件除了加载我提到的普通 Go API 和 wasm.js 中的特定应用的 JavaScript 之外，并没有太多的内容。如例 17-4 所示。
 
-例17-4. Go 切片示例的特定应用 JavaScript
+例 17-4. Go 切片示例的特定应用 JavaScript
 
 ```javascript
 'use strict';
@@ -172,7 +172,7 @@ Artichoke 是一种基于 Rust 的 Ruby 运行时，旨在与 Matz 的 [Ruby 解
 
 我在[附录](../appendix/)中详细介绍了一些安装 Artichoke 的方法。包括 Artichoke Ruby 解释器和一个 irb[^1]的替代品，称为 airb。目前，最简单的实验这个 Ruby-to-WebAssembly 工具链的方法可能是通过 [Playground](https://artichoke.run/)，如图 17-4 所示。
 
-![图17-4. 在浏览器中运行的 Artichoke Ruby](../images/f17-4.png)
+![图 17-4. 在浏览器中运行的 Artichoke Ruby](../images/f17-4.png)
 
 与 TinyGo 一样，我不认为这是 Ruby 和 WebAssembly 的终点，但这足以让 Ruby 爱好者相信在不久的将来，他们将能够更充分地参与 WebAssembly 生态系统。
 
@@ -204,7 +204,7 @@ SwiftWasm Swift version 5.3 (swiftlang-5.3.1)
 Target: x86_64-apple-darwin20.6.0
 ```
 
-例17-5. Swift 的 "Hello, world!"
+例 17-5. Swift 的 "Hello, world!"
 
 ```bash
 print("Hello, world!")
@@ -294,7 +294,7 @@ Zig 是一种快速、可移植的语言，支持多平台交叉编译，具有�
 
 例 17-7 看起来和我们之前看到的没有什么不同，但是用一个整数减去另一个整数到底有多难？
 
-例17-7. 我们用 Zig 编写的 howOld 函数
+例 17-7. 我们用 Zig 编写的 howOld 函数
 
 ```c
 export fn howOld(now: i32, then: i32) i32 {
@@ -302,7 +302,7 @@ export fn howOld(now: i32, then: i32) i32 {
 }
 ```
 
-把我们的例子构建成一个独立的 WebAssembly模块（相对于，比如说，一个以 WASI 为目标的模块），看起来如下。不要眨眼，否则你可能会错过编译的步骤。
+把我们的例子构建成一个独立的 WebAssembly 模块（相对于，比如说，一个以 WASI 为目标的模块），看起来如下。不要眨眼，否则你可能会错过编译的步骤。
 
 ```bash
 brian@tweezer ~/g/w/c/zig> zig build-lib howOld.zig -target wasm32-freestanding -dynamic
@@ -310,7 +310,7 @@ brian@tweezer ~/g/w/c/zig> zig build-lib howOld.zig -target wasm32-freestanding 
 
 我们可以用多种方式调用我们的新模块，让我们使用 Node.js 的代码，如例 17-8 所示。
 
-例17-8. 从 Node.js 调用我们的 Zig 模块
+例 17-8. 从 Node.js 调用我们的 Zig 模块
 
 ```javascript
 const fs = require('fs');
@@ -350,7 +350,7 @@ pub fn main() !void {
 }
 ```
 
-我不打算深入探讨 Zig 的细节，但基本上我们只是打印出我们在托管环境允许的情况下具有预打开权限的目录。构建此应用程序需要不同的后端目标。我们将生成一个基于 WASI 的模块，而不是“独立的” WebAssembly 模块。
+我不打算深入探讨 Zig 的细节，但基本上我们只是打印出我们在托管环境允许的情况下具有预打开权限的目录。构建此应用程序需要不同的后端目标。我们将生成一个基于 WASI 的模块，而不是“独立的”WebAssembly 模块。
 
 下一个示例中的第一行显然构建了 WASI 模块。第二行在 Wasmtime 中执行它而不给它任何目录访问权限。因此，没有输出。第三行重新执行 Wasmtime，赋予它对当前目录的权限，应用程序现在可以确认这些权限。
 
@@ -386,7 +386,7 @@ brian@tweezer ~/g/w/c/zig> wasmtime preopens.wasm brian@tweezer ~/g/w/c/zig> was
 
 2017 年初，我开始在 [No Fluff Just Stuff 巡讲](https://nofluffjuststuff.com/)上从专业的角度开始讲 WebAssembly，就在 MVP 敲定之后，浏览器支持变得无处不在。这显然是在大多数人准备好利用这个新兴平台之前，但我想开始规划即将发生的事情，以便软件开发人员做好准备。
 
-我对这个平台为我们准备的东西感到非常兴奋； 我的兴趣只增不减。当你评估我们在本书中介绍的各种工具、技术和用例时，我希望你至少已经抓住了一些兴奋点。事情每周都会变化，但我希望我写的大部分内容都是稳定的，值得你花时间。
+我对这个平台为我们准备的东西感到非常兴奋；我的兴趣只增不减。当你评估我们在本书中介绍的各种工具、技术和用例时，我希望你至少已经抓住了一些兴奋点。事情每周都会变化，但我希望我写的大部分内容都是稳定的，值得你花时间。
 
 感谢你的兴趣，我迫不及待地想看看你用所学知识做了些什么。
 

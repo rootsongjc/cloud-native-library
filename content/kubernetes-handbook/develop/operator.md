@@ -6,7 +6,7 @@ date: '2022-09-05T11:00:00+08:00'
 type: book
 ---
 
-Operator 最初是由 CoreOS（后被 Red Hat 收购） 开发的，下面是关于 Operator 的一些基础知识：
+Operator 最初是由 CoreOS（后被 Red Hat 收购）开发的，下面是关于 Operator 的一些基础知识：
 
 - Operator 是用来扩展 Kubernetes API 的特定的应用程序控制器；
 - Operator 用来创建、配置和管理复杂的有状态应用，如数据库、缓存和监控系统；
@@ -61,7 +61,7 @@ Operator 本质上是与应用息息相关的，因为这是特定领域的知�
 4. Operator 应该向后兼容，始终了解用户在之前版本中创建的资源；
 5. 当 Operator 被停止或删除时，Operator 创建的应用实例应该不受影响；
 6. Operator 应该让用户能够根据版本声明来选择所需版本和编排应用程序升级。不升级软件是操作错误和安全问题的常见来源，Operator 可以帮助用户更加自信地解决这一问题；
-7. Operator 应该进行 “Chaos Monkey” 测试，以模拟 Pod、配置和网络故障的情况下的行为。
+7. Operator 应该进行“Chaos Monkey”测试，以模拟 Pod、配置和网络故障的情况下的行为。
 
 ## 参考
 

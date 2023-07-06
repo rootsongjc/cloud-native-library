@@ -46,19 +46,19 @@ Calico 的架构图如下所示：
 
 Felix 以 agent 代理的形式在每台机器端点上运行。对路由和 ACL 以及主机编程，为该主机上的端点提供所需的连接。
 
-根据具体的编排器环境，Felix负责：
+根据具体的编排器环境，Felix 负责：
 
 **接口管理**
 
-将有关接口的信息编入内核，以便内核能够正确处理来自该端点的流量。特别是，确保主机响应来自每个工作负载的ARP请求，提供主机的MAC，并为它所管理的接口启用IP转发。它还监控接口，以确保编程在适当的时候应用。
+将有关接口的信息编入内核，以便内核能够正确处理来自该端点的流量。特别是，确保主机响应来自每个工作负载的 ARP 请求，提供主机的 MAC，并为它所管理的接口启用 IP 转发。它还监控接口，以确保编程在适当的时候应用。
 
 **路由编程**
 
-将其主机上的端点的路由编程到Linux内核的FIB（转发信息库）。这可以确保到达主机上的以这些端点为目的地的数据包被相应地转发。
+将其主机上的端点的路由编程到 Linux 内核的 FIB（转发信息库）。这可以确保到达主机上的以这些端点为目的地的数据包被相应地转发。
 
-**ACL编程**
+**ACL 编程**
 
-在Linux内核中编程ACL，以确保只有有效的流量可以在端点之间发送，并且端点不能规避Calico的安全措施。
+在 Linux 内核中编程 ACL，以确保只有有效的流量可以在端点之间发送，并且端点不能规避 Calico 的安全措施。
 
 **状态报告**
 
@@ -66,65 +66,65 @@ Felix 以 agent 代理的形式在每台机器端点上运行。对路由和 ACL
 
 ### BIRD
 
-BGP Internet Routing Daemon，简称 BIRD。从Felix获取路由，并分发到网络上的BGP peer，用于主机间的路由。在每个Felix代理的节点上运行。
+BGP Internet Routing Daemon，简称 BIRD。从 Felix 获取路由，并分发到网络上的 BGP peer，用于主机间的路由。在每个 Felix 代理的节点上运行。
 
-BGP客户端负责：
+BGP 客户端负责：
 
 **路由分配**
 
-当Felix将路由插入Linux内核的FIB时，BGP客户端将它们分配给部署中的其他节点。这确保了部署中的有效流量路由。
+当 Felix 将路由插入 Linux 内核的 FIB 时，BGP 客户端将它们分配给部署中的其他节点。这确保了部署中的有效流量路由。
 
-**BGP路由反射器的配置**
+**BGP 路由反射器的配置**
 
-BGP路由反射器通常是为大型部署而配置的，而不是一个标准的BGP客户端。BGP路由反射器作为连接BGP客户端的一个中心点。(标准BGP要求每个BGP客户端在网状拓扑结构中与其他每个BGP客户端连接，这很难维护)。
+BGP 路由反射器通常是为大型部署而配置的，而不是一个标准的 BGP 客户端。BGP 路由反射器作为连接 BGP 客户端的一个中心点。(标准 BGP 要求每个 BGP 客户端在网状拓扑结构中与其他每个 BGP 客户端连接，这很难维护)。
 
-为了实现冗余，你可以无缝部署多个BGP路由反射器。BGP路由反射器只参与网络的控制：没有终端数据通过它们。当Calico BGP客户端将其FIB中的路由通告给路由反射器时，路由反射器将这些路由通告给部署中的其他节点。
+为了实现冗余，你可以无缝部署多个 BGP 路由反射器。BGP 路由反射器只参与网络的控制：没有终端数据通过它们。当 Calico BGP 客户端将其 FIB 中的路由通告给路由反射器时，路由反射器将这些路由通告给部署中的其他节点。
 
 ### confd
 
-开源的、轻量级的配置管理工具。监控Calico数据存储对BGP配置和全局默认的日志变更，如AS号、日志级别和IPAM信息。
+开源的、轻量级的配置管理工具。监控 Calico 数据存储对 BGP 配置和全局默认的日志变更，如 AS 号、日志级别和 IPAM 信息。
 
-Confd根据存储中的数据更新，动态生成BIRD配置文件。当配置文件发生变化时，confd会触发BIRD加载新的文件。
+Confd 根据存储中的数据更新，动态生成 BIRD 配置文件。当配置文件发生变化时，confd 会触发 BIRD 加载新的文件。
 
 ### Dikastes
 
-执行Istio服务网格的网络策略。作为Istio Envoy的一个Sidecar代理，在集群上运行。
+执行 Istio 服务网格的网络策略。作为 Istio Envoy 的一个 Sidecar 代理，在集群上运行。
 
-Dikastes 是可选的。Calico在Linux内核（使用iptables，在三、四层）和三到七层使用Envoy的Sidecar代理Dikastes为工作负载执行网络策略，对请求进行加密认证。使用多个执行点可以根据多个标准确定远程端点的身份。即使工作负载Pod破坏，Envoy代理被绕过，主机Linux内核的执行也能保护你的工作负载。
+Dikastes 是可选的。Calico 在 Linux 内核（使用 iptables，在三、四层）和三到七层使用 Envoy 的 Sidecar 代理 Dikastes 为工作负载执行网络策略，对请求进行加密认证。使用多个执行点可以根据多个标准确定远程端点的身份。即使工作负载 Pod 破坏，Envoy 代理被绕过，主机 Linux 内核的执行也能保护你的工作负载。
 
 ### CNI 插件
 
-为Kubernetes集群提供Calico网络。
+为 Kubernetes 集群提供 Calico 网络。
 
-向Kubernetes展示该API的Calico二进制文件被称为CNI插件，必须安装在Kubernetes集群的每个节点上。Calico CNI插件允许你为任何使用 CNI  网络规范的编排调度器使用Calico网络。
+向 Kubernetes 展示该 API 的 Calico 二进制文件被称为 CNI 插件，必须安装在 Kubernetes 集群的每个节点上。Calico CNI 插件允许你为任何使用 CNI  网络规范的编排调度器使用 Calico 网络。
 
 ### 数据存储插件
 
-通过减少每个节点对数据存储的影响来增加规模。它是Calico CNI的插件之一。
+通过减少每个节点对数据存储的影响来增加规模。它是 Calico CNI 的插件之一。
 
 **Kubernetes API datastore（kdd）**
 
-在Calico中使用Kubernetes API数据存储（kdd）的优点是：
+在 Calico 中使用 Kubernetes API 数据存储（kdd）的优点是：
 
 - 管理更简单，因为不需要额外的数据存储
-- 使用Kubernetes RBAC来控制对Calico资源的访问
-- 使用Kubernetes审计日志来生成对Calico资源变化的审计日志
+- 使用 Kubernetes RBAC 来控制对 Calico 资源的访问
+- 使用 Kubernetes 审计日志来生成对 Calico 资源变化的审计日志
 
 **etcd**
 
-etcd 是一个一致的、高可用的分布式键值存储，为Calico网络提供数据存储，并用于组件之间的通信。etcd仅支持保护非集群主机（从Calico v3.1开始）。etcd的优点是：
+etcd 是一个一致的、高可用的分布式键值存储，为 Calico 网络提供数据存储，并用于组件之间的通信。etcd 仅支持保护非集群主机（从 Calico v3.1 开始）。etcd 的优点是：
 
-- 让你在非Kubernetes平台上运行Calico
-- 分离Kubernetes和Calico资源之间的关注点，例如允许你独立地扩展数据存储。
-- 让你运行的Calico集群不仅仅包含一个Kubernetes集群，例如，让带有Calico主机保护的裸机服务器与Kubernetes集群互通；或者多个Kubernetes集群。
+- 让你在非 Kubernetes 平台上运行 Calico
+- 分离 Kubernetes 和 Calico 资源之间的关注点，例如允许你独立地扩展数据存储。
+- 让你运行的 Calico 集群不仅仅包含一个 Kubernetes 集群，例如，让带有 Calico 主机保护的裸机服务器与 Kubernetes 集群互通；或者多个 Kubernetes 集群。
 
 ### IPAM 插件
 
-使用Calico的IP池资源来控制如何将IP地址分配给集群中的pod。它是大多数Calico安装所使用的默认插件。它是Calico CNI插件之一。
+使用 Calico 的 IP 池资源来控制如何将 IP 地址分配给集群中的 pod。它是大多数 Calico 安装所使用的默认插件。它是 Calico CNI 插件之一。
 
 ### kube-controller
 
-监控Kubernetes的API，并根据集群状态执行行动。
+监控 Kubernetes 的 API，并根据集群状态执行行动。
 
 `tigera/kube-controllers` 容器包括以下控制器：
 
@@ -136,19 +136,19 @@ etcd 是一个一致的、高可用的分布式键值存储，为Calico网络提
 
 ### Typha
 
-通过减少每个节点对数据存储的影响来增加规模。作为数据存储和Felix实例之间的一个守护程序运行。默认安装，但没有配置。
+通过减少每个节点对数据存储的影响来增加规模。作为数据存储和 Felix 实例之间的一个守护程序运行。默认安装，但没有配置。
 
-Typha代表Felix和confd等所有客户端维护一个单一的数据存储连接。它缓存数据存储的状态，并复制事件，以便它们可以被推广到更多监听器。因为一个Typha实例可以支持数百个Felix实例，可以将数据存储的负载降低很多。由于Typha可以过滤掉与Felix无关的更新，它也减少了Felix的CPU使用。在一个大规模（100多个节点）的Kubernetes集群中，这是至关重要的，因为API服务器产生的更新数量随着节点数量的增加而增加。
+Typha 代表 Felix 和 confd 等所有客户端维护一个单一的数据存储连接。它缓存数据存储的状态，并复制事件，以便它们可以被推广到更多监听器。因为一个 Typha 实例可以支持数百个 Felix 实例，可以将数据存储的负载降低很多。由于 Typha 可以过滤掉与 Felix 无关的更新，它也减少了 Felix 的 CPU 使用。在一个大规模（100 多个节点）的 Kubernetes 集群中，这是至关重要的，因为 API 服务器产生的更新数量随着节点数量的增加而增加。
 
 ### calicoctl
 
-Calicoctl命令行作为二进制或容器需要单独安装，可以在任何可以通过网络访问Calico数据存储的主机上使用。
+Calicoctl 命令行作为二进制或容器需要单独安装，可以在任何可以通过网络访问 Calico 数据存储的主机上使用。
 
 ## 云编排器插件
 
-将管理网络的编排器API翻译成Calico的数据模型和数据存储。
+将管理网络的编排器 API 翻译成 Calico 的数据模型和数据存储。
 
-对于云供应商，Calico为每个主要的云编排平台提供了一个单独的插件。这使得Calico能够与编排器紧密结合，因此用户可以使用他们的编排器工具来管理Calico网络。当需要时，编排器插件会将Calico网络的反馈信息提供给编排器。例如，提供关于Felix liveness的信息，并在网络设置失败时将特定端点标记为失败。
+对于云供应商，Calico 为每个主要的云编排平台提供了一个单独的插件。这使得 Calico 能够与编排器紧密结合，因此用户可以使用他们的编排器工具来管理 Calico 网络。当需要时，编排器插件会将 Calico 网络的反馈信息提供给编排器。例如，提供关于 Felix liveness 的信息，并在网络设置失败时将特定端点标记为失败。
 
 ## 参考
 

@@ -13,7 +13,7 @@ type: book
 
 ## 背景
 
-Docker 中也有一个 [volume](https://docs.docker.com/engine/admin/volumes/) 的概念，尽管它稍微宽松一些，管理也很少。在 Docker 中，卷就像是磁盘或是另一个容器中的一个目录。它的生命周期不受管理，直到最近才有了 local-disk-backed 卷。Docker 现在提供了卷驱动程序，但是功能还非常有限（例如Docker1.7只允许每个容器使用一个卷驱动，并且无法给卷传递参数）。
+Docker 中也有一个 [volume](https://docs.docker.com/engine/admin/volumes/) 的概念，尽管它稍微宽松一些，管理也很少。在 Docker 中，卷就像是磁盘或是另一个容器中的一个目录。它的生命周期不受管理，直到最近才有了 local-disk-backed 卷。Docker 现在提供了卷驱动程序，但是功能还非常有限（例如 Docker1.7 只允许每个容器使用一个卷驱动，并且无法给卷传递参数）。
 
 另一方面，Kubernetes 中的卷有明确的寿命——与封装它的 Pod 相同。所以，卷的生命比 Pod 中的所有容器都长，当这个容器重启时数据仍然得以保存。当然，当 Pod 不再存在时，卷也将不复存在。也许更重要的是，Kubernetes 支持多种类型的卷，Pod 可以同时使用任意数量的卷。
 
@@ -58,7 +58,7 @@ Kubernetes 支持以下类型的卷：
 
 ### awsElasticBlockStore
 
-`awsElasticBlockStore` 卷将Amazon Web Services（AWS）EBS Volume 挂载到您的容器中。与 `emptyDir` 类型会在删除 Pod 时被清除不同，EBS 卷的的内容会保留下来，仅仅是被卸载。这意味着 EBS 卷可以预先填充数据，并且可以在数据包之间“切换”数据。
+`awsElasticBlockStore` 卷将 Amazon Web Services（AWS）EBS Volume 挂载到您的容器中。与 `emptyDir` 类型会在删除 Pod 时被清除不同，EBS 卷的的内容会保留下来，仅仅是被卸载。这意味着 EBS 卷可以预先填充数据，并且可以在数据包之间“切换”数据。
 
 **重要提示**：您必须使用 `aws ec2 create-volume` 或 AWS API 创建 EBS 卷，才能使用它。
 
@@ -110,7 +110,7 @@ spec:
 
 ### cephfs
 
-`cephfs` 卷允许将现有的 CephFS 卷挂载到您的容器中。不像 `emptyDir`，当删除 Pod 时被删除，`cephfs` 卷的内容将被保留，卷仅仅是被卸载。这意味着 CephFS 卷可以预先填充数据，并且可以在数据包之间“切换”数据。 CephFS 可以被多个写设备同时挂载。
+`cephfs` 卷允许将现有的 CephFS 卷挂载到您的容器中。不像 `emptyDir`，当删除 Pod 时被删除，`cephfs` 卷的内容将被保留，卷仅仅是被卸载。这意味着 CephFS 卷可以预先填充数据，并且可以在数据包之间“切换”数据。CephFS 可以被多个写设备同时挂载。
 
 **重要提示**：您必须先拥有自己的 Ceph 服务器，然后才能使用它。
 
@@ -120,11 +120,11 @@ CSI 代表[容器存储接口](https://github.com/container-storage-interface/sp
 
 `csi` 卷类型是一种 in-tree 的 CSI 卷插件，用于 Pod 与在同一节点上运行的外部 CSI 卷驱动程序交互。部署 CSI 兼容卷驱动后，用户可以使用 `csi` 作为卷类型来挂载驱动提供的存储。
 
-CSI 持久化卷支持是在 Kubernetes v1.9 中引入的，作为一个 alpha 特性，必须由集群管理员明确启用。换句话说，集群管理员需要在 apiserver、controller-manager 和 kubelet 组件的 “`--feature-gates =`” 标志中加上 “`CSIPersistentVolume = true`”。
+CSI 持久化卷支持是在 Kubernetes v1.9 中引入的，作为一个 alpha 特性，必须由集群管理员明确启用。换句话说，集群管理员需要在 apiserver、controller-manager 和 kubelet 组件的“`--feature-gates =`”标志中加上“`CSIPersistentVolume = true`”。
 
 CSI 持久化卷具有以下字段可供用户指定：
 
-- `driver`：一个字符串值，指定要使用的卷驱动程序的名称。必须少于 63 个字符，并以一个字符开头。驱动程序名称可以包含 “`.`”、“`-` ”、“`_`” 或数字。
+- `driver`：一个字符串值，指定要使用的卷驱动程序的名称。必须少于 63 个字符，并以一个字符开头。驱动程序名称可以包含“`.`”、“`-` ”、“`_`”或数字。
 - `volumeHandle`：一个字符串值，唯一标识从 CSI 卷插件的 `CreateVolume` 调用返回的卷名。随后在卷驱动程序的所有后续调用中使用卷句柄来引用该卷。
 - `readOnly`：一个可选的布尔值，指示卷是否被发布为只读。默认是 false。
 
@@ -144,7 +144,7 @@ CSI 持久化卷具有以下字段可供用户指定：
 
 - 暂存空间，例如用于基于磁盘的合并排序
 - 用作长时间计算崩溃恢复时的检查点
-- Web服务器容器提供数据时，保存内容管理器容器提取的文件
+- Web 服务器容器提供数据时，保存内容管理器容器提取的文件
 
 #### Pod 示例
 
@@ -254,7 +254,7 @@ spec:
 
 ### glusterfs
 
-`glusterfs` 卷允许将 [Glusterfs](http://www.gluster.org)（一个开放源代码的网络文件系统）卷挂载到您的集群中。与删除 Pod 时删除的 `emptyDir` 不同，`glusterfs` 卷的内容将被保留，而卷仅仅被卸载。这意味着 glusterfs 卷可以预先填充数据，并且可以在数据包之间“切换”数据。 GlusterFS 可以同时由多个写入挂载。
+`glusterfs` 卷允许将 [Glusterfs](http://www.gluster.org)（一个开放源代码的网络文件系统）卷挂载到您的集群中。与删除 Pod 时删除的 `emptyDir` 不同，`glusterfs` 卷的内容将被保留，而卷仅仅被卸载。这意味着 glusterfs 卷可以预先填充数据，并且可以在数据包之间“切换”数据。GlusterFS 可以同时由多个写入挂载。
 
 **重要提示**：您必须先自行安装 GlusterFS，才能使用它。
 
@@ -372,7 +372,7 @@ spec:
 
 ### nfs
 
-`nfs` 卷允许将现有的 NFS（网络文件系统）共享挂载到您的容器中。不像 `emptyDir`，当删除 Pod 时，`nfs` 卷的内容被保留，卷仅仅是被卸载。这意味着 NFS 卷可以预填充数据，并且可以在 pod 之间“切换”数据。 NFS 可以被多个写入者同时挂载。
+`nfs` 卷允许将现有的 NFS（网络文件系统）共享挂载到您的容器中。不像 `emptyDir`，当删除 Pod 时，`nfs` 卷的内容被保留，卷仅仅是被卸载。这意味着 NFS 卷可以预填充数据，并且可以在 pod 之间“切换”数据。NFS 可以被多个写入者同时挂载。
 
 **重要提示**：您必须先拥有自己的 NFS 服务器才能使用它，然后才能使用它。
 
@@ -475,7 +475,7 @@ spec:
 
 ### portworxVolume
 
-`portworxVolume` 是一个与 Kubernetes 一起，以超融合模式运行的弹性块存储层。Portwork 指纹存储在服务器中，基于功能的分层，以及跨多个服务器聚合容量。 Portworx 在虚拟机或裸机 Linux 节点上运行。
+`portworxVolume` 是一个与 Kubernetes 一起，以超融合模式运行的弹性块存储层。Portwork 指纹存储在服务器中，基于功能的分层，以及跨多个服务器聚合容量。Portworx 在虚拟机或裸机 Linux 节点上运行。
 
 `portworxVolume` 可以通过 Kubernetes 动态创建，也可以在 Kubernetes pod 中预先设置和引用。
 
@@ -568,7 +568,7 @@ StorageOS 的核心是为容器提供块存储，可以通过文件系统访问�
 
 StorageOS 容器需要 64 位 Linux，没有额外的依赖关系。可以使用免费的开发者许可证。
 
-**重要提示**：您必须在每个要访问 StorageOS 卷的节点上运行 StorageOS 容器，或者为该池提供存储容量。相关的安装说明，请参阅 [StorageOS文档](https://docs.storageos.com)。
+**重要提示**：您必须在每个要访问 StorageOS 卷的节点上运行 StorageOS 容器，或者为该池提供存储容量。相关的安装说明，请参阅 [StorageOS 文档](https://docs.storageos.com)。
 
 ```yaml
 apiVersion: v1
@@ -650,7 +650,7 @@ spec:
 
 有时，在单个容器中共享一个卷用于多个用途是有用的。`volumeMounts.subPath` 属性可用于在引用的卷内而不是其根目录中指定子路径。
 
-下面是一个使用单个共享卷的 LAMP 堆栈（Linux Apache Mysql PHP）的示例。 HTML 内容被映射到它的 html 目录，数据库将被存储在它的 mysql 目录中：
+下面是一个使用单个共享卷的 LAMP 堆栈（Linux Apache Mysql PHP）的示例。HTML 内容被映射到它的 html 目录，数据库将被存储在它的 mysql 目录中：
 
 ```yaml
 apiVersion: v1
@@ -690,7 +690,7 @@ spec:
 
 除了之前列出的卷类型之外，存储供应商可以创建自定义插件而不将其添加到 Kubernetes 存储库中。可以通过使用 `FlexVolume` 插件来实现。
 
-`FlexVolume`使用户能够将供应商卷挂载到容器中。供应商插件是使用驱动程序实现的，该驱动程序支持由 `FlexVolume` API定义的一系列卷命令。驱动程序必须安装在每个节点的预定义卷插件路径中。
+`FlexVolume`使用户能够将供应商卷挂载到容器中。供应商插件是使用驱动程序实现的，该驱动程序支持由 `FlexVolume` API 定义的一系列卷命令。驱动程序必须安装在每个节点的预定义卷插件路径中。
 
 ## 挂载传播
 
@@ -698,7 +698,7 @@ spec:
 
 挂载传播允许将由容器挂载的卷共享到同一个 Pod 中的其他容器上，甚至是同一节点上的其他 Pod。
 
-如果禁用 MountPropagation 功能，则不会传播 pod 中的卷挂载。也就是说，容器按照 [Linux内核文档](https://www.kernel.org/doc/Documentation/filesystems/sharedsubtree.txt)中所述的 `private` 挂载传播运行。
+如果禁用 MountPropagation 功能，则不会传播 pod 中的卷挂载。也就是说，容器按照 [Linux 内核文档](https://www.kernel.org/doc/Documentation/filesystems/sharedsubtree.txt)中所述的 `private` 挂载传播运行。
 
 要启用此功能，请在 `--feature-gates` 命令行选项中指定 `MountPropagation = true`。启用时，容器的 `volumeMounts` 字段有一个新的 `mountPropagation` 子字段。它的值为：
 
@@ -706,13 +706,13 @@ spec:
 
   同样的，如果任何带有 `Bidirectional` 挂载传播的 pod 挂载到同一个卷上，带有 `HostToContainer` 挂载传播的容器将会看到它。
 
-  该模式等同于[Linux内核文档](https://www.kernel.org/doc/Documentation/filesystems/sharedsubtree.txt)中描述的 `rslave` 挂载传播。
+  该模式等同于[Linux 内核文档](https://www.kernel.org/doc/Documentation/filesystems/sharedsubtree.txt)中描述的 `rslave` 挂载传播。
 
 - `Bidirectional` 卷挂载与 `HostToContainer` 挂载相同。另外，由容器创建的所有卷挂载将被传播回主机和所有使用相同卷的容器的所有容器。
 
   此模式的一个典型用例是带有 Flex 卷驱动器或需要使用 HostPath 卷在主机上挂载某些内容的 pod。
 
-  该模式等同于 [Linux内核文档](https://www.kernel.org/doc/Documentation/filesystems/sharedsubtree.txt)中所述的 `rshared` 挂载传播。
+  该模式等同于 [Linux 内核文档](https://www.kernel.org/doc/Documentation/filesystems/sharedsubtree.txt)中所述的 `rshared` 挂载传播。
 
 **小心**：双向挂载传播可能是危险的。它可能会损坏主机操作系统，因此只能在特权容器中使用。强烈建议熟悉 Linux 内核行为。另外，容器在 Pod 中创建的任何卷挂载必须在容器终止时销毁（卸载）。
 

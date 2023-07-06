@@ -46,7 +46,7 @@ Istio 1.11 增加了实验性支持，可以直接将 gRPC 服务添加到网格
 
 ## 架构概述
 
-![gRPC服务如何与istiod通信的示意图](008i3skNly1gwp3lh9za5j311q0hm75n.jpg "gRPC服务如何与istiod通信的示意图")
+![gRPC 服务如何与 istiod 通信的示意图](008i3skNly1gwp3lh9za5j311q0hm75n.jpg "gRPC服务如何与istiod通信的示意图")
 
 虽然不使用 proxy 进行数据面通信，但它仍然需要一个 agent 来进行初始化和与控制面的通信。首先，agent 在启动时生成一个[引导文件](https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md#xdsclient-and-bootstrap-file)，与为 Envoy 生成引导文件的方式相同。这告诉 gRPC 库如何连接到 istiod，在哪里可以找到数据面通信的证书，以及向控制面发送什么元数据。接下来，agent 作为一个 xDS proxy，代表应用程序与 istiod 进行连接和认证。最后，agent 获取并轮换数据平面通信中使用的证书。
 
@@ -356,9 +356,9 @@ Handling connection for 17171
 
 ### 延迟
 
-![P50延迟对比图](008i3skNly1gwp512szlvj31260rgq57.jpg "P50延迟对比图")
+![P50 延迟对比图](008i3skNly1gwp512szlvj31260rgq57.jpg "P50延迟对比图")
 
-![P99延迟对比图](008i3skNly1gwp51zjxqaj312q0r2jtl.jpg "P99 延迟对比图")
+![P99 延迟对比图](008i3skNly1gwp51zjxqaj312q0r2jtl.jpg "P99 延迟对比图")
 
 在使用无代理的 gRPC 解析器时，延迟会有微小的增加。与 Envoy 相比，这是一个巨大的改进，仍然可以实现先进的流量管理功能和 mTLS。
 

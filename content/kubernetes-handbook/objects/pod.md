@@ -13,7 +13,7 @@ Pod 是 Kubernetes 中可以创建的最小部署单元，也是 Kubernetes REST
 
 ## 什么是 Pod？
 
-Pod 就像是豌豆荚一样，它由一个或者多个容器组成（例如 Docker 容器），它们共享容器存储、网络和容器运行配置项。Pod 中的容器总是被同时调度，有共同的运行环境。你可以把单个 Pod 想象成是运行独立应用的 “逻辑主机”—— 其中运行着一个或者多个紧密耦合的应用容器 —— 在有容器之前，这些应用都是运行在几个相同的物理机或者虚拟机上。
+Pod 就像是豌豆荚一样，它由一个或者多个容器组成（例如 Docker 容器），它们共享容器存储、网络和容器运行配置项。Pod 中的容器总是被同时调度，有共同的运行环境。你可以把单个 Pod 想象成是运行独立应用的“逻辑主机”—— 其中运行着一个或者多个紧密耦合的应用容器 —— 在有容器之前，这些应用都是运行在几个相同的物理机或者虚拟机上。
 
 尽管 kubernetes 支持多种容器运行时，但是 Docker 依然是最常用的运行时环境，我们可以使用 Docker 的术语和规则来定义 Pod。
 
@@ -25,7 +25,7 @@ Pod 中的容器也有访问共享 volume 的权限，这些 volume 会被定义
 
 根据 Docker 的结构，Pod 中的容器共享 namespace 和 volume，不支持共享 PID 的 namespace。
 
-就像每个应用容器，pod 被认为是临时（非持久的）实体。在 Pod 的生命周期中讨论过，pod 被创建后，被分配一个唯一的 ID（UID），调度到节点上，并一致维持期望的状态直到被终结（根据重启策略）或者被删除。如果 node 死掉了，分配到了这个 node 上的 pod，在经过一个超时时间后会被重新调度到其他 node 节点上。一个给定的 pod（如 UID 定义的）不会被 “重新调度” 到新的节点上，而是被一个同样的 pod 取代，如果期望的话甚至可以是相同的名字，但是会有一个新的 UID。
+就像每个应用容器，pod 被认为是临时（非持久的）实体。在 Pod 的生命周期中讨论过，pod 被创建后，被分配一个唯一的 ID（UID），调度到节点上，并一致维持期望的状态直到被终结（根据重启策略）或者被删除。如果 node 死掉了，分配到了这个 node 上的 pod，在经过一个超时时间后会被重新调度到其他 node 节点上。一个给定的 pod（如 UID 定义的）不会被“重新调度”到新的节点上，而是被一个同样的 pod 取代，如果期望的话甚至可以是相同的名字，但是会有一个新的 UID。
 
 临时卷的生命周期跟 pod 相同，当 Pod 因为某种原因被删除或者被新创建的相同的 pod 取代时，pod 的附属物（例如 volume）也会被销毁和重新创建。Kubernetes 中提供了众多的卷类型，关于卷（Volume）的详细介绍请参考 [Kubernetes 文档](https://kubernetes.io/zh-cn/docs/concepts/storage/volumes/)。
 
@@ -85,10 +85,10 @@ Pod 在设计支持就不是作为持久化实体的。在调度失败、节点�
 Pod 原语有利于：
 
 - 调度程序和控制器可插拔性
-- 支持 pod 级操作，无需通过控制器 API “代理” 它们
+- 支持 pod 级操作，无需通过控制器 API“代理”它们
 - 将 pod 生命周期与控制器生命周期分离，例如用于自举（bootstrap）
 - 控制器和服务的分离 —— 端点控制器只是监视 pod
-- 将集群级功能与 Kubelet 级功能的清晰组合 ——Kubelet 实际上是 “pod 控制器”
+- 将集群级功能与 Kubelet 级功能的清晰组合 ——Kubelet 实际上是“pod 控制器”
 - 高可用性应用程序，它们可以在终止之前及在删除之前更换 pod，例如在计划驱逐、镜像预拉取或实时 pod 迁移的情况下，详见[Issue #3949](https://github.com/kubernetes/kubernetes/issues/3949)。
 
 [StatefulSet](../statefulset) 控制器支持有状态的 Pod。在 1.4 版本中被称为 PetSet。在 kubernetes 之前的版本中创建有状态 pod 的最佳方式是创建一个 replica 为 1 的 replication controller。
@@ -100,16 +100,16 @@ Pod 原语有利于：
 示例流程如下：
 
 1. 用户发送删除 pod 的命令，默认宽限期是 30 秒；
-2. 在 Pod 超过该宽限期后 API server 就会更新 Pod 的状态为 “dead”；
-3. 在客户端命令行上显示的 Pod 状态为 “terminating”；
-4. 跟第三步同时，当 kubelet 发现 pod 被标记为 “terminating” 状态时，开始停止 pod 进程：
+2. 在 Pod 超过该宽限期后 API server 就会更新 Pod 的状态为“dead”；
+3. 在客户端命令行上显示的 Pod 状态为“terminating”；
+4. 跟第三步同时，当 kubelet 发现 pod 被标记为“terminating”状态时，开始停止 pod 进程：
    1. 如果在 pod 中定义了 preStop hook，在停止 pod 前会被调用。如果在宽限期过后，preStop hook 依然在运行，第二步会再增加 2 秒的宽限期；
    2. 向 Pod 中的进程发送 TERM 信号；
 5. 跟第三步同时，该 Pod 将从该 service 的端点列表中删除，不再是 replication controller 的一部分。关闭的慢的 pod 将继续处理 load balancer 转发的流量；
 6. 过了宽限期后，将向 Pod 中依然运行的进程发送 SIGKILL 信号而杀掉进程。
 7. Kubelet 会在 API server 中完成 Pod 的的删除，通过将优雅周期设置为 0（立即删除）。Pod 在 API 中消失，并且在客户端也不可见。
 
-删除宽限期默认是 30 秒。 `kubectl delete` 命令支持 `—grace-period=<seconds>` 选项，允许用户设置自己的宽限期。如果设置为 0 将强制删除 pod。在 kubectl>=1.5 版本的命令中，你必须同时使用 `--force` 和 `--grace-period=0` 来强制删除 pod。 在 yaml 文件中可以通过 `{{ .spec.spec.terminationGracePeriodSeconds }}` 来修改此值。
+删除宽限期默认是 30 秒。 `kubectl delete` 命令支持 `—grace-period=<seconds>` 选项，允许用户设置自己的宽限期。如果设置为 0 将强制删除 pod。在 kubectl>=1.5 版本的命令中，你必须同时使用 `--force` 和 `--grace-period=0` 来强制删除 pod。在 yaml 文件中可以通过 `{{ .spec.spec.terminationGracePeriodSeconds }}` 来修改此值。
 
 ### 强制删除 Pod
 
@@ -119,7 +119,7 @@ Pod 的强制删除是通过在集群和 etcd 中将其定义为删除状态。�
 
 ## Pod 中容器的特权模式
 
-从 Kubernetes1.1 版本开始，pod 中的容器就可以开启 privileged 模式，在容器定义文件的 `SecurityContext` 下使用 `privileged` flag。 这在使用 Linux 的网络操作和访问设备的能力时是很有用的。容器内进程可获得近乎等同于容器外进程的权限。在不需要修改和重新编译 kubelet 的情况下就可以使用 pod 来开发节点的网络和存储插件。
+从 Kubernetes1.1 版本开始，pod 中的容器就可以开启 privileged 模式，在容器定义文件的 `SecurityContext` 下使用 `privileged` flag。这在使用 Linux 的网络操作和访问设备的能力时是很有用的。容器内进程可获得近乎等同于容器外进程的权限。在不需要修改和重新编译 kubelet 的情况下就可以使用 pod 来开发节点的网络和存储插件。
 
 如果 master 节点运行的是 kuberentes1.1 或更高版本，而 node 节点的版本低于 1.1 版本，则 API server 将也可以接受新的特权模式的 pod，但是无法启动，pod 将处于 pending 状态。
 

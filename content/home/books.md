@@ -30,8 +30,8 @@ content:
   filter_button:
     - name: All
       tag: '*'
-    - name: Handbook系列
-      tag: Handbook系列
+    - name: Handbook 系列
+      tag: Handbook 系列
     - name: 出版物
       tag: 出版物
     - name: 翻译电子书

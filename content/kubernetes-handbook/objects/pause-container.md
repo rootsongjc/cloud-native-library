@@ -44,7 +44,7 @@ Pod 里的多个容器怎么去共享网络？下面是个例子：
 
 比如说现在有一个 Pod，其中包含了一个容器 A 和一个容器 B，它们两个就要共享 Network Namespace。在 Kubernetes 里的解法是这样的：它会在每个 Pod 里，额外起一个 Infra container 小容器来共享整个 Pod 的 Network Namespace。
 
-Infra container 是一个非常小的镜像，大概 700KB 左右，是一个 C 语言写的、永远处于 “暂停” 状态的容器。由于有了这样一个 Infra container 之后，其他所有容器都会通过 Join Namespace 的方式加入到 Infra container 的 Network Namespace 中。
+Infra container 是一个非常小的镜像，大概 700KB 左右，是一个 C 语言写的、永远处于“暂停”状态的容器。由于有了这样一个 Infra container 之后，其他所有容器都会通过 Join Namespace 的方式加入到 Infra container 的 Network Namespace 中。
 
 所以说一个 Pod 里面的所有容器，它们看到的网络视图是完全一样的。即：它们看到的网络设备、IP 地址、Mac 地址等等，跟网络相关的信息，其实全是一份，这一份都来自于 Pod 第一次创建的这个 Infra container。这就是 Pod 解决网络共享的一个解法。
 
@@ -73,7 +73,7 @@ kubernetes 中的 pause 容器主要为每个业务容器提供以下功能：
 
 [这篇文章](https://www.ianlewis.org/en/almighty-pause-container)做出了详细的说明，pause 容器的作用可以从这个例子中看出，首先见下图：
 
-![Pause容器](../../images/pause-container.png "Pause 容器示意图")
+![Pause 容器](../../images/pause-container.png "Pause 容器示意图")
 
 我们首先在节点上运行一个 pause 容器。
 

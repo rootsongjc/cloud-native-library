@@ -40,7 +40,7 @@ WebAssembly 和 WASI 相当新，因此尚未设置在容器生态系统中本�
 
 可以处理此任务的一个容器运行时是 crun。
 
-Crun 快速，占用内存低，是一个完全符合 OCI 的容器运行时，可以用作现有容器运行时的替代品。 Crun 最初是编写用于运行 Linux 容器的，但它还提供了能够在本地方式下在容器沙盒中运行任意扩展的处理程序。
+Crun 快速，占用内存低，是一个完全符合 OCI 的容器运行时，可以用作现有容器运行时的替代品。Crun 最初是编写用于运行 Linux 容器的，但它还提供了能够在本地方式下在容器沙盒中运行任意扩展的处理程序。
 
 这是用 crun 替换现有运行时的一种非正式方式，仅用于展示 crun 是您现有 OCI 运行时的完整替代品。
 
@@ -86,7 +86,7 @@ $ buildah build --annotation "module.wasm.image/variant=compat" -t mywasm-image
 
 ### 在 Podman 中运行 WASM 工作负载
 
-Crun 是 Podman 的默认 OCI 运行时。 Podman 包含旋钮和处理程序，可利用大多数 crun 功能，包括 crun Wasm 处理程序。构建 Wasm 兼容镜像后，它可以像任何其他容器镜像一样由 Podman 使用：
+Crun 是 Podman 的默认 OCI 运行时。Podman 包含旋钮和处理程序，可利用大多数 crun 功能，包括 crun Wasm 处理程序。构建 Wasm 兼容镜像后，它可以像任何其他容器镜像一样由 Podman 使用：
 
 ```bash
 $ podman run mywasm-image:latest
@@ -104,7 +104,7 @@ $ hello world from the webassembly module !!!!
 
 ### CRI-O
 
-- 通过编辑 `/etc/crio/crio.conf` 上的配置将 CRI-O 配置为使用 crun 而不是 runc。 Red Hat OpenShift 文档包含有关 [配置 CRI-O](https://docs.openshift.com/container-platform/3.11/crio/crio_runtime.html#configure-crio-use-crio-engine) 的更多详细信息。
+- 通过编辑 `/etc/crio/crio.conf` 上的配置将 CRI-O 配置为使用 crun 而不是 runc。Red Hat OpenShift 文档包含有关 [配置 CRI-O](https://docs.openshift.com/container-platform/3.11/crio/crio_runtime.html#configure-crio-use-crio-engine) 的更多详细信息。
 - 使用 `sudo systemctl restart crio` 重新启动 CRI-O。
 - CRI-O 自动将 pod 注释传播到容器规范。
 

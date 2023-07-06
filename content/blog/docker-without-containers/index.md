@@ -343,15 +343,15 @@ apps bin boot dev docroot etc home init lib lib32 lib64 libx32 lost+found media 
 
 ### php-aot-wasm 运行 index.php
 
-当我们使用`php-aot-wasm`与Wasmedge结合使用时，我们发现
+当我们使用`php-aot-wasm`与 Wasmedge 结合使用时，我们发现
 
 - wasi/wasm32平台
 - 没有环境变量，因为没有将任何环境变量显式暴露给 Wasm 应用程序
 - Wasm 应用程序没有被明确授权访问`/`，因此尝试列出其内容时会出现错误
 
-当然，要使`php-wasmedge-aot`可以访问读取`index.php`文件，我们必须明确说明我们想要预先打开`images/php/docroot`以便WasmEdge可以访问它作为Wasm应用程序上下文中的`/docroot`。
+当然，要使`php-wasmedge-aot`可以访问读取`index.php`文件，我们必须明确说明我们想要预先打开`images/php/docroot`以便 WasmEdge 可以访问它作为 Wasm 应用程序上下文中的`/docroot`。
 
-这很容易显示了Wasm除了可移植性之外的最大优点之一。我们获得了更好的安全性，因为除非明确说明，否则没有任何内容是可访问的。
+这很容易显示了 Wasm 除了可移植性之外的最大优点之一。我们获得了更好的安全性，因为除非明确说明，否则没有任何内容是可访问的。
 
 ```bash
 $ wasmedge --dir /docroot:$(pwd)/images/php/docroot \\
@@ -385,8 +385,8 @@ Warning: Invalid argument supplied for foreach() in /docroot/index.php on line 2
 
 当我们使用传统容器中的“php”时，我们会看到
 
-- 基于Linux的平台
-- 脚本具有访问权限的14个环境变量列表
+- 基于 Linux 的平台
+- 脚本具有访问权限的 14 个环境变量列表
 - 带有当前时间和日期的问候消息
 - 根文件夹`/`的内容列表
 
@@ -418,18 +418,18 @@ bin boot dev docroot etc home lib lib64 media mnt opt proc root run sbin srv sys
 
 ### 容器中运行 index.php 的 php-aot-wasm
 
-当我们使用`php-aot-wasm`与Wasmedge结合使用时，我们发现
+当我们使用`php-aot-wasm`与 Wasmedge 结合使用时，我们发现
 
-- wasi / wasm32平台
-- 只有2个基础架构环境变量，使用运行在containerd中的WasmEdge shim预设
-- 显示了容器中`/`中的所有文件和文件夹的列表，这是Wasm应用程序明确预先打开以便访问的（WasmEdge shim中的逻辑的一部分）
+- wasi / wasm32 平台
+- 只有 2 个基础架构环境变量，使用运行在 containerd 中的 WasmEdge shim 预设
+- 显示了容器中`/`中的所有文件和文件夹的列表，这是 Wasm 应用程序明确预先打开以便访问的（WasmEdge shim 中的逻辑的一部分）
 
 注意：如果您更加细心，您将会看到为了从此镜像运行容器，我们必须：
 
 - 通过`runtime=io.containerd.wasmedge.v1`明确地指定运行时
-- 直接传递命令行参数到`php.wasm`，而不包括二进制文件本身。向上滚动并查看传统PHP容器，包括`php`二进制文件（并不是必要的）。
+- 直接传递命令行参数到`php.wasm`，而不包括二进制文件本身。向上滚动并查看传统 PHP 容器，包括`php`二进制文件（并不是必要的）。
 
-最后，即使是在Docker中，Wasm也加强了运行index.php的安全性，因为暴露给它的东西要少得多。
+最后，即使是在 Docker 中，Wasm 也加强了运行 index.php 的安全性，因为暴露给它的东西要少得多。
 
 ```bash
 docker run --rm \\
@@ -457,9 +457,9 @@ docroot etc php.wasm
 
 ```
 
-## 传统容器与wasm容器
+## 传统容器与 wasm 容器
 
-我们成功地构建和运行了一个Wasm二进制文件，并将其作为容器运行。我们看到了Wasm容器和传统容器之间的输出差异以及Wasm带来的高级“沙盒”性能。让我们看看我们可以轻松看到的两种容器类型之间的其他差异。
+我们成功地构建和运行了一个 Wasm 二进制文件，并将其作为容器运行。我们看到了 Wasm 容器和传统容器之间的输出差异以及 Wasm 带来的高级“沙盒”性能。让我们看看我们可以轻松看到的两种容器类型之间的其他差异。
 
 首先，我们将运行两个守护程序容器，并查看如何解释有关它们的一些统计信息。然后，我们将检查容器镜像中的差异。
 
@@ -467,7 +467,7 @@ docroot etc php.wasm
 
 ### 容器统计
 
-我们将运行两个守护程序容器-一个来自传统的`php`镜像，另一个来自`php-wasm`镜像。
+我们将运行两个守护程序容器 - 一个来自传统的`php`镜像，另一个来自`php-wasm`镜像。
 
 ```bash
 docker run --rm -d \\
@@ -484,7 +484,7 @@ docker run --rm -d \\
    -S 0.0.0.0:8080 -t /docroot
 ```
 
-但是，如果我们查看`docker stats`，我们将只看到传统容器的统计信息。由于Docker+Wasm是beta功能，这可能会发生变化。因此，如果想要查看正在发生的情况，可以监视控制组。每个传统容器都有自己的控制组，如`docker/ee44...`所示。另一方面，Wasm容器包含在`podruntime/docker`控制组中，您可以间接观察它们的CPU或内存消耗。
+但是，如果我们查看`docker stats`，我们将只看到传统容器的统计信息。由于 Docker+Wasm 是 beta 功能，这可能会发生变化。因此，如果想要查看正在发生的情况，可以监视控制组。每个传统容器都有自己的控制组，如`docker/ee44...`所示。另一方面，Wasm 容器包含在`podruntime/docker`控制组中，您可以间接观察它们的 CPU 或内存消耗。
 
 ```bash
 $ systemd-cgtop -kP --depth=10
@@ -498,7 +498,7 @@ docker/ee444b...        1        0.0      6.7M
 
 ### 镜像大小
 
-首先，探索镜像时，我们会发现Wasm容器镜像比传统容器镜像小得多。即使是“php”容器的`alpine`版本也比Wasm容器大。
+首先，探索镜像时，我们会发现 Wasm 容器镜像比传统容器镜像小得多。即使是“php”容器的`alpine`版本也比 Wasm 容器大。
 
 ```bash
 $ docker images

@@ -1,6 +1,6 @@
 ---
 title: "告别 Sidecar——使用 eBPF 解锁内核级服务网格"
-summary: "本文回顾了Linux 内核的连接性，实现服务网格的几种模式，以及如何使用 eBPF 实现无 Sidecar 的服务网格。"
+summary: "本文回顾了 Linux 内核的连接性，实现服务网格的几种模式，以及如何使用 eBPF 实现无 Sidecar 的服务网格。"
 authors: ["Thomas Graf"]
 categories: ["service mesh"]
 tags: ["Istio","ebpf","service mesh"]
@@ -20,7 +20,7 @@ links:
 
 ## 编者的话
 
-本文作者是 Isovalent 联合创始人&CTO，原文标题 [How eBPF will solve Service Mesh - Goodbye Sidecars](https://isovalent.com/blog/post/2021-12-08-ebpf-servicemesh)，作者回顾了Linux 内核的连接性，实现服务网格的几种模式，以及如何使用 eBPF 实现无 Sidecar 的服务网格。
+本文作者是 Isovalent 联合创始人&CTO，原文标题 [How eBPF will solve Service Mesh - Goodbye Sidecars](https://isovalent.com/blog/post/2021-12-08-ebpf-servicemesh)，作者回顾了 Linux 内核的连接性，实现服务网格的几种模式，以及如何使用 eBPF 实现无 Sidecar 的服务网格。
 
 ## 什么是服务网格？
 
@@ -40,7 +40,7 @@ links:
 
 ![基于库的服务网格模型](008i3skNly1gx7wyowb55j31pi0k076p.jpg "基于库的服务网格模型")
 
-今天，服务网格通常使用一种叫做 sidecar 模型的架构来实现。这种架构将实现上述功能的代码封装到第四层代理中，服务间的流量被重定向到这个所谓的 sidecar 代理。它之所以被称为 “挎斗”，是因为每个应用程序都有一个代理，就像挎斗附着在摩托车上一样。
+今天，服务网格通常使用一种叫做 sidecar 模型的架构来实现。这种架构将实现上述功能的代码封装到第四层代理中，服务间的流量被重定向到这个所谓的 sidecar 代理。它之所以被称为“挎斗”，是因为每个应用程序都有一个代理，就像挎斗附着在摩托车上一样。
 
 ![基于 Sidecar 的服务网格模型](008i3skNly1gx7wyqsefhj31pe0moq5h.jpg "基于 Sidecar 的服务网格模型")
 

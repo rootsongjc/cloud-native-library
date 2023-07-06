@@ -42,5 +42,5 @@ Kubernetes 提供了一个准入控制器（`PodPreset`），当其启用时，P
 为了在群集中使用 Pod Preset，您必须确保以下内容：
 
 1. 您已启用 `settings.k8s.io/v1alpha1/podpreset` API 类型。例如，可以通过在 API server 的 `--runtime-config` 选项中包含 `settings.k8s.io/v1alpha1=true` 来完成此操作。
-2. 您已启用 `PodPreset` 准入控制器。 一种方法是将 `PodPreset` 包含在为 API server 指定的 `--admission-control` 选项值中。
+2. 您已启用 `PodPreset` 准入控制器。一种方法是将 `PodPreset` 包含在为 API server 指定的 `--admission-control` 选项值中。
 3. 您已经在要使用的命名空间中通过创建 `PodPreset` 对象来定义 `PodPreset`。

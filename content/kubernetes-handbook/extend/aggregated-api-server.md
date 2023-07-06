@@ -15,7 +15,7 @@ Aggregated（聚合的）API server 是为了将原来的 API server 这个巨�
 - 汇总所有的 API server 信息
 - 代理所有的客户端到 API server 的请求
 
-**注意**：这里说的 API server 是一组 “API Server”，而不是说我们安装集群时候的那个 API server，而且这组 API server 是可以横向扩展的。
+**注意**：这里说的 API server 是一组“API Server”，而不是说我们安装集群时候的那个 API server，而且这组 API server 是可以横向扩展的。
 
 ## 安装配置聚合的 API server
 

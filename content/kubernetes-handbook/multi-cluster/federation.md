@@ -54,7 +54,7 @@ Kubernetes 集群 federation 可以包含运行在不同云服务提供商（例
 - 与跨可用区集群相比，推测单区域集群的可用性属性更容易。
 - 当 Kubernetes 开发人员设计系统时（例如对延迟，带宽或相关故障进行假设），它们假设所有的机器都在一个单一的数据中心，或以其它方式紧密连接。
 
-在每个可用区域同时拥有多个集群也是可以的，但总体而言，我们认为少一点更好。 选择较少集群的理由是：
+在每个可用区域同时拥有多个集群也是可以的，但总体而言，我们认为少一点更好。选择较少集群的理由是：
 
 - 某些情况下，在一个集群中拥有更多的节点可以改进 Pod 的装箱打包（较少资源碎片）。
 - 减少运维开销（尽管随着运维工具和流程的成熟，优势已经减少）。
@@ -75,15 +75,15 @@ Kubernetes 集群数量的选择可能是一个相对静态的选择，只是偶
 
 如果在集群故障的情形下允许负载均衡将流量引导到任何区域，则至少需要有比 `R` 或 `U + 1` 数量更大的集群。如果不行的话（例如希望在集群发生故障时对所有用户确保低延迟），那么你需要有数量为 `R * (U + 1)` 的集群（`R` 个区域，每个中有 `U + 1` 个集群）。无论如何，请尝试将每个集群放在不同的区域中。
 
-最后，如果你的任何集群需要比 Kubernetes 集群最大建议节点数更多的节点，那么你可能需要更多的集群。 Kubernetes v1.3 支持最多 1000 个节点的集群。 Kubernetes v1.8 支持最多 5000 个节点的集群。
+最后，如果你的任何集群需要比 Kubernetes 集群最大建议节点数更多的节点，那么你可能需要更多的集群。Kubernetes v1.3 支持最多 1000 个节点的集群。Kubernetes v1.8 支持最多 5000 个节点的集群。
 
 ## Kubernetes 集群联邦的演进
 
 [Kubernetes 官方博客的文章](https://kubernetes.io/blog/2018/12/12/kubernetes-federation-evolution/)中介绍了 Kubernetes 集群联邦的演进，该项目是在 SIG Multicluster 中进行的，Federation 是 Kubernetes 的一个子项目，社区对这个项目的兴趣很浓，该项目最初重用 Kubernetes API，以消除现有 Kubernetes 用户的任何附加使用复杂性。但由于以下原因，此方式行不通：
 
 - 在集群层面重新实施 Kubernetes API 的困难，因为 Federation 的特定扩展存储在注释中。
-- 由于 Kubernetes API 的1:1仿真，Federation 类型、放置（placement）和调节（reconciliation）的灵活性有限。
-- 没有固定的 GA 路径，API 成熟度普遍混乱；例如，Deployment 在Kubernetes 中是 GA，但在 Federation v1 中甚至不是Beta。
+- 由于 Kubernetes API 的 1:1 仿真，Federation 类型、放置（placement）和调节（reconciliation）的灵活性有限。
+- 没有固定的 GA 路径，API 成熟度普遍混乱；例如，Deployment 在 Kubernetes 中是 GA，但在 Federation v1 中甚至不是 Beta。
 
 随着 Federation 特定的 API 架构和社区的努力，这些想法有了进一步的发展，改进为 Federation v2。请注意，Federation V1 版本已经归档不再维护和更新，且官方也不再推荐继续使用。如果需要了解更多的 Federation 资料，请参考：[Kubernetes Federation v2](https://github.com/kubernetes-sigs/kubefed)。
 
@@ -103,7 +103,7 @@ Multicluster SIG 得出了 Federation API 和 API 组的共同定义，即 "一�
 
 Kubernetes 服务在构建微服务架构时非常有用。人们明显希望跨越集群、可用区、区域和云的边界来部署服务。跨集群的服务提供了地理分布，实现了混合和多云场景，并提高了超越单一集群部署的高可用性水平。希望其服务跨越一个或多个（可能是远程）集群的客户，需要在集群内外以一致的方式提供服务。
 
-Federated Service 的核心是包含一个 Template（Kubernetes服务的定义）、一个 Placement（部署到哪个集群）、一个 Override（在特定集群中的可选变化）和一个 ServiceDNSRecord（指定如何发现它的细节）。
+Federated Service 的核心是包含一个 Template（Kubernetes 服务的定义）、一个 Placement（部署到哪个集群）、一个 Override（在特定集群中的可选变化）和一个 ServiceDNSRecord（指定如何发现它的细节）。
 
 注意：联邦服务必须是 LoadBalancer 类型，以便它可以跨集群发现。
 
@@ -119,7 +119,7 @@ Federated Service 的核心是包含一个 Template（Kubernetes服务的定义�
 
 如果服务在本地集群中不存在（或者存在但没有健康的后端 pod），DNS 查询会自动扩展到 `nginx.mynamespace.myfederation.svc.us-central1-a.example.com`。在幕后，这可以找到离我们的可用区最近的一个 shard 的外部 IP。这个扩展是由集群本地 DNS 服务器自动执行的，它返回相关的 CNAME 记录。这就导致了对 DNS 记录的层次结构的遍历，并最终找到附近联邦服务的一个外部 IP。
 
-也可以通过明确指定适当的 DNS 名称，而不是依赖自动的DNS扩展，将目标锁定在 pod 本地以外的可用性区域和地区的服务 shard。例如，`nginx.mynamespace.myfederation.svc.europe-west1.example.com` 将解析到欧洲所有当前健康的服务 shard，即使发布查询的 pod 位于美国，也不管美国是否有健康的服务 shard，这对远程监控和其他类似的应用很有用。
+也可以通过明确指定适当的 DNS 名称，而不是依赖自动的 DNS 扩展，将目标锁定在 pod 本地以外的可用性区域和地区的服务 shard。例如，`nginx.mynamespace.myfederation.svc.europe-west1.example.com` 将解析到欧洲所有当前健康的服务 shard，即使发布查询的 pod 位于美国，也不管美国是否有健康的服务 shard，这对远程监控和其他类似的应用很有用。
 
 ### 从联邦集群之外的其他客户端发现联邦服务
 
@@ -198,7 +198,7 @@ spec:
     version: v1
 ```
 
-若想新增 CRD 的 Federated API 的话，可通过 `kubefedctl enable <res>` 指令来建立，如下:
+若想新增 CRD 的 Federated API 的话，可通过 `kubefedctl enable <res>` 指令来建立，如下：
 
 ```sh
 $ kubefedctl enable etcdclusters

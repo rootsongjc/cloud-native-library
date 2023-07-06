@@ -24,7 +24,7 @@ type: book
 
 标签可以来自各种来源。例如，[端点](#endpoint) 将通过本地容器运行时派生与容器关联的标签，以及与 Kubernetes 提供的 pod 关联的标签。由于这两个标签命名空间彼此不知道，这可能会导致标签键冲突。
 
-为了解决这种潜在的冲突，Cilium 在导入标签时为所有标签键添加前缀 `source:` 以指示标签的来源，例如 `k8s:role=frontend`、`container:user=joe`、`k8s:role=backend`。这意味着当您使用 `docker run [...] -l foo=bar` 运行 Docker 容器时，标签 `container:foo=bar` 将出现在代表容器的 Cilium 端点上。类似地，以 `foo: bar` 标签启动的 Kubernetes pod 将由与标签关联的 Cilium 端点表示 。为每个潜在来源分配一个唯一名称。当前支持以下标签源：
+为了解决这种潜在的冲突，Cilium 在导入标签时为所有标签键添加前缀 `source:` 以指示标签的来源，例如 `k8s:role=frontend`、`container:user=joe`、`k8s:role=backend`。这意味着当您使用 `docker run [...] -l foo=bar` 运行 Docker 容器时，标签 `container:foo=bar` 将出现在代表容器的 Cilium 端点上。类似地，以 `foo: bar` 标签启动的 Kubernetes pod 将由与标签关联的 Cilium 端点表示。为每个潜在来源分配一个唯一名称。当前支持以下标签源：
 
 - `container:` 对于从本地容器运行时派生的标签
 - `k8s:` 对于从 Kubernetes 派生的标签
@@ -83,7 +83,7 @@ ENDPOINT   POLICY        IDENTITY   LABELS (source:key [=value])   IPv6         
 
 ### 安全相关标签 {#security-relevant-labels}
 
-在派生 [身份](#identity) 时，并非所有与容器或 pod 关联的 [标签](#labels) 都有意义。标签可用于存储元数据，例如容器启动时的时间戳。Cilium 需要知道哪些标签是有意义的，知道在推导身份时需要考虑哪些标签。为此，用户需要指定有意义标签的字符串前缀列表。标准行为是包含所有以 `id` 为前缀开头的标签， 例如，``id.service1``、`id.service2`、`id.groupA.service44`。启动代理时可以指定有意义的标签前缀列表。
+在派生 [身份](#identity) 时，并非所有与容器或 pod 关联的 [标签](#labels) 都有意义。标签可用于存储元数据，例如容器启动时的时间戳。Cilium 需要知道哪些标签是有意义的，知道在推导身份时需要考虑哪些标签。为此，用户需要指定有意义标签的字符串前缀列表。标准行为是包含所有以 `id` 为前缀开头的标签，例如，``id.service1``、`id.service2`、`id.groupA.service44`。启动代理时可以指定有意义的标签前缀列表。
 
 ### 特殊身份 {#special-identities}
 

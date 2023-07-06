@@ -9,7 +9,7 @@ type: book
 
 ## 什么是 DaemonSet？
 
- _DaemonSet_ 确保全部（或者一些）Node 上运行一个 Pod 的副本。当有 Node 加入集群时，也会为他们新增一个 Pod 。当有 Node 从集群移除时，这些 Pod 也会被回收。删除 DaemonSet 将会删除它创建的所有 Pod。
+ _DaemonSet_ 确保全部（或者一些）Node 上运行一个 Pod 的副本。当有 Node 加入集群时，也会为他们新增一个 Pod。当有 Node 从集群移除时，这些 Pod 也会被回收。删除 DaemonSet 将会删除它创建的所有 Pod。
 
 使用 DaemonSet 的一些典型用法：
 
@@ -18,7 +18,7 @@ type: book
 - 在每个 Node 上运行监控 daemon，例如 [Prometheus Node Exporter](https://github.com/prometheus/node_exporter)、`collectd`、Datadog 代理、New Relic 代理，或 Ganglia `gmond`。
 
 一个简单的用法是，在所有的 Node 上都存在一个 DaemonSet，将被作为每种类型的 daemon 使用。
-一个稍微复杂的用法可能是，对单独的每种类型的 daemon 使用多个 DaemonSet，但具有不同的标志，和/或对不同硬件类型具有不同的内存、CPU要求。
+一个稍微复杂的用法可能是，对单独的每种类型的 daemon 使用多个 DaemonSet，但具有不同的标志，和/或对不同硬件类型具有不同的内存、CPU 要求。
 
 ## 编写 DaemonSet Spec
 
@@ -95,7 +95,7 @@ Daemon Pod 关心 [Taint 和 Toleration](https://kubernetes.io/docs/concepts/con
 
 - 像对待应用程序一样，具备为 daemon 提供监控和管理日志的能力。
 - 为 daemon 和应用程序使用相同的配置语言和工具（如 Pod 模板、`kubectl`）。
-- Kubernetes 未来版本可能会支持对 DaemonSet 创建 Pod 与 Node升级工作流进行集成。
+- Kubernetes 未来版本可能会支持对 DaemonSet 创建 Pod 与 Node 升级工作流进行集成。
 - 在资源受限的容器中运行 daemon，能够增加 daemon 和应用容器的隔离性。然而这也实现了在容器中运行 daemon，但却不能在 Pod 中运行（例如，直接基于 Docker 启动）。
 
 ### 裸 Pod

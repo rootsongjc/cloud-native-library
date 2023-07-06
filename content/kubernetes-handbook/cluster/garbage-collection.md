@@ -77,21 +77,21 @@ metadata:
 
 ### Foreground 级联删除
 
-在 *foreground 级联删除* 模式下，根对象首先进入 “删除中” 状态。在 “删除中” 状态会有如下的情况：
+在 *foreground 级联删除* 模式下，根对象首先进入“删除中”状态。在“删除中”状态会有如下的情况：
 
 - 对象仍然可以通过 REST API 可见
 - 会设置对象的 `deletionTimestamp` 字段
-- 对象的 `metadata.finalizers` 字段包含了值 “foregroundDeletion”
+- 对象的 `metadata.finalizers` 字段包含了值“foregroundDeletion”
 
-一旦被设置为 “删除中” 状态，垃圾收集器会删除对象的所有 Dependent。垃圾收集器删除了所有 “Blocking” 的 Dependent（对象的 `ownerReference.blockOwnerDeletion=true`）之后，它会删除 Owner 对象。
+一旦被设置为“删除中”状态，垃圾收集器会删除对象的所有 Dependent。垃圾收集器删除了所有“Blocking”的 Dependent（对象的 `ownerReference.blockOwnerDeletion=true`）之后，它会删除 Owner 对象。
 
-注意，在 “foreground 删除” 模式下，Dependent 只有通过 `ownerReference.blockOwnerDeletion` 才能阻止删除 Owner 对象。在 Kubernetes 1.7 版本中将增加 admission controller，基于 Owner 对象上的删除权限来控制用户去设置 `blockOwnerDeletion` 的值为 true，所以未授权的 Dependent 不能够延迟 Owner 对象的删除。
+注意，在“foreground 删除”模式下，Dependent 只有通过 `ownerReference.blockOwnerDeletion` 才能阻止删除 Owner 对象。在 Kubernetes 1.7 版本中将增加 admission controller，基于 Owner 对象上的删除权限来控制用户去设置 `blockOwnerDeletion` 的值为 true，所以未授权的 Dependent 不能够延迟 Owner 对象的删除。
 
 如果一个对象的`ownerReferences` 字段被一个 Controller（例如 Deployment 或 ReplicaSet）设置，`blockOwnerDeletion` 会被自动设置，没必要手动修改这个字段。
 
 ### 设置级联删除策略
 
-通过为 Owner 对象设置 `deleteOptions.propagationPolicy` 字段，可以控制级联删除策略。可能的取值包括：“orphan”、“Foreground” 或 “Background”。
+通过为 Owner 对象设置 `deleteOptions.propagationPolicy` 字段，可以控制级联删除策略。可能的取值包括：“orphan”、“Foreground”或“Background”。
 
 对很多 Controller 资源，包括 ReplicationController、ReplicaSet、StatefulSet、DaemonSet 和 Deployment，默认的垃圾收集策略是 `orphan`。因此，除非指定其它的垃圾收集策略，否则所有 Dependent 对象使用的都是 `orphan` 策略。
 
@@ -124,7 +124,7 @@ curl -X DELETE localhost:8080/apis/extensions/v1beta1/namespaces/default/replica
 -H "Content-Type: application/json"
 ```
 
-kubectl 也支持级联删除。 通过设置 `--cascade` 为 true，可以使用 kubectl 自动删除 Dependent 对象。设置 `--cascade` 为 false，会使 Dependent 对象成为孤儿 Dependent 对象。`--cascade` 的默认值是 true。
+kubectl 也支持级联删除。通过设置 `--cascade` 为 true，可以使用 kubectl 自动删除 Dependent 对象。设置 `--cascade` 为 false，会使 Dependent 对象成为孤儿 Dependent 对象。`--cascade` 的默认值是 true。
 
 下面是一个例子，使一个 ReplicaSet 的 Dependent 对象成为孤儿 Dependent：
 

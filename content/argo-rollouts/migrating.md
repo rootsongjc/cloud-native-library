@@ -47,7 +47,7 @@ type: book
        - pause: {}
 ```
 
-🔔 注意：在迁移已经提供实时生产流量的 Deployment 时，应先在 Deployment 旁边运行 Rollout，然后再删除 Deployment 或缩小 Deployment。 不遵循此方法可能导致停机。这也允许在删除原始部署之前测试 Rollout。
+🔔 注意：在迁移已经提供实时生产流量的 Deployment 时，应先在 Deployment 旁边运行 Rollout，然后再删除 Deployment 或缩小 Deployment。不遵循此方法可能导致停机。这也允许在删除原始部署之前测试 Rollout。
 
 ### 从 Rollout 引用 Deployment
 
@@ -133,7 +133,7 @@ Rollout 提供流量管理功能，可管理路由规则并将流量流向应用
 2. 将 kind 从 Rollout 更改为 Deployment
 3. 在 `spec.strategy.canary` 或 `spec.strategy.blueGreen` 中删除 Rollout 策略
 
-🔔 注意：在迁移已经提供实时生产流量的 Rollout 时，应先在 Rollout 旁边运行 Deployment，然后再删除 Rollout 或缩小 Rollout。 不遵循此方法可能导致停机。这也允许在删除原始 Rollout 之前测试 Deployment。
+🔔 注意：在迁移已经提供实时生产流量的 Rollout 时，应先在 Rollout 旁边运行 Deployment，然后再删除 Rollout 或缩小 Rollout。不遵循此方法可能导致停机。这也允许在删除原始 Rollout 之前测试 Deployment。
 
 ### 从 Rollout 引用 Deployment
 

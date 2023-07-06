@@ -18,7 +18,7 @@ cascade:
 
 《Cilium 中文指南》当前内容译自 [Cilium 官方文档](https://docs.cilium.io/en/v1.11/)，节选了以下章节：
 
-- 概念：描述了 Cilium 的组件以及部署 Cilium 的不同模式。 提供高层次的
+- 概念：描述了 Cilium 的组件以及部署 Cilium 的不同模式。提供高层次的
   运行一个完整的 Cilium 部署并理解其行为所需的高层次理解。
 - 开始：快速开始使用 Cilium。
 - 策略：详细介绍了策略语言结构和支持的格式。

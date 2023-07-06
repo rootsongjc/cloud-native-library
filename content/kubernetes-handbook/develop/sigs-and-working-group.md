@@ -47,7 +47,7 @@ Kubernetes 的社区是以 SIG（Special Interest Group 特别兴趣小组）和
 
 - **App Def**：改进 API 中的声明性原语、客户端库、工具的用户体验。
 - **Cloud Provider**：云供应商工作组。
-- **Cluster API**：定义一个代表 Kubernetes 集群的可移植 API。 API 将包含控制平面及其配置和底层基础设施（节点，节点池等）。
+- **Cluster API**：定义一个代表 Kubernetes 集群的可移植 API。API 将包含控制平面及其配置和底层基础设施（节点，节点池等）。
 - **Container Identity**：确保容器能够获得安全的身份认证并与外部连通的解决方案。
 - **Kubeadm Adoption**：提高 kubeadm 工具的采用率。
 - **Resource Management**J：资源隔离和提高资源利用率。

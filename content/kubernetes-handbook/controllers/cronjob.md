@@ -69,7 +69,7 @@ $ kubectl create -f cronjob.yaml
 cronjob "hello" created
 ```
 
-当然，也可以用`kubectl run`来创建一个CronJob：
+当然，也可以用`kubectl run`来创建一个 CronJob：
 
 ```bash
 kubectl run hello --schedule="*/1 * * * *" --restart=OnFailure --image=busybox -- /bin/sh -c "date; echo Hello from the Kubernetes cluster"
@@ -124,4 +124,4 @@ job "hello-1202039034" deleted
 
 ```
 
-一旦 Job 被删除，由 Job 创建的 Pod 也会被删除。注意，所有由名称为 “hello” 的 Cron Job 创建的 Job 会以前缀字符串 “hello-” 进行命名。如果想要删除当前 Namespace 中的所有 Job，可以通过命令 `kubectl delete jobs --all` 立刻删除它们。
+一旦 Job 被删除，由 Job 创建的 Pod 也会被删除。注意，所有由名称为“hello”的 Cron Job 创建的 Job 会以前缀字符串“hello-”进行命名。如果想要删除当前 Namespace 中的所有 Job，可以通过命令 `kubectl delete jobs --all` 立刻删除它们。

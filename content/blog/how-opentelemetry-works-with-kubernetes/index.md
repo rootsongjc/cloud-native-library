@@ -21,9 +21,9 @@ OTEL 支持多种编程语言，包括 [Java](https://thenewstack.io/getting-sta
 
 一旦 OpenTelemetry 组件收集到遥测数据，就可以将其导出到各种后端，如软件即服务解决方案、平台或存储系统，提供存储和查询功能。OpenTelemetry 提供与各种后端的集成，包括 [Prometheus](https://prometheus.io/)、Jaeger、[Zipkin](https://zipkin.io/) 等，使导出遥测数据到不同系统变得更加容易。
 
-在 Kubernetes 中使用 OTEL 并不困难。实际上，安装 [Kubernetes](https://thenewstack.io/kubernetes/) 的 OTEL Operator是一个简单的过程，在本文中，您将学习如何执行此操作。
+在 Kubernetes 中使用 OTEL 并不困难。实际上，安装 [Kubernetes](https://thenewstack.io/kubernetes/) 的 OTEL Operator 是一个简单的过程，在本文中，您将学习如何执行此操作。
 
-通过此Operator，您可以轻松地管理 Kubernetes 集群中的 OpenTelemetry 组件，并将其配置为导出遥测数据到您选择的后端。这简化了监视 Kubernetes 集群的过程，并使您能够对应用程序的健康和性能做出明智的决策。
+通过此 Operator，您可以轻松地管理 Kubernetes 集群中的 OpenTelemetry 组件，并将其配置为导出遥测数据到您选择的后端。这简化了监视 Kubernetes 集群的过程，并使您能够对应用程序的健康和性能做出明智的决策。
 
 ## OpenTelemetry 的基本组件
 
@@ -79,7 +79,7 @@ OpenTelemetry 包括一个自动仪器化代理，可以注入具有跟踪和指
 
 您可以将 OpenTelemetry Operator 部署到 Kubernetes 集群中，并使其自动为应用程序仪表化和收集遥测数据。
 
-[OpenTelemetry Kubernetes Operator](https://opentelemetry.io/docs/k8s-operator/) 提供了两个自定义资源定义（CRD），用于定义Operator的行为。这两个 CRD 共同允许您为应用程序定义 OpenTelemetry Operator 的完整行为。
+[OpenTelemetry Kubernetes Operator](https://opentelemetry.io/docs/k8s-operator/) 提供了两个自定义资源定义（CRD），用于定义 Operator 的行为。这两个 CRD 共同允许您为应用程序定义 OpenTelemetry Operator 的完整行为。
 
 这两个 CRD 是：
 
@@ -95,9 +95,9 @@ OpenTelemetry 包括一个自动仪器化代理，可以注入具有跟踪和指
 
 OpenTelemetry Kubernetes Operator 可以使用各种方法安装，包括：
 
-- Operator生命周期管理器 (OLM)。这是[推荐的方法](https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/)，因为它提供了方便的安装、升级和管理Operator的方法。
-- Helm charts。Helm 是 Kubernetes 的软件包管理器，提供了一种在 Kubernetes 上部署和管理应用程序的简单方法。OpenTelemetry operator 的 Helm charts [可用](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-operator)，可用于部署Operator。
-- Kubernetes 清单。Operator也可以使用 Kubernetes 清单进行安装，后者提供了一种声明性的方式来管理 Kubernetes 资源。Operator清单可以根据特定要求进行定制。
+- Operator 生命周期管理器 (OLM)。这是[推荐的方法](https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/)，因为它提供了方便的安装、升级和管理 Operator 的方法。
+- Helm charts。Helm 是 Kubernetes 的软件包管理器，提供了一种在 Kubernetes 上部署和管理应用程序的简单方法。OpenTelemetry operator 的 Helm charts [可用](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-operator)，可用于部署 Operator。
+- Kubernetes 清单。Operator 也可以使用 Kubernetes 清单进行安装，后者提供了一种声明性的方式来管理 Kubernetes 资源。Operator 清单可以根据特定要求进行定制。
 
 要收集遥测数据，我们需要使用创建遥测信号的代码仪表化我们的应用程序。有不同的方法来为遥测数据仪表化应用程序。
 
@@ -141,7 +141,7 @@ OpenTelemetry Kubernetes Operator 可以使用各种方法安装，包括：
 
 在某些情况下，OpenTelemetry 可以作为 Prometheus 的替代品，特别是在边缘设备上资源有限的情况下。Prometheus 更加专注于监控和警报，而 OpenTelemetry 则专为可观察性而设计，并提供超出指标以外的功能，包括跟踪和日志记录。
 
-此外，OpenTelemetry 可以用于将数据导出到各种后端，包括 Prometheus，因此如果您愿意，仍然可以使用 Prometheus 进行监控和警报。 OpenTelemetry 的灵活性和可扩展性使您可以将可观察性解决方案定制为符合您的特定需求和资源限制。
+此外，OpenTelemetry 可以用于将数据导出到各种后端，包括 Prometheus，因此如果您愿意，仍然可以使用 Prometheus 进行监控和警报。OpenTelemetry 的灵活性和可扩展性使您可以将可观察性解决方案定制为符合您的特定需求和资源限制。
 
 OpenTelemetry Operator 负责部署和管理 OpenTelemetry Collector，该组件是收集、处理和导出遥测数据的中央组件。它不部署其他边车，例如 Envoy，但可以与它们一起工作以收集额外的遥测数据。
 
@@ -153,7 +153,7 @@ OpenTelemetry Collector 可以以不同的模式部署，例如边车、daemonse
 
 以下是使用 otelcol 自定义资源定义部署 OpenTelemetry 收集器的 Kubernetes 清单文件示例：
 
-在此示例中，我们定义了一个名为 `otel-collector` 的收集器，它使用 OTLP 接收器接收跟踪数据，使用 Prometheus 导出器将指标导出到 Prometheus 服务器，并使用两个处理器（`batch` 和 `queued_retry`）处理数据。 config 字段指定收集器的配置，其格式为 YAML。
+在此示例中，我们定义了一个名为 `otel-collector` 的收集器，它使用 OTLP 接收器接收跟踪数据，使用 Prometheus 导出器将指标导出到 Prometheus 服务器，并使用两个处理器（`batch` 和 `queued_retry`）处理数据。config 字段指定收集器的配置，其格式为 YAML。
 
 使用 OpenTelemetry 收集跟踪、指标和日志在几个方面都很重要：
 

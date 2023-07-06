@@ -52,7 +52,7 @@ Kubernetes 提供的功能可以满足在频繁地自动中断的同时运行高
 
 ## 中断预算的工作原理
 
-应用程序所有者可以为每个应用程序创建一个 `PodDisruptionBudget` 对象（PDB）。 PDB 将限制在同一时间自愿中断的复制应用程序中宕机的 Pod 的数量。例如，基于定额的应用程序希望确保运行的副本数量永远不会低于仲裁所需的数量。Web 前端可能希望确保提供负载的副本的数量永远不会低于总数的某个百分比。
+应用程序所有者可以为每个应用程序创建一个 `PodDisruptionBudget` 对象（PDB）。PDB 将限制在同一时间自愿中断的复制应用程序中宕机的 Pod 的数量。例如，基于定额的应用程序希望确保运行的副本数量永远不会低于仲裁所需的数量。Web 前端可能希望确保提供负载的副本的数量永远不会低于总数的某个百分比。
 
 集群管理器和托管提供商应使用遵循 `Pod Disruption Budgets` 的工具，方法是调用[Eviction API](https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/#the-eviction-api)而不是直接删除 Pod。例如 `kubectl drain` 命令和 Kubernetes-on-GCE 集群升级脚本（`cluster/gce/upgrade.sh`）。
 
@@ -62,7 +62,7 @@ PDB 指定应用程序可以容忍的副本的数量，相对于应该有多少�
 
 使用标签选择器来指定应用程序的一组 pod，这与应用程序的控制器（Deployment、StatefulSet 等）使用的相同。
 
-Pod 控制器的 `.spec.replicas` 计算“预期的” pod 数量。使用对象的 `.metadata.ownerReferences` 值从控制器获取。
+Pod 控制器的 `.spec.replicas` 计算“预期的”pod 数量。使用对象的 `.metadata.ownerReferences` 值从控制器获取。
 
 PDB 不能阻止[非自愿中断](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/#voluntary-and-involuntary-disruptions)的发生，但是它们确实会影响预算。
 
@@ -72,14 +72,14 @@ PDB 不能阻止[非自愿中断](https://kubernetes.io/docs/concepts/workloads/
 
 ## PDB 示例
 
-假设集群有3个节点，`node-1` 到 `node-3`。集群中运行了一些应用，其中一个应用有3个副本，分别是 `pod-a`、`pod-b` 和 `pod-c`。另外，还有一个与它相关的不具有 PDB 的 pod，我们称为之为 `pod-x`。最初，所有 Pod 的分布如下：
+假设集群有 3 个节点，`node-1` 到 `node-3`。集群中运行了一些应用，其中一个应用有 3 个副本，分别是 `pod-a`、`pod-b` 和 `pod-c`。另外，还有一个与它相关的不具有 PDB 的 pod，我们称为之为 `pod-x`。最初，所有 Pod 的分布如下：
 
 |       node-1       |      node-2       |      node-3       |
 | :----------------: | :---------------: | :---------------: |
 | pod-a  *available* | pod-b *available* | pod-c *available* |
 | pod-x  *available* |                   |                   |
 
-所有的3个 pod 都是 Deployment 中的一部分，并且它们共同拥有一个 PDB，要求至少有3个 pod 中的2个始终处于可用状态。
+所有的 3 个 pod 都是 Deployment 中的一部分，并且它们共同拥有一个 PDB，要求至少有 3 个 pod 中的 2 个始终处于可用状态。
 
 例如，假设集群管理员想要重启系统，升级内核版本来修复内核中的错误。集群管理员首先使用 `kubectl drain` 命令尝试排除 `node-1`。该工具试图驱逐 `pod-a` 和 `pod-x`。这立即成功。两个 Pod 同时进入终止状态。这时的集群处于这种状态：
 
@@ -106,7 +106,7 @@ Deployment 注意到其中有一个 pod 处于正在终止，因此会创建了�
 |                  | pod-b *available* | pod-c *available* |
 |                  | pod-d *starting*  |       pod-y       |
 
-此时，如果一个急躁的集群管理员试图排空（drain）`node-2` 或 `node-3`，drain 命令将被阻塞，因为对于 Deployment 只有2个可用的 pod，并且其 PDB 至少需要2个。经过一段时间，`pod-d` 变得可用。
+此时，如果一个急躁的集群管理员试图排空（drain）`node-2` 或 `node-3`，drain 命令将被阻塞，因为对于 Deployment 只有 2 个可用的 pod，并且其 PDB 至少需要 2 个。经过一段时间，`pod-d` 变得可用。
 
 | node-1 *drained* |      node-2       |      node-3       |
 | :--------------: | :---------------: | :---------------: |
@@ -139,7 +139,7 @@ Deployment 将创建一个名为 `pod-e` 的 `pod-b` 的替代品。但是，集
 - 当有许多应用程序团队共享一个 Kubernetes 集群，并且有自然的专业角色
 - 使用第三方工具或服务来自动化集群管理
 
-Pod Disruption Budget（Pod 中断预算） 通过在角色之间提供接口来支持这种角色分离。
+Pod Disruption Budget（Pod 中断预算）通过在角色之间提供接口来支持这种角色分离。
 
 如果您的组织中没有这样的职责分离，则可能不需要使用 Pod 中断预算。
 

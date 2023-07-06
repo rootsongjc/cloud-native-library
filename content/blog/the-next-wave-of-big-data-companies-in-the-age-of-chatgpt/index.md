@@ -21,15 +21,15 @@ links:
 
 还记得“大数据”这个流行语吗？它在云计算时代孕育了许多成功的公司，如 Snowflake、Databricks、DataStax、Splunk 和 Cloudera。但现在我们处于人工智能时代，据说机器学习软件现在已经达到或接近“智能”了（即使它容易 [产生幻觉](https://thenewstack.io/stopping-ai-hallucinations-for-enterprise-is-key-for-vectara/) ——但是，我们所有人不都是吗？）。
 
-因此，鉴于当前的人工智能热潮，我们是否还需要“大数据”公司来对数据进行分类和组织呢？现在AI不是可以为我们做到这一点吗？
+因此，鉴于当前的人工智能热潮，我们是否还需要“大数据”公司来对数据进行分类和组织呢？现在 AI 不是可以为我们做到这一点吗？
 
-为了了解数据公司如何适应人工智能时代，我采访了 [Aaron Kalb](https://www.linkedin.com/in/akalb/)，Alation的联合创始人之一。Alation将自己称为“数据智能”平台，并推广了一个名为“数据目录（data catalog）”的概念。这将“机器学习与人类策展（curation）”相结合，创建一个企业公司的定制数据存储库。
+为了了解数据公司如何适应人工智能时代，我采访了 [Aaron Kalb](https://www.linkedin.com/in/akalb/)，Alation 的联合创始人之一。Alation 将自己称为“数据智能”平台，并推广了一个名为“数据目录（data catalog）”的概念。这将“机器学习与人类策展（curation）”相结合，创建一个企业公司的定制数据存储库。
 
 ## ChatGPT 在 2000 年代与 Siri 的不同之处
 
 在与前 Oracle 高管 Satyen Sangani 共同创立 Alation 之前，Kalb 曾在 Apple 工作，负责 Siri 软件。Siri 或许是第一个应用 AI 语言建模的主流软件应用。因此，我问他当前的生成式 AI 软件（如 ChatGPT 和 Google Bard）与 Siri 在 2000 年代末所做的有何不同。
 
-“Siri 开始时很难，因为当时他们没有对话训练数据，”他回答说。“他们是第一个语音助手。” Siri 的语言模型所训练的语料库比今天大型语言模型（LLMs）的训练数据小得多，Kalb 将 Siri 的训练数据称为“新闻语料库”。
+“Siri 开始时很难，因为当时他们没有对话训练数据，”他回答说。“他们是第一个语音助手。”Siri 的语言模型所训练的语料库比今天大型语言模型（LLMs）的训练数据小得多，Kalb 将 Siri 的训练数据称为“新闻语料库”。
 
 除了相对较差的训练数据外，Siri 并没有使用太多的机器学习。Kalb 说，Siri 在语音到文本和文本到意图的使用中犯了很多错误。“我认为直到今天，Siri、Alexa、Cortana 和 Google 助手都在努力，”他补充道。
 

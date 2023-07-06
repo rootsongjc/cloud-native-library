@@ -174,7 +174,7 @@ kubectl describe pod liveness-http
 
 ## 定义 TCP liveness 探针
 
-第三种 liveness probe 使用 TCP Socket。 使用此配置，kubelet 将尝试在指定端口上打开容器的套接字。 如果可以建立连接，容器被认为是健康的，如果不能就认为是失败的。
+第三种 liveness probe 使用 TCP Socket。使用此配置，kubelet 将尝试在指定端口上打开容器的套接字。如果可以建立连接，容器被认为是健康的，如果不能就认为是失败的。
 
 ```yaml
 apiVersion: v1
@@ -201,9 +201,9 @@ spec:
       periodSeconds: 20
 ```
 
-如您所见，TCP 检查的配置与 HTTP 检查非常相似。 此示例同时使用了 readiness 和 liveness probe。 容器启动后 5 秒钟，kubelet 将发送第一个 readiness probe。 这将尝试连接到端口 8080 上的 goproxy 容器。如果探测成功，则该 pod 将被标记为就绪。Kubelet 将每隔 10 秒钟执行一次该检查。
+如您所见，TCP 检查的配置与 HTTP 检查非常相似。此示例同时使用了 readiness 和 liveness probe。容器启动后 5 秒钟，kubelet 将发送第一个 readiness probe。这将尝试连接到端口 8080 上的 goproxy 容器。如果探测成功，则该 pod 将被标记为就绪。Kubelet 将每隔 10 秒钟执行一次该检查。
 
-除了 readiness probe 之外，该配置还包括 liveness probe。 容器启动 15 秒后，kubelet 将运行第一个 liveness probe。 就像 readiness probe 一样，这将尝试连接到 goproxy 容器上的 8080 端口。如果 liveness probe 失败，容器将重新启动。
+除了 readiness probe 之外，该配置还包括 liveness probe。容器启动 15 秒后，kubelet 将运行第一个 liveness probe。就像 readiness probe 一样，这将尝试连接到 goproxy 容器上的 8080 端口。如果 liveness probe 失败，容器将重新启动。
 
 ## 使用命名的端口
 
@@ -223,7 +223,7 @@ livenessProbe:
 
 ## 定义 readiness 探针
 
-有时，应用程序暂时无法对外部流量提供服务。 例如，应用程序可能需要在启动期间加载大量数据或配置文件。 在这种情况下，你不想杀死应用程序，但你也不想发送请求。 Kubernetes 提供了 readiness probe 来检测和减轻这些情况。 Pod 中的容器可以报告自己还没有准备，不能处理 Kubernetes 服务发送过来的流量。
+有时，应用程序暂时无法对外部流量提供服务。例如，应用程序可能需要在启动期间加载大量数据或配置文件。在这种情况下，你不想杀死应用程序，但你也不想发送请求。Kubernetes 提供了 readiness probe 来检测和减轻这些情况。Pod 中的容器可以报告自己还没有准备，不能处理 Kubernetes 服务发送过来的流量。
 
 Readiness probe 的配置跟 liveness probe 很像。唯一的不同是使用 `readinessProbe` 而不是 `livenessProbe`。
 
@@ -239,7 +239,7 @@ readinessProbe:
 
 Readiness probe 的 HTTP 和 TCP 的探测器配置跟 liveness probe 一样。
 
-Readiness 和 livenss probe 可以并行用于同一容器。 使用两者可以确保流量无法到达未准备好的容器，并且容器在失败时重新启动。
+Readiness 和 livenss probe 可以并行用于同一容器。使用两者可以确保流量无法到达未准备好的容器，并且容器在失败时重新启动。
 
 ## 配置 Probe
 
@@ -259,7 +259,7 @@ HTTP probe 中可以给 `httpGet` 设置其他配置项：
 - `httpHeaders`：自定义请求的 header。HTTP 运行重复的 header。
 - `port`：访问的容器的端口名字或者端口号。端口号必须介于 1 和 65535 之间。
 
-对于 HTTP 探测器，kubelet 向指定的路径和端口发送 HTTP 请求以执行检查。 Kubelet 将 probe 发送到容器的 IP 地址，除非地址被 `httpGet` 中的可选 `host` 字段覆盖。 在大多数情况下，你不想设置主机字段。 有一种情况下你可以设置它。 假设容器在 127.0.0.1 上侦听，并且 Pod 的 `hostNetwork` 字段为 true。 然后，在 `httpGet` 下的 `host` 应该设置为 127.0.0.1。 如果你的 pod 依赖于虚拟主机，这可能是更常见的情况，你不应该是用 `host`，而是应该在 `httpHeaders` 中设置 `Host` 头。
+对于 HTTP 探测器，kubelet 向指定的路径和端口发送 HTTP 请求以执行检查。Kubelet 将 probe 发送到容器的 IP 地址，除非地址被 `httpGet` 中的可选 `host` 字段覆盖。在大多数情况下，你不想设置主机字段。有一种情况下你可以设置它。假设容器在 127.0.0.1 上侦听，并且 Pod 的 `hostNetwork` 字段为 true。然后，在 `httpGet` 下的 `host` 应该设置为 127.0.0.1。如果你的 pod 依赖于虚拟主机，这可能是更常见的情况，你不应该是用 `host`，而是应该在 `httpHeaders` 中设置 `Host` 头。
 
 ## 参考
 

@@ -25,4 +25,4 @@ type: book
 4. 通过熔断器和隔板阻止级联故障
 5. 通过 API 网关集成到特定的客户端上
 
-还有很多其他的模式，包括自动化测试、持续构建与发布管道等。欲了解更多信息，请阅读 Toby Clemson 的 《 Testing Strategies in a Microservice Architecture》，以及 Jez Humbl 和 David Farley（AddisonWesley）的《Continuous Delivery: Reliable Software Releases through Build, Test, and Deployment Automation》。
+还有很多其他的模式，包括自动化测试、持续构建与发布管道等。欲了解更多信息，请阅读 Toby Clemson 的《Testing Strategies in a Microservice Architecture》，以及 Jez Humbl 和 David Farley（AddisonWesley）的《Continuous Delivery: Reliable Software Releases through Build, Test, and Deployment Automation》。

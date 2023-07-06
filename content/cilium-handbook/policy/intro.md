@@ -17,7 +17,7 @@ Cilium 代理（agent）和 Cilium 网络策略的配置决定了一个端点（
 
 - **never**
 
-  在 “never" 模式下，即使规则选择了特定的端点，所有端点上的策略执行也被禁用。换句话说，所有流量都允许来自任何来源（入口处）或目的地（出口处）。
+  在“never" 模式下，即使规则选择了特定的端点，所有端点上的策略执行也被禁用。换句话说，所有流量都允许来自任何来源（入口处）或目的地（出口处）。
 
 要在运行时为 Cilium 代理管理的所有端点配置策略执行模式，请使用：
 
@@ -46,27 +46,27 @@ $ cilium-agent --enable-policy={default,always,never} [...]
 
 ```go
 type Rule struct {
-        // EndpointSelector选择所有应该受此规则约束的端点。
-        // EndpointSelector和NodeSelector不能同时为空，并且
+        // EndpointSelector 选择所有应该受此规则约束的端点。
+        // EndpointSelector 和 NodeSelector 不能同时为空，并且
         // 互相排斥。
         //
         // +optional
         EndpointSelector EndpointSelector `json: "endpointSelector,omitempty"`。
 
         // NodeSelector 选择所有应该受此规则约束的节点。
-        // EndpointSelector和NodeSelector不能同时为空，并且相互排斥的。
-        // 只能在CiliumClusterwideNetworkPolicies中使用。
+        // EndpointSelector 和 NodeSelector 不能同时为空，并且相互排斥的。
+        // 只能在 CiliumClusterwideNetworkPolicies 中使用。
         //
         // +optional
         NodeSelector EndpointSelector `json: "nodeSelector,omitempty"`。
 
-        // Ingress是一个IngressRule的列表，它在Ingress时被强制执行。
+        // Ingress 是一个 IngressRule 的列表，它在 Ingress 时被强制执行。
         // 如果省略或为空，则此规则不适用于入口处。
         //
         // +optional
         Ingress []IngressRule `json: "ingress,omitempty"`。
 
-        // Egress是一个在出口处执行的EgressRule的列表。
+        // Egress 是一个在出口处执行的 EgressRule 的列表。
         // 如果省略或为空，该规则不适用于出口处。
         //
         // +optional

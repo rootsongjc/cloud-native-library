@@ -46,7 +46,7 @@ Masquerading:   BPF (ip-masq-agent)   [eth0, eth1]  10.0.0.0/16
 - UDP
 - ICMP（仅 Echo 请求和 Echo 回复）
 
-默认情况下，来自 pod 的所有发往  `ipv4-native-routing-cidr` 范围外 IP 地址的数据包都会被伪装，但发往其他集群节点的数据包除外。排除 CIDR 显示在 （`cilium status` ) 的上述输出中（`10.0.0.0/16`）。
+默认情况下，来自 pod 的所有发往  `ipv4-native-routing-cidr` 范围外 IP 地址的数据包都会被伪装，但发往其他集群节点的数据包除外。排除 CIDR 显示在（`cilium status` ) 的上述输出中（`10.0.0.0/16`）。
 
 {{<callout note 提示>}}
 启用 eBPF 伪装后，从 Pod 到集群节点外部 IP 的流量也不会被伪装。eBPF 实现在这方面不同于基于 iptables 的伪装。此限制在 [GitHub Issue 17177](https://github.com/cilium/cilium/issues/17177) 中进行了跟踪。

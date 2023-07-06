@@ -160,7 +160,7 @@ $ cilium endpoint get 568 -o jsonpath='{range ..status.policy.realized.l4.egress
     }
     ```
 
-2.  发出 DNS 请求后，应通过以下方式获得 FQDN 到 IP 的映射 ：`cilium fqdn cache list`
+2.  发出 DNS 请求后，应通过以下方式获得 FQDN 到 IP 的映射：`cilium fqdn cache list`
     
     ``` bash
     # cilium fqdn cache list
@@ -169,7 +169,7 @@ $ cilium endpoint get 568 -o jsonpath='{range ..status.policy.realized.l4.egress
     2761       api.twitter.com.    604800   2019-07-16T18:11:38.627Z   104.244.42.194,104.244.42.130,104.244.42.66,104.244.42.2
     ```
     
-3.  如果允许流量，则这些 IP 应通过以下方式具有相应的本地身份 ：`cilium identity list | grep <IP>`
+3.  如果允许流量，则这些 IP 应通过以下方式具有相应的本地身份：`cilium identity list | grep <IP>`
     
     ``` bash
     # cilium identity list | grep -A 1 104.244.42.194

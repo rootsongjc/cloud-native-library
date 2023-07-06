@@ -2,7 +2,7 @@
 title: Argo CD 中文文档
 summary: 节选译自 Argo CD 官方文档。
 tags:
-  - Handbook系列
+  - Handbook 系列
 date: 2023-06-20
 featured: false
 internal_link: argo-cd

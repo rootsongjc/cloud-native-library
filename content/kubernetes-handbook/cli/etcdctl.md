@@ -11,7 +11,7 @@ Kubenretes1.6 中使用 etcd V3 版本的 API，使用 `etcdctl` 直接 `ls` 的
 ETCDCTL_API=3 etcdctl get /registry/namespaces/default -w=json|python -m json.tool
 ```
 
-如果是使用 kubeadm 创建的集群，在 Kubenretes 1.11 中，etcd 默认使用 tls ，这时你可以在 master 节点上使用以下命令来访问 etcd ：
+如果是使用 kubeadm 创建的集群，在 Kubenretes 1.11 中，etcd 默认使用 tls，这时你可以在 master 节点上使用以下命令来访问 etcd：
 
 ```bash
 ETCDCTL_API=3 etcdctl --cacert=/etc/kubernetes/pki/etcd/ca.crt \

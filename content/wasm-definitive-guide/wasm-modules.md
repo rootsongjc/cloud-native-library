@@ -16,7 +16,7 @@ type: book # Do not modify
 
 软件工程师可能会在整个职业生涯中都忽略了程序是如何编译、加载和执行的。他们的世界从 `int main (int argc, char **argv)` 或 `static void main (String [] args)` 开始，仅仅到 `if __name == "__main__":` 就结束了。这些是 C、Java 和 Python 程序的众所周知的入口点，因此这是程序员承担控制流责任的地方。但是，操作系统或程序运行时需要在程序启动之前和退出之后构建和拆除可执行结构。加载器需要知道指令从哪里开始、数据元素是如何初始化的、需要加载哪些其他模块或库等。
 
-这些细节通常由可执行文件的性质定义。在 Linux 上，这是由[可执行和可链接格式 (ELF)](https://en.wikipedia.org/wiki/Executable_and_Linkable_Format) 定义的；在 Windows 上，它由[可移植可执行格式 (PE)](https://en.wikipedia.org/wiki/Portable_Executable) 定义； 在 macOS 上，它由 [Mach-O 格式](https://en.wikipedia.org/wiki/Portable_Executable)定义。显然，这些是本机可执行文件的特定于平台的格式。Java 和 .NET 等更多可移植系统使用中间字节码表示，但仍具有定义良好的结构，并且它们的工作方式相似。
+这些细节通常由可执行文件的性质定义。在 Linux 上，这是由[可执行和可链接格式 (ELF)](https://en.wikipedia.org/wiki/Executable_and_Linkable_Format) 定义的；在 Windows 上，它由[可移植可执行格式 (PE)](https://en.wikipedia.org/wiki/Portable_Executable) 定义；在 macOS 上，它由 [Mach-O 格式](https://en.wikipedia.org/wiki/Portable_Executable)定义。显然，这些是本机可执行文件的特定于平台的格式。Java 和 .NET 等更多可移植系统使用中间字节码表示，但仍具有定义良好的结构，并且它们的工作方式相似。
 
 WebAssembly MVP 的首要设计考虑之一是定义模块结构，以便 WebAssembly 主机知道要查找和验证什么，以及在执行部署单元时从哪里开始。
 
@@ -51,7 +51,7 @@ brian@tweezer ~/g/wasmcodeexplorer> python3 -m http.server 10003
 Serving HTTP on :: port 10003 (http://[::]:10003/) ...
 ```
 
-同样，对于一个空模块来说，它看起来并不多，但一旦我们开始向其中添加一些元素，它将是一个有用的总结。操作系统通常从文件[^2]的前几个字节识别文件格式。它们通常被称为**幻数**。对于WebAssembly，这些字节被编码为 `0x00 0x61 0x73 0x6D`，分别代表字符 a、s、m 的十六进制值，后面是版本号 1（用字节 `0x01 0x00 0x00 0x00` 表示）。
+同样，对于一个空模块来说，它看起来并不多，但一旦我们开始向其中添加一些元素，它将是一个有用的总结。操作系统通常从文件[^2]的前几个字节识别文件格式。它们通常被称为**幻数**。对于 WebAssembly，这些字节被编码为 `0x00 0x61 0x73 0x6D`，分别代表字符 a、s、m 的十六进制值，后面是版本号 1（用字节 `0x01 0x00 0x00 0x00` 表示）。
 
 在图 3-1 中，你可以看到魔法字节，这是 WebAssembly 文件格式的版本 1，左侧是一系列数字，右侧是一个空模块结构。
 
@@ -273,7 +273,7 @@ brian@tweezer ~/g/w/s/ch03> wat2wasm hellolog.wat brian@tweezer ~/g/w/s/ch03> wa
 </html>
 ```
 
-将例 3-3 中的 import 语句与该对象的结构进行比较。请注意，有一个 import 名称空间，其中包含一个名为 `log_func` 的函数。这是我们的 import 语句指定的结构。`$log_how_old` 函数将它的两个参数压入栈顶，然后调用 `$how_old` 指令调用我们之前的函数。请记住，此函数从一个参数中减去另一个参数并将结果返回到堆栈顶部。此时，我们不需要将该值压回堆栈； 我们可以简单地调用我们命名为 `$log` 的导入函数。前一个函数的结果将是这个新调用的参数。花点时间确保你了解参数、返回值和函数之间的关系。
+将例 3-3 中的 import 语句与该对象的结构进行比较。请注意，有一个 import 名称空间，其中包含一个名为 `log_func` 的函数。这是我们的 import 语句指定的结构。`$log_how_old` 函数将它的两个参数压入栈顶，然后调用 `$how_old` 指令调用我们之前的函数。请记住，此函数从一个参数中减去另一个参数并将结果返回到堆栈顶部。此时，我们不需要将该值压回堆栈；我们可以简单地调用我们命名为 `$log` 的导入函数。前一个函数的结果将是这个新调用的参数。花点时间确保你了解参数、返回值和函数之间的关系。
 
 如果你复制上一章的 `utils.js` 文件（它提供了 `fetchAnd Instantiate()` 函数[^4]），然后像我们之前所做的那样通过 HTTP 提供这些东西，你就可以加载新的 HTML 文件。最初你不会看到任何东西，因为我们的 `log_func` 只是将它的参数转储到 `console.log()`。但是，如果你在浏览器的开发人员工具中查看控制台，你应该会看到类似图 3-4 的内容。
 
@@ -337,7 +337,7 @@ function fetchAndInstantiate (url, importObject) {return fetch (url).then (respo
 })();
 ```
 
-请注意，我们不是在创建 `ArrayBuffer`； 我们将 Promise 从 `fetch()` 方法传递给 WebAssembly 对象的 `instantiateStreaming()` 方法。这允许基线编译器在它们出现在网络上时开始编译函数。在大多数情况下，代码的编译速度快于它通过网络传输的速度，因此在你下载完代码时，它应该已经过验证并可以使用了。当 JavaScript 完成下载时，通常是验证过程开始的时候，因此我们看到启动时间有所改善。
+请注意，我们不是在创建 `ArrayBuffer`；我们将 Promise 从 `fetch()` 方法传递给 WebAssembly 对象的 `instantiateStreaming()` 方法。这允许基线编译器在它们出现在网络上时开始编译函数。在大多数情况下，代码的编译速度快于它通过网络传输的速度，因此在你下载完代码时，它应该已经过验证并可以使用了。当 JavaScript 完成下载时，通常是验证过程开始的时候，因此我们看到启动时间有所改善。
 
 目前没有官方的方法来缓存 WebAssembly 模块，但这也是一种改善启动时间的不显眼的方法。缓存控制和其他网络工件处理可避免不必要地重新下载模块（例如，如果它们已更新）。
 

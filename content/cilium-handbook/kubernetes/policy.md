@@ -26,7 +26,7 @@ Kubernetes 网络策略的已知缺失功能：
 
 ## Cilium 网络策略
 
-CiliumNetworkPolicy 与 [标准 NetworkPolicy](https://docs.cilium.io/en/stable/concepts/kubernetes/policy/#networkpolicy) 非常相似。目的是提供 NetworkPolicy 尚不支持的功能 。理想情况下，所有功能都将合并到标准资源格式中，并且不再需要此 CRD。
+CiliumNetworkPolicy 与 [标准 NetworkPolicy](https://docs.cilium.io/en/stable/concepts/kubernetes/policy/#networkpolicy) 非常相似。目的是提供 NetworkPolicy 尚不支持的功能。理想情况下，所有功能都将合并到标准资源格式中，并且不再需要此 CRD。
 
 Go 中资源的原始规范如下所示：
 

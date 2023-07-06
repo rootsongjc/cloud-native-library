@@ -34,11 +34,11 @@ type: book
 
 此标志会影响以下消耗系统中大部分内存的 BPF Map： `cilium_ct_{4,6}_global`、`cilium_ct_{4,6}_any`、 `cilium_nodeport_neigh{4,6}`、`cilium_snat_v{4,6}_external` 和 `cilium_lb{4,6}_reverse_sk`
 
-`kube-proxy`根据机器拥有的内核数设置为 linux 连接跟踪表中的最大条目数。 无论机器有多少内核，`kube-proxy` 默认每个内核的最大条目数是 32768 和最小条目数是 131072。
+`kube-proxy`根据机器拥有的内核数设置为 linux 连接跟踪表中的最大条目数。无论机器有多少内核，`kube-proxy` 默认每个内核的最大条目数是 32768 和最小条目数是 131072。
 
 Cilium 有自己的连接跟踪表作为 BPF Map，并且此类映射的条目数是根据节点中的总内存量计算的，无论机器有多少内存，条目最少数是 131072。
 
-下表介绍了当 Cilium 配置为 `-bpf-map-dynamic-size-ratio: 0.0025` 时，`kube-proxy` 和 Cilium为自己的连接跟踪表设置的数值：
+下表介绍了当 Cilium 配置为 `-bpf-map-dynamic-size-ratio: 0.0025` 时，`kube-proxy` 和 Cilium 为自己的连接跟踪表设置的数值：
 
 | 虚拟 CPU | 内存 (GiB) | Kube-proxy CT 条目 | Cilium CT 条目 |
 | -------- | ---------- | ------------------ | -------------- |

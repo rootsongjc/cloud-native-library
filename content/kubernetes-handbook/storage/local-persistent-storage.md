@@ -21,7 +21,7 @@ type: book
 
 ## 版本兼容性
 
-推荐配置器版本与Kubernetes版本
+推荐配置器版本与 Kubernetes 版本
 
 | Provisioner version                                          | K8s version | Reason                  |
 | ------------------------------------------------------------ | ----------- | ----------------------- |
@@ -29,21 +29,21 @@ type: book
 | [2.0.0](https://github.com/kubernetes-incubator/external-storage/tree/local-volume-provisioner-v2.0.0/local-volume) | 1.8, 1.9    | Mount propagation       |
 | [1.0.1](https://github.com/kubernetes-incubator/external-storage/tree/local-volume-provisioner-v1.0.1/local-volume) | 1.7         |                         |
 
-## K8s功能状态
+## K8s 功能状态
 
 另请参阅[已知问题](https://github.com/kubernetes-incubator/external-storage/blob/master/local-volume/KNOWN_ISSUES.md)和 [CHANGELOG](https://github.com/kubernetes-incubator/external-storage/blob/master/local-volume/CHANGELOG.md)。
 
-### 1.10：Beta
+### 1.10: Beta
 
 - 添加了新的 `PV.NodeAffinity` 字段。
-- **重要：** Alpha PV NodeAffinity annotation 已弃用。用户必须手动更新其 PV 以使用新的 NodeAffinity字段或运行[一次性更新作业](https://github.com/kubernetes-incubator/external-storage/blob/master/local-volume/utils/update-pv-to-beta)。
+- **重要：** Alpha PV NodeAffinity annotation 已弃用。用户必须手动更新其 PV 以使用新的 NodeAffinity 字段或运行[一次性更新作业](https://github.com/kubernetes-incubator/external-storage/blob/master/local-volume/utils/update-pv-to-beta)。
 - Alpha：添加了对 raw block 的支持。
 
-### 1.9：Alpha
+### 1.9: Alpha
 
-- 新的 StorageClass `volumeBindingMode` 参数将延迟PVC绑定，直到 pod 被调度。
+- 新的 StorageClass `volumeBindingMode` 参数将延迟 PVC 绑定，直到 pod 被调度。
 
-### 1.7：Alpha
+### 1.7: Alpha
 
 - 新的`local` PersistentVolume 源，允许指定具有 node affinity 的目录或挂载点。
 - 使用绑定到该 PV 的 PVC 的 Pod 将始终调度到该节点。
@@ -59,9 +59,9 @@ type: book
 
 这些说明反映了最新版本的代码库。有关旧版本的说明，请参阅[版本兼容性](https://github.com/kubernetes-incubator/external-storage/tree/master/local-volume#version-compatibility)下的版本链接。
 
-### 步骤1：使用本地磁盘启动集群
+### 步骤 1：使用本地磁盘启动集群
 
-#### 启用alpha feature gate
+#### 启用 alpha feature gate
 
 ##### 1.10+
 
@@ -73,16 +73,16 @@ export KUBE_FEATURE_GATES ="BlockVolume = true"
 
 注意：1.10 之前的 Kubernetes 版本需要[几个附加 feature gate](https://github.com/kubernetes-incubator/external-storage/tree/local-volume-provisioner-v2.0.0/local-volume#enabling-the-alpha-feature-gates)，因为持久的本地卷和其他功能处于 alpha 版本。
 
-#### 选项1：裸金属环境
+#### 选项 1：裸金属环境
 
 1. 根据应用程序的要求对每个节点上的磁盘进行分区和格式化。
 2. 根据 StorageClass 将所有文件系统挂载到同一个目录下。目录在 configmap 中指定，见下文。
-3. 使用 `KUBE_FEATURE_GATES `配置 Kubernetes API server、controller manager、scheduler 和所有kubelet，[如上所述](https://github.com/kubernetes-incubator/external-storage/tree/master/local-volume#enabling-the-alpha-feature-gates)。
+3. 使用 `KUBE_FEATURE_GATES `配置 Kubernetes API server、controller manager、scheduler 和所有 kubelet，[如上所述](https://github.com/kubernetes-incubator/external-storage/tree/master/local-volume#enabling-the-alpha-feature-gates)。
 4. 如果不使用默认 Kubernetes 调度程序策略，则必须启用以下谓词：
-   - 1.9之前：`NoVolumeBindConflict`
+   - 1.9 之前：`NoVolumeBindConflict`
    - 1.9+：`VolumeBindingChecker`
 
-#### 选项2：本地测试集群
+#### 选项 2：本地测试集群
 
 1. 创建 `/mnt/disks `目录并将多个卷挂载到其子目录。下面的示例使用三个 ram 磁盘来模拟真实的本地卷：
 
@@ -100,7 +100,7 @@ export KUBE_FEATURE_GATES ="BlockVolume = true"
    $ALLOW_PRIVILEGED = true LOG_LEVEL = 5 FEATURE_GATES = $KUBE_FEATURE_GATES hack/local-up-cluster.sh
    ```
 
-### 步骤2：创建StorageClass（1.9+）
+### 步骤 2：创建 StorageClass（1.9+）
 
 要延迟卷绑定，直到 pod 被调度，并在单个 pod 中处理多个本地 PV，必须使用设置为 `WaitForFirstConsumer` 的 `volumeBindingMode` 创建 StorageClass。
 
@@ -108,9 +108,9 @@ export KUBE_FEATURE_GATES ="BlockVolume = true"
 $kubectl create -f provisioner/deployment/kubernetes/example/default_example_storageclass.yaml
 ```
 
-### 步骤3：创建本地持久卷
+### 步骤 3：创建本地持久卷
 
-#### 选项1：使用本地卷静态配置器
+#### 选项 1：使用本地卷静态配置器
 
 1. 生成 Provisioner 的 ServiceAccount、Role、DaemonSet 和 ConfigMap 规范，并对其进行自定义。
 
@@ -167,11 +167,11 @@ $kubectl create -f provisioner/deployment/kubernetes/example/default_example_sto
 
    上面描述的 PV 可以通过引用 `local-fast` storageClassName 声明和绑定到 PVC。
 
-#### 选项2：手动创建本地持久化卷
+#### 选项 2：手动创建本地持久化卷
 
-有关示例 PersistentVolume 规范，请参阅[Kubernetes文档](https://kubernetes.io/docs/concepts/storage/volumes/#local)。
+有关示例 PersistentVolume 规范，请参阅[Kubernetes 文档](https://kubernetes.io/docs/concepts/storage/volumes/#local)。
 
-### 步骤4：创建本地持久卷声明
+### 步骤 4：创建本地持久卷声明
 
 ```yaml
 kind: PersistentVolumeClaim
@@ -192,7 +192,7 @@ spec:
 - 卷所需的存储容量“5Gi”
 - “local-storage”，与本地 PV 关联的存储类名称应该用于满足此 PVC
 
-对于试图声明 “Block” PV 的 “Block” volumeMode PVC，可以使用以下示例：
+对于试图声明“Block”PV 的“Block”volumeMode PVC，可以使用以下示例：
 
 ```yaml
 kind: PersistentVolumeClaim
@@ -213,7 +213,7 @@ spec:
 
 ## 最佳实践
 
-- 对于IO隔离，建议每个卷使用整个磁盘
+- 对于 IO 隔离，建议每个卷使用整个磁盘
 - 对于容量隔离，建议使用单个分区
 - 避免重新创建具有相同节点名称的节点，而仍然存在指定了该节点亲和性的旧 PV。否则，系统可能认为新节点包含旧的 PV。
 - 对于带有文件系统的卷，建议在 fstab 条目和该挂载点的目录名称中使用它们的 UUID（例如 `ls -l/dev/disk/by-uuid ` 的输出）。这种做法可确保即使设备路径发生变化（例如，如果 `/dev/sda1` 在添加新磁盘时变为 `/dev/sdb1`），也不会错误地挂在本地卷。此外，这种做法将确保如果创建具有相同名称的另一个节点，则该节点上的任何卷都是唯一的，而不会误认为是具有相同名称的另一个节点上的卷。

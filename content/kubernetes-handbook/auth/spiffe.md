@@ -28,7 +28,7 @@ SPIFFE 已经在云原生应用中得到了大量的应用，尤其是在 Istio 
 
 ## SPIFFE ID
 
-SPIFFE ID 是一个字符串，可以唯一地、具体地标识一个工作负载。SPIFFE ID 也可以分配给工作负载所运行的中间系统（如一组虚拟机）。例如，`spiffe://acme.com/billing/payments` 是一个有效的SPIFFE ID。
+SPIFFE ID 是一个字符串，可以唯一地、具体地标识一个工作负载。SPIFFE ID 也可以分配给工作负载所运行的中间系统（如一组虚拟机）。例如，`spiffe://acme.com/billing/payments` 是一个有效的 SPIFFE ID。
 
 SPIFFE ID 是一个[统一资源标识符（URI](https://tools.ietf.org/html/rfc3986)），其格式如下：`spiffe://信任域/工作负载标识符`。
 
@@ -44,11 +44,11 @@ SPIFFE ID 是一个[统一资源标识符（URI](https://tools.ietf.org/html/rfc
 
 ## SPIFFE 可验证的身份文件（SVID）{#svid}
 
-SVID（SPIFFE Verifiable Identity Document） 是工作负载向资源或调用者证明其身份的文件。如果 SVID 是由 SPIFFE ID 的信任域内的机构签发的，则被认为是有效的。
+SVID（SPIFFE Verifiable Identity Document）是工作负载向资源或调用者证明其身份的文件。如果 SVID 是由 SPIFFE ID 的信任域内的机构签发的，则被认为是有效的。
 
 SVID 包含一个 SPIFFE ID，代表了服务的身份。它将 SPIFFE ID 编码在一个可加密验证的文件中，目前支持两种格式：X.509 证书或 JWT 令牌。
 
-由于令牌容易受到**重放攻击（replay attack）**，即在传输过程中获得令牌的攻击者可以使用它来冒充工作负载，因此建议尽可能使用 `X.509-SVID`。然而，在某些情况下，JWT令牌格式是唯一的选择，例如，当你的架构在两个工作负载之间有一个L7代理或负载均衡器。
+由于令牌容易受到**重放攻击（replay attack）**，即在传输过程中获得令牌的攻击者可以使用它来冒充工作负载，因此建议尽可能使用 `X.509-SVID`。然而，在某些情况下，JWT 令牌格式是唯一的选择，例如，当你的架构在两个工作负载之间有一个 L7 代理或负载均衡器。
 
 关于 SVID 的详细信息，请参阅 [SVID 规范](https://github.com/spiffe/spiffe/blob/main/standards/X509-SVID.md)。
 
@@ -72,7 +72,7 @@ SVID 包含一个 SPIFFE ID，代表了服务的身份。它将 SPIFFE ID 编码
 
 然而，与这些其他 API 不同的是，Workload API 与平台无关，可以在进程级和内核级识别正在运行的服务，这使得它适合与 Kubernetes 等容器调度器一起使用。
 
-为了最大限度地减少密钥泄露的风险，所有私钥（和相应的证书）都是短期的，经常自动轮换。工作负载可以在相应的密钥过期前从工作负载API请求新的密钥和信任包。
+为了最大限度地减少密钥泄露的风险，所有私钥（和相应的证书）都是短期的，经常自动轮换。工作负载可以在相应的密钥过期前从工作负载 API 请求新的密钥和信任包。
 
 ## 信任包
 

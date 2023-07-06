@@ -91,7 +91,7 @@ links:
 
 一些例子包括：地图、城市和几何场景，如图 3 所示。该图显示了城市隐喻，这是一种用于可视化程序代码属性的流行方法。许多项目都采用了这种隐喻来可视化软件库的属性，比如说。现有的研究已经被用来用包来映射街区，用建筑来映射类。
 
-![图 4. 一个虚构项目中的城市隐喻，来自[这里](https://www.researchgate.net/publication/224503826_Visual_Exploration_of_Large-Scale_Evolving_Software)](f4.webp "图 4. 一个虚构项目中的城市隐喻，来自[这里](https://www.researchgate.net/publication/224503826_Visual_Exploration_of_Large-Scale_Evolving_Software)")
+![图 4. 一个虚构项目中的城市隐喻，来自 [这里](https://www.researchgate.net/publication/224503826_Visual_Exploration_of_Large-Scale_Evolving_Software)](f4.webp "图 4. 一个虚构项目中的城市隐喻，来自[这里](https://www.researchgate.net/publication/224503826_Visual_Exploration_of_Large-Scale_Evolving_Software)")
 
 在这种情况下，这个隐喻把类表示为建筑物，把包表示为建筑物所处的邻域。建筑物的每个边缘都被用来映射类的属性。
 

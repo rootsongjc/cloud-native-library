@@ -2,7 +2,7 @@
 title: Cilium 中文指南
 summary: 节选译自 Cilium 官方文档。
 tags:
-  - Handbook系列
+  - Handbook 系列
 date: 2022-06-20
 featured: false
 internal_link: cilium-handbook

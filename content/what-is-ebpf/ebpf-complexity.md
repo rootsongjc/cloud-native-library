@@ -22,7 +22,7 @@ eBPF 程序可以访问内核数据结构，而这些结构可能在不同的内
 
 CO-RE（Compile Once, Run Everyone，编译一次，到处运行）方法由以下元素组成。
 
-**BTF（BPF Type Format）**
+**BTF (BPF Type Format)**
 
 这是一种用于表达数据结构和函数签名布局的格式。现代 Linux 内核支持 BTF，因此你可以从运行中的系统中生成一个名为 `vmlinux.h` 的头文件，其中包含一个 BPF 程序可能需要的关于内核的所有数据结构信息。
 

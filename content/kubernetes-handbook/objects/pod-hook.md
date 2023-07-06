@@ -32,7 +32,7 @@ spec:
           command: ["/usr/sbin/nginx","-s","quit"]
 ```
 
-Kubernetes 在容器创建后立即发送 postStart 事件。 但是，不能保证在调用容器的入口点之前调用 postStart 处理程序。postStart 处理程序相对于容器的代码异步运行，但 Kubernetes 对容器的管理将被阻止，直到 postStart 处理程序完成。在 postStart 处理程序完成之前，容器的状态不会设置为 RUNNING。
+Kubernetes 在容器创建后立即发送 postStart 事件。但是，不能保证在调用容器的入口点之前调用 postStart 处理程序。postStart 处理程序相对于容器的代码异步运行，但 Kubernetes 对容器的管理将被阻止，直到 postStart 处理程序完成。在 postStart 处理程序完成之前，容器的状态不会设置为 RUNNING。
 
 PreStop 在容器终止之前被同步阻塞调用，常用于在容器结束前优雅的释放资源。
 

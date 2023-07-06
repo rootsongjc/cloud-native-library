@@ -1,6 +1,6 @@
 ---
 weight: 102
-title: 使用StatefulSet部署有状态应用
+title: 使用 StatefulSet 部署有状态应用
 date: '2022-05-21T00:00:00+08:00'
 type: book
 ---

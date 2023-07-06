@@ -32,7 +32,7 @@ links:
 
 困难的部分是为服务建立一个安全机制来向彼此证明它们的身份。
 
-对于常规 TLS，过去很难管理向其客户端证明服务器身份的证书。[随着 Let's Encrypt](https://letsencrypt.org/) 和 [ACME 协议](https://en.wikipedia.org/wiki/Automatic_Certificate_Management_Environment)的出现 ，这变得容易多了。然而，在像 Kubernetes 这样的动态（并且主要是私有的）环境中管理服务身份和证书更加困难，因为有许多通常是短暂的服务需要强大的、可证明的身份，但实际上不能使用公共 ACME 服务。
+对于常规 TLS，过去很难管理向其客户端证明服务器身份的证书。[随着 Let's Encrypt](https://letsencrypt.org/) 和 [ACME 协议](https://en.wikipedia.org/wiki/Automatic_Certificate_Management_Environment)的出现，这变得容易多了。然而，在像 Kubernetes 这样的动态（并且主要是私有的）环境中管理服务身份和证书更加困难，因为有许多通常是短暂的服务需要强大的、可证明的身份，但实际上不能使用公共 ACME 服务。
 
 推出自己的自动化证书管理系统是不切实际且有风险的。正确管理 mTLS 证书很困难，错误的后果很严重。您需要一种可信赖的、经过验证的方法来做到这一点；这就是服务网格的用武之地。
 
@@ -61,7 +61,7 @@ links:
 
 ## 下一步
 
-如果您不熟悉服务网格和 Kubernetes 安全性，我们在 [Tetrate Academy](https://tetr8.io/academy) 提供一系列免费在线课程 ，可以让您快速了解 Istio 和 Envoy。
+如果您不熟悉服务网格和 Kubernetes 安全性，我们在 [Tetrate Academy](https://tetr8.io/academy) 提供一系列免费在线课程，可以让您快速了解 Istio 和 Envoy。
 
 如果您正在寻找一种快速将 Istio 投入生产的方法，请查看 [Tetrate Istio Distribution (TID)](https://tetr8.io/tid)。TID 是 Tetrate 的强化、完全上游的 Istio 发行版，具有经过 FIPS 验证的构建和支持。这是开始使用 Istio 的好方法，因为您知道您有一个值得信赖的发行版，有一个支持您的专家团队，并且如果需要，还可以选择快速获得 FIPS 合规性。
 

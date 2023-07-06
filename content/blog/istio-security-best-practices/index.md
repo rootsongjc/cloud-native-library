@@ -177,7 +177,7 @@ Istio sidecar 的工作原理是捕获入站流量和出站流量，并通过 si
 
 ## 当使用 TLS 发起时，在目的地规则中配置 TLS 验证
 
-Istio 提供了从一个 sidecar 代理或网关[发起 TLS](https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/) 的能力。这使得发送纯文本 HTTP 流量的应用程序能够透明地 “升级 “到 HTTPS。
+Istio 提供了从一个 sidecar 代理或网关[发起 TLS](https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/) 的能力。这使得发送纯文本 HTTP 流量的应用程序能够透明地“升级“到 HTTPS。
 
 在配置 `DestinationRule` 的 `tls` 设置时，必须注意指定 `caCertificates` 字段。如果没有设置，服务器的证书将不会被验证。
 

@@ -12,7 +12,7 @@ cascade:
   categories: ["Linux"]
 ---
 
-《什么是 eBPF —— 新一代网络、安全和可观测性工具介绍》译自 O'Reilly 发布的报告 “What is eBPF”，作者是 Liz Rice，由 JImmy Song 翻译，英文原版可以在 [O'Reilly 网站](https://www.oreilly.com/library/view/what-is-ebpf/9781492097266/)上获取。
+《什么是 eBPF —— 新一代网络、安全和可观测性工具介绍》译自 O'Reilly 发布的报告“What is eBPF”，作者是 Liz Rice，由 JImmy Song 翻译，英文原版可以在 [O'Reilly 网站](https://www.oreilly.com/library/view/what-is-ebpf/9781492097266/)上获取。
 
 {{< figure src="images/cover.jpg" alt="封面" caption="《什么是 eBPF》中文版封面" width="50%" >}}
 
@@ -24,7 +24,7 @@ cascade:
 
 ## 关于作者
 
-Liz Rice 是云原生网络和安全专家，Isovalent 的首席开源官，是基于 eBPF 的 Cilium网络项目的创建者。她在 2019-2022 年担任 CNCF 的技术监督委员会（TOC）主席，并在 2018 年担任 KubeCon + CloudNativeCon 的联合主席。她也是 Container Security 一书的作者，由 O\'Reilly 出版。她拥有丰富的软件开发、团队和产品管理经验，曾在网络协议和分布式系统以及数字技术领域（如 VOD、音乐和 VoIP）工作。在不写代码的时候，Liz 喜欢在天气比她的家乡伦敦好的地方骑自行车，和在 Zwift 上参加虚拟比赛。
+Liz Rice 是云原生网络和安全专家，Isovalent 的首席开源官，是基于 eBPF 的 Cilium 网络项目的创建者。她在 2019-2022 年担任 CNCF 的技术监督委员会（TOC）主席，并在 2018 年担任 KubeCon + CloudNativeCon 的联合主席。她也是 Container Security 一书的作者，由 O\'Reilly 出版。她拥有丰富的软件开发、团队和产品管理经验，曾在网络协议和分布式系统以及数字技术领域（如 VOD、音乐和 VoIP）工作。在不写代码的时候，Liz 喜欢在天气比她的家乡伦敦好的地方骑自行车，和在 Zwift 上参加虚拟比赛。
 
 ## 本书大纲
 

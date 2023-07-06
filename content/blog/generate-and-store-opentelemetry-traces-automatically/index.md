@@ -258,9 +258,9 @@ kubectl port-forward svc/tobs-grafana 3000:80
 
 [Promscale 应用性能监控（APM）仪表盘](https://docs.timescale.com/promscale/latest/visualize-data/apm-experience/)将显示出来，向你展示关于演示应用的洞察力。Tobs 直接导入这套开箱即用、可用于生产的仪表盘，我们在 Grafana 中使用 SQL 查询对追踪数据进行构建，在这种情况下，它是由演示微服务自动生成的。下图显示了其中一个仪表盘 ——“服务详情”。
 
-![用演示应用程序的追踪数据填充的[服务细节仪表盘](https://docs.timescale.com/promscale/latest/visualize-data/apm-experience/)](service-overview.png "用演示应用程序的追踪数据填充的[服务细节仪表盘](https://docs.timescale.com/promscale/latest/visualize-data/apm-experience/)")
+![用演示应用程序的追踪数据填充的 [服务细节仪表盘](https://docs.timescale.com/promscale/latest/visualize-data/apm-experience/)](service-overview.png "用演示应用程序的追踪数据填充的[服务细节仪表盘](https://docs.timescale.com/promscale/latest/visualize-data/apm-experience/)")
 
-关于这些预建仪表盘的更多信息，请[查看这篇博文](https://www.timescale.com/blog/observability-powered-by-sql-understand-your-systems-like-never-before-with-opentelemetry-traces-and-postgresql/)（导航到 “集成到 Grafana 的现代 APM 体验” 一节）。
+关于这些预建仪表盘的更多信息，请[查看这篇博文](https://www.timescale.com/blog/observability-powered-by-sql-understand-your-systems-like-never-before-with-opentelemetry-traces-and-postgresql/)（导航到“集成到 Grafana 的现代 APM 体验”一节）。
 
 我们已经得到了所有这些信息，而在任何 Python 服务中都没有测量工具代码。
 

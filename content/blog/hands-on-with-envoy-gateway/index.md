@@ -172,7 +172,7 @@ NAME   CONTROLLER                                  	ACCEPTED   AGE 	DESCRIPTION
 eg 	gateway.envoyproxy.io/gatewayclass-controller   True   	2m38s  
 ```
 
-接下来，让我们配置一个 Gateway 对象 —— 这将打开我们希望 Envoy 代理监听的网络端口。对于这个简单的演示，我们将绑定到一个端口而不使用 TLS，因此我将其称为 “不安全端口”。
+接下来，让我们配置一个 Gateway 对象 —— 这将打开我们希望 Envoy 代理监听的网络端口。对于这个简单的演示，我们将绑定到一个端口而不使用 TLS，因此我将其称为“不安全端口”。
 
 ```bash
 $ kubectl apply -f - <<EOF
@@ -189,7 +189,7 @@ spec:
 EOF
 ```
 
-当我们检查它时，我们会发现它并没有就绪。由于我们使用的本地开发集群无法使这种云负载均衡器成为 “真正的” 负载均衡器（因此地址字段也是空的），因此该批准被搁置。不用担心这个，它仍然可以正常工作。
+当我们检查它时，我们会发现它并没有就绪。由于我们使用的本地开发集群无法使这种云负载均衡器成为“真正的”负载均衡器（因此地址字段也是空的），因此该批准被搁置。不用担心这个，它仍然可以正常工作。
 
 ```bash
 $ kubectl -n default get gateway -o wide
@@ -273,7 +273,7 @@ x-envoy-upstream-service-time: 14
 
 我给出的说明是针对命令行的，但是好的 GUI 是与任何系统交互的好方法。Envoy Gateway 对标准 Gateway API 的实施提供了交互操作接口生态系统。Tetrate 使用 [Backstage](https://backstage.io/)（开发者接口的新兴标准）为 Envoy Gateway 构建了一个概念验证 UI。下面我将展示几个从上面检查演示设置的屏幕截图。
 
-如果你想玩这个，或者fork它，[我们已经发布了代码](https://github.com/tetratelabs/eg-backstage-demo)—— 目前还是 alpha 版本，并且只是一个可以在一周内构建的示例！如果你在 KubeCon Detroit，请到我们的展位，我们可以亲自向你展示！
+如果你想玩这个，或者 fork 它，[我们已经发布了代码](https://github.com/tetratelabs/eg-backstage-demo)—— 目前还是 alpha 版本，并且只是一个可以在一周内构建的示例！如果你在 KubeCon Detroit，请到我们的展位，我们可以亲自向你展示！
 
 ![UI for Envoy Gateway](008vxvgGgy1h7jx53ycsgj30wi0p5ab7.jpg)
 

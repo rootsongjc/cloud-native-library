@@ -5,7 +5,7 @@ date: '2022-05-21T00:00:00+08:00'
 type: book
 ---
 
-`kubectl` 命令是操作 Kubernetes 集群的最直接和最高效的途径，这个60多 MB 大小的二进制文件，到底有啥能耐呢？
+`kubectl` 命令是操作 Kubernetes 集群的最直接和最高效的途径，这个 60 多 MB 大小的二进制文件，到底有啥能耐呢？
 
 ## Kubectl 自动补全
 
@@ -276,7 +276,7 @@ $ kubectl taint nodes foo dedicated=special-user:NoSchedule
 | `-o=jsonpath=<template>`            | 打印 [jsonpath](https://kubernetes.io/docs/user-guide/jsonpath) 表达式中定义的字段 |
 | `-o=jsonpath-file=<filename>`       | 打印由 文件中的 [jsonpath](https://kubernetes.io/docs/user-guide/jsonpath) 表达式定义的字段 |
 | `-o=name`                           | 仅打印资源名称                                  |
-| `-o=wide`                           | 以纯文本格式输出任何附加信息，对于 Pod ，包含节点名称            |
+| `-o=wide`                           | 以纯文本格式输出任何附加信息，对于 Pod，包含节点名称            |
 | `-o=yaml`                           | 输出 YAML 格式的 API 对象                       |
 
 ### Kubectl 详细输出和调试
@@ -291,8 +291,8 @@ $ kubectl taint nodes foo dedicated=special-user:NoSchedule
 | `--v=3` | 有关更改的扩展信息。                               |
 | `--v=4` | 调试级别详细输出。                                |
 | `--v=6` | 显示请求的资源。                                 |
-| `--v=7` | 显示HTTP请求的header。                         |
-| `--v=8` | 显示HTTP请求的内容。                             |
+| `--v=7` | 显示 HTTP 请求的 header。                         |
+| `--v=8` | 显示 HTTP 请求的内容。                             |
 
 ## 参考
 

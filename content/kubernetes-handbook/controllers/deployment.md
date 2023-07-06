@@ -130,13 +130,13 @@ nginx-deployment-2035384211-qqcnn   1/1       Running   0          18s       app
 
 刚创建的 Replica Set 将保证总是有 3 个 nginx 的 pod 存在。
 
-**注意**： 您必须在 Deployment 中的 selector 指定正确的 pod template label（在该示例中是 `app = nginx`），不要跟其他的 controller 的 selector 中指定的 pod template label 搞混了（包括 Deployment、Replica Set、Replication Controller 等）。**Kubernetes 本身并不会阻止您任意指定 pod template label**，但是如果您真的这么做了，这些 controller 之间会相互打架，并可能导致不正确的行为。
+**注意**：您必须在 Deployment 中的 selector 指定正确的 pod template label（在该示例中是 `app = nginx`），不要跟其他的 controller 的 selector 中指定的 pod template label 搞混了（包括 Deployment、Replica Set、Replication Controller 等）。**Kubernetes 本身并不会阻止您任意指定 pod template label**，但是如果您真的这么做了，这些 controller 之间会相互打架，并可能导致不正确的行为。
 
 ### Pod-template-hash label
 
 **注意**：这个 label 不是用户指定的！
 
-注意上面示例输出中的 pod label 里的 pod-template-hash label。当 Deployment 创建或者接管 ReplicaSet 时，Deployment controller 会自动为 Pod 添加 pod-template-hash label。这样做的目的是防止 Deployment 的子 ReplicaSet 的 pod 名字重复。通过将 ReplicaSet 的 PodTemplate 进行哈希散列，使用生成的哈希值作为 label 的值，并添加到 ReplicaSet selector 里、 pod template label 和 ReplicaSet 管理中的 Pod 上。
+注意上面示例输出中的 pod label 里的 pod-template-hash label。当 Deployment 创建或者接管 ReplicaSet 时，Deployment controller 会自动为 Pod 添加 pod-template-hash label。这样做的目的是防止 Deployment 的子 ReplicaSet 的 pod 名字重复。通过将 ReplicaSet 的 PodTemplate 进行哈希散列，使用生成的哈希值作为 label 的值，并添加到 ReplicaSet selector 里、pod template label 和 ReplicaSet 管理中的 Pod 上。
 
 ## 更新 Deployment
 
@@ -199,7 +199,7 @@ nginx-deployment-1564180365-z9gth   1/1       Running   0          14s
 
 Deployment 可以保证在升级时只有一定数量的 Pod 是 down 的。默认的，它会确保至少有比期望的 Pod 数量少一个是 up 状态（最多一个不可用）。
 
-Deployment 同时也可以确保只创建出超过期望数量的一定数量的 Pod。默认的，它会确保最多比期望的 Pod 数量多一个的 Pod 是 up 的（最多 1 个 surge ）。
+Deployment 同时也可以确保只创建出超过期望数量的一定数量的 Pod。默认的，它会确保最多比期望的 Pod 数量多一个的 Pod 是 up 的（最多 1 个 surge）。
 
 **在未来的 Kuberentes 版本中，将从 1-1 变成 25%-25%。**
 
@@ -279,7 +279,7 @@ Waiting for rollout to finish: 2 out of 3 new replicas have been updated...
 
 按住 Ctrl-C 停止上面的 rollout 状态监控。
 
-您会看到旧的 replica（nginx-deployment-1564180365 和 nginx-deployment-2035384211）和新的 replica （nginx-deployment-3066724191）数目都是 2 个。
+您会看到旧的 replica（nginx-deployment-1564180365 和 nginx-deployment-2035384211）和新的 replica（nginx-deployment-3066724191）数目都是 2 个。
 
 ```bash
 $ kubectl get rs
@@ -695,7 +695,7 @@ Conditions:
   Progressing   True    NewReplicaSetAvailable
 ```
 
-`Type=Available`、 `Status=True` 意味着您的 Deployment 有最小可用性。 最小可用性是在 Deployment 策略中指定的参数。`Type=Progressing` 、 `Status=True` 意味着您的 Deployment 或者在部署过程中，或者已经成功部署，达到了期望的最少的可用 replica 数量（查看特定状态的 Reason—— 在我们的例子中 `Reason=NewReplicaSetAvailable` 意味着 Deployment 已经完成）。
+`Type=Available`、 `Status=True` 意味着您的 Deployment 有最小可用性。最小可用性是在 Deployment 策略中指定的参数。`Type=Progressing` 、 `Status=True` 意味着您的 Deployment 或者在部署过程中，或者已经成功部署，达到了期望的最少的可用 replica 数量（查看特定状态的 Reason—— 在我们的例子中 `Reason=NewReplicaSetAvailable` 意味着 Deployment 已经完成）。
 
 您可以使用 `kubectl rollout status` 命令查看 Deployment 进程是否失败。当 Deployment 过程超过了 deadline，`kubectl rollout status` 将返回非 0 的 exit code。
 
@@ -713,7 +713,7 @@ $ echo $?
 
 ## 清理 Policy
 
-您可以设置 Deployment 中的 `.spec.revisionHistoryLimit` 项来指定保留多少旧的 ReplicaSet。 余下的将在后台被当作垃圾收集。默认的，所有的 revision 历史就都会被保留。在未来的版本中，将会更改为 2。
+您可以设置 Deployment 中的 `.spec.revisionHistoryLimit` 项来指定保留多少旧的 ReplicaSet。余下的将在后台被当作垃圾收集。默认的，所有的 revision 历史就都会被保留。在未来的版本中，将会更改为 2。
 
 **注意**：将该值设置为 0，将导致所有的 Deployment 历史记录都会被清除，该 Deployment 就无法再回退了。
 
@@ -763,7 +763,7 @@ $ echo $?
 
 #### Rolling Update Deployment
 
-`.spec.strategy.type==RollingUpdate` 时，Deployment 使用 Rolling Update 的方式更新 Pod 。您可以指定 `maxUnavailable` 和 `maxSurge` 来控制 rolling update 进程。
+`.spec.strategy.type==RollingUpdate` 时，Deployment 使用 Rolling Update 的方式更新 Pod。您可以指定 `maxUnavailable` 和 `maxSurge` 来控制 rolling update 进程。
 
 ##### Max Unavailable
 
@@ -779,7 +779,7 @@ $ echo $?
 
 ### Progress Deadline Seconds
 
-`.spec.progressDeadlineSeconds` 是可选配置项，用来指定在系统报告 Deployment 的 [failed progressing](https://kubernetes.io/docs/concepts/workloads/controllers/deployment#failed-deployment) —— 表现为 resource 的状态中 `type=Progressing`、`Status=False`、 `Reason=ProgressDeadlineExceeded` 前可以等待的 Deployment 进行的秒数。Deployment controller 会继续重试该 Deployment。未来，在实现了自动回滚后， deployment controller 在观察到这种状态时就会自动回滚。
+`.spec.progressDeadlineSeconds` 是可选配置项，用来指定在系统报告 Deployment 的 [failed progressing](https://kubernetes.io/docs/concepts/workloads/controllers/deployment#failed-deployment) —— 表现为 resource 的状态中 `type=Progressing`、`Status=False`、 `Reason=ProgressDeadlineExceeded` 前可以等待的 Deployment 进行的秒数。Deployment controller 会继续重试该 Deployment。未来，在实现了自动回滚后，deployment controller 在观察到这种状态时就会自动回滚。
 
 如果设置该参数，该值必须大于 `.spec.minReadySeconds`。
 

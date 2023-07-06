@@ -89,7 +89,7 @@ Kubernetes 主机范围 IPAM 模式启用 `ipam: kubernetes` 并将地址分配�
 使用 helm 之前的选项可以定义为：
 
 - `ipam: kubernetes`：`--set ipam.mode=kubernetes`
-- `k8s-require-ipv4-pod-cidr: true`：`--set k8s.requireIPv4PodCIDR=true`， 仅适用于 `--set ipam.mode=kubernetes`
+- `k8s-require-ipv4-pod-cidr: true`：`--set k8s.requireIPv4PodCIDR=true`，仅适用于 `--set ipam.mode=kubernetes`
 - `k8s-require-ipv6-pod-cidr: true`：`--set k8s.requireIPv6PodCIDR=true`，仅适用于 `--set ipam.mode=kubernetes`
 
 ## CRD 支持{#crd-backed}
