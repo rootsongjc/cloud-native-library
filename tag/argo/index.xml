@@ -13,6 +13,77 @@
     </image>
     
     <item>
+      <title>工具</title>
+      <link>https://lib.jimmysong.io/argo-cd/user-guide/application-sources/</link>
+      <pubDate>Fri, 30 Jun 2023 16:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/argo-cd/user-guide/application-sources/</guid>
+      <description>&lt;h2 id=&#34;生产&#34;&gt;生产&lt;/h2&gt;
+&lt;p&gt;Argo CD 支持多种不同的 Kubernetes 清单定义方式：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kustomize&lt;/a&gt;应用程序&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://argo-cd.readthedocs.io/en/stable/user-guide/helm/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Helm&lt;/a&gt; Chart&lt;/li&gt;
+&lt;li&gt;YAML/JSON/Jsonnet 清单的目录，包括&lt;a href=&#34;https://argo-cd.readthedocs.io/en/stable/user-guide/jsonnet/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Jsonnet&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;任何配置为配置管理插件的&lt;a href=&#34;https://argo-cd.readthedocs.io/en/stable/operator-manual/config-management-plugins/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;自定义配置管理工具&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;开发&#34;&gt;开发&lt;/h2&gt;
+&lt;p&gt;Argo CD 还支持直接上传本地清单。由于这是 GitOps 范式的反模式，因此只能出于开发目的而这样做。&lt;code&gt;override&lt;/code&gt;需要具有权限的用户（通常是管理员）才能在本地上传清单。支持上述所有不同的 Kubernetes 部署工具。上传本地应用程序：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ argocd app sync APPNAME --local /path/to/dir/
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    
+    <item>
+      <title>架构概述</title>
+      <link>https://lib.jimmysong.io/argo-cd/operator-manual/architecture/</link>
+      <pubDate>Fri, 30 Jun 2023 16:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/argo-cd/operator-manual/architecture/</guid>
+      <description>&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-argo-cd-架构&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/argocd_architecture.png&#34; alt=&#34;Argo CD 架构&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Argo CD 架构
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h2 id=&#34;组件&#34;&gt;组件&lt;/h2&gt;
+&lt;h3 id=&#34;api-服务器&#34;&gt;API 服务器&lt;/h3&gt;
+&lt;p&gt;API 服务器是一个 gRPC/REST 服务器，用于公开 Web UI、CLI 和 CI/CD 系统使用的 API。它具有以下职责：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;应用程序管理和状态报告&lt;/li&gt;
+&lt;li&gt;调用应用程序操作（例如同步、回滚、用户定义的操作）&lt;/li&gt;
+&lt;li&gt;存储为 K8s 机密的存储库和集群凭据管理&lt;/li&gt;
+&lt;li&gt;身份验证和身份验证委派到外部身份提供者&lt;/li&gt;
+&lt;li&gt;RBAC 执行&lt;/li&gt;
+&lt;li&gt;Git webhook 事件的侦听器/转发器&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;存储库服务器&#34;&gt;存储库服务器&lt;/h3&gt;
+&lt;p&gt;存储库服务器是一个内部服务，它维护 Git 存储库的本地缓存，其中包含应用程序清单。它负责在提供以下输入时生成并返回 Kubernetes 清单：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;存储库 URL&lt;/li&gt;
+&lt;li&gt;修订版（提交、标记、分支）&lt;/li&gt;
+&lt;li&gt;应用程序路径&lt;/li&gt;
+&lt;li&gt;模板特定设置：参数、helm values.yaml&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;应用程序控制器&#34;&gt;应用程序控制器&lt;/h3&gt;
+&lt;p&gt;应用程序控制器是一个 Kubernetes 控制器，它不断监视运行中的应用程序，并将当前的实时状态与期望的目标状态（如 repo 中指定的）进行比较。它检测 &lt;code&gt;OutOfSync&lt;/code&gt; 应用程序状态，并可选择采取纠正措施。它负责调用任何用户定义的生命周期事件钩子（PreSync、Sync、PostSync）&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
       <title>Argo CD 简介</title>
       <link>https://lib.jimmysong.io/argo-cd/overview/</link>
       <pubDate>Fri, 30 Jun 2023 16:00:00 +0800</pubDate>
@@ -48,7 +119,7 @@
 &lt;h3 id=&#34;快速入门&#34;&gt;快速入门&lt;/h3&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create namespace argocd
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请参阅我们的&lt;a href=&#34;../getting-started/&#34;&gt;入门指南&lt;/a&gt;。我们还为其他功能提供了面向用户的文档。如果您想升级 ArgoCD，请参阅升级指南。我们还为有兴趣构建第三方集成的开发人员提供面向开发者的文档。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请参阅我们的&lt;a href=&#34;../getting-started/&#34;&gt;入门指南&lt;/a&gt;。我们还为其他功能提供了面向用户的文档。如果你想升级 ArgoCD，请参阅升级指南。我们还为有兴趣构建第三方集成的开发人员提供面向开发者的文档。&lt;/p&gt;
 &lt;h2 id=&#34;工作原理&#34;&gt;工作原理&lt;/h2&gt;
 &lt;p&gt;Argo CD 遵循使用 Git 存储库作为定义期望应用程序状态的真实来源的 GitOps 模式。Kubernetes 清单可以通过以下几种方式指定：&lt;/p&gt;
 &lt;ul&gt;
@@ -115,6 +186,111 @@
 &lt;p&gt;Argo CD 正在由社区积极开发。我们的发布可以在&lt;a href=&#34;https://github.com/argoproj/argo-cd/releases&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这里&lt;/a&gt;找到。&lt;/p&gt;
 &lt;h2 id=&#34;采用情况&#34;&gt;采用情况&lt;/h2&gt;
 &lt;p&gt;正式采用 Argo CD 的组织可以在&lt;a href=&#34;https://github.com/argoproj/argo-cd/blob/master/USERS.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这里&lt;/a&gt;找到。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>ApplicationSet 控制器介绍</title>
+      <link>https://lib.jimmysong.io/argo-cd/operator-manual/applicationset/overview/</link>
+      <pubDate>Fri, 30 Jun 2023 16:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/argo-cd/operator-manual/applicationset/overview/</guid>
+      <description>&lt;h2 id=&#34;介绍&#34;&gt;介绍&lt;/h2&gt;
+&lt;p&gt;应用程序集控制器是一个&lt;a href=&#34;https://kubernetes.io/docs/concepts/architecture/controller/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kubernetes 控制器&lt;/a&gt;，它添加了对&lt;code&gt;ApplicationSet&lt;/code&gt;&lt;a href=&#34;https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;自定义资源定义&lt;/a&gt; (CRD) 的支持。这个控制器/CRD 使得自动化和更大的灵活性在管理 Argo CD 应用程序跨大量的集群和在 monorepos 内成为可能，同时它使多租户 Kubernetes 集群上的自助式使用成为可能。&lt;/p&gt;
+&lt;p&gt;应用程序集控制器与现有的 Argo CD 安装一起工作。Argo CD 是一个声明性的、GitOps 持续交付工具，允许开发人员从他们现有的 Git 工作流程中定义和控制 Kubernetes 应用程序资源的部署。&lt;/p&gt;
+&lt;p&gt;从 Argo CD v2.3 开始，应用程序集控制器与 Argo CD 捆绑在一起。&lt;/p&gt;
+&lt;p&gt;应用程序集控制器通过添加支持面向集群管理员的附加功能来补充 Argo CD。&lt;code&gt;ApplicationSet&lt;/code&gt;控制器提供：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;使用单个 Kubernetes 清单定位多个 Kubernetes 集群的能力，使用 Argo CD 部署多个应用程序的能力&lt;/li&gt;
+&lt;li&gt;使用单个 Kubernetes 清单从一个或多个 Git 存储库中部署多个应用程序的能力&lt;/li&gt;
+&lt;li&gt;改进了对 monorepos 的支持：在 Argo CD 的上下文中，monorepo 是一个单个 Git 存储库中定义的多个 Argo CD 应用程序资源&lt;/li&gt;
+&lt;li&gt;在多租户集群中，提高了各个集群租户使用 Argo CD 部署应用程序的能力（无需涉及特权集群管理员以启用目标集群/命名空间）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;🔔 注意：在使用 ApplicationSets 之前，请注意其安全影响。&lt;/p&gt;
+&lt;h2 id=&#34;应用程序集资源&#34;&gt;应用程序集资源&lt;/h2&gt;
+&lt;p&gt;此示例定义了一个名为&lt;code&gt;guestbook&lt;/code&gt;的&lt;code&gt;ApplicationSet&lt;/code&gt;资源：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ApplicationSet&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;guestbook&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;generators&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;list&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;elements&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;cluster&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;engineering-dev&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;url&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;https://1.2.3.4&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;cluster&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;engineering-prod&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;url&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;https://2.4.6.8&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;cluster&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;finance-preprod&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;url&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;https://9.8.7.6&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;template&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;{{cluster}}-guestbook&amp;#39;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;project&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;my-project&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;source&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;repoURL&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;https://github.com/infra-team/cluster-deployments.git&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;targetRevision&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;HEAD&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;guestbook/{{cluster}}&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;destination&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;server&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;{{url}}&amp;#39;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;guestbook&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在此示例中，我们想要将我们的&lt;code&gt;guestbook&lt;/code&gt;应用程序（由于这是 GitOps，该应用程序的 Kubernetes 资源来自 Git）部署到一系列 Kubernetes 集群（目标集群的列表在&lt;code&gt;ApplicationSet&lt;/code&gt;资源的 List 项元素中定义）。&lt;/p&gt;
+&lt;p&gt;虽然&lt;code&gt;ApplicationSet&lt;/code&gt;资源可以使用多种类型的&lt;em&gt;生成器&lt;/em&gt;，但此示例使用了列表生成器，它只包含一个固定的、字面的集群列表。这个集群列表将是 Argo CD 在处理了&lt;code&gt;ApplicationSet&lt;/code&gt;资源后部署&lt;code&gt;guestbook&lt;/code&gt;应用程序资源的集群。&lt;/p&gt;
+&lt;p&gt;生成器（如 List 生成器）负责生成&lt;em&gt;参数&lt;/em&gt;。参数是键值对，在模板渲染期间被替换到&lt;code&gt;ApplicationSet&lt;/code&gt;资源的&lt;code&gt;template:&lt;/code&gt;部分中。&lt;/p&gt;
+&lt;p&gt;当前支持的多个生成器：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;List 生成器&lt;/strong&gt;：基于固定的集群名称/URL 值列表生成参数，如上面的示例所示。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Cluster 生成器&lt;/strong&gt;：而不是一个字面的集群列表（如列表生成器），集群生成器根据在 Argo CD 中定义的集群自动生成集群参数。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Git 生成器&lt;/strong&gt;：Git 生成器基于包含在生成器资源中的文件或文件夹生成参数。 - 包含 JSON 值的文件将被解析并转换为模板参数。 - Git 存储库中的单个目录路径也可以用作参数值。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Matrix 生成器&lt;/strong&gt;：矩阵生成器结合了两个其他生成器的生成参数。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;有关各个生成器的更多信息以及未列出的其他生成器，请参见生成器部分。&lt;/p&gt;
+&lt;h2 id=&#34;将参数替换为模板&#34;&gt;将参数替换为模板&lt;/h2&gt;
+&lt;p&gt;不管使用哪个生成器，由生成器生成的参数都会被替换为&lt;code&gt;{{parameter name}}&lt;/code&gt;值，而这些值位于&lt;code&gt;ApplicationSet&lt;/code&gt;资源的&lt;code&gt;template:&lt;/code&gt;部分中。在此示例中，列表生成器定义了&lt;code&gt;cluster&lt;/code&gt;和&lt;code&gt;url&lt;/code&gt;参数，这些参数随后分别被替换为模板的&lt;code&gt;{{cluster}}&lt;/code&gt;和&lt;code&gt;{{url}}&lt;/code&gt;值。&lt;/p&gt;
+&lt;p&gt;在将参数替换后，将此&lt;code&gt;guestbook&lt;/code&gt; &lt;code&gt;ApplicationSet&lt;/code&gt;资源应用于 Kubernetes 集群：&lt;/p&gt;
+&lt;p&gt;1.应用程序集控制器处理生成器条目，生成一组模板参数。2.这些参数被替换到模板中，每组参数替换一次。3.每个渲染的模板都被转换为一个 Argo CD &lt;code&gt;Application&lt;/code&gt;资源，然后创建（或更新）在 Argo CD 名称空间中。4.最后，Argo CD 控制器会收到这些&lt;code&gt;Application&lt;/code&gt;资源的通知，并负责处理它们。&lt;/p&gt;
+&lt;p&gt;对于我们的示例中定义的三个不同集群——&lt;code&gt;engineering-dev&lt;/code&gt;、&lt;code&gt;engineering-prod&lt;/code&gt;和&lt;code&gt;finance-preprod&lt;/code&gt;，这将产生三个新的 Argo CD&lt;code&gt;Application&lt;/code&gt;资源：每个集群一个。&lt;/p&gt;
+&lt;p&gt;这是将创建的&lt;code&gt;Application&lt;/code&gt;资源之一的示例，为&lt;code&gt;engineering-dev&lt;/code&gt;集群在&lt;code&gt;1.2.3.4&lt;/code&gt;处：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Application&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;engineering-dev-guestbook&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;source&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;repoURL&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;https://github.com/infra-team/cluster-deployments.git&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;targetRevision&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;HEAD&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;guestbook/engineering-dev&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;destination&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;server&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;https://1.2.3.4&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;guestbook&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;我们可以看到生成的值已被替换到模板的&lt;code&gt;server&lt;/code&gt;和&lt;code&gt;path&lt;/code&gt;字段中，模板已被渲染成一个完整的 Argo CD 应用程序。&lt;/p&gt;
+&lt;p&gt;现在这些 Application 也可以在 Argo CD UI 中看到：&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-argocd-web-ui-中的列表生成器示例&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../../assets/applicationset/Introduction/List-Example-In-Argo-CD-Web-UI.png&#34; alt=&#34;ArgoCD Web UI 中的列表生成器示例&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      ArgoCD Web UI 中的列表生成器示例
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;应用程序集控制器将确保将对&lt;code&gt;ApplicationSet&lt;/code&gt;资源所做的任何更改、更新或删除自动应用于相应的&lt;code&gt;Application&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;例如，如果向列表生成器添加了新的集群/URL 列表条目，则将为此新集群相应地创建一个新的 Argo CD&lt;code&gt;Application&lt;/code&gt;资源。对&lt;code&gt;guestbook&lt;/code&gt; &lt;code&gt;ApplicationSet&lt;/code&gt;资源所做的任何编辑都将影响由该资源实例化的所有 Argo CD 应用程序，包括新应用程序。&lt;/p&gt;
+&lt;p&gt;虽然列表生成器的字面集群列表相当简单，但 ApplicationSet 控制器支持其他可用生成器的更复杂的场景。&lt;/p&gt;
 </description>
     </item>
     
@@ -1667,7 +1843,7 @@
       <link>https://lib.jimmysong.io/argo-cd/understand-the-basics/</link>
       <pubDate>Fri, 30 Jun 2023 16:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/argo-cd/understand-the-basics/</guid>
-      <description>&lt;p&gt;在有效使用 Argo CD 之前，有必要了解该平台构建的底层技术。还有必要了解向您提供的功能以及如何使用它们。以下部分提供了一些有用的链接来建立这种理解。&lt;/p&gt;
+      <description>&lt;p&gt;在有效使用 Argo CD 之前，有必要了解该平台构建的底层技术。还有必要了解向你提供的功能以及如何使用它们。以下部分提供了一些有用的链接来建立这种理解。&lt;/p&gt;
 &lt;h2 id=&#34;学习基础知识&#34;&gt;学习基础知识&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;浏览在线 Docker 和 Kubernetes 教程：
@@ -1677,19 +1853,74 @@
 &lt;li&gt;&lt;a href=&#34;https://kubernetes.io/docs/tutorials/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;教程&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/li&gt;
-&lt;li&gt;根据您计划如何模板化您的应用程序：
+&lt;li&gt;根据你计划如何模板化你的应用程序：
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;https://kustomize.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kustomize&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://helm.sh/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Helm&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/li&gt;
-&lt;li&gt;如果您要与 CI 工具集成：
+&lt;li&gt;如果你要与 CI 工具集成：
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;https://docs.github.com/en/actions&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;GitHub Actions 文档&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://www.jenkins.io/doc/book/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Jenkins 用户指南&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>ApplicationSet 入门</title>
+      <link>https://lib.jimmysong.io/argo-cd/operator-manual/applicationset/getting-started/</link>
+      <pubDate>Fri, 30 Jun 2023 16:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/argo-cd/operator-manual/applicationset/getting-started/</guid>
+      <description>&lt;p&gt;本指南假定你已经熟悉 Argo CD 及其基本概念。有关更多信息，请参阅 Argo CD 文档。&lt;/p&gt;
+&lt;h2 id=&#34;要求&#34;&gt;要求&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;安装 &lt;a href=&#34;https://kubernetes.io/docs/tasks/tools/install-kubectl/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;kubectl&lt;/a&gt; 命令行工具&lt;/li&gt;
+&lt;li&gt;有一个 &lt;a href=&#34;https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;kubeconfig&lt;/a&gt; 文件（默认位置为 &lt;code&gt;~/.kube/config&lt;/code&gt;）。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;安装&#34;&gt;安装&lt;/h2&gt;
+&lt;p&gt;有几种安装 ApplicationSet 控制器的选项。&lt;/p&gt;
+&lt;h3 id=&#34;a-将-applicationset-作为-argo-cd-的一部分安装&#34;&gt;A) 将 ApplicationSet 作为 Argo CD 的一部分安装&lt;/h3&gt;
+&lt;p&gt;从 Argo CD v2.3 开始，ApplicationSet 控制器已捆绑在 Argo CD 中。无需从 Argo CD 单独安装 ApplicationSet 控制器。&lt;/p&gt;
+&lt;p&gt;有关更多信息，请参阅 Argo CD &lt;a href=&#34;../../../getting-started/&#34;&gt;入门指南&lt;/a&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;b-将-applicationset-安装到现有的-argo-cd-安装中argeo-cd-v23-之前&#34;&gt;B) 将 ApplicationSet 安装到现有的 Argo CD 安装中（Argeo CD v2.3 之前）&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;: 以下说明仅适用于 Argo CD 版本 v2.3.0 之前。&lt;/p&gt;
+&lt;p&gt;ApplicationSet 控制器 &lt;em&gt;必须&lt;/em&gt; 安装到与其所针对的 Argo CD 相同的命名空间中。&lt;/p&gt;
+&lt;p&gt;假设 Argo CD 安装在 &lt;code&gt;argocd&lt;/code&gt; 命名空间中，请运行以下命令：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/applicationset/v0.4.0/manifests/install.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;安装完成后，ApplicationSet 控制器不需要进行其他设置。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;manifests/install.yaml&lt;/code&gt; 文件包含安装 ApplicationSet 控制器所需的 Kubernetes 清单：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;ApplicationSet&lt;/code&gt; 资源的自定义资源定义&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;argocd-applicationset-controller&lt;/code&gt; 的 Deployment&lt;/li&gt;
+&lt;li&gt;供 ApplicationSet 控制器使用的 ServiceAccount，用于访问 Argo CD 资源&lt;/li&gt;
+&lt;li&gt;授予 ServiceAccount 所需资源的 RBAC 访问权限的 Role&lt;/li&gt;
+&lt;li&gt;将 ServiceAccount 和 Role 绑定的 RoleBinding&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;启用高可用性模式&#34;&gt;启用高可用性模式&lt;/h2&gt;
+&lt;p&gt;要启用高可用性，必须在 argocd-applicationset-controller 容器中设置命令 &lt;code&gt;--enable-leader-election=true&lt;/code&gt; 并增加副本数。&lt;/p&gt;
+&lt;p&gt;在 manifests/install.yaml 中执行以下更改：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;containers&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;command&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;         &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;entrypoint.sh&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;         &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;argocd-applicationset-controller&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;         &lt;/span&gt;- --&lt;span class=&#34;l&#34;&gt;enable-leader-election=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;可选升级后的额外安全保障&#34;&gt;可选：升级后的额外安全保障&lt;/h3&gt;
+&lt;p&gt;请参阅 控制资源修改 页面，了解你可能希望在 &lt;code&gt;install.yaml&lt;/code&gt; 中的 ApplicationSet Resource 中添加的其他参数，以提供额外的安全性，以防止任何初始意外的后升级行为。&lt;/p&gt;
+&lt;p&gt;例如，为了暂时防止升级后的 ApplicationSet 控制器进行任何更改，你可以：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;启用干运行&lt;/li&gt;
+&lt;li&gt;使用仅创建策略&lt;/li&gt;
+&lt;li&gt;在 ApplicationSets 上启用 &lt;code&gt;preserveResourcesOnDeletion&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;在你的 ApplicationSets 模板中暂时禁用自动同步&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这些参数将允许你观察/控制新版本 ApplicationSet 控制器在你的环境中的行为，以确保你对结果感到满意（请参阅 ApplicationSet 日志文件以获取详细信息）。只需不要忘记在完成测试后删除任何临时更改！&lt;/p&gt;
+&lt;p&gt;但是，如上所述，这些步骤并不是必需的：升级 ApplicationSet 控制器应该是一项最小侵入性的过程，并且这些步骤仅建议作为额外安全措施。&lt;/p&gt;
+&lt;h2 id=&#34;下一步&#34;&gt;下一步&lt;/h2&gt;
+&lt;p&gt;一旦你的 ApplicationSet 控制器正常运行，请继续阅读 &lt;a href=&#34;../use-cases/&#34;&gt;用例&lt;/a&gt;，了解更多支持的场景，或直接转到 &lt;a href=&#34;../generators/&#34;&gt;生成器&lt;/a&gt; 查看示例 &lt;code&gt;ApplicationSet&lt;/code&gt; 资源。&lt;/p&gt;
 </description>
     </item>
     
@@ -2307,7 +2538,7 @@
       <link>https://lib.jimmysong.io/argo-cd/core-concepts/</link>
       <pubDate>Fri, 30 Jun 2023 16:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/argo-cd/core-concepts/</guid>
-      <description>&lt;p&gt;假设您熟悉 Git、Docker、Kubernetes、持续交付和 GitOps 的核心概念。以下是 Argo CD 特有的一些概念：&lt;/p&gt;
+      <description>&lt;p&gt;假设你熟悉 Git、Docker、Kubernetes、持续交付和 GitOps 的核心概念。以下是 Argo CD 特有的一些概念：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;应用程序&lt;/strong&gt;由清单定义的一组 Kubernetes 资源。这是自定义资源定义 (CRD)。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;应用程序源类型&lt;/strong&gt;使用哪个&lt;strong&gt;工具来构建应用程序。&lt;/strong&gt;&lt;/li&gt;
@@ -2322,6 +2553,108 @@
 &lt;li&gt;&lt;strong&gt;配置管理工具&lt;/strong&gt;请参阅&lt;strong&gt;工具&lt;/strong&gt;。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;配置管理插件&lt;/strong&gt;自定义工具。&lt;/li&gt;
 &lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>ApplicationSet 控制器用例</title>
+      <link>https://lib.jimmysong.io/argo-cd/operator-manual/applicationset/use-cases/</link>
+      <pubDate>Fri, 30 Jun 2023 16:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/argo-cd/operator-manual/applicationset/use-cases/</guid>
+      <description>&lt;p&gt;使用生成器的概念，应用集控制器提供了一组强大的工具，用于自动化模板化和修改 Argo CD 应用程序。生成器从各种来源（包括 Argo CD 集群和 Git 存储库）生成模板参数数据，支持和启用新的用例。&lt;/p&gt;
+&lt;p&gt;虽然可以将这些工具用于任何目的，但这里是应用集控制器旨在支持的一些特定用例。&lt;/p&gt;
+&lt;h2 id=&#34;用例集群附加组件&#34;&gt;用例：集群附加组件&lt;/h2&gt;
+&lt;p&gt;应用集控制器的初始设计重点是允许基础架构团队的 Kubernetes 集群管理员自动创建大量不同的 Argo CD 应用程序，跨多个集群，并将这些应用程序作为单个单元进行管理。 &lt;em&gt;集群附加组件用例&lt;/em&gt; 就是其中一个例子。&lt;/p&gt;
+&lt;p&gt;在 &lt;em&gt;集群附加组件用例&lt;/em&gt; 中，管理员负责为一个或多个 Kubernetes 集群配置集群附加组件：集群附加组件是运算符，例如 &lt;a href=&#34;https://github.com/prometheus-operator/prometheus-operator&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Prometheus 运算符&lt;/a&gt; 或控制器，例如 &lt;a href=&#34;https://argoproj.github.io/argo-workflows/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;argo-workflows 控制器&lt;/a&gt;（&lt;a href=&#34;https://argoproj.github.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Argo 生态系统&lt;/a&gt;的一部分）。&lt;/p&gt;
+&lt;p&gt;通常，这些附加组件是开发团队的应用程序所需的（例如作为多租户集群的租户，他们可能希望向 Prometheus 提供度量数据或通过 Argo Workflows 编排工作流程）。&lt;/p&gt;
+&lt;p&gt;由于安装这些插件需要集群级别的权限，而这些权限不被单个开发团队持有，因此安装是组织的基础架构/运营团队的责任，在大型组织内，这个团队可能负责数十、数百或数千个 Kubernetes 集群（新集群定期添加/修改/删除）。&lt;/p&gt;
+&lt;p&gt;需要在大量集群上扩展，并自动响应新集群的生命周期，这必然需要某种形式的自动化。进一步的要求是允许使用特定标准（例如，staging vs production）将附加组件针对子集群进行定位。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-集群附加组件图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../../assets/applicationset/Use-Cases/Cluster-Add-Ons.png&#34; alt=&#34;集群附加组件图&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      集群附加组件图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;在这个例子中，基础架构团队维护一个包含 Argo Workflows 控制器和 Prometheus 运算符应用程序清单的 Git 存储库。&lt;/p&gt;
+&lt;p&gt;基础架构团队希望使用 Argo CD 将这两个插件部署到大量集群，并希望轻松管理新集群的创建/删除。&lt;/p&gt;
+&lt;p&gt;在这个用例中，我们可以使用应用集控制器的 List、Cluster 或 Git 生成器中的任一个来提供所需的行为：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;List 生成器：管理员维护两个 &lt;code&gt;ApplicationSet&lt;/code&gt; 资源，每个应用程序（工作流和 Prometheus）都包含它们希望在 List 生成器元素中定位的集群列表。
+&lt;ul&gt;
+&lt;li&gt;在该生成器中，添加/删除集群需要手动更新 &lt;code&gt;ApplicationSet&lt;/code&gt; 资源的列表元素。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Cluster 生成器：管理员维护两个 &lt;code&gt;ApplicationSet&lt;/code&gt;  资源，每个应用程序（工作流和 Prometheus）都确保在 Argo CD 中定义所有新集群。
+&lt;ul&gt;
+&lt;li&gt;由于 Cluster 生成器自动检测并针对 Argo CD 中定义的集群，添加/删除 Argo CD 中的集群 将自动导致应用集控制器创建 Application 资源（每个应用程序）。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Git 生成器：Git 生成器是生成器中最灵活/最强大的，因此有多种不同的方法来处理此用例。以下是其中的几个：
+&lt;ul&gt;
+&lt;li&gt;使用 Git 生成器的 &lt;code&gt;files&lt;/code&gt; 字段：将集群列表作为 JSON 文件保存在 Git 存储库中。通过 Git 提交更新 JSON 文件，会导致添加/删除新集群。&lt;/li&gt;
+&lt;li&gt;使用 Git 生成器的 &lt;code&gt;directories&lt;/code&gt; 字段：对于每个目标集群，都在 Git 存储库中存在一个对应的同名目录。通过 Git 提交添加/修改目录，将触发共享目录名称的集群的更新。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;有关每个生成器的详细信息，请参见 &lt;a href=&#34;../generator/&#34;&gt;生成器部分&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;用例单体库&#34;&gt;用例：单体库&lt;/h2&gt;
+&lt;p&gt;在 &lt;em&gt;单体库用例&lt;/em&gt; 中，Kubernetes 集群管理员从单个 Git 存储库管理单个 Kubernetes 集群的整个状态。&lt;/p&gt;
+&lt;p&gt;合并到 Git 存储库的清单更改应自动部署到集群。&lt;/p&gt;
+&lt;p&gt;在这个例子中，基础架构团队维护一个包含 Argo Workflows 控制器和 Prometheus 运算符应用程序清单的 Git 存储库。独立的开发团队还添加了他们希望部署到集群的其他服务。&lt;/p&gt;
+&lt;p&gt;对 Git 生成器可能用于支持此用例：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Git 生成器的 &lt;code&gt;directories&lt;/code&gt; 字段可用于指定包含要部署的各个应用程序的特定子目录（使用通配符）。&lt;/li&gt;
+&lt;li&gt;Git 生成器的 &lt;code&gt;files&lt;/code&gt; 字段可以引用包含 JSON 元数据的 Git 存储库文件，该元数据描述要部署的各个应用程序。&lt;/li&gt;
+&lt;li&gt;更多详情请参见 Git 生成器文档。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;用例多租户集群上的-argo-cd-应用程序自助服务&#34;&gt;用例：多租户集群上的 Argo CD 应用程序自助服务&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;自助服务用例&lt;/em&gt; 旨在允许开发人员（作为多租户 Kubernetes 集群的最终用户）以自动化方式更灵活地执行以下操作：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;使用 Argo CD 将多个应用程序部署到单个集群&lt;/li&gt;
+&lt;li&gt;使用 Argo CD 自动化地部署到多个集群&lt;/li&gt;
+&lt;li&gt;但在这两种情况下，使开发人员能够在不需要涉及集群管理员的情况下执行此操作（以代表他们创建所需的 Argo CD 应用程序/AppProject 资源）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这个用例的一个潜在解决方案是，开发团队在 Git 存储库中定义 Argo CD &lt;code&gt;Application&lt;/code&gt; 资源（包含他们希望部署的清单），在 &lt;a href=&#34;../../cluster-bootstrapping/#app-of-apps-pattern&#34;&gt;app-of-apps 模式&lt;/a&gt; 中，并且集群管理员通过合并请求审查/接受对此存储库的更改。&lt;/p&gt;
+&lt;p&gt;虽然这听起来像是一种有效的解决方案，但一个主要的劣势是需要高度的信任/审查来接受包含 Argo CD &lt;code&gt;Application&lt;/code&gt; 规范更改的提交。这是因为 &lt;code&gt;Application&lt;/code&gt; 规范中包含许多敏感字段，包括 &lt;code&gt;project&lt;/code&gt;、&lt;code&gt;cluster&lt;/code&gt; 和 &lt;code&gt;namespace&lt;/code&gt;。意外合并可能会允许应用程序访问其不属于的命名空间/集群。&lt;/p&gt;
+&lt;p&gt;因此，在自助服务用例中，管理员希望仅允许开发人员控制 &lt;code&gt;Application&lt;/code&gt; 规范的某些字段（例如 Git 源存储库），但不允许控制其他字段（例如目标命名空间或目标集群应受到限制）。&lt;/p&gt;
+&lt;p&gt;幸运的是，应用集控制器提供了另一种解决方案：集群管理员可以安全地创建包含 Git 生成器的 &lt;code&gt;ApplicationSet&lt;/code&gt; 资源，该生成器使用 &lt;code&gt;template&lt;/code&gt; 字段将应用程序资源的部署限制为固定值，同时允许开发人员随意自定义 &amp;lsquo;safe&amp;rsquo; 字段。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ApplicationSet&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# (...)&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;generators&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;git&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;repoURL&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;https://github.com/argoproj/argo-cd.git&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;files&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;apps/**/config.json&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;template&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;project&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;dev-team-one&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 项目受到限制&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;source&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;         &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 开发人员可以使用上述 repo URL 中的 JSON 文件自定义应用程序详细信息&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;         &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;repoURL&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;{{&lt;span class=&#34;l&#34;&gt;app.source}}&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;         &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;targetRevision&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;{{&lt;span class=&#34;l&#34;&gt;app.revision}}&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;         &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;{{&lt;span class=&#34;l&#34;&gt;app.path}}&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;destination&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;         &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;production-cluster&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 集群受到限制&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;         &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;dev-team-one&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 命名空间受到限制&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;有关更多详细信息，请参见 &lt;a href=&#34;../generators-git/&#34;&gt;Git 生成器&lt;/a&gt;。&lt;/p&gt;
 </description>
     </item>
     
@@ -2458,7 +2791,7 @@
       <link>https://lib.jimmysong.io/argo-cd/cli-installation/</link>
       <pubDate>Fri, 30 Jun 2023 16:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/argo-cd/cli-installation/</guid>
-      <description>&lt;p&gt;您可以从此存储库的&lt;a href=&#34;https://github.com/argoproj/argo-cd/releases/latest&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;最新发布页面&lt;/a&gt;下载最新的 Argo CD 版本，其中将包含&lt;code&gt;argocd&lt;/code&gt; CLI。&lt;/p&gt;
+      <description>&lt;p&gt;你可以从此存储库的&lt;a href=&#34;https://github.com/argoproj/argo-cd/releases/latest&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;最新发布页面&lt;/a&gt;下载最新的 Argo CD 版本，其中将包含&lt;code&gt;argocd&lt;/code&gt; CLI。&lt;/p&gt;
 &lt;h2 id=&#34;linux-和-wsl&#34;&gt;Linux 和 WSL&lt;/h2&gt;
 &lt;h3 id=&#34;archlinux&#34;&gt;ArchLinux&lt;/h3&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;pacman -S argocd
@@ -2470,17 +2803,17 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo install -m &lt;span class=&#34;m&#34;&gt;555&lt;/span&gt; argocd-linux-amd64 /usr/local/bin/argocd
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;rm argocd-linux-amd64
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h4 id=&#34;下载具体版本&#34;&gt;下载具体版本&lt;/h4&gt;
-&lt;p&gt;&lt;code&gt;VERSION&lt;/code&gt;将以下命令中的替换设置&lt;code&gt;&amp;lt;TAG&amp;gt;&lt;/code&gt;为您要下载的 Argo CD 版本：&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;VERSION&lt;/code&gt;将以下命令中的替换设置&lt;code&gt;&amp;lt;TAG&amp;gt;&lt;/code&gt;为你要下载的 Argo CD 版本：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;VERSION&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&amp;lt;TAG&amp;gt; &lt;span class=&#34;c1&#34;&gt;# Select desired TAG from https://github.com/argoproj/argo-cd/releases&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/download/&lt;span class=&#34;nv&#34;&gt;$VERSION&lt;/span&gt;/argocd-linux-amd64
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo install -m &lt;span class=&#34;m&#34;&gt;555&lt;/span&gt; argocd-linux-amd64 /usr/local/bin/argocd
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;rm argocd-linux-amd64
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;您现在应该能够运行&lt;code&gt;argocd&lt;/code&gt;命令。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;你现在应该能够运行&lt;code&gt;argocd&lt;/code&gt;命令。&lt;/p&gt;
 &lt;h2 id=&#34;mac-m1&#34;&gt;Mac (M1)&lt;/h2&gt;
 &lt;h3 id=&#34;使用-curl-下载-1&#34;&gt;使用 curl 下载&lt;/h3&gt;
-&lt;p&gt;您可以在上面的链接查看最新版本的 Argo CD 或运行以下命令来获取版本：&lt;/p&gt;
+&lt;p&gt;你可以在上面的链接查看最新版本的 Argo CD 或运行以下命令来获取版本：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;VERSION&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;curl --silent &lt;span class=&#34;s2&#34;&gt;&amp;#34;https://api.github.com/repos/argoproj/argo-cd/releases/latest&amp;#34;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep &lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#34;tag_name&amp;#34;&amp;#39;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; sed -E &lt;span class=&#34;s1&#34;&gt;&amp;#39;s/.*&amp;#34;([^&amp;#34;]+)&amp;#34;.*/\1/&amp;#39;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;将以下命令替换&lt;code&gt;VERSION&lt;/code&gt;为您要下载的 Argo CD 版本：&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;将以下命令替换&lt;code&gt;VERSION&lt;/code&gt;为你要下载的 Argo CD 版本：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -sSL -o argocd-darwin-arm64 https://github.com/argoproj/argo-cd/releases/download/&lt;span class=&#34;nv&#34;&gt;$VERSION&lt;/span&gt;/argocd-darwin-arm64
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;安装 Argo CD CLI 二进制文件：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo install -m &lt;span class=&#34;m&#34;&gt;555&lt;/span&gt; argocd-darwin-arm64 /usr/local/bin/argocd
@@ -2489,25 +2822,25 @@
 &lt;h3 id=&#34;homebrew-1&#34;&gt;Homebrew&lt;/h3&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;brew install argocd
 &lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;使用-curl-下载-2&#34;&gt;使用 curl 下载&lt;/h3&gt;
-&lt;p&gt;您可以在上面的链接查看最新版本的 Argo CD 或运行以下命令来获取版本：&lt;/p&gt;
+&lt;p&gt;你可以在上面的链接查看最新版本的 Argo CD 或运行以下命令来获取版本：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;VERSION&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;curl --silent &lt;span class=&#34;s2&#34;&gt;&amp;#34;https://api.github.com/repos/argoproj/argo-cd/releases/latest&amp;#34;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep &lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#34;tag_name&amp;#34;&amp;#39;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; sed -E &lt;span class=&#34;s1&#34;&gt;&amp;#39;s/.*&amp;#34;([^&amp;#34;]+)&amp;#34;.*/\1/&amp;#39;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;将以下命令替换&lt;code&gt;VERSION&lt;/code&gt;为您要下载的 Argo CD 版本：&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;将以下命令替换&lt;code&gt;VERSION&lt;/code&gt;为你要下载的 Argo CD 版本：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -sSL -o argocd-darwin-amd64 https://github.com/argoproj/argo-cd/releases/download/&lt;span class=&#34;nv&#34;&gt;$VERSION&lt;/span&gt;/argocd-darwin-amd64
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;安装 Argo CD CLI 二进制文件：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo install -m &lt;span class=&#34;m&#34;&gt;555&lt;/span&gt; argocd-darwin-amd64 /usr/local/bin/argocd
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;rm argocd-darwin-amd64
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;完成上述任一说明后，您现在应该能够运行&lt;code&gt;argocd&lt;/code&gt;命令。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;完成上述任一说明后，你现在应该能够运行&lt;code&gt;argocd&lt;/code&gt;命令。&lt;/p&gt;
 &lt;h2 id=&#34;windows&#34;&gt;Windows&lt;/h2&gt;
 &lt;h3 id=&#34;使用-powershell-下载invoke-webrequest&#34;&gt;使用 PowerShell 下载：Invoke-WebRequest&lt;/h3&gt;
-&lt;p&gt;您可以在上面的链接查看最新版本的 Argo CD 或运行以下命令来获取版本：&lt;/p&gt;
+&lt;p&gt;你可以在上面的链接查看最新版本的 Argo CD 或运行以下命令来获取版本：&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$version = (Invoke-RestMethod https://api.github.com/repos/argoproj/argo-cd/releases/latest).tag_name
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;将以下命令替换&lt;code&gt;$version&lt;/code&gt;为您要下载的 Argo CD 版本：&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;将以下命令替换&lt;code&gt;$version&lt;/code&gt;为你要下载的 Argo CD 版本：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;$url&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;https://github.com/argoproj/argo-cd/releases/download/&amp;#34;&lt;/span&gt; + &lt;span class=&#34;nv&#34;&gt;$version&lt;/span&gt; + &lt;span class=&#34;s2&#34;&gt;&amp;#34;/argocd-windows-amd64.exe&amp;#34;&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;$output&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;argocd.exe&amp;#34;&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Invoke-WebRequest -Uri &lt;span class=&#34;nv&#34;&gt;$url&lt;/span&gt; -OutFile &lt;span class=&#34;nv&#34;&gt;$output&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;另请注意，您可能需要将该文件移至您的 PATH 中。&lt;/p&gt;
-&lt;p&gt;完成上述说明后，您现在应该能够运行&lt;code&gt;argocd&lt;/code&gt;命令。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;另请注意，你可能需要将该文件移至你的 PATH 中。&lt;/p&gt;
+&lt;p&gt;完成上述说明后，你现在应该能够运行&lt;code&gt;argocd&lt;/code&gt;命令。&lt;/p&gt;
 </description>
     </item>
     
@@ -2893,7 +3226,7 @@
       <link>https://lib.jimmysong.io/argo-cd/getting-started/</link>
       <pubDate>Fri, 30 Jun 2023 16:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/argo-cd/getting-started/</guid>
-      <description>&lt;p&gt;🔔 提示：本指南假设您对 Argo CD 所基于的工具有一定的了解。请阅读&lt;a href=&#34;../understand-the-basics/&#34;&gt;了解基础知识&lt;/a&gt;以了解这些工具。&lt;/p&gt;
+      <description>&lt;p&gt;🔔 提示：本指南假设你对 Argo CD 所基于的工具有一定的了解。请阅读&lt;a href=&#34;../understand-the-basics/&#34;&gt;了解基础知识&lt;/a&gt;以了解这些工具。&lt;/p&gt;
 &lt;h2 id=&#34;要求&#34;&gt;要求&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;安装 &lt;a href=&#34;https://kubernetes.io/docs/tasks/tools/install-kubectl/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;kubectl&lt;/a&gt; 命令行工具。&lt;/li&gt;
@@ -2904,8 +3237,8 @@
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create namespace argocd
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;这将创建一个新的命名空间，&lt;code&gt;argocd&lt;/code&gt;，Argo CD 服务和应用程序资源将驻留在其中。&lt;/p&gt;
-&lt;p&gt;🔔 警告：安装清单包括&lt;code&gt;ClusterRoleBinding&lt;/code&gt;引用命名空间的资源&lt;code&gt;argocd&lt;/code&gt;。如果您要将 Argo CD 安装到不同的命名空间中，请确保更新命名空间引用。&lt;/p&gt;
-&lt;p&gt;如果您对 UI、SSO、多集群功能不感兴趣，那么您可以仅安装&lt;a href=&#34;../operator-manual/installation/#core&#34;&gt;核心&lt;/a&gt; Argo CD 组件：&lt;/p&gt;
+&lt;p&gt;🔔 警告：安装清单包括&lt;code&gt;ClusterRoleBinding&lt;/code&gt;引用命名空间的资源&lt;code&gt;argocd&lt;/code&gt;。如果你要将 Argo CD 安装到不同的命名空间中，请确保更新命名空间引用。&lt;/p&gt;
+&lt;p&gt;如果你对 UI、SSO、多集群功能不感兴趣，那么你可以仅安装&lt;a href=&#34;../operator-manual/installation/#core&#34;&gt;核心&lt;/a&gt; Argo CD 组件：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create namespace argocd
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/core-install.yaml
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;此默认安装将具有自签名证书，如果没有一些额外的工作就无法访问。执行以下操作之一：&lt;/p&gt;
@@ -2931,12 +3264,12 @@
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl port-forward svc/argocd-server -n argocd 8080:443
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;然后可以使用 https://localhost:8080 访问 API 服务器&lt;/p&gt;
 &lt;h2 id=&#34;4-使用-cli-登录&#34;&gt;4. 使用 CLI 登录&lt;/h2&gt;
-&lt;p&gt;帐户的初始密码&lt;code&gt;admin&lt;/code&gt;是自动生成的，并以明文形式存储 在 Argo CD 安装命名空间中&lt;code&gt;password&lt;/code&gt;命名的机密字段中。&lt;code&gt;argocd-initial-admin-secret&lt;/code&gt;您可以使用 CLI 简单地检索此密码&lt;code&gt;argocd&lt;/code&gt;：&lt;/p&gt;
+&lt;p&gt;帐户的初始密码&lt;code&gt;admin&lt;/code&gt;是自动生成的，并以明文形式存储 在 Argo CD 安装命名空间中&lt;code&gt;password&lt;/code&gt;命名的机密字段中。&lt;code&gt;argocd-initial-admin-secret&lt;/code&gt;你可以使用 CLI 简单地检索此密码&lt;code&gt;argocd&lt;/code&gt;：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;argocd admin initial-password -n argocd
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;🔔 警告：&lt;code&gt;argocd-initial-admin-secret&lt;/code&gt;更改密码后，您应该从 Argo CD 命名空间中删除。该秘密除了以明文形式存储最初生成的密码外没有其他用途，并且可以随时安全地删除。如果必须重新生成新的管理员密码，Argo CD 将根据需要重新创建它。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;🔔 警告：&lt;code&gt;argocd-initial-admin-secret&lt;/code&gt;更改密码后，你应该从 Argo CD 命名空间中删除。该秘密除了以明文形式存储最初生成的密码外没有其他用途，并且可以随时安全地删除。如果必须重新生成新的管理员密码，Argo CD 将根据需要重新创建它。&lt;/p&gt;
 &lt;p&gt;使用上面的用户名&lt;code&gt;admin&lt;/code&gt;和密码，登录 Argo CD 的 IP 或主机名：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;argocd login &amp;lt;ARGOCD_SERVER&amp;gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;🔔 注意：CLI 环境必须能够与 Argo CD API 服务器通信。如果无法按照上述步骤 3 中的描述直接访问它，您可以告诉 CLI 通过以下机制之一使用端口转发来访问它：1) 向每个 CLI 命令添加 &lt;code&gt;--port-forward-namespace argocd&lt;/code&gt;标志；或 2) 设置&lt;code&gt;ARGOCD_OPTS&lt;/code&gt;环境变量：&lt;code&gt;export ARGOCD_OPTS=&#39;--port-forward-namespace argocd&#39;&lt;/code&gt;.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;🔔 注意：CLI 环境必须能够与 Argo CD API 服务器通信。如果无法按照上述步骤 3 中的描述直接访问它，你可以告诉 CLI 通过以下机制之一使用端口转发来访问它：1) 向每个 CLI 命令添加 &lt;code&gt;--port-forward-namespace argocd&lt;/code&gt;标志；或 2) 设置&lt;code&gt;ARGOCD_OPTS&lt;/code&gt;环境变量：&lt;code&gt;export ARGOCD_OPTS=&#39;--port-forward-namespace argocd&#39;&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;使用以下命令更改密码：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;argocd account update-password
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;5-注册集群以部署应用程序可选&#34;&gt;5. 注册集群以部署应用程序（可选）&lt;/h2&gt;
@@ -2980,7 +3313,7 @@
       &amp;#43; New App 按钮
     &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/p&gt;
-&lt;p&gt;为您的应用程序命名&lt;code&gt;guestbook&lt;/code&gt;，使用项目&lt;code&gt;default&lt;/code&gt;，并将同步策略保留为&lt;code&gt;Manual&lt;/code&gt;：&lt;/p&gt;
+&lt;p&gt;为你的应用程序命名&lt;code&gt;guestbook&lt;/code&gt;，使用项目&lt;code&gt;default&lt;/code&gt;，并将同步策略保留为&lt;code&gt;Manual&lt;/code&gt;：&lt;/p&gt;
 &lt;p&gt;
 
 
@@ -3078,7 +3411,7 @@
 &lt;/p&gt;
 &lt;h2 id=&#34;7-同步部署应用程序&#34;&gt;7. 同步（部署）应用程序&lt;/h2&gt;
 &lt;h3 id=&#34;通过-cli-同步&#34;&gt;通过 CLI 同步&lt;/h3&gt;
-&lt;p&gt;创建 guestbook 应用程序后，您现在可以查看其状态：&lt;/p&gt;
+&lt;p&gt;创建 guestbook 应用程序后，你现在可以查看其状态：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ argocd app get guestbook
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Name:               guestbook
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Server:             https://kubernetes.default.svc
@@ -3096,7 +3429,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;       Service     default    guestbook-ui  OutOfSync  Missing
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;应用程序状态为初始&lt;code&gt;OutOfSync&lt;/code&gt;状态，因为应用程序尚未部署，并且尚未创建 Kubernetes 资源。要同步（部署）应用程序，请运行：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;argocd app sync guestbook
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;此命令从存储库检索清单并执行&lt;code&gt;kubectl apply&lt;/code&gt;其中一个清单。guestbook 应用程序现已运行，您现在可以查看其资源组件、日志、事件和评估的健康状态。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;此命令从存储库检索清单并执行&lt;code&gt;kubectl apply&lt;/code&gt;其中一个清单。guestbook 应用程序现已运行，你现在可以查看其资源组件、日志、事件和评估的健康状态。&lt;/p&gt;
 &lt;h3 id=&#34;通过-ui-同步&#34;&gt;通过 UI 同步&lt;/h3&gt;
 &lt;p&gt;
 
@@ -3177,6 +3510,26 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;role&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;preview&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在更新期间，Rollout 将创建所需的 ReplicaSet，并将 &lt;code&gt;canaryMetadata&lt;/code&gt;/&lt;code&gt;previewMetadata&lt;/code&gt; 中定义的元数据合并到所需的 ReplicaSet 的 &lt;code&gt;spec.template.metadata&lt;/code&gt; 中。这将导致 ReplicaSet 的所有 Pod 都使用所需的元数据创建。当 Rollout 完全升级时，所需的 ReplicaSet 变为稳定，更新为使用 &lt;code&gt;stableMetadata&lt;/code&gt;/&lt;code&gt;activeMetadata&lt;/code&gt; 下的标签和注释。ReplicaSet 的 Pod 然后将&lt;em&gt;原地&lt;/em&gt;更新以使用稳定的元数据（而无需重新创建 Pod）。&lt;/p&gt;
 &lt;p&gt;🔔 重要提示：为了让工具能够利用这个功能，他们需要识别标签和/或注释在 Pod 启动后发生的变化。并非所有工具都能检测到这一点。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>ApplicationSet 安全性</title>
+      <link>https://lib.jimmysong.io/argo-cd/operator-manual/applicationset/security/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://lib.jimmysong.io/argo-cd/operator-manual/applicationset/security/</guid>
+      <description>&lt;p&gt;在使用 ApplicationSet 之前，了解其安全性影响非常重要。&lt;/p&gt;
+&lt;h2 id=&#34;只有管理员可以创建更新删除-applicationset&#34;&gt;只有管理员可以创建/更新/删除 ApplicationSet&lt;/h2&gt;
+&lt;p&gt;ApplicationSet 可以在任意 Project 下创建应用程序。Argo CD 设置通常包括高权限的 &lt;a href=&#34;../../user-guide/projects/&#34;&gt;Project&lt;/a&gt;（例如 &lt;code&gt;default&lt;/code&gt;），往往包括管理 Argo CD 自身资源的能力（例如 RBAC ConfigMap）。&lt;/p&gt;
+&lt;p&gt;ApplicationSets 还可以快速创建任意数量的应用程序，并同样快速删除它们。&lt;/p&gt;
+&lt;p&gt;最后，ApplicationSets 可以显示特权信息。例如，&lt;a href=&#34;../generators-git/&#34;&gt;git generator&lt;/a&gt; 可以读取 Argo CD 命名空间中的 Secrets，并将其作为 Auth 标头发送到任意 URL（例如为 &lt;code&gt;api&lt;/code&gt; 字段提供的 URL）。 （此功能旨在为 SCM 提供程序（如 GitHub）授权请求，但可能会被恶意用户滥用。）&lt;/p&gt;
+&lt;p&gt;出于这些原因，&lt;strong&gt;只有管理员&lt;/strong&gt;可以通过 Kubernetes RBAC 或任何其他机制获得创建、更新或删除 ApplicationSets 的权限。&lt;/p&gt;
+&lt;h2 id=&#34;管理员必须为-applicationsets-的真实来源应用适当的控制&#34;&gt;&lt;strong&gt;管理员必须为 ApplicationSets 的真实来源应用适当的控制&lt;/strong&gt;&lt;/h2&gt;
+&lt;p&gt;即使非管理员不能创建 ApplicationSet 资源，他们也可能影响 ApplicationSets 的行为。&lt;/p&gt;
+&lt;p&gt;例如，如果 ApplicationSet 使用 &lt;a href=&#34;../generators-git/&#34;&gt;git generator&lt;/a&gt;，则具有源 Git 存储库的推送访问权限的恶意用户可能会生成过多的应用程序，对 ApplicationSet 和应用程序控制器造成压力。他们还可能导致 SCM 提供者的速率限制生效，影响 ApplicationSet 服务。&lt;/p&gt;
+&lt;h3 id=&#34;模板化的project字段&#34;&gt;&lt;strong&gt;模板化的“project”字段&lt;/strong&gt;&lt;/h3&gt;
+&lt;p&gt;特别需要注意使用模板化的“project”字段的 ApplicationSet。具有写权限的恶意用户（例如，具有对 git generator 的 git repo 的推送访问权限的用户）可能会在限制不足的 Projects 下创建应用程序。具有在不受限制的 Project（如“default”Project）下创建应用程序的能力的恶意用户可能会通过修改其 RBAC ConfigMap 等方式接管 Argo CD 本身。&lt;/p&gt;
+&lt;p&gt;如果 ApplicationSet 的模板中未硬编码“project”字段，则管理员&lt;em&gt;必须&lt;/em&gt;控制 ApplicationSet 的生成器的所有来源。&lt;/p&gt;
 </description>
     </item>
     
@@ -3427,9 +3780,9 @@
       <pubDate>Fri, 30 Jun 2023 16:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/argo-cd/faq/</guid>
       <description>&lt;h2 id=&#34;我删除损坏了我的存储库无法删除我的应用程序&#34;&gt;我删除/损坏了我的存储库，无法删除我的应用程序。&lt;/h2&gt;
-&lt;p&gt;如果 Argo CD 无法生成清单，则无法删除应用程序。您需要：&lt;/p&gt;
+&lt;p&gt;如果 Argo CD 无法生成清单，则无法删除应用程序。你需要：&lt;/p&gt;
 &lt;ol&gt;
-&lt;li&gt;恢复/修复您的存储库。&lt;/li&gt;
+&lt;li&gt;恢复/修复你的存储库。&lt;/li&gt;
 &lt;li&gt;使用&lt;code&gt;cascade=false&lt;/code&gt;删除应用程序，然后手动删除资源。&lt;/li&gt;
 &lt;/ol&gt;
 &lt;h2 id=&#34;为什么我的应用程序在成功同步后仍然处于-outofsync-状态&#34;&gt;为什么我的应用程序在成功同步后仍然处于 &lt;code&gt;OutOfSync&lt;/code&gt; 状态？&lt;/h2&gt;
@@ -3438,8 +3791,8 @@
 &lt;p&gt;Argo CD 为几种标准 Kubernetes 类型提供健康状态。 &lt;code&gt;Ingress&lt;/code&gt;、&lt;code&gt;StatefulSet&lt;/code&gt; 和 &lt;code&gt;SealedSecret&lt;/code&gt; 类型存在已知问题，可能会导致健康检查返回 &lt;code&gt;Progressing&lt;/code&gt; 状态而不是 &lt;code&gt;Healthy&lt;/code&gt;。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;Ingress&lt;/code&gt; 如果 &lt;code&gt;status.loadBalancer.ingress&lt;/code&gt; 列表是非空的，并且至少有一个值为 &lt;code&gt;hostname&lt;/code&gt; 或 &lt;code&gt;IP&lt;/code&gt;，则被视为健康状态。一些 Ingress 控制器（&lt;a href=&#34;https://github.com/heptio/contour/issues/403&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;contour&lt;/a&gt;、&lt;a href=&#34;https://github.com/argoproj/argo-cd/issues/968#issuecomment-451082913&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;traefik&lt;/a&gt;）不会更新 &lt;code&gt;status.loadBalancer.ingress&lt;/code&gt; 字段，这会导致 &lt;code&gt;Ingress&lt;/code&gt; 永久停留在 &lt;code&gt;Progressing&lt;/code&gt; 状态。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;StatefulSet&lt;/code&gt; 如果 &lt;code&gt;status.updatedReplicas&lt;/code&gt; 字段的值与 &lt;code&gt;spec.replicas&lt;/code&gt; 字段匹配，则被视为健康状态。由于 Kubernetes bug &lt;a href=&#34;https://github.com/kubernetes/kubernetes/issues/68573&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;kubernetes/kubernetes#68573&lt;/a&gt;，&lt;code&gt;status.updatedReplicas&lt;/code&gt; 没有填充。因此，除非您运行包括修复程序 &lt;a href=&#34;https://github.com/kubernetes/kubernetes/pull/67570&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;kubernetes/kubernetes#67570&lt;/a&gt; 的 Kubernetes 版本，否则 &lt;code&gt;StatefulSet&lt;/code&gt; 可能会保持在 &lt;code&gt;Progressing&lt;/code&gt; 状态。&lt;/li&gt;
-&lt;li&gt;您的 &lt;code&gt;StatefulSet&lt;/code&gt; 或 &lt;code&gt;DaemonSet&lt;/code&gt; 正在使用 &lt;code&gt;OnDelete&lt;/code&gt; 而不是 &lt;code&gt;RollingUpdate&lt;/code&gt; 策略。请参见 &lt;a href=&#34;https://github.com/argoproj/argo-cd/issues/1881&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;#1881&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;StatefulSet&lt;/code&gt; 如果 &lt;code&gt;status.updatedReplicas&lt;/code&gt; 字段的值与 &lt;code&gt;spec.replicas&lt;/code&gt; 字段匹配，则被视为健康状态。由于 Kubernetes bug &lt;a href=&#34;https://github.com/kubernetes/kubernetes/issues/68573&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;kubernetes/kubernetes#68573&lt;/a&gt;，&lt;code&gt;status.updatedReplicas&lt;/code&gt; 没有填充。因此，除非你运行包括修复程序 &lt;a href=&#34;https://github.com/kubernetes/kubernetes/pull/67570&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;kubernetes/kubernetes#67570&lt;/a&gt; 的 Kubernetes 版本，否则 &lt;code&gt;StatefulSet&lt;/code&gt; 可能会保持在 &lt;code&gt;Progressing&lt;/code&gt; 状态。&lt;/li&gt;
+&lt;li&gt;你的 &lt;code&gt;StatefulSet&lt;/code&gt; 或 &lt;code&gt;DaemonSet&lt;/code&gt; 正在使用 &lt;code&gt;OnDelete&lt;/code&gt; 而不是 &lt;code&gt;RollingUpdate&lt;/code&gt; 策略。请参见 &lt;a href=&#34;https://github.com/argoproj/argo-cd/issues/1881&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;#1881&lt;/a&gt;。&lt;/li&gt;
 &lt;li&gt;对于 &lt;code&gt;SealedSecret&lt;/code&gt;，请参阅 为什么 &lt;code&gt;SealedSecret&lt;/code&gt; 类型的资源处于 &lt;code&gt;Progressing&lt;/code&gt; 状态？&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;作为解决方法，Argo CD 允许提供 健康检查 自定义，覆盖默认行为。&lt;/p&gt;
@@ -3455,7 +3808,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;/div&gt;
 
-&lt;p&gt;要应用新的密码哈希，请使用以下命令（用您自己的哈希替换哈希）：&lt;/p&gt;
+&lt;p&gt;要应用新的密码哈希，请使用以下命令（用你自己的哈希替换哈希）：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;c1&#34;&gt;# bcrypt(password)=$2a$10$rRyBsGSHK6.uc8fntPwVIuLVHgsAhAX7TcdrqW/RADU0uh7CaChLa&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; kubectl -n argocd patch secret argocd-secret &lt;span class=&#34;se&#34;&gt;\\\\&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   -p &lt;span class=&#34;err&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;stringData&amp;#34;&lt;/span&gt;: &lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;
@@ -3464,32 +3817,32 @@
 &lt;h2 id=&#34;如何禁用管理员用户&#34;&gt;如何禁用管理员用户？&lt;/h2&gt;
 &lt;p&gt;将 &lt;code&gt;admin.enabled: &amp;quot;false&amp;quot;&lt;/code&gt; 添加到 &lt;code&gt;argocd-cm&lt;/code&gt; ConfigMap 中 ( 参见 &lt;a href=&#34;../user-guide/&#34;&gt;用户管理&lt;/a&gt;)。&lt;/p&gt;
 &lt;h2 id=&#34;argo-cd-无法在没有互联网访问的情况下部署基于-helm-chart-的应用程序该怎么办&#34;&gt;Argo CD 无法在没有互联网访问的情况下部署基于 Helm Chart 的应用程序，该怎么办？&lt;/h2&gt;
-&lt;p&gt;如果 Helm Chart 有位于外部存储库中的依赖项，则 Argo CD 可能无法生成 Helm Chart 清单。要解决此问题，您需要确保 &lt;code&gt;requirements.yaml&lt;/code&gt; 仅使用内部可用的 Helm 存储库。即使 chart 仅使用来自内部存储库的依赖项，Helm 也可能决定刷新 &lt;code&gt;stable&lt;/code&gt; 存储库。作为解决方法，可以在 &lt;code&gt;argocd-cm&lt;/code&gt; config map 中覆盖 &lt;code&gt;stable&lt;/code&gt; 存储库 URL：&lt;/p&gt;
+&lt;p&gt;如果 Helm Chart 有位于外部存储库中的依赖项，则 Argo CD 可能无法生成 Helm Chart 清单。要解决此问题，你需要确保 &lt;code&gt;requirements.yaml&lt;/code&gt; 仅使用内部可用的 Helm 存储库。即使 chart 仅使用来自内部存储库的依赖项，Helm 也可能决定刷新 &lt;code&gt;stable&lt;/code&gt; 存储库。作为解决方法，可以在 &lt;code&gt;argocd-cm&lt;/code&gt; config map 中覆盖 &lt;code&gt;stable&lt;/code&gt; 存储库 URL：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;data&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;repositories&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;sd&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;     - type: helm
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;       url: http://&amp;lt;internal-helm-repo-host&amp;gt;:8080
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;       name: stable&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;     
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;使用-argo-cd-部署-helm-应用程序后我无法使用-helm-ls-和其他-helm-命令看到它&#34;&gt;使用 Argo CD 部署 Helm 应用程序后，我无法使用 &lt;code&gt;helm ls&lt;/code&gt; 和其他 Helm 命令看到它&lt;/h2&gt;
-&lt;p&gt;在部署 Helm 应用程序时，Argo CD 仅使用 Helm 作为模板机制。它运行 &lt;code&gt;helm template&lt;/code&gt;，然后在集群上部署生成的清单，而不是执行 &lt;code&gt;helm install&lt;/code&gt;。这意味着您无法使用任何 Helm 命令查看/验证应用程序。它由 Argo CD 完全管理。请注意，Argo CD 支持一些 Helm 中可能缺少的本地功能（例如历史记录和回滚命令）。&lt;/p&gt;
+&lt;p&gt;在部署 Helm 应用程序时，Argo CD 仅使用 Helm 作为模板机制。它运行 &lt;code&gt;helm template&lt;/code&gt;，然后在集群上部署生成的清单，而不是执行 &lt;code&gt;helm install&lt;/code&gt;。这意味着你无法使用任何 Helm 命令查看/验证应用程序。它由 Argo CD 完全管理。请注意，Argo CD 支持一些 Helm 中可能缺少的本地功能（例如历史记录和回滚命令）。&lt;/p&gt;
 &lt;p&gt;做出这个决定是为了使 Argo CD 对所有清单生成器都是中立的。&lt;/p&gt;
 &lt;h2 id=&#34;我已经配置了-cluster-secret但是在-cliui-中没有显示我该如何修复&#34;&gt;我已经配置了 cluster secret，但是在 CLI/UI 中没有显示，我该如何修复？&lt;/h2&gt;
 &lt;p&gt;检查集群机密是否具有 &lt;code&gt;argocd.argoproj.io/secret-type: cluster&lt;/code&gt; 标签。如果机密具有该标签但仍然无法看到集群，则可能是权限问题。尝试使用 &lt;code&gt;admin&lt;/code&gt; 用户列出集群 ( 例如，&lt;code&gt;argocd login --username admin &amp;amp;&amp;amp; argocd cluster list&lt;/code&gt;)。&lt;/p&gt;
 &lt;h2 id=&#34;argo-cd-无法连接到我的集群我该如何进行故障排除&#34;&gt;Argo CD 无法连接到我的集群，我该如何进行故障排除？&lt;/h2&gt;
 &lt;p&gt;使用以下步骤重建配置的集群配置并使用 kubectl 手动连接到集群：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; kubectl &lt;span class=&#34;nb&#34;&gt;exec&lt;/span&gt; -it &amp;lt;argocd-pod-name&amp;gt; bash &lt;span class=&#34;c1&#34;&gt;# ssh 到任何 argocd 服务器 pod&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; argocd admin cluster kubeconfig https://&amp;lt;cluster-url&amp;gt; /tmp/config --namespace argocd &lt;span class=&#34;c1&#34;&gt;# 生成您的集群配置&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; argocd admin cluster kubeconfig https://&amp;lt;cluster-url&amp;gt; /tmp/config --namespace argocd &lt;span class=&#34;c1&#34;&gt;# 生成你的集群配置&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;nv&#34;&gt;KUBECONFIG&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;/tmp/config kubectl get pods &lt;span class=&#34;c1&#34;&gt;# 手动测试连接&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;现在，您可以手动验证 Argo CD pod 可以访问集群。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;现在，你可以手动验证 Argo CD pod 可以访问集群。&lt;/p&gt;
 &lt;h2 id=&#34;如何终止同步&#34;&gt;如何终止同步？&lt;/h2&gt;
 &lt;p&gt;要终止同步，请单击“synchronisation”，然后单击“terminate”：&lt;/p&gt;
 &lt;h2 id=&#34;即使同步了我的应用程序仍然out-of-sync为什么&#34;&gt;即使同步了，我的应用程序仍然“Out Of Sync”，为什么？&lt;/h2&gt;
-&lt;p&gt;在某些情况下，您使用的工具可能会通过添加 &lt;code&gt;app.kubernetes.io/instance&lt;/code&gt; 标签与 Argo CD 冲突。例如，使用 Kustomize 的常见标签功能。&lt;/p&gt;
-&lt;p&gt;Argo CD 自动设置 &lt;code&gt;app.kubernetes.io/instance&lt;/code&gt; 标签，并使用它来确定哪些资源形成应用程序。如果工具也这样做，这会导致混淆。您可以通过在 &lt;code&gt;argocd-cm&lt;/code&gt; configmap 中设置 &lt;code&gt;application.instanceLabelKey&lt;/code&gt; 值来更改此标签。我们建议您使用 &lt;code&gt;argocd.argoproj.io/instance&lt;/code&gt;。&lt;/p&gt;
-&lt;p&gt;🔔 提示：更改此设置后，您的应用程序将变为“不同步”，需要重新同步。&lt;/p&gt;
+&lt;p&gt;在某些情况下，你使用的工具可能会通过添加 &lt;code&gt;app.kubernetes.io/instance&lt;/code&gt; 标签与 Argo CD 冲突。例如，使用 Kustomize 的常见标签功能。&lt;/p&gt;
+&lt;p&gt;Argo CD 自动设置 &lt;code&gt;app.kubernetes.io/instance&lt;/code&gt; 标签，并使用它来确定哪些资源形成应用程序。如果工具也这样做，这会导致混淆。你可以通过在 &lt;code&gt;argocd-cm&lt;/code&gt; configmap 中设置 &lt;code&gt;application.instanceLabelKey&lt;/code&gt; 值来更改此标签。我们建议你使用 &lt;code&gt;argocd.argoproj.io/instance&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;🔔 提示：更改此设置后，你的应用程序将变为“不同步”，需要重新同步。&lt;/p&gt;
 &lt;p&gt;请参见 &lt;a href=&#34;https://github.com/argoproj/argo-cd/issues/1482&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;#1482&lt;/a&gt;。&lt;/p&gt;
 &lt;h2 id=&#34;argo-cd-每隔多长时间检查我的-git-或-helm-存储库中的更改&#34;&gt;Argo CD 每隔多长时间检查我的 Git 或 Helm 存储库中的更改？&lt;/h2&gt;
-&lt;p&gt;默认轮询间隔为 3 分钟 (180 秒)。您可以通过更新 &lt;a href=&#34;https://github.com/argoproj/argo-cd/blob/2d6ce088acd4fb29271ffb6f6023dbb27594d59b/docs/operator-manual/argocd-cm.yaml#L279-L282&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;argocd-cm&lt;/a&gt; config map 中的 &lt;code&gt;timeout.reconciliation&lt;/code&gt; 值来更改此设置。如果有任何 Git 更改，ArgoCD 仅会更新启用了 auto-sync setting 的应用程序。如果将其设置为 &lt;code&gt;0&lt;/code&gt;，则 Argo CD 将停止自动轮询 Git 存储库，您只能使用替代方法（例如 webhooks 和/或手动同步）来部署应用程序。&lt;/p&gt;
+&lt;p&gt;默认轮询间隔为 3 分钟 (180 秒)。你可以通过更新 &lt;a href=&#34;https://github.com/argoproj/argo-cd/blob/2d6ce088acd4fb29271ffb6f6023dbb27594d59b/docs/operator-manual/argocd-cm.yaml#L279-L282&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;argocd-cm&lt;/a&gt; config map 中的 &lt;code&gt;timeout.reconciliation&lt;/code&gt; 值来更改此设置。如果有任何 Git 更改，ArgoCD 仅会更新启用了 auto-sync setting 的应用程序。如果将其设置为 &lt;code&gt;0&lt;/code&gt;，则 Argo CD 将停止自动轮询 Git 存储库，你只能使用替代方法（例如 webhooks 和/或手动同步）来部署应用程序。&lt;/p&gt;
 &lt;h2 id=&#34;为什么我的资源限制不同步&#34;&gt;为什么我的资源限制“不同步”？&lt;/h2&gt;
 &lt;p&gt;Kubernetes 在应用资源限制时对其进行了规范化，然后 Argo CD 比较了生成清单中的版本和 K8s 中的规范化版本 - 它们不会匹配。&lt;/p&gt;
 &lt;p&gt;例如：&lt;/p&gt;
@@ -3501,25 +3854,25 @@
 &lt;/ul&gt;
 &lt;p&gt;要解决此问题，请使用差异化自定义&lt;a href=&#34;../user-guide/diffing/&#34;&gt;设置&lt;/a&gt;。&lt;/p&gt;
 &lt;h2 id=&#34;如何修复invalid-cookie-longer-than-max-length-4093&#34;&gt;如何修复“invalid cookie, longer than max length 4093”？&lt;/h2&gt;
-&lt;p&gt;Argo CD 使用 JWT 作为身份验证令牌。您可能是许多组的一部分，并超过了设置为 cookie 的 4KB 限制。您可以通过打开“开发人员工具-&amp;gt;网络”来获取组列表：&lt;/p&gt;
+&lt;p&gt;Argo CD 使用 JWT 作为身份验证令牌。你可能是许多组的一部分，并超过了设置为 cookie 的 4KB 限制。你可以通过打开“开发人员工具-&amp;gt;网络”来获取组列表：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;单击登录&lt;/li&gt;
 &lt;li&gt;找到调用 &lt;code&gt;&amp;lt;argocd_instance&amp;gt;/auth/callback?code=&amp;lt;random_string&amp;gt;&lt;/code&gt;&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;在 &lt;a href=&#34;https://jwt.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://jwt.io/&lt;/a&gt; 上解码令牌。这将提供您可以从中删除自己的团队列表。&lt;/p&gt;
+&lt;p&gt;在 &lt;a href=&#34;https://jwt.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://jwt.io/&lt;/a&gt; 上解码令牌。这将提供你可以从中删除自己的团队列表。&lt;/p&gt;
 &lt;p&gt;请参见 &lt;a href=&#34;https://github.com/argoproj/argo-cd/issues/2165&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;#2165&lt;/a&gt;。&lt;/p&gt;
 &lt;h2 id=&#34;在使用-cli-时为什么会出现rpc-error-code--unavailable-desc--transport-is-closing&#34;&gt;在使用 CLI 时为什么会出现“rpc error: code = Unavailable desc = transport is closing”？&lt;/h2&gt;
-&lt;p&gt;也许您在使用不支持 HTTP 2 的代理？尝试使用 &lt;code&gt;--grpc-web&lt;/code&gt; 标志：&lt;/p&gt;
+&lt;p&gt;也许你在使用不支持 HTTP 2 的代理？尝试使用 &lt;code&gt;--grpc-web&lt;/code&gt; 标志：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; argocd ... --grpc-web
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;在使用-cli-时为什么会出现x509-certificate-signed-by-unknown-authority&#34;&gt;在使用 CLI 时为什么会出现“x509: certificate signed by unknown authority”？&lt;/h2&gt;
-&lt;p&gt;Argo CD 默认创建的证书未被 Argo CD CLI 自动识别，为了创建安全的系统，您必须遵循&lt;a href=&#34;../operator-manual/tls/&#34;&gt;安装证书&lt;/a&gt;的说明，并配置客户端操作系统以信任该证书。&lt;/p&gt;
-&lt;p&gt;如果您不在生产系统中运行（例如，您正在测试 Argo CD），请尝试使用 &lt;code&gt;--insecure&lt;/code&gt; 标志：&lt;/p&gt;
+&lt;p&gt;Argo CD 默认创建的证书未被 Argo CD CLI 自动识别，为了创建安全的系统，你必须遵循&lt;a href=&#34;../operator-manual/tls/&#34;&gt;安装证书&lt;/a&gt;的说明，并配置客户端操作系统以信任该证书。&lt;/p&gt;
+&lt;p&gt;如果你不在生产系统中运行（例如，你正在测试 Argo CD），请尝试使用 &lt;code&gt;--insecure&lt;/code&gt; 标志：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; argocd ... --insecure
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;🔔 警告：不要在生产中使用 &lt;code&gt;--insecure&lt;/code&gt;。&lt;/p&gt;
 &lt;h2 id=&#34;我已经通过-dexconfig-在-argocd-cm-中配置了-dex但它仍然显示-dex-未配置为什么&#34;&gt;我已经通过 &lt;code&gt;dex.config&lt;/code&gt; 在 &lt;code&gt;argocd-cm&lt;/code&gt; 中配置了 Dex，但它仍然显示 Dex 未配置。为什么？&lt;/h2&gt;
-&lt;p&gt;很可能您忘记将 &lt;code&gt;argocd-cm&lt;/code&gt; 中的 &lt;code&gt;url&lt;/code&gt; 设置为指向您的 ArgoCD。另请参见 &lt;a href=&#34;../operator-manual/user-management/&#34;&gt;文档&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;很可能你忘记将 &lt;code&gt;argocd-cm&lt;/code&gt; 中的 &lt;code&gt;url&lt;/code&gt; 设置为指向你的 ArgoCD。另请参见 &lt;a href=&#34;../operator-manual/user-management/&#34;&gt;文档&lt;/a&gt;。&lt;/p&gt;
 &lt;h2 id=&#34;为什么sealedsecret资源会报告status&#34;&gt;为什么&lt;code&gt;SealedSecret&lt;/code&gt;资源会报告&lt;code&gt;Status&lt;/code&gt;?&lt;/h2&gt;
-&lt;p&gt;&lt;code&gt;SealedSecret&lt;/code&gt;的版本包括&lt;code&gt;v0.15.0&lt;/code&gt;（特别是通过 helm &lt;code&gt;1.15.0-r3&lt;/code&gt;）不包括现代 CRD，因此状态字段将不会在 k8s &lt;code&gt;1.16+&lt;/code&gt;上公开。如果您的 Kubernetes 部署是&lt;a href=&#34;https://www.openshift.com/blog/a-look-into-the-technical-details-of-kubernetes-1-16&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;modern&lt;/a&gt;，请确保使用固定的 CRD，如果您想要此功能工作。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;SealedSecret&lt;/code&gt;的版本包括&lt;code&gt;v0.15.0&lt;/code&gt;（特别是通过 helm &lt;code&gt;1.15.0-r3&lt;/code&gt;）不包括现代 CRD，因此状态字段将不会在 k8s &lt;code&gt;1.16+&lt;/code&gt;上公开。如果你的 Kubernetes 部署是&lt;a href=&#34;https://www.openshift.com/blog/a-look-into-the-technical-details-of-kubernetes-1-16&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;modern&lt;/a&gt;，请确保使用固定的 CRD，如果你想要此功能工作。&lt;/p&gt;
 &lt;h2 id=&#34;sealedsecret类型资源为什么停留在progressing状态中&#34;&gt;&lt;code&gt;SealedSecret&lt;/code&gt;类型资源为什么停留在&lt;code&gt;Progressing&lt;/code&gt;状态中？&lt;/h2&gt;
 &lt;p&gt;&lt;code&gt;SealedSecret&lt;/code&gt;资源的控制器可以在它提供的资源上公开状态条件。自&lt;code&gt;v2.0.0&lt;/code&gt;版本以来，ArgoCD 会获取该状态条件以为&lt;code&gt;SealedSecret&lt;/code&gt;推导出健康状态。&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;SealedSecret&lt;/code&gt;控制器的&lt;code&gt;v0.15.0&lt;/code&gt;版本之前受到有关此状态条件更新的问题的影响，因此在这些版本中默认禁用此功能。可以通过使用&lt;code&gt;--update-status&lt;/code&gt;命令行参数启动&lt;code&gt;SealedSecret&lt;/code&gt;控制器或通过设置&lt;code&gt;SEALED_SECRETS_UPDATE_STATUS&lt;/code&gt;环境变量来启用状态条件更新。&lt;/p&gt;
@@ -3542,25 +3895,25 @@
 &lt;blockquote&gt;
 &lt;p&gt;map[name:KEY_BC value:150] map[name:KEY_BC value:500] map[name:KEY_BD value:250] map[name:KEY_BD value:500] map[name:KEY_BI value:something]&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;p&gt;您需要确定重复的键 &amp;ndash; 您可以专注于第一部分，因为每个重复的键将出现，每个值都与其值一起出现在第一个列表中。第二个列表实际上只是&lt;/p&gt;
+&lt;p&gt;你需要确定重复的键 &amp;ndash; 你可以专注于第一部分，因为每个重复的键将出现，每个值都与其值一起出现在第一个列表中。第二个列表实际上只是&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;]&lt;/code&gt;&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;code&gt;doesn&#39;t match $setElementOrder list: [&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;这包括所有的键。为了调试目的，它被包含在内——您不需要太注意它。它将为您提供有关重复键的精确位置的提示：&lt;/p&gt;
+&lt;p&gt;这包括所有的键。为了调试目的，它被包含在内——你不需要太注意它。它将为你提供有关重复键的精确位置的提示：&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;map[name:KEY_AA] map[name:KEY_AB] map[name:KEY_AC] map[name:KEY_AD] map[name:KEY_AE] map[name:KEY_AF] map[name:KEY_AG] map[name:KEY_AH] map[name:KEY_AI] map[name:KEY_AJ] map[name:KEY_AK] map[name:KEY_AL] map[name:KEY_AM] map[name:KEY_AN] map[name:KEY_AO] map[name:KEY_AP] map[name:KEY_AQ] map[name:KEY_AR] map[name:KEY_AS] map[name:KEY_AT] map[name:KEY_AU] map[name:KEY_AV] map[name:KEY_AW] map[name:KEY_AX] map[name:KEY_AY] map[name:KEY_AZ] map[name:KEY_BA] map[name:KEY_BB] map[name:&lt;strong&gt;KEY_BC&lt;/strong&gt;] map[name:&lt;strong&gt;KEY_BD&lt;/strong&gt;] map[name:KEY_BE] map[name:KEY_BF] map[name:KEY_BG] map[name:KEY_BH] map[name:KEY_BI] map[name:&lt;strong&gt;KEY_BC&lt;/strong&gt;] map[name:&lt;strong&gt;KEY_BD&lt;/strong&gt;]&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;p&gt;&lt;code&gt;]&lt;/code&gt;&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;在这种情况下，重复的键已被&lt;strong&gt;加粗&lt;/strong&gt;以帮助您识别有问题的键。许多编辑器都有突出显示所有字符串实例的功能，使用这样的编辑器可以帮助解决此类问题。&lt;/p&gt;
+&lt;p&gt;在这种情况下，重复的键已被&lt;strong&gt;加粗&lt;/strong&gt;以帮助你识别有问题的键。许多编辑器都有突出显示所有字符串实例的功能，使用这样的编辑器可以帮助解决此类问题。&lt;/p&gt;
 &lt;p&gt;此错误的最常见实例是针对&lt;code&gt;containers&lt;/code&gt;的&lt;code&gt;env:&lt;/code&gt;字段。&lt;/p&gt;
 &lt;div class=&#34;alert-note-title&#34;&gt;
     &lt;p&gt;动态应用程序&lt;/p&gt;
 &lt;/div&gt;
 &lt;div class=&#34;alert alert-note&#34;&gt;
-    可能您的应用程序是由工具生成的，因此在单个文件的范围内可能不会显现出重复。如果您在调试此问题时遇到麻烦，请考虑向生成器工具的所有者提交工单，要求他们改进其验证和错误报告功能。
+    可能你的应用程序是由工具生成的，因此在单个文件的范围内可能不会显现出重复。如果你在调试此问题时遇到麻烦，请考虑向生成器工具的所有者提交工单，要求他们改进其验证和错误报告功能。
 &lt;/div&gt;
 
 </description>
@@ -4164,6 +4517,55 @@
     </item>
     
     <item>
+      <title>自动同步策略</title>
+      <link>https://lib.jimmysong.io/argo-cd/user-guide/auto-sync/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://lib.jimmysong.io/argo-cd/user-guide/auto-sync/</guid>
+      <description>&lt;p&gt;Argo CD 具有在检测到 Git 中所需清单与集群中的实际状态之间存在差异时自动同步应用程序的功能。自动同步的好处是，CI/CD 管道不再需要直接访问 Argo CD API 服务器以执行部署。相反，管道将更改的清单提交并推送到跟踪 Git 存储库中。&lt;/p&gt;
+&lt;p&gt;要配置自动同步，请运行：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; argocd app &lt;span class=&#34;nb&#34;&gt;set&lt;/span&gt; &amp;lt;APPNAME&amp;gt; --sync-policy automated
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;或者，如果创建应用程序清单，则使用 &lt;code&gt;automated&lt;/code&gt; 策略指定 syncPolicy。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;automated&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;{}&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;自动修整&#34;&gt;自动修整&lt;/h2&gt;
+&lt;p&gt;默认情况下（作为一种安全机制），当 Argo CD 检测到资源不再在 Git 中定义时，自动同步不会删除资源。始终可以执行手动同步（并检查修整）来修整资源。也可以通过运行以下命令设置自动修整：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; argocd app &lt;span class=&#34;nb&#34;&gt;set&lt;/span&gt; &amp;lt;APPNAME&amp;gt; --auto-prune
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;或通过在自动同步策略中将 &lt;code&gt;prune&lt;/code&gt; 选项设置为 true：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;automated&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;prune&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;带有允许空值的自动修整v18&#34;&gt;&lt;strong&gt;带有允许空值的自动修整（v1.8）&lt;/strong&gt;&lt;/h2&gt;
+&lt;p&gt;默认情况下（作为一种安全机制），自动修整具有保护机制，可防止出现任何自动化或人为错误，因为没有目标资源。它会防止应用程序具有空资源。要允许应用程序具有空资源，请运行：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; argocd app &lt;span class=&#34;nb&#34;&gt;set&lt;/span&gt; &amp;lt;APPNAME&amp;gt; --allow-empty
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;或通过在自动同步策略中将 allowEmpty 选项设置为 true：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;automated&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;prune&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;allowEmpty&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;自动自愈&#34;&gt;&lt;strong&gt;自动自愈&lt;/strong&gt;&lt;/h2&gt;
+&lt;p&gt;默认情况下，对实时集群进行的更改不会触发自动同步。要在实时集群的状态偏离在 Git 中定义的状态时启用自动同步，请运行：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; argocd app &lt;span class=&#34;nb&#34;&gt;set&lt;/span&gt; &amp;lt;APPNAME&amp;gt; --self-heal
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;或通过在自动同步策略中将 &lt;code&gt;selfHeal&lt;/code&gt; 选项设置为 true：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;automated&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;selfHeal&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;自动同步语义&#34;&gt;&lt;strong&gt;自动同步语义&lt;/strong&gt;&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;仅当应用程序处于 OutOfSync 状态时，才会执行自动同步。已同步或错误状态的应用程序不会尝试自动同步。&lt;/li&gt;
+&lt;li&gt;自动同步将仅针对每个唯一的提交 SHA1 和应用程序参数组合尝试一次同步。如果历史记录中最近的成功同步已经针对相同的提交 SHA 和参数执行，那么不会尝试第二个同步，除非将 &lt;code&gt;selfHeal&lt;/code&gt; 标志设置为 true。&lt;/li&gt;
+&lt;li&gt;如果将 &lt;code&gt;selfHeal&lt;/code&gt; 标志设置为 true，则在自我修复超时（默认为 5 秒）之后，将再次尝试同步，该超时由 &lt;code&gt;argocd-application-controller&lt;/code&gt; 部署的 &lt;code&gt;self-heal-timeout-seconds&lt;/code&gt; 标志控制。&lt;/li&gt;
+&lt;li&gt;如果上一个同步尝试针对相同的提交 SHA 和参数失败，则自动同步不会重新尝试同步。&lt;/li&gt;
+&lt;li&gt;无法对启用了自动同步的应用程序执行回滚。&lt;/li&gt;
+&lt;li&gt;自动同步间隔由 &lt;code&gt;argocd-cm&lt;/code&gt; ConfigMap 中的 &lt;a href=&#34;https://argo-cd.readthedocs.io/en/stable/faq/#how-often-does-argo-cd-check-for-changes-to-my-git-or-helm-repository&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;timeout.reconciliation&lt;/code&gt;&lt;/a&gt; 值确定，默认为 &lt;code&gt;180s&lt;/code&gt;（3 分钟）。&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
       <title>迁移到 Rollouts</title>
       <link>https://lib.jimmysong.io/argo-rollouts/migrating/</link>
       <pubDate>Wed, 21 Jun 2023 16:00:00 +0800</pubDate>
@@ -4429,6 +4831,306 @@
 &lt;p&gt;我们很高兴地宣布，Argo 项目正在与 &lt;a href=&#34;https://hackerone.com/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Hacker One&lt;/a&gt; 及其&lt;a href=&#34;https://hackerone.com/ibb&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;互联网错误赏金计划&lt;/a&gt;的优秀人员合作，以奖励在四个主要 Argo 项目（CD、活动、推出和工作流程）中发现安全漏洞的优秀人员然后与我们一起以负责任的方式修复和披露它们。&lt;/p&gt;
 &lt;p&gt;如果你按照本安全政策中的规定向我们报告漏洞，我们将与你共同确定你的发现是否符合领取赏金的条件，以及如何领取赏金。&lt;/p&gt;
 </description>
+    </item>
+    
+    <item>
+      <title>同步选项 </title>
+      <link>https://lib.jimmysong.io/argo-cd/user-guide/sync-options/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://lib.jimmysong.io/argo-cd/user-guide/sync-options/</guid>
+      <description>&lt;p&gt;Argo CD 允许用户定制同步目标集群中所需状态的某些方面。某些同步选项可以定义为特定资源中的注释。大多数同步选项在应用程序资源 &lt;code&gt;spec.syncPolicy.syncOptions&lt;/code&gt; 属性中配置。使用 &lt;code&gt;argocd.argoproj.io/sync-options&lt;/code&gt; 注释配置的多个同步选项可以在注释值中使用 &lt;code&gt;,&lt;/code&gt; 进行连接；空格将被删除。&lt;/p&gt;
+&lt;p&gt;下面你可以找到有关每个可用同步选项的详细信息：&lt;/p&gt;
+&lt;h2 id=&#34;无修整资源&#34;&gt;无修整资源&lt;/h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;v1.1&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;你可能希望防止修整对象：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;argocd.argoproj.io/sync-options&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Prune=false&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在 UI 中，Pod 将仅显示为不同步：&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-同步选项无修整&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/sync-option-no-prune.png&#34; alt=&#34;同步选项无修整&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      同步选项无修整
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;同步状态面板显示跳过修整的原因：&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-同步选项无修正&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/sync-option-no-prune-sync-status.png&#34; alt=&#34;同步选项无修正&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      同步选项无修正
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;如果 Argo CD 期望剪切资源，则应用程序将失去同步。你可能希望与 &lt;a href=&#34;../compare-options/&#34;&gt;比较选项&lt;/a&gt; 结合使用。&lt;/p&gt;
+&lt;h2 id=&#34;禁用-kubectl-验证&#34;&gt;&lt;strong&gt;禁用 Kubectl 验证&lt;/strong&gt;&lt;/h2&gt;
+&lt;p&gt;对于某些对象类，需要使用 &lt;code&gt;--validate=false&lt;/code&gt; 标志使用 &lt;code&gt;kubectl apply&lt;/code&gt; 将其应用。例如使用 &lt;code&gt;RawExtension&lt;/code&gt; 的 Kubernetes 类型，例如 &lt;a href=&#34;https://github.com/kubernetes-incubator/service-catalog/blob/master/pkg/apis/servicecatalog/v1beta1/types.go#L497&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;ServiceCatalog&lt;/a&gt;。你可以使用以下注释执行此操作：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;argocd.argoproj.io/sync-options&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Validate=false&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果要全局排除整个对象类，请考虑在 系统级配置 中设置 &lt;code&gt;resource.customizations&lt;/code&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;跳过新的自定义资源类型的干预运行&#34;&gt;&lt;strong&gt;跳过新的自定义资源类型的干预运行&lt;/strong&gt;&lt;/h2&gt;
+&lt;p&gt;在同步尚未知道集群的自定义资源时，通常有两个选项：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;CRD 清单是同步的一部分。然后，Argo CD 将自动跳过干预运行，将应用 CRD 并创建资源。&lt;/li&gt;
+&lt;li&gt;在某些情况下，CRD 不是同步的一部分，但可以通过其他方式创建，例如通过集群中的控制器。例如是 &lt;a href=&#34;https://github.com/open-policy-agent/gatekeeper&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;gatekeeper&lt;/a&gt;，它根据用户定义的 &lt;code&gt;ConstraintTemplates&lt;/code&gt; 创建 CRD。Argo CD 无法在同步中找到 CRD，并将出现错误 &lt;code&gt;the server could not find the requested resource&lt;/code&gt;。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;要跳过缺少资源类型的干预运行，请使用以下注释：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt; metadata:
+   annotations:
+     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果 CRD 已经存在于集群中，则仍将执行干预运行。&lt;/p&gt;
+&lt;h2 id=&#34;无资源删除&#34;&gt;无资源删除&lt;/h2&gt;
+&lt;p&gt;对于某些资源，你可能希望在删除应用程序后仍保留它们，例如持久卷索赔。在这种情况下，你可以使用以下注释阻止在删除应用程序时清除这些资源：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt; metadata:
+   annotations:
+     argocd.argoproj.io/sync-options: Delete=false
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;选择性同步&#34;&gt;选择性同步&lt;/h2&gt;
+&lt;p&gt;当前，在使用自动同步进行同步时，Argo CD 应用程序中的每个对象都会应用。对于包含数千个对象的应用程序，这需要相当长的时间，并对 API 服务器施加不必要的压力。打开选择性同步选项，仅同步不同步的资源。&lt;/p&gt;
+&lt;p&gt;你可以通过以下方式添加此选项&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;在清单中添加 &lt;code&gt;ApplyOutOfSyncOnly=true&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;示例：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Application&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;ApplyOutOfSyncOnly=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;通过 argocd cli 设置同步选项&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;示例：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; $ argocd app &lt;span class=&#34;nb&#34;&gt;set&lt;/span&gt; guestbook --sync-option &lt;span class=&#34;nv&#34;&gt;ApplyOutOfSyncOnly&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;true&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;资源修整删除传播策略&#34;&gt;资源修整删除传播策略&lt;/h2&gt;
+&lt;p&gt;默认情况下，使用前台删除策略删除多余的资源。可以控制传播策略 使用 &lt;code&gt;PrunePropagationPolicy&lt;/code&gt; 同步选项。支持的策略是 background、foreground 和 orphan。有关这些策略的更多信息可以在 &lt;a href=&#34;https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#controlling-how-the-garbage-collector-deletes-dependents&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这里&lt;/a&gt; 找到。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Application&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;PrunePropagationPolicy=foreground&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;修整最后&#34;&gt;修整最后&lt;/h2&gt;
+&lt;p&gt;此功能是为了允许在同步操作的最后一个隐式波之后，对资源进行修整，在其他资源已部署并变得健康之后，所有其他波成功完成之后。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Application&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;PruneLast=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;这也可以在个体资源级别进行配置。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;argocd.argoproj.io/sync-options&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;PruneLast=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;替换资源而不是应用更改&#34;&gt;替换资源而不是应用更改&lt;/h2&gt;
+&lt;p&gt;默认情况下，Argo CD 执行 &lt;code&gt;kubectl apply&lt;/code&gt; 操作以应用存储在 Git 中的配置。在某些情况下， &lt;code&gt;kubectl apply&lt;/code&gt; 不适用。例如，资源规范可能太大，无法适合 添加的 &lt;code&gt;kubectl.kubernetes.io/last-applied-configuration&lt;/code&gt; 注释。在这种情况下，你 可能会使用 &lt;code&gt;Replace=true&lt;/code&gt; 同步选项：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Application&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;Replace=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果设置了 &lt;code&gt;Replace=true&lt;/code&gt; 同步选项，Argo CD 将使用 &lt;code&gt;kubectl replace&lt;/code&gt; 或 &lt;code&gt;kubectl create&lt;/code&gt; 命令来应用更改。&lt;/p&gt;
+&lt;p&gt;🔔 警告：在同步过程中，资源将使用 &amp;lsquo;kubectl replace/create&amp;rsquo; 命令进行同步。此同步选项具有破坏性，可能导致必须重新创建资源，从而可能导致你的应用程序停机。&lt;/p&gt;
+&lt;p&gt;这也可以在单个资源级别进行配置。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;argocd.argoproj.io/sync-options&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Replace=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;服务器端应用&#34;&gt;服务器端应用&lt;/h2&gt;
+&lt;p&gt;此选项启用 Kubernetes &lt;a href=&#34;https://kubernetes.io/docs/reference/using-api/server-side-apply/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;服务器端应用&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;默认情况下，Argo CD 执行 &lt;code&gt;kubectl apply&lt;/code&gt; 操作以应用存储在 Git 中的配置。这是一个客户端操作，依赖于 &lt;code&gt;kubectl.kubernetes.io/last-applied-configuration&lt;/code&gt; 注释以存储上一个资源状态。&lt;/p&gt;
+&lt;p&gt;但是，有些情况下，你希望使用 &lt;code&gt;kubectl apply --server-side&lt;/code&gt; 而不是 &lt;code&gt;kubectl apply&lt;/code&gt;：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;资源太大，无法适应允许的注释大小 262144 字节。在这种情况下，可以使用服务器端应用程序来避免此问题，因为在此情况下不使用注释。&lt;/li&gt;
+&lt;li&gt;对集群上不完全由 Argo CD 管理的现有资源进行修补。&lt;/li&gt;
+&lt;li&gt;使用更具声明性的方法，它跟踪用户的字段管理，而不是用户的上一次应用状态。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;如果设置了 &lt;code&gt;ServerSideApply=true&lt;/code&gt; 同步选项，Argo CD 将使用 &lt;code&gt;kubectl apply --server-side&lt;/code&gt; 命令来应用更改。&lt;/p&gt;
+&lt;p&gt;它可以在应用程序级别启用，如下例所示：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Application&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;ServerSideApply=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;要为单个资源启用 ServerSideApply，可以使用 sync-option 注释：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;argocd.argoproj.io/sync-options&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ServerSideApply=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;ServerSideApply 还可用于通过提供部分 yaml 来修补现有资源。例如，如果有一个要求仅更新给定部署中的副本数的部署，可以向 Argo CD 提供以下 yaml：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;apps/v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Deployment&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;my-deployment&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;replicas&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请注意，根据部署模式规范，这不是有效的清单。在这种情况下，必须提供一个额外的同步选项 &lt;em&gt;必须&lt;/em&gt; 以跳过模式验证。下面的示例显示了如何配置应用程序以启用两个必要的同步选项：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Application&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;ServerSideApply=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;Validate=false&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在这种情况下，Argo CD 将使用 &lt;code&gt;kubectl apply --server-side --validate=false&lt;/code&gt; 命令应用更改。&lt;/p&gt;
+&lt;p&gt;注意：&lt;code&gt;Replace=true&lt;/code&gt; 优先于 &lt;code&gt;ServerSideApply=true&lt;/code&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;如果发现共享资源则同步失败&#34;&gt;如果发现共享资源，则同步失败&lt;/h2&gt;
+&lt;p&gt;默认情况下，Argo CD 将应用在 Application 中配置的 Git 路径中找到的所有清单，而不管 yamls 中定义的资源是否已被另一个应用程序应用。如果设置了 &lt;code&gt;FailOnSharedResource&lt;/code&gt; 同步选项，则在当前应用程序中发现已由另一个应用程序在集群中应用的资源时，Argo CD 将使同步失败。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Application&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;FailOnSharedResource=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;尊重忽略差异配置&#34;&gt;尊重忽略差异配置&lt;/h2&gt;
+&lt;p&gt;此同步选项用于使 Argo CD 在同步阶段期间也考虑 &lt;code&gt;spec.ignoreDifferences&lt;/code&gt; 属性中所做的配置。默认情况下，Argo CD 仅使用 &lt;code&gt;ignoreDifferences&lt;/code&gt; 配置来计算实际状态和期望状态之间的差异，从而定义应用程序是否已同步。但是，在同步阶段期间，将按原样应用期望状态。使用三方合并计算补丁，其中包括实际状态、期望状态和 &lt;code&gt;last-applied-configuration&lt;/code&gt; 注释。这有时会导致不希望的结果。可以通过将 &lt;code&gt;RespectIgnoreDifferences=true&lt;/code&gt; 同步选项设置如下来更改此行为：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Application&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;ignoreDifferences&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;group&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;apps&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;Deployment&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;jsonPointers&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;/spec/replicas&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;RespectIgnoreDifferences=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;上面的示例显示了如何配置 Argo CD 应用程序，以便在同步阶段期间它将忽略期望状态（git）中的 &lt;code&gt;spec.replicas&lt;/code&gt; 字段。这是通过在应用之前计算和预打补丁期望状态来实现的。请注意，仅当资源已在集群中创建时，&lt;code&gt;RespectIgnoreDifferences&lt;/code&gt; 同步选项才有效。如果正在创建应用程序并且不存在实际状态，则期望状态将按原样应用。&lt;/p&gt;
+&lt;h2 id=&#34;创建命名空间&#34;&gt;创建命名空间&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Application&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argocd&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;destination&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;server&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;https://kubernetes.default.svc&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;some-namespace&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;CreateNamespace=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;上面的示例显示了如何配置 Argo CD 应用程序，以便在不存在时创建 &lt;code&gt;spec.destination.namespace&lt;/code&gt; 中指定的命名空间。如果不在应用程序清单中声明此选项或通过 &lt;code&gt;--sync-option CreateNamespace=true&lt;/code&gt; 通过 CLI 传递，应用程序将无法同步，如果命名空间不存在。&lt;/p&gt;
+&lt;p&gt;请注意，要创建的命名空间必须在 Application 资源的 &lt;code&gt;spec.destination.namespace&lt;/code&gt; 字段中进行通知。应用程序的子清单中的 &lt;code&gt;metadata.namespace&lt;/code&gt; 字段必须与此值匹配，或者可以省略，以便在适当的目标中创建资源。&lt;/p&gt;
+&lt;h3 id=&#34;命名空间元数据&#34;&gt;命名空间元数据&lt;/h3&gt;
+&lt;p&gt;我们还可以通过 &lt;code&gt;managedNamespaceMetadata&lt;/code&gt; 向命名空间添加标签和注释。如果我们扩展上面的示例，我们可以像下面这样做：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Application&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;test&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;managedNamespaceMetadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;labels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 要设置在应用程序命名空间上的标签&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;any&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;label&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;you&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;like&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 要设置在应用程序命名空间上的注释&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;the&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;same&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;applies&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;for&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;on&lt;/span&gt;-&lt;span class=&#34;l&#34;&gt;the-namespace&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;CreateNamespace=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;为了使 ArgoCD 管理命名空间上的标签和注释，需要将 &lt;code&gt;CreateNamespace=true&lt;/code&gt; 设置为同步选项，否则什么也不会发生。如果命名空间不存在，或者如果已经存在且没有在其上设置标签和/或注释，则可以继续执行。使用 &lt;code&gt;managedNamespaceMetadata&lt;/code&gt; 还将在命名空间上设置资源跟踪标签（或注释），因此你可以轻松跟踪由 ArgoCD 管理的命名空间。&lt;/p&gt;
+&lt;p&gt;在 ArgoCD 管理的标签和注释上下文中，如果你没有自定义注释或标签，但仍希望有资源跟踪设置在你的命名空间上，那可以通过将 &lt;code&gt;managedNamespaceMetadata&lt;/code&gt; 与空的 &lt;code&gt;labels&lt;/code&gt; 和/或 &lt;code&gt;annotations&lt;/code&gt; 映射来完成，如下例所示：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Application&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;test&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;managedNamespaceMetadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;labels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 要设置在应用程序命名空间上的标签&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 要设置在应用程序命名空间上的注释&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;CreateNamespace=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在 ArgoCD &amp;ldquo;采用&amp;rdquo; 已经具有在其上设置元数据的现有命名空间的情况下，我们依赖使用服务器端应用程序，以便不会丢失已经设置的元数据。这里的主要影响是需要几个额外的步骤才能摆脱已经存在的字段。&lt;/p&gt;
+&lt;p&gt;想象一下我们有一个预先存在的命名空间，如下所示：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Namespace&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;foobar&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;bar&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;abc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;123&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果我们想要使用 ArgoCD 管理 &lt;code&gt;foobar&lt;/code&gt; 命名空间，然后还要删除 &lt;code&gt;foo: bar&lt;/code&gt; 注释，则在 &lt;code&gt;managedNamespaceMetadata&lt;/code&gt; 中，我们需要先重命名 &lt;code&gt;foo&lt;/code&gt; 值：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Application&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;managedNamespaceMetadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;abc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;123&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 这个是 SSA 中的信息，无论如何在任何情况下都会保留，直到我们设置新值&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;remove-me&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;CreateNamespace=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;同步后，我们可以删除 &lt;code&gt;foo&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Application&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;managedNamespaceMetadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;abc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;123&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 这个是 SSA 中的信息，无论如何在任何情况下都会保留，直到我们设置新值&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;CreateNamespace=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;另一个要注意的是，如果你在 ArgoCD 应用程序中有一个与命名空间的 k8s 清单相同的 k8s 清单，那么它将优先于 &lt;code&gt;managedNamespaceMetadata&lt;/code&gt; 中设置的任何值，并将 &lt;em&gt;覆盖在 &lt;code&gt;managedNamespaceMetadata&lt;/code&gt; 中设置的任何值&lt;/em&gt;。换句话说，如果你有一个应用程序设置了 &lt;code&gt;managedNamespaceMetadata&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;argoproj.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Application&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;managedNamespaceMetadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;abc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;123&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;syncOptions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;CreateNamespace=true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;但是你还有一个 k8s 清单与之匹配的名称&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Namespace&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;foobar&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;bar&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;something&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;completely-different&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;结果的命名空间将其注释设置为&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;bar&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;something&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;completely-different&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
     </item>
     
   </channel>
