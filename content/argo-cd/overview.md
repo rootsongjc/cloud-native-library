@@ -25,7 +25,7 @@ kubectl create namespace argocd
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 ```
 
-请参阅我们的[入门指南](../getting-started/)。我们还为其他功能提供了面向用户的文档。如果您想升级 ArgoCD，请参阅升级指南。我们还为有兴趣构建第三方集成的开发人员提供面向开发者的文档。
+请参阅我们的[入门指南](../getting-started/)。我们还为其他功能提供了面向用户的文档。如果你想升级 ArgoCD，请参阅升级指南。我们还为有兴趣构建第三方集成的开发人员提供面向开发者的文档。
 
 ## 工作原理
 

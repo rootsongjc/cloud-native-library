@@ -1,23 +1,22 @@
 ---
-draft: true
+draft: false
+weight: 1
+title: "工具"
+date: '2023-06-30T16:00:00+08:00'
 ---
 
-# Tools
+## 生产
 
-## Production
+Argo CD 支持多种不同的 Kubernetes 清单定义方式：
 
-Argo CD supports several different ways in which Kubernetes manifests can be defined:
+- [Kustomize](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/)应用程序
+- [Helm](https://argo-cd.readthedocs.io/en/stable/user-guide/helm/) Chart
+- YAML/JSON/Jsonnet 清单的目录，包括[Jsonnet](https://argo-cd.readthedocs.io/en/stable/user-guide/jsonnet/)。
+- 任何配置为配置管理插件的[自定义配置管理工具](https://argo-cd.readthedocs.io/en/stable/operator-manual/config-management-plugins/)
 
-* [Kustomize](kustomize.md) applications
-* [Helm](helm.md) charts
-* A directory of YAML/JSON/Jsonnet manifests, including [Jsonnet](jsonnet.md).
-* Any [custom config management tool](../operator-manual/config-management-plugins.md) configured as a config management plugin
+## 开发
 
-## Development
-Argo CD also supports uploading local manifests directly. Since this is an anti-pattern of the
-GitOps paradigm, this should only be done for development purposes. A user with an `override` permission is required
-to upload manifests locally (typically an admin). All of the different Kubernetes deployment tools above are supported.
-To upload a local application:
+Argo CD 还支持直接上传本地清单。由于这是 GitOps 范式的反模式，因此只能出于开发目的而这样做。`override`需要具有权限的用户（通常是管理员）才能在本地上传清单。支持上述所有不同的 Kubernetes 部署工具。上传本地应用程序：
 
 ```bash
 $ argocd app sync APPNAME --local /path/to/dir/

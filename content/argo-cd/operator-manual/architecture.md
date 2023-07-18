@@ -1,9 +1,5 @@
 ---
-draft: true
----
-
----
-weight: 2
+weight: 1
 title: "架构概述"
 date: '2023-06-30T16:00:00+08:00'
 type: book
@@ -11,9 +7,9 @@ type: book
 
 ![Argo CD 架构](../../assets/argocd_architecture.png)
 
-## **组件**
+## 组件
 
-### **API 服务器**
+### API 服务器
 
 API 服务器是一个 gRPC/REST 服务器，用于公开 Web UI、CLI 和 CI/CD 系统使用的 API。它具有以下职责：
 
@@ -24,7 +20,7 @@ API 服务器是一个 gRPC/REST 服务器，用于公开 Web UI、CLI 和 CI/CD
 - RBAC 执行
 - Git webhook 事件的侦听器/转发器
 
-### **存储库服务器**
+### 存储库服务器
 
 存储库服务器是一个内部服务，它维护 Git 存储库的本地缓存，其中包含应用程序清单。它负责在提供以下输入时生成并返回 Kubernetes 清单：
 
@@ -33,6 +29,6 @@ API 服务器是一个 gRPC/REST 服务器，用于公开 Web UI、CLI 和 CI/CD
 - 应用程序路径
 - 模板特定设置：参数、helm values.yaml
 
-### **应用程序控制器**
+### 应用程序控制器
 
 应用程序控制器是一个 Kubernetes 控制器，它不断监视运行中的应用程序，并将当前的实时状态与期望的目标状态（如 repo 中指定的）进行比较。它检测 `OutOfSync` 应用程序状态，并可选择采取纠正措施。它负责调用任何用户定义的生命周期事件钩子（PreSync、Sync、PostSync）

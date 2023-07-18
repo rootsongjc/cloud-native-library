@@ -1,5 +1,7 @@
 ---
 draft: true
+weight: 10
+date: '2023-06-30T16:00:00+08:00'
 ---
 
 # Secret Management

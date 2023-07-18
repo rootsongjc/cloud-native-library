@@ -10,6 +10,6 @@ type: book
 - 聊天机器人
 - Slack 集成
 
-🔔 注意：请确保您已完成 [入门指南](../getting-started/)。
+🔔 注意：请确保你已完成 [入门指南](../getting-started/)。
 
 {{< list_children show_summary="false">}}

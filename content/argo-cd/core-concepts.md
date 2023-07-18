@@ -6,7 +6,7 @@ date: '2023-06-30T16:00:00+08:00'
 type: book
 ---
 
-假设您熟悉 Git、Docker、Kubernetes、持续交付和 GitOps 的核心概念。以下是 Argo CD 特有的一些概念：
+假设你熟悉 Git、Docker、Kubernetes、持续交付和 GitOps 的核心概念。以下是 Argo CD 特有的一些概念：
 
 - **应用程序**由清单定义的一组 Kubernetes 资源。这是自定义资源定义 (CRD)。
 - **应用程序源类型**使用哪个**工具来构建应用程序。**

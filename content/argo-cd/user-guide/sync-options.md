@@ -1,150 +1,138 @@
 ---
-draft: true
+draft: false
+title: "同步选项 "
+weight: 16
 ---
 
-# Sync Options
+Argo CD 允许用户定制同步目标集群中所需状态的某些方面。某些同步选项可以定义为特定资源中的注释。大多数同步选项在应用程序资源 `spec.syncPolicy.syncOptions` 属性中配置。使用 `argocd.argoproj.io/sync-options` 注释配置的多个同步选项可以在注释值中使用 `,` 进行连接；空格将被删除。
 
-Argo CD allows users to customize some aspects of how it syncs the desired state in the target cluster. Some Sync Options can defined as annotations in a specific resource. Most of the Sync Options are configured in the Application resource `spec.syncPolicy.syncOptions` attribute. Multiple Sync Options which are configured with the `argocd.argoproj.io/sync-options` annotation can be concatenated with a `,` in the annotation value; white spaces will be trimmed.
+下面你可以找到有关每个可用同步选项的详细信息：
 
-Below you can find details about each available Sync Option:
+## 无修整资源
 
-## No Prune Resources
+> v1.1
 
->v1.1
-
-You may wish to prevent an object from being pruned:
+你可能希望防止修整对象：
 
 ```yaml
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: Prune=false
+ metadata:
+   annotations:
+     argocd.argoproj.io/sync-options: Prune=false
 ```
 
-In the UI, the pod will simply appear as out-of-sync:
+在 UI 中，Pod 将仅显示为不同步：
 
-![sync option no prune](../assets/sync-option-no-prune.png)
+![同步选项无修整](../../assets/sync-option-no-prune.png)
 
+同步状态面板显示跳过修整的原因：
 
-The sync-status panel shows that pruning was skipped, and why:
+![同步选项无修正](../../assets/sync-option-no-prune-sync-status.png)
 
-![sync option no prune](../assets/sync-option-no-prune-sync-status.png)
+如果 Argo CD 期望剪切资源，则应用程序将失去同步。你可能希望与 [比较选项](../compare-options/) 结合使用。
 
-The app will be out of sync if Argo CD expects a resource to be pruned. You may wish to use this along with [compare options](compare-options.md).
+## **禁用 Kubectl 验证**
 
-## Disable Kubectl Validation
-
-For a certain class of objects, it is necessary to `kubectl apply` them using the `--validate=false` flag. Examples of this are kubernetes types which uses `RawExtension`, such as [ServiceCatalog](https://github.com/kubernetes-incubator/service-catalog/blob/master/pkg/apis/servicecatalog/v1beta1/types.go#L497). You can do using this annotations:
-
+对于某些对象类，需要使用 `--validate=false` 标志使用 `kubectl apply` 将其应用。例如使用 `RawExtension` 的 Kubernetes 类型，例如 [ServiceCatalog](https://github.com/kubernetes-incubator/service-catalog/blob/master/pkg/apis/servicecatalog/v1beta1/types.go#L497)。你可以使用以下注释执行此操作：
 
 ```yaml
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: Validate=false
+ metadata:
+   annotations:
+     argocd.argoproj.io/sync-options: Validate=false
 ```
 
-If you want to exclude a whole class of objects globally, consider setting `resource.customizations` in [system level configuration](../user-guide/diffing.md#system-level-configuration).
+如果要全局排除整个对象类，请考虑在 系统级配置 中设置 `resource.customizations`。
 
-## Skip Dry Run for new custom resources types
+## **跳过新的自定义资源类型的干预运行**
 
-When syncing a custom resource which is not yet known to the cluster, there are generally two options:
+在同步尚未知道集群的自定义资源时，通常有两个选项：
 
-1) The CRD manifest is part of the same sync. Then Argo CD will automatically skip the dry run, the CRD will be applied and the resource can be created.
-2) In some cases the CRD is not part of the sync, but it could be created in another way, e.g. by a controller in the cluster. An example is [gatekeeper](https://github.com/open-policy-agent/gatekeeper),
-which creates CRDs in response to user defined `ConstraintTemplates`. Argo CD cannot find the CRD in the sync and will fail with the error `the server could not find the requested resource`.
+1. CRD 清单是同步的一部分。然后，Argo CD 将自动跳过干预运行，将应用 CRD 并创建资源。
+2. 在某些情况下，CRD 不是同步的一部分，但可以通过其他方式创建，例如通过集群中的控制器。例如是 [gatekeeper](https://github.com/open-policy-agent/gatekeeper)，它根据用户定义的 `ConstraintTemplates` 创建 CRD。Argo CD 无法在同步中找到 CRD，并将出现错误 `the server could not find the requested resource`。
 
-To skip the dry run for missing resource types, use the following annotation:
+要跳过缺少资源类型的干预运行，请使用以下注释：
+
+```
+ metadata:
+   annotations:
+     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+```
+
+如果 CRD 已经存在于集群中，则仍将执行干预运行。
+
+## 无资源删除
+
+对于某些资源，你可能希望在删除应用程序后仍保留它们，例如持久卷索赔。在这种情况下，你可以使用以下注释阻止在删除应用程序时清除这些资源：
+
+```
+ metadata:
+   annotations:
+     argocd.argoproj.io/sync-options: Delete=false
+```
+
+## 选择性同步
+
+当前，在使用自动同步进行同步时，Argo CD 应用程序中的每个对象都会应用。对于包含数千个对象的应用程序，这需要相当长的时间，并对 API 服务器施加不必要的压力。打开选择性同步选项，仅同步不同步的资源。
+
+你可以通过以下方式添加此选项
+
+1) 在清单中添加 `ApplyOutOfSyncOnly=true`
+
+示例：
 
 ```yaml
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+ apiVersion: argoproj.io/v1alpha1
+ kind: Application
+ spec:
+   syncPolicy:
+     syncOptions:
+     - ApplyOutOfSyncOnly=true
 ```
 
-The dry run will still be executed if the CRD is already present in the cluster.
+2) 通过 argocd cli 设置同步选项
 
-## No Resource Deletion
-
-For certain resources you might want to retain them even after your application is deleted, for eg. Persistent Volume Claims.
-In such situations you can stop those resources from being cleaned up during app deletion by using the following annotation:
-
-
-```yaml
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: Delete=false
-```
-
-## Selective Sync
-
-Currently when syncing using auto sync Argo CD applies every object in the application.
-For applications containing thousands of objects this takes quite a long time and puts undue pressure on the api server.
-Turning on selective sync option which will sync only out-of-sync resources.
-
-You can add this option by following ways
-
-1) Add `ApplyOutOfSyncOnly=true` in manifest
-
-Example:
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-spec:
-  syncPolicy:
-    syncOptions:
-    - ApplyOutOfSyncOnly=true
-```
-
-2) Set sync option via argocd cli
-
-Example:
+示例：
 
 ```bash
-$ argocd app set guestbook --sync-option ApplyOutOfSyncOnly=true
+ $ argocd app set guestbook --sync-option ApplyOutOfSyncOnly=true
 ```
 
-## Resources Prune Deletion Propagation Policy
+## 资源修整删除传播策略
 
-By default, extraneous resources get pruned using foreground deletion policy. The propagation policy can be controlled
-using `PrunePropagationPolicy` sync option. Supported policies are background, foreground and orphan.
-More information about those policies could be found [here](https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#controlling-how-the-garbage-collector-deletes-dependents).
+默认情况下，使用前台删除策略删除多余的资源。可以控制传播策略 使用 `PrunePropagationPolicy` 同步选项。支持的策略是 background、foreground 和 orphan。有关这些策略的更多信息可以在 [这里](https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#controlling-how-the-garbage-collector-deletes-dependents) 找到。
 
 ```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-spec:
-  syncPolicy:
-    syncOptions:
-    - PrunePropagationPolicy=foreground
+ apiVersion: argoproj.io/v1alpha1
+ kind: Application
+ spec:
+   syncPolicy:
+     syncOptions:
+     - PrunePropagationPolicy=foreground
 ```
 
-## Prune Last
+## 修整最后
 
-This feature is to allow the ability for resource pruning to happen as a final, implicit wave of a sync operation,
-after the other resources have been deployed and become healthy, and after all other waves completed successfully.
+此功能是为了允许在同步操作的最后一个隐式波之后，对资源进行修整，在其他资源已部署并变得健康之后，所有其他波成功完成之后。
 
 ```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-spec:
-  syncPolicy:
-    syncOptions:
-    - PruneLast=true
+ apiVersion: argoproj.io/v1alpha1
+ kind: Application
+ spec:
+   syncPolicy:
+     syncOptions:
+     - PruneLast=true
 ```
 
-This can also be configured at individual resource level.
+这也可以在个体资源级别进行配置。
+
 ```yaml
 metadata:
   annotations:
     argocd.argoproj.io/sync-options: PruneLast=true
 ```
 
-## Replace Resource Instead Of Applying Changes
+## 替换资源而不是应用更改
 
-By default, Argo CD executes `kubectl apply` operation to apply the configuration stored in Git. In some cases
-`kubectl apply` is not suitable. For example, resource spec might be too big and won't fit into
-`kubectl.kubernetes.io/last-applied-configuration` annotation that is added by `kubectl apply`. In such cases you
-might use `Replace=true` sync option:
+默认情况下，Argo CD 执行 `kubectl apply` 操作以应用存储在 Git 中的配置。在某些情况下， `kubectl apply` 不适用。例如，资源规范可能太大，无法适合 添加的 `kubectl.kubernetes.io/last-applied-configuration` 注释。在这种情况下，你 可能会使用 `Replace=true` 同步选项：
 
 
 ```yaml
@@ -156,40 +144,33 @@ spec:
     - Replace=true
 ```
 
-If the `Replace=true` sync option is set the Argo CD will use `kubectl replace` or `kubectl create` command to apply changes.
+如果设置了 `Replace=true` 同步选项，Argo CD 将使用 `kubectl replace` 或 `kubectl create` 命令来应用更改。
 
-!!! warning
-      During the sync process, the resources will be synchronized using the 'kubectl replace/create' command.
-      This sync option has the potential to be destructive and might lead to resources having to be recreated, which could cause an outage for your application.
+🔔 警告：在同步过程中，资源将使用 'kubectl replace/create' 命令进行同步。此同步选项具有破坏性，可能导致必须重新创建资源，从而可能导致你的应用程序停机。
 
-This can also be configured at individual resource level.
+这也可以在单个资源级别进行配置。
+
 ```yaml
 metadata:
   annotations:
     argocd.argoproj.io/sync-options: Replace=true
 ```
 
-## Server-Side Apply
+## 服务器端应用
 
-This option enables Kubernetes
-[Server-Side Apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/).
+此选项启用 Kubernetes [服务器端应用](https://kubernetes.io/docs/reference/using-api/server-side-apply/)。
 
-By default, Argo CD executes `kubectl apply` operation to apply the configuration stored in Git.
-This is a client side operation that relies on `kubectl.kubernetes.io/last-applied-configuration`
-annotation to store the previous resource state.
+默认情况下，Argo CD 执行 `kubectl apply` 操作以应用存储在 Git 中的配置。这是一个客户端操作，依赖于 `kubectl.kubernetes.io/last-applied-configuration` 注释以存储上一个资源状态。
 
-However, there are some cases where you want to use `kubectl apply --server-side` over `kubectl apply`:
+但是，有些情况下，你希望使用 `kubectl apply --server-side` 而不是 `kubectl apply`：
 
-- Resource is too big to fit in 262144 bytes allowed annotation size. In this case
-  server-side apply can be used to avoid this issue as the annotation is not used in this case.
-- Patching of existing resources on the cluster that are not fully managed by Argo CD.
-- Use a more declarative approach, which tracks a user's field management, rather than a user's last
-  applied state.
+- 资源太大，无法适应允许的注释大小 262144 字节。在这种情况下，可以使用服务器端应用程序来避免此问题，因为在此情况下不使用注释。
+- 对集群上不完全由 Argo CD 管理的现有资源进行修补。
+- 使用更具声明性的方法，它跟踪用户的字段管理，而不是用户的上一次应用状态。
 
-If `ServerSideApply=true` sync option is set, Argo CD will use `kubectl apply --server-side`
-command to apply changes.
+如果设置了 `ServerSideApply=true` 同步选项，Argo CD 将使用 `kubectl apply --server-side` 命令来应用更改。
 
-It can be enabled at the application level like in the example below:
+它可以在应用程序级别启用，如下例所示：
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -200,8 +181,7 @@ spec:
     - ServerSideApply=true
 ```
 
-To enable ServerSideApply just for an individual resource, the sync-option annotation
-can be used:
+要为单个资源启用 ServerSideApply，可以使用 sync-option 注释：
 
 ```yaml
 metadata:
@@ -209,9 +189,7 @@ metadata:
     argocd.argoproj.io/sync-options: ServerSideApply=true
 ```
 
-ServerSideApply can also be used to patch existing resources by providing a partial
-yaml. For example, if there is a requirement to update just the number of replicas
-in a given Deployment, the following yaml can be provided to Argo CD:
+ServerSideApply 还可用于通过提供部分 yaml 来修补现有资源。例如，如果有一个要求仅更新给定部署中的副本数的部署，可以向 Argo CD 提供以下 yaml：
 
 ```yaml
 apiVersion: apps/v1
@@ -222,9 +200,7 @@ spec:
   replicas: 3
 ```
 
-Note that by the Deployment schema specification, this isn't a valid manifest. In this
-case an additional sync option *must* be provided to skip schema validation. The example
-below shows how to configure the application to enable the two necessary sync options:
+请注意，根据部署模式规范，这不是有效的清单。在这种情况下，必须提供一个额外的同步选项 *必须* 以跳过模式验证。下面的示例显示了如何配置应用程序以启用两个必要的同步选项：
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -236,14 +212,13 @@ spec:
     - Validate=false
 ```
 
-In this case, Argo CD will use `kubectl apply --server-side --validate=false` command
-to apply changes.
+在这种情况下，Argo CD 将使用 `kubectl apply --server-side --validate=false` 命令应用更改。
 
-Note: [`Replace=true`](#replace-resource-instead-of-applying-changes) takes precedence over `ServerSideApply=true`.
+注意：`Replace=true` 优先于 `ServerSideApply=true`。
 
-## Fail the sync if a shared resource is found
+## 如果发现共享资源，则同步失败
 
-By default, Argo CD will apply all manifests found in the git path configured in the Application regardless if the resources defined in the yamls are already applied by another Application. If the `FailOnSharedResource` sync option is set, Argo CD will fail the sync whenever it finds a resource in the current Application that is already applied in the cluster by another Application.
+默认情况下，Argo CD 将应用在 Application 中配置的 Git 路径中找到的所有清单，而不管 yamls 中定义的资源是否已被另一个应用程序应用。如果设置了 `FailOnSharedResource` 同步选项，则在当前应用程序中发现已由另一个应用程序在集群中应用的资源时，Argo CD 将使同步失败。
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -254,9 +229,9 @@ spec:
     - FailOnSharedResource=true
 ```
 
-## Respect ignore difference configs
+## 尊重忽略差异配置
 
-This sync option is used to enable Argo CD to consider the configurations made in the `spec.ignoreDifferences` attribute also during the sync stage. By default, Argo CD uses the `ignoreDifferences` config just for computing the diff between the live and desired state which defines if the application is synced or not. However during the sync stage, the desired state is applied as-is. The patch is calculated using a 3-way-merge between the live state the desired state and the `last-applied-configuration` annotation. This sometimes leads to an undesired results. This behavior can be changed by setting the `RespectIgnoreDifferences=true` sync option like in the example below:
+此同步选项用于使 Argo CD 在同步阶段期间也考虑 `spec.ignoreDifferences` 属性中所做的配置。默认情况下，Argo CD 仅使用 `ignoreDifferences` 配置来计算实际状态和期望状态之间的差异，从而定义应用程序是否已同步。但是，在同步阶段期间，将按原样应用期望状态。使用三方合并计算补丁，其中包括实际状态、期望状态和 `last-applied-configuration` 注释。这有时会导致不希望的结果。可以通过将 `RespectIgnoreDifferences=true` 同步选项设置如下来更改此行为：
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -274,9 +249,9 @@ spec:
     - RespectIgnoreDifferences=true
 ```
 
-The example above shows how an Argo CD Application can be configured so it will ignore the `spec.replicas` field from the desired state (git) during the sync stage. This is achieve by calculating and pre-patching the desired state before applying it in the cluster. Note that the `RespectIgnoreDifferences` sync option is only effective when the resource is already created in the cluster. If the Application is being created and no live state exists, the desired state is applied as-is.
+上面的示例显示了如何配置 Argo CD 应用程序，以便在同步阶段期间它将忽略期望状态（git）中的 `spec.replicas` 字段。这是通过在应用之前计算和预打补丁期望状态来实现的。请注意，仅当资源已在集群中创建时，`RespectIgnoreDifferences` 同步选项才有效。如果正在创建应用程序并且不存在实际状态，则期望状态将按原样应用。
 
-## Create Namespace
+## 创建命名空间
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -292,14 +267,13 @@ spec:
     - CreateNamespace=true
 ```
 
-The example above shows how an Argo CD Application can be configured so it will create the namespace specified in `spec.destination.namespace` if it doesn't exist already. Without this either declared in the Application manifest or passed in the CLI via `--sync-option CreateNamespace=true`, the Application will fail to sync if the namespace doesn't exist.
+上面的示例显示了如何配置 Argo CD 应用程序，以便在不存在时创建 `spec.destination.namespace` 中指定的命名空间。如果不在应用程序清单中声明此选项或通过 `--sync-option CreateNamespace=true` 通过 CLI 传递，应用程序将无法同步，如果命名空间不存在。
 
-Note that the namespace to be created must be informed in the `spec.destination.namespace` field of the Application resource. The `metadata.namespace` field in the Application's child manifests must match this value, or can be omitted, so resources are created in the proper destination.
+请注意，要创建的命名空间必须在 Application 资源的 `spec.destination.namespace` 字段中进行通知。应用程序的子清单中的 `metadata.namespace` 字段必须与此值匹配，或者可以省略，以便在适当的目标中创建资源。
 
-### Namespace Metadata
+### 命名空间元数据
 
-We can also add labels and annotations to the namespace through `managedNamespaceMetadata`. If we extend the example above
-we could potentially do something like below:
+我们还可以通过 `managedNamespaceMetadata` 向命名空间添加标签和注释。如果我们扩展上面的示例，我们可以像下面这样做：
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -309,10 +283,10 @@ metadata:
 spec:
   syncPolicy:
     managedNamespaceMetadata:
-      labels: # The labels to set on the application namespace
+      labels: # 要设置在应用程序命名空间上的标签
         any: label
         you: like
-      annotations: # The annotations to set on the application namespace
+      annotations: # 要设置在应用程序命名空间上的注释
         the: same
         applies: for
         annotations: on-the-namespace
@@ -320,14 +294,9 @@ spec:
     - CreateNamespace=true
 ```
 
-In order for ArgoCD to manage the labels and annotations on the namespace, `CreateNamespace=true` needs to be set as a
-sync option, otherwise nothing will happen. If the namespace doesn't already exist, or if it already exists and doesn't
-already have labels and/or annotations set on it, you're good to go. Using `managedNamespaceMetadata` will also set the
-resource tracking label (or annotation) on the namespace, so you can easily track which namespaces are managed by ArgoCD.
+为了使 ArgoCD 管理命名空间上的标签和注释，需要将 `CreateNamespace=true` 设置为同步选项，否则什么也不会发生。如果命名空间不存在，或者如果已经存在且没有在其上设置标签和/或注释，则可以继续执行。使用 `managedNamespaceMetadata` 还将在命名空间上设置资源跟踪标签（或注释），因此你可以轻松跟踪由 ArgoCD 管理的命名空间。
 
-In the case you do not have any custom annotations or labels but would nonetheless want to have resource tracking set on
-your namespace, that can be done by setting `managedNamespaceMetadata` with an empty `labels` and/or `annotations` map,
-like the example below:
+在 ArgoCD 管理的标签和注释上下文中，如果你没有自定义注释或标签，但仍希望有资源跟踪设置在你的命名空间上，那可以通过将 `managedNamespaceMetadata` 与空的 `labels` 和/或 `annotations` 映射来完成，如下例所示：
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -337,17 +306,15 @@ metadata:
 spec:
   syncPolicy:
     managedNamespaceMetadata:
-      labels: # The labels to set on the application namespace
-      annotations: # The annotations to set on the application namespace
+      labels: # 要设置在应用程序命名空间上的标签
+      annotations: # 要设置在应用程序命名空间上的注释
     syncOptions:
     - CreateNamespace=true
 ```
 
-In the case where ArgoCD is "adopting" an existing namespace which already has metadata set on it, we rely on using
-Server Side Apply in order not to lose metadata which has already been set. The main implication here is that it takes
-a few extra steps to get rid of an already preexisting field.
+在 ArgoCD "采用" 已经具有在其上设置元数据的现有命名空间的情况下，我们依赖使用服务器端应用程序，以便不会丢失已经设置的元数据。这里的主要影响是需要几个额外的步骤才能摆脱已经存在的字段。
 
-Imagine we have a pre-existing namespace as below:
+想象一下我们有一个预先存在的命名空间，如下所示：
 
 ```yaml
 apiVersion: v1
@@ -359,8 +326,7 @@ metadata:
     abc: "123"
 ```
 
-If we want to manage the `foobar` namespace with ArgoCD and to then also remove the `foo: bar` annotation, in
-`managedNamespaceMetadata` we'd need to first rename the `foo` value:
+如果我们想要使用 ArgoCD 管理 `foobar` 命名空间，然后还要删除 `foo: bar` 注释，则在 `managedNamespaceMetadata` 中，我们需要先重命名 `foo` 值：
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -369,13 +335,13 @@ spec:
   syncPolicy:
     managedNamespaceMetadata:
       annotations:
-        abc: 123 # adding this is informational with SSA; this would be sticking around in any case until we set a new value
+        abc: 123 # 这个是 SSA 中的信息，无论如何在任何情况下都会保留，直到我们设置新值
         foo: remove-me
     syncOptions:
       - CreateNamespace=true
 ```
 
-Once that has been synced, we're ok to remove `foo`
+同步后，我们可以删除 `foo`
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -384,14 +350,12 @@ spec:
   syncPolicy:
     managedNamespaceMetadata:
       annotations:
-        abc: 123 # adding this is informational with SSA; this would be sticking around in any case until we set a new value
+        abc: 123 # 这个是 SSA 中的信息，无论如何在任何情况下都会保留，直到我们设置新值
     syncOptions:
       - CreateNamespace=true
 ```
 
-Another thing to keep mind of is that if you have a k8s manifest for the same namespace in your ArgoCD application, that
-will take precedence and *overwrite whatever values that have been set in `managedNamespaceMetadata`*. In other words, if
-you have an application that sets `managedNamespaceMetadata`
+另一个要注意的是，如果你在 ArgoCD 应用程序中有一个与命名空间的 k8s 清单相同的 k8s 清单，那么它将优先于 `managedNamespaceMetadata` 中设置的任何值，并将 *覆盖在 `managedNamespaceMetadata` 中设置的任何值*。换句话说，如果你有一个应用程序设置了 `managedNamespaceMetadata`
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -405,7 +369,7 @@ spec:
       - CreateNamespace=true
 ```
 
-But you also have a k8s manifest with a matching name
+但是你还有一个 k8s 清单与之匹配的名称
 
 ```yaml
 apiVersion: v1
@@ -417,7 +381,7 @@ metadata:
     something: completely-different
 ```
 
-The resulting namespace will have its annotations set to
+结果的命名空间将其注释设置为
 
 ```yaml
   annotations:

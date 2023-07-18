@@ -6,7 +6,7 @@ date: '2023-06-30T16:00:00+08:00'
 type: book
 ---
 
-🔔 提示：本指南假设您对 Argo CD 所基于的工具有一定的了解。请阅读[了解基础知识](../understand-the-basics/)以了解这些工具。
+🔔 提示：本指南假设你对 Argo CD 所基于的工具有一定的了解。请阅读[了解基础知识](../understand-the-basics/)以了解这些工具。
 
 ## 要求
 
@@ -23,9 +23,9 @@ kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/st
 
 这将创建一个新的命名空间，`argocd`，Argo CD 服务和应用程序资源将驻留在其中。
 
-🔔 警告：安装清单包括`ClusterRoleBinding`引用命名空间的资源`argocd`。如果您要将 Argo CD 安装到不同的命名空间中，请确保更新命名空间引用。
+🔔 警告：安装清单包括`ClusterRoleBinding`引用命名空间的资源`argocd`。如果你要将 Argo CD 安装到不同的命名空间中，请确保更新命名空间引用。
 
-如果您对 UI、SSO、多集群功能不感兴趣，那么您可以仅安装[核心](../operator-manual/installation/#core) Argo CD 组件：
+如果你对 UI、SSO、多集群功能不感兴趣，那么你可以仅安装[核心](../operator-manual/installation/#core) Argo CD 组件：
 
 ```bash
 kubectl create namespace argocd
@@ -78,13 +78,13 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 ## 4. 使用 CLI 登录
 
-帐户的初始密码`admin`是自动生成的，并以明文形式存储 在 Argo CD 安装命名空间中`password`命名的机密字段中。`argocd-initial-admin-secret`您可以使用 CLI 简单地检索此密码`argocd`：
+帐户的初始密码`admin`是自动生成的，并以明文形式存储 在 Argo CD 安装命名空间中`password`命名的机密字段中。`argocd-initial-admin-secret`你可以使用 CLI 简单地检索此密码`argocd`：
 
 ```bash
 argocd admin initial-password -n argocd
 ```
 
-🔔 警告：`argocd-initial-admin-secret`更改密码后，您应该从 Argo CD 命名空间中删除。该秘密除了以明文形式存储最初生成的密码外没有其他用途，并且可以随时安全地删除。如果必须重新生成新的管理员密码，Argo CD 将根据需要重新创建它。
+🔔 警告：`argocd-initial-admin-secret`更改密码后，你应该从 Argo CD 命名空间中删除。该秘密除了以明文形式存储最初生成的密码外没有其他用途，并且可以随时安全地删除。如果必须重新生成新的管理员密码，Argo CD 将根据需要重新创建它。
 
 使用上面的用户名`admin`和密码，登录 Argo CD 的 IP 或主机名：
 
@@ -92,7 +92,7 @@ argocd admin initial-password -n argocd
 argocd login <ARGOCD_SERVER>
 ```
 
-🔔 注意：CLI 环境必须能够与 Argo CD API 服务器通信。如果无法按照上述步骤 3 中的描述直接访问它，您可以告诉 CLI 通过以下机制之一使用端口转发来访问它：1) 向每个 CLI 命令添加 `--port-forward-namespace argocd`标志；或 2) 设置`ARGOCD_OPTS`环境变量：`export ARGOCD_OPTS='--port-forward-namespace argocd'`.
+🔔 注意：CLI 环境必须能够与 Argo CD API 服务器通信。如果无法按照上述步骤 3 中的描述直接访问它，你可以告诉 CLI 通过以下机制之一使用端口转发来访问它：1) 向每个 CLI 命令添加 `--port-forward-namespace argocd`标志；或 2) 设置`ARGOCD_OPTS`环境变量：`export ARGOCD_OPTS='--port-forward-namespace argocd'`.
 
 使用以下命令更改密码：
 
@@ -146,7 +146,7 @@ argocd app create guestbook --repo https://github.com/argoproj/argocd-example-ap
 
 ![+ New App 按钮](../assets/new-app.png)
 
-为您的应用程序命名`guestbook`，使用项目`default`，并将同步策略保留为`Manual`：
+为你的应用程序命名`guestbook`，使用项目`default`，并将同步策略保留为`Manual`：
 
 ![应用程序信息](../assets/app-ui-information.png)
 
@@ -166,7 +166,7 @@ argocd app create guestbook --repo https://github.com/argoproj/argocd-example-ap
 
 ### 通过 CLI 同步
 
-创建 guestbook 应用程序后，您现在可以查看其状态：
+创建 guestbook 应用程序后，你现在可以查看其状态：
 
 ```bash
 $ argocd app get guestbook
@@ -192,7 +192,7 @@ apps   Deployment  default    guestbook-ui  OutOfSync  Missing
 argocd app sync guestbook
 ```
 
-此命令从存储库检索清单并执行`kubectl apply`其中一个清单。guestbook 应用程序现已运行，您现在可以查看其资源组件、日志、事件和评估的健康状态。
+此命令从存储库检索清单并执行`kubectl apply`其中一个清单。guestbook 应用程序现已运行，你现在可以查看其资源组件、日志、事件和评估的健康状态。
 
 ### 通过 UI 同步
 

@@ -1,96 +1,95 @@
 ---
-draft: true
+draft: false
+weight: 3
+linktitle: "用例"
+title: "ApplicationSet 控制器用例"
+date: '2023-06-30T16:00:00+08:00'
 ---
 
-# Use cases supported by the ApplicationSet controller
+使用生成器的概念，应用集控制器提供了一组强大的工具，用于自动化模板化和修改 Argo CD 应用程序。生成器从各种来源（包括 Argo CD 集群和 Git 存储库）生成模板参数数据，支持和启用新的用例。
 
-With the concept of generators, the ApplicationSet controller provides a powerful set of tools to automate the templating and modification of Argo CD Applications. Generators produce template parameter data from a variety of sources, including Argo CD clusters and Git repositories, supporting and enabling new use cases.
+虽然可以将这些工具用于任何目的，但这里是应用集控制器旨在支持的一些特定用例。
 
-While these tools may be utilized for whichever purpose is desired, here are some of the specific use cases that the ApplicationSet controller was designed to support.
+## 用例：集群附加组件
 
-## Use case: cluster add-ons
+应用集控制器的初始设计重点是允许基础架构团队的 Kubernetes 集群管理员自动创建大量不同的 Argo CD 应用程序，跨多个集群，并将这些应用程序作为单个单元进行管理。 *集群附加组件用例* 就是其中一个例子。
 
-An initial design focus of the ApplicationSet controller was to allow an infrastructure team's Kubernetes cluster administrators the ability to automatically create a large, diverse set of Argo CD Applications, across a significant number of clusters, and manage those Applications as a single unit. One example of why this is needed is the *cluster add-on use case*.
+在 *集群附加组件用例* 中，管理员负责为一个或多个 Kubernetes 集群配置集群附加组件：集群附加组件是运算符，例如 [Prometheus 运算符](https://github.com/prometheus-operator/prometheus-operator) 或控制器，例如 [argo-workflows 控制器](https://argoproj.github.io/argo-workflows/)（[Argo 生态系统](https://argoproj.github.io/)的一部分）。
 
-In the *cluster add-on use case*, an administrator is responsible for provisioning cluster add-ons to one or more Kubernetes clusters: cluster-addons are operators such as the [Prometheus operator](https://github.com/prometheus-operator/prometheus-operator), or controllers such as the [argo-workflows controller](https://argoproj.github.io/argo-workflows/) (part of the [Argo ecosystem](https://argoproj.github.io/)).
+通常，这些附加组件是开发团队的应用程序所需的（例如作为多租户集群的租户，他们可能希望向 Prometheus 提供度量数据或通过 Argo Workflows 编排工作流程）。
 
-Typically these add-ons are required by the applications of development teams (as tenants of a multi-tenant cluster, for instance, they may wish to provide metrics data to Prometheus or orchestrate workflows via Argo Workflows).
+由于安装这些插件需要集群级别的权限，而这些权限不被单个开发团队持有，因此安装是组织的基础架构/运营团队的责任，在大型组织内，这个团队可能负责数十、数百或数千个 Kubernetes 集群（新集群定期添加/修改/删除）。
 
-Since installing these add-ons requires cluster-level permissions not held by individual development teams, installation is the responsibility of the infrastructure/ops team of an organization, and within a large organization this team might be responsible for tens, hundreds, or thousands of Kubernetes clusters (with new clusters being added/modified/removed on a regular basis).
+需要在大量集群上扩展，并自动响应新集群的生命周期，这必然需要某种形式的自动化。进一步的要求是允许使用特定标准（例如，staging vs production）将附加组件针对子集群进行定位。
 
-The need to scale across a large number of clusters, and automatically respond to the lifecycle of new clusters, necessarily mandates some form of automation. A further requirement would be allowing the targeting of add-ons to a subset of clusters using specific criteria (eg staging vs production).
+![集群附加组件图](../../../assets/applicationset/Use-Cases/Cluster-Add-Ons.png)
 
-![Cluster add-on diagram](../../assets/applicationset/Use-Cases/Cluster-Add-Ons.png)
+在这个例子中，基础架构团队维护一个包含 Argo Workflows 控制器和 Prometheus 运算符应用程序清单的 Git 存储库。
 
-In this example, the infrastructure team maintains a Git repository containing application manifests for the Argo Workflows controller, and Prometheus operator.
+基础架构团队希望使用 Argo CD 将这两个插件部署到大量集群，并希望轻松管理新集群的创建/删除。
 
-The infrastructure team would like to deploy both these add-on to a large number of clusters, using Argo CD, and likewise wishes to easily manage the creation/deletion of new clusters.
+在这个用例中，我们可以使用应用集控制器的 List、Cluster 或 Git 生成器中的任一个来提供所需的行为：
 
-In this use case, we may use either the List, Cluster, or Git generators of the ApplicationSet controller to provide the required behaviour:
+- List 生成器：管理员维护两个 `ApplicationSet` 资源，每个应用程序（工作流和 Prometheus）都包含它们希望在 List 生成器元素中定位的集群列表。
+  - 在该生成器中，添加/删除集群需要手动更新 `ApplicationSet` 资源的列表元素。
+- Cluster 生成器：管理员维护两个 `ApplicationSet`  资源，每个应用程序（工作流和 Prometheus）都确保在 Argo CD 中定义所有新集群。
+  - 由于 Cluster 生成器自动检测并针对 Argo CD 中定义的集群，添加/删除 Argo CD 中的集群 将自动导致应用集控制器创建 Application 资源（每个应用程序）。
+- Git 生成器：Git 生成器是生成器中最灵活/最强大的，因此有多种不同的方法来处理此用例。以下是其中的几个：
+  - 使用 Git 生成器的 `files` 字段：将集群列表作为 JSON 文件保存在 Git 存储库中。通过 Git 提交更新 JSON 文件，会导致添加/删除新集群。
+  - 使用 Git 生成器的 `directories` 字段：对于每个目标集群，都在 Git 存储库中存在一个对应的同名目录。通过 Git 提交添加/修改目录，将触发共享目录名称的集群的更新。
 
-- *List generator*: Administrators maintain two `ApplicationSet` resources, one for each application (Workflows and Prometheus), and include the list of clusters they wish to target within the List generator elements of each.
-    - With this generator, adding/removing clusters requires manually updating the `ApplicationSet` resource's list elements.
-- *Cluster generator*: Administrators maintain two  `ApplicationSet` resources, one for each application (Workflows and Prometheus), and ensure that all new cluster are defined within Argo CD.
-    - Since the Cluster generator automatically detects and targets the clusters defined within Argo CD, [adding/remove a cluster from Argo CD](../../declarative-setup/#clusters) will automatically cause Argo CD Application resources (for each application) to be created by the ApplicationSet controller.
-- *Git generator*: The Git generator is the most flexible/powerful of the generators, and thus there are a number of different ways to tackle this use case. Here are a couple:
-    - Using the Git generator `files` field: A list of clusters is kept as a JSON file within a Git repository. Updates to the JSON file, through Git commits, cause new clusters to be added/removed.
-    - Using the Git generator `directories` field: For each target cluster, a corresponding directory of that name exists in a Git repository. Adding/modifying a directory, through Git commits, would trigger an update for the cluster that has shares the directory name.
+有关每个生成器的详细信息，请参见 [生成器部分](../generator/)。
 
-See the [generators section](Generators.md) for details on each of the generators.
+## 用例：单体库
 
-## Use case: monorepos
+在 *单体库用例* 中，Kubernetes 集群管理员从单个 Git 存储库管理单个 Kubernetes 集群的整个状态。
 
-In the *monorepo use case*, Kubernetes cluster administrators manage the entire state of a single Kubernetes cluster from a single Git repository.
+合并到 Git 存储库的清单更改应自动部署到集群。
 
-Manifest changes merged into the Git repository should automatically deploy to the cluster.
+在这个例子中，基础架构团队维护一个包含 Argo Workflows 控制器和 Prometheus 运算符应用程序清单的 Git 存储库。独立的开发团队还添加了他们希望部署到集群的其他服务。
 
-![Monorepo diagram](../../assets/applicationset/Use-Cases/Monorepos.png)
+对 Git 生成器可能用于支持此用例：
 
-In this example, the infrastructure team maintains a Git repository containing application manifests for an Argo Workflows controller, and a Prometheus operator. Independent development teams also have added additional services they wish to deploy to the cluster.
+- Git 生成器的 `directories` 字段可用于指定包含要部署的各个应用程序的特定子目录（使用通配符）。
+- Git 生成器的 `files` 字段可以引用包含 JSON 元数据的 Git 存储库文件，该元数据描述要部署的各个应用程序。
+- 更多详情请参见 Git 生成器文档。
 
-Changes made to the Git repository -- for example, updating the version of a deployed artifact -- should automatically cause that update to be applied to the corresponding Kubernetes cluster by Argo CD.
+## 用例：多租户集群上的 Argo CD 应用程序自助服务
 
-The Git generator may be used to support this use case:
+*自助服务用例* 旨在允许开发人员（作为多租户 Kubernetes 集群的最终用户）以自动化方式更灵活地执行以下操作：
 
-- The Git generator `directories` field may be used to specify particular subdirectories (using wildcards) containing the individual applications to deploy.
-- The Git generator `files` field may reference Git repository files containing JSON metadata, with that metadata describing the individual applications to deploy.
-- See the Git generator documentation for more details.
+- 使用 Argo CD 将多个应用程序部署到单个集群
+- 使用 Argo CD 自动化地部署到多个集群
+- 但在这两种情况下，使开发人员能够在不需要涉及集群管理员的情况下执行此操作（以代表他们创建所需的 Argo CD 应用程序/AppProject 资源）
 
-## Use case: self-service of Argo CD Applications on multitenant clusters
+这个用例的一个潜在解决方案是，开发团队在 Git 存储库中定义 Argo CD `Application` 资源（包含他们希望部署的清单），在 [app-of-apps 模式](../../cluster-bootstrapping/#app-of-apps-pattern) 中，并且集群管理员通过合并请求审查/接受对此存储库的更改。
 
-The *self-service use case* seeks to allow developers (as the end users of a multitenant Kubernetes cluster) greater flexibility to:
+虽然这听起来像是一种有效的解决方案，但一个主要的劣势是需要高度的信任/审查来接受包含 Argo CD `Application` 规范更改的提交。这是因为 `Application` 规范中包含许多敏感字段，包括 `project`、`cluster` 和 `namespace`。意外合并可能会允许应用程序访问其不属于的命名空间/集群。
 
-- Deploy multiple applications to a single cluster, in an automated fashion, using Argo CD
-- Deploy to multiple clusters, in an automated fashion, using Argo CD
-- But, in both cases, to empower those developers to be able to do so without needing to involve a cluster administrator (to create the necessarily Argo CD Applications/AppProject resources on their behalf)
+因此，在自助服务用例中，管理员希望仅允许开发人员控制 `Application` 规范的某些字段（例如 Git 源存储库），但不允许控制其他字段（例如目标命名空间或目标集群应受到限制）。
 
-One potential solution to this use case is for development teams to define Argo CD `Application` resources within a Git repository (containing the manifests they wish to deploy), in an [app-of-apps pattern](../../cluster-bootstrapping/#app-of-apps-pattern), and for cluster administrators to then review/accept changes to this repository via merge requests.
-
-While this might sound like an effective solution, a major disadvantage is that a high degree of trust/scrutiny is needed to accept commits containing Argo CD `Application` spec changes. This is because there are many sensitive fields contained within the `Application` spec, including `project`, `cluster`, and `namespace`. An inadvertent merge might allow applications to access namespaces/clusters where they did not belong.
-
-Thus in the self-service use case, administrators desire to only allow some fields of the `Application` spec to be controlled by developers (eg the Git source repository) but not other fields (eg the target namespace, or target cluster, should be restricted).
-
-Fortunately, the ApplicationSet controller presents an alternative solution to this use case: cluster administrators may safely create an `ApplicationSet` resource containing a Git generator that restricts deployment of application resources to fixed values with the `template` field, while allowing customization of 'safe' fields by developers, at will.
+幸运的是，应用集控制器提供了另一种解决方案：集群管理员可以安全地创建包含 Git 生成器的 `ApplicationSet` 资源，该生成器使用 `template` 字段将应用程序资源的部署限制为固定值，同时允许开发人员随意自定义 'safe' 字段。
 
 ```yaml
-kind: ApplicationSet
-# (...)
-spec:
-  generators:
-  - git:
-      repoURL: https://github.com/argoproj/argo-cd.git
-      files:
-      - path: "apps/**/config.json"
-  template:
-    spec:
-      project: dev-team-one # project is restricted
-      source:
-        # developers may customize app details using JSON files from above repo URL
-        repoURL: {{app.source}}
-        targetRevision: {{app.revision}}
-        path: {{app.path}}
-      destination:
-        name: production-cluster # cluster is restricted
-        namespace: dev-team-one # namespace is restricted
+ kind: ApplicationSet
+ # (...)
+ spec:
+   generators:
+   - git:
+       repoURL: <https://github.com/argoproj/argo-cd.git>
+       files:
+       - path: "apps/**/config.json"
+   template:
+     spec:
+       project: dev-team-one # 项目受到限制
+       source:
+         # 开发人员可以使用上述 repo URL 中的 JSON 文件自定义应用程序详细信息
+         repoURL: {{app.source}}
+         targetRevision: {{app.revision}}
+         path: {{app.path}}
+       destination:
+         name: production-cluster # 集群受到限制
+         namespace: dev-team-one # 命名空间受到限制
 ```
-See the [Git generator](Generators-Git.md) for more details.
+
+有关更多详细信息，请参见 [Git 生成器](../generators-git/)。

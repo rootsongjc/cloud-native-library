@@ -10,6 +10,7 @@ icon_pack: fas
 cascade:
   commentable: true
   level: 1
+  type: book
   tags: ["Argo","Argo CD"]
   categories: ["GitOps"]
 ---
