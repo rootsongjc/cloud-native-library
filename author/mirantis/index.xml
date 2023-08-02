@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Mirantis | 云原生资料库</title>
+    <link>https://lib.jimmysong.io/author/mirantis/</link>
+      <atom:link href="https://lib.jimmysong.io/author/mirantis/index.xml" rel="self" type="application/rss+xml" />
+    <description>Mirantis</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Wed, 02 Aug 2023 11:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://lib.jimmysong.io/media/sharing.png</url>
+      <title>Mirantis</title>
+      <link>https://lib.jimmysong.io/author/mirantis/</link>
+    </image>
+    
+    <item>
+      <title>Kubernetes 将推出新 sidecar container 特性</title>
+      <link>https://lib.jimmysong.io/blog/understanding-kubernetes-new-sidecar-container-feature/</link>
+      <pubDate>Wed, 02 Aug 2023 11:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/blog/understanding-kubernetes-new-sidecar-container-feature/</guid>
+      <description>&lt;p&gt;上周，Kubernetes 项目&lt;a href=&#34;https://github.com/kubernetes/kubernetes/pull/116429&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;合并&lt;/a&gt;了一个新的 alpha 特性，使用户能够在规范中定义“sidecar containers”。这个新功能旨在帮助定义多容器 pod 中辅助容器的行为，这些容器可能有助于配置、网络、日志和度量收集等方面。&lt;/p&gt;
+&lt;h2 id=&#34;什么是-sidecar-container&#34;&gt;什么是 sidecar container？&lt;/h2&gt;
+&lt;p&gt;理论上，Kubernetes 期望您在每个 pod 中运行一个容器。实际上，&lt;a href=&#34;https://www.mirantis.com/blog/kubernetes-pod-vs-container-multi-container-pods-and-container-communication/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;许多用例需要多容器 pod&lt;/a&gt;——例如，当您使用某些服务网格时，几乎所有的 pod 中都可能有 sidecar。&lt;/p&gt;
+&lt;p&gt;有时，辅助容器仅用于初始化：例如为主容器配置和管理 secret。Kubernetes 已经为用户提供了定义 initContainer 的方式一段时间了。这个新功能最终为 initContainer 提供了更精细的粒度，以反映 sidecar 的特定要求，简化常见用法模式并为未来开辟了一些有趣的设计空间。&lt;/p&gt;
+&lt;h2 id=&#34;sidecar-container-特性如何工作&#34;&gt;sidecar container 特性如何工作？&lt;/h2&gt;
+&lt;p&gt;在这个新的功能门控中，sidecar containers 被定义为&amp;hellip;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;在 pod 中比其他容器更早地启动，因为它们可能需要先初始化。这对于像服务网格这样的事情很重要，其中您希望 sidecar 准备好为主容器进程建立网络连接，以及在日志记录方面，您希望收集器 sidecar 能够抓取主容器的启动日志。&lt;/li&gt;
+&lt;li&gt;在 pod 的整个生命周期内保持运行，因为它们可能需要长期运行。例如，在网络和指标/日志记录的情况下，您需要 sidecar 运行的时间与主进程一样长。&lt;/li&gt;
+&lt;li&gt;永远不会阻止 pod 被终止，因为它们仅支持 pod 的核心功能——如果没有新功能，运行的 sidecar 容器可以阻止作业完成，即使 pod 的核心任务已完成&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;在较丑的一面上，在这个 alpha 实现中，您可以通过在您的 &lt;code&gt;initContainer&lt;/code&gt; 规范中添加值为 &lt;code&gt;Always&lt;/code&gt; 的 &lt;code&gt;restartPolicy&lt;/code&gt; 字段来定义 sidecar container。例如：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Pod&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;myapp-pod&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;initContainers&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;init-myservice&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;image&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;busybox:1.28&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;init-mydb&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;image&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;busybox:1.28&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istio-proxy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;image&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istio/proxyv2:1.16.0&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;args&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;proxy&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;sidecar&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;restartPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Always&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;containers&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;myapp-container&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;image&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;busybox:1.28&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在上面的规范中，&lt;strong&gt;init-myservice&lt;/strong&gt; 和 &lt;strong&gt;init-mydb&lt;/strong&gt; 是标准 initContainers，而设置为 &lt;code&gt;Always&lt;/code&gt; 的 &lt;code&gt;restartPolicy&lt;/code&gt; 字段使 &lt;strong&gt;istio-proxy&lt;/strong&gt; 成为 sidecar container。&lt;/p&gt;
+&lt;p&gt;这个新特性的 Kubernetes Enhancement Proposal (KEP) 承认了这种表面上的不优雅，指出 initContainer“不适合作为 sidecar containers，因为它们通常做的不仅是初始化”，并建议“基础设施容器”是一个更好的名称，未来可能会采用。KEP 解释了选择的结构背后的思考方式：&lt;/p&gt;
+&lt;p&gt;&amp;hellip;&amp;hellip;将 sidecar containers 定义在其他 init 容器之间是很重要的，以便能够表达容器的初始化顺序。&lt;/p&gt;
+&lt;p&gt;一位高级贡献者在 Hacker News 上补充了一些细节，指出：&lt;/p&gt;
+&lt;p&gt;分离属性的挑战在于它与我们可能添加到 pod 周围的有关排序和生命周期的新功能不兼容。如果我们使用一个简单的布尔值，最终我们将不得不让它与其他字段交互，并处理“sidecar”的含义和更灵活性之间的冲突行为。[&amp;hellip;]我们为 init containers 可以失败 pod、并且可以并行化、以及常规容器具有唯一的 restartPolicies 留出了空间。这两个都将允许更多的工作流/作业引擎控制，以分解单体容器并获得更好的隔离。&lt;/p&gt;
+&lt;p&gt;在&lt;a href=&#34;https://news.ycombinator.com/item?id=36666359&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;另一个评论&lt;/a&gt;中，他们补充说，团队想要&amp;hellip;&lt;/p&gt;
+&lt;p&gt;&amp;hellip;&amp;hellip;留下更复杂的 init containers 和 sidecars 的排序（常规容器没有 restart 顺序）。例如，您可能需要一个服务网格来需要一个 vault secret——这两个可能都是 sidecars，并且如果两者都关闭，您可能需要确保 vault sidecar 首先启动。最终，我们可能希望在启动顺序中添加并行性，而单独的字段将阻止简单的排序现在起作用。&lt;/p&gt;
+&lt;p&gt;KEP 提供了有关引发该功能的问题案例以及一些组织正在运行 Kubernetes 分叉以实现类似功能的有趣更广泛的背景的详细见解。&lt;/p&gt;
+&lt;p&gt;如果您迫不及待地想在新的测试集群上尝试这个新功能，您需要为 kubelet、kube-apiserver、kube-controller-manager 和 kube-scheduler 启用 SidecarContainers feature gate。KEP 提供了有关默认策略和实现的有用细节，您可以期待在 8 月份发布 Kubernetes 1.28 时看到更多关于此功能的讨论。&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
