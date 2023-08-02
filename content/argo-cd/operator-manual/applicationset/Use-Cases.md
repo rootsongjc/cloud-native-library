@@ -14,7 +14,7 @@ date: '2023-06-30T16:00:00+08:00'
 
 应用集控制器的初始设计重点是允许基础架构团队的 Kubernetes 集群管理员自动创建大量不同的 Argo CD 应用程序，跨多个集群，并将这些应用程序作为单个单元进行管理。 *集群附加组件用例* 就是其中一个例子。
 
-在 *集群附加组件用例* 中，管理员负责为一个或多个 Kubernetes 集群配置集群附加组件：集群附加组件是运算符，例如 [Prometheus 运算符](https://github.com/prometheus-operator/prometheus-operator) 或控制器，例如 [argo-workflows 控制器](https://argoproj.github.io/argo-workflows/)（[Argo 生态系统](https://argoproj.github.io/)的一部分）。
+在 *集群附加组件用例* 中，管理员负责为一个或多个 Kubernetes 集群配置集群附加组件：集群附加组件是 Operator，例如 [Prometheus  Operator](https://github.com/prometheus-operator/prometheus-operator) 或控制器，例如 [argo-workflows 控制器](https://argoproj.github.io/argo-workflows/)（[Argo 生态系统](https://argoproj.github.io/)的一部分）。
 
 通常，这些附加组件是开发团队的应用程序所需的（例如作为多租户集群的租户，他们可能希望向 Prometheus 提供度量数据或通过 Argo Workflows 编排工作流程）。
 
@@ -24,7 +24,7 @@ date: '2023-06-30T16:00:00+08:00'
 
 ![集群附加组件图](../../../assets/applicationset/Use-Cases/Cluster-Add-Ons.png)
 
-在这个例子中，基础架构团队维护一个包含 Argo Workflows 控制器和 Prometheus 运算符应用程序清单的 Git 存储库。
+在这个例子中，基础架构团队维护一个包含 Argo Workflows 控制器和 Prometheus  Operator 应用程序清单的 Git 存储库。
 
 基础架构团队希望使用 Argo CD 将这两个插件部署到大量集群，并希望轻松管理新集群的创建/删除。
 
@@ -46,7 +46,7 @@ date: '2023-06-30T16:00:00+08:00'
 
 合并到 Git 存储库的清单更改应自动部署到集群。
 
-在这个例子中，基础架构团队维护一个包含 Argo Workflows 控制器和 Prometheus 运算符应用程序清单的 Git 存储库。独立的开发团队还添加了他们希望部署到集群的其他服务。
+在这个例子中，基础架构团队维护一个包含 Argo Workflows 控制器和 Prometheus  Operator 应用程序清单的 Git 存储库。独立的开发团队还添加了他们希望部署到集群的其他服务。
 
 对 Git 生成器可能用于支持此用例：
 
