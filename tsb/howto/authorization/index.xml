@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>External Authorization | 云原生资料库</title>
+    <link>https://lib.jimmysong.io/tsb/howto/authorization/</link>
+      <atom:link href="https://lib.jimmysong.io/tsb/howto/authorization/index.xml" rel="self" type="application/rss+xml" />
+    <description>External Authorization</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Wed, 09 Aug 2023 12:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://lib.jimmysong.io/media/sharing.png</url>
+      <title>External Authorization</title>
+      <link>https://lib.jimmysong.io/tsb/howto/authorization/</link>
+    </image>
+    
+    <item>
+      <title>Service to service authorization using external authorization</title>
+      <link>https://lib.jimmysong.io/tsb/howto/authorization/sidecar/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/howto/authorization/sidecar/</guid>
+      <description>&lt;p&gt;&lt;a href=&#34;../../concepts/terminology##tetrate-service-bridge-tsb&#34;&gt;Tetrate Service Bridge (TSB)&lt;/a&gt; provides authorization capabilities to authorize every HTTP request coming to a service from another service (&amp;ldquo;service-to-service&amp;rdquo; requests).&lt;/p&gt;
+&lt;p&gt;TSB supports &lt;em&gt;local&lt;/em&gt; authorization by using JWT claims and &lt;em&gt;external&lt;/em&gt; authorization which uses a service running externally to determine if a request should be allowed or denied. External authorization can be used on both gateways and workloads (through their sidecars).&lt;/p&gt;
+&lt;p&gt;You may decide to use an external authorization system if you have a separate in-house system or if you want to integrate with a third party authorization solution such as &lt;a href=&#34;https://www.openpolicyagent.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Open Policy Agent (OPA)&lt;/a&gt; or &lt;a href=&#34;https://www.plainid.com/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;PlainID&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;This document describes how to configure service-to-service authorization using OPA as an example. OPA is an open source, general-purpose policy engine that provides a high-level declarative language that lets you specify policy as code.&lt;/p&gt;
+&lt;p&gt;:::note OPA support
+Tetrate does not offer support for OPA. Please look elsewhere if you need support for your use case.
+:::&lt;/p&gt;
+&lt;p&gt;Before you get started, make sure you: &lt;br /&gt;
+✓ Familiarize yourself with &lt;a href=&#34;../../concepts/toc&#34;&gt;TSB concepts&lt;/a&gt; &lt;br /&gt;
+✓ Install the TSB environment. You can use &lt;a href=&#34;../../setup/self_managed/demo-installation&#34;&gt;TSB demo&lt;/a&gt; for quick install &lt;br /&gt;
+✓ Completed TSB usage quickstart. This document assumes you already created a Tenant and are familiar with &lt;a href=&#34;../../concepts/terminology#workspace&#34;&gt;Workspaces&lt;/a&gt; and Config Groups. Also you need to configure &lt;code&gt;tctl&lt;/code&gt; to your TSB environment.&lt;/p&gt;
+&lt;h2 id=&#34;overview&#34;&gt;Overview&lt;/h2&gt;
+&lt;p&gt;The following diagram shows the request and response flow when using an external authorization system to authorize service-to-service requests.&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/howto/service-to-service-authorization.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;The desired result is to be able to send requests from the &amp;ldquo;Sleep workload&amp;rdquo; to &amp;ldquo;&lt;code&gt;httpbin&lt;/code&gt; with OPA workload&amp;rdquo;, and have these requests go through proper authorization checks by OPA. If a request from the &amp;ldquo;Sleep workload&amp;rdquo; is deemed to be unauthorized, a &lt;code&gt;403&lt;/code&gt; Forbidden should be returned.&lt;/p&gt;
+&lt;p&gt;Note that while in this example you deploy OPA as sidecar within a pod, it is also possible to deploy OPA in a separate pod. If you do deploy OPA in a separate pod, you will need to investigate yourself what value you use when you specify the URL of the external system later.&lt;/p&gt;
+&lt;h2 id=&#34;setting-up-the-services&#34;&gt;Setting up the services&lt;/h2&gt;
+&lt;h3 id=&#34;setting-up-the-httpbin-service&#34;&gt;Setting up the &lt;code&gt;httpbin&lt;/code&gt; service&lt;/h3&gt;
+&lt;p&gt;You will first setup the &amp;ldquo;server side&amp;rdquo;, which is the &amp;ldquo;httpbin with OPA workload&amp;rdquo; component in the diagram.&lt;/p&gt;
+&lt;h4 id=&#34;opa-policy&#34;&gt;OPA policy&lt;/h4&gt;
+&lt;p&gt;Before starting a service, you need to create the Kubernetes Secret which will contain OPA policy.&lt;/p&gt;
+&lt;p&gt;Below is an example of OPA policy that you will use to authorize requests. It will allow requests when:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;JWT token is present&lt;/li&gt;
+&lt;li&gt;JWT token is not expired&lt;/li&gt;
+&lt;li&gt;URL path that you want to access is specified in the JWT token&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Create a file named &lt;a href=&#34;../../assets/howto/s2s-policy.rego&#34;&gt;s2s-policy.rego&lt;/a&gt; with the following content:&lt;/p&gt;
+&lt;CodeBlock&gt;
+  {policyRego}
+&lt;/CodeBlock&gt;
+```
+&lt;p&gt;Then store the policy in Kubernetes as a Secret.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl create namespace httpbin
+kubectl create secret generic opa-policy -n httpbin --from-file s2s-policy.rego
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;create-httpbin-deployment-with-opa-and-envoy-sidecars&#34;&gt;Create httpbin deployment with OPA and Envoy sidecars&lt;/h4&gt;
+&lt;p&gt;Once you have the policy, deploy the &lt;code&gt;httpbin&lt;/code&gt; service that references the policy.
+Create a file named &lt;a href=&#34;../../assets/howto/s2s-httpbin-with-opa.yaml&#34;&gt;&lt;code&gt;s2s-httpbin-with-opa.yaml&lt;/code&gt;&lt;/a&gt; with the following content:&lt;/p&gt;
+&lt;CodeBlock className=&#34;language-yaml&#34;&gt;
+  {httpbinWithOpaYAML}
+&lt;/CodeBlock&gt;
+&lt;p&gt;Then apply it with kubectl:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl label namespace httpbin istio-injection=enabled --overwrite=true
+kubectl apply -n httpbin -f s2s-httpbin-with-opa.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;setting-up-the-sleep-service&#34;&gt;Setting up the &lt;code&gt;sleep&lt;/code&gt; service&lt;/h3&gt;
+&lt;p&gt;Since you will be configuring service-to-service authorization, you need a service to act as a client to your &lt;code&gt;httpbin&lt;/code&gt; service.&lt;/p&gt;
+&lt;p&gt;In this example you will deploy a service that does nothing but sleep, which maps to the &amp;ldquo;sleep workload&amp;rdquo; in the previous diagram. You will use &lt;code&gt;kubectl exec&lt;/code&gt; later to issue HTTP requests to the &lt;code&gt;httpbin&lt;/code&gt; service.&lt;/p&gt;
+&lt;p&gt;Create a file called &lt;a href=&#34;../../assets/howto/s2s-sleep.yaml&#34;&gt;&lt;code&gt;s2s-sleep.yaml&lt;/code&gt;&lt;/a&gt; with the following content:&lt;/p&gt;
+&lt;CodeBlock className=&#34;language-yaml&#34;&gt;
+  {sleepYAML}
+&lt;/CodeBlock&gt;
+&lt;p&gt;Deploy this sleep service with kubectl:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl create namespace sleep
+kubectl label namespace httpbin istio-injection=enabled --overwrite=true
+kubectl apply -n sleep -f s2s-sleep.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;testing&#34;&gt;Testing&lt;/h2&gt;
+&lt;h3 id=&#34;test-with-external-authorization-disabled&#34;&gt;Test with external authorization disabled&lt;/h3&gt;
+&lt;p&gt;So far you have deployed the services but have not enabled external authorization. Thus requests from the &lt;code&gt;sleep&lt;/code&gt; service to the &lt;code&gt;httpbin&lt;/code&gt; service are not checked for authorization.&lt;/p&gt;
+&lt;p&gt;This can be seen by checking if sending HTTP requests from the &lt;code&gt;sleep&lt;/code&gt; service results in a &lt;code&gt;200&lt;/code&gt; OK.&lt;/p&gt;
+&lt;p&gt;To send a request from sleep service, identify the pod within your &lt;code&gt;sleep&lt;/code&gt; service:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;export SLEEP_POD=$(kubectl get pod -n sleep -l app=sleep -o jsonpath={.items..metadata.name})
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Then send a request from this pod to the &lt;code&gt;httpbin&lt;/code&gt; service, which should be reachable at &lt;code&gt;http://httpbin-with-opa.httpbin:8000&lt;/code&gt;:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl exec ${SLEEP_POD} -n sleep -c sleep  -- curl http://httpbin-with-opa.httpbin:8000/headers -s -o /dev/null -w &amp;#34;%{http_code}\n&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;With external authorization disabled, the above command should display &lt;code&gt;200&lt;/code&gt;.&lt;/p&gt;
+&lt;h3 id=&#34;test-with-external-authorization-enabled&#34;&gt;Test with external authorization enabled&lt;/h3&gt;
+&lt;p&gt;To see how the external authorization works, you will have to create a workspace and security group.&lt;/p&gt;
+&lt;h4 id=&#34;create-the-workspace&#34;&gt;Create the workspace&lt;/h4&gt;
+&lt;p&gt;Create a file called &lt;a href=&#34;../../assets/howto/s2s-workspace.yaml&#34;&gt;&lt;code&gt;s2s-workspace.yaml&lt;/code&gt;&lt;/a&gt; with the following content.&lt;/p&gt;
+&lt;p&gt;Please note that in the following example we assume that you have deployed your &lt;code&gt;httpbin&lt;/code&gt; service in the &lt;code&gt;demo&lt;/code&gt; cluster that you have created using the TSB demo install. If you are using another cluster, change the cluster name in the example accordingly.&lt;/p&gt;
+&lt;CodeBlock className=&#34;language-yaml&#34;&gt;
+  {workspaceYAML}
+&lt;/CodeBlock&gt;
+&lt;p&gt;Then apply it using tctl:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;tctl apply -f s2s-workspace.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;create-the-securitysettings&#34;&gt;Create the SecuritySettings&lt;/h4&gt;
+&lt;p&gt;Once you have a workspace, you need to create a SecuritySettings for that workspace to enable external authorization.&lt;/p&gt;
+&lt;p&gt;Create a file called &lt;a href=&#34;../../assets/howto/s2s-workspace.yaml&#34;&gt;&lt;code&gt;s2s-security-settings.yaml&lt;/code&gt;&lt;/a&gt; with the following content.&lt;/p&gt;
+&lt;p&gt;Please note that the &lt;code&gt;uri&lt;/code&gt; points to a local address (&lt;code&gt;grpc://127.0.0.1:9191&lt;/code&gt;) because in this example the OPA service is deployed in the same pod as a sidecar. If you have deployed OPA in a separate pod, you will need to change the value for &lt;code&gt;uri&lt;/code&gt; accordingly.&lt;/p&gt;
+&lt;CodeBlock className=&#34;language-yaml&#34;&gt;
+  {securitySettingsYAML}
+&lt;/CodeBlock&gt;
+&lt;p&gt;Then apply it using tctl:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;tctl apply -f s2s-security-settings.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;testing-the-authorization&#34;&gt;Testing the authorization&lt;/h3&gt;
+&lt;p&gt;Send a request to &lt;code&gt;httpbin&lt;/code&gt; service again.&lt;/p&gt;
+&lt;p&gt;With the SecuritySettings applied, plain requests from the &lt;code&gt;sleep&lt;/code&gt; service to &lt;code&gt;httpbin&lt;/code&gt; service should fail with &lt;code&gt;403&lt;/code&gt; Forbidden.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl exec ${SLEEP_POD} -n sleep -c sleep  -- curl http://httpbin-with-opa.httpbin:8000/headers -s -o /dev/null -w &amp;#34;%{http_code}\n&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The above command should display &lt;code&gt;403&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;In order to authorize the requests, you need to add a JWT in the requests. For this example, the raw JWT that we would like to attach to the requests looks like the following:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;{
+  &amp;#34;path&amp;#34;: &amp;#34;L2hlYWRlcnM=&amp;#34;,
+  &amp;#34;nbf&amp;#34;: 1500000000,
+  &amp;#34;exp&amp;#34;: 1900000000
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The path claim has value &lt;code&gt;L2hlYWRlcnM=&lt;/code&gt;, which is the base64 encoded form of the string &lt;code&gt;/headers&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;JWTs need to be passed via the &lt;code&gt;Authorization&lt;/code&gt; header, which requires the entire JWT to be base64 encoded as show below. Save this into an environment variable:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;export JWT_TOKEN=&amp;#34;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXRoIjoiTDJobFlXUmxjbk09IiwibmJmIjoxNTAwMDAwMDAwLCJleHAiOjE5MDAwMDAwMDB9.9yl8LcZdq-5UpNLm0Hn0nnoBHXXAnK4e8RSl9vn6l98&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Finally, send a request with the above JWT token to the &lt;code&gt;httpbin&lt;/code&gt; service, making sure that the request is pointing to the path &lt;code&gt;/headers&lt;/code&gt;, which matches the claim in the JWT. This time around you should get a &lt;code&gt;200&lt;/code&gt; OK.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl exec ${SLEEP_POD} -n sleep -c sleep  -- curl http://httpbin-with-opa.httpbin:8000/headers -H &amp;#34;Authorization: Bearer $JWT_TOKEN&amp;#34; -s -o /dev/null -w &amp;#34;%{http_code}\n&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;To check that requests to other paths are not authorized, try sending the following request, which is pointing to the path &lt;code&gt;/get&lt;/code&gt;. The following command should result in a &lt;code&gt;403&lt;/code&gt; Forbidden.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl exec ${SLEEP_POD} -n sleep -c sleep  -- curl http://httpbin-with-opa.httpbin:8000/get -H &amp;#34;Authorization: Bearer $JWT_TOKEN&amp;#34; -s -o /dev/null -w &amp;#34;%{http_code}\n&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>Configuring External Authorization in Ingress Gateways</title>
+      <link>https://lib.jimmysong.io/tsb/howto/authorization/ingress-gateway/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/howto/authorization/ingress-gateway/</guid>
+      <description>&lt;p&gt;This document will describe how to configure Ingress Gateway external authorization using &lt;a href=&#34;https://www.openpolicyagent.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Open Policy Agent&lt;/a&gt; (OPA) as an example.&lt;/p&gt;
+&lt;p&gt;Before you get started, make sure you: &lt;br /&gt;
+✓ Familiarize yourself with &lt;a href=&#34;../../concepts/toc&#34;&gt;TSB concepts&lt;/a&gt; &lt;br /&gt;
+✓ Install the TSB environment. You can use &lt;a href=&#34;../../setup/self_managed/demo-installation&#34;&gt;TSB demo&lt;/a&gt; for quick install &lt;br /&gt;
+✓ Completed TSB usage &lt;a href=&#34;../../quickstart&#34;&gt;quickstart&lt;/a&gt;. This document assumes you already created Tenant and are familiar with Workspace and Config Groups. Also you need to configure tctl to your TSB environment.&lt;/p&gt;
+&lt;p&gt;In this example, httpbin will be used as the workload. Requests that come to Ingress GW will be checked by OPA. If the request is deemed unauthorized, then the request will be denied with a 403 (Forbidden) response.&lt;/p&gt;
+&lt;p&gt;Following image shows the requests and response flow when using an external authorization system,you will deploy OPA as an individual service.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;../../assets/howto/authorization/ingress_gateway_flow.png&#34;&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/howto/authorization/ingress_gateway_flow.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/a&gt;&lt;/p&gt;
+&lt;h2 id=&#34;deploy-httpbin-service&#34;&gt;Deploy &lt;code&gt;httpbin&lt;/code&gt; Service&lt;/h2&gt;
+&lt;p&gt;Follow &lt;a href=&#34;../../reference/samples/httpbin&#34;&gt;all of the instructions in this document&lt;/a&gt; to create the &lt;code&gt;httpbin&lt;/code&gt; service.&lt;/p&gt;
+&lt;h2 id=&#34;deploy-opa-service&#34;&gt;Deploy OPA Service&lt;/h2&gt;
+&lt;p&gt;Refer to the &amp;ldquo;&lt;a href=&#34;../../reference/samples/opa&#34;&gt;Installing Open Policy Agent&lt;/a&gt;&amp;rdquo; document and create &lt;a href=&#34;../../reference/samples/opa#example-policy-with-basic-authentication&#34;&gt;a policy for a basic authentication&lt;/a&gt; and &lt;a href=&#34;../../reference/samples/opa#basic-deployment&#34;&gt;deploy OPA as a standalone service&lt;/a&gt;&lt;/p&gt;
+&lt;h2 id=&#34;configure-ingress-gateway&#34;&gt;Configure Ingress Gateway&lt;/h2&gt;
+&lt;p&gt;You will need to configure your Ingress Gateway again for &lt;code&gt;httpbin&lt;/code&gt; to use OPA. Create a file called &lt;code&gt;httpbin-ingress.yaml&lt;/code&gt; with the following contents:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;apiVersion: gateway.tsb.tetrate.io/v2
+kind: IngressGateway
+Metadata:
+ organization: tetrate
+ name: httpbin-ingress-gateway
+ group: httpbin
+ workspace: httpbin
+ tenant: tetrate
+spec:
+ workloadSelector:
+   namespace: httpbin
+   labels:
+     app: httpbin-ingress-gateway
+ http:
+   - name: httpbin
+     port: 443
+     hostname: &amp;#34;httpbin.tetrate.com&amp;#34;
+     tls:
+       mode: SIMPLE
+       secretName: httpbin-certs
+     routing:
+       rules:
+         - route:
+             host: &amp;#34;httpbin/httpbin.httpbin.svc.cluster.local&amp;#34;
+             port: 8000
+     authorization:
+       external:
+         uri: grpc://opa.opa.svc.cluster.local:9191
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Apply the configuration using &lt;code&gt;tctl apply&lt;/code&gt;:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;tctl apply -f httpbin-ingress.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;testing&#34;&gt;Testing&lt;/h2&gt;
+&lt;p&gt;You can test the external authorization by sending HTTP requests from an external machine or your local environment to the &lt;code&gt;httpbin&lt;/code&gt; Ingress Gateway.&lt;/p&gt;
+&lt;p&gt;In the following example, since you do not control httpbin.tetrate.com, you will have to trick curl into thinking that httpbin.tetrate.com resolves to the IP address of the Ingress Gateway.&lt;/p&gt;
+&lt;p&gt;Obtain the IP address of the Ingress Gateway that you previously created using the following command.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;kubectl -n httpbin get service httpbin-ingress-gateway \
+  -o jsonpath=&amp;#39;{.status.loadBalancer.ingress[0].ip}&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Then execute the following command to send HTTP requests to the httpbin service through the Ingress Gateway. Replace the &lt;code&gt;gateway-ip&lt;/code&gt; with the value you obtained in the previous step.&lt;/p&gt;
+&lt;p&gt;Remember that the example OPA policy contains two users &lt;code&gt;alice&lt;/code&gt; and &lt;code&gt;bob&lt;/code&gt; that can be authorized using basic authentication.&lt;/p&gt;
+&lt;p&gt;The following command should display &lt;code&gt;200&lt;/code&gt;. Similarly, changing the username to &lt;code&gt;bob&lt;/code&gt; should also display &lt;code&gt;200&lt;/code&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;curl -u alice:password &amp;#34;https://httpbin.tetrate.com/get&amp;#34; \
+  --resolve &amp;#34;httpbin.tetrate.com:443:&amp;lt;gateway-ip&amp;gt;&amp;#34; \
+  --cacert certs/httpbin-ca.crt \
+  -s \
+  -o \
+  -w &amp;#34;%{http_code}\n&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The following command provides the wrong password to user &lt;code&gt;alice&lt;/code&gt;. This should display &lt;code&gt;403&lt;/code&gt;.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;curl -u alice:wrongpassword &amp;#34;https://httpbin.tetrate.com/get&amp;#34; \
+  --resolve &amp;#34;httpbin.tetrate.com:443:&amp;lt;gateway-ip&amp;gt;&amp;#34; \
+  --cacert certs/httpbin-ca.crt \
+  -s \
+  -o \
+  -w &amp;#34;%{http_code}\n&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Finally, if you provide any other user than &lt;code&gt;alice&lt;/code&gt; or &lt;code&gt;bob&lt;/code&gt;, it should display &lt;code&gt;403&lt;/code&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;curl -u charlie:password &amp;#34;https://httpbin.tetrate.com/get&amp;#34; \
+  --resolve &amp;#34;httpbin.tetrate.com:443:&amp;lt;gateway-ip&amp;gt;&amp;#34; \
+  --cacert certs/httpbin-ca.crt \
+  -s \
+  -o \
+  -w &amp;#34;%{http_code}\n&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>External Authz with TLS verification</title>
+      <link>https://lib.jimmysong.io/tsb/howto/authorization/tls-verification/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/howto/authorization/tls-verification/</guid>
+      <description>&lt;p&gt;TSB supports specifying &lt;a href=&#34;../../refs/tsb/auth/v2/auth#clienttlssettings&#34;&gt;TLS or mTLS&lt;/a&gt; parameters for securing communication to external auth servers. This document will show you how to configure TLS validation for an external authorization server by adding a CA certificate to the authorization configuration.&lt;/p&gt;
+&lt;p&gt;Before you get started, make sure you: &lt;br /&gt;
+✓ Familiarize yourself with &lt;a href=&#34;../../concepts/toc&#34;&gt;TSB concepts&lt;/a&gt; &lt;br /&gt;
+✓ Install the TSB environment. You can use &lt;a href=&#34;../../setup/self_managed/demo-installation&#34;&gt;TSB demo&lt;/a&gt; for quick install&lt;br /&gt;
+✓ Completed &lt;a href=&#34;../../quickstart&#34;&gt;TSB usage quickstart&lt;/a&gt;. This document assumes you already created Tenant and are familiar with Workspace and Config Groups. Also you need to configure tctl to your TSB environment.&lt;br/&gt;&lt;/p&gt;
+&lt;p&gt;The examples in this document will build on top of &lt;a href=&#34;./ingress_gateway&#34;&gt;&amp;ldquo;Configuring External Authorization in Ingress Gateways&amp;rdquo;&lt;/a&gt;. Make sure to have completed that document before proceeding, and note that you will be working on the namespace &lt;code&gt;httpbin&lt;/code&gt;&lt;/p&gt;
+&lt;h2 id=&#34;create-tls-certificate&#34;&gt;Create TLS certificate&lt;/h2&gt;
+&lt;p&gt;To enable TLS for Ingress Gateway to authorization service traffic, you must have a TLS certificate. This document assumes you already have TLS certificates which usually include server certificate and private key along with the CA as root certificate that will be used by the client. This document use following files&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;authz.crt&lt;/code&gt; as  server certificate&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;authz.key&lt;/code&gt; as certificate private key&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;authz-ca.crt&lt;/code&gt; as CA certificate&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;If you decide to use other file names, please replace them accordingly throughout the examples below.&lt;/p&gt;
+&lt;p&gt;:::note self signed certificate
+For the purpose of example, you can create self signed certificates using this &lt;a href=&#34;../../quickstart/ingress_gateway#certificate-for-gateway&#34;&gt;scripts&lt;/a&gt;.
+:::note&lt;/p&gt;
+&lt;p&gt;Once you have the files, create Kubernetes secret using server certificate and private key.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;kubectl create secret tls -n httpbin opa-certs \
+  --cert=authz.crt \
+  --key=authz.key
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You will also need the CA certificate in to validate the TLS connection.
+Create a &lt;code&gt;ConfigMap&lt;/code&gt; named &lt;code&gt;authz-ca&lt;/code&gt; that will contain the CA certificate:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;kubectl create configmap -n httpbin authz-ca \
+  --from-file=authz-ca.crt
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;deploy-authorization-service-with-tls-certificate&#34;&gt;Deploy Authorization Service with TLS certificate&lt;/h2&gt;
+&lt;p&gt;Follow the instructions in &lt;a href=&#34;../../reference/samples/opa#terminating-tls&#34;&gt;&amp;ldquo;Installing Open Policy Agent in TSB&amp;rdquo;&lt;/a&gt; to setup an instance OPA with a sidecar proxy that terminates TLS.&lt;/p&gt;
+&lt;h2 id=&#34;modify-ingress-gateway&#34;&gt;Modify Ingress Gateway&lt;/h2&gt;
+&lt;p&gt;You will need to add CA certificate to the Ingress Gateway to validate the TLS connection.
+Create a file named &lt;code&gt;httpbing-ingress-gateway.yaml&lt;/code&gt; with the following contents. This manifest adds overlays to read the &lt;code&gt;ConfigMap&lt;/code&gt; named &lt;code&gt;authz-ca&lt;/code&gt; that contains the CA certificates to the Ingress Gateway deployment.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;install.tetrate.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;IngressGateway&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;httpbin-ingress-gateway&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;httpbin&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kubeSpec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;service&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;type&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;LoadBalancer&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;overlays&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;apps/v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Deployment&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;httpbin-ingress-gateway&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;patches&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;spec.template.spec.volumes[-1]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;authz-ca&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;configMap&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;            &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;authz-ca&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;spec.template.spec.containers.[name:istio-proxy].volumeMounts[-1]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;authz-ca&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;mountPath&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;/etc/certs&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;readOnly&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Apply with kubectl:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;kubectl apply -f httpbin-ingress-gateway.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Then update the Ingress Gateway configuration to enable TLS validation:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;gateway.tsb.tetrate.io/v2&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;IngressGateway&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;Metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;organization&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;tetrate&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;httpbin-ingress-gateway&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;group&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;httpbin&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;workspace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;httpbin&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tenant&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;tetrate&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;workloadSelector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;httpbin&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;labels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;httpbin-ingress-gateway&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;http&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;httpbin&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;443&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;hostname&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;httpbin.tetrate.com&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tls&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;mode&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;SIMPLE&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;secretName&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;httpbin-certs&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;routing&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;rules&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;         &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;route&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;             &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;host&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;httpbin/httpbin.httpbin.svc.cluster.local&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;             &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;8080&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;authorization&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;external&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;         &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tls&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;           &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;mode&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;SIMPLE&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;           &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;files&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;             &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;caCertificates&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;/etc/certs/authz-ca.crt&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;         &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;uri&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;grpcs://opa.opa.svc.cluster.local:18443&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Apply with tctl&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;tctl apply -f ext-authz-ingress-gateway-tls.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;testing&#34;&gt;Testing&lt;/h2&gt;
+&lt;p&gt;You can use the same testing steps as shown in &lt;a href=&#34;./ingress_gateway#testing&#34;&gt;&amp;ldquo;Configuring External Authorization in Ingress Gateways&amp;rdquo;&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>External Authorization in Tier-1 Gateways</title>
+      <link>https://lib.jimmysong.io/tsb/howto/authorization/tier1-gateway/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/howto/authorization/tier1-gateway/</guid>
+      <description>&lt;p&gt;TSB provides authorization capability to authorize every request coming to your service from a public network. This document will describe how to configure Tier-1 Gateway authorization using Open Policy Agent (OPA) as an example.&lt;/p&gt;
+&lt;p&gt;Before you get started, make sure you: &lt;br /&gt;
+✓ Familiarize yourself with &lt;a href=&#34;../../concepts/toc&#34;&gt;TSB concepts&lt;/a&gt;. &lt;br /&gt;
+✓ Completed Tier-1 Gateway routing to Tier-2 Gateway with &lt;a href=&#34;../../reference/samples/httpbin&#34;&gt;httpbin already configured&lt;/a&gt; in TSB.&lt;br /&gt;
+✓ Created a Tenant, and understand Workspaces and Config Groups.&lt;br /&gt;
+✓ Configured &lt;code&gt;tctl&lt;/code&gt; for your TSB environment.&lt;/p&gt;
+&lt;p&gt;The following diagram shows the request/response flow using OPA with Tier-1 Gateways. Requests that come to Tier-1 Gateway will be checked by OPA. If the request is deemed unauthorized, then the request will be denied with a 403 (Forbidden) response, otherwise they are sent to the Tier-2 Gateways.&lt;/p&gt;
+&lt;h2 id=&#34;deploy-httpbin-service&#34;&gt;Deploy &lt;code&gt;httpbin&lt;/code&gt; Service&lt;/h2&gt;
+&lt;p&gt;Follow &lt;a href=&#34;../../reference/samples/httpbin&#34;&gt;the instructions in this document&lt;/a&gt; to create the &lt;code&gt;httpbin&lt;/code&gt; service, and make sure the service is exposed at &lt;code&gt;httpbin.tetrate.com&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;configuring-opa&#34;&gt;Configuring OPA&lt;/h2&gt;
+&lt;p&gt;For this example you will be deploying OPA as its own standalone service. Create a namespace for the OPA service, if you have not already done so:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;kubectl create namespace opa
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Follow the instructions in &lt;a href=&#34;../../reference/samples/opa&#34;&gt;the OPA document&lt;/a&gt; to create &lt;a href=&#34;../../reference/samples/opa#example--policy-with-basic-authentication&#34;&gt;an OPA policy using Basic Authentication&lt;/a&gt;, and deploy the OPA service and agent in the &lt;code&gt;opa&lt;/code&gt; namespace.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl apply -f opa.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Then update your Tier-1 Gateway configuration
+your OpenAPI spec by adding the following section to the Tier-1 Gateway and use tctl to apply them&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;apiVersion: gateway.tsb.tetrate.io/v2
+kind: Tier1Gateway
+metadata:
+ organization: tetrate
+ tenant: tetrate
+ workspace: tier1
+ group: tier1
+ name: tier1gw
+spec:
+ workloadSelector:
+   namespace: tier1
+   labels:
+     app: tier1gw
+     istio: ingressgateway
+ externalServers:
+ - name: httpbin
+   hostname: httpbin.tetrate.com
+   port: 443
+   tls:
+     mode: SIMPLE
+     secretName: tier1-cert
+   clusters:
+   - labels:
+       network: tier2
+   authorization:
+     external:
+       uri: grpc://opa.opa.svc.cluster.local:9191
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;testing&#34;&gt;Testing&lt;/h2&gt;
+&lt;p&gt;You can test the external authorization by following the instructions in the &lt;a href=&#34;./ingress_gateway#testing&#34;&gt;&amp;ldquo;Configuring External Authorization in Ingress Gateways&amp;rdquo;&lt;/a&gt;, except you need to obtain the Tier-1 Gateway IP address instead of the Ingress Gateway address.&lt;/p&gt;
+&lt;p&gt;To obtain the Tier-1 Gateway address, execute the following command:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;kubectl -n tier1 get service tier1-gateway \
+  -o jsonpath=&amp;#39;{.status.loadBalancer.ingress[0].ip}&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Then follow &lt;a href=&#34;./ingress_gateway#testing&#34;&gt;the instructions&lt;/a&gt; but replace the value for &lt;code&gt;gateway-ip&lt;/code&gt; with the address of the Tier-1 Gateway.&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

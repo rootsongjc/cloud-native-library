@@ -1,0 +1,24 @@
+apiVersion: install.tetrate.io/v1alpha1
+kind: IngressGateway
+metadata:
+  name: httpbin-ingress-gateway
+  namespace: httpbin
+spec:
+  kubeSpec:
+    service:
+      type: LoadBalancer
+    overlays:
+      - apiVersion: apps/v1
+        kind: Deployment
+        name: httpbin-ingress-gateway
+        patches:
+          - path: spec.template.spec.volumes[-1]
+            value:
+              name: ratelimit-ca
+              configMap:
+                name: ratelimit-ca
+          - path: spec.template.spec.containers.[name:istio-proxy].volumeMounts[-1]
+            value:
+              name: ratelimit-ca
+              mountPath: /etc/certs
+              readOnly: true

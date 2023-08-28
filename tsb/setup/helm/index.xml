@@ -1,0 +1,970 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Install with Helm | 云原生资料库</title>
+    <link>https://lib.jimmysong.io/tsb/setup/helm/</link>
+      <atom:link href="https://lib.jimmysong.io/tsb/setup/helm/index.xml" rel="self" type="application/rss+xml" />
+    <description>Install with Helm</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Wed, 09 Aug 2023 12:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://lib.jimmysong.io/media/sharing.png</url>
+      <title>Install with Helm</title>
+      <link>https://lib.jimmysong.io/tsb/setup/helm/</link>
+    </image>
+    
+    <item>
+      <title>Control Plane Installation</title>
+      <link>https://lib.jimmysong.io/tsb/setup/helm/controlplane/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/setup/helm/controlplane/</guid>
+      <description>&lt;p&gt;This chart installs the TSB control plane operator to onboard a cluster. Similar to &lt;a href=&#34;./managementplane&#34;&gt;Management Plane Helm chart&lt;/a&gt;, it also allows you to install TSB control plane components using &lt;a href=&#34;../../refs/install/controlplane/v1alpha1/spec&#34;&gt;TSB &lt;code&gt;ControlPlane&lt;/code&gt; CR&lt;/a&gt; and all the required secrets to make it fully run.&lt;/p&gt;
+&lt;p&gt;Before you start, make sure that you&amp;rsquo;ve:&lt;/p&gt;
+&lt;p&gt;✓ Checked the &lt;a href=&#34;./helm#installation-process&#34;&gt;Helm installation process&lt;/a&gt;&lt;br /&gt;
+✓ &lt;a href=&#34;./managementplane&#34;&gt;Installed TSB management plane&lt;/a&gt;&lt;br /&gt;
+✓ &lt;a href=&#34;../tctl_connect&#34;&gt;Login to the management plane with tctl&lt;/a&gt;&lt;br /&gt;
+✓ Installed &lt;a href=&#34;https://github.com/mikefarah/yq#install&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;yq&lt;/a&gt;. This will be used to help getting helm values from creating cluster response.&lt;/p&gt;
+&lt;p&gt;:::note isolation boundaries
+TSB 1.6 introduces isolation boundaries that allows you to have multiple TSB-managed Istio environments within a Kubernetes cluster, or spanning several clusters. One of the benefits of isolation boundaries is that you can perform canary upgrades of the control plane.&lt;/p&gt;
+&lt;p&gt;To enable isolation boundaries, you must update operator deployment with environment variable &lt;code&gt;ISTIO_ISOLATION_BOUNDARIES=true&lt;/code&gt; and control plane CR to include &lt;code&gt;isolationBoundaries&lt;/code&gt; field.
+For more information, see &lt;a href=&#34;../isolation-boundaries&#34;&gt;Isolation Boundaries&lt;/a&gt;.
+:::&lt;/p&gt;
+&lt;h2 id=&#34;prerequisites&#34;&gt;Prerequisites&lt;/h2&gt;
+&lt;p&gt;Before you begin, you will need to create a &lt;a href=&#34;../../refs/tsb/v2/cluster&#34;&gt;cluster object&lt;/a&gt; in TSB to represent the cluster where you will be installing the TSB control plane. Replace &lt;code&gt;&amp;lt;cluster-name-in-tsb&amp;gt;&lt;/code&gt; and &lt;code&gt;&amp;lt;organization-name&amp;gt;&lt;/code&gt; with the appropriate values for your environment:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;api.tsb.tetrate.io/v2&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Cluster&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;cluster-name-in-tsb&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;organization&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;organization-name&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;displayName&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;App Cluster&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;To create the cluster object, run the following command:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:alice}&#34; data-lang=&#34;bash{promptUser:alice}&#34;&gt;tctl apply -f cluster.yaml -o yaml | yq .spec.installTemplate.helm &amp;gt; cluster-cp-values.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The file, cluster-cp-values.yaml, comprises the default configuration for the TSB control plane operator, including any necessary secrets for authentication with the TSB management plane. To customize your installation, you may modify this file by adding any extra configuration values you need for the TSB control plane prior to proceeding to the subsequent step.&lt;/p&gt;
+&lt;h2 id=&#34;installation&#34;&gt;Installation&lt;/h2&gt;
+&lt;p&gt;Use the following helm install command to install TSB control plane. Make sure to replace &lt;code&gt;&amp;lt;tsb-version&amp;gt;&lt;/code&gt; and &lt;code&gt;&amp;lt;registry-location&amp;gt;&lt;/code&gt; with the correct values.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:alice}&#34; data-lang=&#34;bash{promptUser:alice}&#34;&gt;helm install cp tetrate-tsb-helm/controlplane \
+  --version &amp;lt;tsb-version&amp;gt; \
+  --namespace istio-system --create-namespace \
+  --timeout 5m \
+  --values cluster-cp-values.yaml \
+  --set image.registry=&amp;lt;registry-location&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Wait for the TSB control plane components to be deployed successfully. To verify that the installation was successful, you can try logging in to the TSB UI or connecting to TSB using &lt;a href=&#34;../tctl_connect&#34;&gt;tctl&lt;/a&gt; and checking the list of clusters to see if the cluster has been onboarded.&lt;/p&gt;
+&lt;h2 id=&#34;troubleshooting&#34;&gt;Troubleshooting&lt;/h2&gt;
+&lt;p&gt;If you encounter any issues during the installation process, here are a few tips for troubleshooting:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Make sure that you have followed all of the steps in the correct order.&lt;/li&gt;
+&lt;li&gt;Double-check the configuration values in the &lt;code&gt;cluster-cp-values.yaml&lt;/code&gt; file to ensure that they are correct.&lt;/li&gt;
+&lt;li&gt;Check the logs of the TSB control plane operator to see if there are any error messages or stack traces that can help diagnose the problem.&lt;/li&gt;
+&lt;li&gt;If you are using a private registry to host the TSB control plane operator image, make sure that you have authenticated with the registry and that the &lt;code&gt;image.registry&lt;/code&gt; value is correct.&lt;/li&gt;
+&lt;li&gt;Check the cluster onboarding troubleshooting &lt;a href=&#34;../../troubleshooting/cluster_onboarding&#34;&gt;guide&lt;/a&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;configuration&#34;&gt;Configuration&lt;/h2&gt;
+&lt;h3 id=&#34;image-configuration&#34;&gt;Image configuration&lt;/h3&gt;
+&lt;p&gt;This is a &lt;strong&gt;required&lt;/strong&gt; field. Set &lt;code&gt;registry&lt;/code&gt; to your private registry where you have synced TSB images into and &lt;code&gt;tag&lt;/code&gt; to TSB version that you want to deploy. Specifying only this field will install TSB control plane operator without installing other TSB components.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Name&lt;/th&gt;
+&lt;th&gt;Description&lt;/th&gt;
+&lt;th&gt;Default value&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;image.registry&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Registry used to download the operator image&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;containers.dl.tetrate.io&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;image.tag&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The tag of the operator image&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;same as the Chart version&lt;/em&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;control-plane-resource-configuration&#34;&gt;Control Plane resource configuration&lt;/h3&gt;
+&lt;p&gt;This is an &lt;strong&gt;optional&lt;/strong&gt; field. You can set &lt;a href=&#34;../../refs/install/controlplane/v1alpha1/spec&#34;&gt;TSB &lt;code&gt;ControlPlane&lt;/code&gt; CR&lt;/a&gt;
+in Helm values file to make the TSB control plane fully run.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Name&lt;/th&gt;
+&lt;th&gt;Description&lt;/th&gt;
+&lt;th&gt;Default value&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;spec&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Holds the &lt;code&gt;spec&lt;/code&gt; section of the &lt;code&gt;ControlPlane&lt;/code&gt; CR&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;secrets-configuration&#34;&gt;Secrets configuration&lt;/h3&gt;
+&lt;p&gt;This is an &lt;strong&gt;optional&lt;/strong&gt; field. You can apply secrets into your cluster before installing TSB control plane or you can use Helm values to specify required secrets. Note that you can use different Helm values file if you want to separate secrets from control plane spec.&lt;/p&gt;
+&lt;p&gt;:::warning
+Keep in mind that these options just help with creating secrets, and they must respect the configuration provided
+in the TSB &lt;code&gt;ManagementPlane&lt;/code&gt; CR, otherwise the installation will end up misconfigured.
+:::&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Name&lt;/th&gt;
+&lt;th&gt;Description&lt;/th&gt;
+&lt;th&gt;Default value&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.keep&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Enabling this makes the generated secrets persist in the cluster after uninstalling the chart if they are no provided in future updates. (see &lt;a href=&#34;https://helm.sh/docs/howto/charts_tips_and_tricks/#tell-helm-not-to-uninstall-a-resource&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Helm doc&lt;/a&gt;)&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;false&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.tsb.cacert&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;CA certificate used to verify TLS certs exposed the Management Plane (front envoy)&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.elasticsearch.username&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The username to access Elasticsearch&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.elasticsearch.password&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The password to access Elasticsearch&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.elasticsearch.cacert&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Elasticsearch CA cert TLS used by control plane to verify TLS connection&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.oapToken&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;JWT token used to authenticate OAP against the Management Plane&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.otelToken&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;JWT token used to authenticate Otel Collector against the Management Plane&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.clusterServiceAccount.clusterFQN&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;TSB FQN of the onboarded cluster resource. This will be generate tokens for all Control Plane agents.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.clusterServiceAccount.JWK&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Literal JWK used to generate and sign the tokens for all the Control Plane agents.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.clusterServiceAccount.encodedJWK&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Base64-encoded JWK used to generate and sign the tokens for all the Control Plane agents.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h4 id=&#34;xcp-secrets-configuration&#34;&gt;XCP secrets configuration&lt;/h4&gt;
+&lt;p&gt;XCP uses JWTs to authenticate against between Edges and Central.&lt;/p&gt;
+&lt;p&gt;If the XCP root CA (&lt;code&gt;secrets.xcp.rootca&lt;/code&gt;) is provided it will be used to verify the TLS certs provided by
+XCP Central.&lt;/p&gt;
+&lt;p&gt;Also &lt;code&gt;secrets.xcp.edge.token&lt;/code&gt; or &lt;code&gt;secrets.clusterServiceAccount&lt;/code&gt; will be required to authenticate against XCP Central.&lt;/p&gt;
+&lt;p&gt;The following are the configuration properties allowed to be used to configure XCP authentication mode:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Name&lt;/th&gt;
+&lt;th&gt;Description&lt;/th&gt;
+&lt;th&gt;Default value&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.xcp.rootca&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;CA certificate of XCP components&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.xcp.edge.token&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;JWT token used to authenticate XCP Edge against the XCP Central&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;operator-extended-configuration&#34;&gt;Operator extended configuration&lt;/h3&gt;
+&lt;p&gt;This is an &lt;strong&gt;optional&lt;/strong&gt; field. You can customize TSB operator related resources like the deployment, the service or the service account using the following optional properties:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Name&lt;/th&gt;
+&lt;th&gt;Description&lt;/th&gt;
+&lt;th&gt;Default value&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.affinity&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Affinity configuration for the pod&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.annotations&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Custom collection of annotations to add to the deployment&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.env&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Custom collection of environment vars to add to the container&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.podAnnotations&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Custom collection of annotations to add to the pod&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.replicaCount&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Number of replicas managed by the deployment&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.strategy&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Deployment strategy to use&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.tolerations&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Toleration collection applying to the pod scheduling&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.podSecurityContext&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-podsecuritycontext&#34;&gt;SecurityContext&lt;/a&gt; properties to apply to the pod&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.containerSecurityContext&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-securitycontext&#34;&gt;SecurityContext&lt;/a&gt; properties to apply to the pod&amp;rsquo;s containers&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.service.annotations&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Custom collection of annotations to add to the service&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.serviceAccount.annotations&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Custom collection of annotations to add to the service account&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.serviceAccount.imagePullSecrets&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Collection of secrets names required to be able to pull images from the registry&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.pullSecret&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;A JSON encoded Docker configuration that will be stored as an image pull secret&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Data Plane Installation</title>
+      <link>https://lib.jimmysong.io/tsb/setup/helm/dataplane/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/setup/helm/dataplane/</guid>
+      <description>&lt;p&gt;This chart installs the TSB data plane operator, which is used to manage the lifecycle of &lt;a href=&#34;../../refs/install/dataplane/v1alpha1/spec&#34;&gt;gateways&lt;/a&gt; such as the Ingress Gateway, Tier-1 Gateway, and Egress Gateway.&lt;/p&gt;
+&lt;p&gt;:::note
+If you are using the revisioned control plane, the data plane operator is no longer required for managing Istio gateways. To learn more about the revisioned control plane, see the &lt;a href=&#34;../isolation-boundaries&#34;&gt;Istio Isolation Boundaries&lt;/a&gt; documentation.
+:::&lt;/p&gt;
+&lt;h2 id=&#34;install&#34;&gt;Install&lt;/h2&gt;
+&lt;p&gt;To install the data plane operator, run the following Helm command. Make sure to replace &lt;code&gt;&amp;lt;tsb-version&amp;gt;&lt;/code&gt; and &lt;code&gt;&amp;lt;registry-location&amp;gt;&lt;/code&gt; with the correct values.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm install dp tetrate-tsb-helm/dataplane &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --version &amp;lt;tsb-version&amp;gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --namespace istio-gateway --create-namespace &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --set image.registry&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&amp;lt;registry-location&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;configuration&#34;&gt;Configuration&lt;/h2&gt;
+&lt;h3 id=&#34;image-configuration&#34;&gt;Image configuration&lt;/h3&gt;
+&lt;p&gt;This is a &lt;strong&gt;required&lt;/strong&gt; field. Set &lt;code&gt;image.registry&lt;/code&gt; to the location of your private registry where you have synced the TSB images, and set &lt;code&gt;image.tag&lt;/code&gt; to the TSB version that you want to deploy.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Name&lt;/th&gt;
+&lt;th&gt;Description&lt;/th&gt;
+&lt;th&gt;Default value&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;image.registry&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Registry used to download the operator image&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;containers.dl.tetrate.io&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;image.tag&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The tag of the operator image&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;same as the Chart version&lt;/em&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;operator-extended-configuration&#34;&gt;Operator extended configuration&lt;/h3&gt;
+&lt;p&gt;This is an &lt;strong&gt;optional&lt;/strong&gt; field. You can customize TSB operator related resources like the deployment, the service or the service account using the following optional properties:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Name&lt;/th&gt;
+&lt;th&gt;Description&lt;/th&gt;
+&lt;th&gt;Default value&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.affinity&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Affinity configuration for the pod&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.annotations&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Custom collection of annotations to add to the deployment&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.env&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Custom collection of environment vars to add to the container&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.podAnnotations&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Custom collection of annotations to add to the pod&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.replicaCount&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Number of replicas managed by the deployment&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.strategy&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Deployment strategy to use&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.tolerations&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Toleration collection applying to the pod scheduling&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.podSecurityContext&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-podsecuritycontext&#34;&gt;SecurityContext&lt;/a&gt; properties to apply to the pod&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.containerSecurityContext&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-securitycontext&#34;&gt;SecurityContext&lt;/a&gt; properties to apply to the pod&amp;rsquo;s containers&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.service.annotations&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Custom collection of annotations to add to the service&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.serviceAccount.annotations&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Custom collection of annotations to add to the service account&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.serviceAccount.imagePullSecrets&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Collection of secrets names required to be able to pull images from the registry&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.pullSecret&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;A Docker JSON config string that will be stored as an image pull secret&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Helm TSB Uninstallation</title>
+      <link>https://lib.jimmysong.io/tsb/setup/helm/uninstallation/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/setup/helm/uninstallation/</guid>
+      <description>&lt;p&gt;To uninstall TSB, installed using helm, you can use &lt;code&gt;helm uninstall&lt;/code&gt; to uninstall a release. Uninstallation must be done
+in the following order:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a href=&#34;#data-plane-uninstallation&#34;&gt;Data Plane&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#control-plane-uninstallation&#34;&gt;Control Plane&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#management-plane-uninstallation&#34;&gt;Management Plane&lt;/a&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;data-plane-uninstallation&#34;&gt;Data Plane Uninstallation&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm uninstall dp tetrate-tsb-helm/dataplane --namespace istio-gateway
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Once Helm has removed all the resources associated with the last release of the data plane chart, you will need to
+manually remove some resources created during the uninstallation process that are untracked by Helm.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete serviceaccount tsb-helm-delete-hook --ignore-not-found
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete clusterrole tsb-helm-delete-hook --ignore-not-found
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete clusterrolebinding tsb-helm-delete-hook --ignore-not-found
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete istiooperators.install.istio.io --all -n istio-gateway --ignore-not-found
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;control-plane-uninstallation&#34;&gt;Control Plane Uninstallation&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm uninstall cp tetrate-tsb-helm/controlplane --namespace istio-system
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Once Helm has removed all the resources associated with the last release of the data plane chart, you will need to
+manually remove some resources created during the uninstallation process that are untracked by Helm.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete serviceaccount tsb-helm-delete-hook --ignore-not-found
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete clusterrole tsb-helm-delete-hook --ignore-not-found
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete clusterrolebinding tsb-helm-delete-hook --ignore-not-found
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete apiservices.apiregistration.k8s.io v1beta1.external.metrics.k8s.io
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete validatingwebhookconfigurations.admissionregistration.k8s.io xcp-edge-istio-system
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete mutatingwebhookconfigurations.admissionregistration.k8s.io xcp-edge-istio-system
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;management-plane-uninstallation&#34;&gt;Management Plane Uninstallation&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm uninstall mp tetrate-tsb-helm/managementplane --namespace tsb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Once Helm has removed all the resources associated with the last release of the data plane chart, you will need to
+manually remove some resources created during the uninstallation process that are untracked by Helm.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete serviceaccount tsb-helm-delete-hook --ignore-not-found
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete clusterrole tsb-helm-delete-hook --ignore-not-found
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete clusterrolebinding tsb-helm-delete-hook --ignore-not-found
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete validatingwebhookconfigurations.admissionregistration.k8s.io xcp-central-tsb
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete mutatingwebhookconfigurations.admissionregistration.k8s.io xcp-central-tsb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    
+    <item>
+      <title>Management Plane Installation</title>
+      <link>https://lib.jimmysong.io/tsb/setup/helm/managementplane/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/setup/helm/managementplane/</guid>
+      <description>&lt;p&gt;This chart installs the TSB management plane operator, which also allows you to install TSB management plane components using the &lt;a href=&#34;../../refs/install/managementplane/v1alpha1/spec&#34;&gt;TSB &lt;code&gt;ManagementPlane&lt;/code&gt; CR&lt;/a&gt; and all the required secrets to make it fully run.&lt;/p&gt;
+&lt;p&gt;Before you start, make sure that you have checked the &lt;a href=&#34;./helm#installation-process&#34;&gt;Helm installation process&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;installation-overview&#34;&gt;Installation overview&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Create a &lt;code&gt;values.yaml&lt;/code&gt; file and edit it with your desired configuration. You can find more details on the available Helm configuration in the &lt;a href=&#34;#configuration&#34;&gt;configuration&lt;/a&gt; section below. For a full reference of the &lt;code&gt;spec&lt;/code&gt; section, see the &lt;a href=&#34;../../refs/install/managementplane/v1alpha1/spec#tetrateio-api-install-managementplane-v1alpha1-managementplanespec&#34;&gt;TSB &lt;code&gt;ManagementPlane&lt;/code&gt; CR&lt;/a&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Use the &lt;code&gt;helm install&lt;/code&gt; command to install TSB management plane. Make sure to set the &lt;code&gt;image.registry&lt;/code&gt; and &lt;code&gt;version&lt;/code&gt; to the correct registry location and TSB version.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Wait until all TSB management plane components have been deployed successfully. You can verify your installation by trying to log in to TSB UI or connect to TSB using &lt;a href=&#34;../tctl_connect&#34;&gt;tctl&lt;/a&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;installation&#34;&gt;Installation&lt;/h2&gt;
+&lt;p&gt;To install TSB management plane, create a &lt;code&gt;values.yaml&lt;/code&gt; file with the following content and edit it according to your needs.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# Set the organization name. Organization name has to be lowercase to comply with RFC standards.&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;organization&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;organization-name&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;dataStore&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;postgres&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;host&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;postgres-hostname-or-ip&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;postgres-port&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;database-name&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;telemetryStore&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;elastic&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;host&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;elastic-hostname-or-ip&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;elastic-port&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;version&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;elastic-version&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;selfSigned&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;is-elastic-use-self-signed-certificate&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# TSB support OIDC and LDAP as Identity Provider.&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# Set according to your environment.&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;identityProvider&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# Enable automatic certificates management.&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# You can remove this field if you want to manage certificates using other methods.&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# Note that you will need to provide certificates as secrets in that case.&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;certIssuer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;selfSigned&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;{}&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tsbCerts&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;{}&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;clusterIntermediateCAs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;{}&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# The default port for TSB Management Plane is 8443. You can change it here.&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;components&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;frontEnvoy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;443&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# enable oap streaming log feature&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;oap&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;streamingLogEnabled&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;secrets&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tsb&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;adminPassword&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;tsb-admin-password&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;postgres&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;username&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;postgres-username&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;password&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;postgres-password&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# Depending on your IdP, you need to set required secrets here.&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Then, use the following helm install command to install TSB management plane. This installation can take up to 10 minutes to complete. Make sure to replace &lt;code&gt;&amp;lt;tsb-version&amp;gt;&lt;/code&gt; and &lt;code&gt;&amp;lt;registry-location&amp;gt;&lt;/code&gt; with the correct values.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm install mp tetrate-tsb-helm/managementplane &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --version &amp;lt;tsb-version&amp;gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --namespace tsb  --create-namespace &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --values values.yaml &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --timeout 10m &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --set image.registry&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&amp;lt;registry-location&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;non-prod-external-dependencies&#34;&gt;Non-prod external dependencies&lt;/h3&gt;
+&lt;p&gt;If you omit the &lt;code&gt;dataStore&lt;/code&gt;, &lt;code&gt;telemetryStore&lt;/code&gt;, and &lt;code&gt;identityProvider&lt;/code&gt; fields in your &lt;code&gt;values.yaml&lt;/code&gt; file, TSB will install non-prod Postgres, Elasticsearch, and LDAP. Note that you still need to set correct secrets and credentials to use the storage.&lt;/p&gt;
+&lt;p&gt;:::danger
+DO NOT USE NON-PROD STORAGE AND IDENTITY PROVIDER IN PRODUCTION.
+:::&lt;/p&gt;
+&lt;p&gt;Here is an example of a completed &lt;code&gt;values.yaml&lt;/code&gt; file for a demo installation:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;organization&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;organization-name&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# Enable automatic certificates management.&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;certIssuer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;selfSigned&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;{}&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tsbCerts&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;{}&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;clusterIntermediateCAs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;{}&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;secrets&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tsb&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;adminPassword&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;tsb-admin-password&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;postgres&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;username&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;tsb&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;password&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;tsb-postgres-password&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;ldap&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;binddn&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;cn=admin,dc=tetrate,dc=io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;bindpassword&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;admin&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;accessing-tsb-management-plane&#34;&gt;Accessing TSB Management Plane&lt;/h2&gt;
+&lt;p&gt;After completing the installation, you can access TSB management plane by log in to TSB UI or using &lt;a href=&#34;../tctl_connect&#34;&gt;tctl&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;troubleshooting&#34;&gt;Troubleshooting&lt;/h2&gt;
+&lt;p&gt;If you encounter any issues during the installation process, here are a few things to check:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Make sure that you have entered the correct values in your &lt;code&gt;values.yaml&lt;/code&gt; file.&lt;/li&gt;
+&lt;li&gt;Verify that you are using the correct registry location and TSB version in the &lt;code&gt;helm install&lt;/code&gt; command.&lt;/li&gt;
+&lt;li&gt;If you are using a custom identity provider, make sure that you have set all of the required &lt;code&gt;secrets&lt;/code&gt; in the secrets section of the &lt;code&gt;values.yaml&lt;/code&gt; file.&lt;/li&gt;
+&lt;li&gt;If you are having trouble connecting to TSB, make sure that all TSB components have been deployed successfully and that there are no errors in the logs.&lt;/li&gt;
+&lt;li&gt;If you are using a private registry to host the TSB control plane operator image, make sure that you have authenticated with the registry and that the &lt;code&gt;image.registry&lt;/code&gt; value is correct.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;configuration&#34;&gt;Configuration&lt;/h2&gt;
+&lt;h3 id=&#34;image-configuration&#34;&gt;Image configuration&lt;/h3&gt;
+&lt;p&gt;This is a &lt;strong&gt;required&lt;/strong&gt; field. Set &lt;code&gt;image.registry&lt;/code&gt; to the location of your private registry where you have synced the TSB images, and set &lt;code&gt;image.tag&lt;/code&gt; to the TSB version that you want to deploy. Specifying only this field will install the TSB control plane operator without installing other TSB components.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Name&lt;/th&gt;
+&lt;th&gt;Description&lt;/th&gt;
+&lt;th&gt;Default value&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;image.registry&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Registry used to download the operator image. Required&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;containers.dl.tetrate.io&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;image.tag&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The tag of the operator image. Required&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;same as the Chart version&lt;/em&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;management-plane-resource-configuration&#34;&gt;Management plane resource configuration&lt;/h3&gt;
+&lt;p&gt;This is an &lt;strong&gt;optional&lt;/strong&gt; field. You can set &lt;a href=&#34;../../refs/install/managementplane/v1alpha1/spec##tetrateio-api-install-managementplane-v1alpha1-managementplanespec&#34;&gt;TSB &lt;code&gt;ManagementPlane&lt;/code&gt; CR &lt;code&gt;spec&lt;/code&gt;&lt;/a&gt; in Helm values file to make the TSB management plane fully run.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Name&lt;/th&gt;
+&lt;th&gt;Description&lt;/th&gt;
+&lt;th&gt;Default value&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;spec&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Holds the &lt;code&gt;spec&lt;/code&gt; section of the &lt;code&gt;ManagementPlane&lt;/code&gt; CR. Optional&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;secrets-configuration&#34;&gt;Secrets configuration&lt;/h3&gt;
+&lt;p&gt;This is an &lt;strong&gt;optional&lt;/strong&gt; field. You can apply secrets into your cluster before installing TSB management plane or you can use Helm values to specify required secrets. Note that you can use different Helm values file if you want to separate secrets from management plane spec.&lt;/p&gt;
+&lt;p&gt;:::warning
+Keep in mind that these options just help with creating secrets, and they must respect the configuration provided
+in the TSB &lt;code&gt;ManagementPlane&lt;/code&gt; CR, otherwise the installation will end up misconfigured.
+:::&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Name&lt;/th&gt;
+&lt;th&gt;Description&lt;/th&gt;
+&lt;th&gt;Default value&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.keep&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Enabling this makes the generated secrets persist in the cluster after uninstalling the chart if they are no provided in future updates. (see &lt;a href=&#34;https://helm.sh/docs/howto/charts_tips_and_tricks/#tell-helm-not-to-uninstall-a-resource&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Helm doc&lt;/a&gt;)&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;false&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.tsb.adminPassword&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The password that is going to be configured for the &lt;code&gt;admin&lt;/code&gt; user.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.tsb.cert&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The TLS certificate exposed by the management plane (front envoy).&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.tsb.key&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The key for TLS certificate exposed by the management plane (front envoy).&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.postgres.username&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The username used to access the Postgres database.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.postgres.password&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The password used to access the Postgres database.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.postgres.cacert&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The CA cert to verify TLS certificates provided by the Postgres database.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.postgres.clientcert&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The client cert required to access the Postgres database.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.postgres.clientkey&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The key for the client cert required to access the Postgres database.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.elasticsearch.username&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The username used to access the Elasticsearch.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.elasticsearch.password&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The password used to access the Elasticsearch.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.elasticsearch.cacert&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The CA cert to verify TLS certificates provided by the Elasticsearch.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.ldap.binddn&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The bind DN used to read from the LDAP IDP.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.ldap.bindpassword&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The password for the provided bind DN used to read from the LDAP IDP.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.ldap.cacert&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The CA cert to verify TLS certificates provided by the LDAP IDP.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.oidc.clientSecret&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The client secret used to connect to the configured OIDC.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.oidc.deviceClientSecret&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The device client secret used to connect to the configured OIDC.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.azure.clientSecret&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The client secret used to connect to the Azure OIDC.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h4 id=&#34;xcp-secrets-configuration&#34;&gt;XCP secrets configuration&lt;/h4&gt;
+&lt;p&gt;XCP uses TLS and JWTs to authenticate between Edges and Central.&lt;/p&gt;
+&lt;p&gt;If &lt;code&gt;secrets.xcp.autoGenerateCerts&lt;/code&gt; is &lt;strong&gt;disabled&lt;/strong&gt;, the certificate for XCP Central and the key must be provided by the
+user using &lt;code&gt;secrets.xcp.central.cert&lt;/code&gt; and &lt;code&gt;secrets.xcp.central.key&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Optionally, a CA can be provided with &lt;code&gt;secrets.xcp.rootca&lt;/code&gt; to allow the MPC component to use it to verify the certs
+provided by XCP Central.&lt;/p&gt;
+&lt;p&gt;If &lt;code&gt;secrets.xcp.autoGenerateCerts&lt;/code&gt; is &lt;strong&gt;enabled&lt;/strong&gt;, Cert Manager is required to provide the XCP Central certificate.&lt;/p&gt;
+&lt;p&gt;Then &lt;code&gt;secrets.xcp.rootca&lt;/code&gt; and &lt;code&gt;secrets.xcp.rootcakey&lt;/code&gt; will be used to create the proper Issuer and generate the
+certificate for XCP Central and share the CA with MPC to allow it to verify the XCP Central generated cert.&lt;/p&gt;
+&lt;p&gt;The following properties are allowed to be used to configure the XCP authentication mode:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Name&lt;/th&gt;
+&lt;th&gt;Description&lt;/th&gt;
+&lt;th&gt;Default value&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.xcp.autoGenerateCerts&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Enabling this will auto generate the XCP Central TLS certificate. Requires cert-manager&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;false&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.xcp.rootca&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The XCP components CA certificate.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.xcp.rootcakey&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The XCP components Root CA certificate key.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.xcp.central.cert&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The XCP Central certificate for TLS.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.xcp.central.key&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The XCP Central certificate key for TLS.&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.xcp.central.additionalDNSNames&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Additional DNS names to be added in the XCP Central certificate when &lt;code&gt;secrets.xcp.autoGenerateCerts&lt;/code&gt; is enabled&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.xcp.central.additionalURIs&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Additional URIs to be added in the XCP Central certificate when &lt;code&gt;secrets.xcp.autoGenerateCerts&lt;/code&gt; is enabled&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;secrets.xcp.central.additionalIPAddresses&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Additional IP addresses to be added in the XCP Central certificate when &lt;code&gt;secrets.xcp.autoGenerateCerts&lt;/code&gt; is enabled&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;certManager.clusterResourcesNamespace&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The namespace configured in the Cert Manager installation for cluster resources.&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;cert-manager&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;operator-extended-configuration&#34;&gt;Operator extended configuration&lt;/h3&gt;
+&lt;p&gt;This is an &lt;strong&gt;optional&lt;/strong&gt; field. You can customize TSB operator related resources like the deployment, the service or the service account using the following optional properties:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Name&lt;/th&gt;
+&lt;th&gt;Description&lt;/th&gt;
+&lt;th&gt;Default value&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.affinity&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Affinity configuration for the pod&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.annotations&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Custom collection of annotations to add to the deployment&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.env&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Custom collection of environment vars to add to the container&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.podAnnotations&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Custom collection of annotations to add to the pod&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.replicaCount&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Number of replicas managed by the deployment&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.strategy&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Deployment strategy to use&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.tolerations&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Toleration collection applying to the pod scheduling&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.podSecurityContext&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-podsecuritycontext&#34;&gt;SecurityContext&lt;/a&gt; properties to apply to the pod&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.deployment.containerSecurityContext&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-securitycontext&#34;&gt;SecurityContext&lt;/a&gt; properties to apply to the pod&amp;rsquo;s containers&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.service.annotations&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Custom collection of annotations to add to the service&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.serviceAccount.annotations&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Custom collection of annotations to add to the service account&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.serviceAccount.imagePullSecrets&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Collection of secrets names required to be able to pull images from the registry&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;operator.pullSecret&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;A Docker JSON config string that will be stored as an image pull secret&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>TSB Helm Charts</title>
+      <link>https://lib.jimmysong.io/tsb/setup/helm/helm/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/setup/helm/helm/</guid>
+      <description>&lt;h2 id=&#34;overview&#34;&gt;Overview&lt;/h2&gt;
+&lt;p&gt;This document explains how to use &lt;a href=&#34;https://helm.sh&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Helm&lt;/a&gt; Charts to install the different components of Tetrate Service Bridge (TSB). It is assumed that &lt;a href=&#34;https://helm.sh/docs/intro/install/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Helm is already installed&lt;/a&gt; on your system.&lt;/p&gt;
+&lt;p&gt;TSB has one chart for each of its &lt;a href=&#34;../../concepts/architecture#overall-architecture&#34;&gt;planes&lt;/a&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;./managementplane&#34;&gt;Management Plane&lt;/a&gt;: installs the TSB Management Plane operator (optionally allows to install the MP
+CR and/or the secrets).&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;./controlplane&#34;&gt;Control Plane&lt;/a&gt;: installs the TSB Control Plane operator (optionally allows to install the MP CR and/or
+the secrets).&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;./dataplane&#34;&gt;Data Plane&lt;/a&gt;: installs the TSB Data Plane operator.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Each chart installs the operator of the corresponding plane. Both management plane and the control plane ones also allow
+creating the corresponding resource that triggers the operator (using the &lt;code&gt;spec&lt;/code&gt; attribute) to deploy all the TSB components and/or the required secrets (using the &lt;code&gt;secrets&lt;/code&gt; attribute) to making them properly run.&lt;/p&gt;
+&lt;p&gt;This behavior lets you choose the way to fully configure TSB and integrate with CD pipelines. You can use
+helm to:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;only install the operators&lt;/li&gt;
+&lt;li&gt;install/upgrade the plane resource (Management plane or Control plane CRs) along with the operator&lt;/li&gt;
+&lt;li&gt;install/upgrade the secrets along with the operator&lt;/li&gt;
+&lt;li&gt;install/upgrade all of them (operator, resource, secrets) at once&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Regarding secrets, keep in mind that &lt;code&gt;helm install/upgrade&lt;/code&gt; command accepts different files that can be provided by
+different sources, using one of the source for the spec and another for secrets.&lt;/p&gt;
+&lt;p&gt;There is an extra configuration (&lt;code&gt;secrets.keep&lt;/code&gt;) to keep the secrets installed and avoid removing them. With this,
+secrets can be applied just once, and future upgrades without secrets won&amp;rsquo;t remove them.&lt;/p&gt;
+&lt;p&gt;By default, Helm charts also install TSB CRDs. If you wish to skip the CRD installation step, you can pass the &lt;code&gt;--skip-crds&lt;/code&gt; flag.&lt;/p&gt;
+&lt;h2 id=&#34;installation-process&#34;&gt;Installation process&lt;/h2&gt;
+&lt;h3 id=&#34;prerequisites&#34;&gt;Prerequisites&lt;/h3&gt;
+&lt;p&gt;Before you start, make sure that you&amp;rsquo;ve:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Checked the &lt;a href=&#34;../requirements-and-download&#34;&gt;requirements&lt;/a&gt;&lt;br /&gt;&lt;/li&gt;
+&lt;li&gt;Installed &lt;a href=&#34;https://helm.sh/docs/intro/install/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Helm&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Installed &lt;a href=&#34;https://kubernetes.io/docs/tasks/tools/#kubectl&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;kubectl&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;../requirements-and-download#sync-tetrate-service-bridge-images&#34;&gt;Synced&lt;/a&gt; the Tetrate Service Bridge images&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;configure-the-helm-repository&#34;&gt;Configure the Helm repository&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Add the repository:
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm repo add tetrate-tsb-helm &lt;span class=&#34;s1&#34;&gt;&amp;#39;https://charts.dl.tetrate.io/public/helm/charts/&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm repo update
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;List the available versions:
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm search repo tetrate-tsb-helm -l
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;installation&#34;&gt;Installation&lt;/h3&gt;
+&lt;p&gt;Go to &lt;a href=&#34;./managementplane&#34;&gt;Management Plane Installation&lt;/a&gt; to install &lt;a href=&#34;../components#management-plane&#34;&gt;TSB management plane components&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Go to &lt;a href=&#34;./controlplane&#34;&gt;Control Plane Installation&lt;/a&gt; to install &lt;a href=&#34;../components#control-plane&#34;&gt;TSB control plane components&lt;/a&gt; into your application clusters. This will onboard your application clusters into TSB.&lt;/p&gt;
+&lt;p&gt;Go to &lt;a href=&#34;./dataplane&#34;&gt;Data Plane Installation&lt;/a&gt; to install &lt;a href=&#34;../components#data-plane&#34;&gt;TSB data plane components&lt;/a&gt; that will manage gateways lifecycle into your application clusters.&lt;/p&gt;
+&lt;p&gt;:::note Revisioned Control Plane
+When you use revisioned control plane, Data plane operator is not required anymore to manage Istio gateways and you can skip Data Plane Installation. To learn more about revisioned control plane, go to &lt;a href=&#34;../isolation-boundaries&#34;&gt;Istio Isolation Boundaries&lt;/a&gt;.
+:::&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>TSB Helm Upgrade</title>
+      <link>https://lib.jimmysong.io/tsb/setup/helm/upgrade/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/setup/helm/upgrade/</guid>
+      <description>&lt;p&gt;This document explains how you can leverage &lt;a href=&#34;https://helm.sh&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Helm&lt;/a&gt; Charts to upgrade the different elements
+of TSB. The document assumes that &lt;a href=&#34;https://helm.sh/docs/intro/install/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Helm is already installed&lt;/a&gt; in the system.&lt;/p&gt;
+&lt;p&gt;This document only applies to TSB instances created with Helm, not to upgrade from TCTL based installations.&lt;/p&gt;
+&lt;p&gt;Before you start, make sure that you have:&lt;/p&gt;
+&lt;p&gt;✓ Checked the new version&amp;rsquo;s &lt;a href=&#34;../requirements-and-download#requirements&#34;&gt;requirements&lt;/a&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;h2 id=&#34;prerequisites&#34;&gt;Prerequisites&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;Helm&lt;/code&gt; &lt;a href=&#34;https://helm.sh/docs/intro/install/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;installed&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;TSB cli &lt;code&gt;tctl&lt;/code&gt; &lt;a href=&#34;../../reference/cli/guide/index#installation&#34;&gt;installed&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;kubectl&lt;/code&gt; &lt;a href=&#34;https://kubernetes.io/docs/tasks/tools/#kubectl&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;installed&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Credentials for Tetrate&amp;rsquo;s image repository&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;configure-the-helm-repository&#34;&gt;Configure the Helm repository&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Add the repository:
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm repo add tetrate-tsb-helm &lt;span class=&#34;s1&#34;&gt;&amp;#39;https://charts.dl.tetrate.io/public/helm/charts/&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm repo update
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;List the available versions:
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm search repo tetrate-tsb-helm -l
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;backup-the-postgresql-database&#34;&gt;Backup the PostgreSQL database&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;../../operations/postgresql#create-a-backup-of-tsb-configuration&#34;&gt;Create a backup of your PostgreSQL database&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;The exact procedure for connecting to the database may differ depending on your environment, please refer
+to the documentation for your environment.&lt;/p&gt;
+&lt;h2 id=&#34;upgrade-process&#34;&gt;Upgrade process&lt;/h2&gt;
+&lt;h3 id=&#34;management-plane&#34;&gt;Management Plane&lt;/h3&gt;
+&lt;p&gt;Upgrade the management plane chart:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm upgrade mp tetrate-tsb-helm/managementplane --namespace tsb -f values-mp.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;control-plane&#34;&gt;Control Plane&lt;/h3&gt;
+&lt;p&gt;Upgrade the control plane chart:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm upgrade cp tetrate-tsb-helm/controlplane --namespace istio-system -f values-cp.yaml --set-file secrets.clusterServiceAccount.JWK&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;/tmp/&amp;lt;cluster&amp;gt;.jwk
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;data-plane&#34;&gt;Data Plane&lt;/h3&gt;
+&lt;p&gt;Upgrade the control plane chart:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm upgrade dp tetrate-tsb-helm/dataplane --namespace istio-gateway -f values-dp.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;rollback&#34;&gt;Rollback&lt;/h2&gt;
+&lt;p&gt;In case something goes wrong and you want to rollback TSB to the previous version,
+you will need to rollback the Management Plane, the Control Planes and the Data Planes charts.&lt;/p&gt;
+&lt;h3 id=&#34;rollback-the-control-plane&#34;&gt;Rollback the Control Plane&lt;/h3&gt;
+&lt;p&gt;You can use &lt;code&gt;helm rollback&lt;/code&gt; to rollback the current revision. To see the current revisions, you can run:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm &lt;span class=&#34;nb&#34;&gt;history&lt;/span&gt; cp -n istio-system
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;And then you can rollback to the previous revision:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm rollback cp &amp;lt;REVISION&amp;gt; -n istio-system
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;rollback-the-management-plane&#34;&gt;Rollback the Management Plane&lt;/h3&gt;
+&lt;h4 id=&#34;scale-down-pods-in-management-plane&#34;&gt;Scale Down Pods in Management Plane&lt;/h4&gt;
+&lt;p&gt;Scale down all of the pods that talk to Postgres in the Management Plane so that the it is inactive.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl scale deployment tsb iam -n tsb --replicas&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h4 id=&#34;restore-postgresql&#34;&gt;Restore PostgreSQL&lt;/h4&gt;
+&lt;p&gt;&lt;a href=&#34;../../operations/postgresql#restore-a-backup&#34;&gt;Restore your PostgreSQL database from your backup&lt;/a&gt;.
+The exact procedure for connecting to the database may differ depending on your environment, please refer to the documentation for your environment.&lt;/p&gt;
+&lt;h4 id=&#34;restore-management-plane&#34;&gt;Restore Management Plane&lt;/h4&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm rollback mp &amp;lt;REVISION&amp;gt; -n tsb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

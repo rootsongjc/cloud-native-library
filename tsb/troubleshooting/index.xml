@@ -1,0 +1,1376 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>问题排查 | 云原生资料库</title>
+    <link>https://lib.jimmysong.io/tsb/troubleshooting/</link>
+      <atom:link href="https://lib.jimmysong.io/tsb/troubleshooting/index.xml" rel="self" type="application/rss+xml" />
+    <description>问题排查</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Wed, 09 Aug 2023 12:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://lib.jimmysong.io/media/sharing.png</url>
+      <title>问题排查</title>
+      <link>https://lib.jimmysong.io/tsb/troubleshooting/</link>
+    </image>
+    
+    <item>
+      <title>Basic troubleshooting</title>
+      <link>https://lib.jimmysong.io/tsb/troubleshooting/troubleshooting/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/troubleshooting/troubleshooting/</guid>
+      <description>&lt;p&gt;This document explains some possible ways to do basic troubleshooting in TSB in order to find misconfiguration issues for a given route or common causes for &lt;code&gt;50x&lt;/code&gt; errors.&lt;/p&gt;
+&lt;h2 id=&#34;system-architecture&#34;&gt;System architecture&lt;/h2&gt;
+&lt;p&gt;In this document the following system architecture with Tier1-Tier2 setup:&lt;/p&gt;
+&lt;p&gt;There are two different clusters, &lt;code&gt;training-mp&lt;/code&gt; which contains the management plane and a control plane configured as tier1, and &lt;code&gt;training-cp&lt;/code&gt; which is configured as tier2 and contains &lt;code&gt;bookinfo&lt;/code&gt; and &lt;code&gt;httpbin&lt;/code&gt; applications.&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../assets/operations/troubleshooting-diagram.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h2 id=&#34;tier1-gateway-troubleshooting&#34;&gt;Tier1 Gateway troubleshooting&lt;/h2&gt;
+&lt;p&gt;When a &lt;code&gt;50x&lt;/code&gt; error is detected it is important to understand the error message, as it will point us to different sources.&lt;/p&gt;
+&lt;p&gt;For example, suppose you issued an HTTP request using &lt;code&gt;curl&lt;/code&gt; to one of the services
+controlled by TSB, and you observe an error like the following:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Failed to connect to &amp;lt;hostname&amp;gt; port &amp;lt;port&amp;gt;: Connection refused
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This usually means that there is no listener configured. This in turn would mean that
+we are either:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Missing the gateway object&lt;/li&gt;
+&lt;li&gt;Accessing the wrong port&lt;/li&gt;
+&lt;li&gt;The gateway is not correctly configured, or&lt;/li&gt;
+&lt;li&gt;The pod for the Tier1 Gateway is not running.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;To check if the listener exists you can use &lt;code&gt;istioctl&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ istioctl pc listener &amp;lt;ingressgateway&amp;gt;.&amp;lt;namespace&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If there is no listener or you want to check the current configuration, you need to review your gateway configuration. To fetch the Gateway object, use &lt;code&gt;kubectl&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl get gateway
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If the gateway does not exist, you will need to troubleshoot why XCP is not creating the configurations.
+In this case, locate the &lt;code&gt;mpc&lt;/code&gt; pod in the management plane namespace, and look for webhook errors that could point to the wrong configuration.&lt;/p&gt;
+&lt;p&gt;If the gateway and virtual service are created, but you are still getting &lt;code&gt;50x&lt;/code&gt; errors in your HTTP request such as the following, you will need to dig further for more information.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;HTTP/2 &lt;span class=&#34;m&#34;&gt;503&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;In this case look at the &lt;code&gt;ingressgateway&lt;/code&gt; logs. Because in this particular case the system is configured in a tier1-tier2 is setup, the first thing that should be checked is the &lt;code&gt;tier1gateway&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Find the logs from the corresponding pod. Depending on the nature of the issue, you may have to enable trace logs for further investigation.&lt;/p&gt;
+&lt;p&gt;If you find an entry like the following, this means that there is no route to find the tier2 gateway.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;HTTP/2&lt;span class=&#34;s2&#34;&gt;&amp;#34; 503 NR
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If this is the case, try checking the following:&lt;/p&gt;
+&lt;h3 id=&#34;make-sure-nodeselector-annotations-have-been-applied&#34;&gt;Make sure &lt;code&gt;nodeSelector&lt;/code&gt; annotations have been applied&lt;/h3&gt;
+&lt;p&gt;If using NodePort for your XCP-edge services, remember that you must add the following annotation in both tier1 and tier2:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;traffic.istio.io/nodeSelector: &lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;value&amp;#34;&lt;/span&gt;:&lt;span class=&#34;s2&#34;&gt;&amp;#34;value&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;check-the-tier1gateway-configuration&#34;&gt;Check the &lt;code&gt;tier1gateway&lt;/code&gt; configuration.&lt;/h3&gt;
+&lt;p&gt;Tier1 gateways can be configured to route traffic to a specific cluster name or use a label.
+Make sure that the cluster or label names are correct by inspecting &lt;code&gt;spec.externalServers.name[x].clusters&lt;/code&gt;
+field in the &lt;a href=&#34;https://docs.tetrate.io/service-bridge/latest/en-us/refs/tsb/gateway/v2/tier1_gateway&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;tier1gateway&lt;/code&gt;&lt;/a&gt; configuration.&lt;/p&gt;
+&lt;p&gt;You might fetch the &lt;code&gt;tier1gateway&lt;/code&gt; object by using the following command:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ tctl get t1 -w &amp;lt;workspace&amp;gt; -l &amp;lt;gatewaygroup&amp;gt; &amp;lt;name&amp;gt; -o yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  …
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  externalServers:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  - clusters:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    - name: training-cp
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    hostname: bookinfo
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    …
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  - clusters:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    - labels:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        tier: tier2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    hostname: httpbin
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    …
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;And compare this with the &lt;a href=&#34;https://docs.tetrate.io/service-bridge/latest/en-us/refs/tsb/v2/cluster&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;cluster&lt;/a&gt; object:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ tctl get cluster &amp;lt;name&amp;gt; -o yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;…
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;metadata:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  labels:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    tier: tier2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  name: training-cp
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;…
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;check-permissions-for-communication-between-networks&#34;&gt;Check permissions for communication between networks&lt;/h3&gt;
+&lt;p&gt;If you have a &lt;code&gt;network&lt;/code&gt; defined in your cluster object, and the participating clusters do not all share the same &lt;code&gt;network&lt;/code&gt;, check if an &lt;a href=&#34;https://docs.tetrate.io/service-bridge/latest/en-us/refs/tsb/v2/organization_setting&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;organization setting&lt;/a&gt; exists to allow communication between the different networks.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ tctl get os
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Once this is fixed, you should see the service created in the namespace &lt;code&gt;xcp-multicluster&lt;/code&gt;. This service entry is created for multi-cluster purposes along the destination rule in the application namespace to set mTLS.&lt;/p&gt;
+&lt;p&gt;If at this point you are still noticing 503 errors from the &lt;code&gt;tier1gateway&lt;/code&gt;, check the &lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;error code&lt;/a&gt; to better understand what might be causing the error.&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;It&amp;rsquo;s also useful to use &lt;code&gt;istioctl&lt;/code&gt; command at this point, as most likely, in tier1 - tier2 scenarios, you will have some issue with the downstream.&lt;/p&gt;
+&lt;p&gt;First check if your &lt;code&gt;tier1gateway&lt;/code&gt;&amp;rsquo;s configuration has been synced by checking the presence of &lt;code&gt;SYNC&lt;/code&gt; in the status.
+You can verify that the configuration is being properly received from &lt;code&gt;istiod&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ istioctl ps
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Verify that the route you are trying to access exists:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ istioctl pc route &amp;lt;ingressgateway&amp;gt;.&amp;lt;namespace&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If the route does not exist, you have a misconfiguration in the &lt;code&gt;tier1gateway&lt;/code&gt; object.
+If it does, check the &lt;code&gt;cluster&lt;/code&gt; for the service:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ istioctl pc cluster &amp;lt;ingressgateway&amp;gt;.&amp;lt;namespace&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You should be able to see the subset and destination rule in the output of the above command. Check that the configuration of the destination rule is correct.&lt;/p&gt;
+&lt;p&gt;Finally, check the &lt;code&gt;endpoints&lt;/code&gt;. Check the configuration to see if the downstream is healthy:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ istioctl pc endpoint &amp;lt;ingressgateway&amp;gt;.&amp;lt;namespace&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If all of the above seems correct, then it is likely that you have to look at the &lt;code&gt;tier2gateway&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Check in the &lt;code&gt;tier1gateway&lt;/code&gt; logs if you have an error resembling the following:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;HTTP/2&lt;span class=&#34;s2&#34;&gt;&amp;#34; 503 LR,URX
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This likely means that there is a timeout connecting from &lt;code&gt;tier1gateway&lt;/code&gt; to &lt;code&gt;tier2gateway&lt;/code&gt;. Check with &lt;code&gt;netcat&lt;/code&gt; if you can access &lt;code&gt;tier2gateway&lt;/code&gt;. If you are not successful at connecting to &lt;code&gt;tier2gateway&lt;/code&gt;, there could be a misconfiguration or there could be a firewall in between blocking communication.&lt;/p&gt;
+&lt;p&gt;Another hint that you may be able to find is in the &lt;code&gt;ingressgateway&lt;/code&gt; logs.
+If you find an error message resembling the following, it means that the &lt;a href=&#34;https://istio.io/latest/docs/tasks/security/cert-management/plugin-ca-cert/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;cacert&lt;/code&gt;&lt;/a&gt;
+secret in &lt;code&gt;istio-system&lt;/code&gt; namespace is not signed by the same root (or intermediate)
+CA in both clusters.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ HTTP/2&lt;span class=&#34;s2&#34;&gt;&amp;#34; 503 UF,URX &amp;#34;&lt;/span&gt;-&lt;span class=&#34;s2&#34;&gt;&amp;#34; &amp;#34;&lt;/span&gt;TLS error: 268435581:SSL routines:OPENSSL_internal:CERTIFICATE_VERIFY_FAILED&lt;span class=&#34;s2&#34;&gt;&amp;#34;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If you make changes to the certificates, you will either need to restart all sidecars and gateways, or
+wait for 30 minutes until the components pull the new certificates from &lt;code&gt;istiod&lt;/code&gt;. The interval
+between these updates can be configured, but the default value is 30 minutes.&lt;/p&gt;
+&lt;h2 id=&#34;tier2gateway-troubleshooting&#34;&gt;Tier2Gateway troubleshooting&lt;/h2&gt;
+&lt;p&gt;If debugging the &lt;code&gt;tier1gateway&lt;/code&gt; was not been enough to fix the problem, you will have to
+perform mostly similar exercise as you have done on &lt;code&gt;tier2gateway&lt;/code&gt;, and understand
+if your problem stems from a misconfiguration or a configuration propagation issue (i.e. &lt;code&gt;XCP&lt;/code&gt;)&lt;/p&gt;
+&lt;p&gt;Check if the gateway has been created in the &lt;code&gt;tier2&lt;/code&gt; namespace with &lt;code&gt;kubectl get gateway&lt;/code&gt;.
+If the gateways does not exist, check on the XCP side. From the &lt;code&gt;mpc&lt;/code&gt; pod in the management plane namespace you can also see if there is any webhook issue.&lt;/p&gt;
+&lt;p&gt;If the gateway has been created, verify that the listeners are created properly.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ istioctl pc listener &amp;lt;ingressgateway&amp;gt;.&amp;lt;namespace&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;A listener for port 15443 must also be included in the &lt;a href=&#34;https://docs.tetrate.io/service-bridge/latest/en-us/refs/install/dataplane/v1alpha1/spec&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;ingressgateway&lt;/code&gt;&lt;/a&gt; resource, as traffic from &lt;code&gt;tier1&lt;/code&gt; to &lt;code&gt;tier2&lt;/code&gt; will need to use this port. It is also important to check that port 15443 is specified as the first entry in the list of listeners, as some cloud vendors uses the first port for load balancer health checks.&lt;/p&gt;
+&lt;p&gt;If your problems still persist after you have checked that the listeners are created properly, you will need to check the &lt;code&gt;tier2gateway&lt;/code&gt; logs. If you see &lt;code&gt;50x&lt;/code&gt; errors in these logs, it is likely that there issues with the application itself or there are configuration propagation issues from &lt;code&gt;istiod&lt;/code&gt; to &lt;code&gt;tier2gateway&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;If further troubleshooting is needed, then you will need to enable trace logs to be able to find the root cause:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl &lt;span class=&#34;nb&#34;&gt;exec&lt;/span&gt; &amp;lt;pod&amp;gt; -c istio-proxy -- pilot-agent request POST ‘logging?level&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;trace&lt;span class=&#34;err&#34;&gt;&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You can also check if configuration is being received from &lt;code&gt;istiod&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ istioctl ps
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If the configuration have not been synced properly, check if there are any networking conditions between &lt;code&gt;istiod&lt;/code&gt; and the &lt;code&gt;tier2gateway&lt;/code&gt; that could block the communication.&lt;/p&gt;
+&lt;p&gt;Also verify if &lt;code&gt;istiod&lt;/code&gt; pod in &lt;code&gt;istio-system&lt;/code&gt; namespace is up and running. You might have resource issues that may prevent the configurations from being sent.&lt;/p&gt;
+&lt;p&gt;In case you want to verify all the configuration in the &lt;code&gt;tier2gateway&lt;/code&gt; for a particular hostname, you can get the config dump:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl &lt;span class=&#34;nb&#34;&gt;exec&lt;/span&gt; &amp;lt;pod&amp;gt; -c istio-proxy -- pilot-agent request GET config_dump &amp;gt; config_dump.json
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;xcp-troubleshooting&#34;&gt;XCP troubleshooting&lt;/h2&gt;
+&lt;p&gt;If you notice that &lt;code&gt;XCP&lt;/code&gt; is not creating the configurations that you expected,
+check the &lt;code&gt;mpc&lt;/code&gt; pod logs in the management plane namespace.&lt;/p&gt;
+&lt;p&gt;You may find validation errors in these logs, indicating problems transforming configurations from TSB to XCP API.
+For example, you might see long entries that resembles the following:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl logs -n tsb &amp;lt;mpc&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;2022-03-02T13:58:26.153872Z     error   mpc/config      failed to convert TSB config into its XCP equivalent: no gateway object found &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; reference &lt;span class=&#34;s2&#34;&gt;&amp;#34;httpbin/httpbin-gw&amp;#34;&lt;/span&gt; in &lt;span class=&#34;s2&#34;&gt;&amp;#34;organizations/&amp;lt;org&amp;gt;/tenants/&amp;lt;tenant&amp;gt;/workspaces/&amp;lt;ws&amp;gt;/gatewaygroups/&amp;lt;gg&amp;gt;/virtualservices/&amp;lt;vs&amp;gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If there are no webhook errors in &lt;code&gt;mpc&lt;/code&gt; then check the logs for &lt;code&gt;edge&lt;/code&gt; pod in the control plane namespace of the cluster where the configuration should be created.&lt;/p&gt;
+&lt;p&gt;If things are working, you should be able to see all the configurations applied to the istio-system namespace:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl logs -n istio-system &amp;lt;edge&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;2022-03-09T11:17:25.492365Z     debug   &lt;span class=&#34;nv&#34;&gt;configapply&lt;/span&gt;     &lt;span class=&#34;o&#34;&gt;===&lt;/span&gt;BEGIN: Apply request &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &amp;lt;n&amp;gt; objects in istio-system namespace
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If the object that you are looking for does not appear in this list, it could be an issue in either &lt;code&gt;XCP edge&lt;/code&gt; or &lt;code&gt;XCP central&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;To enable debug logs for &lt;code&gt;XCP edge&lt;/code&gt; you can modify the deployment as follows (this will restart the pod):&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl edit deployment edge -n istio-system
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Depending on what you want to troubleshoot, you may have to configure the loggers in more detail.
+For example, if you want to configure each loggers to a different logging level, you could
+use command like the following:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- --log_output_level
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;default:info,transform:info,discovery-server:info,configapply:debug,translator:debug,model:debug,istiod-discovery:error,cluster-gen:error,stream:debug
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Or you could set the log level for all loggers at once:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- --log_output_level
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- default:debug
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If you want permanently change the logging configuration for all future &lt;code&gt;XCP edge&lt;/code&gt; components, you can create an overlay for the control plane operator:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;          overlays:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;          - apiVersion: install.xcp.tetrate.io/v1alpha1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            kind: EdgeXcp
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            name: edge-xcp
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            patches:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            - path: spec.logLevels
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;              value: default:info,transform:info,discovery-server:info,configapply:debug,translator:debug,model:debug,istiod-discovery:error,cluster-gen:error,stream:debug
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;With XCP edge in debug mode, you should be able to see the error and determine if the root cause is in the cluster. If it is not in the cluster, you will have to perform the same exercise for &lt;code&gt;XCP cetnral&lt;/code&gt;, located in the management plane namespace.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Cluster onboarding troubleshooting</title>
+      <link>https://lib.jimmysong.io/tsb/troubleshooting/cluster-onboarding/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/troubleshooting/cluster-onboarding/</guid>
+      <description>&lt;p&gt;This document explains most common issues when onboarding new control planes into TSB.&lt;/p&gt;
+&lt;h2 id=&#34;connectivity&#34;&gt;Connectivity&lt;/h2&gt;
+&lt;p&gt;The deployment &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; needs to have connectivity with the management plane URL. Communication is performed to
+the &lt;code&gt;front-envoy&lt;/code&gt; component in the &lt;code&gt;tsb&lt;/code&gt; namespace, which is served by the &lt;code&gt;envoy&lt;/code&gt; service.&lt;/p&gt;
+&lt;p&gt;Make sure that the control plane can reach it and it&amp;rsquo;s not blocked by network policies, security groups or any firewall.&lt;/p&gt;
+&lt;h2 id=&#34;troubleshooting&#34;&gt;Troubleshooting&lt;/h2&gt;
+&lt;p&gt;Once you&amp;rsquo;ve applied the &lt;a href=&#34;../setup/helm/controlplane#secrets-configuration&#34;&gt;necessary secrets&lt;/a&gt;, installed the control plane operator
+and created the control plane CR, if there&amp;rsquo;s some misconfiguration, some pods won&amp;rsquo;t be able to start. Always check for &lt;code&gt;tsb-operator-control-plane&lt;/code&gt;
+logs, as it will give more information about what could be wrong.&lt;/p&gt;
+&lt;h3 id=&#34;service-account-issues&#34;&gt;Service account issues&lt;/h3&gt;
+&lt;p&gt;If the service account to generate the tokens is not created, you&amp;rsquo;ll get the following error:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;error	controlplane	token rotation failed, retrying in 15m0s: secret istio-system/cluster-service-account not found: Secret &lt;span class=&#34;s2&#34;&gt;&amp;#34;cluster-service-account&amp;#34;&lt;/span&gt; not found &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;scope&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;controlplane&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Or it can also happen that it is not correctly configured:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;error	controlplane	token rotation failed, retrying in 15m0s: cluster has been configured with incorrect service account secret. ControlPlane CR has cluster name &lt;span class=&#34;s2&#34;&gt;&amp;#34;demo&amp;#34;&lt;/span&gt;, but service account secret has &lt;span class=&#34;s2&#34;&gt;&amp;#34;organizations/tetrate/clusters/not-demo&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;scope&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;controlplane&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;In this example, we&amp;rsquo;ve created a cluster object called &lt;code&gt;demo&lt;/code&gt;, but in the CP we&amp;rsquo;re generating the service account for a cluster called &lt;code&gt;not-demo&lt;/code&gt;.
+To fix this issue you&amp;rsquo;ll need to add the cluster name and service account token to the &lt;code&gt;values.yaml&lt;/code&gt; file to install the CP. First generate the token:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl install cluster-service-account --cluster demo &amp;gt; /tmp/demo.jwk
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;And then configure the &lt;code&gt;values.yaml&lt;/code&gt; file with the cluster name and the JWK file:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;secrets&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tsb&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;clusterServiceAccount&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;clusterFQN&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;organizations/tetrate/clusters/demo&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;JWK&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;sd&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;{{ .Secrets.ClusterServiceAccount.JWK }}&amp;#39;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The cluster name needs to match with the cluster name added in the control plane CR under &lt;code&gt;spec.managementPlane.clusterName&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;:::note
+Remember to restart the &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; pod to generate the secrets, and once generated, restart the control plane pods.
+:::&lt;/p&gt;
+&lt;h3 id=&#34;control-plane-certificate-issues&#34;&gt;Control plane certificate issues&lt;/h3&gt;
+&lt;p&gt;If the certificate &lt;code&gt;tsb-certs&lt;/code&gt; configured in the management plane don&amp;rsquo;t contain the correct URI SAN which is configured in
+the control plane CR under &lt;code&gt;spec.managementPlane.host&lt;/code&gt;, or both &lt;code&gt;tsb-certs&lt;/code&gt; in &lt;code&gt;tsb&lt;/code&gt; namespace and &lt;code&gt;mp-cert&lt;/code&gt; in &lt;code&gt;istio-system&lt;/code&gt;
+namespace doesn&amp;rsquo;t contain the same URI SAN, or are not signed by the same root/intermediate CA you&amp;rsquo;ll get the following error:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;error	controlplane	token rotation failed, retrying in 7.153870785s: generate tokens: rpc error: &lt;span class=&#34;nv&#34;&gt;code&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; Unavailable &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; connection error: &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;transport: authentication handshake failed: tls: failed to verify certificate: x509: certificate is valid for demo.tsb.tetrate.io, not tsb.tetrate.io&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;scope&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;controlplane&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You can update the &lt;code&gt;mp-cert&lt;/code&gt; by configuring the value &lt;code&gt;secrets.tsb.cacert&lt;/code&gt; in your control plane &lt;code&gt;values.yaml&lt;/code&gt; file, or update
+the &lt;code&gt;tsb-certs&lt;/code&gt; by configuring the values &lt;code&gt;secrets.tsb.cert&lt;/code&gt; and &lt;code&gt;secrets.tsb.key&lt;/code&gt; in the management plane &lt;code&gt;values.yaml&lt;/code&gt; file.&lt;/p&gt;
+&lt;p&gt;If the certificate provided in &lt;code&gt;tsb-certs&lt;/code&gt; is signed by a public CA such as Digicert or Let’s Encrypt you can let the default values
+for the control plane CR, but if this certificate is signed by an internal CA or it&amp;rsquo;s self signed you can get the following error:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;error	controlplane	token rotation failed, retrying in 1.661766738s: generate tokens: rpc error: &lt;span class=&#34;nv&#34;&gt;code&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; Unavailable &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; connection error: &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;transport: authentication handshake failed: x509: certificate signed by unknown authority&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;scope&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;controlplane&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If that&amp;rsquo;s the case, you&amp;rsquo;ll need to modify the control plane CR to set &lt;code&gt;spec.managementPlane.selfSigned&lt;/code&gt; to &lt;code&gt;true&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;:::note
+Remember to restart the &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; pod to generate the secrets, and once generated, restart the control plane pods.
+:::&lt;/p&gt;
+&lt;h3 id=&#34;xcp-connection-issues&#34;&gt;XCP connection issues&lt;/h3&gt;
+&lt;p&gt;If the newly onboarded cluster it&amp;rsquo;s not reporting the cluster status or new configurations applied are not being created in the cluster,
+check the &lt;code&gt;edge&lt;/code&gt; pod logs in &lt;code&gt;istio-system&lt;/code&gt; namespace, as even if the pod is running, it is possible that it&amp;rsquo;s having some issues. For example:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;warn	stream	error getting stream. retrying in 21.72809085s: rpc error: &lt;span class=&#34;nv&#34;&gt;code&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; Unavailable &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; connection error: &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;transport: authentication handshake failed: tls: failed to verify certificate: x509: certificate is valid for xcp.tetrate.io, not tsb.tetrate.io&amp;#34;&lt;/span&gt;	&lt;span class=&#34;nv&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;configs-4d116fd6
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;In this case the &lt;code&gt;xcp-central-cert&lt;/code&gt; in &lt;code&gt;tsb&lt;/code&gt; namespace is configured for &lt;code&gt;xcp.tetrate.io&lt;/code&gt; but the host configured in the control plane
+CR is &lt;code&gt;tsb.tetrate.io&lt;/code&gt;. To update the certificate, you&amp;rsquo;ll need to update the management plane &lt;code&gt;values.yaml&lt;/code&gt; &lt;a href=&#34;../setup/helm/managementplane#xcp-secrets-configuration&#34;&gt;accordingly to this&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;If &lt;code&gt;edge&lt;/code&gt; is unable to start you can describe to pod in order to get more information. Sometimes it couldn&amp;rsquo;t start due to:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  Warning  FailedMount  7m15s &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;x7 over 7m47s&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;  kubelet            MountVolume.SetUp failed &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; volume &lt;span class=&#34;s2&#34;&gt;&amp;#34;xcp-central-auth-jwt&amp;#34;&lt;/span&gt; : secret &lt;span class=&#34;s2&#34;&gt;&amp;#34;xcp-edge-central-auth-token&amp;#34;&lt;/span&gt; not found
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  Warning  FailedMount  5m44s                  kubelet            Unable to attach or mount volumes: unmounted &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;xcp-central-auth-ca&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;, unattached &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;config-map-volume xcp-central-auth-jwt xcp-central-auth-ca xcp-edge-webhook-ca kube-api-access-hxk8l webhook-certs&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;: timed out waiting &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; the condition
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  Warning  FailedMount  3m26s                  kubelet            Unable to attach or mount volumes: unmounted &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;xcp-central-auth-ca&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;, unattached &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;xcp-edge-webhook-ca kube-api-access-hxk8l webhook-certs config-map-volume xcp-central-auth-jwt xcp-central-auth-ca&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;: timed out waiting &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; the condition
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  Warning  FailedMount  95s &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;x11 over 7m47s&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;   kubelet            MountVolume.SetUp failed &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; volume &lt;span class=&#34;s2&#34;&gt;&amp;#34;xcp-central-auth-ca&amp;#34;&lt;/span&gt; : secret &lt;span class=&#34;s2&#34;&gt;&amp;#34;xcp-central-ca-bundle&amp;#34;&lt;/span&gt; not found
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  Warning  FailedMount  69s                    kubelet            Unable to attach or mount volumes: unmounted &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;xcp-central-auth-ca&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;, unattached &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;kube-api-access-hxk8l webhook-certs config-map-volume xcp-central-auth-jwt xcp-central-auth-ca xcp-edge-webhook-ca&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;: timed out waiting &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; the condition
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This error is because the secret &lt;code&gt;xcp-central-ca-bundle&lt;/code&gt; in &lt;code&gt;istio-system&lt;/code&gt; namespace don&amp;rsquo;t exist. This secret must contain the same URI SAN and must
+be signed by the same root/intermediate CA as &lt;code&gt;xcp-central-cert&lt;/code&gt; in &lt;code&gt;tsb&lt;/code&gt; namespace. In order to configure this secret, you&amp;rsquo;ll need to update the value
+&lt;code&gt;secrets.xcp.rootca&lt;/code&gt; from your control plane &lt;code&gt;values.yaml&lt;/code&gt; file.&lt;/p&gt;
+&lt;p&gt;:::note
+Remember to restart the &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; pod to generate the secrets, and once generated, restart the edge pod.
+:::&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Configuration status troubleshooting</title>
+      <link>https://lib.jimmysong.io/tsb/troubleshooting/configuration-status/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/troubleshooting/configuration-status/</guid>
+      <description>&lt;p&gt;Tetrate Service Bridge&amp;rsquo;s &lt;a href=&#34;../reference/cli/guide/index&#34;&gt;tctl CLI&lt;/a&gt; lets you
+interact with the TSB API to apply objects&amp;rsquo;s configurations. This document
+describes how to use tctl to understand what&amp;rsquo;s the deployment status of a
+resource configuration within the system.&lt;/p&gt;
+&lt;h2 id=&#34;resource-status&#34;&gt;Resource Status&lt;/h2&gt;
+&lt;p&gt;TSB tracks the lifecycle of configuration changes as ResourceStatus. You can
+fetch them using &lt;a href=&#34;../reference/cli/reference/experimental#tctl-experimental-status&#34;&gt;tctl x
+status&lt;/a&gt;. Run
+&lt;code&gt;tctl x status --help&lt;/code&gt; to see all the possible options.&lt;/p&gt;
+&lt;p&gt;There are different types of resources, depending on how their configuration status is computed.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Resource Type&lt;/th&gt;
+&lt;th&gt;Configuration Status&lt;/th&gt;
+&lt;th&gt;Examples&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Parent&lt;/td&gt;
+&lt;td&gt;Aggregate the status of their children resources.&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;workspace&lt;/code&gt;, &lt;code&gt;trafficgroup&lt;/code&gt;, &lt;code&gt;gatewaygroup&lt;/code&gt;, &lt;code&gt;securitygroup&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Child&lt;/td&gt;
+&lt;td&gt;Does not depend on other resources.&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;ingressgateway&lt;/code&gt;, &lt;code&gt;egressgateway&lt;/code&gt;, &lt;code&gt;trafficsettings&lt;/code&gt;, etc&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Non-configurable&lt;/td&gt;
+&lt;td&gt;Do not get directly materialized as configurations in the target cluster.&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;organizations&lt;/code&gt;, &lt;code&gt;tenants&lt;/code&gt;, &lt;code&gt;users&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;With dependencies&lt;/td&gt;
+&lt;td&gt;High-level resources.&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;applications&lt;/code&gt; and &lt;code&gt;apis&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;A resource status can have several values, depending on on how far its
+configuration has been propagated across the &lt;a href=&#34;../concepts/architecture&#34;&gt;TSB
+components&lt;/a&gt;.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Type&lt;/th&gt;
+&lt;th&gt;Status&lt;/th&gt;
+&lt;th&gt;Condition&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Child and non-configurable&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;ACCEPTED&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Their configuration has been validated and persisted. This is the initial value for valid configurations.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;READY&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Their configuration have been propagated to all the destination clusters. This is also the default state for non-configurable resources.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;PARTIAL&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Some of their configuration are ready in some destination clusters, but not in all of them.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;FAILED&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Their configuration has triggered some internal error in some, or all, destination clusters.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;FAILED&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;An offending resource in a destination clusters affects the correct behaviour of the configuration.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Parent&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;ACCEPTED&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;All their children resources either &lt;code&gt;ACCEPTED&lt;/code&gt; or &lt;code&gt;READY&lt;/code&gt;.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;READY&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;All their children resources &lt;code&gt;READY&lt;/code&gt;.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;FAILED&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Any of their children has &lt;code&gt;FAILED&lt;/code&gt;.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;With dependencies&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;ACCEPTED&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;All their dependent configurations are &lt;code&gt;ACCEPTED&lt;/code&gt;.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;READY&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;All their dependent configurations are &lt;code&gt;READY&lt;/code&gt;.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;DIRTY&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;All their dependent configurations are &lt;code&gt;DIRTY&lt;/code&gt;.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;FAILED&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Any of their dependent configurations are &lt;code&gt;FAILED&lt;/code&gt;.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;PARTIAL&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Their dependent configurations are in a mix of &lt;code&gt;READY&lt;/code&gt;, &lt;code&gt;ACCEPTED&lt;/code&gt; and/or &lt;code&gt;DIRTY&lt;/code&gt;.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;You can read more about the status types in &lt;a href=&#34;../refs/tsb/v2/status#status&#34;&gt;the Status API spec&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;using-tctl-to-understand-the-status-of-config-objects&#34;&gt;Using tctl to understand the status of config objects&lt;/h2&gt;
+&lt;p&gt;Let&amp;rsquo;s see some examples in a scenario where the &lt;code&gt;bookinfo&lt;/code&gt; app is deployed.&lt;/p&gt;
+&lt;p&gt;:::note
+We assume the Bookinfo application has been deployed in its own workspace, as
+in our &lt;a href=&#34;../quickstart/introduction&#34;&gt;Quick Start&lt;/a&gt; tutorials, and has been
+configured with the corresponding groups.
+:::&lt;/p&gt;
+&lt;p&gt;You can check the status of the &lt;code&gt;bookinfo&lt;/code&gt; ingress gateway with &lt;code&gt;tctl x status&lt;/code&gt;:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;$ tctl x status ig --tenant tetrate --workspace bookinfo --gatewaygroup bookinfo bookinfo
+NAME        STATUS      LAST EVENT      MESSAGE
+bookinfo    ACCEPTED    XCP_ACCEPTED
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This shows that its configuration has been validated and persisted.&lt;/p&gt;
+&lt;p&gt;If you want further information, its yaml version will show you the history of
+events of this resource status. This information is very useful for
+troubleshooting the lifecycle of a resource configuration.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;$ tctl x status ig --tenant tetrate --workspace bookinfo --gatewaygroup bookinfo bookinfo
+apiVersion: api.tsb.tetrate.io/v2
+kind: ResourceStatus
+metadata:
+  group: bookinfo
+  name: bookinfo
+  organization: tetrate
+  tenant: tetrate
+  workspace: bookinfo
+spec:
+  configEvents:
+    events:
+    - etag: &amp;#39;&amp;#34;sMlEWPbvm6M=&amp;#34;&amp;#39;
+      timestamp: &amp;#34;2022-02-10T16:54:14.710165091Z&amp;#34;
+      type: XCP_ACCEPTED
+    - etag: &amp;#39;&amp;#34;sMlEWPbvm6M=&amp;#34;&amp;#39;
+      timestamp: &amp;#34;2022-02-10T16:54:14.649002805Z&amp;#34;
+      type: MPC_ACCEPTED
+    - etag: &amp;#39;&amp;#34;sMlEWPbvm6M=&amp;#34;&amp;#39;
+      timestamp: &amp;#34;2022-02-10T16:54:10.453242255Z&amp;#34;
+      type: TSB_ACCEPTED
+  status: ACCEPTED
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Here you can see the historic of events that changed the status of the last
+version &lt;code&gt;sMlEWPbvm6M=&lt;/code&gt; of this &lt;code&gt;ingressgateway&lt;/code&gt; resource, most recent first.&lt;/p&gt;
+&lt;p&gt;In this example, the resource was initially accepted by TSB Server, then by MPC
+and finally by the XCP component.&lt;/p&gt;
+&lt;p&gt;Note that just the historic of the latest resource version is persisted. In the
+following section your will learn how to use Audit Logs to display the historic
+for all the versions.&lt;/p&gt;
+&lt;h2 id=&#34;using-the-tsb-audit-logs-to-understand-the-lifecycle-of-config-objects&#34;&gt;Using the TSB audit logs to understand the lifecycle of config objects&lt;/h2&gt;
+&lt;p&gt;TSB has the notion of audit logs that show everything that happens to a TSB
+resource. Who did what and when, on each resource, and it also gives insights
+on the different stages of its config.&lt;/p&gt;
+&lt;p&gt;For example, you could use the following command to get a list of all the events
+that happened on the bookinfo workspace and all the resources contained in it.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;$ tctl x audit ws bookinfo --recursive --text bookinfo
+TIME                   SEVERITY    TYPE                                        OPERATION               USER     MESSAGE
+2022/02/10 17:02:53    INFO        api.tsb.tetrate.io/v2/ResourceStatus        XCP_CENTRAL_ACCEPTED    mpc      New ACCEPTED status due to XCP_CENTRAL_ACCEPTED event for trafficgroup &amp;#34;bookinfo&amp;#34; version &amp;#34;oxil15u6bfw=&amp;#34;
+2022/02/10 17:02:53    INFO        api.tsb.tetrate.io/v2/ResourceStatus        XCP_CENTRAL_ACCEPTED    mpc      New ACCEPTED status due to XCP_CENTRAL_ACCEPTED event for securitygroup &amp;#34;bookinfo&amp;#34; version &amp;#34;gEUA3cK7+YI=&amp;#34;
+2022/02/10 17:02:52    INFO        api.tsb.tetrate.io/v2/ResourceStatus        MPC_ACCEPTED            mpc      New ACCEPTED status due to MPC_ACCEPTED event for ingressgateway &amp;#34;bookinfo&amp;#34; version &amp;#34;sMlEWPbvm6M=&amp;#34;
+2022/02/10 17:02:52    INFO        api.tsb.tetrate.io/v2/ResourceStatus        MPC_ACCEPTED            mpc      New ACCEPTED status due to MPC_ACCEPTED event for trafficgroup &amp;#34;bookinfo&amp;#34; version &amp;#34;oxil15u6bfw=&amp;#34;
+2022/02/10 17:02:52    INFO        api.tsb.tetrate.io/v2/ResourceStatus        XCP_CENTRAL_ACCEPTED    mpc      New ACCEPTED status due to XCP_CENTRAL_ACCEPTED event for workspace &amp;#34;bookinfo&amp;#34; version &amp;#34;GBcgtWe3R80=&amp;#34;
+2022/02/10 17:02:52    INFO        api.tsb.tetrate.io/v2/ResourceStatus        XCP_CENTRAL_REJECTED    mpc      New ACCEPTED status due to XCP_CENTRAL_ACCEPTED event for gatewaygroup &amp;#34;bookinfo&amp;#34; version &amp;#34;y6q054gFZCQ=&amp;#34;
+2022/02/10 17:02:52    INFO        api.tsb.tetrate.io/v2/ResourceStatus        MPC_ACCEPTED            mpc      New ACCEPTED status due to MPC_ACCEPTED event for securitygroup &amp;#34;bookinfo&amp;#34; version &amp;#34;gEUA3cK7+YI=&amp;#34;
+2022/02/10 17:02:52    INFO        api.tsb.tetrate.io/v2/ResourceStatus        MPC_ACCEPTED            mpc      New ACCEPTED status due to MPC_ACCEPTED event for workspace &amp;#34;bookinfo&amp;#34; version &amp;#34;GBcgtWe3R80=&amp;#34;
+2022/02/10 17:02:52    INFO        api.tsb.tetrate.io/v2/ResourceStatus        MPC_ACCEPTED            mpc      New ACCEPTED status due to MPC_ACCEPTED event for gatewaygroup &amp;#34;bookinfo&amp;#34; version &amp;#34;y6q054gFZCQ=&amp;#34;
+2022/02/10 17:02:48    INFO        gateway.tsb.tetrate.io/v2/IngressGateway    create                  admin    Create IngressGateway &amp;#34;bookinfo&amp;#34; by &amp;#34;admin&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Some errors are identified in the audit logs that you can further inspect by
+retrieving the details of the config status for those objects:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;$ tctl x status ig --workspace bookinfo --gatewaygroup bookinfo bookinfo
+NAME        STATUS    LAST EVENT              MESSAGE
+bookinfo    FAILED    XCP_CENTRAL_REJECTED    admission webhook &amp;#34;central-validation.xcp.tetrate.io&amp;#34; denied the request: configuration is invalid: domain name &amp;#34;tetrate.io---&amp;#34; invalid (label &amp;#34;io---&amp;#34; invalid)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;As you can see in the command output, the configuration has been rejected by the
+XCP component and flagged as invalid, and it will not be propagated to the
+target clusters.&lt;/p&gt;
+&lt;p&gt;You can also get insights by querying the status of the workspace. It will show
+any errors in its child resources. This way it is very easy to navigate from
+any workspace or top-level element to the specific errors that configuration
+objects may present.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;$ tctl x status ws bookinfo
+NAME        STATUS    LAST EVENT    MESSAGE
+bookinfo    FAILED                  The following children are failing: organizations/tetrate/tenants/tetrate/workspaces/bookinfo/gatewaygroups/bookinfo
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Or its extended yaml version:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;$ tctl x status ws bookinfo -o yaml
+apiVersion: api.tsb.tetrate.io/v2
+kind: ResourceStatus
+metadata:
+  name: bookinfo
+  organization: tetrate
+  tenant: tetrate
+spec:
+  aggregatedStatus:
+    children:
+      organizations/tetrate/tenants/tetrate/workspaces/bookinfo/gatewaygroups/bookinfo:
+        message: &amp;#39;The following children resources have issues: organizations/tetrate/tenants/tetrate/workspaces/bookinfo/gatewaygroups/bookinfo/ingressgateways/bookinfo&amp;#39;
+        status: FAILED
+      organizations/tetrate/tenants/tetrate/workspaces/bookinfo/securitygroups/bookinfo:
+        status: ACCEPTED
+      organizations/tetrate/tenants/tetrate/workspaces/bookinfo/trafficgroups/bookinfo:
+        status: ACCEPTED
+    configEvents:
+      events:
+      - etag: &amp;#39;&amp;#34;GBcgtWe3R80=&amp;#34;&amp;#39;
+        timestamp: &amp;#34;2022-02-10T18:32:29.593869622Z&amp;#34;
+        type: XCP_ACCEPTED
+      - etag: &amp;#39;&amp;#34;GBcgtWe3R80=&amp;#34;&amp;#39;
+        timestamp: &amp;#34;2022-02-10T18:32:29.576374660Z&amp;#34;
+        type: MPC_ACCEPTED
+      - etag: &amp;#39;&amp;#34;GBcgtWe3R80=&amp;#34;&amp;#39;
+        timestamp: &amp;#34;2022-02-10T18:32:24.679197258Z&amp;#34;
+        type: TSB_ACCEPTED
+  message: &amp;#39;The following children resources have issues: organizations/tetrate/tenants/tetrate/workspaces/bookinfo/gatewaygroups/bookinfo&amp;#39;
+  status: FAILED
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Finally, audit logs help easily identify when config issues were introduced and
+the exact changes that have been applied at any point in time. Here you can
+clearly see that an update for admin triggered a change in the config resource
+that was rejected, and you can see the exact fields that were changed, causing
+the issue:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;$ tctl x audit ig --workspace bookinfo --gatewaygroup bookinfo bookinfo
+TIME                   SEVERITY    TYPE                                        OPERATION               USER     MESSAGE
+2022/02/10 22:04:14    INFO        api.tsb.tetrate.io/v2/ResourceStatus        XCP_CENTRAL_REJECTED    mpc      New FAILED status due to XCP_CENTRAL_REJECTED event for ingressgateway &amp;#34;bookinfo&amp;#34; version &amp;#34;O0HhTEHkvjA=&amp;#34;
+2022/02/10 22:04:14    INFO        api.tsb.tetrate.io/v2/ResourceStatus        MPC_ACCEPTED            mpc      New ACCEPTED status due to MPC_ACCEPTED event for ingressgateway &amp;#34;bookinfo&amp;#34; version &amp;#34;O0HhTEHkvjA=&amp;#34;
+2022/02/10 22:04:12    INFO        gateway.tsb.tetrate.io/v2/IngressGateway    update                  admin    Update IngressGateway &amp;#34;bookinfo&amp;#34; by &amp;#34;admin&amp;#34;
+2021/11/25 16:02:53    INFO        api.tsb.tetrate.io/v2/ResourceStatus        XCP_CENTRAL_ACCEPTED    mpc      New ACCEPTED status due to XCP_CENTRAL_ACCEPTED event for ingressgateway &amp;#34;bookinfo&amp;#34; version &amp;#34;sMlEWPbvm6M=&amp;#34;
+2021/11/25 16:02:52    INFO        api.tsb.tetrate.io/v2/ResourceStatus        MPC_ACCEPTED            mpc      New ACCEPTED status due to MPC_ACCEPTED event for ingressgateway &amp;#34;bookinfo&amp;#34; version &amp;#34;sMlEWPbvm6M=&amp;#34;
+2021/11/25 16:02:48    INFO        gateway.tsb.tetrate.io/v2/IngressGateway    create                  admin    Create IngressGateway &amp;#34;bookinfo&amp;#34; by &amp;#34;admin&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Displaying the yaml with a date filter will output:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;$ tctl x audit ig --workspace bookinfo --gatewaygroup bookinfo bookinfo --operation update --since &amp;#34;2022/02/10 22:04:12&amp;#34; -o yaml
+apiVersion: audit.tetrate.io/v1
+kind: AuditLog
+metadata: {}
+spec:
+  createTime: &amp;#34;2021-12-13T22:11:32Z&amp;#34;
+  fqn: organizations/tetrate/tenants/tetrate/workspaces/bookinfo/gatewaygroups/bookinfo/ingressgateways/bookinfo
+  kind: gateway.tsb.tetrate.io/v2/IngressGateway
+  message: Update IngressGateway &amp;#34;bookinfo&amp;#34; by &amp;#34;admin&amp;#34;
+  operation: update
+  properties:
+    diff: |2-
+       {
+        Fqn: &amp;#34;organizations/tetrate/tenants/tetrate/workspaces/bookinfo/gatewaygroups/bookinfo/ingressgateways/bookinfo&amp;#34;,
+      - Etag: &amp;#34;\&amp;#34;sMlEWPbvm6M=\&amp;#34;&amp;#34;,
+      + Etag: &amp;#34;\&amp;#34;O0HhTEHkvjA=\&amp;#34;&amp;#34;,
+        WorkloadSelector: {
+         Namespace: &amp;#34;bookinfo&amp;#34;,
+         Labels: {
+          app: &amp;#34;bookinfo-gateway&amp;#34;,
+         },
+        },
+        Http: [
+         {
+      -   Name: &amp;#34;productpage&amp;#34;,
+      +   Name: &amp;#34;productpage-invalid&amp;#34;,
+          Port: 80,
+      -   Hostname: &amp;#34;bookinfo.tetrate.io&amp;#34;,
+      +   Hostname: &amp;#34;bookinfo.tetrate.io=--&amp;#34;,
+          Routing: {
+           Rules: [
+            {
+             RouteOrRedirect: {
+              Route: {
+               Host: &amp;#34;bookinfo/productpage.bookinfo.svc.cluster.local&amp;#34;,
+               Port: 9080,
+              },
+             },
+            },
+           ],
+          },
+         },
+        ],
+       }
+    display-name: &amp;#34;&amp;#34;
+    etag: &amp;#39;&amp;#34;O0HhTEHkvjA=&amp;#34;&amp;#39;
+    fqn: organizations/tetrate/tenants/tetrate/workspaces/bookinfo/gatewaygroups/bookinfo/ingressgateways/bookinfo
+  severity: INFO
+  triggeredBy: admin
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You can easily see in a &lt;code&gt;diff&lt;/code&gt; format the exact fields that were changed.&lt;/p&gt;
+&lt;h2 id=&#34;summary&#34;&gt;Summary&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;You can use the config status commands to get status details and errors on
+individual resources.&lt;/li&gt;
+&lt;li&gt;You can use it as well on top-level resources to quickly identify offending
+resources down the hierarchy.&lt;/li&gt;
+&lt;li&gt;You can use the audit logs to have a global view of all events that happened
+on any TSB resource.&lt;/li&gt;
+&lt;li&gt;You can correlate those audit logs with the configuration statuses.&lt;/li&gt;
+&lt;li&gt;Audit logs give you details on the exact changes that were made to any
+resource.&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Identify Underperforming Services</title>
+      <link>https://lib.jimmysong.io/tsb/troubleshooting/identify-underperforming-services/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/troubleshooting/identify-underperforming-services/</guid>
+      <description>&lt;p&gt;Service performance degradations can be very difficult to understand and isolate:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;There is far too much data to dig through to identify the cause of the performance issue&lt;/li&gt;
+&lt;li&gt;The experts in the application&amp;rsquo;s behavior (the dev team) typically do not have access to the running cluster&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Tetrate Service Bridge provides a set of tools to:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Enable the TSB operator to retrieve an archive of service performance data from a running cluster&lt;/li&gt;
+&lt;li&gt;Enable application developers to query this data to identify the slowest transactions (or those with errors) and determine the call graph associated with the slow response.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Before you get started, make sure you: &lt;br /&gt;
+✓ Familiarize yourself with &lt;a href=&#34;../concepts/toc&#34;&gt;TSB concepts&lt;/a&gt; &lt;br /&gt;
+✓ Install the &lt;a href=&#34;../setup/self_managed/demo-installation&#34;&gt;TSB demo&lt;/a&gt; environment &lt;br /&gt;
+✓ Deploy the &lt;a href=&#34;../quickstart/deploy_sample_app&#34;&gt;Istio Bookinfo&lt;/a&gt; sample app &lt;br /&gt;&lt;/p&gt;
+&lt;h2 id=&#34;collecting-data&#34;&gt;Collecting data&lt;/h2&gt;
+&lt;p&gt;The TSB operator can use &lt;code&gt;tctl&lt;/code&gt; to collect the cluster state. This state includes proxy logs from the workloads, Istio controlplane information, node information, &lt;code&gt;istioctl analyze&lt;/code&gt; and other runtime information. Data is exported as a tar file.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Usage:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  tctl collect &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;flags&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Examples:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# Collect without any obfuscation or redaction&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl collect
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# Collect without archiving results (useful for local debugging)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl collect --disable-archive
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# Collect and redact with user-provided regex&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl collect --redact-regexes &amp;lt;regex-one&amp;gt;,&amp;lt;regex-two&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# Collect and redact with presets&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl collect --redact-presets networking
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Running &lt;code&gt;tctl collect&lt;/code&gt; requires admin permissions. The resulting tar file can be shared with application teams for analysis and interpretation, using &lt;code&gt;tctl troubleshoot&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;analysing-data&#34;&gt;Analysing Data&lt;/h2&gt;
+&lt;p&gt;Any user can then run &lt;code&gt;tctl troubleshoot&lt;/code&gt; to inspect the collected tar file and generate a range of reports on the transactions recorded within the file:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Dump the cluster information to identify workloads&lt;/li&gt;
+&lt;li&gt;Analyse requests to named workloads to identify slowest responses and error responses&lt;/li&gt;
+&lt;li&gt;Discriminate between sidecar performance and application performance&lt;/li&gt;
+&lt;li&gt;Obtain request IDs, and then generate full traces for these requests (call graph)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;analyzing-cluster-data&#34;&gt;Analyzing Cluster data&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Usage:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  tctl experimental troubleshoot log-explorer cluster &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;flags&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Examples:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  tctl experimental troubleshoot log-explorer cluster &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;tar file&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Flags:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -h, --help               &lt;span class=&#34;nb&#34;&gt;help&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; cluster
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -n, --namespace string   List details of only specified namespace
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      --workspace string   List details of only specified workspace
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;troubleshoot log-explorer cluster&lt;/code&gt; provides details of all workloads running in the cluster. Users can get a subset of the entire cluster state by applying filters like &lt;code&gt;--workspace&lt;/code&gt; or &lt;code&gt;--namespace&lt;/code&gt;.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$: tctl experimental troubleshoot log-explorer cluster tctl-debug-1664467971183386000.tar.gz --workspace organizations/tetrate/tenants/payment/workspaces/payment-ws
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;namespaces:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    payment-channel:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        services:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            details:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                pods:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                - details-v1-7d88846999-wgmSV 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            productpage:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                pods:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                - productpage-v1-7795568889-tghhb 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            ratings:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                pods:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                - ratings-v1-754f9c4975-x9h86
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            tsb-gateway-bookinfo:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                pods:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                - tsb-gateway-bookinfo-6c46758bf6-5q6vw 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    payment-offers:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        services:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            reviews:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                pods:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                - reviews-primary-54c7dd49dc-8658t 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            reviews-canary:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                pods: &lt;span class=&#34;o&#34;&gt;[]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            reviews-primary:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                pods:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                - reviews-primary-54c7dd49dc-8658t
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;nodes:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- gke-cp-cluster-1-default-pool-1119254c-w7i
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- gke-cp-cluster-1-default-pool-a03a3024-7519
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- gke-cp-cluster-1-default-pool-a03a3024-btfs
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- gke-cp-cluster-1-default-pool-e090b6ac-trp
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;workspaces:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- organizations/tetrate/tenants/payment/workspaces/payment-ws
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;analyzing-service-data&#34;&gt;Analyzing Service data&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Usage:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  tctl experimental troubleshoot log-explorer service &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;flags&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Examples:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  tctl experimental log-explorer service &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;tar file&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;service&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Flags:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      --all                Show all requests instead of just the longest ones and those with errors.
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      --full-log           Print the full Envoy access log instead of a summary.
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -h, --help               &lt;span class=&#34;nb&#34;&gt;help&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; service
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      --limit int          Number of requests to show &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;defaults to 10&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -n, --namespace string   The namespace containing the service.
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;troubleshoot log-explorer service&lt;/code&gt; provides details about the 10 longest requests.  It outputs a summary of time elapsed within the envoy sidecar and within the application service.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;../assets/tctl-service.png&#34;&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-tctl-troubleshoot-log-explorer-service&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../assets/tctl-service.png&#34; alt=&#34;tctl troubleshoot log-explorer service&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      tctl troubleshoot log-explorer service
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;With this report, users can obtain the Request IDs of the longest time consuming requests, for analysis in the next step. The &lt;code&gt;--full-log&lt;/code&gt; flag can also be used to access the Envoy request log information.&lt;/p&gt;
+&lt;h3 id=&#34;analyzing-request-data&#34;&gt;Analyzing Request data&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; Usage:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  tctl experimental troubleshoot log-explorer request &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;flags&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Examples:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  tctl experimental log-explorer request &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;tar file&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;requestID&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Flags:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -h, --help                 &lt;span class=&#34;nb&#34;&gt;help&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; request
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -o, --output-type string   Select the output type, available formats json and yaml, default format is yaml &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;default &lt;span class=&#34;s2&#34;&gt;&amp;#34;yaml&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;troubleshoot log-explorer request&lt;/code&gt; reports the trace for a single request identified by the provided &lt;code&gt;requestID&lt;/code&gt;. It outputs the chain of requests, starting from the IngressGateway Pod IP to the final application workload. The report presents the total time spent by the Envoy sidecar, and the Application services along with details like &lt;code&gt;requestType&lt;/code&gt; to indicate whether a request is &lt;code&gt;inbound&lt;/code&gt; or &lt;code&gt;outbound&lt;/code&gt;, namespace and name of the workload and &lt;code&gt;calledBy&lt;/code&gt; IP &amp;amp; Port etc.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;../assets/tctl-request.png&#34;&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-tctl-troubleshoot-log-explorer-request&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../assets/tctl-request.png&#34; alt=&#34;tctl troubleshoot log-explorer request&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      tctl troubleshoot log-explorer request
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Ingress Gateway troubleshooting</title>
+      <link>https://lib.jimmysong.io/tsb/troubleshooting/gateway-troubleshooting/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/troubleshooting/gateway-troubleshooting/</guid>
+      <description>&lt;p&gt;Whenever we use the TSB &lt;code&gt;IngressGateway&lt;/code&gt; or the Istio &lt;code&gt;Gateway&lt;/code&gt; and &lt;code&gt;VirtualService&lt;/code&gt; resources to route external traffic to our services, we might face problems with the routes that we expose. In this document, we are going to show you some of the most common failure scenarios and how to troubleshoot them.&lt;/p&gt;
+&lt;h2 id=&#34;missing-configuration&#34;&gt;Missing configuration&lt;/h2&gt;
+&lt;p&gt;One of the first things to check is that the configuration that we created in TSB exists in the destination cluster. For instance, in this case:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ curl -vk http://helloworld.tetrate.io/hello
+[ ... ]
+&amp;gt; GET /hello HTTP/1.1
+&amp;gt; Host: helloworld.tetrate.io
+&amp;gt; User-Agent: curl/7.81.0
+&amp;gt; Accept: */*
+&amp;gt;
+* Mark bundle as not supporting multiuse
+&amp;lt; HTTP/1.1 404 Not Found
+&amp;lt; date: Wed, 27 Apr 2022 14:46:41 GMT
+&amp;lt; server: istio-envoy
+&amp;lt; content-length: 0
+&amp;lt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We are getting a 404 HTTP response (not found) to an ingress route that had just been configured. The first thing to check is the &lt;a href=&#34;./configuration_status&#34;&gt;resource status&lt;/a&gt;. Make sure that the status for your ingress resources is &lt;code&gt;ACCEPTED&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;:::note 404
+Envoy 404 responses do not have any body as shown above. If you see a 404 along with some &amp;ldquo;not found&amp;rdquo; message, it usually points to a correct configuration in routing, but you are hitting a wrong URL. For instance:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ curl -vk https://httpbin.tetrate.io/foobar
+[ ... ]
+&amp;lt; HTTP/2 404
+&amp;lt; server: istio-envoy
+&amp;lt; date: Wed, 27 Apr 2022 14:53:32 GMT
+&amp;lt; content-type: text/html
+&amp;lt; content-length: 233
+&amp;lt; access-control-allow-origin: *
+&amp;lt; access-control-allow-credentials: true
+&amp;lt; x-envoy-upstream-service-time: 47
+&amp;lt;
+&amp;lt;!DOCTYPE HTML PUBLIC &amp;#34;-//W3C//DTD HTML 3.2 Final//EN&amp;#34;&amp;gt;
+&amp;lt;title&amp;gt;404 Not Found&amp;lt;/title&amp;gt;
+&amp;lt;h1&amp;gt;Not Found&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;The requested URL was not found on the server.  If you entered the URL manually please check your spelling and try again.&amp;lt;/p&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The HTML code you can see there is sent back by the application itself, which means the routing works OK, but you are reaching the application on a wrong path.
+:::&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ tctl experimental status workspace hello --tenant tetrate
+NAME     STATUS    LAST EVENT    MESSAGE                                                                                                                  
+hello    FAILED                  The following children resources have issues: organizations/tetrate/tenants/tetrate/workspaces/hello/gatewaygroups/hello   
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;For instance, the output above suggests that something in the workspace &lt;code&gt;hello&lt;/code&gt; is not right, specifically in the gateway group named &lt;code&gt;hello&lt;/code&gt;.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ tctl experimental status gatewaygroup hello --workspace hello --tenant tetrate
+NAME     STATUS    LAST EVENT    MESSAGE                                                                                                                                        
+hello    FAILED                  The following children resources have issues: organizations/tetrate/tenants/tetrate/workspaces/hello/gatewaygroups/hello/virtualservices/hello    
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;And there seem to be a problem with the &lt;code&gt;VirtualService&lt;/code&gt; that was deployed for this route.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ tctl experimental status virtualservice hello --gatewaygroup hello --workspace hello --tenant tetrate
+NAME     STATUS    LAST EVENT    MESSAGE                                                                                                                                                          
+hello    FAILED    MPC_FAILED    no gateway object found for reference &amp;#34;helloworld/hellogw&amp;#34; in &amp;#34;organizations/tetrate/tenants/tetrate/workspaces/hello/gatewaygroups/hello/virtualservices/hello&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;At this point we can identify the reason for the missing configuration is actually a problem with the configuration itself, so it can be fixed so it gets deployed, fixing the 404 error we were seeing. The error message in the status object will guide you to find where error is.&lt;/p&gt;
+&lt;h2 id=&#34;envoy-access-logs&#34;&gt;Envoy access logs&lt;/h2&gt;
+&lt;p&gt;:::note X-REQUEST-ID HEADER
+You can sent &lt;code&gt;X-REQUEST-ID&lt;/code&gt; header to correlate the requests within the logs. You can use any random string as request ID. Envoy proxies will include that ID in every log statement that it creates. Following the example given below, this would be &lt;code&gt;curl -vk -H  &#39;X-REQUEST-ID:4e3e3e04-6509-43d4-9a97-52b7b2cea0e8&#39;&lt;/code&gt;
+:::&lt;/p&gt;
+&lt;p&gt;TSB configures Istio so that Envoy prints access logs in &lt;code&gt;stdout&lt;/code&gt; and only errors for certain modules. If the configuration received from &lt;code&gt;istiod&lt;/code&gt; is not valid, you will see a message, but for requests failing, you will pretty much see a response &lt;code&gt;503&lt;/code&gt; with some flags, specified in the &lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy documentation&lt;/a&gt; (see the &lt;code&gt;%RESPONSE_FLAGS%&lt;/code&gt; section). Let&amp;rsquo;s check the following example.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ curl -vk https://httpbin.tetrate.io/foobar
+[ ... ]
+&amp;lt; HTTP/2 503
+&amp;lt; content-length: 19
+&amp;lt; content-type: text/plain
+&amp;lt; date: Wed, 27 Apr 2022 15:02:19 GMT
+&amp;lt; server: istio-envoy
+&amp;lt;
+no healthy upstream
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;If we look at the access log for this request, we see:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[2022-04-27T15:02:20.472Z] &amp;#34;GET /foobar HTTP/2&amp;#34; 503 UH no_healthy_upstream - &amp;#34;-&amp;#34; 0 19 0 - &amp;#34;X.X.X.X&amp;#34; &amp;#34;curl/7.81.0&amp;#34; &amp;#34;55fef75a-70e5-449f-ad01-cd34960f465c&amp;#34; &amp;#34;httpbin.tetrate.io&amp;#34; &amp;#34;-&amp;#34; outbound|8000||httpbin.httpbin.svc.cluster.local - 10.16.0.20:8443 X.X.X.X:36009 httpbin.tetrate.io httpbin
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Right, so we see the timestamp of the log, some HTTP information for the request (method, path, protocol), and then we can see the response code, &lt;code&gt;503&lt;/code&gt;, followed by the flag &lt;code&gt;UH&lt;/code&gt;, which matches the message we got in the response, stating that there is no healthy upstream. The &lt;code&gt;VirtualService&lt;/code&gt; for this ingress route is currently:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;VirtualService&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tsb.tetrate.io/organization&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;tetrate&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tsb.tetrate.io/tenant&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;tetrate&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;xcp.tetrate.io/workspace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;httpbin&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;xcp.tetrate.io/gatewayGroup&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;httpbin&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;httpbin&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;httpbin&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;gateways&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;httpbin/httpbingw&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;hosts&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;httpbin.tetrate.io&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;http&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;httpbin&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;route&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;destination&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;host&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;httpbin.httpbin.svc.cluster.local&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If we check the destination service &lt;code&gt;httpbin&lt;/code&gt; endpoints:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl get ep
+NAME              ENDPOINTS                                          AGE
+httpbin           &amp;lt;none&amp;gt;                                             48m
+httpbin-gateway   10.16.0.20:8080,10.16.0.20:8443,10.16.0.20:15443   48m
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We have no valid endpoints, which is causing the problem. The next step here would be to check why we have no endpoints for the service (wrong selectors, compute problem, etc.).&lt;/p&gt;
+&lt;h2 id=&#34;debug-or-trace-logs&#34;&gt;Debug or trace logs&lt;/h2&gt;
+&lt;p&gt;There are other cases where you might need to end up raising the verbosity of Envoy logs to find out what is going on. Let&amp;rsquo;s say we have created an application that does:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ curl localhost:8090/
+super funny stuff...
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;And we deploy that to our service mesh. Once all the configuration is in place, we found out it is not quite working&amp;hellip;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ curl -v http://fun.tetrate.io/
+[ ... ]
+&amp;gt; GET / HTTP/1.1
+&amp;gt; Host: fun.tetrate.io
+&amp;gt; User-Agent: curl/7.81.0
+&amp;gt; Accept: */*
+&amp;gt; 
+* Mark bundle as not supporting multiuse
+&amp;lt; HTTP/1.1 502 Bad Gateway
+&amp;lt; content-length: 87
+&amp;lt; content-type: text/plain
+&amp;lt; date: Thu, 28 Apr 2022 11:03:48 GMT
+&amp;lt; server: istio-envoy
+&amp;lt; x-envoy-upstream-service-time: 3
+&amp;lt; 
+upstream connect error or disconnect/reset before headers. reset reason: protocol error
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The HTTP status code &lt;code&gt;502&lt;/code&gt; stands for &lt;code&gt;bad gateway&lt;/code&gt;, so the problem should not be in our app.&lt;/p&gt;
+&lt;p&gt;Inspecting the logs for the gateway shows:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[2022-04-28T10:58:59.087Z] &amp;#34;GET / HTTP/1.1&amp;#34; 502 - via_upstream - &amp;#34;-&amp;#34; 0 87 3 3 &amp;#34;X.X.X.X&amp;#34; &amp;#34;curl/7.81.0&amp;#34; &amp;#34;3d1f5c5c-e788-4f55-ba0f-00f15b749767&amp;#34; &amp;#34;fun.tetrate.io&amp;#34; &amp;#34;10.16.0.40:8090&amp;#34; outbound|8090||faulty-http.faulty-http.svc.cluster.local 10.16.2.34:50440 10.16.2.34:8080 X.X.X.X:20985 - faulty-http
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;And the sidecar shows:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[2022-04-28T10:58:59.089Z] &amp;#34;GET / HTTP/1.1&amp;#34; 502 UPE upstream_reset_before_response_started{protocol_error} - &amp;#34;-&amp;#34; 0 87 1 - &amp;#34;X.X.X.X&amp;#34; &amp;#34;curl/7.81.0&amp;#34; &amp;#34;3d1f5c5c-e788-4f55-ba0f-00f15b749767&amp;#34; &amp;#34;fun.tetrate.io&amp;#34; &amp;#34;10.16.0.40:8090&amp;#34; inbound|8090|| 127.0.0.6:36281 10.16.0.40:8090 X.X.X.X:0 outbound_.8090_._.faulty-http.faulty-http.svc.cluster.local default
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;OK, here we can see the HTTP status code &lt;code&gt;502&lt;/code&gt; along with the flags &lt;code&gt;UPE&lt;/code&gt;, which according to the Envoy docs means &lt;code&gt;The upstream response had an HTTP protocol error.&lt;/code&gt;. Right, but that does not show us what is going on.&lt;/p&gt;
+&lt;p&gt;At this point we are going to raise the verbosity for the Envoy logs to see if we can see some message that can point us to the root cause of the problem. To that extent, we are going to use a combination of &lt;code&gt;tctl&lt;/code&gt; commands to get the configuration matching our host URL and then raise the log for the related components. The first command we are going to run is &lt;code&gt;tctl get all&lt;/code&gt; to get the configuration related to our URL &lt;code&gt;fun.tetrate.io&lt;/code&gt;.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ tctl get all --fqdn fun.tetrate.io &amp;gt; fun.tetrate.io.config.yaml
+$ grep -i kind fun.tetrate.io.config.yaml
+kind: VirtualService
+kind: Gateway
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;In order to expose &lt;code&gt;fun.tetrate.io&lt;/code&gt; we are using an Istio &lt;code&gt;Gateway&lt;/code&gt; and a &lt;code&gt;VirtualService&lt;/code&gt;. Now we can run a command that will turn the log levels of the pods related to these two objects to &lt;code&gt;trace&lt;/code&gt; (we could use &lt;code&gt;debug&lt;/code&gt;, but trace might provide some extra info in some cases), and we are going to instruct &lt;code&gt;tctl&lt;/code&gt; to wait while we do the tests so it will collect the logs afterwards.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ tctl experimental debug log-level -f fun.tetrate.io.config.yaml --level trace --wait -o /tmp/logs
+The following pods were found matching the provided component/file:
+
+ - faulty-http/faulty-http-75cd76d866-x9hqx
+ - faulty-http/faulty-http-gw-7fbd455c4c-q8lr8
+
+Do you want to proceed? [y/n]: y
+Pod: faulty-http/faulty-http-75cd76d866-x9hqx
+active loggers:
+  admin: trace
+  alternate_protocols_cache: trace
+  aws: trace
+  assert: trace
+[ ... ]
+
+Pod: faulty-http/faulty-http-gw-7fbd455c4c-q8lr8
+active loggers:
+  admin: trace
+  alternate_protocols_cache: trace
+  aws: trace
+  assert: trace
+[ ... ]
+
+Waiting for logs to populate. Press Ctrl+C to stop and dump logs to files...
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You can see how &lt;code&gt;tctl&lt;/code&gt; identified 2 pods to change the log levels on:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;faulty-http/faulty-http-75cd76d866-x9hqx&lt;/code&gt; is a pod that matches the selector for the service that is the destination in the &lt;code&gt;VirtualService&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;faulty-http/faulty-http-gw-7fbd455c4c-q8lr8&lt;/code&gt; is a pod that matches the &lt;code&gt;selector&lt;/code&gt; in the Istio &lt;code&gt;Gateway&lt;/code&gt; object.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;For these two pods, &lt;code&gt;tctl&lt;/code&gt; is going to turn the log level to the specified &lt;code&gt;trace&lt;/code&gt; level, and then it will hang for the user to press &lt;code&gt;Ctrl+C&lt;/code&gt; to stop waiting for logs. At this point we are going to fire up a different terminal and fire the &lt;code&gt;curl&lt;/code&gt; request we used before a couple of times. After that, we will return to the terminal running the &lt;code&gt;tctl&lt;/code&gt; command and press &lt;code&gt;Ctrl+C&lt;/code&gt;.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Waiting for logs to populate. Press Ctrl+C to stop and dump logs to files...
+^C
+Dumping pod logs:
+- faulty-http/faulty-http-75cd76d866-x9hqx... Done.
+- faulty-http/faulty-http-gw-7fbd455c4c-q8lr8... Done.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;As a result, we will have different files in the &lt;code&gt;/tmp/logs&lt;/code&gt; folder:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ ls -lrt /tmp/logs
+-rw-r--r--   1 chirauki  staff       0 28 Apr 16:17 faulty-http-faulty-http-75cd76d866-x9hqx-faulty-http.log
+-rw-r--r--   1 chirauki  staff  151797 28 Apr 16:17 faulty-http-faulty-http-75cd76d866-x9hqx-istio-proxy.log
+-rw-r--r--   1 chirauki  staff  111970 28 Apr 16:17 faulty-http-faulty-http-gw-7fbd455c4c-q8lr8-istio-proxy.log
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;From top to bottom, these are the app container logs, app sidecar container logs and gateway logs. Let&amp;rsquo;s check the sidecar container logs. If we search the host name in the URL, &lt;code&gt;fun.tetrate.io&lt;/code&gt;, we will see the requests that come into the gateway:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2022-04-28T14:17:49.024048Z     debug   envoy filter    original_dst: new connection accepted
+2022-04-28T14:17:49.024099Z     debug   envoy filter    tls inspector: new connection accepted
+2022-04-28T14:17:49.024226Z     trace   envoy filter    tls inspector: recv: 2103
+2022-04-28T14:17:49.024265Z     trace   envoy filter    tls:onALPN(), ALPN: istio-peer-exchange,istio
+2022-04-28T14:17:49.024291Z     debug   envoy filter    tls:onServerName(), requestedServerName: outbound_.8090_._.faulty-http.faulty-http.svc.cluster.local
+2022-04-28T14:17:49.024431Z     trace   envoy misc      enableTimer called on 0x557654f50480 for 3600000ms, min is 3600000ms
+2022-04-28T14:17:49.024456Z     debug   envoy conn_handler      [C6169] new connection from 10.16.2.34:41344
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Then we will be able to see the decoded headers of the incoming request:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2022-04-28T14:17:49.025487Z     trace   envoy http      [C6169] completed header: key=host value=fun.tetrate.io
+2022-04-28T14:17:49.025503Z     trace   envoy http      [C6169] completed header: key=user-agent value=curl/7.81.0
+2022-04-28T14:17:49.025510Z     trace   envoy http      [C6169] completed header: key=accept value=*/*
+2022-04-28T14:17:49.025516Z     trace   envoy http      [C6169] completed header: key=x-forwarded-for value=10.132.0.30
+2022-04-28T14:17:49.025525Z     trace   envoy http      [C6169] completed header: key=x-forwarded-proto value=http
+2022-04-28T14:17:49.025531Z     trace   envoy http      [C6169] completed header: key=x-envoy-internal value=true
+2022-04-28T14:17:49.025539Z     trace   envoy http      [C6169] completed header: key=x-request-id value=4e3e3e04-6509-43d4-9a97-52b7b2cea0e8
+2022-04-28T14:17:49.025560Z     trace   envoy http      [C6169] completed header: key=x-envoy-decorator-operation value=faulty-http.faulty-http.svc.cluster.local:8090/*
+2022-04-28T14:17:49.025577Z     trace   envoy http      [C6169] completed header: key=x-envoy-peer-metadata value=ChQKDkFQUF9DT05UQUlORVJTEgIaAAoUCgpDTFVTVEVSX0lEEgYaBGRlbW8KJAoNSVNUSU9fVkVSU0lPThITGhExLjEyLjQtZmZmMGE5MDg5Mwr0AgoGTEFCRUxTEukCKuYCChcKA2FwcBIQGg5mYXVsdHktaHR0cC1ndwo2CilpbnN0YWxsLm9wZXJhdG9yLmlzdGlvLmlvL293bmluZy1yZXNvdXJjZRIJGgd1bmtub3duChkKBWlzdGlvEhAaDmluZ3Jlc3NnYXRld2F5ChkKDGlzdGlvLmlvL3JldhIJGgdkZWZhdWx0CjAKG29wZXJhdG9yLmlzdGlvLmlvL2NvbXBvbmVudBIRGg9JbmdyZXNzR2F0ZXdheXMKIQoRcG9kLXRlbXBsYXRlLWhhc2gSDBoKN2ZiZDQ1NWM0YwozCh9zZXJ2aWNlLmlzdGlvLmlvL2Nhbm9uaWNhbC1uYW1lEhAaDmZhdWx0eS1odHRwLWd3Ci8KI3NlcnZpY2UuaXN0aW8uaW8vY2Fub25pY2FsLXJldmlzaW9uEggaBmxhdGVzdAoiChdzaWRlY2FyLmlzdGlvLmlvL2luamVjdBIHGgVmYWxzZQoaCgdNRVNIX0lEEg8aDWNsdXN0ZXIubG9jYWwKKQoETkFNRRIhGh9mYXVsdHktaHR0cC1ndy03ZmJkNDU1YzRjLXE4bHI4ChoKCU5BTUVTUEFDRRINGgtmYXVsdHktaHR0cApWCgVPV05FUhJNGktrdWJlcm5ldGVzOi8vYXBpcy9hcHBzL3YxL25hbWVzcGFjZXMvZmF1bHR5LWh0dHAvZGVwbG95bWVudHMvZmF1bHR5LWh0dHAtZ3cKqwUKEVBMQVRGT1JNX01FVEFEQVRBEpUFKpIFCkAKEGdjcF9nY2VfaW5zdGFuY2USLBoqZ2tlLXRlc3QtbWFzdGVyLWRlZmF1bHQtcG9vbC0zM2Y5ZDBhMi0wb2JkCosBChtnY3BfZ2NlX2luc3RhbmNlX2NyZWF0ZWRfYnkSbBpqcHJvamVjdHMvNzIyMTQ1MjIwNjg3L3pvbmVzL2V1cm9wZS13ZXN0MS1iL2luc3RhbmNlR3JvdXBNYW5hZ2Vycy9na2UtdGVzdC1tYXN0ZXItZGVmYXVsdC1wb29sLTMzZjlkMGEyLWdycAosChNnY3BfZ2NlX2luc3RhbmNlX2lkEhUaEzg2NzA2MDkxNDc3MzExODY3NTgKcwoZZ2NwX2djZV9pbnN0YW5jZV90ZW1wbGF0ZRJWGlRwcm9qZWN0cy83MjIxNDUyMjA2ODcvZ2xvYmFsL2luc3RhbmNlVGVtcGxhdGVzL2drZS10ZXN0LW1hc3Rlci1kZWZhdWx0LXBvb2wtMDA3NzZlYWIKJQoUZ2NwX2drZV9jbHVzdGVyX25hbWUSDRoLdGVzdC1tYXN0ZXIKhwEKE2djcF9na2VfY2x1c3Rlcl91cmwScBpuaHR0cHM6Ly9jb250YWluZXIuZ29vZ2xlYXBpcy5jb20vdjEvcHJvamVjdHMvbWFyYy10ZXN0aW5nLTI2MjQxNC9sb2NhdGlvbnMvZXVyb3BlLXdlc3QxLWIvY2x1c3RlcnMvdGVzdC1tYXN0ZXIKIAoMZ2NwX2xvY2F0aW9uEhAaDmV1cm9wZS13ZXN0MS1iCiQKC2djcF9wcm9qZWN0EhUaE21hcmMtdGVzdGluZy0yNjI0MTQKJAoSZ2NwX3Byb2plY3RfbnVtYmVyEg4aDDcyMjE0NTIyMDY4NwohCg1XT1JLTE9BRF9OQU1FEhAaDmZhdWx0eS1odHRwLWd3
+2022-04-28T14:17:49.025590Z     trace   envoy http      [C6169] completed header: key=x-envoy-peer-metadata-id value=router~10.16.2.34~faulty-http-gw-7fbd455c4c-q8lr8.faulty-http~faulty-http.svc.cluster.local
+2022-04-28T14:17:49.025594Z     trace   envoy http      [C6169] completed header: key=x-envoy-attempt-count value=1
+2022-04-28T14:17:49.025602Z     trace   envoy http      [C6169] completed header: key=x-b3-traceid value=d5a4ba02141b15b1769bf40d0463c3b6
+2022-04-28T14:17:49.025606Z     trace   envoy http      [C6169] completed header: key=x-b3-spanid value=769bf40d0463c3b6
+2022-04-28T14:17:49.025611Z     trace   envoy http      [C6169] onHeadersCompleteBase
+2022-04-28T14:17:49.025614Z     trace   envoy http      [C6169] completed header: key=x-b3-sampled value=0
+2022-04-28T14:17:49.025622Z     trace   envoy http      [C6169] Server: onHeadersComplete size=14
+2022-04-28T14:17:49.025636Z     trace   envoy http      [C6169] message complete
+2022-04-28T14:17:49.025642Z     trace   envoy connection        [C6169] readDisable: disable=true disable_count=0 state=0 buffer_length=2374
+2022-04-28T14:17:49.025679Z     debug   envoy http      [C6169][S9387494024320102295] request headers complete (end_stream=true):
+&amp;#39;:authority&amp;#39;, &amp;#39;fun.tetrate.io&amp;#39;
+&amp;#39;:path&amp;#39;, &amp;#39;/&amp;#39;
+&amp;#39;:method&amp;#39;, &amp;#39;GET&amp;#39;
+&amp;#39;user-agent&amp;#39;, &amp;#39;curl/7.81.0&amp;#39;
+&amp;#39;accept&amp;#39;, &amp;#39;*/*&amp;#39;
+&amp;#39;x-forwarded-for&amp;#39;, &amp;#39;10.132.0.30&amp;#39;
+&amp;#39;x-forwarded-proto&amp;#39;, &amp;#39;http&amp;#39;
+&amp;#39;x-envoy-internal&amp;#39;, &amp;#39;true&amp;#39;
+&amp;#39;x-request-id&amp;#39;, &amp;#39;4e3e3e04-6509-43d4-9a97-52b7b2cea0e8&amp;#39;
+&amp;#39;x-envoy-decorator-operation&amp;#39;, &amp;#39;faulty-http.faulty-http.svc.cluster.local:8090/*&amp;#39;
+&amp;#39;x-envoy-peer-metadata&amp;#39;, &amp;#39;ChQKDkFQUF9DT05UQUlORVJTEgIaAAoUCgpDTFVTVEVSX0lEEgYaBGRlbW8KJAoNSVNUSU9fVkVSU0lPThITGhExLjEyLjQtZmZmMGE5MDg5Mwr0AgoGTEFCRUxTEukCKuYCChcKA2FwcBIQGg5mYXVsdHktaHR0cC1ndwo2CilpbnN0YWxsLm9wZXJhdG9yLmlz
+dGlvLmlvL293bmluZy1yZXNvdXJjZRIJGgd1bmtub3duChkKBWlzdGlvEhAaDmluZ3Jlc3NnYXRld2F5ChkKDGlzdGlvLmlvL3JldhIJGgdkZWZhdWx0CjAKG29wZXJhdG9yLmlzdGlvLmlvL2NvbXBvbmVudBIRGg9JbmdyZXNzR2F0ZXdheXMKIQoRcG9kLXRlbXBsYXRlLWhhc2gSDBoKN2ZiZD
+Q1NWM0YwozCh9zZXJ2aWNlLmlzdGlvLmlvL2Nhbm9uaWNhbC1uYW1lEhAaDmZhdWx0eS1odHRwLWd3Ci8KI3NlcnZpY2UuaXN0aW8uaW8vY2Fub25pY2FsLXJldmlzaW9uEggaBmxhdGVzdAoiChdzaWRlY2FyLmlzdGlvLmlvL2luamVjdBIHGgVmYWxzZQoaCgdNRVNIX0lEEg8aDWNsdXN0ZXIu
+bG9jYWwKKQoETkFNRRIhGh9mYXVsdHktaHR0cC1ndy03ZmJkNDU1YzRjLXE4bHI4ChoKCU5BTUVTUEFDRRINGgtmYXVsdHktaHR0cApWCgVPV05FUhJNGktrdWJlcm5ldGVzOi8vYXBpcy9hcHBzL3YxL25hbWVzcGFjZXMvZmF1bHR5LWh0dHAvZGVwbG95bWVudHMvZmF1bHR5LWh0dHAtZ3cKqw
+UKEVBMQVRGT1JNX01FVEFEQVRBEpUFKpIFCkAKEGdjcF9nY2VfaW5zdGFuY2USLBoqZ2tlLXRlc3QtbWFzdGVyLWRlZmF1bHQtcG9vbC0zM2Y5ZDBhMi0wb2JkCosBChtnY3BfZ2NlX2luc3RhbmNlX2NyZWF0ZWRfYnkSbBpqcHJvamVjdHMvNzIyMTQ1MjIwNjg3L3pvbmVzL2V1cm9wZS13ZXN0
+MS1iL2luc3RhbmNlR3JvdXBNYW5hZ2Vycy9na2UtdGVzdC1tYXN0ZXItZGVmYXVsdC1wb29sLTMzZjlkMGEyLWdycAosChNnY3BfZ2NlX2luc3RhbmNlX2lkEhUaEzg2NzA2MDkxNDc3MzExODY3NTgKcwoZZ2NwX2djZV9pbnN0YW5jZV90ZW1wbGF0ZRJWGlRwcm9qZWN0cy83MjIxNDUyMjA2OD
+cvZ2xvYmFsL2luc3RhbmNlVGVtcGxhdGVzL2drZS10ZXN0LW1hc3Rlci1kZWZhdWx0LXBvb2wtMDA3NzZlYWIKJQoUZ2NwX2drZV9jbHVzdGVyX25hbWUSDRoLdGVzdC1tYXN0ZXIKhwEKE2djcF9na2VfY2x1c3Rlcl91cmwScBpuaHR0cHM6Ly9jb250YWluZXIuZ29vZ2xlYXBpcy5jb20vdjEv
+cHJvamVjdHMvbWFyYy10ZXN0aW5nLTI2MjQxNC9sb2NhdGlvbnMvZXVyb3BlLXdlc3QxLWIvY2x1c3RlcnMvdGVzdC1tYXN0ZXIKIAoMZ2NwX2xvY2F0aW9uEhAaDmV1cm9wZS13ZXN0MS1iCiQKC2djcF9wcm9qZWN0EhUaE21hcmMtdGVzdGluZy0yNjI0MTQKJAoSZ2NwX3Byb2plY3RfbnVtYm
+VyEg4aDDcyMjE0NTIyMDY4NwohCg1XT1JLTE9BRF9OQU1FEhAaDmZhdWx0eS1odHRwLWd3&amp;#39;
+&amp;#39;x-envoy-peer-metadata-id&amp;#39;, &amp;#39;router~10.16.2.34~faulty-http-gw-7fbd455c4c-q8lr8.faulty-http~faulty-http.svc.cluster.local&amp;#39;
+&amp;#39;x-envoy-attempt-count&amp;#39;, &amp;#39;1&amp;#39;
+&amp;#39;x-b3-traceid&amp;#39;, &amp;#39;d5a4ba02141b15b1769bf40d0463c3b6&amp;#39;
+&amp;#39;x-b3-spanid&amp;#39;, &amp;#39;769bf40d0463c3b6&amp;#39;
+&amp;#39;x-b3-sampled&amp;#39;, &amp;#39;0&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;And right after, we will see the outgoing request to the application. After some handshake messages, we will be able to see the headers of the incoming response from the application:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2022-04-28T14:17:49.027763Z     trace   envoy http      [C6170] parsing 2548 bytes
+2022-04-28T14:17:49.027768Z     trace   envoy http      [C6170] message begin
+2022-04-28T14:17:49.027788Z     trace   envoy http      [C6170] completed header: key=X-Header-0 value=value
+2022-04-28T14:17:49.027806Z     trace   envoy http      [C6170] completed header: key=X-Header-1 value=value
+2022-04-28T14:17:49.027810Z     trace   envoy http      [C6170] completed header: key=X-Header-10 value=value
+2022-04-28T14:17:49.027815Z     trace   envoy http      [C6170] completed header: key=X-Header-100 value=value
+[ ... ]
+2022-04-28T14:17:49.028329Z     trace   envoy http      [C6170] completed header: key=X-Header-8 value=value
+2022-04-28T14:17:49.028335Z     trace   envoy http      [C6170] completed header: key=X-Header-80 value=value
+2022-04-28T14:17:49.028340Z     trace   envoy http      [C6170] completed header: key=X-Header-81 value=value
+2022-04-28T14:17:49.028350Z     debug   envoy client    [C6170] Error dispatching received data: headers count exceeds limit
+2022-04-28T14:17:49.028366Z     debug   envoy connection        [C6170] closing data_to_write=0 type=1
+2022-04-28T14:17:49.028370Z     debug   envoy connection        [C6170] closing socket: 1
+2022-04-28T14:17:49.028450Z     trace   envoy connection        [C6170] raising connection event 1
+2022-04-28T14:17:49.028466Z     debug   envoy client    [C6170] disconnect. resetting 1 pending requests
+2022-04-28T14:17:49.028478Z     debug   envoy client    [C6170] request reset
+2022-04-28T14:17:49.028484Z     trace   envoy main      item added to deferred deletion list (size=1)
+2022-04-28T14:17:49.028497Z     debug   envoy router    [C6169][S9387494024320102295] upstream reset: reset reason: protocol error, transport failure reason:
+2022-04-28T14:17:49.028555Z     debug   envoy http      [C6169][S9387494024320102295] Sending local reply with details upstream_reset_before_response_started{protocol error}
+2022-04-28T14:17:49.028594Z     trace   envoy http      [C6169][S9387494024320102295] encode headers called: filter=0x557655798850 status=0
+2022-04-28T14:17:49.028601Z     trace   envoy http      [C6169][S9387494024320102295] encode headers called: filter=0x55765503e2a0 status=0
+2022-04-28T14:17:49.028606Z     trace   envoy http      [C6169][S9387494024320102295] encode headers called: filter=0x5576557993b0 status=0
+2022-04-28T14:17:49.028628Z     trace   envoy http      [C6169][S9387494024320102295] encode headers called: filter=0x557654ed1420 status=0
+2022-04-28T14:17:49.028660Z     debug   envoy http      [C6169][S9387494024320102295] encoding headers via codec (end_stream=false):
+&amp;#39;:status&amp;#39;, &amp;#39;502&amp;#39;
+&amp;#39;content-length&amp;#39;, &amp;#39;87&amp;#39;
+&amp;#39;content-type&amp;#39;, &amp;#39;text/plain&amp;#39;
+&amp;#39;x-envoy-peer-metadata&amp;#39;, &amp;#39;Ch8KDkFQUF9DT05UQUlORVJTEg0aC2ZhdWx0eS1odHRwChQKCkNMVVNURVJfSUQSBhoEZGVtbwokCg1JU1RJT19WRVJTSU9OEhMaETEuMTIuNC1mZmYwYTkwODkzCtABCgZMQUJFTFMSxQEqwgEKFAoDYXBwEg0aC2ZhdWx0eS1odHRwCiEKEXBvZC10ZW1wbGF0
+ZS1oYXNoEgwaCjc1Y2Q3NmQ4NjYKJAoZc2VjdXJpdHkuaXN0aW8uaW8vdGxzTW9kZRIHGgVpc3RpbwowCh9zZXJ2aWNlLmlzdGlvLmlvL2Nhbm9uaWNhbC1uYW1lEg0aC2ZhdWx0eS1odHRwCi8KI3NlcnZpY2UuaXN0aW8uaW8vY2Fub25pY2FsLXJldmlzaW9uEggaBmxhdGVzdAobCgdNRVNIX0
+lEEhAaDmRlbW8udHNiLmxvY2FsCiYKBE5BTUUSHhocZmF1bHR5LWh0dHAtNzVjZDc2ZDg2Ni14OWhxeAoaCglOQU1FU1BBQ0USDRoLZmF1bHR5LWh0dHAKUwoFT1dORVISShpIa3ViZXJuZXRlczovL2FwaXMvYXBwcy92MS9uYW1lc3BhY2VzL2ZhdWx0eS1odHRwL2RlcGxveW1lbnRzL2ZhdWx0
+eS1odHRwCqsFChFQTEFURk9STV9NRVRBREFUQRKVBSqSBQpAChBnY3BfZ2NlX2luc3RhbmNlEiwaKmdrZS10ZXN0LW1hc3Rlci1kZWZhdWx0LXBvb2wtMzNmOWQwYTItZnpobAqLAQobZ2NwX2djZV9pbnN0YW5jZV9jcmVhdGVkX2J5EmwaanByb2plY3RzLzcyMjE0NTIyMDY4Ny96b25lcy9ldX
+JvcGUtd2VzdDEtYi9pbnN0YW5jZUdyb3VwTWFuYWdlcnMvZ2tlLXRlc3QtbWFzdGVyLWRlZmF1bHQtcG9vbC0zM2Y5ZDBhMi1ncnAKLAoTZ2NwX2djZV9pbnN0YW5jZV9pZBIVGhM0NjQ3OTQ3MDc3NTU5ODE3NTY5CnMKGWdjcF9nY2VfaW5zdGFuY2VfdGVtcGxhdGUSVhpUcHJvamVjdHMvNzIy
+MTQ1MjIwNjg3L2dsb2JhbC9pbnN0YW5jZVRlbXBsYXRlcy9na2UtdGVzdC1tYXN0ZXItZGVmYXVsdC1wb29sLTAwNzc2ZWFiCiUKFGdjcF9na2VfY2x1c3Rlcl9uYW1lEg0aC3Rlc3QtbWFzdGVyCocBChNnY3BfZ2tlX2NsdXN0ZXJfdXJsEnAabmh0dHBzOi8vY29udGFpbmVyLmdvb2dsZWFwaX
+MuY29tL3YxL3Byb2plY3RzL21hcmMtdGVzdGluZy0yNjI0MTQvbG9jYXRpb25zL2V1cm9wZS13ZXN0MS1iL2NsdXN0ZXJzL3Rlc3QtbWFzdGVyCiAKDGdjcF9sb2NhdGlvbhIQGg5ldXJvcGUtd2VzdDEtYgokCgtnY3BfcHJvamVjdBIVGhNtYXJjLXRlc3RpbmctMjYyNDE0CiQKEmdjcF9wcm9q
+ZWN0X251bWJlchIOGgw3MjIxNDUyMjA2ODcKHgoNV09SS0xPQURfTkFNRRINGgtmYXVsdHktaHR0cA==&amp;#39;
+&amp;#39;x-envoy-peer-metadata-id&amp;#39;, &amp;#39;sidecar~10.16.0.40~faulty-http-75cd76d866-x9hqx.faulty-http~faulty-http.svc.cluster.local&amp;#39;
+&amp;#39;date&amp;#39;, &amp;#39;Thu, 28 Apr 2022 14:17:48 GMT&amp;#39;
+&amp;#39;server&amp;#39;, &amp;#39;istio-envoy&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;OK, hang on. We see how Envoy starts parsing the response headers, but eventually prints this line:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2022-04-28T14:17:49.028350Z     debug   envoy client    [C6170] Error dispatching received data: headers count exceeds limit
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Somehow, there seem to be more headers in the response than Envoy would like. If we search the &lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#config-core-v3-httpprotocoloptions&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy documentation&lt;/a&gt; (check specifically &lt;code&gt;max_headers_count&lt;/code&gt;), we will see that, by default, Envoy allows up to 100 headers in an HTTP request or response, and we are going over that number. In this case, a problem in the application is causing an error in Envoy, so fixing the application would fix this issue.&lt;/p&gt;
+&lt;p&gt;At this point, we can use &lt;code&gt;tctl&lt;/code&gt; again to revert the log levels to the defaults.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ tctl experimental debug log-level -f fun.tetrate.io.config.yaml --level info -y
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;gateway-autoscaling-and-deletion&#34;&gt;Gateway Autoscaling and Deletion&lt;/h2&gt;
+&lt;p&gt;When a gateway pod delete event occurs, TSB needs to propagate service information to other clusters so that cross-cluster traffic does not target the deleted pod&amp;rsquo;s NodePort IP address. You can configure TSB control plane to enable a webhook that intercepts gateway pod delete events, holding the delete operation for a configurable time period. This allows for sufficient time for the configuration change to propagate across all clusters and for all mesh components to remove the soon-to-be-deleted IP address. In the unlikely event that the configuration does not completely propagate, you may observe &lt;code&gt;503&lt;/code&gt; errors for HTTP traffic or &lt;code&gt;000&lt;/code&gt; errors for passthrough cross cluster traffic.&lt;/p&gt;
+&lt;p&gt;See &lt;a href=&#34;../operations/features/gateway_deletion_webhook&#34;&gt;gateway deletion hold webhook&lt;/a&gt; to enable the webhook.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Maximum Header Size Exceed</title>
+      <link>https://lib.jimmysong.io/tsb/troubleshooting/maximum-header-size-exceed/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/troubleshooting/maximum-header-size-exceed/</guid>
+      <description>&lt;p&gt;This article will cover how TSB and istio-proxy handle headers when forwarding from Istio ingress gateways or sidecars to applications.&lt;/p&gt;
+&lt;p&gt;Before you get started, make sure you:&lt;br /&gt;
+✓ Familiarize yourself with &lt;a href=&#34;../concepts/toc&#34;&gt;TSB concepts&lt;/a&gt; &lt;br /&gt;
+✓ Install the TSB environment. You can use &lt;a href=&#34;../setup/self_managed/demo-installation&#34;&gt;TSB demo&lt;/a&gt; for quick install&lt;br /&gt;
+✓ Completed &lt;a href=&#34;../quickstart&#34;&gt;TSB usage quickstart&lt;/a&gt;.&lt;br /&gt;
+✓ Install sample application &lt;a href=&#34;../reference/samples/httpbin&#34;&gt;httpbin&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;request-header-size-in-envoy-istio-proxy&#34;&gt;Request header size in Envoy (istio-proxy)&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy&lt;/a&gt; or istio-proxy can handle headers that are considerably larger. The default maximum request headers size for incoming connections is 60 KiB&lt;/p&gt;
+&lt;p&gt;In this case, it will not be an issue for the majority of applications, and the request headers that incoming connections will be proxied through istio-proxy. However, your application might have restrictions based on the configuration of the header size for each web server.&lt;/p&gt;
+&lt;p&gt;For example:
+In &lt;a href=&#34;https://www.baeldung.com/spring-boot-max-http-header-size&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Spring Boot 2&lt;/a&gt; and &lt;a href=&#34;https://docs.gunicorn.org/en/stable/settings.html#limit-request-field-size&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Gunicorn&lt;/a&gt; the default max header size is 8 KiB. You can override the default if needed.&lt;/p&gt;
+&lt;h2 id=&#34;debug-request-headers-size&#34;&gt;Debug request headers size&lt;/h2&gt;
+&lt;p&gt;For this experiment, you will need the &lt;a href=&#34;../reference/samples/httpbin&#34;&gt;httpbin&lt;/a&gt; sample application deployed in your cluster. You will perform two requests, one with a header size below the maximum and another one that exceeds the limit by the app container.&lt;/p&gt;
+&lt;h3 id=&#34;header-below-the-maximum&#34;&gt;Header below the maximum&lt;/h3&gt;
+&lt;p&gt;Your header can be anything just make sure is below 8 KiB you can export it as a variable and perform the request:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -k  https://httpbin.example.io/response-headers -X POST -H &amp;#34;X-MyHeader: $SMALL&amp;#34; -sI
+HTTP/2 200 
+server: istio-envoy
+date: Wed, 19 Oct 2022 20:13:49 GMT
+content-type: application/json
+content-length: 68
+access-control-allow-origin: *
+access-control-allow-credentials: true
+x-envoy-upstream-service-time: 5
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;header-above-the-maximum&#34;&gt;Header above the maximum&lt;/h3&gt;
+&lt;p&gt;Now perform the request with a header that can exceed the maximum of 8 KiB&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -k  https://httpbin.example.io/response-headers -X POST -H &amp;#34;X-MyHeader: $LONG&amp;#34; -sI
+HTTP/2 400 
+content-type: text/html
+content-length: 189
+x-envoy-upstream-service-time: 6
+date: Wed, 19 Oct 2022 20:17:37 GMT
+server: istio-envoy
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;If the request header exceed the maximum header size, you will receive a bad request following a 400 HTTP code.&lt;/p&gt;
+&lt;h2 id=&#34;modify-header-size-in-istio-proxy&#34;&gt;Modify header size in istio-proxy&lt;/h2&gt;
+&lt;p&gt;As you learned above, you can limit the header size in a variety of web servers. You can do the same modifications in istio-proxy.&lt;/p&gt;
+&lt;p&gt;The default header size should be just enough, or you may want to decrease the default size.&lt;/p&gt;
+&lt;h3 id=&#34;decreasing-the-default-size-of-the-header-in-istio-proxy&#34;&gt;Decreasing the default size of the header in istio-proxy&lt;/h3&gt;
+&lt;p&gt;In order to decrease the size of the default request header you will need to create an &lt;a href=&#34;https://istio.io/latest/docs/reference/config/networking/envoy-filter/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoyfilter&lt;/a&gt; that allows you to modify the istio-proxy configuration.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: max-request-headers
+  namespace: istio-system
+spec:
+  configPatches:
+  - applyTo: NETWORK_FILTER # http connection manager is a filter in Envoy
+    match:
+      context: ANY
+      listener:
+        filterChain:
+          filter:
+            name: &amp;#34;envoy.filters.network.http_connection_manager&amp;#34;
+    patch:
+      operation: MERGE
+      value:
+        typed_config:
+          &amp;#34;@type&amp;#34;: &amp;#34;type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager&amp;#34;
+          max_request_headers_kb: 10
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Once this is applied in your cluster, try again the request with an small header and a larger one.&lt;/p&gt;
+&lt;h3 id=&#34;header-below-the-maximum-in-istio-proxy&#34;&gt;Header below the maximum in istio-proxy&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -k  https://httpbin.example.io/response-headers -X POST -H &amp;#34;X-MyHeader: $SMALL&amp;#34; -sI
+HTTP/2 200 
+server: istio-envoy
+date: Wed, 19 Oct 2022 20:36:43 GMT
+content-type: application/json
+content-length: 68
+access-control-allow-origin: *
+access-control-allow-credentials: true
+x-envoy-upstream-service-time: 5
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You can see the request was successfully as the header was below the maximum of 10 KiB.&lt;/p&gt;
+&lt;h3 id=&#34;header-above-the-maximum-in-istio-proxy&#34;&gt;Header above the maximum in istio-proxy&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -k  https://httpbin.example.io/response-headers -X POST -H &amp;#34;X-MyHeader: $LONG&amp;#34; -sI
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You can remove the -s flag from curl and see the output.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -k  https://httpbin.example.io/response-headers -X POST -H &amp;#34;X-MyHeader: $LONG&amp;#34; -I
+curl: (92) HTTP/2 stream 0 was not closed cleanly: INTERNAL_ERROR (err 2)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The request did not return anything but an error. You can see what happened in the logs.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl logs $GWPOD -n tier1
+
+[2022-10-19T20:39:58.081Z] &amp;#34;- - HTTP/2&amp;#34; 0 - http2.too_many_headers - &amp;#34;-&amp;#34; 0 0 0 - &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; - - 10.211.129.34:8443 10.240.0.38:63077 httpbin.example.io -
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>Multiple Transfer Encoding Chunked</title>
+      <link>https://lib.jimmysong.io/tsb/troubleshooting/multiple-transfer-encoding-chunked/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/troubleshooting/multiple-transfer-encoding-chunked/</guid>
+      <description>&lt;p&gt;This document describes how TSB will handle the request/response if the header has multiple &lt;code&gt;transfer-encoding:chunked&lt;/code&gt;  and also helps you in identifying whether the problem is from the source or the destination.&lt;/p&gt;
+&lt;p&gt;What we recommend to resolve this issue is to make sure that there is only one &lt;code&gt;transfer-encoding:chunked&lt;/code&gt; in both the request and the response header, otherwise Envoy will reject the request.&lt;/p&gt;
+&lt;p&gt;Before you get started, make sure you: &lt;br /&gt;
+✓ Familiarize yourself with &lt;a href=&#34;../concepts/toc&#34;&gt;TSB concepts&lt;/a&gt; &lt;br /&gt;
+✓ Install the &lt;a href=&#34;../setup/self_managed/demo-installation&#34;&gt;TSB demo&lt;/a&gt; environment &lt;br /&gt;
+✓ Deploy the &lt;a href=&#34;../quickstart/deploy_sample_app&#34;&gt;Istio Bookinfo&lt;/a&gt; sample app &lt;br /&gt;&lt;/p&gt;
+&lt;p&gt;Note: For the response section, the application we used here deliberately generates multiple &lt;code&gt;transfer-encoding:chunked&lt;/code&gt; headers and it’s used for only documentation purpose.&lt;/p&gt;
+&lt;p&gt;We have often seen that the header of the request/response contains multiple &lt;code&gt;transfer-encoding:chunked&lt;/code&gt; and this is not a valid header as Envoy rejects such request. In the bookinfo application that we have installed we can take a deeper look at how envoy will reject with specific error code for a simple request.&lt;/p&gt;
+&lt;h2 id=&#34;request-header-with-transfer-encoding-chunkedchunked&#34;&gt;Request header with &amp;ldquo;Transfer-Encoding: chunked,chunked&amp;rdquo;&lt;/h2&gt;
+&lt;p&gt;For our bookinfo app we will create a simple request using curl to send a multiple &lt;code&gt;transfer-encoding:chunked&lt;/code&gt; and we will observe how the envoy gateway will respond.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ curl  -kv &amp;#34;http://bookinfo.tetrate.com/productpage&amp;#34; -H &amp;#34;Transfer-Encoding: chunked&amp;#34; -H &amp;#34;Transfer-Encoding: chunked&amp;#34; 
+[ ... ]
+&amp;gt; GET /productpage HTTP/1.1
+&amp;gt; Host: bookinfo.tetrate.com
+&amp;gt; User-Agent: curl/7.79.1
+&amp;gt; Accept: */*
+&amp;gt; Transfer-Encoding: chunked
+&amp;gt; Transfer-Encoding: chunked
+&amp;gt; 
+* Mark bundle as not supporting multiuse
+&amp;lt; HTTP/1.1 501 Not Implemented
+&amp;lt; content-length: 15
+&amp;lt; content-type: text/plain
+&amp;lt; date: Tue, 13 Sep 2022 11:08:56 GMT
+&amp;lt; server: istio-envoy
+&amp;lt; connection: close
+&amp;lt; 
+* Closing connection 0
+Not Implemented%
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;At the same time the gateway envoy logs show the failure with the below snippet and the error code as &lt;code&gt;501 DPE (Downstream Protocol Error)&lt;/code&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl logs ${GWPOD} -n bookinfo 
+[2022-09-07T08:17:38.936Z] &amp;#34;- - HTTP/1.1&amp;#34; 501 DPE http1.invalid_transfer_encoding - &amp;#34;-&amp;#34; 0 15 0 - &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; - - 10.0.2.20:8080 10.128.0.74:23365 - -
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;response-header-with-transfer-encoding-chunkedchunked&#34;&gt;Response header with &amp;ldquo;Transfer-Encoding: chunked,chunked&amp;rdquo;&lt;/h2&gt;
+&lt;p&gt;The response header can be manipulated within the application itself and could trigger the multiple chunks as well. In these cases the envoy sidecar of that application will reject the response.
+To demonstrate the response we used a simple application which will generate multiple transfer-chunked as a default behavior,We will send a curl request from the &lt;a href=&#34;./debug-container&#34;&gt;Debug-container&lt;/a&gt; with default values as shown below.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$curl -v http://transfer:8080/test
+[ ... ]
+&amp;gt; GET /test HTTP/1.1
+&amp;gt; Host: transfer:8080
+&amp;gt; User-Agent: curl/7.83.1
+&amp;gt; Accept: */*
+&amp;gt; 
+* Mark bundle as not supporting multiuse
+&amp;lt; HTTP/1.1 502 Bad Gateway
+&amp;lt; content-length: 87
+&amp;lt; content-type: text/plain
+&amp;lt; date: Tue, 13 Sep 2022 11:17:13 GMT
+&amp;lt; server: envoy
+&amp;lt; x-envoy-upstream-service-time: 2
+&amp;lt; 
+* Connection #0 to host transfer left intact
+upstream connect error or disconnect/reset before headers. reset reason: protocol error/ 
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;When we look at the sidecar envoy log we can see the rejection with the error message &lt;code&gt;502 UPE (Upstream Protocol Error)&lt;/code&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl logs transfer-58c6c67c56-d8wzk  -n test 
+[2022-09-13T11:17:13.471Z] &amp;#34;GET /test HTTP/1.1&amp;#34; 502 UPE upstream_reset_before_response_started{protocol_error} - &amp;#34;-&amp;#34; 0 87 1 - &amp;#34;-&amp;#34; &amp;#34;curl/7.83.1&amp;#34; &amp;#34;fbcd5bff-1981-40a5-a2c8-fd6133161976&amp;#34; &amp;#34;transfer:8080&amp;#34; &amp;#34;10.0.2.7:8080&amp;#34; inbound|8080|| 127.0.0.6:53799 10.0.2.7:8080 10.0.0.21:59960 outbound_.8080_._.transfer.test.svc.cluster.local default
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;If we enable the debug log for sidecar of the application we can see the error in details as&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2022-09-13T12:46:48.497388Z     debug   envoy client    [C2912] Error dispatching received data: http/1.1 protocol error: unsupported transfer encoding
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>UI Metrics Troubleshooting</title>
+      <link>https://lib.jimmysong.io/tsb/troubleshooting/tsb-ui-metrics/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/troubleshooting/tsb-ui-metrics/</guid>
+      <description>&lt;p&gt;TSB&amp;rsquo;s UI displays metrics and health of your services. However, if there are no
+metrics or traces displayed, then you may be facing an issue with either your
+services, or with TSB.&lt;/p&gt;
+&lt;p&gt;This guide will walk you through how to determine whether the issue is with a
+service, or with one of the metrics components within TSB.&lt;/p&gt;
+&lt;h2 id=&#34;metrics&#34;&gt;Metrics&lt;/h2&gt;
+&lt;p&gt;If you don&amp;rsquo;t see the metrics, use this section of the guide to troubleshoot.&lt;/p&gt;
+&lt;p&gt;First, make sure that you have traffic flowing in your application. You need
+traffic to generate metrics.&lt;/p&gt;
+&lt;p&gt;Check that the time range window you&amp;rsquo;ve set in TSB is correct, and there was
+traffic during that period.&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../assets/023f435-Tetrate_Service_Bridge.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;Check if running a UI query in your browser returns a status. Use your browser
+&lt;code&gt;inspect&lt;/code&gt; command and check the request/response details.&lt;/p&gt;
+&lt;p&gt;From the inspector, select the &lt;code&gt;Network&lt;/code&gt; tab and open your application from the
+TSB UI. You should see a list of all the requests between your browser and the
+TSB backend.&lt;/p&gt;
+&lt;p&gt;Search for the last &lt;code&gt;graphql&lt;/code&gt; request.&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../assets/71914d4-DevTools_-_35_247_59_43_8443_applications_prune-tenant_dev_bookinfo.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../assets/47326cc-DevTools_-_35_247_59_43_8443_applications_prune-tenant_dev_bookinfo-2.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;If you don&amp;rsquo;t see the query, it may indicate that your application is not
+handling any traffic, or you&amp;rsquo;re having a problem with the OAP deployment.&lt;/p&gt;
+&lt;p&gt;To inspect OAP, use the following steps:&lt;/p&gt;
+&lt;p&gt;Check if the &lt;code&gt;OAP&lt;/code&gt; Pod in the &lt;code&gt;tsb&lt;/code&gt; Namespace is up and running by confirming
+whether there are any errors in the pod&amp;rsquo;s log:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:alice}&#34; data-lang=&#34;bash{promptUser:alice}&#34;&gt;kubectl -n tsb logs -l app=oap
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The errors from the logs will help you triage the problem.&lt;/p&gt;
+&lt;p&gt;If the issue is related to Elasticsearch, check if OAP in the control plane
+namespace (istio-system) is receiving Access Log Service (ALS) data from various
+Envoys by forwarding the monitoring port of the OAP pods to your local computer,
+and querying some metrics using the following steps:&lt;/p&gt;
+&lt;p&gt;Start a port-forward to OAP in a shell:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:alice}&#34; data-lang=&#34;bash{promptUser:alice}&#34;&gt;kubectl -n istio-system port-forward deployment/oap-deployment 1234
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;If there is no issue, you should see:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Forwarding from 127.0.0.1:1234 -&amp;gt; 1234
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Forwarding from [::1]:1234 -&amp;gt; 1234
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;In a different shell, curl the metrics with the command below:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;curl -s http://localhost:1234/ | grep &amp;#34;envoy_als_in_count&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You should see something similar to this example output:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;router~10.28.0.25~tsb-gateway-7b7fbcdfb7-726bf.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;tsb-gateway&amp;#34;,} 67492.0
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.19~details-v1-94d5d794-kt76x.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;details.bookinfo&amp;#34;,} 33747.0
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.23~reviews-v3-5556b6949-pvqfn.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;reviews.bookinfo&amp;#34;,} 22500.0
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.24~productpage-v1-665ddb5664-ts6pz.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;productpage.bookinfo&amp;#34;,} 101240.0
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.22~reviews-v2-6cb744f8ff-mf8s6.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;reviews.bookinfo&amp;#34;,} 22498.0
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.20~ratings-v1-744894fbdb-ctvpd.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;ratings.bookinfo&amp;#34;,} 22499.0
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.21~reviews-v1-f7c7c7b45-8v2sf.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;reviews.bookinfo&amp;#34;,} 11249.0
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You should see the numbers on the right-hand side increase if your application
+is in use.&lt;/p&gt;
+&lt;p&gt;If you don&amp;rsquo;t see any metrics, or the metrics do not change over time, check if
+your application sidecars (Envoy) are sending ALS metrics to the control plane
+OAP by performing a&lt;code&gt;port-forward&lt;/code&gt; of the Istio Sidecar on port 15000 and query
+the &lt;code&gt;envoy_accesslog_service&lt;/code&gt; metric. The standard number of  &lt;code&gt;cx_active&lt;/code&gt;
+metrics (i.e. the number of current connections) is two.&lt;/p&gt;
+&lt;p&gt;The below example uses the &lt;code&gt;productpage&lt;/code&gt; service of the &lt;code&gt;bookinfo&lt;/code&gt; application:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:alice}{outputLines:1,3-6,8}&#34; data-lang=&#34;bash{promptUser:alice}{outputLines:1,3-6,8}&#34;&gt;# start the port-forward in a shell
+kubectl -n bookinfo port-forward deployment/productpage-v1 15000
+Forwarding from 127.0.0.1:15000 -&amp;gt; 15000
+Forwarding from [::1]:15000 -&amp;gt; 15000
+
+# curl the config in another shell
+curl -s http://localhost:15000/clusters | grep &amp;#34;envoy_accesslog_service&amp;#34; | grep cx_active
+envoy_accesslog_service::10.31.243.206:11800::cx_active::2
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;If the counters aren&amp;rsquo;t what you expect, add &lt;code&gt;debug&lt;/code&gt; logging level to OAP by
+editing the OAP&amp;rsquo;s &lt;code&gt;config.yml&lt;/code&gt; with the following command:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;kubectl -n istio-system edit cm oap-config
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Search for the following lines and remove the comments around it:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;&amp;lt;!-- uncomment following line when need to debug ALS raw data
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;   &amp;lt;logger name=&amp;#34;io.tetrate.spm.user.receiver.envoy&amp;#34; level=&amp;#34;DEBUG&amp;#34;/&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;--&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;So that it becomes:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;&amp;lt;logger&lt;/span&gt; &lt;span class=&#34;na&#34;&gt;name=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;io.tetrate.spm.user.receiver.envoy&amp;#34;&lt;/span&gt; &lt;span class=&#34;na&#34;&gt;level=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;DEBUG&amp;#34;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;/&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Then, restart OAP for the configuration change to take effect:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:alice}&#34; data-lang=&#34;bash{promptUser:alice}&#34;&gt;kubectl -n istio-system delete pod -l app=oap
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Now you can search the logs for &lt;code&gt;downstream_remote_address&lt;/code&gt;. If you have
+searchable logs, it  means that the metrics are reaching the OAP service.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;search in the Elasticsearch back-end&lt;br/&gt;
+Metrics are kept in Elasticsearch (ES) indices. You can check the status and
+health of the ES by sending some queries.&lt;br/&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;As the ES server is not managed by TSB, please refer to your documentation for
+the correct connection string.&lt;br/&gt;&lt;/p&gt;
+&lt;p&gt;In the example, we set a port-forward to the ES pod inside the &lt;code&gt;tsb&lt;/code&gt; namespace.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:alice}{outputLines:1,3-4,6-9,10-22}&#34; data-lang=&#34;bash{promptUser:alice}{outputLines:1,3-4,6-9,10-22}&#34;&gt;# port forward to ES server
+kubectl -n tsb port-forward statefulset/elasticsearch 9200
+
+# check cluster health
+curl -s  &amp;#39;http://localhost:9200/_cluster/health?pretty=true&amp;#39;
+{
+    &amp;#34;cluster_name&amp;#34; : &amp;#34;elasticsearch&amp;#34;,
+    &amp;#34;status&amp;#34; : &amp;#34;yellow&amp;#34;,
+    &amp;#34;timed_out&amp;#34; : false,
+    &amp;#34;number_of_nodes&amp;#34; : 1,
+    &amp;#34;number_of_data_nodes&amp;#34; : 1,
+    &amp;#34;active_primary_shards&amp;#34; : 64,
+    &amp;#34;active_shards&amp;#34; : 64,
+    &amp;#34;relocating_shards&amp;#34; : 0,
+    &amp;#34;initializing_shards&amp;#34; : 0,
+    &amp;#34;unassigned_shards&amp;#34; : 5,
+    &amp;#34;delayed_unassigned_shards&amp;#34; : 0,
+    &amp;#34;number_of_pending_tasks&amp;#34; : 0,
+    &amp;#34;number_of_in_flight_fetch&amp;#34; : 0,
+    &amp;#34;task_max_waiting_in_queue_millis&amp;#34; : 0,
+    &amp;#34;active_shards_percent_as_number&amp;#34; : 92.7536231884058
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The &lt;code&gt;status&lt;/code&gt; line should be green or yellow. If it&amp;rsquo;s red, then the issue is
+with the ES cluster. You should check the indices&amp;rsquo; status using the command:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:alice}{outputLines:1,3-8}&#34; data-lang=&#34;bash{promptUser:alice}{outputLines:1,3-8}&#34;&gt;# Indices status for the 26 March 2020
+curl -H&amp;#39;Content-Type: application/json&amp;#39; -s -XGET &amp;#39;http://localhost:9200/_cat/shards/*20200326
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You should see a list of all the indices. They should all be in the &lt;code&gt;STARTED&lt;/code&gt;
+state. Next columns hold the number of documents and the size of the index. By
+running the command at different times, you should see these numbers increasing.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;service_5xx-20200326                                 0 p STARTED  31236   1.4mb 10.28.1.12 elasticsearch-0
+service_instance_relation_client_call_sla-20200326   0 p STARTED  53791   5.1mb 10.28.1.12 elasticsearch-0
+endpoint_percentile-20200326                         0 p STARTED 128707  12.7mb 10.28.1.12 elasticsearch-0
+endpoint_2xx-20200326                                0 p STARTED 123131   7.4mb 10.28.1.12 elasticsearch-0
+...
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>Using The Debug Container</title>
+      <link>https://lib.jimmysong.io/tsb/troubleshooting/debug-container/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/troubleshooting/debug-container/</guid>
+      <description>&lt;p&gt;import vars from &amp;ldquo;../_vars.json&amp;rdquo;;&lt;/p&gt;
+&lt;p&gt;Tetrate Service Bridge (TSB) is a complex collection of components that are interconnected using various protocols. This is probably also true for your applications deployed over the service mesh that TSB provides. In many cases you will need to check, test, and verify the network connectivity within the various TSB components to make sure that the system is working as expected.&lt;/p&gt;
+&lt;p&gt;To save you some time to create a debugging environment in the Kubernetes clusters, Tetrate provides a debug container that comes with most of the toolsets needed to validate the network status already installed. For example, tools such as &lt;code&gt;ping&lt;/code&gt;, &lt;code&gt;curl&lt;/code&gt;, &lt;code&gt;gpcurl&lt;/code&gt;, &lt;code&gt;dig&lt;/code&gt;, etc are already installed in this container.&lt;/p&gt;
+&lt;h2 id=&#34;using-the-debug-container&#34;&gt;Using the debug container&lt;/h2&gt;
+&lt;p&gt;This debug container can be deployed to any cluster as long as the appropriate image registry can be reached to download the container image.&lt;/p&gt;
+&lt;p&gt;The container image is included in the TSB distribution and will be synced to your registry along with the rest of the images when you run the &lt;a href=&#34;../setup/requirements-and-download#sync-tetrate-service-bridge-images&#34;&gt;&lt;code&gt;tctl install image-sync&lt;/code&gt; command&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;To deploy the debug container, run the following command. Replace &lt;code&gt;&amp;lt;registry-location&amp;gt;&lt;/code&gt; with the registry URL where you synced the TSB images.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
+{`kubectl run debug-container --image &lt;registry-location&gt;/tetrate-troubleshoot:${vars.versionNumber} -it -- ash`}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Once the pod is created, you will be placed in a shell within the debug container and you will be able to run necessary commands for troubleshooting.&lt;/p&gt;
+&lt;h3 id=&#34;checking-the-network-connectivity&#34;&gt;Checking the network connectivity&lt;/h3&gt;
+&lt;p&gt;If you want to check the network connectivity from the TSB cluster to the datastore you use (we assume PostgreSQL for this example), you can run the following command:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;curl -v telnet://&amp;lt;postgres_IP&amp;gt;:5432
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Or use the PostgreSQL client command &lt;code&gt;psql&lt;/code&gt; to validate the credentials.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;psql -h my.postgres.local -P 5432 -U myUser
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

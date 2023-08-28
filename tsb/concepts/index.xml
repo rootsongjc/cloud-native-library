@@ -1,0 +1,710 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>概念 | 云原生资料库</title>
+    <link>https://lib.jimmysong.io/tsb/concepts/</link>
+      <atom:link href="https://lib.jimmysong.io/tsb/concepts/index.xml" rel="self" type="application/rss+xml" />
+    <description>概念</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Wed, 09 Aug 2023 12:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://lib.jimmysong.io/media/sharing.png</url>
+      <title>概念</title>
+      <link>https://lib.jimmysong.io/tsb/concepts/</link>
+    </image>
+    
+    <item>
+      <title>服务网格简介</title>
+      <link>https://lib.jimmysong.io/tsb/concepts/service-mesh/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/concepts/service-mesh/</guid>
+      <description>&lt;p&gt;Service Mesh 架构已得到广泛采用，Tetrate 的团队由一些最早开发支持该架构的技术的工程师组成。在本节中，我们将介绍该架构、其术语、功能、特性，并重点介绍 Istio，这是为 Tetrate Service Bridge 提供支持的领先网格实现。&lt;/p&gt;
+&lt;h2 id=&#34;什么是服务网格&#34;&gt;什么是服务网格？&lt;/h2&gt;
+&lt;p&gt;服务网格是通过代理位于应用程序组件和网络之间的基础设施层。虽然这些组件通常是微服务，但任何工作负载（从无服务器容器到虚拟机或裸机上的传统 n 层应用程序）都可以参与网格。代理不是通过网络在组件之间进行直接通信，而是拦截并管理该通信。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-服务网格架构控制平面和数据平面&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/concepts/service-mesh-architecture.svg&#34; alt=&#34;服务网格架构：控制平面和数据平面&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      服务网格架构：控制平面和数据平面
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;数据平面&#34;&gt;数据平面&lt;/h3&gt;
+&lt;p&gt;这些代理被称为“sidecar 代理”，因为它们与每个应用程序实例一起部署，构成了服务网格的&lt;a href=&#34;../terminology#data-plane&#34;&gt;数据平面&lt;/a&gt;。它们在运行时处理应用程序流量。 Tetrate Service Bridge 采用 Envoy 作为数据平面实现。 Envoy 提供了大量的安全、流量策略和遥测功能，包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;服务发现&lt;/li&gt;
+&lt;li&gt;弹性机制（重试、熔断、异常值检测）&lt;/li&gt;
+&lt;li&gt;客户端负载均衡&lt;/li&gt;
+&lt;li&gt;细粒度的L7流量控制&lt;/li&gt;
+&lt;li&gt;根据请求实施安全策略&lt;/li&gt;
+&lt;li&gt;基于 L7 元数据的身份验证、速率限制、策略&lt;/li&gt;
+&lt;li&gt;具有强 L7 身份的工作负载身份&lt;/li&gt;
+&lt;li&gt;服务间授权&lt;/li&gt;
+&lt;li&gt;使用 WASM 扩展的可扩展性&lt;/li&gt;
+&lt;li&gt;指标、日志和跟踪&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;通过将这些功能从应用程序转移到边车代理，可以引入控制平面来动态配置数据平面，从而提供一系列好处。&lt;/p&gt;
+&lt;h3 id=&#34;控制平面&#34;&gt;控制平面&lt;/h3&gt;
+&lt;p&gt;控制平面负责数据平面代理的运行时配置。它将控制平面的声明性配置转换为 Envoy 的具体运行时配置。控制平面协调多个 Envoy 代理，创建一个有凝聚力的网格。&lt;/p&gt;
+&lt;p&gt;通过每个应用程序实例的边车代理和动态控制平面，服务网格提供了集中控制和分布式执行。这种级别的控制无法通过框架和库实现，但具有以下优点：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;集中可见性和控制&lt;/li&gt;
+&lt;li&gt;整个环境的一致性&lt;/li&gt;
+&lt;li&gt;通过基于代码的配置进行有效的策略更改&lt;/li&gt;
+&lt;li&gt;将功能生命周期与应用程序生命周期分开&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Tetrate Service Bridge 利用 Istio 作为其控制平面在运行时配置 Envoy 代理。&lt;/p&gt;
+&lt;h2 id=&#34;服务网格的起源&#34;&gt;服务网格的起源&lt;/h2&gt;
+&lt;p&gt;2010 年代初，服务网格架构在多家公司同时出现，以解决采用面向服务架构的挑战。谷歌的旅程导致了原型服务网格的创建，该网格解决了共同命运中断、成本归因和跨领域功能实现等问题。&lt;/p&gt;
+&lt;p&gt;在内部体验到服务网格的好处后，Istio 诞生了，就是为了将这些功能带给世界。 Tetrate 的成立是为了满足在现代化和云采用方面面临类似挑战的企业的需求。&lt;/p&gt;
+&lt;h2 id=&#34;api-网关和服务网格&#34;&gt;API 网关和服务网格&lt;/h2&gt;
+&lt;p&gt;服务网格架构起源于分布式 API 网关，解决跨领域问题。随着微服务架构的盛行，内部流量大大超过外部流量。这种转变以及向零信任安全的转变，推动网格处理跨环境的流量。&lt;/p&gt;
+&lt;p&gt;因此，API 网关的功能正在成为应用程序流量平台不可或缺的一部分，在平台中随处可用。传统上被视为“边缘”设备的其他功能也正在合并到应用程序流量平台中。&lt;/p&gt;
+&lt;h2 id=&#34;istio领先的网格实现&#34;&gt;Istio：领先的网格实现&lt;/h2&gt;
+&lt;p&gt;服务网格充当基于微服务的应用程序的安全内核，因此网格实现的选择对于应用程序和信息安全至关重要。 Istio 是使用最广泛、支持最广泛的服务网格，可作为微服务安全标准的参考实现。它符合 NIST 的指导方针，并拥有活跃的错误赏金、安全审计和 CVE 补丁。&lt;/p&gt;
+&lt;p&gt;Istio 与 Kubernetes 生态系统一起发展，提供无缝集成和标准化。 Tetrate 的团队由早期 Istio 贡献者组成，选择 Istio 作为为 Tetrate Service Bridge 提供支持的网格。&lt;/p&gt;
+&lt;p&gt;继续阅读，了解 TSB 如何利用 Istio 将你的基础设施统一为一个有凝聚力的网格。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>TSB 架构</title>
+      <link>https://lib.jimmysong.io/tsb/concepts/architecture/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/concepts/architecture/</guid>
+      <description>&lt;p&gt;本节重点介绍组成 TSB 的架构及其含义。你将获得以下方面的知识：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;我们的可靠部署理念是 TSB 架构背后的驱动力&lt;/li&gt;
+&lt;li&gt;数据平面，由 Envoy 提供支持&lt;/li&gt;
+&lt;li&gt;由 Istio 提供支持的本地控制平面&lt;/li&gt;
+&lt;li&gt;Tetrate Service Bridge 的全局控制平面&lt;/li&gt;
+&lt;li&gt;Tetrate Service Bridge 的管理平面&lt;/li&gt;
+&lt;li&gt;拥有管理平面的重要性&lt;/li&gt;
+&lt;li&gt;Tetrate Service Bridge 中的 Envoy 扩展&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;读完本节后，你应该清楚地了解 TSB 架构的每个元素以及它们如何协同工作以帮助你管理环境。&lt;/p&gt;
+&lt;h2 id=&#34;部署理念&#34;&gt;部署理念&lt;/h2&gt;
+&lt;p&gt;TSB 的架构基于以故障域为中心的强大部署理念。此方法涉及识别和隔离关键系统发生故障时受影响的基础设施部分。这些故障域分为三类：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;物理故障：包括主机故障、机架故障、硬盘驱动器故障和资源短缺。&lt;/li&gt;
+&lt;li&gt;逻辑故障：逻辑故障包括错误配置、安全漏洞以及与依赖项和数据相关的问题。&lt;/li&gt;
+&lt;li&gt;数据故障：这些涉及数据库问题、错误更新、复制失败和备份问题。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;为了创建可靠的系统，这些故障域被分组到孤岛中并作为独立实例进行复制。所得系统的可靠性取决于最小化副本之间的相互依赖性。&lt;/p&gt;
+&lt;h3 id=&#34;物理故障域&#34;&gt;物理故障域&lt;/h3&gt;
+&lt;p&gt;在现代云环境中，需要考虑的一组物理故障域已被浓缩为一个简单的概念，称为可用区。然而，我们必须记住，可用性区域并不总是彼此完全隔离，正如云提供商中断所证明的那样。&lt;/p&gt;
+&lt;p&gt;为了解决这个问题，云提供商将多个可用区域组织到一个称为区域的更高级别的故障域中。虽然同一区域中的多个可用区发生故障的情况并不罕见，但多个区域发生故障的可能性很小。&lt;/p&gt;
+&lt;p&gt;因此，在考虑可用区和区域作为物理故障域的同时，还必须考虑逻辑故障域。&lt;/p&gt;
+&lt;h3 id=&#34;逻辑故障&#34;&gt;逻辑故障&lt;/h3&gt;
+&lt;p&gt;逻辑故障很大程度上取决于我们自己的应用程序架构，并且往往更难以推理。作为应用程序开发人员，要考虑的关键要素是应用程序的部署、配置、数据、依赖项以及它的公开方式（负载平衡、DNS 等）&lt;/p&gt;
+&lt;p&gt;在典型的微服务架构中，我们设计应用程序来使用云提供商数据库，使用单个区域中跨可用区的云提供商原语运行它（使用 Kubernetes、VM 自动缩放组、容器 aaS 产品等），并尽可能与部署在同一区域的依赖进行通信。当这不可能时，我们依赖于 DNS 等全局负载平衡层。这是我们的故障域孤岛，我们将其复制到其他区域以实现可用性，以某种方式处理数据复制（这是一个难题，也是影响所有孤岛的常见故障域）。&lt;/p&gt;
+&lt;h3 id=&#34;保持本地化&#34;&gt;保持本地化&lt;/h3&gt;
+&lt;p&gt;创建没有耦合故障域的隔离孤岛的最简单方法之一是在每个孤岛中运行关键服务的独立副本。我们可以说这些副本对于筒仓来说是“本地”的，因为它们共享相同的故障域，包括物理故障域，这意味着它们位于附近。&lt;/p&gt;
+&lt;p&gt;在 Tetrate Service Bridge，我们遵循这种“保持本地化”模式，在运行应用程序的每个计算集群中运行 Istio 控制平面的实例。换句话说，我们部署 Istio，使其物理故障域与你的应用程序保持一致。此外，我们确保这些实例是松散耦合的，不需要彼此直接通信，从而最大限度地减少它们需要在孤岛之外进行的任何通信。&lt;/p&gt;
+&lt;p&gt;这意味着你运行的每个集群都是一座孤岛，其中一个集群的故障不会导致其他集群的故障。此外，由于控制平面位于集群本地，因此它了解正在发生的情况。当发生故障时，它可以继续保持其网格部分在其本地上下文中尽可能表现最佳。&lt;/p&gt;
+&lt;p&gt;有了这个基本原语，我们就可以通过简单地跨孤岛进行整体故障转移来开始构建更可靠的系统。如果孤岛中出现任何问题，我们可以将所有流量发送到不同的孤岛，直到解决问题为止。&lt;/p&gt;
+&lt;p&gt;但为了将其提升到一个新的水平，我们想要做的是在部分发生故障时促进跨孤岛的通信，而不是对整个事情进行故障转移。为此，我们需要跨部门进行沟通。&lt;/p&gt;
+&lt;h3 id=&#34;促进跨孤岛通信&#34;&gt;促进跨孤岛通信&lt;/h3&gt;
+&lt;p&gt;保持本地化为我们提供了一组可用但不互连的孤岛。这会导致浪费并使故障转移操作变得痛苦。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-更新从-k8s-流向-tsb然后返回远程集群中的-tsb-组件的框图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/concepts/tsb-multicluster-block-vm.svg&#34; alt=&#34;更新从 K8s 流向 TSB，然后返回远程集群中的 TSB 组件的框图。&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      更新从 K8s 流向 TSB，然后返回远程集群中的 TSB 组件的框图。
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;我们经常想要找到一个健康的依赖实例，即使它不在我们的本地孤岛中，并将请求路由到它。例如，如果我们在一个集群中的后端服务部署不当，我们希望前端能够故障转移到第二个集群中的现有部署。 TSB 促进了应用程序的跨孤岛通信，同时最大限度地减少了 Istio 控制平面实例与其全局控制平面之间所需的配置同步。它将网格中每个集群的入口点地址以及该集群中可用的服务集发布到 TSB 管理的每个 Istio 实例。当服务在本地发生故障，或者本地服务需要与远程依赖项进行通信时，我们可以将该流量定向到具有我们所需服务的远程集群，而应用程序本身无需担心依赖项所在的位置。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;与互联网比较&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    我们经常使用互联网作为例子来解释我们的方法。你完全了解本地网络，并且要连接到其他网络上的主机，你可以使用 BGP 发布的路由。这些路由提供有关使用哪个本地网关来转发流量以到达远程地址的信息。在我们的设置中，Istio 控制平面的每个实例都完全了解其自己的本地集群。全局控制平面的功能类似于 BGP，发布“第 7 层路由”，指示 Istio 使用哪些远程网关（网格中的其他 Istio 集群）来转发流量以到达远程服务。
+&lt;/div&gt;
+
+&lt;h2 id=&#34;架构概述&#34;&gt;架构概述&lt;/h2&gt;
+&lt;p&gt;Tetrate Service Bridge 的架构由四层组成：数据平面、本地控制平面、全局控制平面和管理平面。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-具有本地控制平面全局控制平面和管理平面的-tetrate-service-brdige-架构&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/concepts/tsb-architecture.svg&#34; alt=&#34;具有本地控制平面、全局控制平面和管理平面的 Tetrate Service Brdige 架构&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      具有本地控制平面、全局控制平面和管理平面的 Tetrate Service Brdige 架构
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;数据平面：数据平面负责入站和出站流量，确保使用 Envoy 代理强制执行流量和安全策略。&lt;/li&gt;
+&lt;li&gt;本地控制平面：本地控制平面部署在集群内并管理服务网格功能，例如提供服务身份、加密和流量路由。&lt;/li&gt;
+&lt;li&gt;全局控制平面：全局控制平面链接本地控制平面，方便跨集群的配置传播、服务发现和灾难恢复。&lt;/li&gt;
+&lt;li&gt;管理平面：管理平面是可以管理工作区、组和服务的用户的主要访问点。这提供了对环境的有效管理和控制。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;数据平面&#34;&gt;数据平面&lt;/h2&gt;
+&lt;p&gt;Istio 使用 Envoy 代理的扩展版本作为数据平面。 Envoy 是一种高性能边缘/中间/服务代理，旨在调解服务网格中所有服务的所有入站和出站流量。当作为 sidecar 部署到应用程序时，Envoy 代理可以通过流量管理、安全性和可观察性功能来增强这些应用程序。&lt;/p&gt;
+&lt;p&gt;将 Envoy 部署为 sidecar 会自动配置所有入站和出站流量通过 Envoy。这允许在不需要重新架构或重写应用程序的情况下增加服务。&lt;/p&gt;
+&lt;h3 id=&#34;现代-api-网关web-应用程序防火墙和其他边缘功能&#34;&gt;现代 API 网关、Web 应用程序防火墙和其他“边缘”功能&lt;/h3&gt;
+&lt;p&gt;利用 Envoy 作为一致的数据平面，我们可以提供传统上仅限于应用程序流量平台中任何位置的边缘或 DMZ 的功能。 TSB 将 Envoy 的一系列功能组合到一个易于使用的包中，支持 API 网关功能，例如令牌验证、速率限制和基于 OpenAPI 规范的配置。它还为 sidecar、入口网关和边缘负载均衡器带来了 WAF 功能。最重要的是，TSB 允许你编写单个策略并将其应用于任何地方的流量：外部客户端和你的服务之间、网络中的集群或数据中心之间、甚至同一集群上运行的服务之间。&lt;/p&gt;
+&lt;h3 id=&#34;扩展&#34;&gt;扩展&lt;/h3&gt;
+&lt;p&gt;TSB 在数据平面的扩展点是 WebAssembly。 Envoy 有多个扩展点，但正常的 Envoy 扩展需要重建和链接 Envoy 二进制文件。 WebAssembly 是一种沙盒技术，从 Istio 1.6 开始可用于动态扩展 Envoy。&lt;/p&gt;
+&lt;p&gt;Istio 文档提供了 WebAssembly 扩展的概述。在 TSB 中，通过 WASM 扩展和 Istio 的 WasmPlugin 资源提供了对 WebAssembly 扩展的更好支持。这有助于开发人员构建和测试 Envoy 扩展，并与 TSB 集成以促进扩展部署。&lt;/p&gt;
+&lt;h2 id=&#34;本地控制平面&#34;&gt;本地控制平面&lt;/h2&gt;
+&lt;p&gt;TSB 使用 Istio 作为每个集群内的本地控制平面，通过多个 Istio 实例提供隔离的故障域，并从 TSB 管理平面进行简单、标准化的管理。&lt;/p&gt;
+&lt;p&gt;作为用户，你可以从管理平面访问和控制它们，这意味着你不会与本地控制平面进行直接交互。此外，你只需推送一个配置即可更新所有配置。&lt;/p&gt;
+&lt;p&gt;本地控制平面负责：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;智能本地负载均衡&lt;/li&gt;
+&lt;li&gt;在集群内实施零信任&lt;/li&gt;
+&lt;li&gt;在本地级别实施身份验证和授权&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;控制平面是 TSB 推送配置、挖掘数据并根据集群活动做出智能决策的本地接入点。&lt;/p&gt;
+&lt;h2 id=&#34;全局控制平面&#34;&gt;全局控制平面&lt;/h2&gt;
+&lt;p&gt;全局控制平面 (XCP) 是管理平面的一部分，作为用户，你无法直接访问全局控制平面的 API。全局控制平面负责：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;集群间的服务发现&lt;/li&gt;
+&lt;li&gt;从本地控制平面和数据平面收集的遥测数据&lt;/li&gt;
+&lt;li&gt;网关中断或集群故障时的灾难恢复和故障转移&lt;/li&gt;
+&lt;li&gt;用户以及应用程序之间的身份验证和授权&lt;/li&gt;
+&lt;li&gt;出口控制以确定什么可以离开网络。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-在-us-east-中创建的-barcom-服务会传播到-tsb然后通过-xcp-传播到集群&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/concepts/tsb-bgp.svg&#34; alt=&#34;在 us-east 中创建的 bar.com 服务会传播到 TSB，然后通过 XCP 传播到集群。&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      在 us-east 中创建的 bar.com 服务会传播到 TSB，然后通过 XCP 传播到集群。
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;全局控制平面使集群能够相互通信并通告可用服务。&lt;/p&gt;
+&lt;p&gt;全局控制平面由两个应用程序组成：XCP Central 和 XCP Edge。 XCP Central 部署在 TSB 管理平面中，负责将配置传播到 XCP Edge 应用程序。 XCP Edge 应用程序部署在每个运行用户应用程序的载入集群中，以便将 TSB 配置本地转换为 Istio API。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;多集群方法比较&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    与使用 Istio 跨多个集群构建网格的其他方法（例如将每个集群的每个服务的 Pod 或 VM IP 地址更改发布到所有其他 Istio 实例）相比，TSB 的方法需要的数据更改率非常低传播，数据本身非常小，并且不需要跨集群进行 n 方通信，这意味着保持最新和准确要容易得多，并且整体系统更简单。越简单总是更容易运行并且更可靠。 TSB 促进跨孤岛通信的方法可实现非常稳健且可靠的运行时部署。
+&lt;/div&gt;
+
+&lt;h2 id=&#34;tetrate-service-bridge管理平面&#34;&gt;Tetrate Service Bridge管理平面&lt;/h2&gt;
+&lt;p&gt;TSB 管理平面是网状管理环境中所有内容的主要访问点。&lt;/p&gt;
+&lt;p&gt;管理平面将你的基础架构划分为称为工作区、组和服务的逻辑分组，从而简化管理环境的过程，从而轻松管理你的环境。&lt;/p&gt;
+&lt;p&gt;影响网格管理环境的所有更改均由管理平面处理，包括流量管理、服务发现、服务间通信和入口/出口控制等运行时操作，以及管理用户访问等管理操作（ IAM）、安全控制和审计。&lt;/p&gt;
+&lt;h2 id=&#34;了解管理平面&#34;&gt;了解管理平面&lt;/h2&gt;
+&lt;p&gt;在上一篇Service Mesh架构中，我们介绍了数据平面和控制平面的概念。上面，我们介绍了故障域的概念以及为什么我们要部署本地控制平面的许多实例。拥有许多本地控制平面自然意味着我们需要一些东西来帮助它们作为一个整体运行，因此全局控制平面会出现问题。但为什么要在管理平面之上添加另一层呢？&lt;/p&gt;
+&lt;p&gt;与控制平面不同，控制平面的主要工作是可用、低延迟并尽快服务数据平面配置（它以机器的速度变化），管理平面的主要工作是促进用户与系统的交互，他们之间的工作流程。&lt;/p&gt;
+&lt;p&gt;管理平面是将运行时系统连接到组织中的用户和团队的层。它允许你在具有许多用户和团队、具有许多不同策略和兴趣的复杂组织中安全地管理同一物理基础设施上的分布式系统。它使用 Envoy、Istio 和 SkyWalking 创建一个工具，可在企业中自信地实施监管要求的控制，在同一基础设施上维护许多不相关的团队，而不会造成共同的命运中断，并让团队按照他们想要的速度快速行动它将是安全可靠的。&lt;/p&gt;
+&lt;p&gt;我们将在概念部分的其余部分讨论你可以使用 Tetrate Service Bridge 管理平面做什么，从授权应用程序开发人员管理流量到应用全局策略和使用 TSB 的 IAM 系统管理用户访问，再到了解你的整个基础设施单块玻璃。但乍一看，它可以让你：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;无论应用程序或其依赖项部署在何处，都可以在一处控制流量&lt;/li&gt;
+&lt;li&gt;使用高级权限系统管理谁可以更改什么（防止应用程序开发人员更改安全设置；防止安全团队导致应用程序中断）&lt;/li&gt;
+&lt;li&gt;审核系统中的每一个变更&lt;/li&gt;
+&lt;li&gt;了解和控制系统中的流量：内部流量、入口和出口&lt;/li&gt;
+&lt;li&gt;管理整个基础设施的控制平面生命周期&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;详细的数据流&#34;&gt;详细的数据流&lt;/h2&gt;
+&lt;p&gt;Tetrate Service Bridge 组件和数据流的详细、幕后视图可以帮助你了解构成运行时系统的各个部分以及数据在它们之间的流动方式。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-tsb-组件之间的数据流的详细图表&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/concepts/tes-architecture-detail.svg&#34; alt=&#34;TSB 组件之间的数据流的详细图表。&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      TSB 组件之间的数据流的详细图表。
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;有关每个组件的详细说明，请参阅 &lt;a href=&#34;../../setup/components&#34;&gt;TSB 组件&lt;/a&gt;。有关每个组件使用的端口的完整列表，请转到&lt;a href=&#34;../../setup/firewall-information#tsb-components-ports&#34;&gt;组件端口&lt;/a&gt;。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>安全</title>
+      <link>https://lib.jimmysong.io/tsb/concepts/security/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/concepts/security/</guid>
+      <description>&lt;p&gt;安全性是融入 Tetrate Service Bridge (TSB) 架构每一层的一个基本方面。 TSB 的方法建立在零信任原则之上，其中安全性是网格管理环境中每个特性和功能的首要考虑因素。本节深入探讨 TSB 如何将安全视为一等公民，并提供全面的措施来保护你的应用程序、支持合规性工作并防止中断。&lt;/p&gt;
+&lt;p&gt;在本节中，你将深入了解以下关键方面：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;租赁和抽象基础设施&lt;/li&gt;
+&lt;li&gt;访问控制策略&lt;/li&gt;
+&lt;li&gt;可审计性和日志记录&lt;/li&gt;
+&lt;li&gt;安全通信的服务身份&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;租赁和抽象基础设施&#34;&gt;租赁和抽象基础设施&lt;/h2&gt;
+&lt;p&gt;TSB 引入了资源的逻辑层次结构，为你的物理基础设施提供了抽象层。这种抽象实现了超越单个虚拟机 (VM) 或 Pod 的安全考虑和操作。 TSB的管理平面提供了一个结构化的框架，简化了服务配置，使其更安全、更易于管理。&lt;/p&gt;
+&lt;p&gt;TSB 管理平面中所做的更改适用于环境中的资源集合，而不是处理特定的 VM 或 Pod。这种抽象有助于更好地组织基础设施和理解共享资源，从而最大限度地减少与共享所有权相关的潜在陷阱。&lt;/p&gt;
+&lt;h3 id=&#34;资源层次结构&#34;&gt;资源层次结构&lt;/h3&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-tetrate-service-bridge-资源层次结构&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/operations/tsb-resources.svg&#34; alt=&#34;Tetrate Service Bridge 资源层次结构&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Tetrate Service Bridge 资源层次结构
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;TSB 层级结构的核心是组织。&lt;/p&gt;
+&lt;h4 id=&#34;组织&#34;&gt;组织&lt;/h4&gt;
+&lt;p&gt;每个 TSB 安装都包含一个组织，充当 TSB 范围设置的容器。该组织还包括团队、用户和集群。在组织内，资源被分类为租户。&lt;/p&gt;
+&lt;h4 id=&#34;租户&#34;&gt;租户&lt;/h4&gt;
+&lt;p&gt;TSB 中的租户代表一组共享资源并在指定工作空间内运行的个人或团队。租赁边界提供访问控制和配置分离。租户可以容纳多个团队，例如安全或开发团队。租户拥有的资源进一步划分为工作区，这些工作区通常与特定团队相关联。在租户级别设置的团队级别权限是继承的，允许团队修改其分配的工作区中的资源。&lt;/p&gt;
+&lt;h4 id=&#34;工作空间&#34;&gt;工作空间&lt;/h4&gt;
+&lt;p&gt;TSB 中的工作空间提供了分区区域，团队可以在其中专门管理其资源和网格配置。工作区下面是组，这些组进一步细分为物理服务，最终细分为单个服务实例。&lt;/p&gt;
+&lt;p&gt;工作区提供配置流量和安全访问策略所需的粒度。 TSB 允许为整个工作区设置默认配置，这些配置会自动应用于这些工作区中的所有服务。但是，可以在组或配置级别创建覆盖。&lt;/p&gt;
+&lt;h2 id=&#34;访问控制策略&#34;&gt;访问控制策略&lt;/h2&gt;
+&lt;p&gt;TSB 强制执行两个主要类别的访问控制策略：运行时访问策略和用户管理。&lt;/p&gt;
+&lt;h3 id=&#34;运行时访问策略&#34;&gt;运行时访问策略&lt;/h3&gt;
+&lt;p&gt;TSB 的逻辑模型允许灵活配置运行时安全策略，例如传输中加密（双向 TLS）和最终用户身份验证（例如基于 JWT 的身份验证）。这些运行时访问策略利用服务身份，这是 TSB 零信任架构 (ZTA) 的基本组件。&lt;/p&gt;
+&lt;p&gt;用户管理访问策略有助于配置不同用户角色的权限，确保对 TSB 功能进行清晰且精细的访问控制。&lt;/p&gt;
+&lt;h3 id=&#34;用户访问策略&#34;&gt;用户访问策略&lt;/h3&gt;
+&lt;p&gt;TSB 内的每个资源都与定义特定条件下授权访问的访问策略相关联。 TSB 通过集成来自企业身份提供商（例如 LDAP）的数据并使用下一代访问控制 (NGAC) 在内部进行映射来与你的组织结构保持一致。这种一致性导致访问控制策略尊重组织边界并防止用户影响其指定范围之外的资源。&lt;/p&gt;
+&lt;p&gt;TSB 的用户和团队资源可以通过团队和用户 API 进行管理。然而，TSB 与 LDAP 和 OIDC 等身份提供商的集成可确保大多数用户数据自动同步，从而减少与这些 API 直接交互的需要。&lt;/p&gt;
+&lt;h3 id=&#34;用户访问和资源层次结构&#34;&gt;用户访问和资源层次结构&lt;/h3&gt;
+&lt;p&gt;TSB 的 RBAC API 允许向 TSB 资源层次结构中的用户和团队分配权限。这些权限在层次结构中向下继承。结合支持自定义角色和细粒度权限的 TSB 复杂的 IAM 系统，用户可以广泛控制谁可以在托管基础设施上执行特定操作。&lt;/p&gt;
+&lt;p&gt;例如，在受监管的行业中，TSB 授权中央安全团队为整个基础设施配置传输中的加密。他们可以审核整个系统并在组织级别控制加密设置。业务线安全团队可以进一步为其基础设施的特定部分配置安全控制，而应用程序团队可以在不影响安全设置的情况下专注于开发。&lt;/p&gt;
+&lt;h2 id=&#34;可审计性和日志记录&#34;&gt;可审计性和日志记录&lt;/h2&gt;
+&lt;p&gt;TSB 维护对受控资源所做的所有更改的审计跟踪，提供强大的审计功能。 TSB 内的每个资源都可以进行审核，提供全面的详细信息，例如谁进行了更改、何时进行更改以及更改的确切性质。此信息可通过 TSB 审核日志 API 访问。&lt;/p&gt;
+&lt;p&gt;TSB审计日志API与权限系统紧密结合，确保审计日志仅显示与用户有权访问的资源相关的条目。&lt;/p&gt;
+&lt;h2 id=&#34;安全通信的服务身份&#34;&gt;安全通信的服务身份&lt;/h2&gt;
+&lt;p&gt;TSB 依靠服务身份而不是 IP 或网络位置来增强网络安全性和访问控制。 Istio 支持 TSB 内的服务身份，为每个工作负载提供可验证的身份，以便在运行时进行身份验证和授权。这些身份由 Istio 发布，在运行时轮换，为工作负载之间的安全通信和传输中的加密奠定基础。&lt;/p&gt;
+&lt;p&gt;TSB 利用这些服务身份使应用程序开发人员和安全团队能够定义精细的访问控制策略。这些策略规定了哪些服务可以通信以及如何通信，同时还限制了潜在攻击的范围。通过使用服务身份，TSB 将访问控制策略与底层网络和基础设施组件解耦，确保其在云、Kubernetes、本地和虚拟机等各种环境中的可移植性。&lt;/p&gt;
+&lt;h2 id=&#34;结论&#34;&gt;结论&lt;/h2&gt;
+&lt;p&gt;安全性是 TSB 架构的核心原则，深入融入其设计原则和每一层功能中。从通过资源层次结构提供细粒度的访问控制到通过服务身份实现安全通信，TSB 可确保为你的网格管理环境提供强大的安全态势。通过使安全性与组织结构保持一致并提供全面的审计功能，TSB 使组织能够自信地管理资源、遵守合规性要求并维护高度可用且安全的应用程序环境。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>流量管理</title>
+      <link>https://lib.jimmysong.io/tsb/concepts/traffic-management/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/concepts/traffic-management/</guid>
+      <description>&lt;p&gt;Tetrate Service Bridge (TSB) 提供强大的流量管理功能，允许有效控制其域内服务之间的流量。 TSB 简化了流量路由、分阶段部署和迁移等复杂任务，从而增强了应用程序交付的整体方法。&lt;/p&gt;
+&lt;p&gt;本节涵盖 TSB 流量管理的基本方面：&lt;/p&gt;
+&lt;h2 id=&#34;tsb-中的网关&#34;&gt;TSB 中的网关&lt;/h2&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-tsb-中的基本应用程序流量&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/concepts/tsb-traffic-flow.svg&#34; alt=&#34;TSB 中的基本应用程序流量。&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      TSB 中的基本应用程序流量。
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;TSB 使用一系列网关来管理流量路由。当流量进入你的 TSB 环境时，它会在到达其预期应用程序之前遍历各个网关。该过程涉及：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;应用程序边缘网关：也称为“边缘网关”，这种共享多租户网关有助于跨集群负载平衡。它将传入流量定向到适当的应用程序入口网关。&lt;/li&gt;
+&lt;li&gt;应用程序入口网关：称为“应用程序网关”，该网关可以在多个应用程序之间共享，也可以专用于特定应用程序。它控制流量的流动方式以及与应用程序的交互方式。应用程序入口网关归工作区所有，提供对流量的控制。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;建议部署多个入口网关以隔离和控制流量。随着时间的推移，随着对网格使用的信心不断增强，可以考虑整合到共享入口网关上。&lt;/p&gt;
+&lt;h2 id=&#34;智能流量路由&#34;&gt;智能流量路由&lt;/h2&gt;
+&lt;p&gt;TSB 通过利用每个集群内本地控制平面的信息来确保智能流量路由。它优先考虑本地流量以获得最佳性能和可用性。 Envoy 的按请求功能可以对流量路由进行细粒度控制，支持请求粘性、金丝雀部署以及跨后端均匀分配流量等场景。&lt;/p&gt;
+&lt;p&gt;TSB 通过本地控制平面跟踪服务可用性、位置和运行状况。这使得系统能够尽可能将流量引导到本地实例。全局控制平面跨集群维护服务信息，实现无缝流量故障转移并增强可用性。&lt;/p&gt;
+&lt;h2 id=&#34;多集群路由&#34;&gt;多集群路由&lt;/h2&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-在-us-east-中创建的-barcom-服务会传播到-tsb然后通过-xcp-传播到集群&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/concepts/tsb-bgp.svg&#34; alt=&#34;在 us-east 中创建的 bar.com 服务会传播到 TSB，然后通过 XCP 传播到集群。&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      在 us-east 中创建的 bar.com 服务会传播到 TSB，然后通过 XCP 传播到集群。
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;TSB 擅长管理多集群环境，无论是主动-主动还是主动-被动配置。多集群管理轻松自如，适合多个集群服务不同团队和应用程序的场景。 TSB 使用主机名实现跨集群的无缝应用程序访问，从而促进服务之间的私有通信，无论其集群位置如何。&lt;/p&gt;
+&lt;h2 id=&#34;api网关能力无处不在&#34;&gt;API网关能力无处不在&lt;/h2&gt;
+&lt;p&gt;TSB 将 API 网关功能扩展至整个应用程序流量平台。通过注释 OpenAPI 规范，开发人员可以根据自己的意图配置流量。 TSB 跨网关和网格内部实施这些配置，从而提供了规则执行的灵活性。这支持身份验证、授权、速率限制、WAF 策略和通过 WebAssembly (WASM) 进行请求转换等功能。&lt;/p&gt;
+&lt;h2 id=&#34;流量分流和迁移&#34;&gt;流量分流和迁移&lt;/h2&gt;
+&lt;p&gt;TSB 简化了迁移、流量分割和金丝雀部署的流量管理。该平台使应用程序开发人员能够通过简单的配置过程来改变服务处理流量的方式。 TSB 确保安全，使迁移和变更可扩展且易于管理。借助 TSB 的可观察性功能，可以促进可靠的监控和回滚，从而在基础设施转换和更新期间保持应用程序的可用性。&lt;/p&gt;
+&lt;h2 id=&#34;结论&#34;&gt;结论&lt;/h2&gt;
+&lt;p&gt;Tetrate Service Bridge 的流量管理功能提供对服务如何通信和处理传入请求的精细控制。从网关层次结构到智能流量路由和多集群支持，TSB 简化了复杂环境中的流量管理，增强了应用程序可用性和性能，同时简化了部署流程。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>全局可观测性</title>
+      <link>https://lib.jimmysong.io/tsb/concepts/observability/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/concepts/observability/</guid>
+      <description>&lt;p&gt;Tetrate Service Bridge (TSB) 提供强大的全局可观测性功能，可提供对整个服务网格基础设施的全面洞察。 TSB 简化了监控和了解服务运行状况和性能的过程，从而实现高效运营和故障排除。&lt;/p&gt;
+&lt;h3 id=&#34;全局拓扑视图&#34;&gt;全局拓扑视图&lt;/h3&gt;
+&lt;p&gt;TSB 的显着特征之一是它能够提供跨所有注册集群的服务网格拓扑的综合视图。这使组织能够掌握分布在各个可用区和区域的应用程序、服务和集群之间的复杂关系。全局拓扑视图允许全面了解应用程序如何在更大的基础设施环境中进行通信和交互。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/concepts/tsb-topology.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;服务指标概述&#34;&gt;服务指标概述&lt;/h3&gt;
+&lt;p&gt;TSB 提供以服务为中心的视角，使用户能够监控其应用程序的运行状况和性能，而不管底层部署详细信息或服务版本如何。此聚合视图简化了跨所有集群和区域评估应用程序整体运行状况的过程。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/concepts/service-details.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;此外，TSB 允许用户深入了解服务指标、单个集群甚至特定服务实例的特定方面。这种精细的可观察性使用户能够精确识别潜在问题和瓶颈，从而促进有效的故障排除和优化。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/concepts/service-metrics.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;envoy-指标分析&#34;&gt;Envoy 指标分析&lt;/h3&gt;
+&lt;p&gt;TSB 的全局可观察性还扩展到 Envoy，它是负责在服务网格内路由和管理流量的代理。用户可以访问与各个 Envoy 实例相关的详细指标，从而监控性能指标并深入了解网格内特定组件的行为。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/concepts/envoy-instance-metrics.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>配置的数据流</title>
+      <link>https://lib.jimmysong.io/tsb/concepts/configuration-dataflow/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/concepts/configuration-dataflow/</guid>
+      <description>&lt;p&gt;Tetrate Service Bridge (TSB) 采用结构化数据流机制来确保配置更改和更新在整个服务网格基础设施中高效、准确地传播。这个复杂的过程涉及各种组件，包括管理平面、全局控制平面（XCP Central）和本地控制平面（XCP Edge），每个组件在配置生命周期中都发挥着关键作用。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-simplified-data-flow-from-user-input-through-tsb-xcp-to-local-control-planes&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/concepts/tsb-data-flow.svg&#34; alt=&#34;Simplified data flow from user input through TSB, XCP, to local control planes.&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Simplified data flow from user input through TSB, XCP, to local control planes.
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h2 id=&#34;管理平面&#34;&gt;管理平面&lt;/h2&gt;
+&lt;p&gt;TSB 中的所有配置更改均源自管理平面。用户通过各种接口与 TSB 配置交互，例如 gRPC API、TSB UI 和 &lt;code&gt;tctl&lt;/code&gt; 命令行界面。配置更改随后会保存在数据库中，作为整个系统的事实来源。管理平面将这些更改推送到 XCP Central 以便进一步分发。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;MPC 组件&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    &lt;p&gt;由于遗留原因，XCP Central 通过 Kubernetes CRD 接收其配置。名为“MPC”的 shim 服务器建立到 TSB 的 API 服务器的 gRPC 流，以接收配置并将相应的 CR 推送到托管 XCP Central 的 Kubernetes 集群中。 MPC 还会从 XCP Central 向 TSB 发送系统运行时状态的报告，以帮助用户管理网格。&lt;/p&gt;
+&lt;p&gt;即将发布的 TSB 版本将删除该组件，TSB 的 API Server 和 XCP Central 将直接通过 gRPC 进行通信。&lt;/p&gt;
+
+&lt;/div&gt;
+
+&lt;h2 id=&#34;全局控制平面---xcp-central&#34;&gt;全局控制平面 - XCP Central&lt;/h2&gt;
+&lt;p&gt;XCP Central 充当应用程序集群中管理平面和本地控制平面之间的中介。它处理运行时配置、服务发现信息和管理元数据的分发。这种通信通过 gRPC 流进行，从而实现 XCP Central 和 XCP Edge 实例之间的双向交互。 XCP Central 发送新的用户配置，而 XCP Edge 报告服务发现更改和管理数据。 XCP Central 还将其本地状态的快照存储为其运行的集群中的 Kubernetes 自定义资源 (CR)。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;XCP Central Data Store&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    &lt;p&gt;如今，XCP Central 将其本地状态的快照作为 Kubernetes CR 存储在其部署的集群中。当 XCP Central 无法连接到管理平面并且 XCP Central 本身需要重新启动（即无法使用内存缓存）时，将使用此方法。&lt;/p&gt;
+&lt;p&gt;在未来版本中，当 XCP Central 通过 gRPC 直接从 TSB 接收其配置时，XCP Central 会将其配置保存在类似于管理平面的数据库中。&lt;/p&gt;
+
+&lt;/div&gt;
+
+&lt;h2 id=&#34;本地控制平面---xcp-edge&#34;&gt;本地控制平面 - XCP Edge&lt;/h2&gt;
+&lt;p&gt;XCP Edge 负责将从 XCP Central 接收到的配置转换为特定于本地集群的本机 Istio 对象。它将这些配置发布到 Kubernetes API 服务器中，Istio 在其中照常处理它们。 XCP Edge 还管理跨网格的服务公开，有助于跨集群通信和功能。从 XCP Central 接收的配置信息存储在控制平面命名空间 ( &lt;code&gt;istio-system&lt;/code&gt; ) 中，确保本地缓存在连接丢失时可用。&lt;/p&gt;
+&lt;h2 id=&#34;详细的数据流&#34;&gt;详细的数据流&lt;/h2&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-每个集群中从用户变更到-istio-的详细数据流&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/concepts/configuration-dataflow.svg&#34; alt=&#34;每个集群中从用户变更到 Istio 的详细数据流。&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      每个集群中从用户变更到 Istio 的详细数据流。
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;TSB 内的配置数据流可以概括为一系列步骤：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;用户通过 TSB UI、API 或 CLI 启动配置更改。&lt;/li&gt;
+&lt;li&gt;TSB API 服务器将配置存储在其数据库中。&lt;/li&gt;
+&lt;li&gt;TSB 将配置推送到 XCP Central。&lt;/li&gt;
+&lt;li&gt;XCP Central 通过 gRPC 将配置分发到 XCP Edge 实例。&lt;/li&gt;
+&lt;li&gt;XCP Edge 将传入配置存储在控制平面命名空间 ( &lt;code&gt;istio-system&lt;/code&gt; ) 中。&lt;/li&gt;
+&lt;li&gt;XCP Edge 将配置转换为本机 Istio 对象。&lt;/li&gt;
+&lt;li&gt;Istio 处理配置并将其部署到 Envoy。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;此外，服务发现信息的管理如下：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;XCP Edge 将服务发现更新发送到 XCP Central。&lt;/li&gt;
+&lt;li&gt;XCP Central 将集群状态信息传播到 XCP Edge 实例。&lt;/li&gt;
+&lt;li&gt;如果需要，XCP Edge 会更新多集群命名空间配置 ( &lt;code&gt;xcp-multicluster&lt;/code&gt; )。&lt;/li&gt;
+&lt;li&gt;Istio 处理配置并将其部署到 Envoy。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;与-gitops-集成&#34;&gt;与 GitOps 集成&lt;/h2&gt;
+&lt;p&gt;TSB 的结构化配置数据流可以无缝集成到 GitOps 工作流程中。这种集成通过两个主要场景进行：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;从 CI/CD 接收配置：TSB 可以从 CI/CD 系统接收配置更新，该系统在 Git 存储库中维护事实来源。&lt;/li&gt;
+&lt;li&gt;管理平面提交到 Git：在未来的版本中，TSB 的管理平面将能够将其配置更改直接提交到 Git，与 GitOps 方法保持一致。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;这两种场景都可以在 TSB 生态系统内实现高效的配置管理，从而增强服务网格基础设施的可靠性和可维护性。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>术语</title>
+      <link>https://lib.jimmysong.io/tsb/concepts/terminology/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/concepts/terminology/</guid>
+      <description>&lt;h3 id=&#34;tetrate-service-bridge-tsb&#34;&gt;Tetrate Service Bridge (TSB)&lt;/h3&gt;
+&lt;h4 id=&#34;tetrate-service-bridge-tsb-1&#34;&gt;Tetrate Service Bridge (TSB)&lt;/h4&gt;
+&lt;p&gt;TSB 是一个服务网格管理平面，旨在提供对基础设施的集中控制。它映射到你的组织结构，使你能够管理资源、访问权限、网络和安全性。&lt;/p&gt;
+&lt;h4 id=&#34;组织&#34;&gt;组织&lt;/h4&gt;
+&lt;p&gt;组织代表管理共享基础设施的公司，由多个租户和工作区组成。&lt;/p&gt;
+&lt;h4 id=&#34;租户&#34;&gt;租户&lt;/h4&gt;
+&lt;p&gt;租户是组织内共享资源和访问权限的子组，例如团队或部门。&lt;/p&gt;
+&lt;h4 id=&#34;工作空间&#34;&gt;工作空间&lt;/h4&gt;
+&lt;p&gt;工作区是团队管理其命名空间的定义区域。它隔离与跨不同集群的特定团队的命名空间相关的配置。&lt;/p&gt;
+&lt;h4 id=&#34;服务&#34;&gt;服务&lt;/h4&gt;
+&lt;p&gt;具有唯一身份和身份验证的网络可访问目的地。&lt;/p&gt;
+&lt;h4 id=&#34;团体&#34;&gt;团体&lt;/h4&gt;
+&lt;p&gt;工作区中资源的逻辑分组，分类为网关、流量或安全组。&lt;/p&gt;
+&lt;h4 id=&#34;应用&#34;&gt;应用&lt;/h4&gt;
+&lt;p&gt;公开 API 的服务的逻辑分组，在租户的工作区中进行管理。它使开发人员能够配置服务行为和访问条件。&lt;/p&gt;
+&lt;h4 id=&#34;应用程序接口&#34;&gt;应用程序接口&lt;/h4&gt;
+&lt;p&gt;应用程序公开的一组端点，使开发人员能够使用 OpenAPI 文档配置行为。&lt;/p&gt;
+&lt;h4 id=&#34;用户&#34;&gt;用户&lt;/h4&gt;
+&lt;p&gt;与 TSB 相关的实体，包括人类和非人类实体。可以将用户组织成团队并通过 RBAC 分配访问权限。&lt;/p&gt;
+&lt;h4 id=&#34;团队&#34;&gt;团队&lt;/h4&gt;
+&lt;p&gt;一组用户使用 RBAC 分配对资源的访问权限。建议团队进行访问分配，增强安全性。&lt;/p&gt;
+&lt;h3 id=&#34;架构组件&#34;&gt;架构组件&lt;/h3&gt;
+&lt;h4 id=&#34;管理平面&#34;&gt;管理平面&lt;/h4&gt;
+&lt;p&gt;在 TSB 环境中配置网络、安全性和可观察性的主要界面。&lt;/p&gt;
+&lt;h4 id=&#34;全局控制平面xcp&#34;&gt;全局控制平面/XCP&lt;/h4&gt;
+&lt;p&gt;管理平面的一部分，负责多集群功能和状态管理。&lt;/p&gt;
+&lt;h4 id=&#34;控制平面&#34;&gt;控制平面&lt;/h4&gt;
+&lt;p&gt;每个集群中部署的本地 Istio 服务网格用于管理集群内的网络、流量路由和安全性。&lt;/p&gt;
+&lt;h4 id=&#34;数据平面&#34;&gt;数据平面&lt;/h4&gt;
+&lt;p&gt;由 Envoy 提供支持，使用 sidecar 代理促进服务之间的数据传输。&lt;/p&gt;
+&lt;h4 id=&#34;sidecar-代理&#34;&gt;Sidecar 代理&lt;/h4&gt;
+&lt;p&gt;Envoy 实例与应用程序一起部署，处理流量管理、安全性和可观察性。&lt;/p&gt;
+&lt;h4 id=&#34;负载均衡器&#34;&gt;负载均衡器&lt;/h4&gt;
+&lt;p&gt;根据可用性和容量在服务器之间分配传入请求。&lt;/p&gt;
+&lt;h4 id=&#34;网关&#34;&gt;网关&lt;/h4&gt;
+&lt;p&gt;位于网格边缘的负载均衡器，用于传入/传出 HTTP/TCP 连接。&lt;/p&gt;
+&lt;h4 id=&#34;服务注册中心&#34;&gt;服务注册中心&lt;/h4&gt;
+&lt;p&gt;中心点列出了 TSB 已接入集群中的每项服务。&lt;/p&gt;
+&lt;h4 id=&#34;front-envoyenvoy-网关&#34;&gt;Front Envoy（Envoy 网关）&lt;/h4&gt;
+&lt;p&gt;Envoy 网关接受 TSB 组件的传入流量。&lt;/p&gt;
+&lt;h3 id=&#34;其他术语&#34;&gt;其他术语&lt;/h3&gt;
+&lt;h4 id=&#34;kubernetes&#34;&gt;Kubernetes&lt;/h4&gt;
+&lt;p&gt;开源容器编排平台。&lt;/p&gt;
+&lt;h4 id=&#34;集群&#34;&gt;集群&lt;/h4&gt;
+&lt;p&gt;一组包含 Kubernetes Pod、VM 或裸机资源的计算节点。&lt;/p&gt;
+&lt;h4 id=&#34;命名空间&#34;&gt;命名空间&lt;/h4&gt;
+&lt;p&gt;Kubernetes 对资源进行分组，逻辑地组织容器、pod 或节点。&lt;/p&gt;
+&lt;h4 id=&#34;故障域&#34;&gt;故障域&lt;/h4&gt;
+&lt;p&gt;当关键组件出现问题时，环境的一部分容易发生故障。&lt;/p&gt;
+&lt;h4 id=&#34;筒仓&#34;&gt;筒仓&lt;/h4&gt;
+&lt;p&gt;一组故障域形成一个推理和复制单元。&lt;/p&gt;
+&lt;h4 id=&#34;可用区&#34;&gt;可用区&lt;/h4&gt;
+&lt;p&gt;云提供商区域中用于部署资源的隔离位置，受相关故障模式的影响。&lt;/p&gt;
+&lt;h4 id=&#34;地区&#34;&gt;地区&lt;/h4&gt;
+&lt;p&gt;物理位置包括数据中心，包含可用区域。&lt;/p&gt;
+&lt;h3 id=&#34;开源软件项目&#34;&gt;开源软件项目&lt;/h3&gt;
+&lt;h4 id=&#34;istio&#34;&gt;Istio&lt;/h4&gt;
+&lt;p&gt;提供网络自动化和灵活性的开源服务网格。&lt;/p&gt;
+&lt;h4 id=&#34;envoy&#34;&gt;Envoy&lt;/h4&gt;
+&lt;p&gt;适用于现代架构的 L7 代理和通信系统。&lt;/p&gt;
+&lt;h4 id=&#34;skywalking&#34;&gt;SkyWalking&lt;/h4&gt;
+&lt;p&gt;提供分布式跟踪和指标聚合的可观察性应用程序平台和 APM 工具。&lt;/p&gt;
+&lt;h4 id=&#34;下一代访问控制-ngac&#34;&gt;下一代访问控制 (NGAC)&lt;/h4&gt;
+&lt;p&gt;增强传统 ABAC 的基于图形的访问控制系统。&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
