@@ -21,14 +21,14 @@ a `Gateway group` so that you can configure the application ingress, and a
 
 Store the file as [`helloworld-ws-groups.yaml`](../../assets/howto/helloworld-ws-groups.yaml), and apply with `tctl`:
 
-```bash{promptUser: alice}
+```bash
 tctl apply -f helloworld-ws-groups.yaml
 ```
 
 To deploy your application, start by creating the namespace and enable the Istio
 sidecar injection.
 
-```bash{promptUser: alice}
+```bash
 kubectl create namespace helloworld
 kubectl label namespace helloworld istio-injection=enabled
 ```
@@ -41,7 +41,7 @@ Then deploy your application.
 
 Store as [`helloworld-1.yaml`](../../assets/howto/helloworld-1.yaml), and apply with `kubectl`:
 
-```bash{promptUser: alice}
+```bash
 kubectl apply -f helloworld-1.yaml
 ```
 
@@ -51,7 +51,7 @@ In this example, you're going to expose the application using simple TLS at the
 gateway. You'll need to provide it with a TLS certificate stored in a Kubernetes
 secret.
 
-```bash{promptUser: alice}{outputLines: 2-3}
+```bash
 kubectl create secret tls -n helloworld helloworld-cert \
     --cert /path/to/some/helloworld-cert.pem \
     --key /path/to/some/helloworld-key.pem
@@ -65,7 +65,7 @@ Now you can deploy your ingress gateway.
 
 Save as [`helloworld-ingress.yaml`](../../assets/howto/helloworld-ingress.yaml), and apply with `kubectl`:
 
-```bash{promptUser: alice}
+```bash
 kubectl apply -f helloworld-ingress.yaml
 ```
 
@@ -78,7 +78,7 @@ the gateway so that it routes traffic to your application.
 </CodeBlock>
 
 Save as [`helloworld-gw.yaml`](../../assets/howto/helloworld-gw.yaml), and apply with `tctl`:
-```bash{promptUser: alice}
+```bash
 tctl apply -f helloworld-gw.yaml
 ```
 
@@ -95,7 +95,7 @@ Now, configure client-side load balancing and use the source IP.
 
 Save as [`helloworld-client-lb.yaml`](../../assets/howto/helloworld-client-lb.yaml), and apply with `tctl`:
 
-```bash{promptUser: alice}
+```bash
 tctl apply -f helloworld-client-lb.yaml
 ```
 

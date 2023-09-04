@@ -173,7 +173,7 @@ spec:
 You can use the following command to send some traffic to our httpbin to validate the TSB config.
 
 
-```bash{promptUser: alice}
+```bash
 export GATEWAY_IP=$(kubectl -n shared-ingress-ns get service shared-gateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 curl -k --resolve httpbin.tetrate.com:443:$GATEWAY_IP https://httpbin.tetrate.com/
 ```
@@ -235,7 +235,7 @@ spec:
 You can use the following command to send some traffic to our httpbin to validate the TSB config.
 
 
-```bash{promptUser: alice}
+```bash
 export GATEWAY_IP=$(kubectl -n shared-ingress-ns get service shared-gateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 curl -k --resolve httpbin.tetrate.com:443:$GATEWAY_IP https://httpbin.tetrate.com/
 ```
@@ -356,7 +356,7 @@ spec:
 You can use the following command to send some traffic to our httpbin to validate the TSB config.
 
 
-```bash{promptUser: alice}
+```bash
 export GATEWAY_IP=$(kubectl -n shared-ingress-ns get service shared-gateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 curl -k --resolve httpbin.tetrate.com:443:$GATEWAY_IP https://httpbin.tetrate.com/
 ```
@@ -418,7 +418,7 @@ spec:
 You can use the following command to send some traffic to our httpbin to validate the TSB config.
 
 
-```bash{promptUser: alice}
+```bash
 export GATEWAY_IP=$(kubectl -n shared-ingress-ns get service shared-gateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 curl -k --resolve httpbin.tetrate.com:443:$GATEWAY_IP https://httpbin.tetrate.com/
 ```

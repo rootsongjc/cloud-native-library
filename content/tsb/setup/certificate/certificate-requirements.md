@@ -1,30 +1,25 @@
 ---
-title: Internal Certificates Requirements
-description: Requirements for certificates used for internal communication within TSB
+title: 内部证书要求
+description: 用于 TSB 内部通信的证书要求。
+weight: 2
 ---
 
-Before you continue, make sure you:  <br />
-✓ Understand [the 4 types of certificates](./certificate-setup) in TSB particularly [internal certificates](./certificate-setup#tsb-internal-certificates).
+在继续之前，请确保你了解 TSB 中的 [4 种证书类型](../certificate-setup)，特别是内部证书。
 
-:::note
-Please note that the certificates described here are solely used for the communication between TSB components,
-and thus are not part of your workloads' certificates that are typically managed by Istio or application TLS certificates. 
-:::
+{{<callout note "注意">}}
+请注意，此处描述的证书仅用于 TSB 组件之间的通信，因此不属于通常由 Istio 或应用程序 TLS 证书管理的工作负载证书。
+{{</callout>}}
 
-:::warning
-In case you have installed `cert-manager` in the management plane cluster, you can use tctl
-to automatically install required issuer and certificate in the management plane and create control 
-plane certificate. Please see the documentations for [Management Plane Installation](../self_managed/management-plane-installation) and 
-[Onboarding Clusters](../self_managed/onboarding-clusters) for more details.
-:::
+{{<callout warning 提醒>}}
+如果你在管理平面集群中安装了 `cert-manager`，你可以使用 tctl
+自动在管理平面中安装所需的发行者和证书，并创建控制平面证书。有关更多详细信息，请参阅 [管理平面安装](../../self-managed/management-plane-installation) 和 [载入集群](../../self-managed/onboarding-clusters) 文档。
+{{</callout>}}
 
-To use JWT authentication with regular (non-mutual) TLS, the XCP central certificate must include its address in its subject alternate names (SANs). This will either be a DNS name or an IP address.
+要使用常规（非相互）TLS 进行 JWT 身份验证，XCP central 证书必须在其主体备用名称（SANs）中包含其地址。这将是 DNS 名称或 IP 地址。
 
-Similar with mTLS above, XCP central in the management plane uses the certificate stored in a secret named `xcp-central-cert`
-in the management plane namespace (which defaults to `tsb`). The secret must contain data for the
-standard `tls.crt`, `tls.key`, and `ca.crt` fields.
+与上述 mTLS 类似，管理平面中的 XCP central 使用存储在名为 `xcp-central-cert` 的管理平面命名空间（默认为 `tsb`）中的密钥中的证书。密钥必须包含标准的 `tls.crt`、`tls.key` 和 `ca.crt` 字段的数据。
 
-Below is an example of XCP central certificate as `cert-manager` resource if you are using IP address.
+以下是如果你使用 IP 地址作为 XCP central 证书的 `cert-manager` 资源示例。
 
 ```yaml
 apiVersion: cert-manager.io/v1
@@ -35,14 +30,14 @@ metadata:
 spec:
   secretName: xcp-central-cert
   ipAddresses:
-  - a.b.c.d  ## <--- IP Address here
+  - a.b.c.d  ## <--- 在此处输入 IP 地址
   issuerRef:
     name: xcp-identity-issuer
     kind: Issuer
   duration: 30000h
 ```
 
-Or, if you are using domain names, edit the field `spec.dnsNames`
+或者，如果你使用域名，编辑字段 `spec.dnsNames`。
 
 ```yaml
 apiVersion: cert-manager.io/v1
@@ -53,13 +48,13 @@ metadata:
 spec:
   secretName: xcp-central-cert
   dnsNames:
-  - example-tsb.tetrate.io ## <-- DNS name here
+  - example-tsb.tetrate.io ## <-- 在此处输入 DNS 名称
   issuerRef:
     name: xcp-identity-issuer
     kind: Issuer
   duration: 30000h
 ```
 
-:::warning DNS name when creating certificate with tctl
-If you use tctl to automatically install required issuer and certificate, XCP central cert will have `central.xcp.tetrate.io` as the DNS name.
-:::
+{{<callout warning "使用 tctl 创建证书时的 DNS 名称">}}
+如果你使用 tctl 自动安装所需的发行者和证书，XCP central 证书的 DNS 名称将为 `central.xcp.tetrate.io`。
+{{</callout>}}

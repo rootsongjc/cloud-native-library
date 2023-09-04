@@ -206,7 +206,7 @@ tctl apply -f traffic-shifting-tier1-config.yaml
 
 At this point, you should be able to send requests to the Tier-1 Gateway. Get the Tier-1 public IP address using the Tier-1 cluster kubeconfig.
 
-```bash{promptUser: alice}
+```bash
 export GATEWAY_IP=$(kubectl -n tier1 get service tier1-gateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
 curl "https://bookinfo.tetrate.com/productpage" --resolve "bookinfo.tetrate.com:443:${GATEWAY_IP}" -v --cacert bookinfo-ca.crt

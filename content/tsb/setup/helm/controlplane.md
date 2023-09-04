@@ -1,27 +1,28 @@
 ---
-title: Control Plane Installation
-description: How to leverage Helm to install the Control Plane component.
+title: 控制平面安装
+description: 如何使用 Helm 安装控制平面组件。
+weight: 3
 ---
 
-This chart installs the TSB control plane operator to onboard a cluster. Similar to [Management Plane Helm chart](./managementplane), it also allows you to install TSB control plane components using [TSB `ControlPlane` CR](../../refs/install/controlplane/v1alpha1/spec) and all the required secrets to make it fully run.
+此Chart安装 TSB 控制平面Operator以将集群引入。与[管理平面 Helm Chart](../managementplane)类似，它还允许你使用[TSB `ControlPlane` CR](../../refs/install/controlplane/v1alpha1/spec)安装 TSB 控制平面组件，以及使其正常运行所需的所有密钥。
 
-Before you start, make sure that you've:
+在开始之前，请确保你已完成以下操作：
 
-✓ Checked the [Helm installation process](./helm#installation-process)<br />
-✓ [Installed TSB management plane](./managementplane)<br />
-✓ [Login to the management plane with tctl](../tctl_connect)<br />
-✓ Installed [yq](https://github.com/mikefarah/yq#install). This will be used to help getting helm values from creating cluster response.
+- 检查 [Helm 安装过程](../helm#installation-process)
+- [已安装 TSB 管理平面](../managementplane)
+- [使用 tctl 登录到管理平面](../tctl_connect)
+- 安装 [yq](https://github.com/mikefarah/yq#install)。这将用于从创建集群响应中获取 Helm 值。
 
-:::note isolation boundaries
-TSB 1.6 introduces isolation boundaries that allows you to have multiple TSB-managed Istio environments within a Kubernetes cluster, or spanning several clusters. One of the benefits of isolation boundaries is that you can perform canary upgrades of the control plane. 
+{{<callout note  "隔离边界">}}
+TSB 1.6 引入了隔离边界，允许你在 Kubernetes 集群内或跨多个集群中拥有多个 TSB 管理的 Istio 环境。隔离边界的好处之一是你可以执行控制平面的金丝雀升级。
 
-To enable isolation boundaries, you must update operator deployment with environment variable `ISTIO_ISOLATION_BOUNDARIES=true` and control plane CR to include `isolationBoundaries` field.
-For more information, see [Isolation Boundaries](../isolation-boundaries).
-:::
+要启用隔离边界，你必须使用环境变量 `ISTIO_ISOLATION_BOUNDARIES=true` 更新Operator部署，并在控制平面 CR 中包括 `isolationBoundaries` 字段。
+有关更多信息，请参见[隔离边界](../isolation-boundaries)。
+{{</callout>}}
 
-## Prerequisites
+## 先决条件
 
-Before you begin, you will need to create a [cluster object](../../refs/tsb/v2/cluster) in TSB to represent the cluster where you will be installing the TSB control plane. Replace `<cluster-name-in-tsb>` and `<organization-name>` with the appropriate values for your environment:
+在开始之前，你需要创建一个 [集群对象](../../refs/tsb/v2/cluster) 在 TSB 中表示你将安装 TSB 控制平面的集群。将 `<cluster-name-in-tsb>` 和 `<organization-name>` 替换为你的环境中的正确值：
 
 ```yaml
 apiVersion: api.tsb.tetrate.io/v2
@@ -33,19 +34,19 @@ spec:
   displayName: "App Cluster"
 ```
 
-To create the cluster object, run the following command:
+要创建集群对象，请运行以下命令：
 
-```bash{promptUser:alice}
+```bash
 tctl apply -f cluster.yaml -o yaml | yq .spec.installTemplate.helm > cluster-cp-values.yaml
 ```
 
-The file, cluster-cp-values.yaml, comprises the default configuration for the TSB control plane operator, including any necessary secrets for authentication with the TSB management plane. To customize your installation, you may modify this file by adding any extra configuration values you need for the TSB control plane prior to proceeding to the subsequent step.
+文件 cluster-cp-values.yaml 包含了 TSB 控制平面Operator的默认配置，包括与 TSB 管理平面进行身份验证所需的任何必要密钥。要自定义安装，你可以通过在继续下一步之前向此文件添加所需的额外配置值来修改此文件。
 
-## Installation
+## 安装
 
-Use the following helm install command to install TSB control plane. Make sure to replace `<tsb-version>` and `<registry-location>` with the correct values.
+使用以下 helm install 命令安装 TSB 控制平面。确保替换 `<tsb-version>` 和 `<registry-location>` 为正确的值。
 
-```bash{promptUser:alice}
+```bash
 helm install cp tetrate-tsb-helm/controlplane \
   --version <tsb-version> \
   --namespace istio-system --create-namespace \
@@ -54,92 +55,92 @@ helm install cp tetrate-tsb-helm/controlplane \
   --set image.registry=<registry-location>
 ```
 
-Wait for the TSB control plane components to be deployed successfully. To verify that the installation was successful, you can try logging in to the TSB UI or connecting to TSB using [tctl](../tctl_connect) and checking the list of clusters to see if the cluster has been onboarded.
+等待 TSB 控制平面组件成功部署。要验证安装是否成功，你可以尝试登录到 TSB UI 或使用 [tctl](../tctl_connect) 连接到 TSB，然后检查集群列表，看看是否已经加入了集群。
 
-## Troubleshooting
+## 故障排除
 
-If you encounter any issues during the installation process, here are a few tips for troubleshooting:
+如果在安装过程中遇到任何问题，请尝试以下几种故障排除方法：
 
-- Make sure that you have followed all of the steps in the correct order.
-- Double-check the configuration values in the `cluster-cp-values.yaml` file to ensure that they are correct.
-- Check the logs of the TSB control plane operator to see if there are any error messages or stack traces that can help diagnose the problem.
-- If you are using a private registry to host the TSB control plane operator image, make sure that you have authenticated with the registry and that the `image.registry` value is correct.
-- Check the cluster onboarding troubleshooting [guide](../../troubleshooting/cluster_onboarding).
+- 确保按照正确的顺序执行了所有步骤。
+- 仔细检查 `cluster-cp-values.yaml` 文件中的配置值，确保它们是正确的。
+- 检查 TSB 控制平面Operator的日志，查看是否有任何错误消息或堆栈跟踪，以帮助诊断问题。
+- 如果你正在使用私有注册表来托管 TSB 控制平面Operator镜像，请确保已在
 
-## Configuration
+注册表进行了身份验证，并且 `image.registry` 值是正确的。
+- 检查集群引入故障排除 [指南](../../../troubleshooting/cluster-onboarding)。
 
-### Image configuration
+## 配置
 
-This is a **required** field. Set `registry` to your private registry where you have synced TSB images into and `tag` to TSB version that you want to deploy. Specifying only this field will install TSB control plane operator without installing other TSB components. 
+### 镜像配置
 
-| Name             | Description                                  | Default value                        |
-|------------------|----------------------------------------------|--------------------------------------|
-| `image.registry` | Registry used to download the operator image | `containers.dl.tetrate.io` |
-| `image.tag`      | The tag of the operator image                | *same as the Chart version*            |
+这是一个 **必填** 字段。将 `registry` 设置为你同步了 TSB 镜像的私有注册表，将 `tag` 设置为要部署的 TSB 版本。仅指定此字段将安装 TSB 控制平面Operator，而不安装其他 TSB 组件。
 
-### Control Plane resource configuration
+| 名称             | 描述                       | 默认值                     |
+| ---------------- | -------------------------- | -------------------------- |
+| `image.registry` | 用于下载Operator镜像的注册表 | `containers.dl.tetrate.io` |
+| `image.tag`      | Operator镜像的标签           | *与Chart版本相同*           |
 
-This is an **optional** field. You can set [TSB `ControlPlane` CR](../../refs/install/controlplane/v1alpha1/spec)
-in Helm values file to make the TSB control plane fully run.
+### 控制平面资源配置
 
-| Name   | Description                                                   | Default value |
-|--------|---------------------------------------------------------------|---------------|
-| `spec` | Holds the `spec` section of the `ControlPlane` CR ||
+这是一个 **可选** 字段。你可以在 Helm 值文件中设置 [TSB `ControlPlane` CR](../../refs/install/controlplane/v1alpha1/spec)，以使 TSB 控制平面正常运行。
 
-### Secrets configuration
+| 名称   | 描述                                  | 默认值 |
+| ------ | ------------------------------------- | ------ |
+| `spec` | 包含 `ControlPlane` CR 的 `spec` 部分 |        |
 
-This is an **optional** field. You can apply secrets into your cluster before installing TSB control plane or you can use Helm values to specify required secrets. Note that you can use different Helm values file if you want to separate secrets from control plane spec.
+### 密钥配置
 
-:::warning
-Keep in mind that these options just help with creating secrets, and they must respect the configuration provided
-in the TSB `ManagementPlane` CR, otherwise the installation will end up misconfigured.
-:::
+这是一个 **可选** 字段。你可以在安装 TSB 控制平面之前将密钥应用到你的集群，或者你可以使用 Helm 值来指定所需的密钥。请注意，如果要将密钥与控制平面规范分开，可以使用不同的 Helm 值文件。
 
-| Name                                       | Description                                                                                                                                                                                                                                         | Default value |
-|--------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
-| `secrets.keep`                             | Enabling this makes the generated secrets persist in the cluster after uninstalling the chart if they are no provided in future updates. (see [Helm doc](https://helm.sh/docs/howto/charts_tips_and_tricks/#tell-helm-not-to-uninstall-a-resource)) | `false`       |
-| `secrets.tsb.cacert`                       | CA certificate used to verify TLS certs exposed the Management Plane (front envoy)                                                                                                                                                                  |               |
-| `secrets.elasticsearch.username`           | The username to access Elasticsearch                                                                                                                                                                                                                ||
-| `secrets.elasticsearch.password`           | The password to access Elasticsearch                                                                                                                                                                                                                ||
-| `secrets.elasticsearch.cacert`             | Elasticsearch CA cert TLS used by control plane to verify TLS connection                                                                                                                                                                            ||
-| `secrets.oapToken`                         | JWT token used to authenticate OAP against the Management Plane                                                                                                                                                                                     ||
-| `secrets.otelToken`                        | JWT token used to authenticate Otel Collector against the Management Plane                                                                                                                                                                          ||                                                                                                                                                                              ||
-| `secrets.clusterServiceAccount.clusterFQN` | TSB FQN of the onboarded cluster resource. This will be generate tokens for all Control Plane agents.                                                                                                                                               ||
-| `secrets.clusterServiceAccount.JWK`        | Literal JWK used to generate and sign the tokens for all the Control Plane agents.                                                                                                                                                                  ||
-| `secrets.clusterServiceAccount.encodedJWK` | Base64-encoded JWK used to generate and sign the tokens for all the Control Plane agents.                                                                                                                                                           ||
+{{<callout warning "注意">}}
+请牢记这些选项只有助于创建密钥，并且必须遵守 TSB `ManagementPlane` CR 中提供的配置，否则安装将配置不正确。
+{{</callout>}}
 
-#### XCP secrets configuration
+| 名称                                       | 描述                                                         | 默认值  |
+| ------------------------------------------ | ------------------------------------------------------------ | ------- |
+| `secrets.keep`                             | 启用此选项会在卸载Chart后使生成的密钥持久存在于集群中，如果它们在未来的更新中没有提供的话。（请参阅 [Helm 文档](https://helm.sh/docs/howto/charts_tips_and_tricks/#tell-helm-not-to-uninstall-a-resource)） | `false` |
+| `secrets.tsb.cacert`                       | 用于验证公开的管理平面（前端 envoy）TLS 证书的 CA 证书       |         |
+| `secrets.elasticsearch.username`           | 访问 Elasticsearch 的用户名                                  |         |
+| `secrets.elasticsearch.password`           | 访问 Elasticsearch 的密码                                    |         |
+| `secrets.elasticsearch.cacert`             | 控制平面用于验证 TLS 连接的 Elasticsearch CA 证书            |         |
+| `secrets.oapToken`                         | 用于对接口进行身份验证的 JWT 令牌，该接口与管理平面（OAP）交互 |         |
+| `secrets.otelToken`                        | 用于对接口进行身份验证的 JWT 令牌，该接口与管理平面（Otel Collector）交互 |         |
+| `secrets.clusterServiceAccount.clusterFQN` | 集群资源的 TSB FQN。这将为所有控制平面代理生成令牌。         |         |
+| `secrets.clusterServiceAccount.JWK`        | 用于生成和签名所有控制平面代理令牌的文字 JWK                 |         |
+| `secrets.clusterServiceAccount.encodedJWK` | 用于生成和签名所有控制平面代理令牌的 Base64 编码 JWK         |         |
 
-XCP uses JWTs to authenticate against between Edges and Central.
+#### XCP 密钥配置
 
-If the XCP root CA (`secrets.xcp.rootca`) is provided it will be used to verify the TLS certs provided by
-XCP Central.
+XCP 使用 JWT 进行 Edge 和 Central 之间的身份验证。
 
-Also `secrets.xcp.edge.token` or `secrets.clusterServiceAccount` will be required to authenticate against XCP Central.
+如果提供了 XCP 根 CA (`secrets.xcp.rootca`)，它将用于验证 XCP Central 提供的 TLS 证书。
 
-The following are the configuration properties allowed to be used to configure XCP authentication mode:
+此外，需要 `secrets.xcp.edge.token` 或 `secrets.clusterServiceAccount` 以对接 XCP Central 进行身份验证。
 
-| Name                            | Description                                                                                                                               | Default value |
-|---------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|---------------|
-| `secrets.xcp.rootca`            | CA certificate of XCP components                                                                                                          ||
-| `secrets.xcp.edge.token`        | JWT token used to authenticate XCP Edge against the XCP Central                                                                           ||
+以下是允许用于配置 XCP 身份验证模式的配置属性：
 
-### Operator extended configuration
+| 名称                            | 描述                                                     | 默认值 |
+| ------------------------------- | -------------------------------------------------------- | ------ |
+| `secrets.xcp.rootca`            | XCP 组件的 CA 证书                                       |        |
+| `secrets.xcp.edge.token`        | 用于对接 XCP Edge 和 XCP Central 进行身份验证的 JWT 令牌 |        |
+| `secrets.clusterServiceAccount` | 用于生成和签名所有控制平面代理令牌的 Base64 编码 JWK     |        |
 
-This is an **optional** field. You can customize TSB operator related resources like the deployment, the service or the service account using the following optional properties:
+### Operator扩展配置
 
-| Name                                           | Description                                                                      | Default value |
-|------------------------------------------------|----------------------------------------------------------------------------------|---------------|
-| `operator.deployment.affinity`                 | Affinity configuration for the pod                                               ||
-| `operator.deployment.annotations`              | Custom collection of annotations to add to the deployment                        ||
-| `operator.deployment.env`                      | Custom collection of environment vars to add to the container                            ||
-| `operator.deployment.podAnnotations`           | Custom collection of annotations to add to the pod                               ||
-| `operator.deployment.replicaCount`             | Number of replicas managed by the deployment                                     ||
-| `operator.deployment.strategy`                 | Deployment strategy to use                                                       ||
-| `operator.deployment.tolerations`              | Toleration collection applying to the pod scheduling                             ||
-| `operator.deployment.podSecurityContext`       | [SecurityContext](../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-podsecuritycontext) properties to apply to the pod                              ||
-| `operator.deployment.containerSecurityContext` | [SecurityContext](../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-securitycontext) properties to apply to the pod's containers                             ||
-| `operator.service.annotations`                 | Custom collection of annotations to add to the service                           ||
-| `operator.serviceAccount.annotations`          | Custom collection of annotations to add to the service account                   ||
-| `operator.serviceAccount.imagePullSecrets`     | Collection of secrets names required to be able to pull images from the registry ||
-| `operator.pullSecret`                          | A JSON encoded Docker configuration that will be stored as an image pull secret          ||
+这是一个 **可选** 字段。你可以使用以下可选属性自定义 TSB Operator相关资源，如部署、服务或服务帐户：
+
+| 名称                                           | 描述                                                         | 默认值 |
+| ---------------------------------------------- | ------------------------------------------------------------ | ------ |
+| `operator.deployment.affinity`                 | Pod 的亲和性配置                                             |        |
+| `operator.deployment.annotations`              | 要添加到部署的自定义注释集                                   |        |
+| `operator.deployment.env`                      | 要添加到容器的自定义环境变量集                               |        |
+| `operator.deployment.podAnnotations`           | 要添加到 Pod 的自定义注释集                                  |        |
+| `operator.deployment.replicaCount`             | 部署管理的副本数                                             |        |
+| `operator.deployment.strategy`                 | 要使用的部署策略                                             |        |
+| `operator.deployment.tolerations`              | 适用于 Pod 调度的耐受性集合                                  |        |
+| `operator.deployment.podSecurityContext`       | 应用于 Pod 的 [SecurityContext](../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-podsecuritycontext) 属性 |        |
+| `operator.deployment.containerSecurityContext` | 应用于 Pod 的容器的 [SecurityContext](../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-securitycontext) 属性 |       |
+| `operator.service.annotations`                 | 要添加到服务的自定义注释集                   |       |
+| `operator.serviceAccount.annotations`          | 要添加到服务帐户的自定义注释集               |       |
+| `operator.serviceAccount.imagePullSecrets`     | 从注册表拉取镜像所需的密钥名称集合            |       |
+| `operator.pullSecret`                          | JSON 编码的 Docker 配置，将存储为镜像拉取密钥 |       |

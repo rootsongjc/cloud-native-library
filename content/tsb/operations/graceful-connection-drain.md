@@ -61,7 +61,7 @@ If you use Helm, you can update `spec` section of the control plane Helm values 
 
 You must restart of the workload with the `istio-proxy` to get the `drainDuration` in effect. Once you have restarted your workload, you can verify it by checking the config dump of the for `envoy`:
 
-```bash{promptUser: alice}
+```bash
 kubectl exec helloworld-v1-59fdd6b476-pjrtr -n helloworld -c istio-proxy -- pilot-agent request GET config_dump |grep -i drainDuration
        "drainDuration": "50s",
 ```
@@ -72,7 +72,7 @@ If you are using TSB gateways such as `IngressGateway`, `EgressGateway`, or `Tie
 
 You can query the current value for the `connectionDrainDuration` field on your gateway custom resource by issuing the following command:
 
-```bash{promptUser: alice}
+```bash
 kubectl get ingress helloworld-gateway  -n helloworld -oyaml | grep connectionDrainDuration:
   connectionDrainDuration: 22s
 ```

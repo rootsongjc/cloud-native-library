@@ -1,17 +1,19 @@
 ---
-title: Automated Certificate Management
-description: Describing how to use automated certificate management for TSB 
+title: 自动证书管理
+description: 描述如何为 TSB 使用自动证书管理
+weight: 3
 ---
 
-TSB supports automated certificate management for TSB components. You can enable TSB to provision a self signed root CA that will be used to issue certificates such as TLS certificates for TSB management plane, [internal certificates](./certificate-requirements) for communication between control plane to management plane and intermediate CA certificates for application clusters that will be used by Istio in the cluster to issue certificates for application workloads.
+TSB 支持为 TSB 组件进行自动证书管理。你可以启用 TSB 以创建自签名根 CA，用于签发证书，例如 TSB 管理平面的 TLS 证书，用于控制平面与管理平面之间的通信的 [内部证书](../certificate-requirements)，以及应用程序集群的中间 CA 证书，Istio 在集群中将使用它们来签发应用程序工作负载的证书。
 
-:::note External Root CA
-TSB's automated certificate management currently does not support using an external root CA. Support for external root CA will be added in a future release.
-:::
+{{<callout note "外部根 CA">}}
+目前，TSB 的自动证书管理不支持使用外部根 CA。将来的版本将添加对外部根 CA 的支持。
 
-## Enable Automated Certificate Management
+{{</callout>}}
 
-To enable automated certificate management, you need to set the `certIssuer` field in the  TSB management plane CR or helm values:
+## 启用自动证书管理
+
+要启用自动证书管理，你需要在 TSB 管理平面 CR 或 helm values 中设置 `certIssuer` 字段：
 
 ```yaml
 spec:
@@ -21,12 +23,12 @@ spec:
     clusterIntermediateCAs: {}
 ```
 
-The `certIssuer` field is a map of certificate issuers that you want to enable. Currently, TSB supports the following issuers:
-1. `selfSigned`: This will provision a self signed root CA that will be used to issue certificates for TSB components. 
-1. `tsbCerts`: This will provision TSB TLS certificates for TSB endpoint and also TSB internal certificates.
-1. `clusterIntermediateCAs`: This will provision intermediate CA certificates for application clusters that will be used by Istio in the cluster to issue certificates for application workloads.
+`certIssuer` 字段是一个你要启用的证书颁发者的映射。目前，TSB 支持以下颁发者：
+1. `selfSigned`：这将创建一个自签名的根 CA，用于签发 TSB 组件的证书。
+1. `tsbCerts`：这将为 TSB 端点提供 TSB TLS 证书，还将提供 TSB 内部证书。
+1. `clusterIntermediateCAs`：这将为应用程序集群提供中间 CA 证书，Istio 将在集群中使用它们来签发应用程序工作负载的证书。
 
-To enable automated cluster intermediate CA certificate management, you also need to set the `centralProvidedCaCert` field in the  TSB control plane CR or helm values:
+要启用自动集群中间 CA 证书管理，还需要在 TSB 控制平面 CR 或 helm values 中设置 `centralProvidedCaCert` 字段：
 
 ```yaml
 spec:
@@ -37,15 +39,15 @@ spec:
       centralProvidedCaCert: true
 ```
 
-## Using External Certificate Management
+## 使用外部证书管理
 
-If you want to use external certificate provisioning, you need to remove the relevant issuer from the `certIssuer` field in the TSB management plane CR or helm values to avoid conflict. For examples:
+如果要使用外部证书提供程序，你需要从 TSB 管理平面 CR 或 helm values 中的 `certIssuer` 字段中删除相关的颁发者以避免冲突。例如：
 
-1. To use Let's Encrypt to provision TSB TLS certificate, remove `tsbCerts` from the `certIssuer` field. Note that if you disable this, then you also need to need provision TSB [internal certificates](./certificate-requirements).
-1. To use AWS PCA to provision cluster intermediate CA, remove `clusterIntermediateCAs` from the `certIssuer` field and set `centralProvidedCaCert` to `false` in the  TSB control plane CR or helm values.
+1. 要使用 Let's Encrypt 提供 TSB TLS 证书，请从 `certIssuer` 字段中删除 `tsbCerts`。请注意，如果禁用此选项，还需要提供 TSB [内部证书](../certificate-requirements)。
+1. 要使用 AWS PCA 提供集群中间 CA，请从 `certIssuer` 字段中删除 `clusterIntermediateCAs`，并在 TSB 控制平面 CR 或 helm values 中将 `centralProvidedCaCert` 设置为 `false`。
 
-If you plan to use external certificate management for both `tsbCerts` and `clusterIntermediateCAs`, then you can remove the `certIssuer` field from the TSB management plane CR or helm values.
+如果计划同时为 `tsbCerts` 和 `clusterIntermediateCAs` 使用外部证书管理，则可以从 TSB 管理平面 CR 或 helm values 中删除 `certIssuer` 字段。
 
-## Certificate Rotation
+## 证书轮换
 
-TSB will automatically rotate certificates for TSB components and application clusters. Cluster intermediate CA certificates will be rotated every 1 year. TSB TLS and internal certificates will be rotated every 90 days. Currently TSB don't provide a way to configure the rotation period.
+TSB 将自动轮换 TSB 组件和应用程序集群的证书。集群中间 CA 证书每年轮换一次。TSB TLS 和内部证书每 90 天轮换一次。目前，TSB 不提供配置轮换周期的方法。

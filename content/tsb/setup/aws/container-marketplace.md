@@ -63,7 +63,7 @@ Using the Tetrate CLI (`tctl`), generate the Kubernetes manifest for Tetrate Ope
 
 Generate the CRDs for TSB Management plane using the following command:
 
-```bash{promptUser: alice}
+```bash
 tctl install manifest management-plane-operator \
    --registry 709825985650.dkr.ecr.us-east-1.amazonaws.com/tetrate-io > managementplaneoperator.yaml
 ```
@@ -86,18 +86,18 @@ metadata:
 
 Deploy the operator using `kubectl`, making sure that your Kubernetes context is pointed to the correct cluster:
 
-```bash{promptUser: alice}
+```bash
 kubectl apply -f managementplaneoperator.yaml
 ```
 Deploying the Tetrate Operator may take a little bit of time. You can monitor its status by running the following command:
  
-```bash{promptUser: alice}
+```bash
 kubectl -n tsb get pod -owide
 ```
  
 You should see some text resembling the example below. The operator is ready when the READY and STATUS columns have the values `1/1` and `Running` respectively. 
 
-```bash{promptUser: alice}
+```bash
 kubectl -n tsb get pod -owide
 NAME                                             READY   STATUS    RESTARTS   AGE   IP               NODE                                              NOMINATED NODE   READINESS GATES
 tsb-operator-management-plane-68c98756d5-n44d7   1/1     Running   0          71s   192.168.17.234   ip-192-168-24-207.ca-central-1.compute.internal   <none>          <none>
@@ -109,7 +109,7 @@ Follow the instructions on [Management Plane installation](../self_managed/manag
 
 Obtain the ELB address assigned to the Management Plane by executing the following command:
 
-```bash{promptUser: alice}
+```bash
 kubectl -n tsb get svc -l=app=envoy
 NAME    TYPE           CLUSTER-IP       EXTERNAL-IP                                                                 PORT(S)                                         AGE
 envoy   LoadBalancer   10.100.157.254   a72dd70af1bf64e7d86a7352a9568ea1-952780637.ca-central-1.elb.amazonaws.com   8443:32457/TCP,9443:30475/TCP,42422:32238/TCP   10m

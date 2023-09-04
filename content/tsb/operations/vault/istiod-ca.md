@@ -19,12 +19,12 @@ is installed in the `tsb` namespace.
 For more details, check the
 [Vault documentation](https://www.vaultproject.io/docs/platform/k8s/injector/installation).
 
-```bash{promptUser: alice}
+```bash
 helm install --name=vault --set='server.dev.enabled=true'
 ```
 
 Port forward the vault service to local and set environment values to authenticate to the API
-```bash{promptUser: alice}
+```bash
 kubectl port-forward svc/vault  8200:8200 & # this will run it in the background
 export VAULT_ADDR='http://[::]:8200'
 export VAULT_TOKEN="root"
@@ -46,7 +46,7 @@ details.
 
 Generate a self-signed root CA certificate in Vault using the Vault PKI back-end.
 
-```bash{promptUser: alice}{outputLines: 3,6,9}
+```bash{outputLines: 3,6,9}
 # Add audit trail in Vault
 vault audit enable file file_path=/vault/vault-audit.log
 
@@ -67,7 +67,7 @@ Istio. We re-use the `pki` Secret back-end but with a new path (`istioca`).
 This time we need to get the CA Key and will call the `exported` endpoint
 instead of `internal`:
 
-```bash{promptUser: alice}{outputLines: 3,6,9-26}
+```bash{outputLines: 3,6,9-26}
 # Enable PKI in a new path for intermediate CA
 vault secrets enable --path istioca pki
 
@@ -104,7 +104,7 @@ of this key in a secure place.
 
 Now we can use the Vault CA to sign the CSR:
 
-```bash{promptUser: alice}{outputLines: 2-19}
+```bash{outputLines: 2-19}
 vault write pki/root/sign-intermediate csr=@istioca.csr format=pem_bundle ttl=43800h
  
 Key              Value
@@ -132,7 +132,7 @@ Save the `certificate` to a file named `istioca.crt`.
 
 We now need to put the signed Intermediate CA certificate into Vault.
 
-```bash{promptUser: alice}
+```bash
 vault write istioca/intermediate/set-signed certificate=@istioca.crt
 ```
 
@@ -142,13 +142,13 @@ using its API, we have to take care of the key. To do so, we make a copy of the
 key inside a Vault Secret for later.
 
 Enable the `kv` secrets engine if not enabled already.
-```bash{promptUser: alice}{outputLines: 2}
+```bash{outputLines: 2}
 vault secrets enable kv
 Success! Enabled the kv secrets engine at: kv/
 ```
 Now save the CA key in it.
 
-```bash{promptUser: alice}
+```bash
 vault kv put kv/istioca ca-key.pem=@istioca.key
 ```
 
@@ -160,11 +160,11 @@ is named `istiod` and is bound to the `istiod` service account,
 `istiod-service-account`.
 
 Enable the Kubernetes auth method:
-```bash{promptUser: alice}
+```bash
 vault auth enable kubernetes
 ```
 Create the named role `istiod`
-```bash{promptUser: alice}{outputLines: 2-5}
+```bash{outputLines: 2-5}
 vault write auth/kubernetes/role/istiod \
     bound_service_account_names=istiod-service-account \
     bound_service_account_namespaces=istio-system \
@@ -172,7 +172,7 @@ vault write auth/kubernetes/role/istiod \
     period=600s
 ```
 Enable the `istiod-service-account` to communicate via the vault-inject container to vault
-```bash{promptUser: alice}
+```bash
 export VAULT_SA_NAME=$(kubectl get sa -n istio-system istiod-service-account \
     --output jsonpath="{.secrets[*]['name']}")
 export SA_JWT_TOKEN=$(kubectl get secret -n istio-system $VAULT_SA_NAME \
@@ -195,7 +195,7 @@ secret `secret/data/istioca`, where we have stored the Key of the Intermediate
 CA. It also allows Istio to access the Intermediate CA and the CA chain (by
 using `*`) and finally the Root CA.
 
-```bash{promptUser: alice}{outputLines: 2-9,10-12}
+```bash{outputLines: 2-9,10-12}
 cat > policy.hcl <<EOF
 path "kv/istioca" {
     capabilities = ["read", "list"]
@@ -274,13 +274,13 @@ If something is wrong, like the `istiod` pods not starting, check in the logs:
 
 Check the Vault-Injector logs in the `istiod` pod:
 
-```bash{promptUser: alice}
+```bash
 kubectl logs -n istio-system deployment/istiod -c vault-agent-init
 ```
 
 #### Pod is failing after Init
 
-```bash{promptUser: alice}
+```bash
 kubectl logs -n istio-system deployment/istiod -c vault-agent
 ```
 
@@ -289,6 +289,6 @@ kubectl logs -n istio-system deployment/istiod -c vault-agent
 If the certificate is not working, the Vault-Injector will work but `istiod`
 will not be able to start. Check `istiod` logs:
 
-```bash{promptUser: alice}
+```bash
 kubectl logs -n istio-system deployment/istiod -c discovery
 ```

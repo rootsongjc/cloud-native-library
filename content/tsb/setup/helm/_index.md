@@ -1,8 +1,8 @@
 ---
-title: Install with Helm
+title: 使用 Helm 安装
 weight: 3
 ---
 
-This document explains how you can leverage [Helm](https://helm.sh) Charts to install the different components of TSB. 
+本文档解释了如何利用Helm Charts来安装TSB的不同组件。
 
 {{< list_children show_summary="false">}}

@@ -65,7 +65,7 @@ spec:
 
 Configure the Ingress Gateway with `tctl`:
 
-```bash{promptUser: alice}
+```bash
 tctl apply -f rate-limiting-ingress-config.yaml
 ```
 
@@ -83,7 +83,7 @@ kubectl -n httpbin get service httpbin-ingress-gateway -o jsonpath='{.status.loa
 
 Then execute the following command to send HTTP requests to the `httpbin` service through the Ingress Gateway. Replace the `gateway-ip` with the value you obtained in the previous step. 
 
-```bash{promptUser: alice}{outputLines: 2-3}
+```bash
 curl -k -v "http://httpbin.tetrate.com/get" \
     --resolve "httpbin.tetrate.com:80:<gateway-ip>" \
     -s \
@@ -96,7 +96,7 @@ you should start seeing "429" instead.
 
 You can change the `user-agent` header to another unique value to get a successful response.
 
-```bash{promptUser: alice}{outputLines: 2-3}
+```bash
 curl -k -v -A "another-agent" \
     "http://httpbin.tetrate.com/get" \
     --resolve "httpbin.tetrate.com:80:<gateway-ip>" \

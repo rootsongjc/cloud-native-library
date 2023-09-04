@@ -25,7 +25,7 @@ a `Gateway` group so that you can configure the application ingress.
 
 Store as [`httpbin-mgmt.yaml`](../../assets/howto/httpbin-mgmt.yaml), and apply with tctl:
 
-```bash{promptUser: alice}
+```bash
 tctl apply -f httpbin-mgmt.yaml
 ```
 
@@ -35,14 +35,14 @@ The following configurations should be applied to both clusters; to deploy your
 application, start by creating the namespace and enable the Istio sidecar
 injection.
 
-```bash{promptUser: alice}
+```bash
 kubectl create namespace httpbin
 kubectl label namespace httpbin istio-injection=enabled
 ```
 
 Then deploy your application.
 
-```bash{promptUser: alice}{outputLines: 2-3}
+```bash
 kubectl apply -f \
     https://raw.githubusercontent.com/istio/istio/master/samples/httpbin/httpbin.yaml \
     -n httpbin
@@ -54,7 +54,7 @@ In this example, you're going to expose the application using simple TLS at the
 gateway. You'll need to provide it with a TLS certificate stored in a Kubernetes
 secret.
 
-```bash{promptUser: alice}{outputLines: 2-3}
+```bash
 kubectl create secret tls -n httpbin httpbin-cert \
     --cert /path/to/some/cert.pem \
     --key /path/to/some/key.pem
@@ -68,7 +68,7 @@ Now you can deploy the ingress gateway.
 
 Save as [`httpbin-ingress.yaml`](../../assets/howto/httpbin-ingress.yaml), and apply with `kubectl`:
 
-```bash{promptUser: alice}
+```bash
 kubectl apply -f httpbin-ingress.yaml
 ```
 
@@ -85,7 +85,7 @@ to do is configure the gateway so that it routes traffic to your application.
 
 Save as [`httpbin-gw.yaml`](../../assets/howto/httpbin-gw.yaml), and apply with `tctl`:
 
-```bash{promptUser: alice}
+```bash
 tctl apply -f httpbin-gw.yaml
 ```
 
@@ -95,13 +95,13 @@ cluster as failover.
 
 You can test that both ingress gateway are working by running:
 
-```bash{promptUser: alice}{outputLines: 2-3}
+```bash
 curl -s -o /dev/null --insecure -w "%{http_code}" \
     "https://httpbin.tetrate.com" \
     --resolve "httpbin.tetrate.com:443:$CLUSTER1_IP"
 ```
 
-```bash{promptUser: alice}{outputLines: 2-3}
+```bash
 curl -s -o /dev/null --insecure -w "%{http_code}" \
     "https://httpbin.tetrate.com" \
     --resolve "httpbin.tetrate.com:443:$CLUSTER2_IP"

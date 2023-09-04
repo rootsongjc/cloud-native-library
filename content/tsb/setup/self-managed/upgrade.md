@@ -1,250 +1,226 @@
 ---
-title: TSB Upgrade
-description: Upgrade TSB with the TSB Operator.
+title: TSB 升级
+description: "使用 TSB Operator升级 TSB。"
+weight: 5
 ---
 
-This page will walk you through how to upgrade TSB using the `tctl` CLI,
-rendering the Kubernetes manifests for the different operators and applying them
-to the clusters to upgrade using `kubectl`.
+本页将指导你如何使用 `tctl` CLI 升级 TSB，呈现不同Operator的 Kubernetes 清单，并使用 `kubectl` 将它们应用到集群中以进行升级。
 
-Before you start, make sure that you have:
+在开始之前，请确保你已完成以下操作：
 
-✓ Checked the new version's [requirements](../requirements-and-download#requirements)<br />
+- 检查新版本的 [要求](../../requirements-and-download#requirements)
 
-The upgrade procedure between operator-based releases is fairly simple. Once the
-operator pods are updated with the new release images, the newly spun up
-operator pods will upgrade all the necessary components to the new version for
-you.
+基于Operator的版本之间的升级过程相对简单。一旦Operator的 Pod 使用新的发布映像进行了更新，新生成的Operator Pod 将升级所有必要的组件以适应新版本。
 
-## Create Backups
+## 创建备份
 
-In order to make sure you can restore everything when something goes wrong, please create backups for the Management Plane and each of your clusters' local Control Planes.
+为了确保在出现问题时可以恢复一切，请为管理平面和每个集群的本地控制平面创建备份。
 
-### Backup the Management Plane
+### 备份管理平面
 
-#### Backup the `tctl` binary
+#### 备份 `tctl` 二进制文件
 
-Since each new `tctl` binary potentially comes with new operators and configurations to deploy and configure TSB, you should backup the current `tctl` binary you are using. Please do this *before* syncing the new images.
+由于每个新的 `tctl` 二进制文件可能都附带了新的Operator和配置来部署和配置 TSB，因此你应该备份当前正在使用的 `tctl` 二进制文件。请在同步新映像之前执行此操作。
 
-Copy the `tctl` binary with version suffix (e.g. `-1.3.0`) to quickly restore the older one if needed.
+将带有版本后缀的 `tctl` 二进制文件（例如 `-1.3.0`）复制到一个位置，以便在需要时快速还原旧版本。
 
-```bash{promptUser: alice}
+```bash
 cp ~/.tctl/bin/tctl ~/.tctl/bin/tctl-{version}
 ```
 
-If you have misplaced your binary, you may be able to find the right version from [this URL](https://binaries.dl.tetrate.io/public/raw/). However, it is strongly recommended that you backup your current copy to be sure.
+如果你不小心丢失了二进制文件，你可以从 [此网址](https://binaries.dl.tetrate.io/public/raw/) 找到正确的版本。但强烈建议你备份当前的副本以确保安全。
 
-#### Backup the ManagementPlane CR
+#### 备份 ManagementPlane CR
 
-Create a backup of the `ManagementPlane` CR by executing the following command:
+通过执行以下命令创建 `ManagementPlane` CR 的备份：
 
-```bash{promptUser: alice}
+```bash
 kubectl get managementplane -n tsb -o yaml > mp-backup.yaml
 ```
 
-#### Backup the PostgreSQL database
+#### 备份 PostgreSQL 数据库
 
-[Create a backup of your PostgreSQL database](../../operations/postgresql#create-a-backup-of-tsb-configuration).
+[创建 PostgreSQL 数据库的备份](../../../operations/postgresql#create-a-backup-of-tsb-configuration)。
 
-The exact procedure for connecting to the database may differ depending on your environment, please refer to the documentation for your environment.
+连接到数据库的确切过程可能因你的环境而异，请参考你的环境的文档。
 
-### Backup the Control Plane Custom Resource
+### 备份控制平面自定义资源
 
-Create a backup of all `ControlPlane` CRs by executing the following command on each of your onboarded clusters:
+通过在每个已上线集群上执行以下命令，创建所有 `ControlPlane` CR 的备份：
 
 ```
 kubectl get controlplane -n istio-system -o yaml > cp-backup.yaml
 ```
 
-## Upgrade Procedure
+## 升级过程
 
-### Download `tctl` and Sync Images
+### 下载 `tctl` 和同步映像
 
-Now that you have taken backups, [download the new version's `tctl` binary](../requirements-and-download#download),
-then obtain the new TSB container images.
+现在你已经创建了备份，请 [下载新版本的 `tctl` 二进制文件](../../requirements-and-download#download)，然后获取新的 TSB 容器映像。
 
-Details on how to do this is described in the [Requirements and Download page](../requirements-and-download#sync-tetrate-service-bridge-images)
+有关如何执行此操作的详细信息在 [要求和下载页面](../../requirements-and-download#sync-tetrate-service-bridge-images) 中有描述。
 
-### Create the Management Plane Operator
+### 创建管理平面Operator
 
-Create the base manifest which will allow you to update the management
-plane operator from your private Docker registry:
+创建基本清单，它将允许你从私有 Docker 注册表中更新管理平面Operator：
 
-```bash{promptUser: alice}{outputLines: 2-3}
+```bash
 tctl install manifest management-plane-operator \
     --registry <your-docker-registry> \
     > managementplaneoperator.yaml
 ```
 
-:::note Management namespace name
-Starting with TSB 0.9.0 the default Management Plane namespace name is `tsb` as
-opposed to `tcc` used in older versions. If you installed TSB using an earlier
-version than 0.9.0, your Management Plane probably lives in the `tcc` namespace.
-You will need to add a `--management-namespace tcc` flag to reflect this.
-:::
+{{<callout note 管理命名空间名称>}}
+从 TSB 0.9.0 开始，默认的管理平面命名空间名称是 `tsb`，而不是较早版本中使用的 `tcc`。如果你使用早于 0.9.0 的版本安装了 TSB，则你的管理平面可能位于 `tcc` 命名空间中。你需要添加 `--management-namespace tcc` 标志以反映这一点。
+{{</callout>}}
 
-:::note Customization
-The managementplaneoperator.yaml file created by the install command can now be
-used as a base template for your Management Plane upgrade. If your existing TSB
-configuration contains specific adjustments on top of the standard configuration,
-you should copy them over to the new template.
-:::
+{{<callout note "自定义">}}
+由 install 命令创建的 managementplaneoperator.yaml 文件现在可以用作管理平面升级的基本模板。如果你的现有 TSB 配置包含在标准配置之上的特定调整，你应该将它们复制到新模板中。
+{{</callout>}}
 
-Now, add the manifest to source control or apply it directly to the management
-plane cluster by using the kubectl client:
+现在，将清单添加到源代码控制或直接使用 kubectl 客户端将其应用到管理平面集群：
 
-```bash{promptUser: alice}
+```bash
 kubectl apply -f managementplaneoperator.yaml
 ```
 
-After applying the manifest, you will see the new operator running in the `tsb`
-namespace:
+应用清单后，你将在 `tsb` 命名空间中看到新的Operator运行：
 
-```bash{promptUser: alice}{outputLines:2-3}
+```bash{outputLines:2-3}
 kubectl get pod -n tsb
-NAME                                            READY   STATUS    RESTARTS   AGE
-tsb-operator-management-plane-d4c86f5c8-b2zb5   1/1     Running   0          8s
+名称                                            准备就绪   状态    重启   年龄
+tsb-operator-management-plane-d4c86f5c8-b2zb5   1/1     运行中   0          8s
 ```
 
-For more information on the manifest and how to configure it, please review the
-[`ManagementPlane` CR reference](../../refs/install/managementplane/v1alpha1/spec)
+有关清单以及如何配置它的更多信息，请查看 [`ManagementPlane` CR 参考](../../../refs/install/managementplane/v1alpha1/spec)。
 
-### Create the Control and Data Plane operators
+### 创建控制平面和数据平面Operator
 
-To deploy the new Control and Data Plane operators in your application clusters,
-you must run [`tctl install manifest cluster-operators`](../../reference/cli/reference/install#tctl-install-manifest-cluster-operators)
-to retrieve the Control Plane and Data Plane operator manifests for the new
-version.
+要在你的应用程序集群中部署新的控制平面和数据平面Operator，必须运行 [`tctl install manifest cluster-operators`](../../../../reference/cli/reference/install#tctl-install-manifest-cluster-operators) 来检索新版本的控制平面和数据平面Operator清单。
 
-```bash{promptUser: alice}{outputLines: 2-3}
+```bash
 tctl install manifest cluster-operators \
     --registry <your-docker-registry> \
     > clusteroperators.yaml
 ```
-:::note Customization
-The clusteroperators.yaml file can now be used for your cluster upgrade. If your
-existing control and Data Planes have specific adjustments on top of the
-standard configuration, you should copy them over to the template.
+:::note 自定义
+clusteroperators.yaml 文件现在可用于你的集群升级。如果你的现有控制平面和数据平面具有标准配置之上的特定调整，你应该将它们复制到模板中。
 :::
 
-### Review tier1gateways and ingressgateways
+### 查看 tier1gateways 和 ingressgateways
 
-Due to a fix introduced in [Istio 1.14](https://github.com/istio/istio/pull/36928), when both `replicaCount` and `autoscaleEnaled` are set, `replicaCount` will be ignored
-and only autoscale configuration will be applied. This could lead to issues where the `tier1gateways` and `ingressgateways` scale down to 1 replica 
-temporally during the upgrade until the autoscale configuration is applied.
-In order to avoid this issue, you can edit the `tier1gateway` or `ingressgateway` spec and remove the `replicas` field, and since the current
-deployment will be already managed by the HPA controller, then this will allow you to upgrade the pods with the desired configuration.
+由于 [Istio 1.14](https://github.com/istio/istio/pull/36928) 中引入的修复，当同时设置 `replicaCount` 和 `autoscaleEnaled` 时，将会忽略 `replicaCount`，只会应用自动缩放配置。这可能导致 `tier1gateways` 和 `ingressgateways` 在升级过程中暂时缩减到 1 个副本，直到应用自动缩放配置
 
-You can get all the `tier1gateways` or `ingressgateways` by running:
+。为了避免此问题，你可以编辑 `tier1gateway` 或 `ingressgateway` 规范，删除 `replicas` 字段，由于当前部署已由 HPA 控制器管理，因此这将允许你使用所需的配置升级 Pod。
+
+你可以通过运行以下命令获取所有 `tier1gateways` 或 `ingressgateways`：
+
 ```bash
 kubectl get tier1gateway.install -A
 kubectl get ingressgateway.install -A
 ```
 
-### Applying the Manifest
+### 应用清单
 
-Now, add the manifest to source control or apply it directly to the appropriate
-clusters by using the kubectl client:
+现在，将清单添加到源代码控制或直接使用 kubectl 客户端将其应用到适当的集群中：
 
-```bash{promptUser: alice}
+```bash
 kubectl apply -f clusteroperators.yaml
 ```
 
-For more information on each of these manifests and how to configure them,
-please check out the following guides:
+有关每个清单以及如何配置它们的更多信息，请查看以下指南：
 
-- [ControlPlane resource reference](../../refs/install/controlplane/v1alpha1/spec)
-- [Data Plane resources reference](../../refs/install/dataplane/v1alpha1/spec)
-- [Kubernetes overrides reference](../../refs/install/kubernetes/k8s)
+- [ControlPlane 资源参考](../../../refs/install/controlplane/v1alpha1/spec)
+- [Data Plane 资源参考](../../../refs/install/dataplane/v1alpha1/spec)
+- [Kubernetes 资源参考](../../../refs/install/kubernetes/k8s)
 
-## Rollback
+## 回滚
 
-In case something goes wrong and you want to rollback TSB to the previous version, you will need to rollback both the Management Plane and the Control Planes.
+如果出现问题并且你想回滚 TSB 到之前的版本，你需要回滚管理平面和控制平面。
 
-### Rollback the Control Plane
+### 回滚控制平面
 
-#### Scale down `istio-operator` and `tsb-operator`
+#### 缩减 `istio-operator` 和 `tsb-operator`
 
-```bash{promptUser: alice}
+```bash
 kubectl scale deployment \
    -l "platform.tsb.tetrate.io/component in (tsb-operator,istio)" \
    -n istio-system \
    --replicas=0
 ```
 
-#### Delete the `IstioOperator` Resource
+#### 删除 `IstioOperator` 资源
 
-Delete the operator will require to remove the finalizer protecting the istio object with the following command:
+删除Operator将需要删除保护 istio 对象的 finalizer，使用以下命令：
 
-```bash{promptUser: alice}
+```bash
 kubectl patch iop tsb-istiocontrolplane -n istio-system --type='json' -p='[{"op": "remove", "path": "/metadata/finalizers", "value":""}]'
 
 
 kubectl delete istiooperator -n istio-system --all
 ```
 
-#### Scale down `istio-operator` and `tsb-operator` for the Data Plane operator
+#### 缩减 `istio-operator` 和 `tsb-operator`，用于数据平面Operator
 
-```bash{promptUser: alice}
+```bash
 kubectl scale deployment \
    -l "platform.tsb.tetrate.io/component in (tsb-operator,istio)" \
    -n istio-gateway \
    --replicas=0
 ```
 
-#### Delete the `IstioOperator` Resources for the Data Plane
+#### 删除数据平面的 `IstioOperator` 资源
 
-Since 1.5.11 the IOP containing the ingressgateways is split to have one IOP per ingressgateway. In order to rollback to the old Istio version, we 
-will need to remove the finalizer protecting the istio objects and delete all the operators with the following commands:
+从 1.5.11 开始，包含 ingressgateways 的 IOP 被拆分为每个 ingressgateway 都有一个 IOP。为了回滚到旧的 Istio 版本，我们需要删除保护 istio 对象的 finalizer，并使用以下命令删除所有Operator：
 
-```bash{promptUser: alice}
+```bash
 for iop in $(kubectl get iop -n istio-gateway --no-headers | grep -i "tsb-ingress" | awk '{print $1}'); do kubectl patch iop $iop -n istio-gateway --type='json' -p='[{"op": "remove", "path": "/metadata/finalizers", "value":""}]'; done
 
 kubectl delete istiooperator -n istio-gateway --all
 ```
 
-### Create the Cluster Operators, and rollback the ControlPlane CR
+### 创建集群Operator，回滚 ControlPlane CR
 
-Using the `tctl` binary from the previous version, follow [the instructions to create the cluster operators](#create-the-control-and-data-planes).
+使用之前版本的 `tctl` 二进制文件，按照 [创建集群Operator的说明](#create-the-control-and-data-planes) 进行操作。
 
-Then apply the the backup of the `ControlPlane` CR:
+然后应用 `ControlPlane` CR 的备份：
 
-```
+```bash
 kubectl apply -f cp-backup.yaml
 ```
 
-### Rollback the Management Plane
+### 回滚管理平面
 
-#### Scale Down Pods in Management Plane
+#### 缩减管理平面中的 Pod
 
-Scale down all of the pods in the Management Plane so that the it is inactive.
+缩减管理平面中的所有 Pod，使其处于非活动状态。
 
-```bash{promptUser: alice}
+```bash
 kubectl scale deployment tsb iam -n tsb --replicas=0
 ```
 
-#### Restore PostgreSQL
+#### 恢复 PostgreSQL
 
-[Restore your PostgreSQL database from your backup](../../operations/postgresql#restore-a-backup). The exact procedure for connecting to the database may differ depending on your environment, please refer to the documentation for your environment.
+从备份中 [恢复 PostgreSQL 数据库](../../../operations/postgresql#restore-a-backup)。连接到数据库的确切过程可能因你的环境而异，请参考你的环境的文档。
 
-#### Restore `tctl` and create the Management Plane operator
+#### 恢复 `tctl` 并创建管理平面Operator
 
-Restore `tctl` from  the backup copy that you made, or [download the binary for the specific version you would like to use](https://binaries.dl.tetrate.io/public/raw/).
+从你创建的备份副本中恢复 `tctl`，或者 [下载你想要使用的特定版本的二进制文件](https://binaries.dl.tetrate.io/public/raw/)。
 
-```bash{promptUser: alice}
+```bash
 mv ~/.tctl/bin/tctl-{version} ~/.tctl/bin/tctl
 ```
 
-Follow the [instructions for upgrading](#create-the-management-plane-operator) to create the Management Plane operator. Then apply the backup of the `ManagementPlane` CR:
+按照创建管理平面Operator的说明创建管理平面Operator。然后应用 `ManagementPlane` CR 的备份：
 
-```bash{promptUser: alice}
+```bash
 kubectl apply -f mp-backup.yaml
 ```
 
-#### Scale back the deployments
+#### 恢复部署
 
-Finally, scale back the deployments.
+最后，恢复部署。
 
-```bash{promptUser: alice}
+```bash
 kubectl scale deployment tsb iam -n tsb --replicas 1
 ```

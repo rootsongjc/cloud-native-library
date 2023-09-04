@@ -131,13 +131,13 @@ Instead, when you are instructed to edit an access biding in the following examp
 
 For example if you are working with organization `AccessBindings`, get the existing bindings first:
 
-```bash{promptUser: alice}
+```bash
 tctl get accessbindings organizations/myorg -o yaml > bindings.yaml
 ```
 
 Then after you make the edits, apply the bindings:
 
-```bash{promptUser: alice}
+```bash
 tctl apply -f bindings -o yaml > bindings.yaml
 ```
 

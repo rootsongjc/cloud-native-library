@@ -21,14 +21,14 @@ Before you start: <br />
 
 The first step, is to install Docker
 
-```bash{promptUser: alice}
+```bash
 sudo apt-get update
 sudo apt-get -y install docker.io
 ```
 
 Then, run the httpbin server and test that it works.
 
-```bash{promptUser: alice}{outputLines: 2-4,6-9,10-12}
+```bash{outputLines: 2-4,6-9,10-12}
 sudo docker run -d \
     --name httpbin \
     -p 127.0.0.1:80:80 \
@@ -45,7 +45,7 @@ curl localhost/headers
 Next onboard the VM into your cluster following the [VM onboarding docs](../../setup/workload_onboarding/onboarding-vms). 
 Create the following service account in your cluster for use by your VM.
 
-```bash{promptUser: alice}{outputLines: 4-9,10-11}
+```bash{outputLines: 4-9,10-11}
 kubectl create namespace httpbin
 kubectl label namespace httpbin istio-injection=enabled
 cat <<EOF | kubectl apply -f-
@@ -113,7 +113,7 @@ spec:
 In your cluster, add the following to configure traffic flow from your cluster
 to the VM.
 
-```bash{promptUser: alice}{outputLines: 2-9,10-16}
+```bash{outputLines: 2-9,10-16}
 cat <<EOF | kubectl apply -f-
 apiVersion: v1
 kind: Service
@@ -235,7 +235,7 @@ This will send 100% of traffic to the VM because you set this up before
 deploying your app to your cluster. To start traffic splitting, run the
 following command in your cluster.
 
-```bash{promptUser: alice}{outputLines: 2-9,10-29}
+```bash{outputLines: 2-9,10-29}
 cat <<EOF | kubectl apply -f-
 apiVersion: apps/v1
 kind: Deployment

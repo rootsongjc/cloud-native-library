@@ -44,7 +44,7 @@ spec:
             "@type": "type.googleapis.com/envoy.extensions.filters.listener.tls_inspector.v3.TlsInspector"
 ```
 Apply with `kubectl`
-```bash{promptUser: alice}
+```bash
 kubectl apply -f haproxy-filter.yaml
 ```
 
@@ -80,7 +80,7 @@ spec:
 ```
 
 Apply with `tctl`
-```bash{promptUser: alice}
+```bash
 tctl apply -f gateway.yaml
 ```
 
@@ -103,7 +103,7 @@ spec:
 ```
 
 Apply with `kubectl`
-```bash{promptUser: alice}
+```bash
 kubectl apply -f ingress.yaml
 ```
 
@@ -111,7 +111,7 @@ kubectl apply -f ingress.yaml
 
 To test if your ingress is working correctly with haproxy-protocol try the following curl curl request:
 
-```bash{promptUser: alice}
+```bash
 curl -k -s --connect-to bookinfo.tetrate.com:443:$GATEWAY_IP \
     "https://bookinfo.tetrate.com/productpage" | \
     grep -o "<title>.*</title>"

@@ -94,7 +94,7 @@ spec:
 
 To edit the resource, run the following command:
 
-```bash{promptUser: alice}{outputLines: 2-3}
+```bash
 kubectl patch ControlPlane controlplane -n istio-system \
     --patch '{"spec":{"meshExpansion":{}}}' \
     --type merge

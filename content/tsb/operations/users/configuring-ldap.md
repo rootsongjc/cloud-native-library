@@ -140,7 +140,7 @@ data:
  
 Also create a `custom-host-ca` secret if your LDAP is configured to present a self-signed certificate.
  
-```bash{promptUser: alice}{outputLines: 2-3}
+```bash
 kubectl create secret generic custom-host-ca \
     --from-file=ca-certificates.crt=<path to custom CA file> \
     --namespace tsb

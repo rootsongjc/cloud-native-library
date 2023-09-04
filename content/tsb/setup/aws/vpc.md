@@ -25,7 +25,7 @@ Please follow the corresponding AWS guides for more detail on how to setup these
 First, create the Management Plane cluster using the following command template.
 Since a VPC is not explicitly defined in the command, a new VPC will be created for you.
 
-```bash{promptUser: alice}
+```bash
 $ eksctl create cluster \
   --name <NAME> \
   --version <VERSION> \
@@ -40,7 +40,7 @@ Once the Management Plane cluster and nodes, as well as VPC, are ready, take not
 
 For Tier 1 and Control Plane clusters, you will need to specify the VPC network information on top of the previous command template. Use the following command template to create two clusters, one for Tier 1 and one for the Control Plane.
 
-```bash{promptUser: alice}
+```bash
 $ eksctl create cluster \
   --name <NAME> \
   --version <VERSION>\
@@ -90,7 +90,7 @@ Also, the [ManagementPlane](../../refs/install/managementplane/v1alpha1/spec) cu
 
 Once you have setup the Management Plane, you should be able to obtain the external host name using the following command (make sure to have your kubernetes context pointing to the appropriate cluster):
 
-```bash{promptUser: alice}
+```bash
 $ kubectl get svc -n tsb
 ```
 
@@ -143,7 +143,7 @@ The infrastructure in this scenario is similar to that of the case using a singl
 
 First create a cluster and a new VPC for the control plane. You can use the same command template as when you created your first EKS cluster for Single VPC case.
 
-```bash{promptUser: alice}
+```bash
 $ eksctl create cluster \
   --name <NAME> \
   --version <VERSION> \
@@ -158,7 +158,7 @@ $ eksctl create cluster \
 
 You will need to retrieve VPC information to continue configuring. Use the following command to get the necessary information:
 
-```bash{promptUser: alice}
+```bash
 $ aws ec2 --output text \
           --query 'Vpcs[*].{VpcId:VpcId,Name:Tags[?Key==`Name`].Value|[0],CidrBlock:CidrBlock}' describe-vpcs
 ```
@@ -166,7 +166,7 @@ $ aws ec2 --output text \
 Find the ID for each VPC that will be participating, and execute [`aws ec2 create-vpc-peering-connection`](https://docs.aws.amazon.com/cli/latest/reference/ec2/create-vpc-peering-connection.html) command to create a VPC peering
 to allow the VPCs to talk to each other:
 
-```bash{promptUser: alice}
+```bash
 $ aws ec2 create-vpc-peering-connection \
           --vpc-id <VPC-ID1> \
           --peer-vpc-id <VPC-ID2>
@@ -176,7 +176,7 @@ Take note the field `VpcPeeringConnectionId` from the output of the above comman
 
 Using this ID, accept the peering connection using [`aws ec2 accept-vpc-peering-connection`](https://docs.aws.amazon.com/cli/latest/reference/ec2/accept-vpc-peering-connection.html) command:
 
-```bash{promptUser: alice}
+```bash
 $ aws ec2 accept-vpc-peering-connection --vpc-peering-connection-id <PEERID>
 ```
 
@@ -186,7 +186,7 @@ When the above command is successfully executed, the VPCs should be able to comm
 
 In order to connect to the Control Plane cluster, you will need to update your `kubeconfig`. Run the following command with the appropriate values:
 
-```bash{promptUser: alice}
+```bash
 $ aws eks --region <REGION> update-kubeconfig --name <NAME>
 ```
 

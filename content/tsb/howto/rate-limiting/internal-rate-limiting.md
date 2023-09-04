@@ -40,7 +40,7 @@ You are responsible in making sure that this URI is reachable from the control p
 
 If your Redis database requires a password, you can either create the secret yourself:
 
-```bash{promptUser: alice}
+```bash
 kubectl -n istio-system create secret generic \
   redis-credentials \
   --from-literal=REDIS_AUTH=<password>
@@ -53,7 +53,7 @@ If you are running TSB >= 1.4.0, you can specify it in using the `--redis-passwo
 If your Redis database supports in-transit encryption (TLS), you will need to enable TLS in
 the Ratelimit Redis client by setting the `REDIS_TLS` key to `true` in the `redis-credentials` secret:
 
-```bash{promptUser: alice}
+```bash
 kubectl -n istio-system create secret generic \
   redis-credentials \
   --from-literal=REDIS_AUTH=<password>

@@ -60,7 +60,7 @@ configured with the corresponding groups.
 
 You can check the status of the `bookinfo` ingress gateway with `tctl x status`:
 
-```bash{promptUser: alice}
+```bash
 $ tctl x status ig --tenant tetrate --workspace bookinfo --gatewaygroup bookinfo bookinfo
 NAME        STATUS      LAST EVENT      MESSAGE
 bookinfo    ACCEPTED    XCP_ACCEPTED
@@ -72,7 +72,7 @@ If you want further information, its yaml version will show you the history of
 events of this resource status. This information is very useful for
 troubleshooting the lifecycle of a resource configuration.
 
-```bash{promptUser: alice}
+```bash
 $ tctl x status ig --tenant tetrate --workspace bookinfo --gatewaygroup bookinfo bookinfo
 apiVersion: api.tsb.tetrate.io/v2
 kind: ResourceStatus
@@ -116,7 +116,7 @@ on the different stages of its config.
 For example, you could use the following command to get a list of all the events
 that happened on the bookinfo workspace and all the resources contained in it.
 
-```bash{promptUser: alice}
+```bash
 $ tctl x audit ws bookinfo --recursive --text bookinfo
 TIME                   SEVERITY    TYPE                                        OPERATION               USER     MESSAGE
 2022/02/10 17:02:53    INFO        api.tsb.tetrate.io/v2/ResourceStatus        XCP_CENTRAL_ACCEPTED    mpc      New ACCEPTED status due to XCP_CENTRAL_ACCEPTED event for trafficgroup "bookinfo" version "oxil15u6bfw="
@@ -134,7 +134,7 @@ TIME                   SEVERITY    TYPE                                        O
 Some errors are identified in the audit logs that you can further inspect by
 retrieving the details of the config status for those objects:
 
-```bash{promptUser: alice}
+```bash
 $ tctl x status ig --workspace bookinfo --gatewaygroup bookinfo bookinfo
 NAME        STATUS    LAST EVENT              MESSAGE
 bookinfo    FAILED    XCP_CENTRAL_REJECTED    admission webhook "central-validation.xcp.tetrate.io" denied the request: configuration is invalid: domain name "tetrate.io---" invalid (label "io---" invalid)
@@ -149,7 +149,7 @@ any errors in its child resources. This way it is very easy to navigate from
 any workspace or top-level element to the specific errors that configuration
 objects may present.
 
-```bash{promptUser: alice}
+```bash
 $ tctl x status ws bookinfo
 NAME        STATUS    LAST EVENT    MESSAGE
 bookinfo    FAILED                  The following children are failing: organizations/tetrate/tenants/tetrate/workspaces/bookinfo/gatewaygroups/bookinfo
@@ -157,7 +157,7 @@ bookinfo    FAILED                  The following children are failing: organiza
 
 Or its extended yaml version:
 
-```bash{promptUser: alice}
+```bash
 $ tctl x status ws bookinfo -o yaml
 apiVersion: api.tsb.tetrate.io/v2
 kind: ResourceStatus
@@ -196,7 +196,7 @@ clearly see that an update for admin triggered a change in the config resource
 that was rejected, and you can see the exact fields that were changed, causing
 the issue:
 
-```bash{promptUser: alice}
+```bash
 $ tctl x audit ig --workspace bookinfo --gatewaygroup bookinfo bookinfo
 TIME                   SEVERITY    TYPE                                        OPERATION               USER     MESSAGE
 2022/02/10 22:04:14    INFO        api.tsb.tetrate.io/v2/ResourceStatus        XCP_CENTRAL_REJECTED    mpc      New FAILED status due to XCP_CENTRAL_REJECTED event for ingressgateway "bookinfo" version "O0HhTEHkvjA="
@@ -209,7 +209,7 @@ TIME                   SEVERITY    TYPE                                        O
 
 Displaying the yaml with a date filter will output:
 
-```bash{promptUser: alice}
+```bash
 $ tctl x audit ig --workspace bookinfo --gatewaygroup bookinfo bookinfo --operation update --since "2022/02/10 22:04:12" -o yaml
 apiVersion: audit.tetrate.io/v1
 kind: AuditLog

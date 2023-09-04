@@ -1,110 +1,82 @@
 ---
-title: TSB Uninstallation
-description: Steps to follow to uninstall TSB from your cluster.
+title: TSB 卸载
+description: 卸载你的集群中的 TSB 的步骤。
+weight: 4
 ---
 
-This page describes the procedure to follow to uninstall TSB from a cluster.
+本页描述了从集群中卸载 TSB 的步骤。
 
-:::note
-The process will be similar for all of the planes (management, control, and data
-planes), because you'll need to delete any custom resource for the plane, then
-delete the operator itself.
-:::
+{{<callout note "注意">}}
+此过程对于所有平面（管理、控制和数据平面）都是相似的，因为你需要删除平面的任何自定义资源，然后删除Operator本身。
+{{</callout>}}
 
-## Data plane
+## 数据平面
 
-As the data plane takes care of deploying ingress gateways in your cluster, the
-first step is to delete all of the `IngressGateway` custom resources from your
-cluster.
+由于数据平面负责在你的集群中部署入口网关，因此第一步是从你的集群中删除所有 `IngressGateway` 自定义资源。
 
-```bash{promtUser: Alice}{outputLines: 2}
-kubectl delete ingressgateways.install.tetrate.io \
-    --all --all-namespaces
+```bash
+kubectl delete ingressgateways.install.tetrate.io --all --all-namespaces
 ```
 
-This will delete all the `IngressGateway`'s deployed in every namespace in the
-cluster. Once you've run this command, the data plane operator will delete the
-deployments and associated resources for every gateway. This may take some time
-to ensure that they're all successfully removed.
+这将删除集群中每个命名空间中部署的所有 `IngressGateway`。运行此命令后，数据平面Operator将删除每个网关的部署和相关资源。这可能需要一些时间来确保它们都成功删除。
 
-To make sure that you gracefully remove the `istio-operator` deployment, you
-must scale and delete the remaining objects in the data plane operator namespace
-in the following order:
+为确保你正常删除 `istio-operator` 部署，你必须按以下顺序缩放并删除数据平面Operator命名空间中的剩余对象：
 
-```bash{promtUser: Alice}{outputLines: 2, 4}
-kubectl -n istio-gateway scale deployment \
-    tsb-operator-data-plane --replicas=0
-kubectl -n istio-gateway delete \
-    istiooperators.install.istio.io --all
+```bash
+kubectl -n istio-gateway scale deployment tsb-operator-data-plane --replicas=0
+kubectl -n istio-gateway delete istiooperators.install.istio.io --all
 kubectl -n istio-gateway delete deployment --all
 ```
 
-This will delete both the TSB and Istio operator deployments stored in the data
-plane operator namespace. Now you can clean up the validation and mutation web
-hooks.
+这将删除存储在数据平面Operator命名空间中的 TSB 和 Istio Operator部署。现在你可以清理验证和变异 Web 钩子。
 
-```bash{promtUser: Alice}{outputLines: 2-6, 7-9,10}
-kubectl delete \
-    validatingwebhookconfigurations.admissionregistration.k8s.io \
+```bash
+kubectl delete validatingwebhookconfigurations.admissionregistration.k8s.io \
     tsb-operator-data-plane-egress \
     tsb-operator-data-plane-ingress \
     tsb-operator-data-plane-tier1
-kubectl delete \
-    mutatingwebhookconfigurations.admissionregistration.k8s.io \
+kubectl delete mutatingwebhookconfigurations.admissionregistration.k8s.io \
     tsb-operator-data-plane-egress \
     tsb-operator-data-plane-ingress \
     tsb-operator-data-plane-tier1
 ```
 
-Removing the control plane will remove all TSB components as well as the Istio
-control plane used by TSB and render any sidecars in the cluster non-functional.
+删除控制平面将删除所有 TSB 组件以及 TSB 使用的 Istio 控制平面，并使集群中的任何 Sidecar 失去功能。
 
-## Control Plane
+## 控制平面
 
-To delete the TSB control plane, first delete the IstioOperator associated with
-it.
+要删除 TSB 控制平面，首先删除与其关联的 IstioOperator。
 
-```bash{promtUser: Alice}
+```bash
 kubectl delete controlplanes.install.tetrate.io --all --all-namespaces
 ```
 
-It may take some time for the TSB operator in the istio-system namespace to
-clean up the Istio components, but once it's complete, delete the validation
-and mutation web hooks.
+TSB Operator在 istio-system 命名空间中清理 Istio 组件可能需要一些时间，但一旦完成，删除验证和变异 Web 钩子。
 
-```bash{promtUser: Alice}{outputLines: 2-3, 5-6, 8-9}
-kubectl delete \
-    validatingwebhookconfigurations.admissionregistration.k8s.io \
-    tsb-operator-control-plane
-kubectl delete \
-    mutatingwebhookconfigurations.admissionregistration.k8s.io \
-    tsb-operator-control-plane
-kubectl delete \
-    validatingwebhookconfigurations.admissionregistration.k8s.io \
-    xcp-edge-istio-system
+```bash
+kubectl delete validatingwebhookconfigurations.admissionregistration.k8s.io tsb-operator-control-plane
+kubectl delete mutatingwebhookconfigurations.admissionregistration.k8s.io tsb-operator-control-plane
+kubectl delete validatingwebhookconfigurations.admissionregistration.k8s.io xcp-edge-istio-system
 ```
 
-Then delete the `istio-system` and `xcp-multicluster` namespaces.
+然后删除 `istio-system` 和 `xcp-multicluster` 命名空间。
 
-```bash{promtUser: Alice}
+```bash
 kubectl delete namespace istio-system xcp-multicluster
 ```
 
-In order to clean up the cluster-scoped resources, use the `tctl install manifest`
-command to render the `cluster-operators` manifest and delete the resulting
-manifest.
+为了清理集群范围的资源，请使用 `tctl install manifest` 命令来呈现 `cluster-operators` 清单并删除生成的清单。
 
-```bash{promtUser: Alice}{outputLines: 2}
+```bash
 tctl install manifest cluster-operators --registry=dummy | \
     kubectl delete -f - --ignore-not-found
 kubectl delete clusterrole xcp-operator-edge
 kubectl delete clusterrolebinding xcp-operator-edge
 ```
 
-Now clean up all the control plane related custom resource definitions in your
-cluster.
+现在清理集群中与控制平面相关的自定义资源定义。
 
-```bash{promtUser: Alice}{outputLines: 2-9,10-21}
+```bash
 kubectl delete crd \
     clusters.xcp.tetrate.io \
     controlplanes.install.tetrate.io \
@@ -128,62 +100,46 @@ kubectl delete crd \
     --ignore-not-found
 ```
 
-At this point, all the TSB resources in the Kubernetes cluster are removed,
-but in order to remove this cluster from TSB configuration, you have to run
-the following command:
+此时，Kubernetes 集群中的所有 TSB 资源都已删除，但为了从 TSB 配置中删除此集群，你必须运行以下命令：
 
-```bash{promtUser: Alice}
+```bash
 tctl delete cluster <cluster>
 ```
 
-## Management plane
+## 管理平面
 
-To uninstall the management plane, you need to remove the `ManagementPlane` CR
-that describes your management plane configuration, which will force the
-management plane operator to delete any components related to it.
+要卸载管理平面，你需要删除描述管理平面配置的 `ManagementPlane` CR，这将强制管理平面Operator删除与之相关的任何组件。
 
-```bash{promtUser: Alice}
+```bash
 kubectl -n tsb delete managementplanes.install.tetrate.io --all
 ```
 
-Then, delete the management plane operator.
+然后，删除管理平面Operator。
 
-```bash{promtUser: Alice}
+```bash
 kubectl -n tsb delete deployment tsb-operator-management-plane
 ```
 
-Finally, delete the validation and mutation web hooks.
+最后，删除验证和变异 Web 钩子。
 
-```bash{promtUser: Alice}{outputLines: 2-3, 5-6, 8-9, 11-12}
-kubectl delete \
-    validatingwebhookconfigurations.admissionregistration.k8s.io \
-    tsb-operator-management-plane
-kubectl delete \
-    mutatingwebhookconfigurations.admissionregistration.k8s.io \
-    tsb-operator-management-plane
-kubectl delete \
-    validatingwebhookconfigurations.admissionregistration.k8s.io \
-    xcp-central-tsb
-kubectl delete \
-    mutatingwebhookconfigurations.admissionregistration.k8s.io \
-    xcp-central-tsb
+```bash
+kubectl delete validatingwebhookconfigurations.admissionregistration.k8s.io tsb-operator-management-plane
+kubectl delete  mutatingwebhookconfigurations.admissionregistration.k8s.io tsb-operator-management-plane
+kubectl delete validatingwebhookconfigurations.admissionregistration.k8s.io xcp-central-tsb
+kubectl delete mutatingwebhookconfigurations.admissionregistration.k8s.io xcp-central-tsb
 ```
 
-To clean up the cluster-scoped resources, use the `tctl install manifest`
-command to render the `management-plane-operator` manifest and delete it.
+为了清理集群范围的资源，请使用 `tctl install manifest` 命令来呈现 `management-plane-operator` 清单并删除它。
 
-```bash{promtUser: Alice}{outputLines: 2-3}
-tctl install manifest management-plane-operator \
-    --registry=dummy | \
-    kubectl delete -f - --ignore-not-found
+```bash
+tctl install manifest management-plane-operator --registry=dummy | kubectl delete -f - --ignore-not-found
 kubectl delete clusterrole xcp-operator-central
 kubectl delete clusterrolebinding xcp-operator-central
 ```
 
-Now clean up all the management plane related custom resource definitions in
-your cluster.
+现在清理集群中与管理平面相关的自定义资源定义。
 
-```bash{promtUser: Alice}{outputLines: 2-9,10-20}
+```bash
 kubectl delete crd \
     centralxcps.install.xcp.tetrate.io \
     clusters.xcp.tetrate.io \

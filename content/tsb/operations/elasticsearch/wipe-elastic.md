@@ -20,20 +20,20 @@ Make sure to follow steps 1 and 2 before proceeding
 This needs to be done in all CP clusters onboarded in TSB.
 :::
 
-```bash{promptUser: alice}{outputLines: 2}
+```bash{outputLines: 2}
 kubectl -n ${CONTROL_NAMESPACE} scale deployment oap-deployment
 --replicas=0
 ```
 
 **2. Scale down to 0 replicas the `oap` deployment in the management namespace.**
 
-```bash{promptUser: alice}
+```bash
 kubectl -n ${MANAGEMENT_NAMESPACE} scale deployment oap --replicas=0
 ```
 
 **3. Execute the following commands to delete templates and indexes in Elasticsearch.**
 
-```bash{promptUser: alice}
+```bash
 es_host=localhost
 es_port=9200
 es_user=<USER>
@@ -62,7 +62,7 @@ commands above, or set the scheme to `https` if needed.
 
 **4. Scale up the `oap` deployment in the management namespace.**
 
-```bash{promptUser: alice}
+```bash
 kubectl -n ${MANAGEMENT_NAMESPACE} scale deployment oap --replicas=1
 ```
 
@@ -82,7 +82,7 @@ components.
 This needs to be done in all CP clusters onboarded in TSB.
 :::
 
-```bash{promptUser: alice}{outputLines: 2}
+```bash{outputLines: 2}
 kubectl -n ${CONTROL_NAMESPACE} scale deployment oap-deployment \
 --replicas=1
 ```

@@ -97,7 +97,7 @@ Credentials in the CLI are referred to as `user`. The full reference for the
 [CLI reference](../reference/config#tctl-config-users) page. An example for
 creating an `admin-user` user is shown below.
 
-```bash{promptUser: alice}
+```bash
 tctl config users set admin-user --username admin --password 'MySuperSecret!' --org tetrate --tenant tenant1
 ```
 
@@ -126,7 +126,7 @@ Clusters in the CLI map to a given TSB API endpoint. The full reference for the
 [CLI reference](../reference/config#tctl-config-clusters) page. An example for
 creating a `my-tsb` cluster is shown below.
 
-```bash{promptUser: alice}
+```bash
 tctl config clusters set my-tsb --bridge-address my.tsb.corp:8443
 ```
 
@@ -142,7 +142,7 @@ authenticating with the `username` credentials. The full reference for the
 [CLI reference](../reference/config#tctl-config-profiles) page. An example for
 creating a `demo-tsb` profile is shown below.
 
-```bash{promptUser: alice}
+```bash
 tctl config profiles set demo-tsb --cluster my-tsb --username admin-user
 ```
 
@@ -151,7 +151,7 @@ and users. One of the profiles will be used as default when the option
 `--profile` is not specified. You can change the current profile at any time as
 shown below.
 
-```bash{promptUser: alice}{outputLines: 2-5,7,9-11}
+```bash{outputLines: 2-5,7,9-11}
 tctl config profiles list
   CURRENT  NAME      CLUSTER      ACCOUNT
   *        default
@@ -172,6 +172,6 @@ commands and their flags. Provided you have `bash` completion enabled, you can
 source the output of the [completion](../reference/completion) command to get
 the auto completion of `tctl` commands for `bash` working.
 
-```bash{promptUser: alice}
+```bash
 source <(tctl completion bash)
 ```

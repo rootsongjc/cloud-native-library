@@ -1,17 +1,18 @@
 ---
-title: Data Plane Installation
-description: How to leverage Helm to install the Data Plane element.
+title: 数据平面安装
+description: 如何使用 Helm 安装数据平面元素。
+weight: 4
 ---
 
-This chart installs the TSB data plane operator, which is used to manage the lifecycle of [gateways](../../refs/install/dataplane/v1alpha1/spec) such as the Ingress Gateway, Tier-1 Gateway, and Egress Gateway.
+此图表安装 TSB 数据平面Operator，用于管理 [网关](../../../refs/install/dataplane/v1alpha1/spec)，如 Ingress 网关、Tier-1 网关和 Egress 网关的生命周期。
 
-:::note
-If you are using the revisioned control plane, the data plane operator is no longer required for managing Istio gateways. To learn more about the revisioned control plane, see the [Istio Isolation Boundaries](../isolation-boundaries) documentation.
-:::
+{{<callout note 注意>}}
+如果你正在使用基于版本的控制平面，则不再需要数据平面Operator来管理 Istio 网关。要了解有关基于版本的控制平面的更多信息，请参阅 [Istio 隔离边界](../../isolation-boundaries) 文档。
+{{</callout>}}
 
-## Install
+## 安装
 
-To install the data plane operator, run the following Helm command. Make sure to replace `<tsb-version>` and `<registry-location>` with the correct values.
+要安装数据平面Operator，请运行以下 Helm 命令。确保将 `<tsb-version>` 和 `<registry-location>` 替换为正确的值。
 
 ```shell
 helm install dp tetrate-tsb-helm/dataplane \
@@ -20,33 +21,34 @@ helm install dp tetrate-tsb-helm/dataplane \
   --set image.registry=<registry-location>
 ```
 
-## Configuration
+## 配置
 
-### Image configuration
+### 镜像配置
 
-This is a **required** field. Set `image.registry` to the location of your private registry where you have synced the TSB images, and set `image.tag` to the TSB version that you want to deploy. 
+这是一个 **必填** 字段。将 `image.registry` 设置为你的私有注册表位置，你已经同步了 TSB 镜像，将 `image.tag` 设置为要部署的 TSB 版本。
 
-| Name             | Description                                  | Default value                        |
-|------------------|----------------------------------------------|--------------------------------------|
-| `image.registry` | Registry used to download the operator image | `containers.dl.tetrate.io` |
-| `image.tag`      | The tag of the operator image                | *same as the Chart version*                       |
+| 名称             | 描述                       | 默认值                     |
+| ---------------- | -------------------------- | -------------------------- |
+| `image.registry` | 用于下载Operator镜像的注册表 | `containers.dl.tetrate.io` |
+| `image.tag`      | Operator镜像的标签           | *与图表版本相同*           |
 
-### Operator extended configuration
+### Operator扩展配置
 
-This is an **optional** field. You can customize TSB operator related resources like the deployment, the service or the service account using the following optional properties:
+这是一个 **可选** 字段。你可以使用以下可选属性自定义与 TSB Operator相关的资源，如部署、服务或服务帐户：
 
-| Name                                       | Description                                                                      | Default value |
-|--------------------------------------------|----------------------------------------------------------------------------------|---------------|
-| `operator.deployment.affinity`             | Affinity configuration for the pod                                               ||
-| `operator.deployment.annotations`          | Custom collection of annotations to add to the deployment                        ||
-| `operator.deployment.env`                  | Custom collection of environment vars to add to the container                            ||
-| `operator.deployment.podAnnotations`       | Custom collection of annotations to add to the pod                               ||
-| `operator.deployment.replicaCount`         | Number of replicas managed by the deployment                                     ||
-| `operator.deployment.strategy`             | Deployment strategy to use                                                       ||
-| `operator.deployment.tolerations`          | Toleration collection applying to the pod scheduling                             ||
-| `operator.deployment.podSecurityContext`       | [SecurityContext](../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-podsecuritycontext) properties to apply to the pod                              ||
-| `operator.deployment.containerSecurityContext` | [SecurityContext](../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-securitycontext) properties to apply to the pod's containers                             ||
-| `operator.service.annotations`             | Custom collection of annotations to add to the service                           ||
-| `operator.serviceAccount.annotations`      | Custom collection of annotations to add to the service account                   ||
-| `operator.serviceAccount.imagePullSecrets` | Collection of secrets names required to be able to pull images from the registry ||
-| `operator.pullSecret`                      | A Docker JSON config string that will be stored as an image pull secret          ||
+| 名称                                           | 描述                                                         | 默认值 |
+| ---------------------------------------------- | ------------------------------------------------------------ | ------ |
+| `operator.deployment.affinity`                 | 用于 pod 的亲和性配置                                        |        |
+| `operator.deployment.annotations`              | 自定义的注释集，用于添加到部署中                             |        |
+| `operator.deployment.env`                      | 自定义的环境变量集，用于添加到容器中                         |        |
+| `operator.deployment.podAnnotations`           | 自定义的注释集，用于添加到 pod 中                            |        |
+| `operator.deployment.replicaCount`             | 部署管理的副本数量                                           |        |
+| `operator.deployment.strategy`                 | 要使用的部署策略                                             |        |
+| `operator.deployment.tolerations`              | 适用于 pod 调度的容忍集合                                    |        |
+| `operator.deployment.podSecurityContext`       | [SecurityContext](../../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-podsecuritycontext) 用于应用于 pod 的属性 |        |
+| `operator.deployment.containerSecurityContext` | [SecurityContext](../../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-securitycontext) 用于应用于 pod 的容器的属性 |        |
+| `operator.service.annotations`                 | 自定义的注释集，用于添加到服务中                             |        |
+| `operator.serviceAccount.annotations`          | 自定义的注释集，用于添加到服务帐户中                         |        |
+| `operator.serviceAccount.imagePullSecrets`     | 需要能够从注册表中拉取镜像的密钥名称集合                     |        |
+| `operator.pullSecret`                          | 将存储为图像拉取密钥的 Docker JSON 配置字符串                |        |
+```

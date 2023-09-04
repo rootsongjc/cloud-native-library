@@ -1,22 +1,22 @@
 ---
-title: Helm TSB Uninstallation
-description: Steps to follow to uninstall TSB from your cluster.
+title: Helm TSB 卸载
+description: 卸载 TSB 从你的集群中的步骤。
+weight: 6
 ---
 
-To uninstall TSB, installed using helm, you can use `helm uninstall` to uninstall a release. Uninstallation must be done
-in the following order:
+要卸载使用 Helm 安装的 TSB，你可以使用 `helm uninstall` 来卸载一个发布。卸载必须按照以下顺序进行：
 
-1. [Data Plane](#data-plane-uninstallation).
-2. [Control Plane](#control-plane-uninstallation).
-3. [Management Plane](#management-plane-uninstallation).
+1. 数据平面
+2. 控制平面
+3. 管理平面
 
-## Data Plane Uninstallation
+## 数据平面卸载
+
 ```shell
 helm uninstall dp tetrate-tsb-helm/dataplane --namespace istio-gateway
 ```
 
-Once Helm has removed all the resources associated with the last release of the data plane chart, you will need to
-manually remove some resources created during the uninstallation process that are untracked by Helm.
+一旦 Helm 删除了与数据平面Chart的最后一个发布关联的所有资源，你将需要手动删除一些在卸载过程中创建的资源，这些资源不受 Helm 跟踪。
 
 ```shell
 kubectl delete serviceaccount tsb-helm-delete-hook --ignore-not-found
@@ -25,13 +25,13 @@ kubectl delete clusterrolebinding tsb-helm-delete-hook --ignore-not-found
 kubectl delete istiooperators.install.istio.io --all -n istio-gateway --ignore-not-found
 ```
 
-## Control Plane Uninstallation
+## 控制平面卸载
+
 ```shell
 helm uninstall cp tetrate-tsb-helm/controlplane --namespace istio-system
 ```
 
-Once Helm has removed all the resources associated with the last release of the data plane chart, you will need to
-manually remove some resources created during the uninstallation process that are untracked by Helm.
+一旦 Helm 删除了与控制平面Chart的最后一个发布关联的所有资源，你将需要手动删除一些在卸载过程中创建的资源，这些资源不受 Helm 跟踪。
 
 ```shell
 kubectl delete serviceaccount tsb-helm-delete-hook --ignore-not-found
@@ -42,13 +42,13 @@ kubectl delete validatingwebhookconfigurations.admissionregistration.k8s.io xcp-
 kubectl delete mutatingwebhookconfigurations.admissionregistration.k8s.io xcp-edge-istio-system
 ```
 
-## Management Plane Uninstallation
+## 管理平面卸载
+
 ```shell
 helm uninstall mp tetrate-tsb-helm/managementplane --namespace tsb
 ```
 
-Once Helm has removed all the resources associated with the last release of the data plane chart, you will need to
-manually remove some resources created during the uninstallation process that are untracked by Helm.
+一旦 Helm 删除了与管理平面Chart的最后一个发布关联的所有资源，你将需要手动删除一些在卸载过程中创建的资源，这些资源不受 Helm 跟踪。
 
 ```shell
 kubectl delete serviceaccount tsb-helm-delete-hook --ignore-not-found

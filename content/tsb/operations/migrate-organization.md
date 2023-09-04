@@ -12,7 +12,7 @@ This document describes how to move all configurations, users, and groups from a
 
 Start by extracting all of the configurations per tenant. For each tenant, execute the following command:
 
-```bash{promptUser: alice}
+```bash
 tctl get all --tenant <tenant> > config.yaml
 ```
 
@@ -62,7 +62,7 @@ metadata:
 
 Then apply the new configuration to create the organization.
 
-```bash{promptUser: alice}
+```bash
 tctl apply -f myorg.yaml
 ```
 
@@ -81,13 +81,13 @@ metadata:
 Then apply the new configuration to create the new tenant(s). The example assumes you have listed all of the necessary
 tenants in the file `mytenants.yaml`
 
-```bash{promptUser: alice}
+```bash
 tctl apply -f mytenants.yaml
 ```
 
 Finally, apply the configuration stored in the file `config.yaml` you edited earlier:
 
-```bash{promptUser: alice}
+```bash
 tctl apply -f config.yaml
 ```
 
@@ -117,7 +117,7 @@ spec:
 
 Then apply the configuration.  This will associate the clusters with the new organization.
 
-```bash{promptUser: alice}
+```bash
 tctl apply -f clusters.yaml
 ```
 
@@ -147,7 +147,7 @@ spec:
 At this point you should have all of the clusters and the control plane migrated to the new organization. You now need
 to synchronize the users and groups to the new organization. To do this, create a Job as follows
 
-```bash{promptUser: alice}
+```bash
 kubectl create job --from=cronjob/teamsync teamsync -n tsb
 ```
 
@@ -165,7 +165,7 @@ Make sure to remove `tetrate-agents` from the bindings. Remove the section shown
 
 Then, after this is done, apply the bindings:
 
-```bash{promptUser: alice}
+```bash
 tctl apply -f bindings.yaml
 ```
 
@@ -202,13 +202,13 @@ communicate from tier1 to tier2.
 
 Once you are satisfied, apply the new configurations:
 
-```bash{promptUser: alice}
+```bash
 kubectl apply -f managementplane.yaml
 ```
 
 And finally, login to TSB using the new organization:
 
-```bash{promptUser: alice}
+```bash
 tctl login
 ```
 

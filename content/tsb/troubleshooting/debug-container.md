@@ -27,12 +27,12 @@ Once the pod is created, you will be placed in a shell within the debug containe
 
 If you want to check the network connectivity from the TSB cluster to the datastore you use (we assume PostgreSQL for this example), you can run the following command:
 
-```bash{promptUser: alice}
+```bash
 curl -v telnet://<postgres_IP>:5432
 ```
 
 Or use the PostgreSQL client command `psql` to validate the credentials.
 
-```bash{promptUser: alice}
+```bash
 psql -h my.postgres.local -P 5432 -U myUser
 ```

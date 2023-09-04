@@ -20,7 +20,7 @@ is installed in the `tsb` namespace.
 For more details, check the
 [Vault documentation](https://www.vaultproject.io/docs/platform/k8s/injector/installation).
 
-```bash{promptUser: alice}
+```bash
 helm install --name=vault --set='server.dev.enabled=true' ./vault-helm
 ```
 
@@ -34,7 +34,7 @@ security and set the super-user password.
 First, using the super-user, create a role that will allow Vault the minimum
 privileges by performing a POST to Elasticsearch.
 
-```bash{promptUser: alice}{outputLines: 2-5}
+```bash{outputLines: 2-5}
 curl -k \
     -X POST \
     -H "Content-Type: application/json" \
@@ -44,7 +44,7 @@ curl -k \
 
 Next, create a user for Vault associated with that role.
 
-```bash{promptUser: alice}{outputLines: 2-5}
+```bash{outputLines: 2-5}
 curl -k \
     -X POST \
     -H "Content-Type: application/json" \
@@ -72,7 +72,7 @@ Now, an Elasticsearch user is configured and ready to be used by Vault.
 
 Enable the database secrets engine in Vault.
 
-```bash{promptUser: alice}
+```bash
 vault secrets enable database
 ```
 
@@ -88,7 +88,7 @@ argument.
 Configure Vault with the plugin and connection information. You will need to
 provide the certificate, key and CA bundle (Root CA and Intermediates):
 
-```bash{promptUser: alice}{outputLines: 2-7}
+```bash{outputLines: 2-7}
 vault write database/config/tsb-elastic \
     plugin_name="elasticsearch-database-plugin" \
     allowed_roles="tsb-elastic-role" \
@@ -100,7 +100,7 @@ vault write database/config/tsb-elastic \
 
 Configure a role that maps a name in Vault to a role definition in Elasticsearch.
 
-```bash{promptUser: alice}{outputLines: 2-7}
+```bash{outputLines: 2-7}
 vault write database/roles/tsb-elastic-role \
     db_name=tsb-elastic \
     creation_statements='{"elasticsearch_role_definition": {"cluster":["manage_index_templates","monitor"],"indices":[{"names":["*"],"privileges":["manage","read","write"]}],"applications":[],"run_as":[],"metadata":{},"transient_metadata":{"enabled":true}}}' \
@@ -113,7 +113,7 @@ Success! Data written to: database/roles/internally-defined-role
 For validation of the configuration, generate a new credential by reading from
 the `/creds` endpoint with the name of the role:
 
-```bash{promptUser: alice}{outputLines: 2-8}
+```bash{outputLines: 2-8}
 vault read database/creds/tsb-elastic-role
 Key                Value
 ---                -----
@@ -127,7 +127,7 @@ username           v-root-tsb-elastic-rol-2eRGSeD09gTNzYHf7a2G-1610542455
 You can check the Elasticsearch cluster to verify the newly created credential
 is present:
 
-```bash{promptUser: alice}{outputLines: 2-9,10-14}
+```bash{outputLines: 2-9,10-14}
 curl -u "vault:<vault-elastic-password>" -ks -XGET https://<super-user-username>:<super-user-password>@<elastic-ip>:<elastic-port>/_xpack/security/user/v-root-tsb-elastic-rol-2eRGSeD09gTNzYHf7a2G-1610542455|jq '.'
 
 {
@@ -149,7 +149,7 @@ curl -u "vault:<vault-elastic-password>" -ks -XGET https://<super-user-username>
 Configure a policy named "database", This is a very non-restrictive policy, and
 in a production setting, we should lock this down more.
 
-```bash{promptUser: alice}{outputLines: 2-6}
+```bash{outputLines: 2-6}
 vault policy write es-auth - <<EOF
 path "database/creds/internally-defined-role" {
     capabilities = ["read"]
@@ -165,7 +165,7 @@ will use to connect to Kubernetes) and the CA certificate of the `vaultserver`
 service account as described in
 [Vault documentation](https://learn.hashicorp.com/tutorials/vault/kubernetes-external-vault?in=vault/kubernetes#define-a-kubernetes-service-account):
 
-```bash{promptUser: alice}{outputLines: 3-5}
+```bash{outputLines: 3-5}
 vault auth enable kubernetes
 vault write auth/kubernetes/config \
     token_reviewer_jwt="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
@@ -176,7 +176,7 @@ vault write auth/kubernetes/config \
 Attach our database policy to the service accounts that will use it, namely OAP
 service accounts for both management plane and control plane namespaces:
 
-```bash{promptUser: alice}{outputLines: 2-5}
+```bash{outputLines: 2-5}
 vault write auth/kubernetes/role/es \
     bound_service_account_names=tsb-oap,istio-system-oap,default \
     bound_service_account_namespaces=tsb,istio-system \

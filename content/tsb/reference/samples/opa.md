@@ -61,14 +61,14 @@ Assuming your policy is stored in a file named `policy.rego`, you will need to s
 
 To create a Secret, execute the following command, replacing `namespace` with the appropriate value:
 
-```bash{promptUser: alice}
+```bash
 kubectl create secret generic opa-policy -n <namespace> \
   --from-file policy.rego
 ```
 
 If you are using a ConfigMap, execute the following command in the same manner:
 
-```bash{promptUser: alice}
+```bash
 kubectl create configmap opa-policy -n <namespace> \
   --from-file policy.rego
 ```

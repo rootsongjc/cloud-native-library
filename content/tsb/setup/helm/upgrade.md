@@ -1,103 +1,102 @@
 ---
-title: TSB Helm Upgrade
-description: Upgrade TSB with Helm.
+title: TSB Helm 升级
+description: 使用 Helm 升级 TSB。
+weight: 5
 ---
 
-This document explains how you can leverage [Helm](https://helm.sh) Charts to upgrade the different elements
-of TSB. The document assumes that [Helm is already installed](https://helm.sh/docs/intro/install/) in the system.
+本文档解释了如何利用 [Helm](https://helm.sh) Chart来升级 TSB 的不同元素。本文假定 [Helm 已经安装](https://helm.sh/docs/intro/install/) 在系统中。
 
-This document only applies to TSB instances created with Helm, not to upgrade from TCTL based installations.
+本文档仅适用于使用 Helm 创建的 TSB 实例，不适用于从基于 TCTL 的安装升级。
 
-Before you start, make sure that you have:
+在开始之前，请确保你已经：
 
-✓ Checked the new version's [requirements](../requirements-and-download#requirements)<br />
+- 检查新版本的 [要求](../../requirements-and-download#requirements)
 
-## Prerequisites
+## 先决条件
 
-1. `Helm` [installed](https://helm.sh/docs/intro/install/)
-1. TSB cli `tctl` [installed](../../reference/cli/guide/index#installation)
-1. `kubectl` [installed](https://kubernetes.io/docs/tasks/tools/#kubectl)
-1. Credentials for Tetrate's image repository
+1. 已经 [安装](https://helm.sh/docs/intro/install/) `Helm`
+1. 已经 [安装](../../../reference/cli/guide/index#installation) TSB cli `tctl`
+1. 已经 [安装](https://kubernetes.io/docs/tasks/tools/#kubectl) `kubectl`
+1. Tetrate 的镜像仓库的凭据
 
 
-### Configure the Helm repository
+### 配置 Helm 仓库
 
-- Add the repository:
+- 添加仓库：
   ```shell
   helm repo add tetrate-tsb-helm 'https://charts.dl.tetrate.io/public/helm/charts/'
   helm repo update
   ```
-- List the available versions:
+
+- 列出可用版本：
   ```shell
   helm search repo tetrate-tsb-helm -l
   ```
 
-### Backup the PostgreSQL database
+### 备份 PostgreSQL 数据库
 
-[Create a backup of your PostgreSQL database](../../operations/postgresql#create-a-backup-of-tsb-configuration).
+[创建 PostgreSQL 数据库的备份](../../../operations/postgresql#create-a-backup-of-tsb-configuration)。
 
-The exact procedure for connecting to the database may differ depending on your environment, please refer
-to the documentation for your environment.
+根据你的环境，连接到数据库的确切过程可能会有所不同，请参考你环境的文档。
 
-## Upgrade process
+## 升级过程
 
-### Management Plane
+### 管理平面
 
-Upgrade the management plane chart:
+升级管理平面Chart：
 
 ```bash
 helm upgrade mp tetrate-tsb-helm/managementplane --namespace tsb -f values-mp.yaml
 ```
 
-### Control Plane
+### 控制平面
 
-Upgrade the control plane chart:
+升级控制平面Chart：
 
 ```bash
 helm upgrade cp tetrate-tsb-helm/controlplane --namespace istio-system -f values-cp.yaml --set-file secrets.clusterServiceAccount.JWK=/tmp/<cluster>.jwk
 ```
 
-### Data Plane
+### 数据平面
 
-Upgrade the control plane chart:
+升级数据平面Chart：
 
 ```bash
 helm upgrade dp tetrate-tsb-helm/dataplane --namespace istio-gateway -f values-dp.yaml
 ```
 
-## Rollback
+## 回滚
 
-In case something goes wrong and you want to rollback TSB to the previous version,
-you will need to rollback the Management Plane, the Control Planes and the Data Planes charts.
+如果发生问题，你希望将 TSB 回滚到以前的版本，你需要回滚管理平面、控制平面和数据平面Chart。
 
-### Rollback the Control Plane
+### 回滚控制平面
 
-You can use `helm rollback` to rollback the current revision. To see the current revisions, you can run:
+你可以使用 `helm rollback` 回滚到当前版本。要查看当前版本，可以运行：
 ```bash
 helm history cp -n istio-system
 ```
 
-And then you can rollback to the previous revision:
+然后，你可以回滚到以前的版本：
 ```bash
 helm rollback cp <REVISION> -n istio-system
 ```
 
-### Rollback the Management Plane
+### 回滚管理平面
 
-#### Scale Down Pods in Management Plane
+#### 缩减管理平面中的 Pod 数量
 
-Scale down all of the pods that talk to Postgres in the Management Plane so that the it is inactive.
+缩减管理平面中连接到 Postgres 的所有 Pod，以使其处于非活动状态。
 
 ```bash
 kubectl scale deployment tsb iam -n tsb --replicas=0
 ```
 
-#### Restore PostgreSQL
+#### 恢复 PostgreSQL
 
-[Restore your PostgreSQL database from your backup](../../operations/postgresql#restore-a-backup).
-The exact procedure for connecting to the database may differ depending on your environment, please refer to the documentation for your environment.
+[从备份中恢复你的 PostgreSQL 数据库](../../../operations/postgresql#restore-a-backup)。
+根据你的环境，连接到数据库的确切过程可能会有所不同，请参考你环境的文档。
 
-#### Restore Management Plane
+#### 恢复管理平面
 
 ```bash
 helm rollback mp <REVISION> -n tsb

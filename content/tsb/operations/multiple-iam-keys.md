@@ -14,7 +14,7 @@ certificate to use a custom signing key.
 
 First of all you need to retrieve the configuration for the token issuer with:
 
-```bash{promptUser: alice}
+```bash
 kubectl -n tsb get managementplane managementplane
 ```
 
@@ -35,7 +35,7 @@ tokenIssuer:
 
 This indicates that the current signing key is the one in the `tls.key` entry in the `tsb-certs` secret. We can retrieve it and save it for later as follows:
 
-```bash{promptUser: alice}
+```bash
 kubectl get secret -n tsb tsb-certs -o jsonpath='{.data.tls\.key}' | base64 -d >/tmp/old-key.pem
 ```
 
@@ -45,7 +45,7 @@ The next thing is to generate a new secret with the new IAM signing key. This ca
 Please refer to the [supported key algorithms list](../refs/install/managementplane/v1alpha1/spec#tetrateio-api-install-managementplane-v1alpha1-jwtsettings-issuer-algorithm)
 for further details about the supported keys.
 
-```bash{promptUser: alice}
+```bash
 $ cat /opt/iam-key.pem
 
 -----BEGIN RSA PRIVATE KEY-----
@@ -79,7 +79,7 @@ mu69O2h7ud88ozXJntC0VTv2nU1cKpiMHq3jZ0vxNmJomd7wKxwunKAZj8GJczhm
 
 Then you will generate a new secret that contains the new key and the OLD key as well:
 
-```bash{promptUser: alice}
+```bash
 kubectl -n tsb create secret generic iam-signing-keys \
     --from-file=new.key=/opt/iam-key.pem \
     --from-file=old.key=/tmp/old-key.pem
@@ -87,7 +87,7 @@ kubectl -n tsb create secret generic iam-signing-keys \
 
 This would create a secret like the following one, containing the old and the new key:
 
-```bash{promptUser: alice}
+```bash
 kubectl -n tsb get secret iam-signing-keys -o yaml
 apiVersion: v1
 data:

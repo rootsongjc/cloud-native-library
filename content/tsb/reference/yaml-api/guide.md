@@ -17,7 +17,7 @@ Once you have the CLI installed and configured to talk to your TSB installation,
 you'll need to configure access to the TSB platform with the `tctl login`
 command:
 
-```bash{promptUser: alice}{outputLines: 2-9}
+```bash{outputLines: 2-9}
 tctl login
 ```
 
@@ -96,7 +96,7 @@ make sure the operation will not fail because a resource is missing its parent.
 The following example shows how to create a tenant and a workspace in an
 existing organization:
 
-```bash{promptUser: alice}{outputLines: 2-9,10-24}
+```bash{outputLines: 2-9,10-24}
 tctl apply -f - <<EOF
 apiVersion: api.tsb.tetrate.io/v2
 kind: Tenant
@@ -139,7 +139,7 @@ table form (default), YAML or JSON:
 
 #### Get all workspaces in the configured tenant
 
-```bash{promptUser: alice}
+```bash
 tctl get workspace
 ```
 
@@ -153,7 +153,7 @@ bookinfo    Bookinfo      Bookinfo application
 
 #### Get the details of a workspace
 
-```bash{promptUser: alice}
+```bash
 tctl get workspace helloworld -o yaml
 ```
 
@@ -184,7 +184,7 @@ spec:
 Note that we need to provide the flags to specify which is the workspace and
 group we want to get the service routes for:
 
-```bash{promptUser: alice}{outputLines: 2-3}
+```bash
 tctl get serviceroute \
     --workspace helloworld \
     --trafficgroup helloworld -o yaml
@@ -230,7 +230,7 @@ at higher levels of the resource hierarchy.
 
 Assume you have an existing `trafficgroup` you can query with the command below:
 
-```bash{promptUser: alice}
+```bash
 tctl get trafficgroup --workspace test
 ```
 
@@ -243,13 +243,13 @@ test-tg  test-tg       et-tg
 
 To delete the `trafficgroup`:
 
-```bash{promptUser: alice}
+```bash
 tctl delete trafficgroup test-tg --workspace test
 ```
 
 Query it again:
 
-```bash{promptUser: alice}{outputLines: 2}
+```bash{outputLines: 2}
 tctl get trafficgroup -w test
 No resources found
 ```

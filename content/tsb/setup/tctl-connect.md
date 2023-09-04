@@ -19,7 +19,7 @@ There are three ways to configure `tctl`: using `tctl login`, downloading the a 
 
 1. The preferred method is connecting to TSB with `tctl login`, using the `default` profile:
 
-```bash{promptUser: alice}
+```bash
 tctl config clusters set default --bridge-address $TSB_ADDRESS
 tctl login
 Organization: tetrate
@@ -35,7 +35,7 @@ tetrate       Tetrate         Default tenant
 
 2. A second easy way to connect with `tctl` is to download the bundle from the TSB UI and `tctl config import` it:
 
-```bash{promptUser: alice}
+```bash
 tctl config profiles import ~/Downloads/tctl-<your username>.config.yaml
 tctl config profiles set-current <your username>-tsb
 # We're ready to go:
@@ -46,7 +46,7 @@ tetrate       Tetrate         Default tenant
 
 3. And finally you can create your own `user`, `cluster`, and `profile` (with slightly different flags for LDAP vs OIDC) to log in:
 
-```bash{promptUser: alice}
+```bash
 tctl config clusters set tsb-how-to-cluster --bridge-address $TSB_ADDRESS
 # For OIDC
 tctl config users set tsb-how-to-user --org $TCTL_LOGIN_ORG --token $TSB_BEARER_TOKEN --refresh-token $TSB_REFRESH_TOKEN
@@ -71,7 +71,7 @@ To do this, first we need to configure `tctl` with the address of our TSB instan
 ### Get TSB's Address
 If your kubeconfig is pointed at the management plane cluster, you can get the address from the Kubernetes service:
 
-```bash{promptUser: alice}
+```bash
 export TSB_ADDRESS=$(kubectl get svc -n tsb envoy --output jsonpath='{.status.loadBalancer.ingress[0].ip}'):8443
 ```
 
@@ -80,17 +80,17 @@ Many organizations will expose TSB's UI (and therefore API) via DNS; you should 
 ### Configure the default profile
 
 With TSB's address in hand, we'll configure `tctl` to connect to it:
-```bash{promptUser: alice}
+```bash
 tctl config clusters set default --bridge-address $TSB_ADDRESS
 ```
 
 ### Log in with OIDC
 To log in with OIDC, we can use the OIDC device code flow, which is built into `tctl`:
-```bash{promptUser: alice}
+```bash
 tctl login --use-device-code
 ```
 
-```bash{promptUser: alice}
+```bash
 Organization: tetrate
 Tenant:
 Code: GGBD-NJPR
@@ -105,11 +105,11 @@ This will open up your browser for you to complete the OIDC login flow and gener
 
 ### Log in with Username and Password 
 Log in, providing your username and password:
-```bash{promptUser: alice}
+```bash
 tctl login
 ```
 
-```bash{promptUser: alice}
+```bash
 Organization: tetrate
 Tenant:
 Username: admin
@@ -121,7 +121,7 @@ Login Successful!
 
 `tctl` works with a config file to connect to a TSB instance, similar to kubeconfig for connecting to a Kubernetes API server. The easiest way to get connected with `tctl` is to download that config file from the TSB UI, following the instructions in the webpage. To get to those credentials, log in to the TSB UI in your browser, then in the top right corner click on your user name and under select `Actions` > `Show token information` > `Download tctl Config`. This will download a file named `tctl-<your username>.config.yaml`. You can then import this into `tctl`, saving it permanently:
 
-```bash{promptUser: alice}
+```bash
 tctl config profiles import /path/to/tctl-<your username>.config.yaml
 tctl config profiles set-current <your username>-tsb
 ```
@@ -147,7 +147,7 @@ Both the UI and TSB's APIs are exposed on the same address and port. To configur
 #### Get TSB's Address
 If your kubeconfig is pointed at the management plane cluster, you can get the address from the Kubernetes service:
 
-```bash{promptUser: alice}
+```bash
 export TSB_ADDRESS=$(kubectl get svc -n tsb envoy --output jsonpath='{.status.loadBalancer.ingress[0].ip}'):8443
 ```
 
@@ -156,7 +156,7 @@ Many organizations will expose TSB's UI (and therefore API) via DNS; you should 
 #### Create a `tctl` Cluster
 Once you have obtained the address (`$TSB_ADDRESS`) you can create a *cluster* in `tctl`'s config. Name the cluster `tsb-how-to-cluster`:
 
-```bash{promptUser: alice}
+```bash
 tctl config clusters set tsb-how-to-cluster --bridge-address $TSB_ADDRESS
 ```
 
@@ -172,11 +172,11 @@ First you need to know the username you are logging in with. This will depend on
 
 To log in to TSB with OIDC credentials, log in to the TSB UI in your browser, then in the top right corner click on your user name and under select `Actions` > `Show token information`. From that page, copy down the Bearer Token and Refresh Token, exporting them as `TSB_BEARER_TOKEN` and `TSB_REFRESH_TOKEN`:
 
-```bash{promptUser: alice}
+```bash
 export TSB_BEARER_TOKEN=HHVMW2.qhf9jBL1fMCazBe1umanDr5sNEuFcKtClAUxeWA...redacted
 export TSB_REFRESH_TOKEN=AJWXL6VmGUmvYfn43601RG.Bw+xr0IVQ43swidqAt1tHf...redacted
 ```
-```bash{promptUser: alice}
+```bash
 tctl config users set tsb-how-to-user \
   --org $TCTL_LOGIN_ORG \
   --token $TSB_BEARER_TOKEN \
@@ -186,11 +186,11 @@ tctl config users set tsb-how-to-user \
 #### Login for LDAP (username + password) Users
 For LDAP logins, you need a username and password; you can configure these and environment variables, or pass them in via the CLI:
 
-```bash{promptUser: alice}
+```bash
 export TCTL_LOGIN_USERNAME=demo-user@tetrate.io
 export TCTL_LOGIN_PASSWORD=<your password>
 ```
-```bash{promptUser: alice}
+```bash
 tctl config users set tsb-how-to-user \
   --org $TCTL_LOGIN_ORG \
   --username $TCTL_LOGIN_USERNAME \
@@ -205,11 +205,11 @@ When you configure a user with a username and password, that password is written
 
 You can log in as the default administrative user with the same username and password scheme as an LDAP account:
 
-```bash{promptUser: alice}
+```bash
 export TCTL_LOGIN_USERNAME=admin # this is hard-coded
 export TCTL_LOGIN_PASSWORD=<your password> # you created this during management plane install
 ```
-```bash{promptUser: alice}
+```bash
 tctl config users set tsb-how-to-user \
   --org $TCTL_LOGIN_ORG \
   --username $TCTL_LOGIN_USERNAME \
@@ -226,7 +226,7 @@ Finally, because this is a username and password login, you need to `tctl login`
 
 A *profile* ties a *cluster* and a *user* together so that they can be used to connect to a TSB instance. Connect the *cluster* and *user* you just created together into a *profile*:
 
-```bash{promptUser: alice}
+```bash
 tctl config profiles set tsb-how-to --cluster tsb-how-to-cluster --username tsb-how-to-user
 ```
 
@@ -234,7 +234,7 @@ tctl config profiles set tsb-how-to --cluster tsb-how-to-cluster --username tsb-
 
 Configure `tctl` to use the profile you just created to connect to TSB:
 
-```bash{promptUser: alice}
+```bash
 tctl config profiles set-current tsb-how-to
 ```
 
@@ -244,10 +244,10 @@ At this point, you're good to go: `tctl` has TSB's location and your credentials
 
 As a sanity check, after finishing the following steps you can list your `tctl` profiles, and you should see something like:
 
-```bash{promptUser: alice}
+```bash
 tctl config profiles list
 ```
-```bash{promptUser: alice}
+```bash
 CURRENT   NAME         CLUSTER             ACCOUNT
           default      default             default
 *         tsb-how-to   tsb-how-to-cluster  tsb-how-to-user
@@ -257,17 +257,17 @@ CURRENT   NAME         CLUSTER             ACCOUNT
 
 The final bit of setup you can do to make your life easier with `tctl` is to fill in your `tenant`, if you have not already done so.  Use `tctl` to ask TSB which tenants exist. For most users, there will be exactly one result returned - which is the tenant you want to be using. For users with multiple tenants, you'll need to talk with your platform team to determine which is the correct to use for you.
 
-```bash{promptUser: alice}
+```bash
 tctl get tenants
 ```
-```bash{promptUser: alice}
+```bash
 NAME          DISPLAY NAME    DESCRIPTION
 tetrate       Tetrate         Default tenant
 ```
 
 With your tenant in hand, you can save it to your user:
 
-```bash{promptUser: alice}
+```bash
 tctl config users set tsb-how-to-user --tenant <your tenant>
 ```
 
@@ -275,6 +275,6 @@ tctl config users set tsb-how-to-user --tenant <your tenant>
 
 When you log in with username and password, both are persisted to disk. This is not desirable, as your password is stored in plaintext. To remove the password from `tctl`'s config file, you can use [`tctl login`](../reference/cli/reference/login), which will exchange your credentials for a set of OAuth tokens and write those to disk instead.
 
-```bash{promptUser: alice}
+```bash
 tctl login
 ```

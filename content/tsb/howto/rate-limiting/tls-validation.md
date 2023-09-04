@@ -31,7 +31,7 @@ You may generate a self-signed certificate using [the script show here](../../qu
 
 Once you have the certificate files, create Kubernetes secret using server certificate and private key. 
 
-```bash{promptUser: alice}
+```bash
 kubectl create secret tls -n ext-ratelimit ratelimit-certs \
   --cert=ratelimit.crt \
   --key=ratelimit.key
@@ -49,7 +49,7 @@ Create a configuration file for Envoy with the following content as [`proxy-conf
 
 Execute the following to store the configuration in Kubernetes as a `ConfigMap`.
 
-```bash{promptUser: alice}
+```bash
 kubectl create configmap -n ext-ratelimit ratelimit-proxy \
   --from-file=proxy-config-tls.yaml
 ```
@@ -63,14 +63,14 @@ Create a file called [`ratelimit-tls.yaml`](../../assets/howto/rate_limiting/rat
 
 Then apply this using `kubectl`:
 
-```bash{promptUser: alice}
+```bash
 kubectl apply -f ratelimit-tls.yaml
 ```
 
 Once you applied the new configuration, make sure that the `ratelimit-tls` service is running properly.
 Note that if you have followed the instructions from [Setting Up an External Rate Limiting Server](./external_rate_limiting), you will also see `ratelimit` and `redis` services as well.
 
-```bash{promptUser: alice}
+```bash
 kubectl get pods -n ext-ratelimit
 
 NAME                             READY   STATUS    RESTARTS   AGE
@@ -85,7 +85,7 @@ The `ratelimit-tls` service can now terminate TLS, but the Ingress Gateway must 
 
 First, create a `ConfigMap` named `ratelimit-ca` to store the CA information from `ratelimit-ca.crt`:
 
-```bash{promptUser: alice}
+```bash
 kubectl create configmap -n httpbin ratelimit-ca \
   --from-file=ratelimit-ca.crt
 ```
@@ -98,7 +98,7 @@ Then add the `ratelimit-ca` `ConfigMap` into the Ingress Gateway pod. To do this
 
 Apply with kubectl to update existing ingress gateway
 
-```bash{promptUser: alice}
+```bash
 kubectl apply -f httpbin-ingress-gateway.yaml
 ```
 
@@ -110,7 +110,7 @@ Finally, update [the Ingress Gateway configuration in `ext-ratelimit-ingress-gat
 
 And apply with tctl
 
-```bash{promptUser: alice}
+```bash
 tctl apply -f ext-ratelimit-ingress-gateway-tls.yaml
 ```
 
