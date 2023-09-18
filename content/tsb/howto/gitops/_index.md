@@ -1,6 +1,6 @@
 ---
 weight: 3
-title: "Using GitOps"
+title: "GitOps"
 ---
 
 {{< list_children show_summary="false">}}
