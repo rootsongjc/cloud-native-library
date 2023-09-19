@@ -16,7 +16,7 @@ weight: 6
 helm uninstall dp tetrate-tsb-helm/dataplane --namespace istio-gateway
 ```
 
-一旦 Helm 删除了与数据平面Chart的最后一个发布关联的所有资源，你将需要手动删除一些在卸载过程中创建的资源，这些资源不受 Helm 跟踪。
+一旦 Helm 删除了与数据平面 Chart 的最后一个发布关联的所有资源，你将需要手动删除一些在卸载过程中创建的资源，这些资源不受 Helm 跟踪。
 
 ```shell
 kubectl delete serviceaccount tsb-helm-delete-hook --ignore-not-found
@@ -31,7 +31,7 @@ kubectl delete istiooperators.install.istio.io --all -n istio-gateway --ignore-n
 helm uninstall cp tetrate-tsb-helm/controlplane --namespace istio-system
 ```
 
-一旦 Helm 删除了与控制平面Chart的最后一个发布关联的所有资源，你将需要手动删除一些在卸载过程中创建的资源，这些资源不受 Helm 跟踪。
+一旦 Helm 删除了与控制平面 Chart 的最后一个发布关联的所有资源，你将需要手动删除一些在卸载过程中创建的资源，这些资源不受 Helm 跟踪。
 
 ```shell
 kubectl delete serviceaccount tsb-helm-delete-hook --ignore-not-found
@@ -48,7 +48,7 @@ kubectl delete mutatingwebhookconfigurations.admissionregistration.k8s.io xcp-ed
 helm uninstall mp tetrate-tsb-helm/managementplane --namespace tsb
 ```
 
-一旦 Helm 删除了与管理平面Chart的最后一个发布关联的所有资源，你将需要手动删除一些在卸载过程中创建的资源，这些资源不受 Helm 跟踪。
+一旦 Helm 删除了与管理平面 Chart 的最后一个发布关联的所有资源，你将需要手动删除一些在卸载过程中创建的资源，这些资源不受 Helm 跟踪。
 
 ```shell
 kubectl delete serviceaccount tsb-helm-delete-hook --ignore-not-found

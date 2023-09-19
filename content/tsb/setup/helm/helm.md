@@ -10,16 +10,16 @@ weight: 1
 
 TSB 为其 [平面](../../../concepts/architecture#overall-architecture) 中的每一个都提供了一个图表：
 
-- [管理平面](../managementplane)：安装 TSB 管理平面Operator（可选择安装 MP CR 和/或密钥）。
-- [控制平面](../controlplane)：安装 TSB 控制平面Operator（可选择安装 MP CR 和/或密钥）。
-- [数据平面](../dataplane)：安装 TSB 数据平面Operator。
+- [管理平面](../managementplane)：安装 TSB 管理平面 Operator（可选择安装 MP CR 和/或密钥）。
+- [控制平面](../controlplane)：安装 TSB 控制平面 Operator（可选择安装 MP CR 和/或密钥）。
+- [数据平面](../dataplane)：安装 TSB 数据平面 Operator。
 
-每个Chart都安装了相应平面的Operator。管理平面和控制平面都允许创建触发Operator的相应资源（使用 `spec` 属性）以部署所有 TSB 组件和/或必需的密钥（使用 `secrets` 属性）以使其正常运行。
+每个 Chart 都安装了相应平面的 Operator。管理平面和控制平面都允许创建触发 Operator 的相应资源（使用 `spec` 属性）以部署所有 TSB 组件和/或必需的密钥（使用 `secrets` 属性）以使其正常运行。
 
 这种行为让你选择完全配置 TSB 并与 CD 流水线集成的方式。你可以使用 Helm 来：
 
-- 仅安装Operator
-- 安装/升级平面资源（管理平面或控制平面 CR）以及Operator
+- 仅安装 Operator
+- 安装/升级平面资源（管理平面或控制平面 CR）以及 Operator
 - 安装/升级Operator和密钥
 - 一次安装/升级它们（Operator、资源、密钥）
 
@@ -61,6 +61,6 @@ TSB 为其 [平面](../../../concepts/architecture#overall-architecture) 中的�
 前往 [数据平面安装](../dataplane) 来安装将管理网关生命周期的 [TSB 数据平面组件](../../components#data-plane) 到你的应用程序集群中。
 
 {{<callout note 基于版本的控制平面>}}
-当你使用基于版本的控制平面时，不再需要 Data Plane Operator来管理 Istio 网关，你可以跳过数据平面安装。要了解有关基于版本的控制平面的更多信息，请前往 [Istio 隔离边界](../../isolation-boundaries)。
+当你使用基于版本的控制平面时，不再需要 Data Plane Operator 来管理 Istio 网关，你可以跳过数据平面安装。要了解有关基于版本的控制平面的更多信息，请前往 [Istio 隔离边界](../../isolation-boundaries)。
 
 {{</callout>}}

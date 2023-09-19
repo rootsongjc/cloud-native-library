@@ -47,7 +47,7 @@ spec: {}
 tctl apply -f new-cluster.yaml
 ```
 
-## 部署Operator
+## 部署 Operator
 
 接下来，你需要在集群中安装必要的组件，以加入集群并将其连接到管理平面。
 

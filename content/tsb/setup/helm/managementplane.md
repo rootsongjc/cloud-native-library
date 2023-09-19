@@ -4,7 +4,7 @@ description: 如何使用 Helm 安装管理平面元素。
 weight: 2
 ---
 
-此Chart安装 TSB 管理平面Operator，还允许你使用 [TSB `ManagementPlane` CR](../../../refs/install/managementplane/v1alpha1/spec) 安装 TSB 管理平面组件以及使其完全运行所需的所有秘密。
+此 Chart 安装 TSB 管理平面 Operator，还允许你使用 [TSB `ManagementPlane` CR](../../../refs/install/managementplane/v1alpha1/spec) 安装 TSB 管理平面组件以及使其完全运行所需的所有秘密。
 
 在开始之前，请确保你已经查看了 [Helm 安装过程](../helm#installation-process)。
 
@@ -126,18 +126,18 @@ secrets:
 - 验证你在 `helm install` 命令中使用的注册表位置和 TSB 版本是否正确。
 - 如果你使用自定义身份提供者，请确保你在 `values.yaml` 文件的 secrets 部分设置了所有所需的 `secrets`。
 - 如果无法连接到 TSB，请确保所有 TSB 组件都已成功部署，日志中没有错误。
-- 如果你使用私有注册表来托管 TSB 控制平面Operator镜像，请确保已对注册表进行身份验证，并且 `image.registry` 值正确。
+- 如果你使用私有注册表来托管 TSB 控制平面 Operator 镜像，请确保已对注册表进行身份验证，并且 `image.registry` 值正确。
 
 ## 配置
 
 ### 镜像配置
 
-这是一个 **必填** 字段。将 `image.registry` 设置为你的私有注册表位置，你已经同步了 TSB 镜像，将 `image.tag` 设置为要部署的 TSB 版本。仅指定此字段将安装 TSB 控制平面Operator，而不安装其他 TSB 组件。
+这是一个 **必填** 字段。将 `image.registry` 设置为你的私有注册表位置，你已经同步了 TSB 镜像，将 `image.tag` 设置为要部署的 TSB 版本。仅指定此字段将安装 TSB 控制平面 Operator，而不安装其他 TSB 组件。
 
 | 名称             | 描述                             | 默认值                     |
 | ---------------- | -------------------------------- | -------------------------- |
-| `image.registry` | 用于下载Operator镜像的注册表。必填 | `containers.dl.tetrate.io` |
-| `image.tag`      | Operator镜像的标签。必填             | *与Chart版本相同*                  |
+| `image.registry` | 用于下载 Operator 镜像的注册表。必填 | `containers.dl.tetrate.io` |
+| `image.tag`      | Operator 镜像的标签。必填             | *与 Chart 版本相同*                  |
 
 ### 管理平面资源配置
 
@@ -157,7 +157,7 @@ secrets:
 
 | 名称                              | 描述                                                         | 默认值  |
 | --------------------------------- | ------------------------------------------------------------ | ------- |
-| `secrets.keep`                    | 启用此选项将使生成的秘密在卸载Chart后持续存在于集群中，如果它们在将来的更新中未提供，则不会删除它们。 (参见 [Helm 文档](https://helm.sh/docs/howto/charts_tips_and_tricks/#tell-helm-not-to-uninstall-a-resource)) | `false` |
+| `secrets.keep`                    | 启用此选项将使生成的秘密在卸载 Chart 后持续存在于集群中，如果它们在将来的更新中未提供，则不会删除它们。 (参见 [Helm 文档](https://helm.sh/docs/howto/charts_tips_and_tricks/#tell-helm-not-to-uninstall-a-resource)) | `false` |
 | `secrets.tsb.adminPassword`       | 为 `admin` 用户配置的密码。                                  |         |
 | `secrets.tsb.cert`                | 管理平面 (front envoy) 暴露的 TLS 证书。                     |         |
 | `secrets.tsb.key`                 | 管理平面 (front envoy) 暴露的 TLS 证书的密钥。               |         |

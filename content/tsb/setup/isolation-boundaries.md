@@ -93,7 +93,7 @@ istio-sidecar-injector-qa-stable      2      45h
 
 ### 使用 tctl 安装
 
-如果你更喜欢使用 [tctl 安装](../self-managed/onboarding-clusters)，你可以使用以下命令生成启用 Istio 隔离边界的集群 Operator 。
+如果你更喜欢使用 [tctl 安装](../self-managed/onboarding-clusters)，你可以使用以下命令生成启用 Istio 隔离边界的集群 Operator。
 
 ```bash
 tctl install manifest cluster-operators \
@@ -139,9 +139,7 @@ spec:
         revisions:
         - name: qa-stable
           istio:
-            tsb
-
-Version: 1.6.0
+            tsbVersion: 1.6.0
 ```
 
 使用这些配置，会部署两个修订的控制平面，使用相应的 TSB 发布的 Istio 镜像。
@@ -387,7 +385,7 @@ NAME                       AGE
 tsb-gateway-dev-bookinfo   3h10min
 ```
 
-如果缺少这些资源，则 TSB 控制平面运算符未协调 TSB 网关资源到相应的 XCP 资源。首先，重新验证 TSB 控制平面运算符和网关资源之间的修订匹配。接下来， Operator 日志应该提供一些线索。
+如果缺少这些资源，则 TSB 控制平面运算符未协调 TSB 网关资源到相应的 XCP 资源。首先，重新验证 TSB 控制平面运算符和网关资源之间的修订匹配。接下来，Operator 日志应该提供一些线索。
 
 2. 查找位于 `istio-system` 命名空间中的相应 `IstioOperator` 资源。例如：
 
@@ -447,5 +445,5 @@ NAME                                                        DOMAINS             
 - 修订的控制平面的可用性与非修订的控制平面一样，通过删除对应的 TSB 控制平面资源来禁用。
 - 默认情况下，每个 Istio 控制平面版本都使用相同的内部 CA。将 Istio 控制平面升级到新版本时，可能会创建新的 CA。如果你有运行中的 mTLS 流量，请确保进行测试以验证在 CA 更改后是否仍然能够正常工作。有关详细信息，请参阅修订到修订的升级。
 - 如果你想跨隔离边界运行 mTLS 流量，则需要确保 TSB 控制平面支持跨隔离边界的 mTLS 流量。这需要将跨边界服务的根证书添加到 TSB 控制平面的根证书存储库中。有关详细信息，请参阅部署资源的数据平面和 [部署证书](../../setup/self-managed/deploy-certs)。
-- 如果你要在生产环境中使用 Istio 隔离边界，请在生产环境之前仔细测试你的配置。 Istio 隔离边界是一个强大的功能，但也复杂，需要精心设计和配置以满足你的需求。
+- 如果你要在生产环境中使用 Istio 隔离边界，请在生产环境之前仔细测试你的配置。Istio 隔离边界是一个强大的功能，但也复杂，需要精心设计和配置以满足你的需求。
 - 如果你使用的是 Istio 1.9.0 版本或更高版本，请注意 Istio 资源中的一些字段名称可能发生了变化。请查看 Istio 的官方文档，以了解与你使用的 Istio 版本相关的详细信息。

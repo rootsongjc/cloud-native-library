@@ -4,7 +4,7 @@ description: 如何使用 Helm 安装控制平面组件。
 weight: 3
 ---
 
-此Chart安装 TSB 控制平面Operator以将集群引入。与[管理平面 Helm Chart](../managementplane)类似，它还允许你使用[TSB `ControlPlane` CR](../../refs/install/controlplane/v1alpha1/spec)安装 TSB 控制平面组件，以及使其正常运行所需的所有密钥。
+此 Chart 安装 TSB 控制平面 Operator 以将集群引入。与[管理平面 Helm Chart](../managementplane)类似，它还允许你使用[TSB `ControlPlane` CR](../../refs/install/controlplane/v1alpha1/spec)安装 TSB 控制平面组件，以及使其正常运行所需的所有密钥。
 
 在开始之前，请确保你已完成以下操作：
 
@@ -16,7 +16,7 @@ weight: 3
 {{<callout note  "隔离边界">}}
 TSB 1.6 引入了隔离边界，允许你在 Kubernetes 集群内或跨多个集群中拥有多个 TSB 管理的 Istio 环境。隔离边界的好处之一是你可以执行控制平面的金丝雀升级。
 
-要启用隔离边界，你必须使用环境变量 `ISTIO_ISOLATION_BOUNDARIES=true` 更新Operator部署，并在控制平面 CR 中包括 `isolationBoundaries` 字段。
+要启用隔离边界，你必须使用环境变量 `ISTIO_ISOLATION_BOUNDARIES=true` 更新 Operator 部署，并在控制平面 CR 中包括 `isolationBoundaries` 字段。
 有关更多信息，请参见[隔离边界](../isolation-boundaries)。
 {{</callout>}}
 
@@ -40,7 +40,7 @@ spec:
 tctl apply -f cluster.yaml -o yaml | yq .spec.installTemplate.helm > cluster-cp-values.yaml
 ```
 
-文件 cluster-cp-values.yaml 包含了 TSB 控制平面Operator的默认配置，包括与 TSB 管理平面进行身份验证所需的任何必要密钥。要自定义安装，你可以通过在继续下一步之前向此文件添加所需的额外配置值来修改此文件。
+文件 cluster-cp-values.yaml 包含了 TSB 控制平面 Operator 的默认配置，包括与 TSB 管理平面进行身份验证所需的任何必要密钥。要自定义安装，你可以通过在继续下一步之前向此文件添加所需的额外配置值来修改此文件。
 
 ## 安装
 
@@ -63,8 +63,8 @@ helm install cp tetrate-tsb-helm/controlplane \
 
 - 确保按照正确的顺序执行了所有步骤。
 - 仔细检查 `cluster-cp-values.yaml` 文件中的配置值，确保它们是正确的。
-- 检查 TSB 控制平面Operator的日志，查看是否有任何错误消息或堆栈跟踪，以帮助诊断问题。
-- 如果你正在使用私有注册表来托管 TSB 控制平面Operator镜像，请确保已在
+- 检查 TSB 控制平面 Operator 的日志，查看是否有任何错误消息或堆栈跟踪，以帮助诊断问题。
+- 如果你正在使用私有注册表来托管 TSB 控制平面 Operator 镜像，请确保已在
 
 注册表进行了身份验证，并且 `image.registry` 值是正确的。
 - 检查集群引入故障排除 [指南](../../../troubleshooting/cluster-onboarding)。
@@ -73,12 +73,12 @@ helm install cp tetrate-tsb-helm/controlplane \
 
 ### 镜像配置
 
-这是一个 **必填** 字段。将 `registry` 设置为你同步了 TSB 镜像的私有注册表，将 `tag` 设置为要部署的 TSB 版本。仅指定此字段将安装 TSB 控制平面Operator，而不安装其他 TSB 组件。
+这是一个 **必填** 字段。将 `registry` 设置为你同步了 TSB 镜像的私有注册表，将 `tag` 设置为要部署的 TSB 版本。仅指定此字段将安装 TSB 控制平面 Operator，而不安装其他 TSB 组件。
 
 | 名称             | 描述                       | 默认值                     |
 | ---------------- | -------------------------- | -------------------------- |
-| `image.registry` | 用于下载Operator镜像的注册表 | `containers.dl.tetrate.io` |
-| `image.tag`      | Operator镜像的标签           | *与Chart版本相同*           |
+| `image.registry` | 用于下载 Operator 镜像的注册表 | `containers.dl.tetrate.io` |
+| `image.tag`      | Operator 镜像的标签           | *与 Chart 版本相同*           |
 
 ### 控制平面资源配置
 
@@ -98,7 +98,7 @@ helm install cp tetrate-tsb-helm/controlplane \
 
 | 名称                                       | 描述                                                         | 默认值  |
 | ------------------------------------------ | ------------------------------------------------------------ | ------- |
-| `secrets.keep`                             | 启用此选项会在卸载Chart后使生成的密钥持久存在于集群中，如果它们在未来的更新中没有提供的话。（请参阅 [Helm 文档](https://helm.sh/docs/howto/charts_tips_and_tricks/#tell-helm-not-to-uninstall-a-resource)） | `false` |
+| `secrets.keep`                             | 启用此选项会在卸载 Chart 后使生成的密钥持久存在于集群中，如果它们在未来的更新中没有提供的话。（请参阅 [Helm 文档](https://helm.sh/docs/howto/charts_tips_and_tricks/#tell-helm-not-to-uninstall-a-resource)） | `false` |
 | `secrets.tsb.cacert`                       | 用于验证公开的管理平面（前端 envoy）TLS 证书的 CA 证书       |         |
 | `secrets.elasticsearch.username`           | 访问 Elasticsearch 的用户名                                  |         |
 | `secrets.elasticsearch.password`           | 访问 Elasticsearch 的密码                                    |         |
@@ -125,9 +125,9 @@ XCP 使用 JWT 进行 Edge 和 Central 之间的身份验证。
 | `secrets.xcp.edge.token`        | 用于对接 XCP Edge 和 XCP Central 进行身份验证的 JWT 令牌 |        |
 | `secrets.clusterServiceAccount` | 用于生成和签名所有控制平面代理令牌的 Base64 编码 JWK     |        |
 
-### Operator扩展配置
+### Operator 扩展配置
 
-这是一个 **可选** 字段。你可以使用以下可选属性自定义 TSB Operator相关资源，如部署、服务或服务帐户：
+这是一个 **可选** 字段。你可以使用以下可选属性自定义 TSB Operator 相关资源，如部署、服务或服务帐户：
 
 | 名称                                           | 描述                                                         | 默认值 |
 | ---------------------------------------------- | ------------------------------------------------------------ | ------ |

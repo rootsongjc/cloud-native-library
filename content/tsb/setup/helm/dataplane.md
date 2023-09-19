@@ -4,15 +4,15 @@ description: 如何使用 Helm 安装数据平面元素。
 weight: 4
 ---
 
-此图表安装 TSB 数据平面Operator，用于管理 [网关](../../../refs/install/dataplane/v1alpha1/spec)，如 Ingress 网关、Tier-1 网关和 Egress 网关的生命周期。
+此图表安装 TSB 数据平面 Operator，用于管理 [网关](../../../refs/install/dataplane/v1alpha1/spec)，如 Ingress 网关、Tier-1 网关和 Egress 网关的生命周期。
 
 {{<callout note 注意>}}
-如果你正在使用基于版本的控制平面，则不再需要数据平面Operator来管理 Istio 网关。要了解有关基于版本的控制平面的更多信息，请参阅 [Istio 隔离边界](../../isolation-boundaries) 文档。
+如果你正在使用基于版本的控制平面，则不再需要数据平面 Operator 来管理 Istio 网关。要了解有关基于版本的控制平面的更多信息，请参阅 [Istio 隔离边界](../../isolation-boundaries) 文档。
 {{</callout>}}
 
 ## 安装
 
-要安装数据平面Operator，请运行以下 Helm 命令。确保将 `<tsb-version>` 和 `<registry-location>` 替换为正确的值。
+要安装数据平面 Operator，请运行以下 Helm 命令。确保将 `<tsb-version>` 和 `<registry-location>` 替换为正确的值。
 
 ```shell
 helm install dp tetrate-tsb-helm/dataplane \
@@ -29,12 +29,12 @@ helm install dp tetrate-tsb-helm/dataplane \
 
 | 名称             | 描述                       | 默认值                     |
 | ---------------- | -------------------------- | -------------------------- |
-| `image.registry` | 用于下载Operator镜像的注册表 | `containers.dl.tetrate.io` |
-| `image.tag`      | Operator镜像的标签           | *与图表版本相同*           |
+| `image.registry` | 用于下载 Operator 镜像的注册表 | `containers.dl.tetrate.io` |
+| `image.tag`      | Operator 镜像的标签           | *与图表版本相同*           |
 
-### Operator扩展配置
+### Operator 扩展配置
 
-这是一个 **可选** 字段。你可以使用以下可选属性自定义与 TSB Operator相关的资源，如部署、服务或服务帐户：
+这是一个 **可选** 字段。你可以使用以下可选属性自定义与 TSB Operator 相关的资源，如部署、服务或服务帐户：
 
 | 名称                                           | 描述                                                         | 默认值 |
 | ---------------------------------------------- | ------------------------------------------------------------ | ------ |

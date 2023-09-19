@@ -7,7 +7,7 @@ weight: 4
 本页描述了从集群中卸载 TSB 的步骤。
 
 {{<callout note "注意">}}
-此过程对于所有平面（管理、控制和数据平面）都是相似的，因为你需要删除平面的任何自定义资源，然后删除Operator本身。
+此过程对于所有平面（管理、控制和数据平面）都是相似的，因为你需要删除平面的任何自定义资源，然后删除 Operator 本身。
 {{</callout>}}
 
 ## 数据平面
@@ -18,9 +18,9 @@ weight: 4
 kubectl delete ingressgateways.install.tetrate.io --all --all-namespaces
 ```
 
-这将删除集群中每个命名空间中部署的所有 `IngressGateway`。运行此命令后，数据平面Operator将删除每个网关的部署和相关资源。这可能需要一些时间来确保它们都成功删除。
+这将删除集群中每个命名空间中部署的所有 `IngressGateway`。运行此命令后，数据平面 Operator 将删除每个网关的部署和相关资源。这可能需要一些时间来确保它们都成功删除。
 
-为确保你正常删除 `istio-operator` 部署，你必须按以下顺序缩放并删除数据平面Operator命名空间中的剩余对象：
+为确保你正常删除 `istio-operator` 部署，你必须按以下顺序缩放并删除数据平面 Operator 命名空间中的剩余对象：
 
 ```bash
 kubectl -n istio-gateway scale deployment tsb-operator-data-plane --replicas=0
@@ -28,7 +28,7 @@ kubectl -n istio-gateway delete istiooperators.install.istio.io --all
 kubectl -n istio-gateway delete deployment --all
 ```
 
-这将删除存储在数据平面Operator命名空间中的 TSB 和 Istio Operator部署。现在你可以清理验证和变异 Web 钩子。
+这将删除存储在数据平面 Operator 命名空间中的 TSB 和 Istio Operator 部署。现在你可以清理验证和变异 Web 钩子。
 
 ```bash
 kubectl delete validatingwebhookconfigurations.admissionregistration.k8s.io \
@@ -51,7 +51,7 @@ kubectl delete mutatingwebhookconfigurations.admissionregistration.k8s.io \
 kubectl delete controlplanes.install.tetrate.io --all --all-namespaces
 ```
 
-TSB Operator在 istio-system 命名空间中清理 Istio 组件可能需要一些时间，但一旦完成，删除验证和变异 Web 钩子。
+TSB Operator 在 istio-system 命名空间中清理 Istio 组件可能需要一些时间，但一旦完成，删除验证和变异 Web 钩子。
 
 ```bash
 kubectl delete validatingwebhookconfigurations.admissionregistration.k8s.io tsb-operator-control-plane
@@ -108,13 +108,13 @@ tctl delete cluster <cluster>
 
 ## 管理平面
 
-要卸载管理平面，你需要删除描述管理平面配置的 `ManagementPlane` CR，这将强制管理平面Operator删除与之相关的任何组件。
+要卸载管理平面，你需要删除描述管理平面配置的 `ManagementPlane` CR，这将强制管理平面 Operator 删除与之相关的任何组件。
 
 ```bash
 kubectl -n tsb delete managementplanes.install.tetrate.io --all
 ```
 
-然后，删除管理平面Operator。
+然后，删除管理平面 Operator。
 
 ```bash
 kubectl -n tsb delete deployment tsb-operator-management-plane

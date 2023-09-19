@@ -4,7 +4,7 @@ description: 使用 Helm 升级 TSB。
 weight: 5
 ---
 
-本文档解释了如何利用 [Helm](https://helm.sh) Chart来升级 TSB 的不同元素。本文假定 [Helm 已经安装](https://helm.sh/docs/intro/install/) 在系统中。
+本文档解释了如何利用 [Helm](https://helm.sh) Chart 来升级 TSB 的不同元素。本文假定 [Helm 已经安装](https://helm.sh/docs/intro/install/) 在系统中。
 
 本文档仅适用于使用 Helm 创建的 TSB 实例，不适用于从基于 TCTL 的安装升级。
 
@@ -43,7 +43,7 @@ weight: 5
 
 ### 管理平面
 
-升级管理平面Chart：
+升级管理平面 Chart：
 
 ```bash
 helm upgrade mp tetrate-tsb-helm/managementplane --namespace tsb -f values-mp.yaml
@@ -51,7 +51,7 @@ helm upgrade mp tetrate-tsb-helm/managementplane --namespace tsb -f values-mp.ya
 
 ### 控制平面
 
-升级控制平面Chart：
+升级控制平面 Chart：
 
 ```bash
 helm upgrade cp tetrate-tsb-helm/controlplane --namespace istio-system -f values-cp.yaml --set-file secrets.clusterServiceAccount.JWK=/tmp/<cluster>.jwk
@@ -59,7 +59,7 @@ helm upgrade cp tetrate-tsb-helm/controlplane --namespace istio-system -f values
 
 ### 数据平面
 
-升级数据平面Chart：
+升级数据平面 Chart：
 
 ```bash
 helm upgrade dp tetrate-tsb-helm/dataplane --namespace istio-gateway -f values-dp.yaml
@@ -67,7 +67,7 @@ helm upgrade dp tetrate-tsb-helm/dataplane --namespace istio-gateway -f values-d
 
 ## 回滚
 
-如果发生问题，你希望将 TSB 回滚到以前的版本，你需要回滚管理平面、控制平面和数据平面Chart。
+如果发生问题，你希望将 TSB 回滚到以前的版本，你需要回滚管理平面、控制平面和数据平面 Chart。
 
 ### 回滚控制平面
 
