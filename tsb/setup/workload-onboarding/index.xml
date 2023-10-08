@@ -13,186 +13,143 @@
     </image>
     
     <item>
-      <title>Onboarding VMs with tctl</title>
+      <title>使用 tctl 将虚拟机（VM）接入 TSB 服务网格</title>
       <link>https://lib.jimmysong.io/tsb/setup/workload-onboarding/onboarding-vms/</link>
       <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/tsb/setup/workload-onboarding/onboarding-vms/</guid>
-      <description>&lt;p&gt;import ratingsWorkloadEntryYAML from &amp;lsquo;!!raw-loader!../../assets/setup/ratings-workloadentry.yaml&amp;rsquo;;
-import ratingsSidecarYAML from &amp;lsquo;!!raw-loader!../../assets/setup/ratings-sidecar.yaml&amp;rsquo;;
-import CodeBlock from &amp;lsquo;@theme/CodeBlock&amp;rsquo;;&lt;/p&gt;
-&lt;p&gt;:::note Bare metal servers
-In this guide we only call out virtual machines (VMs). If you want to onboard a
-workload running on a bare metal server, simply replace VM for bare metal. There
-is no difference in handling between them.
-:::&lt;/p&gt;
-&lt;h2 id=&#34;problem-definition&#34;&gt;Problem definition&lt;/h2&gt;
-&lt;p&gt;Istio and the underlying Kubernetes platform create a sealed ecosystem, where
-control plane and data plane components are tightly integrated. For example,
-control plane components running on each node create a mutually trusted
-relationship. When new pods are scheduled to run on a node, the node is a
-trusted entity and its critical resources, like iptables, are modified.&lt;/p&gt;
-&lt;p&gt;When a virtual machine (VM) is brought into that ecosystem, it is an outsider.
-To successfully extend an Istio/Kubernetes cluster with a VM, the following
-steps must be taken:&lt;/p&gt;
+      <description>&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;裸机服务器&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    在本指南中，我们仅提及虚拟机（VM）。如果你想将运行在裸机服务器上的工作负载接入到 TSB 服务网格中，只需将 &amp;ldquo;VM&amp;rdquo; 替换为 &amp;ldquo;裸机&amp;rdquo; 即可。在处理它们时没有任何区别。
+&lt;/div&gt;
+
+&lt;h2 id=&#34;问题定义&#34;&gt;问题定义&lt;/h2&gt;
+&lt;p&gt;Istio 和底层的 Kubernetes 平台共同构建了一个封闭的生态系统，控制平面和数据平面组件紧密集成。例如，运行在每个节点上的控制平面组件创建了相互信任的关系。当新的 Pod 被调度在一个节点上运行时，该节点是一个受信任的实体，其关键资源，如 iptables，会被修改。&lt;/p&gt;
+&lt;p&gt;当一个虚拟机（VM）被引入这个生态系统时，它是一个外部实体。要成功地将一个 Istio/Kubernetes 集群扩展到一个 VM 上，必须执行以下步骤：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Authentication. The VM must establish an authenticated encrypted session to the
-control plane. The VM must prove that it is allowed to join the cluster.&lt;/li&gt;
-&lt;li&gt;Routing. The VM must be aware of services defined in the Kubernetes cluster
-and vice-versa. If the VM runs a service, it must be visible to pods running
-inside the cluster.&lt;/li&gt;
+&lt;li&gt;认证。VM 必须与控制平面建立一个经过认证的加密会话，证明它被允许加入集群。&lt;/li&gt;
+&lt;li&gt;路由。VM 必须知道在 Kubernetes 集群中定义的服务，反之亦然。如果 VM 运行一个服务，它必须对在集群内运行的 Pod 可见。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h2 id=&#34;overview&#34;&gt;Overview&lt;/h2&gt;
-&lt;p&gt;Onboarding a Virtual Machine (VM) into a TSB managed Istio service mesh can be
-broken down into the following steps:&lt;/p&gt;
+&lt;h2 id=&#34;概述&#34;&gt;概述&lt;/h2&gt;
+&lt;p&gt;将虚拟机（VM）接入 TSB 管理的 Istio 服务网格可以分为以下步骤：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Registering the VM &lt;code&gt;workload&lt;/code&gt; with the Istio control plane (WorkloadEntry)&lt;/li&gt;
-&lt;li&gt;Obtaining a bootstrap security token and seed configuration for the Istio
-Proxy that will run on the VM&lt;/li&gt;
-&lt;li&gt;Transferring the bootstrap security token and seed configuration to the VM&lt;/li&gt;
-&lt;li&gt;Starting Istio Proxy on the VM&lt;/li&gt;
+&lt;li&gt;使用 Istio 控制平面注册 VM 工作负载（WorkloadEntry）&lt;/li&gt;
+&lt;li&gt;获取用于在 VM 上运行的 Istio 代理的引导安全令牌和种子配置&lt;/li&gt;
+&lt;li&gt;将引导安全令牌和种子配置传输到 VM&lt;/li&gt;
+&lt;li&gt;在 VM 上启动 Istio 代理&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;To improve the user experience with VM onboarding, TSB comes with &lt;code&gt;tctl&lt;/code&gt; CLI
-that automates most of these tasks.&lt;/p&gt;
-&lt;p&gt;At a high level, &lt;code&gt;tctl&lt;/code&gt; aims to streamline VM onboarding flow down to a single
-command:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;tctl x sidecar-bootstrap
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The &lt;code&gt;tctl&lt;/code&gt; sidecar bootstrap logic, as well as the registration of the VM
-workload with the service mesh is driven by the configuration inside a
-&lt;code&gt;WorkloadEntry&lt;/code&gt; resource. &lt;code&gt;tctl&lt;/code&gt; sidecar bootstrap allows you to onboard VMs in
-various network and deployment scenarios to your service mesh on Kubernetes. The
-&lt;code&gt;tctl&lt;/code&gt; sidecar bootstrap also allows VM onboarding to be reproduced at any point
-from any context, by a developer machine, or a CI/CD pipeline.&lt;/p&gt;
-&lt;h2 id=&#34;requirements&#34;&gt;Requirements&lt;/h2&gt;
-&lt;p&gt;Before you get started make sure that you have:&lt;/p&gt;
-&lt;p&gt;✓ TSB version 0.9 or above&lt;br /&gt;
-✓ A Kubernetes cluster onboarded into TSB&lt;br /&gt;
-✓ The relevant application deployed on that Kubernetes cluster in the appropriate namespace&lt;br /&gt;
-✓ A Virtual Machine spun up and ready to go&lt;br /&gt;
-✓ The most recent &lt;code&gt;kubectl&lt;/code&gt; ready&lt;br /&gt;
-✓ The most recent Tetrate Service Bridge CLI (&lt;code&gt;tctl&lt;/code&gt;) ready&lt;/p&gt;
-&lt;p&gt;:::note Differences between environments
-This set-up guide provides the common steps you need to take to get a VM
-onboarded. Since you have to deal with your specific combination of cloud
-providers, networks, firewalls, workloads, and operating systems, you will need
-to adapt the steps so that they will work for your situation. In this guide, we
-will use the example of onboarding the Ratings service from the Istio Bookinfo
-example on an Ubuntu VM.
-:::&lt;/p&gt;
-&lt;h2 id=&#34;walkthrough&#34;&gt;Walkthrough&lt;/h2&gt;
-&lt;h3 id=&#34;cluster-mesh-expansion&#34;&gt;Cluster Mesh expansion&lt;/h3&gt;
-&lt;p&gt;To allow workloads from outside the Kubernetes environment to become part of the
-service mesh, you need to enable &lt;code&gt;mesh expansion&lt;/code&gt; in the cluster. Edit the
-&lt;a href=&#34;../../refs/install/controlplane/v1alpha1/spec&#34;&gt;&lt;code&gt;ControlPlane&lt;/code&gt;&lt;/a&gt; CR or Helm values to include
-the &lt;code&gt;meshExpansion&lt;/code&gt; property as shown below.&lt;/p&gt;
+&lt;p&gt;为了改善 VM 接入的用户体验，TSB 提供了 &lt;code&gt;tctl&lt;/code&gt; CLI，它可以自动化大部分这些任务。&lt;/p&gt;
+&lt;p&gt;在高层次上，&lt;code&gt;tctl&lt;/code&gt; 旨在将 VM 接入流程简化为一个单一的命令：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl x sidecar-bootstrap
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;tctl&lt;/code&gt; Sidecar 引导逻辑以及将 VM 工作负载注册到服务网格的操作由 &lt;code&gt;WorkloadEntry&lt;/code&gt; 资源内部的配置驱动。&lt;code&gt;tctl&lt;/code&gt; Sidecar 引导允许你将 VM 接入到 Kubernetes 上的服务网格中，从而实现了对各种网络和部署方案的支持。&lt;code&gt;tctl&lt;/code&gt; Sidecar 引导还允许在任何情况下、从任何上下文中（开发者机器或 CI/CD 流水线）重现 VM 接入。&lt;/p&gt;
+&lt;h2 id=&#34;要求&#34;&gt;要求&lt;/h2&gt;
+&lt;p&gt;在开始之前，请确保你具备以下条件：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;TSB 版本 0.9 或以上&lt;/li&gt;
+&lt;li&gt;一个已接入 TSB 的 Kubernetes 集群&lt;/li&gt;
+&lt;li&gt;在适当的命名空间中部署了相关应用程序&lt;/li&gt;
+&lt;li&gt;一个已启动并准备好的虚拟机&lt;/li&gt;
+&lt;li&gt;最新的 &lt;code&gt;kubectl&lt;/code&gt; 已准备就绪&lt;/li&gt;
+&lt;li&gt;最新的 Tetrate Service Bridge CLI (&lt;code&gt;tctl&lt;/code&gt;) 已准备就绪&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;不同环境之间的差异&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    此设置指南提供了将 VM 接入的通用步骤。由于你必须处理特定的云提供商、网络、防火墙、工作负载和操作系统的组合，你需要调整这些步骤以使其适用于你的情况。在本指南中，我们将以在 Ubuntu VM 上接入 Istio Bookinfo 示例中的 Ratings 服务为例。
+&lt;/div&gt;
+
+&lt;h2 id=&#34;操作步骤&#34;&gt;操作步骤&lt;/h2&gt;
+&lt;h3 id=&#34;集群网格扩展&#34;&gt;集群网格扩展&lt;/h3&gt;
+&lt;p&gt;为了允许来自 Kubernetes 环境之外的工作负载成为服务网格的一部分，你需要在集群中启用 &lt;code&gt;mesh expansion&lt;/code&gt;。编辑 &lt;a href=&#34;../../refs/install/controlplane/v1alpha1/spec&#34;&gt;&lt;code&gt;ControlPlane&lt;/code&gt;&lt;/a&gt; CR 或 Helm 值以包含 &lt;code&gt;meshExpansion&lt;/code&gt; 属性，如下所示。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;meshExpansion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;{}&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;To edit the resource, run the following command:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;要编辑资源，请运行以下命令：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl patch ControlPlane controlplane -n istio-system &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    --patch &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;spec&amp;#34;:{&amp;#34;meshExpansion&amp;#34;:{}}}&amp;#39;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    --type merge
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Once you have completed this step you can onboard as many VM workloads to this
-cluster as needed. If you have multiple clusters, repeat this step for each
-cluster where you need to onboard VMs.&lt;/p&gt;
-&lt;h3 id=&#34;vm-preparation&#34;&gt;VM Preparation&lt;/h3&gt;
-&lt;p&gt;To prepare your VM for onboarding you will need to have SSH access to a
-privileged user on the VM, because you must add a user account and install
-additional software.&lt;/p&gt;
-&lt;p&gt;:::note Example environment
-As an example this guide will show how to prepare an Ubuntu 18.04 LTS virtual
-machine.
-:::&lt;/p&gt;
-&lt;p&gt;First, ensure that Docker is installed on the VM. You will be installing Istio
-Proxy later on, which will run inside a Docker container. Using Docker allows
-you to keep the Proxy dependencies isolated from your operating system
-installation, as well as provide a homogeneous environment for the Proxy to run
-on.&lt;/p&gt;
-&lt;p&gt;To install Docker on the VM, run:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;sudo apt-get update
-sudo apt-get -y install docker.io
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;To allow &lt;code&gt;tctl&lt;/code&gt; to onboard your VM workload, create and configure a dedicated
-user account. This user account will need permissions to interact with the
-Docker daemon as well as have SSH access. To bootstrap the onboarding process,
-the &lt;code&gt;tctl&lt;/code&gt; tool will connect to your VM using SSH.&lt;/p&gt;
-&lt;p&gt;To set up and configure the user account, run the following commands:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;# create dedicated user account &amp;#34;istio-proxy&amp;#34; for VM onboarding
-sudo useradd --create-home istio-proxy
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;完成此步骤后，你可以将尽可能多的 VM 工作负载接入到该集群中。如果你有多个集群，请为需要接入 VM 的每个集群重复此步骤。&lt;/p&gt;
+&lt;h3 id=&#34;vm-准备工作&#34;&gt;VM 准备工作&lt;/h3&gt;
+&lt;p&gt;要为接入做好 VM 的准备工作，你需要对 VM 具有 SSH 访问权限，因为你必须添加一个用户帐户并安装额外的软件。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;示例环境&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    本指南将以准备一个 Ubuntu 18.04 LTS 虚拟机为例。
+&lt;/div&gt;
 
-# sudo into the dedicated user
-sudo su - istio-proxy
-
-# configure SSH access for the new user account
-mkdir -p $HOME/.ssh
-chmod 700 $HOME/.ssh
-touch $HOME/.ssh/authorized_keys
-chmod 600 $HOME/.ssh/authorized_keys
-
-#
-# Add your SSH public key to $HOME/.ssh/authorized_keys
-#
-
-# go back to the privileged user
-exit
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;To give the new user account permissions to interact with Docker daemon, you
-must add the account to the docker user group:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;sudo usermod -aG docker istio-proxy
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;To store the onboarding configuration, you must set up a directory for it. If
-you wish to use a different path, make sure it is reflected in the
-&lt;code&gt;WorkloadEntry&lt;/code&gt; resource which you will be configuring later.&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;sudo mkdir -p /etc/istio-proxy
-sudo chmod  775 /etc/istio-proxy
-sudo chown istio-proxy:istio-proxy /etc/istio-proxy
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;If your workload is not running yet, start it now. In our example we will run
-the Ratings service from the Istio Bookinfo example. This example will be
-running inside Docker but this is not required. Your workload can run from the
-operating system as a regular process.&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;sudo docker run -d \
-    --name ratings \
-    -p 127.0.0.1:9080:9080 \
-    docker.io/istio/examples-bookinfo-ratings-v1:1.16.2
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;configuring-firewalls&#34;&gt;Configuring firewalls&lt;/h3&gt;
-&lt;p&gt;To allow a VM to join a service mesh, there must be IP (L3) connectivity between
-the VM and the Kubernetes cluster. You may need to configure firewalls at the
-Kubernetes and the VM network ends, to allow traffic between the two on the
-various TCP ports used for traffic.&lt;/p&gt;
-&lt;h4 id=&#34;kubernetes-and-vm-on-the-same-network-or-peered-networks&#34;&gt;Kubernetes and VM on the same network (or peered networks)&lt;/h4&gt;
-&lt;p&gt;Since all workloads have direct IP connectivity, traffic between the VM and Pod
-IPs will not use the VM gateway.&lt;/p&gt;
-&lt;p&gt;In this scenario you must:&lt;/p&gt;
-&lt;p&gt;✓ allow ingress traffic from the VM IP to the entire range of TCP ports on the Pod IPs&lt;br /&gt;
-✓ allow ingress traffic from Pod IPs to a relevant set of TCP ports on the VM IP&lt;/p&gt;
-&lt;h4 id=&#34;kubernetes-and-vm-on-different-networks&#34;&gt;Kubernetes and VM on different networks&lt;/h4&gt;
-&lt;p&gt;When workloads that span Kubernetes and VM do not have direct IP connectivity,
-traffic must flow through the VM Gateway.&lt;/p&gt;
-&lt;p&gt;In this scenario where the networks are segregated, the following TCP ports on
-the VM Gateway in Kubernetes must be accessible by the VM:&lt;/p&gt;
+&lt;p&gt;首先，请确保 VM 上已安装 Docker。稍后你将安装 Istio 代理，它将在 Docker 容器中运行。使用 Docker 可以使你将代理的依赖项与操作系统安装隔离开来，同时为代理提供一个均匀的运行环境。&lt;/p&gt;
+&lt;p&gt;要在 VM 上安装 Docker，请运行：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo apt-get update
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo apt-get -y install docker.io
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;要允许 &lt;code&gt;tctl&lt;/code&gt; 接入你的 VM 工作负载，请创建并配置一个专用用户帐户。此用户帐户将需要权限与 Docker 守护程序进行交互，并具有 SSH 访问权限。为了启动&lt;/p&gt;
+&lt;p&gt;接入流程，&lt;code&gt;tctl&lt;/code&gt; 工具将使用 SSH 连接到你的 VM。&lt;/p&gt;
+&lt;p&gt;要设置和配置用户帐户，请运行以下命令：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 为 VM 接入创建专用用户帐户 &amp;#34;istio-proxy&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo useradd --create-home istio-proxy
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 切换到专用用户&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo su - istio-proxy
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 为新用户帐户配置 SSH 访问&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;mkdir -p &lt;span class=&#34;nv&#34;&gt;$HOME&lt;/span&gt;/.ssh
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;chmod &lt;span class=&#34;m&#34;&gt;700&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;$HOME&lt;/span&gt;/.ssh
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;touch &lt;span class=&#34;nv&#34;&gt;$HOME&lt;/span&gt;/.ssh/authorized_keys
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;chmod &lt;span class=&#34;m&#34;&gt;600&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;$HOME&lt;/span&gt;/.ssh/authorized_keys
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 将你的 SSH 公钥添加到 $HOME/.ssh/authorized_keys 中&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 返回特权用户&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;exit&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;要使新用户帐户具有与 Docker 守护程序交互的权限，你必须将该帐户添加到 docker 用户组中：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo usermod -aG docker istio-proxy
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;为了存储接入配置，你必须设置一个目录。如果你希望使用不同的路径，请确保它反映在稍后将配置的 &lt;code&gt;WorkloadEntry&lt;/code&gt; 资源中。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo mkdir -p /etc/istio-proxy
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo chmod  &lt;span class=&#34;m&#34;&gt;775&lt;/span&gt; /etc/istio-proxy
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo chown istio-proxy:istio-proxy /etc/istio-proxy
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果你的工作负载尚未运行，请立即启动它。在我们的示例中，我们将运行 Istio Bookinfo 示例中的 Ratings 服务。此示例将在 Docker 中运行，但并非必须如此。你的工作负载可以作为操作系统的常规进程运行。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo docker run -d &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    --name ratings &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -p 127.0.0.1:9080:9080 &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    docker.io/istio/examples-bookinfo-ratings-v1:1.16.2
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;配置防火墙&#34;&gt;配置防火墙&lt;/h3&gt;
+&lt;p&gt;要允许 VM 加入服务网格，必须在 VM 和 Kubernetes 集群网络端之间建立 IP（L3）连接。你可能需要在 Kubernetes 和 VM 网络端配置防火墙，以允许在各种用于流量的 TCP 端口之间进行通信。&lt;/p&gt;
+&lt;h4 id=&#34;kubernetes-和-vm-在同一网络上或互通的网络&#34;&gt;Kubernetes 和 VM 在同一网络上（或互通的网络）&lt;/h4&gt;
+&lt;p&gt;由于所有工作负载具有直接的 IP 连通性，因此 VM IP 与 Pod IP 之间的流量不会使用 VM 网关。&lt;/p&gt;
+&lt;p&gt;在此情况下，你必须：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;15012 (control plane xDS traffic)&lt;/li&gt;
-&lt;li&gt;15443 (data plane ingress traffic)&lt;/li&gt;
-&lt;li&gt;9411 (sidecar tracing data ingress)&lt;/li&gt;
-&lt;li&gt;11800 (sidecar access logs ingress)&lt;/li&gt;
+&lt;li&gt;允许从 VM IP 到 Pod IPs 的整个 TCP 端口范围的入站流量&lt;/li&gt;
+&lt;li&gt;允许从 Pod IPs 到 VM IP 的一组相关的 TCP 端口的入站流量&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;:::note GKE and EKS
-On both GKE and EKS these ports will allow incoming traffic automatically.
-:::&lt;/p&gt;
-&lt;p&gt;The ports you need to open for traffic to your VM workload from the Kubernetes
-cluster is dependent on the proxy listening ports that you will configure in the
-&lt;a href=&#34;https://istio.io/latest/docs/reference/config/networking/sidecar/#Sidecar&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Sidecar&lt;/a&gt;
-resource. In the example, we use port 9080. In this case, we need to allow TCP
-traffic from Kubernetes to VM on port 9080.&lt;/p&gt;
-&lt;h3 id=&#34;create-a-workloadentry&#34;&gt;Create a WorkloadEntry&lt;/h3&gt;
-&lt;p&gt;A &lt;a href=&#34;https://istio.io/latest/docs/reference/config/networking/workload-entry/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;WorkloadEntry&lt;/a&gt;
-resource captures information about a workload running on a VM which will allow
-you to properly onboard the VM with a verifiable identity that is recognized by
-the TSB service mesh.&lt;/p&gt;
-&lt;p&gt;The configuration of a WorkloadEntry deals with the following information:&lt;/p&gt;
+&lt;h4 id=&#34;kubernetes-和-vm-在不同的网络中&#34;&gt;Kubernetes 和 VM 在不同的网络中&lt;/h4&gt;
+&lt;p&gt;当跨越 Kubernetes 和 VM 的工作负载没有直接的 IP 连通性时，流量必须通过 VM 网关传递。&lt;/p&gt;
+&lt;p&gt;在这种网络隔离的情况下，Kubernetes 中 VM 网关的以下 TCP 端口必须对 VM 可用：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Details needed by the service mesh to register the VM workload&lt;/li&gt;
-&lt;li&gt;Annotations to provide &lt;code&gt;tctl&lt;/code&gt; with the right information to bootstrap the VM onboarding&lt;/li&gt;
-&lt;li&gt;Labels for TSB observability that hold the logical service identity of the workload&lt;/li&gt;
+&lt;li&gt;15012（控制平面 xDS 流量）&lt;/li&gt;
+&lt;li&gt;15443（数据平面入站流量）&lt;/li&gt;
+&lt;li&gt;9411（Sidecar 跟踪数据入站）&lt;/li&gt;
+&lt;li&gt;11800（Sidecar 访问日志入站）&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;A template example of a &lt;code&gt;WorkloadEntry&lt;/code&gt; resource can be seen below and
-highlights properties that must be configured based on the specifics of your
-environment.&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;GKE 和 EKS&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    在 GKE 和 EKS 上，这些端口将自动允许传入流量。
+&lt;/div&gt;
+
+&lt;p&gt;你需要打开用于从 Kubernetes 集群到 VM 工作负载的流量的端口取决于你将在 &lt;a href=&#34;https://istio.io/latest/docs/reference/config/networking/sidecar/#Sidecar&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Sidecar&lt;/a&gt; 资源中配置的代理侦听端口。在本例中，我们使用端口 9080。在这种情况下，我们需要允许从 Kubernetes 到 VM 的 TCP 流量使用端口 9080。&lt;/p&gt;
+&lt;h3 id=&#34;创建-workloadentry&#34;&gt;创建 WorkloadEntry&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;https://istio.io/latest/docs/reference/config/networking/workload-entry/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;WorkloadEntry&lt;/a&gt; 资源记录了运行在 VM 上的工作负载的信息，这将允许你使用可验证的身份正确地将 VM 接入到 TSB 服务网格中。&lt;/p&gt;
+&lt;p&gt;WorkloadEntry 的配置涉及以下信息：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;服务网格需要注册 VM 工作负载所需的详细信息&lt;/li&gt;
+&lt;li&gt;为 &lt;code&gt;tctl&lt;/code&gt; 提供了正确信息以启动 VM 接入的注释&lt;/li&gt;
+&lt;li&gt;用于 TSB 可观测性的标签，它们持有工作负载的逻辑服务身份&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;下面是一个 &lt;code&gt;WorkloadEntry&lt;/code&gt; 资源的模板示例，突出显示了根据你的环境的具体情况必须配置的属性。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;networking.istio.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;WorkloadEntry&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -208,144 +165,129 @@ environment.&lt;/p&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;address&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;address&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;labels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;class&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;vm&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ratings  &lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# mandatory label for observability through TSB&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;version&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;v3   &lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# mandatory label for observability through TSB&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ratings  &lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 可观测性标签，通过 TSB 可观测性可见&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;version&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;v3   &lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 可观测性标签，通过 TSB 可观测性可见&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;serviceAccount&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;bookinfo-ratings&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;network&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;vm-network-name&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h4 id=&#34;network-ltvm-network-namegt&#34;&gt;network: &amp;lt;vm-network-name&amp;gt;&lt;/h4&gt;
-&lt;p&gt;The service mesh in your Kubernetes cluster needs to know if your VM resides in
-a network that can directly reach the pod IPs. As explained in the firewall
-section, this will determine if traffic should be routed through the VM gateway
-or not. By adding the &lt;code&gt;network&lt;/code&gt; property and providing a name for the VM
-network, the service mesh will enable VM gateway routing. If you omit the
-network property, the service mesh will assume the VM to run on a network with
-direct IP connectivity.&lt;/p&gt;
+&lt;p&gt;在你的 Kubernetes 集群中的服务网格需要知道你的 VM 是否位于可以直接到达 Pod IPs 的网络中。正如防火墙部分所述，这将决定流量是否应该通过 VM 网&lt;/p&gt;
+&lt;p&gt;关路由。通过添加 &lt;code&gt;network&lt;/code&gt; 属性并提供 VM 网络的名称，服务网格将启用 VM 网关路由。如果你省略网络属性，则服务网格将假定 VM 在具有直接 IP 连通性的网络上运行。&lt;/p&gt;
 &lt;h4 id=&#34;address-ltaddressgt&#34;&gt;address: &amp;lt;address&amp;gt;&lt;/h4&gt;
-&lt;p&gt;Address must hold the destination IP of the VM workload that can be directly
-connected to by the pods. In the same network scenario this is the VM IP address
-that a pod can directly connect to. In a segregated network scenario this is the
-VM IP address the pods can reach. As an example, if you have different VPCs for
-Kubernetes and VM this can be a private IP address as long as VPC
-routing/peering is set up correctly. In case of different cloud providers this
-typically is a public IP address on which the VM is reachable.&lt;/p&gt;
+&lt;p&gt;Address 必须保存可以被 Pod 直接连接到的 VM 工作负载的目标 IP。在相同网络场景中，这是一个 pod 可以直接连接到的 VM IP 地址。在网络隔离的情况下，这是 pod 可以到达的 VM IP 地址。例如，如果你对 Kubernetes 和 VM 使用了不同的 VPC，则这可以是一个私有 IP 地址，只要 VPC 路由/对等设置正确即可。在不同云提供商的情况下，这通常是 VM 可以访问的公共 IP 地址。&lt;/p&gt;
 &lt;h4 id=&#34;proxy-instance-ip-ltproxy-instance-ipgt&#34;&gt;proxy-instance-ip: &amp;lt;proxy-instance-ip&amp;gt;&lt;/h4&gt;
-&lt;p&gt;If this annotation is provided, it must hold the IP address the Istio Proxy
-sidecar on the VM can bind its listener to. This typically is the IP address of
-the interface that will receive incoming traffic originating from outside. If
-the VM has an interface that is configured with a public IP address and this is
-the same IP as the &lt;code&gt;address&lt;/code&gt; property, this annotation can be omitted. Most
-cloud providers the VMs do not have an interface that listens directly on a
-public IP address, but on a private IP. In this case, you must configure the
-internal IP address of the VM to which external incoming traffic is routed.&lt;/p&gt;
+&lt;p&gt;如果提供了此注释，它必须保存 Istio Proxy sidecar 在 VM 上可以将其侦听器绑定到的 IP 地址。通常，这是从外部接收传入流量的接口的 IP 地址。如果 VM 有一个配置了公共 IP 地址的接口，并且这与 &lt;code&gt;address&lt;/code&gt; 属性相同，那么可以省略此注释。大多数云提供商的 VM 不会在直接侦听公共 IP 地址的接口上，而是在私有 IP 上。在这种情况下，你必须配置 VM 的内部 IP 地址，以便将外部传入流量路由到该地址。&lt;/p&gt;
 &lt;h4 id=&#34;ssh-host-ltssh-hostgt&#34;&gt;ssh-host: &amp;lt;ssh-host&amp;gt;&lt;/h4&gt;
-&lt;p&gt;When you execute the &lt;code&gt;tctl&lt;/code&gt; bootstrap command, &lt;code&gt;tctl&lt;/code&gt; tries to connect to the VM
-it needs to onboard. The default behavior is for &lt;code&gt;tctl&lt;/code&gt; to use the IP address as
-found in the &lt;code&gt;address&lt;/code&gt; property. If the machine you run &lt;code&gt;tctl&lt;/code&gt; on does not have
-direct IP connectivity to that address, for instance in the case of &lt;code&gt;address&lt;/code&gt;
-holding a private IP address, you can set this optional &lt;code&gt;ssh-host&lt;/code&gt; annotation.
-In this case, provide the IP address or hostname that allows &lt;code&gt;tctl&lt;/code&gt; to connect
-over SSH to the VM.&lt;/p&gt;
-&lt;p&gt;In the ratings VM example we will assume the following:&lt;/p&gt;
+&lt;p&gt;当你执行 &lt;code&gt;tctl&lt;/code&gt; bootstrap 命令时，&lt;code&gt;tctl&lt;/code&gt; 尝试连接到需要接入的 VM。默认行为是使用在 &lt;code&gt;address&lt;/code&gt; 属性中找到的 IP 地址。如果运行 &lt;code&gt;tctl&lt;/code&gt; 的机器与该地址没有直接的 IP 连通性，例如在 &lt;code&gt;address&lt;/code&gt; 包含私有 IP 地址的情况下，可以设置此可选的 &lt;code&gt;ssh-host&lt;/code&gt; 注释。在这种情况下，请提供允许 &lt;code&gt;tctl&lt;/code&gt; 通过 SSH 连接到 VM 的 IP 地址或主机名。&lt;/p&gt;
+&lt;p&gt;在评分 VM 示例中，我们将假设以下情况：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Kubernetes Cluster at cloud provider and VM on-prem&lt;/li&gt;
-&lt;li&gt;External VM IP address is not directly bound on the machine&lt;/li&gt;
-&lt;li&gt;Istio Proxy on VM Workload will listen on TCP port 9080&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;tctl&lt;/code&gt; and Kubernetes can both reach the VM over the same external IP.&lt;/li&gt;
-&lt;li&gt;VM internal IP: 10.128.0.2&lt;/li&gt;
-&lt;li&gt;VM external IP:  35.194.38.142&lt;/li&gt;
+&lt;li&gt;云提供商上的 Kubernetes 集群和本地 VM&lt;/li&gt;
+&lt;li&gt;外部 VM IP 地址未直接绑定到机器上&lt;/li&gt;
+&lt;li&gt;VM 上的 Istio Proxy 将侦听 TCP 端口 9080&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;tctl&lt;/code&gt; 和 Kubernetes 都可以通过相同的外部 IP 访问 VM。&lt;/li&gt;
+&lt;li&gt;VM 内部 IP: 10.128.0.2&lt;/li&gt;
+&lt;li&gt;VM 外部 IP:  35.194.38.142&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;Example &lt;code&gt;WorkloadEntry&lt;/code&gt; using these assumptions looks like this:&lt;/p&gt;
-&lt;CodeBlock className=&#34;language-yaml&#34;&gt;
-  {ratingsWorkloadEntryYAML}
-&lt;/CodeBlock&gt;
-&lt;p&gt;Save as &lt;a href=&#34;../../assets/setup/ratings-workloadentry.yaml&#34;&gt;&lt;code&gt;ratings-workloadentry.yaml&lt;/code&gt;&lt;/a&gt;. You can add this file to source control or
-apply directly to your cluster using &lt;code&gt;kubectl&lt;/code&gt;:&lt;/p&gt;
+&lt;p&gt;使用这些假设的示例 &lt;code&gt;WorkloadEntry&lt;/code&gt; 如下所示：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;networking.istio.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;WorkloadEntry&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ratings-vm&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;bookinfo&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;sidecar-bootstrap.istio.io/ssh-host&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;35.194.38.142&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;sidecar-bootstrap.istio.io/ssh-user&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istio-proxy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;sidecar-bootstrap.istio.io/proxy-config-dir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;/etc/istio-proxy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;sidecar-bootstrap.istio.io/proxy-image-hub&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;docker.io/tetrate&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;sidecar-bootstrap.istio.io/proxy-instance-ip&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;35.194.38.142&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;address&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;10.128.0.2&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;labels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;class&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;vm&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ratings  &lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 可观测性标签，通过 TSB 可观测性可见&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;version&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;v3   &lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 可观测性标签，通过 TSB 可观测性可见&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;serviceAccount&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;bookinfo-ratings&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;network&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;vm-network-name&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;将其保存为 &lt;a href=&#34;../../assets/setup/ratings-workloadentry.yaml&#34;&gt;&lt;code&gt;ratings-workloadentry.yaml&lt;/code&gt;&lt;/a&gt;。你可以将此文件添加到源代码控制中，或者使用 &lt;code&gt;kubectl&lt;/code&gt; 将其直接应用于你的集群：&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{userPrompt:&#34; data-lang=&#34;bash{userPrompt:&#34;&gt;kubectl apply -f ratings-workloadentry.yaml
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;create-a-sidecar&#34;&gt;Create a Sidecar&lt;/h3&gt;
-&lt;p&gt;Now that we have configured our &lt;code&gt;WorkloadEntry&lt;/code&gt; to provide information for
-bootstrapping the onboarding process of the VM and IP connectivity, we need to
-configure the VMs Istio Proxy sidecar. The &lt;a href=&#34;https://istio.io/latest/docs/reference/config/networking/sidecar/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Sidecar&lt;/a&gt;
-resource gives you control over the configuration of the Istio Proxy. In this
-example the Sidecar configuration allows you to avoid using IPtables on the VM
-for redirecting traffic.&lt;/p&gt;
-&lt;p&gt;The &lt;code&gt;Sidecar&lt;/code&gt; example below shows the configuration for the ratings VM example,
-listening on TCP port 9080.&lt;/p&gt;
-&lt;CodeBlock className=&#34;language-yaml&#34;&gt;
-  {ratingsSidecarYAML}
-&lt;/CodeBlock&gt;
-&lt;p&gt;Save as &lt;a href=&#34;../../assets/setup/ratings-sidecar.yaml&#34;&gt;&lt;code&gt;ratings-sidecar.yaml&lt;/code&gt;&lt;/a&gt;. You can add this file to source control or apply
-directly to your cluster using &lt;code&gt;kubectl&lt;/code&gt;:&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;创建-sidecar&#34;&gt;创建 Sidecar&lt;/h3&gt;
+&lt;p&gt;现在，我们已经配置了我们的 &lt;code&gt;WorkloadEntry&lt;/code&gt;，以提供有关启动 VM 接入流程和 IP 连通性的信息，我们需要配置 VM 的 Istio Proxy sidecar。 &lt;a href=&#34;https://istio.io/latest/docs/reference/config/networking/sidecar/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Sidecar&lt;/a&gt; 资源使你可以控制 Istio Proxy 的配置。在此示例中，Sidecar 配置允许你避免在 VM 上使用 IPtables 重定向流量。&lt;/p&gt;
+&lt;p&gt;下面的 &lt;code&gt;Sidecar&lt;/code&gt; 示例显示了评分 VM 示例的配置，侦听 TCP 端口 9080。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;networking.istio.io/v1beta1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Sidecar&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ratings-vm&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;bookinfo&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;egress&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; 
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;hosts&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;*&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;ports&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;80&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;protocol&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;HTTP&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;bind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0.0.0.0&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;workloadSelector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;labels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ratings&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;将其保存为 &lt;a href=&#34;../../assets/setup/ratings-sidecar.yaml&#34;&gt;&lt;code&gt;ratings-sidecar.yaml&lt;/code&gt;&lt;/a&gt;。你可以将此文件添加到源代码控制中，或者使用 &lt;code&gt;kubectl&lt;/code&gt; 将其直接应用于你的集群：&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{userPrompt:&#34; data-lang=&#34;bash{userPrompt:&#34;&gt;kubectl apply -f ratings-sidecar.yaml
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;onboard-the-vm&#34;&gt;Onboard the VM&lt;/h3&gt;
-&lt;p&gt;With both &lt;code&gt;WorkloadEntry&lt;/code&gt; and &lt;code&gt;Sidecar&lt;/code&gt; configured and applied to your
-Kubernetes cluster, the VM workload is now registered with your service mesh.
-With your VM and service mesh prepared, we can use &lt;code&gt;tctl&lt;/code&gt; to complete the actual
-onboarding process.&lt;/p&gt;
-&lt;p&gt;The &lt;code&gt;tctl&lt;/code&gt; CLI will:&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;接入-vm&#34;&gt;接入 VM&lt;/h3&gt;
+&lt;p&gt;使用配置并将其应用于你的 Kubernetes 集群后，VM 工作负载现在已注册到你的服务网格中。随着 VM 和服务网格的准备就绪，我们可以使用 &lt;code&gt;tctl&lt;/code&gt; 完成实际的接入过程。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;tctl&lt;/code&gt; CLI 将：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Obtain a bootstrap security token and seed configuration from the service mesh&lt;/li&gt;
-&lt;li&gt;Transfer this bootstrap security token and seed configuration to the VM&lt;/li&gt;
-&lt;li&gt;Start Istio Proxy using the bootstrap security token and seed configuration&lt;/li&gt;
+&lt;li&gt;从服务网格获取引导安全令牌和种子配置&lt;/li&gt;
+&lt;li&gt;将此引导安全令牌和种子配置传输到 VM&lt;/li&gt;
+&lt;li&gt;使用引导安全令牌和种子配置启动 Istio Proxy&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;Since this onboarding process is complex, &lt;code&gt;tctl&lt;/code&gt; implements a dry run feature.
-It will allow you to inspect the process flow without actual execution. To see
-what &lt;code&gt;tctl&lt;/code&gt; is planning to do, run:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;tctl x sidecar-bootstrap ratings-vm.bookinfo \
-    --start-istio-proxy \
-    --dry-run
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You&amp;rsquo;ll see an output similar to below:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[SSH client] going to connect to istio-proxy@35.194.38.142:22
-
-[SSH client] going to execute a command remotely: mkdir -p /etc/istio-proxy
-
-[SSH client] going to copy into a remote file: /etc/istio-proxy/sidecar.env
-JWT_POLICY=third-party-jwt
-PROV_CERT=/var/run/secrets/istio
-OUTPUT_CERTS=/var/run/secrets/istio
-PILOT_CERT_PROVIDER=istiod
-...
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The dry run will output both generated configuration and commands that will be
-run over SSH on the VM.&lt;/p&gt;
-&lt;p&gt;Once you&amp;rsquo;re satisfied with the test, you can remove the &lt;code&gt;--dry-run&lt;/code&gt; argument and
-start the actual onboarding process like this:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{promptUser:&#34; data-lang=&#34;bash{promptUser:&#34;&gt;tctl x sidecar-bootstrap ratings-vm.bookinfo \
-    --start-istio-proxy
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;An output similar to below will appear:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[SSH client] connecting to istio-proxy@35.194.38.142:22
-[SSH client] executing a command remotely: mkdir -p /etc/istio-proxy
-[SSH client] copying into a remote file: /etc/istio-proxy/sidecar.env
-[SSH client] copying into a remote file: /etc/istio-proxy/k8s-ca.pem
-[SSH client] copying into a remote file: /etc/istio-proxy/istio-ca.pem
-[SSH client] copying into a remote file: /etc/istio-proxy/istio-token
-[SSH client] executing a command remotely: docker rm --force istio-proxy
-istio-proxy
-[SSH client] executing a command remotely: docker run -d --name istio-proxy --restart unless-stopped --network host ...
-[SSH client] closing connection
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;When done, you should see the generated configuration copied on the VM and a
-Docker container with Istio Proxy started.&lt;/p&gt;
-&lt;h3 id=&#34;vm-workload-calling-mesh-services&#34;&gt;VM Workload calling mesh services&lt;/h3&gt;
-&lt;p&gt;The VM workload in this example does not need to initiate requests to services
-inside the service mesh. In case your VM workload does, special considerations
-need to be made with respect to egress routing. The Istio Proxy instance on your
-VM is dynamically provided with a list of available services in the service
-mesh. Since our example does not use &lt;code&gt;iptables&lt;/code&gt; to automatically redirect
-traffic to the Istio Proxy you will need to update your &lt;code&gt;/etc/hosts&lt;/code&gt; file to
-include the &lt;code&gt;FQDN&lt;/code&gt; of each of the services your Workload needs to initiate
-requests to and point them to the bind address of the egress listener.&lt;/p&gt;
-&lt;p&gt;Example of additions to &lt;code&gt;/etc/hosts&lt;/code&gt;:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;# direct the following services to the egress listener address
-127.0.0.2 reviews.bookinfo.svc
-127.0.0.2 www.example.org
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;For more information on this topic, please consult the
-&lt;a href=&#34;https://istio.io/latest/docs/reference/config/networking/sidecar/#IstioEgressListener&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;IstioEgressListener&lt;/a&gt;
-reference.&lt;/p&gt;
-&lt;h2 id=&#34;testing-workload-traffic&#34;&gt;Testing workload traffic&lt;/h2&gt;
-&lt;p&gt;To test if onboarding the VM succeeded and traffic is flowing between workloads
-on VM and Kubernetes, you have multiple options. Next to inspecting logs of your
-services to see if activity occurs, you can also use the TSB UI to look at the
-various service metrics and the topology map. The values for the &lt;code&gt;app&lt;/code&gt; and
-&lt;code&gt;version&lt;/code&gt; labels you provided in the &lt;code&gt;WorkloadEntry&lt;/code&gt; will be reflected in the
-topology map and service metrics.&lt;/p&gt;
+&lt;p&gt;由于此接入过程比较复杂，&lt;code&gt;tctl&lt;/code&gt; 实现了干运行功能。&lt;/p&gt;
+&lt;p&gt;在实际应用程序中，你可以使用 &lt;code&gt;--dry-run=false&lt;/code&gt; 选项。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl x sidecar-bootstrap &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    --dry-run&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;true&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    ratings-vm &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    --access-log-out /var/log/access.log &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    --envoy-image-version v1.16.2
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;你将收到一个包含引导令牌和种子配置的 JSON 输出。此信息必须传输到 VM。&lt;/p&gt;
+&lt;h3 id=&#34;在-vm-上启动-istio-代理&#34;&gt;在 VM 上启动 Istio 代理&lt;/h3&gt;
+&lt;p&gt;你可以将脚本保存在名为 &lt;code&gt;sidecar-bootstrap.sh&lt;/code&gt; 的文件中，然后在 VM 上运行。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 将引导令牌和种子配置复制到 VM，以及 sidecar-bootstrap.sh 脚本。&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 这里使用 SCP 命令，你可以根据需要使用其他方法。&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;scp path_to_token_and_config.tar.gz sidecar-bootstrap.sh istio-proxy@&amp;lt;vm-ip&amp;gt;:~
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在 VM 上运行 &lt;code&gt;sidecar-bootstrap.sh&lt;/code&gt; 脚本。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;chmod +x sidecar-bootstrap.sh
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;./sidecar-bootstrap.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;脚本将自动完成以下操作：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;解压缩引导令牌和种子配置&lt;/li&gt;
+&lt;li&gt;将引导令牌和种子配置复制到 Istio 代理的正确位置&lt;/li&gt;
+&lt;li&gt;使用配置的版本和配置文件启动 Istio 代理&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;验证-vm-接入&#34;&gt;验证 VM 接入&lt;/h3&gt;
+&lt;p&gt;一旦 Istio 代理在 VM 上启动，它应该会自动连接到 Istio 控制平面，并成为服务网格的一部分。&lt;/p&gt;
+&lt;p&gt;要验证接入是否成功，请使用以下步骤：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;在 Kubernetes 集群中，确保你的 Bookinfo 示例正常运行。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;在 VM 上，使用 &lt;code&gt;curl&lt;/code&gt; 或其他工具来访问 Bookinfo 示例中的服务，例如 Ratings 服务。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl http://&amp;lt;ratings-pod-ip&amp;gt;:9080/ratings
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在成功连接到服务之后，你应该能够从 VM 访问 Bookinfo 示例中的 Ratings 服务。&lt;/p&gt;
+&lt;h2 id=&#34;结论&#34;&gt;结论&lt;/h2&gt;
+&lt;p&gt;通过使用 &lt;code&gt;tctl&lt;/code&gt; 和 Istio 的 &lt;code&gt;WorkloadEntry&lt;/code&gt; 和 &lt;code&gt;Sidecar&lt;/code&gt; 资源，你可以将虚拟机（VM）接入到 TSB 服务网格中。这使得你可以将 VM 集成到 Istio 控制平面和数据平面中，从而实现了对 VM 的流量管理和安全性控制。请根据你的特定环境和需求调整本指南中的步骤。&lt;/p&gt;
+&lt;p&gt;请记得检查 Tetrate 文档以获取最新的信息和更新。&lt;/p&gt;
+&lt;h2 id=&#34;相关资源&#34;&gt;相关资源&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://istio.io/latest/docs/reference/config/networking/workload-entry/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Istio WorkloadEntry 参考&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://istio.io/latest/docs/reference/config/networking/sidecar/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Istio Sidecar 参考&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.tsb.tetrate.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate Service Bridge 文档&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://istio.io/latest/docs/reference/config/installation-options/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Istio 控制平面指南&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://istio.io/latest/docs/concepts/what-is-istio/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Istio 服务网格概述&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://istio.io/latest/docs/setup/getting-started/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Istio 服务网格入门&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://istio.io/latest/docs/tasks/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Istio 服务网格任务&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.tetrate.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate 文档&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.tsb.tetrate.io/guides/cli_reference/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate CLI (&lt;code&gt;tctl&lt;/code&gt;) 参考&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
 </description>
     </item>
     
