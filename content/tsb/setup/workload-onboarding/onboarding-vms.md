@@ -1,98 +1,67 @@
 ---
-title: Onboarding VMs with tctl
-description: Guide to onboard a VM or Bare Metal machine to a TSB service mesh.
+title: 使用 tctl 将虚拟机（VM）接入 TSB 服务网格
+description: 将虚拟机或裸机接入 TSB 服务网格的指南。
+weight: 3
 ---
 
-import ratingsWorkloadEntryYAML from '!!raw-loader!../../assets/setup/ratings-workloadentry.yaml';
-import ratingsSidecarYAML from '!!raw-loader!../../assets/setup/ratings-sidecar.yaml';
-import CodeBlock from '@theme/CodeBlock';
+{{<callout note 裸机服务器>}}
+在本指南中，我们仅提及虚拟机（VM）。如果你想将运行在裸机服务器上的工作负载接入到 TSB 服务网格中，只需将 "VM" 替换为 "裸机" 即可。在处理它们时没有任何区别。
+{{</callout>}}
 
-:::note Bare metal servers
-In this guide we only call out virtual machines (VMs). If you want to onboard a
-workload running on a bare metal server, simply replace VM for bare metal. There
-is no difference in handling between them.
-:::
+## 问题定义
 
-## Problem definition
+Istio 和底层的 Kubernetes 平台共同构建了一个封闭的生态系统，控制平面和数据平面组件紧密集成。例如，运行在每个节点上的控制平面组件创建了相互信任的关系。当新的 Pod 被调度在一个节点上运行时，该节点是一个受信任的实体，其关键资源，如 iptables，会被修改。
 
-Istio and the underlying Kubernetes platform create a sealed ecosystem, where 
-control plane and data plane components are tightly integrated. For example, 
-control plane components running on each node create a mutually trusted 
-relationship. When new pods are scheduled to run on a node, the node is a 
-trusted entity and its critical resources, like iptables, are modified.
+当一个虚拟机（VM）被引入这个生态系统时，它是一个外部实体。要成功地将一个 Istio/Kubernetes 集群扩展到一个 VM 上，必须执行以下步骤：
+- 认证。VM 必须与控制平面建立一个经过认证的加密会话，证明它被允许加入集群。
+- 路由。VM 必须知道在 Kubernetes 集群中定义的服务，反之亦然。如果 VM 运行一个服务，它必须对在集群内运行的 Pod 可见。
 
-When a virtual machine (VM) is brought into that ecosystem, it is an outsider.
-To successfully extend an Istio/Kubernetes cluster with a VM, the following 
-steps must be taken:
-- Authentication. The VM must establish an authenticated encrypted session to the
-  control plane. The VM must prove that it is allowed to join the cluster.
-- Routing. The VM must be aware of services defined in the Kubernetes cluster
-  and vice-versa. If the VM runs a service, it must be visible to pods running
-  inside the cluster.
+## 概述
 
-## Overview
+将虚拟机（VM）接入 TSB 管理的 Istio 服务网格可以分为以下步骤：
 
-Onboarding a Virtual Machine (VM) into a TSB managed Istio service mesh can be
-broken down into the following steps:
+- 使用 Istio 控制平面注册 VM 工作负载（WorkloadEntry）
+- 获取用于在 VM 上运行的 Istio 代理的引导安全令牌和种子配置
+- 将引导安全令牌和种子配置传输到 VM
+- 在 VM 上启动 Istio 代理
 
-- Registering the VM `workload` with the Istio control plane (WorkloadEntry)
-- Obtaining a bootstrap security token and seed configuration for the Istio
-  Proxy that will run on the VM
-- Transferring the bootstrap security token and seed configuration to the VM
-- Starting Istio Proxy on the VM
+为了改善 VM 接入的用户体验，TSB 提供了 `tctl` CLI，它可以自动化大部分这些任务。
 
-To improve the user experience with VM onboarding, TSB comes with `tctl` CLI
-that automates most of these tasks.
+在高层次上，`tctl` 旨在将 VM 接入流程简化为一个单一的命令：
 
-At a high level, `tctl` aims to streamline VM onboarding flow down to a single
-command:
-
-```bash{promptUser: Alice}
+```bash
 tctl x sidecar-bootstrap
 ```
 
-The `tctl` sidecar bootstrap logic, as well as the registration of the VM
-workload with the service mesh is driven by the configuration inside a 
-`WorkloadEntry` resource. `tctl` sidecar bootstrap allows you to onboard VMs in
-various network and deployment scenarios to your service mesh on Kubernetes. The
-`tctl` sidecar bootstrap also allows VM onboarding to be reproduced at any point
-from any context, by a developer machine, or a CI/CD pipeline.
+`tctl` Sidecar 引导逻辑以及将 VM 工作负载注册到服务网格的操作由 `WorkloadEntry` 资源内部的配置驱动。`tctl` Sidecar 引导允许你将 VM 接入到 Kubernetes 上的服务网格中，从而实现了对各种网络和部署方案的支持。`tctl` Sidecar 引导还允许在任何情况下、从任何上下文中（开发者机器或 CI/CD 流水线）重现 VM 接入。
 
-## Requirements
+## 要求
 
-Before you get started make sure that you have:
+在开始之前，请确保你具备以下条件：
 
-✓ TSB version 0.9 or above<br />
-✓ A Kubernetes cluster onboarded into TSB<br />
-✓ The relevant application deployed on that Kubernetes cluster in the appropriate namespace<br />
-✓ A Virtual Machine spun up and ready to go<br />
-✓ The most recent `kubectl` ready<br />
-✓ The most recent Tetrate Service Bridge CLI (`tctl`) ready
+- TSB 版本 0.9 或以上
+- 一个已接入 TSB 的 Kubernetes 集群
+- 在适当的命名空间中部署了相关应用程序
+- 一个已启动并准备好的虚拟机
+- 最新的 `kubectl` 已准备就绪
+- 最新的 Tetrate Service Bridge CLI (`tctl`) 已准备就绪
 
-:::note Differences between environments
-This set-up guide provides the common steps you need to take to get a VM
-onboarded. Since you have to deal with your specific combination of cloud 
-providers, networks, firewalls, workloads, and operating systems, you will need
-to adapt the steps so that they will work for your situation. In this guide, we
-will use the example of onboarding the Ratings service from the Istio Bookinfo
-example on an Ubuntu VM.
-:::
+{{<callout note 不同环境之间的差异>}}
+此设置指南提供了将 VM 接入的通用步骤。由于你必须处理特定的云提供商、网络、防火墙、工作负载和操作系统的组合，你需要调整这些步骤以使其适用于你的情况。在本指南中，我们将以在 Ubuntu VM 上接入 Istio Bookinfo 示例中的 Ratings 服务为例。
+{{</callout>}}
 
-## Walkthrough
+## 操作步骤
 
-### Cluster Mesh expansion
+### 集群网格扩展
 
-To allow workloads from outside the Kubernetes environment to become part of the
-service mesh, you need to enable `mesh expansion` in the cluster. Edit the 
-[`ControlPlane`](../../refs/install/controlplane/v1alpha1/spec) CR or Helm values to include
-the `meshExpansion` property as shown below.
+为了允许来自 Kubernetes 环境之外的工作负载成为服务网格的一部分，你需要在集群中启用 `mesh expansion`。编辑 [`ControlPlane`](../../refs/install/controlplane/v1alpha1/spec) CR 或 Helm 值以包含 `meshExpansion` 属性，如下所示。
 
 ```yaml
 spec:
   meshExpansion: {}
 ```
 
-To edit the resource, run the following command:
+要编辑资源，请运行以下命令：
 
 ```bash
 kubectl patch ControlPlane controlplane -n istio-system \
@@ -100,146 +69,115 @@ kubectl patch ControlPlane controlplane -n istio-system \
     --type merge
 ```
 
-Once you have completed this step you can onboard as many VM workloads to this
-cluster as needed. If you have multiple clusters, repeat this step for each
-cluster where you need to onboard VMs.
+完成此步骤后，你可以将尽可能多的 VM 工作负载接入到该集群中。如果你有多个集群，请为需要接入 VM 的每个集群重复此步骤。
 
-### VM Preparation
+### VM 准备工作
 
-To prepare your VM for onboarding you will need to have SSH access to a 
-privileged user on the VM, because you must add a user account and install 
-additional software.
+要为接入做好 VM 的准备工作，你需要对 VM 具有 SSH 访问权限，因为你必须添加一个用户帐户并安装额外的软件。
 
-:::note Example environment
-As an example this guide will show how to prepare an Ubuntu 18.04 LTS virtual 
-machine.
-:::
+{{<callout note 示例环境>}}
+本指南将以准备一个 Ubuntu 18.04 LTS 虚拟机为例。
+{{</callout>}}
 
-First, ensure that Docker is installed on the VM. You will be installing Istio
-Proxy later on, which will run inside a Docker container. Using Docker allows 
-you to keep the Proxy dependencies isolated from your operating system
-installation, as well as provide a homogeneous environment for the Proxy to run
-on.
+首先，请确保 VM 上已安装 Docker。稍后你将安装 Istio 代理，它将在 Docker 容器中运行。使用 Docker 可以使你将代理的依赖项与操作系统安装隔离开来，同时为代理提供一个均匀的运行环境。
 
-To install Docker on the VM, run:
+要在 VM 上安装 Docker，请运行：
 
-```bash{promptUser: Alice}
+```bash
 sudo apt-get update
 sudo apt-get -y install docker.io
 ```
 
-To allow `tctl` to onboard your VM workload, create and configure a dedicated
-user account. This user account will need permissions to interact with the
-Docker daemon as well as have SSH access. To bootstrap the onboarding process,
-the `tctl` tool will connect to your VM using SSH.
+要允许 `tctl` 接入你的 VM 工作负载，请创建并配置一个专用用户帐户。此用户帐户将需要权限与 Docker 守护程序进行交互，并具有 SSH 访问权限。为了启动
 
-To set up and configure the user account, run the following commands:
+接入流程，`tctl` 工具将使用 SSH 连接到你的 VM。
 
-```bash{promptUser: Alice}{outputLines: 1,3,4,6,7,12-17}
-# create dedicated user account "istio-proxy" for VM onboarding
+要设置和配置用户帐户，请运行以下命令：
+
+```bash
+# 为 VM 接入创建专用用户帐户 "istio-proxy"
 sudo useradd --create-home istio-proxy
 
-# sudo into the dedicated user
+# 切换到专用用户
 sudo su - istio-proxy
 
-# configure SSH access for the new user account
+# 为新用户帐户配置 SSH 访问
 mkdir -p $HOME/.ssh
 chmod 700 $HOME/.ssh
 touch $HOME/.ssh/authorized_keys
 chmod 600 $HOME/.ssh/authorized_keys
 
 #
-# Add your SSH public key to $HOME/.ssh/authorized_keys
+# 将你的 SSH 公钥添加到 $HOME/.ssh/authorized_keys 中
 #
 
-# go back to the privileged user
+# 返回特权用户
 exit
-``` 
+```
 
-To give the new user account permissions to interact with Docker daemon, you
-must add the account to the docker user group:
+要使新用户帐户具有与 Docker 守护程序交互的权限，你必须将该帐户添加到 docker 用户组中：
 
-```bash{promptUser: Alice}
+```bash
 sudo usermod -aG docker istio-proxy
 ```
 
-To store the onboarding configuration, you must set up a directory for it. If
-you wish to use a different path, make sure it is reflected in the
-`WorkloadEntry` resource which you will be configuring later.
+为了存储接入配置，你必须设置一个目录。如果你希望使用不同的路径，请确保它反映在稍后将配置的 `WorkloadEntry` 资源中。
 
-```bash{promptUser: Alice}
+```bash
 sudo mkdir -p /etc/istio-proxy
 sudo chmod  775 /etc/istio-proxy
 sudo chown istio-proxy:istio-proxy /etc/istio-proxy
 ```
 
-If your workload is not running yet, start it now. In our example we will run
-the Ratings service from the Istio Bookinfo example. This example will be
-running inside Docker but this is not required. Your workload can run from the
-operating system as a regular process.
+如果你的工作负载尚未运行，请立即启动它。在我们的示例中，我们将运行 Istio Bookinfo 示例中的 Ratings 服务。此示例将在 Docker 中运行，但并非必须如此。你的工作负载可以作为操作系统的常规进程运行。
 
-```bash{promptUser: Alice}{outputLines: 2-4}
+```bash
 sudo docker run -d \
     --name ratings \
     -p 127.0.0.1:9080:9080 \
     docker.io/istio/examples-bookinfo-ratings-v1:1.16.2
 ```
 
-### Configuring firewalls
+### 配置防火墙
 
-To allow a VM to join a service mesh, there must be IP (L3) connectivity between
-the VM and the Kubernetes cluster. You may need to configure firewalls at the
-Kubernetes and the VM network ends, to allow traffic between the two on the
-various TCP ports used for traffic.
+要允许 VM 加入服务网格，必须在 VM 和 Kubernetes 集群网络端之间建立 IP（L3）连接。你可能需要在 Kubernetes 和 VM 网络端配置防火墙，以允许在各种用于流量的 TCP 端口之间进行通信。
 
-#### Kubernetes and VM on the same network (or peered networks)
+#### Kubernetes 和 VM 在同一网络上（或互通的网络）
 
-Since all workloads have direct IP connectivity, traffic between the VM and Pod
-IPs will not use the VM gateway.
+由于所有工作负载具有直接的 IP 连通性，因此 VM IP 与 Pod IP 之间的流量不会使用 VM 网关。
 
-In this scenario you must:
+在此情况下，你必须：
 
-✓ allow ingress traffic from the VM IP to the entire range of TCP ports on the Pod IPs<br />
-✓ allow ingress traffic from Pod IPs to a relevant set of TCP ports on the VM IP
+- 允许从 VM IP 到 Pod IPs 的整个 TCP 端口范围的入站流量
+- 允许从 Pod IPs 到 VM IP 的一组相关的 TCP 端口的入站流量
 
-#### Kubernetes and VM on different networks
+#### Kubernetes 和 VM 在不同的网络中
 
-When workloads that span Kubernetes and VM do not have direct IP connectivity,
-traffic must flow through the VM Gateway.
+当跨越 Kubernetes 和 VM 的工作负载没有直接的 IP 连通性时，流量必须通过 VM 网关传递。
 
-In this scenario where the networks are segregated, the following TCP ports on
-the VM Gateway in Kubernetes must be accessible by the VM:
+在这种网络隔离的情况下，Kubernetes 中 VM 网关的以下 TCP 端口必须对 VM 可用：
 
-- 15012 (control plane xDS traffic)
-- 15443 (data plane ingress traffic)
-- 9411 (sidecar tracing data ingress)
-- 11800 (sidecar access logs ingress)
+- 15012（控制平面 xDS 流量）
+- 15443（数据平面入站流量）
+- 9411（Sidecar 跟踪数据入站）
+- 11800（Sidecar 访问日志入站）
 
-:::note GKE and EKS
-On both GKE and EKS these ports will allow incoming traffic automatically.
-:::
+{{<callout note "GKE 和 EKS">}}
+在 GKE 和 EKS 上，这些端口将自动允许传入流量。
+{{</callout>}}
 
-The ports you need to open for traffic to your VM workload from the Kubernetes
-cluster is dependent on the proxy listening ports that you will configure in the
-[Sidecar](https://istio.io/latest/docs/reference/config/networking/sidecar/#Sidecar)
-resource. In the example, we use port 9080. In this case, we need to allow TCP
-traffic from Kubernetes to VM on port 9080.
+你需要打开用于从 Kubernetes 集群到 VM 工作负载的流量的端口取决于你将在 [Sidecar](https://istio.io/latest/docs/reference/config/networking/sidecar/#Sidecar) 资源中配置的代理侦听端口。在本例中，我们使用端口 9080。在这种情况下，我们需要允许从 Kubernetes 到 VM 的 TCP 流量使用端口 9080。
 
-### Create a WorkloadEntry
+### 创建 WorkloadEntry
 
-A [WorkloadEntry](https://istio.io/latest/docs/reference/config/networking/workload-entry/)
-resource captures information about a workload running on a VM which will allow
-you to properly onboard the VM with a verifiable identity that is recognized by
-the TSB service mesh.
+[WorkloadEntry](https://istio.io/latest/docs/reference/config/networking/workload-entry/) 资源记录了运行在 VM 上的工作负载的信息，这将允许你使用可验证的身份正确地将 VM 接入到 TSB 服务网格中。
 
-The configuration of a WorkloadEntry deals with the following information:
-- Details needed by the service mesh to register the VM workload
-- Annotations to provide `tctl` with the right information to bootstrap the VM onboarding 
-- Labels for TSB observability that hold the logical service identity of the workload
+WorkloadEntry 的配置涉及以下信息：
+- 服务网格需要注册 VM 工作负载所需的详细信息
+- 为 `tctl` 提供了正确信息以启动 VM 接入的注释
+- 用于 TSB 可观测性的标签，它们持有工作负载的逻辑服务身份
 
-A template example of a `WorkloadEntry` resource can be seen below and
-highlights properties that must be configured based on the specifics of your
-environment.
+下面是一个 `WorkloadEntry` 资源的模板示例，突出显示了根据你的环境的具体情况必须配置的属性。
 
 ```yaml
 apiVersion: networking.istio.io/v1beta1
@@ -257,189 +195,173 @@ spec:
   address: <address>
   labels:
     class: vm
-    app: ratings   # mandatory label for observability through TSB
-    version: v3    # mandatory label for observability through TSB
+    app: ratings   # 可观测性标签，通过 TSB 可观测性可见
+    version: v3    # 可观测性标签，通过 TSB 可观测性可见
   serviceAccount: bookinfo-ratings
   network: <vm-network-name>
 ```
 
 #### network: &lt;vm-network-name&gt;
-The service mesh in your Kubernetes cluster needs to know if your VM resides in
-a network that can directly reach the pod IPs. As explained in the firewall
-section, this will determine if traffic should be routed through the VM gateway
-or not. By adding the `network` property and providing a name for the VM
-network, the service mesh will enable VM gateway routing. If you omit the
-network property, the service mesh will assume the VM to run on a network with
-direct IP connectivity.
+在你的 Kubernetes 集群中的服务网格需要知道你的 VM 是否位于可以直接到达 Pod IPs 的网络中。正如防火墙部分所述，这将决定流量是否应该通过 VM 网
+
+关路由。通过添加 `network` 属性并提供 VM 网络的名称，服务网格将启用 VM 网关路由。如果你省略网络属性，则服务网格将假定 VM 在具有直接 IP 连通性的网络上运行。
 
 #### address: &lt;address&gt;
-Address must hold the destination IP of the VM workload that can be directly
-connected to by the pods. In the same network scenario this is the VM IP address
-that a pod can directly connect to. In a segregated network scenario this is the
-VM IP address the pods can reach. As an example, if you have different VPCs for
-Kubernetes and VM this can be a private IP address as long as VPC
-routing/peering is set up correctly. In case of different cloud providers this
-typically is a public IP address on which the VM is reachable.
+Address 必须保存可以被 Pod 直接连接到的 VM 工作负载的目标 IP。在相同网络场景中，这是一个 pod 可以直接连接到的 VM IP 地址。在网络隔离的情况下，这是 pod 可以到达的 VM IP 地址。例如，如果你对 Kubernetes 和 VM 使用了不同的 VPC，则这可以是一个私有 IP 地址，只要 VPC 路由/对等设置正确即可。在不同云提供商的情况下，这通常是 VM 可以访问的公共 IP 地址。
 
 #### proxy-instance-ip: &lt;proxy-instance-ip&gt;
-If this annotation is provided, it must hold the IP address the Istio Proxy
-sidecar on the VM can bind its listener to. This typically is the IP address of
-the interface that will receive incoming traffic originating from outside. If
-the VM has an interface that is configured with a public IP address and this is
-the same IP as the `address` property, this annotation can be omitted. Most
-cloud providers the VMs do not have an interface that listens directly on a
-public IP address, but on a private IP. In this case, you must configure the
-internal IP address of the VM to which external incoming traffic is routed.
+如果提供了此注释，它必须保存 Istio Proxy sidecar 在 VM 上可以将其侦听器绑定到的 IP 地址。通常，这是从外部接收传入流量的接口的 IP 地址。如果 VM 有一个配置了公共 IP 地址的接口，并且这与 `address` 属性相同，那么可以省略此注释。大多数云提供商的 VM 不会在直接侦听公共 IP 地址的接口上，而是在私有 IP 上。在这种情况下，你必须配置 VM 的内部 IP 地址，以便将外部传入流量路由到该地址。
 
 #### ssh-host: &lt;ssh-host&gt;
-When you execute the `tctl` bootstrap command, `tctl` tries to connect to the VM
-it needs to onboard. The default behavior is for `tctl` to use the IP address as
-found in the `address` property. If the machine you run `tctl` on does not have
-direct IP connectivity to that address, for instance in the case of `address`
-holding a private IP address, you can set this optional `ssh-host` annotation.
-In this case, provide the IP address or hostname that allows `tctl` to connect
-over SSH to the VM.
+当你执行 `tctl` bootstrap 命令时，`tctl` 尝试连接到需要接入的 VM。默认行为是使用在 `address` 属性中找到的 IP 地址。如果运行 `tctl` 的机器与该地址没有直接的 IP 连通性，例如在 `address` 包含私有 IP 地址的情况下，可以设置此可选的 `ssh-host` 注释。在这种情况下，请提供允许 `tctl` 通过 SSH 连接到 VM 的 IP 地址或主机名。
 
-In the ratings VM example we will assume the following:
+在评分 VM 示例中，我们将假设以下情况：
 
-- Kubernetes Cluster at cloud provider and VM on-prem
-- External VM IP address is not directly bound on the machine
-- Istio Proxy on VM Workload will listen on TCP port 9080
-- `tctl` and Kubernetes can both reach the VM over the same external IP.
-- VM internal IP: 10.128.0.2
-- VM external IP:  35.194.38.142
+- 云提供商上的 Kubernetes 集群和本地 VM
+- 外部 VM IP 地址未直接绑定到机器上
+- VM 上的 Istio Proxy 将侦听 TCP 端口 9080
+- `tctl` 和 Kubernetes 都可以通过相同的外部 IP 访问 VM。
+- VM 内部 IP: 10.128.0.2
+- VM 外部 IP:  35.194.38.142
 
-Example `WorkloadEntry` using these assumptions looks like this:
+使用这些假设的示例 `WorkloadEntry` 如下所示：
 
-<CodeBlock className="language-yaml">
-  {ratingsWorkloadEntryYAML}
-</CodeBlock>
+```yaml
+apiVersion: networking.istio.io/v1beta1
+kind: WorkloadEntry
+metadata:
+  name: ratings-vm
+  namespace: bookinfo
+  annotations:
+    sidecar-bootstrap.istio.io/ssh-host: 35.194.38.142
+    sidecar-bootstrap.istio.io/ssh-user: istio-proxy
+    sidecar-bootstrap.istio.io/proxy-config-dir: /etc/istio-proxy
+    sidecar-bootstrap.istio.io/proxy-image-hub: docker.io/tetrate
+    sidecar-bootstrap.istio.io/proxy-instance-ip: 35.194.38.142
+spec:
+  address: 10.128.0.2
+  labels:
+    class: vm
+    app: ratings   # 可观测性标签，通过 TSB 可观测性可见
+    version: v3    # 可观测性标签，通过 TSB 可观测性可见
+  serviceAccount: bookinfo-ratings
+  network: <vm-network-name>
+```
 
-Save as [`ratings-workloadentry.yaml`](../../assets/setup/ratings-workloadentry.yaml). You can add this file to source control or
-apply directly to your cluster using `kubectl`:
+将其保存为 [`ratings-workloadentry.yaml`](../../assets/setup/ratings-workloadentry.yaml)。你可以将此文件添加到源代码控制中，或者使用 `kubectl` 将其直接应用于你的集群：
 
 ```bash{userPrompt: Alice}
 kubectl apply -f ratings-workloadentry.yaml
 ```
 
-### Create a Sidecar
+### 创建 Sidecar
 
-Now that we have configured our `WorkloadEntry` to provide information for
-bootstrapping the onboarding process of the VM and IP connectivity, we need to
-configure the VMs Istio Proxy sidecar. The [Sidecar](https://istio.io/latest/docs/reference/config/networking/sidecar/)
-resource gives you control over the configuration of the Istio Proxy. In this
-example the Sidecar configuration allows you to avoid using IPtables on the VM
-for redirecting traffic.
+现在，我们已经配置了我们的 `WorkloadEntry`，以提供有关启动 VM 接入流程和 IP 连通性的信息，我们需要配置 VM 的 Istio Proxy sidecar。 [Sidecar](https://istio.io/latest/docs/reference/config/networking/sidecar/) 资源使你可以控制 Istio Proxy 的配置。在此示例中，Sidecar 配置允许你避免在 VM 上使用 IPtables 重定向流量。
 
-The `Sidecar` example below shows the configuration for the ratings VM example,
-listening on TCP port 9080.
+下面的 `Sidecar` 示例显示了评分 VM 示例的配置，侦听 TCP 端口 9080。
 
-<CodeBlock className="language-yaml">
-  {ratingsSidecarYAML}
-</CodeBlock>
+```yaml
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: ratings-vm
+  namespace: bookinfo
+spec:
+  egress: 
+    - hosts:
+        - "*"
+      ports:
+        - port: 80
+          protocol: HTTP
+          bind: 0.0.0.0
+  workloadSelector:
+    labels:
+      app: ratings
+```
 
-Save as [`ratings-sidecar.yaml`](../../assets/setup/ratings-sidecar.yaml). You can add this file to source control or apply
-directly to your cluster using `kubectl`:
+将其保存为 [`ratings-sidecar.yaml`](../../assets/setup/ratings-sidecar.yaml)。你可以将此文件添加到源代码控制中，或者使用 `kubectl` 将其直接应用于你的集群：
 
 ```bash{userPrompt: Alice}
 kubectl apply -f ratings-sidecar.yaml
 ```
 
-### Onboard the VM
+### 接入 VM
 
-With both `WorkloadEntry` and `Sidecar` configured and applied to your
-Kubernetes cluster, the VM workload is now registered with your service mesh.
-With your VM and service mesh prepared, we can use `tctl` to complete the actual
-onboarding process.
+使用配置并将其应用于你的 Kubernetes 集群后，VM 工作负载现在已注册到你的服务网格中。随着 VM 和服务网格的准备就绪，我们可以使用 `tctl` 完成实际的接入过程。
 
-The `tctl` CLI will:
+`tctl` CLI 将：
 
-- Obtain a bootstrap security token and seed configuration from the service mesh
-- Transfer this bootstrap security token and seed configuration to the VM
-- Start Istio Proxy using the bootstrap security token and seed configuration
+- 从服务网格获取引导安全令牌和种子配置
+- 将此引导安全令牌和种子配置传输到 VM
+- 使用引导安全令牌和种子配置启动 Istio Proxy
 
-Since this onboarding process is complex, `tctl` implements a dry run feature.
-It will allow you to inspect the process flow without actual execution. To see
-what `tctl` is planning to do, run:
+由于此接入过程比较复杂，`tctl` 实现了干运行功能。
 
-```bash{promptUser: Alice}{outputLines: 2-3}
-tctl x sidecar-bootstrap ratings-vm.bookinfo \
-    --start-istio-proxy \
-    --dry-run
+在实际应用程序中，你可以使用 `--dry-run=false` 选项。
+
+```bash
+tctl x sidecar-bootstrap \
+    --dry-run=true \
+    ratings-vm \
+    --access-log-out /var/log/access.log \
+    --envoy-image-version v1.16.2
 ```
 
-You'll see an output similar to below:
+你将收到一个包含引导令牌和种子配置的 JSON 输出。此信息必须传输到 VM。
 
-```
-[SSH client] going to connect to istio-proxy@35.194.38.142:22
+### 在 VM 上启动 Istio 代理
 
-[SSH client] going to execute a command remotely: mkdir -p /etc/istio-proxy
+你可以将脚本保存在名为 `sidecar-bootstrap.sh` 的文件中，然后在 VM 上运行。
 
-[SSH client] going to copy into a remote file: /etc/istio-proxy/sidecar.env
-JWT_POLICY=third-party-jwt
-PROV_CERT=/var/run/secrets/istio
-OUTPUT_CERTS=/var/run/secrets/istio
-PILOT_CERT_PROVIDER=istiod
-...
+```bash
+# 将引导令牌和种子配置复制到 VM，以及 sidecar-bootstrap.sh 脚本。
+# 这里使用 SCP 命令，你可以根据需要使用其他方法。
+scp path_to_token_and_config.tar.gz sidecar-bootstrap.sh istio-proxy@<vm-ip>:~
 ```
 
-The dry run will output both generated configuration and commands that will be
-run over SSH on the VM.
+在 VM 上运行 `sidecar-bootstrap.sh` 脚本。
 
-Once you're satisfied with the test, you can remove the `--dry-run` argument and
-start the actual onboarding process like this:
-
-```bash{promptUser: Alice}{outputLines: 2}
-tctl x sidecar-bootstrap ratings-vm.bookinfo \
-    --start-istio-proxy
+```bash
+chmod +x sidecar-bootstrap.sh
+./sidecar-bootstrap.sh
 ```
 
-An output similar to below will appear:
+脚本将自动完成以下操作：
 
-```
-[SSH client] connecting to istio-proxy@35.194.38.142:22
-[SSH client] executing a command remotely: mkdir -p /etc/istio-proxy
-[SSH client] copying into a remote file: /etc/istio-proxy/sidecar.env
-[SSH client] copying into a remote file: /etc/istio-proxy/k8s-ca.pem
-[SSH client] copying into a remote file: /etc/istio-proxy/istio-ca.pem
-[SSH client] copying into a remote file: /etc/istio-proxy/istio-token
-[SSH client] executing a command remotely: docker rm --force istio-proxy
-istio-proxy
-[SSH client] executing a command remotely: docker run -d --name istio-proxy --restart unless-stopped --network host ...
-[SSH client] closing connection
-```
+- 解压缩引导令牌和种子配置
+- 将引导令牌和种子配置复制到 Istio 代理的正确位置
+- 使用配置的版本和配置文件启动 Istio 代理
 
-When done, you should see the generated configuration copied on the VM and a
-Docker container with Istio Proxy started.
+### 验证 VM 接入
 
-### VM Workload calling mesh services
-The VM workload in this example does not need to initiate requests to services
-inside the service mesh. In case your VM workload does, special considerations
-need to be made with respect to egress routing. The Istio Proxy instance on your
-VM is dynamically provided with a list of available services in the service
-mesh. Since our example does not use `iptables` to automatically redirect
-traffic to the Istio Proxy you will need to update your `/etc/hosts` file to
-include the `FQDN` of each of the services your Workload needs to initiate
-requests to and point them to the bind address of the egress listener.
+一旦 Istio 代理在 VM 上启动，它应该会自动连接到 Istio 控制平面，并成为服务网格的一部分。
 
-Example of additions to `/etc/hosts`:
+要验证接入是否成功，请使用以下步骤：
 
-```
-# direct the following services to the egress listener address
-127.0.0.2 reviews.bookinfo.svc
-127.0.0.2 www.example.org
+1. 在 Kubernetes 集群中，确保你的 Bookinfo 示例正常运行。
+
+2. 在 VM 上，使用 `curl` 或其他工具来访问 Bookinfo 示例中的服务，例如 Ratings 服务。
+
+```bash
+curl http://<ratings-pod-ip>:9080/ratings
 ```
 
-For more information on this topic, please consult the
-[IstioEgressListener](https://istio.io/latest/docs/reference/config/networking/sidecar/#IstioEgressListener)
-reference.
+在成功连接到服务之后，你应该能够从 VM 访问 Bookinfo 示例中的 Ratings 服务。
 
-## Testing workload traffic
+## 结论
 
-To test if onboarding the VM succeeded and traffic is flowing between workloads
-on VM and Kubernetes, you have multiple options. Next to inspecting logs of your
-services to see if activity occurs, you can also use the TSB UI to look at the
-various service metrics and the topology map. The values for the `app` and 
-`version` labels you provided in the `WorkloadEntry` will be reflected in the
-topology map and service metrics.
+通过使用 `tctl` 和 Istio 的 `WorkloadEntry` 和 `Sidecar` 资源，你可以将虚拟机（VM）接入到 TSB 服务网格中。这使得你可以将 VM 集成到 Istio 控制平面和数据平面中，从而实现了对 VM 的流量管理和安全性控制。请根据你的特定环境和需求调整本指南中的步骤。
 
+请记得检查 Tetrate 文档以获取最新的信息和更新。
+
+## 相关资源
+
+- [Istio WorkloadEntry 参考](https://istio.io/latest/docs/reference/config/networking/workload-entry/)
+- [Istio Sidecar 参考](https://istio.io/latest/docs/reference/config/networking/sidecar/)
+- [Tetrate Service Bridge 文档](https://docs.tsb.tetrate.io/)
+- [Istio 控制平面指南](https://istio.io/latest/docs/reference/config/installation-options/)
+- [Istio 服务网格概述](https://istio.io/latest/docs/concepts/what-is-istio/)
+- [Istio 服务网格入门](https://istio.io/latest/docs/setup/getting-started/)
+- [Istio 服务网格任务](https://istio.io/latest/docs/tasks/)
+- [Tetrate 文档](https://docs.tetrate.io/)
+- [Tetrate CLI (`tctl`) 参考](https://docs.tsb.tetrate.io/guides/cli_reference/)

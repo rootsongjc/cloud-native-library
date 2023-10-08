@@ -1,150 +1,133 @@
 ---
-title: Resource Consumption and Capacity Planning
-description: General guidelines for capacity planning of TSB.
+title: 资源消耗与容量规划
+description: Tetrate Service Bridge (TSB) 容量规划的通用指南。
 weight: 8
 ---
 
-This document describes a conservative guideline for capacity planning of Tetrate Service Bridge (TSB) in Management and Control planes.
+本文描述了 Tetrate Service Bridge (TSB) 在管理平面和控制平面的容量规划的保守指南。
 
-These parameters apply to production installations: TSB will run with minimal resources if you are using a demo-like environment.
+这些参数适用于生产环境的安装：如果您使用类似演示的环境，TSB 将以最小的资源运行。
 
-:::note disclaimer
-The resource provisioning guidelines described in this document are very conservative.
+{{<callout note 注意事项>}}
+本文描述的资源配置指南非常保守。
 
-Also please be aware that the resource provisioning described in this document are applicable to _vertical_ resource scaling. Multiple replicas of the same TSB components do not share the load with each other, and therefore you cannot expect the combined resources from multiple components to have the same effect. Replicas of TSB components should only be used for high availability purposes only.
-:::
+另请注意，本文描述的资源配置适用于 _垂直_ 资源扩展。相同 TSB 组件的多个副本不会共享负载，因此您不能期望多个组件的合并资源产生相同的效果。TSB 组件的副本应仅用于实现高可用性。
+{{</callout>}}
 
-## Recommended baseline production installation resource requirements
+## 推荐的基线生产安装资源要求
 
-For a baseline installation of TSB with 1 registered cluster and 1 deployed service within that cluster, the following resources are recommended.
+对于一个具有 1 个注册集群和该集群内部部署的 1 个服务的 TSB 基线安装，建议如下资源。
 
-To reiterate, the amount of memory described below are very conservative. Also, the actual performance given by the number of vCPUs tend to fluctuate depending on your underlying infrastructure. You are advised to verify the results in your environment.
+再次强调，下面描述的内存量非常保守。此外，vCPU 数量给出的实际性能会根据您的基础设施而波动。建议您在您的环境中验证结果。
 
-| Component | vCPU # | Memory MiB
-| --- | :---: | :---:
-| TSB server *(Management Plane)* <sup>1</sup> | 2 | 512
-| XCP Central Components <sup>2</sup> | 2 | 128
-| XCP Edge | 1 | 128
-| Front Envoy | 1 | 50
-| IAM | 1 | 128
-| TSB UI | 1 | 256
-| OAP | 4 | 5192
-| OTEL-collector | 2 | 1024
+| 组件                                 | vCPU 数量 | 内存 MiB |
+| ------------------------------------ | :-------: | :------: |
+| TSB 服务器 *(管理平面)* <sup>1</sup> |     2     |   512    |
+| XCP 中央组件 <sup>2</sup>            |     2     |   128    |
+| XCP Edge                             |     1     |   128    |
+| Front Envoy                          |     1     |    50    |
+| IAM                                  |     1     |   128    |
+| TSB UI                               |     1     |   256    |
+| OAP                                  |     4     |   5192   |
+| OTEL 收集器                          |     2     |   1024   |
 
-<sup>1</sup> Including the Kubernetes operator and persistent data
-reconciliation processes. <br />
-<sup>2</sup> Including the Kubernetes operator.
+<sup>1</sup> 包括 Kubernetes  Operator 和持久数据协调过程。
 
-## Recommended scaling resource parameters
+<sup>2</sup> 包括 Kubernetes  Operator 。
 
-The TSB stack is mostly CPU-bound. Additional clusters registered with TSB via XCP increase the
-CPU utilization by ~4%.
+## 推荐的扩展资源参数
 
-The effect of additional registered clusters or additional deployed workload
-services on memory utilisation is almost negligible. Likewise, the effect of
-additional clusters or workloads on resource consumption of the majority of TSB
-components is mostly negligible, with the notable exceptions of TSB, XCP Central
-component, TSB UI and IAM.
+TSB 栈主要受 CPU 限制。通过 XCP 注册的附加集群会使 CPU 利用率增加约 ~4%。
 
-:::note
-Components that are part of the visibility stack (e.g. OTel/OAP, etc.) have
-their resource utilisation driven by requests, thus the resource scaling should
-follow the user request rate statistics. As a general rule of thumb, more than
-1 vCPU is preferred. It is also important to notice that the visibility stack
-performance is largely bound by Elasticsearch performance.
-:::
+对内存使用情况的附加注册集群或附加部署的工作负载服务的影响几乎可以忽略不计。同样，对于大多数 TSB 组件的资源消耗，额外集群或工作负载的影响几乎可以忽略不计，但 TSB、XCP 中央组件、TSB UI 和 IAM 则是值得注意的例外。
 
-Thus, we recommend vertically scaling the components by 1 vCPU for a number of
-deployed workflows:
+{{<callout note 注意>}}
+作为能见度堆栈的一部分（例如 OTel/OAP 等），其资源利用取决于请求，因此资源扩展应遵循用户请求速率统计。一般而言，建议使用超过 1 个 vCPU。还要注意，可见度堆栈的性能主要受 Elasticsearch 性能限制。
+{{</callout>}}
 
-### Management Plane
+因此，我们建议为部署的工作流程垂直扩展组件 1 个 vCPU：
 
-Besides OAP, All components don't require any resource adjustment. 
-Those components are architectured and tested to support very large clusters.
+### 管理平面
 
-OAP in Management plane requires extra CPU and Memory ~ 100 millicores of CPU and 
-1024 MiB of RAM per every 1000 services. E.g. 4000 services aggregated in 
-TSB Management Plane from all TSB clusters would require approximately 400 millicores 
-of CPU and 4096 MiB of RAM in total.
+除了 OAP 外，所有组件都不需要进行任何资源调整。 这些组件的架构和测试支持非常大的集群。
 
-## Control Plane Resource Requirements
+在管理平面的 OAP 需要额外的 CPU 和内存，每 1000 个服务需要约 100 毫核的 CPU 和 1024 MiB 的内存。例如，从所有 TSB 集群中聚合的 4000 个服务将总共需要大约 400 毫核的 CPU 和 4096 MiB 的内存。
 
-Following table shows typical peak resource utilization for TSB control plane with the following assumptions:
-- 50 services with sidecars
-- Traffic on entire cluster is 500 repository
-- OAP trace sampling rate is 1% of the traffic
-- Metric is captured for every request at every workload.
+## 控制平面资源要求
 
-Note that average CPU utilization would be a fraction of the typical peak value.
+以下表格显示了 TSB 控制平面的典型峰值资源利用情况，假设如下：
+- 带有 Sidecar 的 50 个服务
+- 整个集群的流量为 500 个存储库
+- OAP 的跟踪采样率为流量的 1%
+- 对于每个工作负载的每个请求都捕获度量值。
 
-| Component | Typical Peak CPU (m) | Typical Peak Memory (Mi)
-| --- | :---: | :---:
-| Istiod | 300m | 250Mi
-| OAP | 2500m | 2500Mi
-| XCP Edge | 100m | 100Mi
-| Istio Operator - Control Plane | 50m | 100Mi
-| Istio Operator - Data Plane | 150m | 100Mi
-| TSB Control Plane Operator | 100m | 100Mi
-| TSB Data Plane Operator | 150m | 100Mi
-| OTEL Collector | 50m | 100Mi
+请注意，平均 CPU 利用率将是典型峰值值的一部分。
 
-## TSB/Istio Operator resource usage per Ingress Gateway
+| 组件                        | 典型峰值 CPU (m) | 典型峰值内存 (Mi) |
+| --------------------------- | :--------------: | :---------------: |
+| Istiod                      |       300m       |       250Mi       |
+| OAP                         |      2500m       |      2500Mi       |
+| XCP Edge                    |       100m       |       100Mi       |
+| Istio  Operator  - 控制平面 |       50m        |       100Mi       |
+| Istio  Operator  - 数据平面 |       150m       |       100Mi       |
+| TSB 控制平面 Operator       |       100m       |       100Mi       |
+| TSB 数据平面 Operator       |       150m       |       100Mi       |
+| OTEL 收集器                 |       50m        |       100Mi       |
 
-The following table shows the resources used by TSB Operator and Istio Operator per Ingress Gateways
+## 每个入口网关的 TSB/Istio  Operator 资源使用情况
 
-| Ingress Gateways | TSB Operator CPU(m) | TSB Operator Mem(Mi) | Istio Operator CPU(m) | Istio Operator Mem(Mi)
-| --- | :---: | :---: | :---: | :---:
-| 0 | 100m | 50Mi | 10m | 45Mi
-| 50 | 2600m | 125Mi | 1100m | 120Mi 
-| 100 | 3500m | 200Mi | 1300m | 175Mi
-| 150 | 3800m | 250Mi | 1400m | 200Mi
-| 200 | 4000m | 325Mi | 1400m | 250Mi
-| 250 | 4700m | 325Mi | 1750m | 300Mi
-| 300 | 5000m | 475Mi | 1750m | 400Mi
+以下表格显示了每个入口网关使用的 TSB  Operator 和 Istio  Operator 的资源。
 
+| 入口网关 | TSB  Operator  CPU (m) | TSB  Operator 内存 (Mi) | Istio  Operator  CPU (m) | Istio  Operator 内存 (Mi) |
+| -------- | :--------------------: | :---------------------: | :----------------------: | :-----------------------: |
+| 0        |          100m          |          50Mi           |           10m            |           45Mi            |
+| 50       |         2600m          |          125Mi          |          1100m           |           120Mi           |
+| 100      |         3500m          |          200Mi          |          1300m           |           175Mi           |
+| 150      |         3800m          |          250Mi          |          1400m           |           200Mi           |
+| 200      |         4000m          |          325Mi          |          1400m           |           250Mi           |
+| 250      |         4700m          |          325Mi          |          1750m           |           300Mi           |
+| 300      |         5000m          |          475Mi          |          1750m           |           400Mi           |
 
-## Component resource utilization
+## 组件资源利用
 
-The following tables will show how the different components of TSB scale with 4000 services and peaking with 60 rpm, this is divided by information from the Management Plane, and the Control Plane.
+以下表格将展示 TSB 的不同组件如何随着 4000 个服务的规模增长并以 60 rpm 峰值，这是根据来自管理平面和控制平面的信息进行划分的。
 
-### Management Plane
+### 管理平面
 
-| Services | Gateways | Traffic(rpm) | Central CPU(m) | Central Mem(Mi) | MPC CPU(m) | MPC Mem(Mi) | OAP CPU(m) | OAP Mem(Mi) | Otel CPU(m) | Otel Mem(Mi) | TSB CPU(m) | TSB Mem(Mi)
-| --- | --- | --- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: 
-| 0 | 0| 0 rpm| 3m|39Mi|5m|30Mi|37m|408Mi|22m|108Mi|14m|57Mi
-| 400 | 2| 60 rpm|4m|42Mi|15m|31Mi|116m|736Mi|24m|123Mi|50m|63Mi
-| 800 | 4|60 rpm|4m|54Mi|24m|34Mi|43m|909Mi|26m|127Mi|85m|75Mi
-| 1200 | 6|60 rpm|4m|59Mi|32m|41Mi|28m|1141Mi|27m|210Mi|213m|78Mi
-| 1600 |8|60 rpm|5m|63Mi|44m|48Mi|209m|1475Mi|29m|249Mi|113m|86Mi
-| 2000 |10|60 rpm|5m|73Mi|41m|51Mi|51m|1655Mi|24m|319Mi|211m|91Mi
-| 2400 |12|60 rpm|4m|84Mi|72m|62Mi|57m|1910Mi|29m|381Mi|227m|97Mi
-| 2800 |14|60 rpm|5m|90Mi|73m|65Mi|43m|2136Mi|16m|466Mi|275m|104Mi
-| 3200 |16|60 rpm|5m|106Mi|85m|78Mi|89m|2600Mi|43m|574Mi|382m|108Mi
-| 3600 |18|60 rpm|5m|123Mi|94m|71Mi|245m|2772Mi|37m|578Mi|625m|115Mi
-| 4000 |20|60 rpm|5m|147Mi|90m|81Mi|521m|3224Mi|15m|704Mi|508m|122Mi
+| 服务 | 入口网关 | 流量(rpm) | 中央 CPU (m) | 中央内存 (Mi) | MPC CPU (m) | MPC 内存 (Mi) | OAP CPU (m) | OAP 内存 (Mi) | Otel CPU (m) | Otel 内存 (Mi) | TSB CPU (m) | TSB 内存 (Mi) |
+| ---- | -------- | --------- | :----------: | :-----------: | :---------: | :-----------: | :---------: | :-----------: | :----------: | :------------: | :---------: | :-----------: |
+| 0    | 0        | 0 rpm     |      3m      |     39Mi      |     5m      |     30Mi      |     37m     |     408Mi     |     22m      |     108Mi      |     14m     |     57Mi      |
+| 400  | 2        | 60 rpm    |      4m      |     42Mi      |     15m     |     31Mi      |    116m     |     736Mi     |     24m      |     123Mi      |     50m     |     63Mi      |
+| 800  | 4        | 60 rpm    |      4m      |     54Mi      |     24m     |     34Mi      |     43m     |     909Mi     |     26m      |     127Mi      |     85m     |     75Mi      |
+| 1200 | 6        | 60 rpm    |      4m      |     59Mi      |     32m     |     41Mi      |     28m     |    1141Mi     |     27m      |     210Mi      |    213m     |     78Mi      |
+| 1600 | 8        | 60 rpm    |      5m      |     63Mi      |     44m     |     48Mi      |    209m     |    1475Mi     |     29m      |     249Mi      |    113m     |     86Mi      |
+| 2000 | 10       | 60 rpm    |      5m      |     73Mi      |     41m     |     51Mi      |     51m     |    1655Mi     |     24m      |     319Mi      |    211m     |     91Mi      |
+| 2400 | 12       | 60 rpm    |      4m      |     84Mi      |     72m     |     62Mi      |     57m     |    1910Mi     |     29m      |     381Mi      |    227m     |     97Mi      |
+| 2800 | 14       | 60 rpm    |      5m      |     90Mi      |     73m     |     65Mi      |     43m     |    2136Mi     |     16m      |     466Mi      |    275m     |     104Mi     |
+| 3200 | 16       | 60 rpm    |      5m      |     106Mi     |     85m     |     78Mi      |     89m     |    2600Mi     |     43m      |     574Mi      |    382m     |     108Mi     |
+| 3600 | 18       | 60 rpm    |      5m      |     123Mi     |     94m     |     71Mi      |    245m     |    2772Mi     |     37m      |     578Mi      |    625m     |     115Mi     |
+| 4000 | 20       | 60 rpm    |      5m      |     147Mi     |     90m     |     81Mi      |    521m     |    3224Mi     |     15m      |     704Mi      |    508m     |     122Mi     |
 
-:::note
-IAM will peak at 5m/32Mi, LDAP at 1m/12Mi and XCP Operator at 3m and 23Mi
-:::
+{{<callout note 注意>}}
+IAM 将在 5m/32Mi，LDAP 在 1m/12Mi，XCP  Operator 在 3m 和 23Mi 时达到峰值。
+{{</callout>}}
 
-### Control Plane
+### 控制平面
 
-| Services | Gateways | Traffic(rpm) | Edge CPU(m) | Edge Mem(Mi) | Istiod CPU(m) | Istiod Mem(Mi) | OAP CPU(m) | OAP Mem(Mi) | Otel CPU(m) | Otel Mem(Mi)
-| --- | --- | --- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-|0|0|0 rpm|3m|67Mi|6m|110Mi|55m|439Mi|16m|74Mi
-|400|2|60 rpm|2m|97Mi|33m|182Mi| 334m|1138Mi|18m|75Mi
-|800|4|60 rpm|3m|153Mi|35m|249Mi|653m|1640Mi|21m|85Mi
-|1200|6|60 rpm|3m|192Mi|68m|286Mi|815m|2238Mi|23m|164Mi
-|1600|8|60 rpm|3m|238Mi|84m|324Mi|1217m|2766Mi|20m|202Mi
-|2000|10|60 rpm|3m|280Mi|84m|357Mi|1364m|3351Mi|17m|267Mi
-|2400|12|60 rpm|15m|270Mi|98m|370Mi|1658m|3921Mi|19m|331Mi
-|2800|14|60 rpm|5m|310Mi|334m|450Mi|2062m|4493Mi|19m|406Mi
-|3200|16|60 rpm|6m|352Mi|243m|470Mi|2406m|4866Mi|20m|506Mi
-|3600|18|60 rpm|22m|386Mi|130m|489Mi|2606m|5346Mi|20m|512Mi
-|4000|20|60 rpm|5m|501Mi|138m|523Mi|2904m|6128Mi|20m|620Mi
+| 服务 | 入口网关 | 流量(rpm) | 边缘 CPU (m) | 边缘内存 (Mi) | Istiod CPU (m) | Istiod 内存 (Mi) | OAP CPU (m) | OAP 内存 (Mi) | Otel CPU (m) | Otel 内存 (Mi) |
+| ---- | -------- | --------- | :----------: | :-----------: | :------------: | :--------------: | :---------: | :-----------: | :----------: | :------------: |
+| 0    | 0        | 0 rpm     |      3m      |     67Mi      |       6m       |      110Mi       |     55m     |     439Mi     |     16m      |      74Mi      |
+| 400  | 2        | 60 rpm    |      2m      |     97Mi      |      33m       |      182Mi       |    334m     |    1138Mi     |     18m      |      75Mi      |
+| 800  | 4        | 60 rpm    |      3m      |     153Mi     |      35m       |      249Mi       |    653m     |    1640Mi     |     21m      |      85Mi      |
+| 1200 | 6        | 60 rpm    |      3m      |     192Mi     |      68m       |      286Mi       |    815m     |    2238Mi     |     23m      |     164Mi      |
+| 1600 | 8        | 60 rpm    |      3m      |     238Mi     |      84m       |      324Mi       |    1217m    |    2766Mi     |     20m      |     202Mi      |
+| 2000 | 10       | 60 rpm    |      3m      |     280Mi     |      84m       |      357Mi       |    1364m    |    3351Mi     |     17m      |     267Mi      |
+| 2400 | 12       | 60 rpm    |     15m      |     270Mi     |      98m       |      370Mi       |    1658m    |    3921Mi     |     19m      |     331Mi      |
+| 2800 | 14       | 60 rpm    |      5m      |     310Mi     |      334m      |      450Mi       |    2062m    |    4493Mi     |     19m      |     406Mi      |
+| 3200 | 16       | 60 rpm    |      6m      |     352Mi     |      243m      |      470Mi       |    2406m    |    4866Mi     |     20m      |     506Mi      |
+| 3600 | 18       | 60 rpm    |     22m      |     386Mi     |      130m      |      489Mi       |    2606m    |    5346Mi     |     20m      |     512Mi      |
+| 4000 | 20       | 60 rpm    |      5m      |     501Mi     |      138m      |      523Mi       |    2904m    |    6128Mi     |     20m      |     620Mi      |
 
-:::note
-Metric Server will peak at 4m/24Mi, Onboarding Operator at 4m/24Mi, and XCP-Operator at 3m/22Mi
-:::
-
-
+{{<callout note 注意>}}
+Metric Server 将在 4m/24Mi，Onboarding Operator 在 4m/24Mi，XCP-Operator 在 3m/22Mi 时达到峰值。
+{{</callout>}}
