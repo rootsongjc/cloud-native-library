@@ -4,6 +4,7 @@ title:  使用 SPIFFE 身份通知授权
 linktitle: 8. 使用 SPIFFE 身份通知授权
 date: '2022-10-07T00:00:00+08:00'
 type: book
+description: "本章解释了如何实施使用 SPIFFE 身份的授权策略。"
 ---
 
 本章解释了如何实施使用 SPIFFE 身份的授权策略。

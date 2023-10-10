@@ -4,6 +4,7 @@ title: SPIFFE 与其他安全技术对比
 title: 9. SPIFFE 与其他安全技术对比
 date: '2022-10-07T00:00:00+08:00'
 type: book
+description: "本章将 SPIFFE 与其他解决类似问题的技术进行了比较。"
 ---
 
 本章将 SPIFFE 与其他解决类似问题的技术进行了比较。

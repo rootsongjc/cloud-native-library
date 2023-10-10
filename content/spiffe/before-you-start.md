@@ -4,6 +4,7 @@ title: 开始前的准备
 linktitle: 5. 开始前的准备
 date: '2022-10-07T00:00:00+08:00'
 type: book
+description: "本章旨在让你为上线 SPIFFE/SPIRE 时需要做出的许多决定做好准备。"
 ---
 
 本章旨在让你为上线 SPIFFE/SPIRE 时需要做出的许多决定做好准备。

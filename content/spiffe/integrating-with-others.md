@@ -4,6 +4,7 @@ title: 与其他系统集成
 linktitle: 7. 与其他系统集成
 date: '2022-10-07T00:00:00+08:00'
 type: book
+description: "本章探讨了 SPIFFE 和 SPIRE 如何与环境集成。"
 ---
 
 本章探讨了 SPIFFE 和 SPIRE 如何与环境集成。

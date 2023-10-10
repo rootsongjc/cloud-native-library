@@ -4,6 +4,7 @@ title: 设计一个 SPIRE 部署
 linktitle: 6. 设计一个 SPIRE 部署
 date: '2022-10-07T00:00:00+08:00'
 type: book
+description: "读者将了解到 SPIRE 部署的组成部分，有哪些部署模式，以及在部署 SPIRE 时需要考虑哪些性能和安全问题。"
 ---
 
 读者将了解到 SPIRE 部署的组成部分，有哪些部署模式，以及在部署 SPIRE 时需要考虑哪些性能和安全问题。
