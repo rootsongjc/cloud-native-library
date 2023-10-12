@@ -1,0 +1,1929 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="宋净超" />
+
+  
+  
+  
+    
+  
+  <meta name="description" content="本文介绍了在 Kubernetes 和 Istio 中使用 gRPC 负载均衡的行为。首先，通过创建命名空间、部署资源和配置文件来准备环境。然后，介绍了没有 Istio 的情况下，gRPC 服务的负载均衡行为。接下来，介绍了如何使用 Istio 创建虚拟服务和目标规则来实现负载均衡。还讨论了 ConnectionPoolSetting 对负载均衡行为的影响。最后，介绍了如何通过入口网关访问 gRPC 服务，并提供了验证步骤。" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://lib.jimmysong.io/blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/css/wowchemy.b26eb9b802629dccab300faa82cc98c7.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MP490FS739"></script>
+
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', "G-MP490FS739");
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2a4b7f65b1839466beaa48d633aa60c1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://lib.jimmysong.io/blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary_large_image" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://lib.jimmysong.io/blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/" />
+  <meta property="og:title" content="理解使用 Istio 在 Kubernetes 中的 gRPC 负载均衡 | 云原生资料库" />
+  <meta property="og:description" content="本文介绍了在 Kubernetes 和 Istio 中使用 gRPC 负载均衡的行为。首先，通过创建命名空间、部署资源和配置文件来准备环境。然后，介绍了没有 Istio 的情况下，gRPC 服务的负载均衡行为。接下来，介绍了如何使用 Istio 创建虚拟服务和目标规则来实现负载均衡。还讨论了 ConnectionPoolSetting 对负载均衡行为的影响。最后，介绍了如何通过入口网关访问 gRPC 服务，并提供了验证步骤。" /><meta property="og:image" content="https://lib.jimmysong.io/media/sharing.png" />
+    <meta property="twitter:image" content="https://lib.jimmysong.io/media/sharing.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2023-10-12T17:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2023-10-12T17:26:47&#43;08:00">
+  
+
+  
+
+
+    
+
+
+
+
+
+
+  
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://lib.jimmysong.io/blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/"
+  },
+  "headline": "理解使用 Istio 在 Kubernetes 中的 gRPC 负载均衡",
+  
+  "datePublished": "2023-10-12T17:00:00+08:00",
+  "dateModified": "2023-10-12T17:26:47+08:00",
+  
+  "author": {
+    "@type": "Person",
+    "name": "Shrishs"
+  },
+  
+  "publisher": {
+    "@type": "Organization",
+    "name": "云原生社区",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://lib.jimmysong.io/media/logo.svg"
+    }
+  },
+  "description": "本文介绍了在 Kubernetes 和 Istio 中使用 gRPC 负载均衡的行为。首先，通过创建命名空间、部署资源和配置文件来准备环境。然后，介绍了没有 Istio 的情况下，gRPC 服务的负载均衡行为。接下来，介绍了如何使用 Istio 创建虚拟服务和目标规则来实现负载均衡。还讨论了 ConnectionPoolSetting 对负载均衡行为的影响。最后，介绍了如何通过入口网关访问 gRPC 服务，并提供了验证步骤。"
+}
+</script>
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>理解使用 Istio 在 Kubernetes 中的 gRPC 负载均衡 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="97d25dd7ac230530abc86cbd943e64d1" >
+  <button onclick="topFunction()" id="backTopBtn" title="Go to top"><i class="fa-solid fa-circle-up" aria-hidden="true"></i></button>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/js/wowchemy-init.min.62d6f8dfe8493f1c68557dde65bec362.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6 search-title">
+          <p>搜索</p>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/"><img src="/media/logo.svg" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/"><img src="/media/logo.svg" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#books"><span>图书</span></a>
+          </li>
+
+          
+          
+
+          
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"><span>教程</span><span class="caret"></span>
+            </a>
+            <div class="dropdown-menu">
+              
+                <a class="dropdown-item" href="/kubernetes-handbook"><span>Kubernetes 基础教程</span></a>
+              
+                <a class="dropdown-item" href="https://academy.tetrate.io/courses/istio-fundamentals-zh"><span>Istio 基础教程</span></a>
+              
+                <a class="dropdown-item" href="https://academy.tetrate.io/courses/envoy-fundamentals-zh"><span>Envoy 基础教程</span></a>
+              
+            </div>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link  active" href="/blog"><span>译文</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#feed"><span>更新</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#tags"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>Jimmy Song</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://jimmysong.io/contact/" data-toggle="tooltip" data-placement="bottom" title="联系" target="_blank" rel="noopener" aria-label="联系">
+                <i class="fab fa-weixin" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://twitter.com/jimmysongio" data-toggle="tooltip" data-placement="bottom" title="关注" target="_blank" rel="noopener" aria-label="关注">
+                <i class="fab fa-twitter" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+        
+
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://jimmysong.io" target="_blank" rel="noopener" data-toggle="tooltip" data-placement="bottom" title="主站" aria-label="主站"><i class="fas fa-home" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link js-search" href="#" data-toggle="tooltip" data-placement="bottom" title="搜索" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item d-none d-lg-inline-flex">
+            <a class="nav-link" href="https://github.com/rootsongjc/cloud-native-library/" target="_blank" rel="noopener" data-toggle="tooltip" data-placement="bottom" title="查看源码" aria-label="查看源码" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+        <li class="nav-item">
+          <a href="#" class="nav-link set-theme">
+            <i class="fa fa-sun" aria-hidden="true" id="theme-icon"></i>
+          </a>
+        </li>
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    <div class="container-xl">
+    <div class="post-container">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  
+  
+<div class="article-container pt-3">
+  <h1>理解使用 Istio 在 Kubernetes 中的 gRPC 负载均衡</h1>
+
+  
+
+  
+    
+
+
+<div class="article-metadata">
+
+  <div>
+  
+  
+  
+  
+    <i class="fa-solid fa-feather"></i>
+    
+
+  <span >
+      <a href="/author/shrishs/">Shrishs</a></span>
+    
+    <span class="middot-divider"></span>
+    
+  
+  
+  
+  
+  
+  
+  <span class="article-categories">
+    <i class="fas fa-folder mr-1"></i><a href="/category/istio/" class="text-capitalize">Istio</a></span>
+  
+  </div>
+
+  
+  <span class="article-date">
+    
+    
+      
+          
+          发布于
+      
+    
+    2023-10-12
+  </span>
+  
+
+  
+
+  
+  <span class="middot-divider"></span>
+  字数 1956
+  <span class="middot-divider"></span>
+  <span class="article-reading-time">
+      阅读时长 9 分钟
+  </span>
+  
+
+  
+  
+  
+  
+
+</div>
+
+    
+
+
+
+
+<div class="btn-links mb-2">
+  
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  <a class="btn btn-outline-primary btn-page-header" href="https://medium.com/@shrishs/understanding-grpc-load-balancing-in-kubernetes-with-istio-c6e71634724c" target="_blank" rel="noopener">
+    <i class="fa fa-globe mr-1"></i>原文</a>
+
+
+</div>
+
+
+  
+</div>
+
+
+    </div>
+    <div class="border-bottom mb-2"></div>
+    <div class="row flex-xl-nowrap">
+        <div class="col-3 d-none d-xl-block docs-toc">
+            <!-- toc -->
+            
+<div class="">
+    <ul class="nav toc-top">
+        <li>
+            <a href="#" id="back_to_top" class="docs-toc-title">目录</a>
+        </li>
+    </ul>
+  <nav id="TableOfContents">
+  <ul>
+    <li><a href="#环境准备">环境准备</a></li>
+    <li><a href="#没有-istio-的-kubernetes-grpc-服务">没有 Istio 的 Kubernetes gRPC 服务</a></li>
+    <li><a href="#带有-istio-的-kubernetes-grpc-服务">带有 Istio 的 Kubernetes gRPC 服务</a></li>
+    <li><a href="#connectionpoolsetting">ConnectionPoolSetting</a></li>
+    <li><a href="#通过入口网关访问-grpc-服务">通过入口网关访问 gRPC 服务</a></li>
+  </ul>
+</nav>
+</div>
+
+            <!-- /toc -->
+            
+            <div class="subscribe-module col-12 mt-1">
+    <img src="/img/wechat.webp" alt="image" title="Jimmy Song的微信公众号"/>
+    <p class="text-center pt-1">扫码联系站长</p>
+    
+    
+     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4029167986768912"
+     crossorigin="anonymous"></script>
+     <ins class="adsbygoogle"
+       style="display:block"
+       data-ad-client="ca-pub-4029167986768912"
+       data-ad-slot="6856371908"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
+    <script>
+       (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+    
+    
+</div>
+
+            
+        </div>
+        <main class="article-body col-9 container docs-content" role="main">
+            <article class="article">
+                <div class="article-style">
+                    
+                    <details class="toc-inpage d-print-none d-show-block mb-0">
+  <summary class="font-weight-bold">点击查看目录</summary>
+  <nav id="TableOfContents">
+  <ul>
+    <li><a href="#环境准备">环境准备</a></li>
+    <li><a href="#没有-istio-的-kubernetes-grpc-服务">没有 Istio 的 Kubernetes gRPC 服务</a></li>
+    <li><a href="#带有-istio-的-kubernetes-grpc-服务">带有 Istio 的 Kubernetes gRPC 服务</a></li>
+    <li><a href="#connectionpoolsetting">ConnectionPoolSetting</a></li>
+    <li><a href="#通过入口网关访问-grpc-服务">通过入口网关访问 gRPC 服务</a></li>
+  </ul>
+</nav>
+</details>
+
+                    
+                    <p>本文译自：<a href="https://medium.com/@shrishs/understanding-grpc-load-balancing-in-kubernetes-with-istio-c6e71634724c" target="_blank" rel="noopener">https://medium.com/@shrishs/understanding-grpc-load-balancing-in-kubernetes-with-istio-c6e71634724c</a></p>
+<blockquote>
+<p>摘要：本文介绍了在 Kubernetes 和 Istio 中使用 gRPC 负载均衡的行为。首先，通过创建命名空间、部署资源和配置文件来准备环境。然后，介绍了没有 Istio 的情况下，gRPC 服务的负载均衡行为。接下来，介绍了如何使用 Istio 创建虚拟服务和目标规则来实现负载均衡。还讨论了 ConnectionPoolSetting 对负载均衡行为的影响。最后，介绍了如何通过入口网关访问 gRPC 服务，并提供了验证步骤。</p>
+</blockquote>
+<p><strong><a href="https://en.wikipedia.org/wiki/GRPC" target="_blank" rel="noopener">gRPC</a></strong>（gRPC 远程过程调用）是一个跨平台的开源高性能远程过程调用（RPC）框架，使用 HTTP/2 进行传输。gRPC 相对于传统的 HTTP 机制具有诸多优势，例如在一个连接上多路复用多个请求（HTTP/2）。本文将解释在 Kubernetes（RedHat Openshift）和（Redhat Openshift Service Mesh）中结合使用时的行为。</p>
+<h2 id="环境准备">环境准备</h2>
+<ul>
+<li>创建两个新的命名空间</li>
+</ul>
+<pre tabindex="0"><code>oc new-project grpc
+oc new-project test
+</code></pre><ul>
+<li>在 grpc 命名空间部署所有与服务器相关的资源。本示例基于 Quarkus 的<a href="https://quarkus.io/guides/grpc-getting-started" target="_blank" rel="noopener">gRPC 快速入门</a>。</li>
+<li>创建一个 ConfigMap。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ConfigMap</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">grpcconfig</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">data</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">application.properties</span><span class="p">:</span><span class="w"> </span><span class="p">|</span><span class="sd">
+</span></span></span><span class="line"><span class="cl"><span class="sd">    numrequest: 25
+</span></span></span><span class="line"><span class="cl"><span class="sd">    quarkus.grpc.clients.hello.host: grpc.grpc.svc.cluster.local
+</span></span></span><span class="line"><span class="cl"><span class="sd">    teststring: prom</span><span class="w">    
+</span></span></span></code></pre></div><ul>
+<li>基于以下内容创建一个新的部署。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Deployment</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">grpc-v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">replicas</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">template</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">app.kubernetes.io/version</span><span class="p">:</span><span class="w"> </span><span class="l">l1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">annotations</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">sidecar.istio.io/inject</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;true&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">sidecar.istio.io/logLevel</span><span class="p">:</span><span class="w"> </span><span class="l">debug</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">quarkus-config-volume</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">configMap</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">grpcconfig</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">defaultMode</span><span class="p">:</span><span class="w"> </span><span class="m">420</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">custom-grpc-hello</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;quay.io/shrishs/grpc-plain-text-quickstart-jvm&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="m">9000</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l">TCP</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">volumeMounts</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">quarkus-config-volume</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l">/deployments/config</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">restartPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">Always</span><span class="w">
+</span></span></span></code></pre></div><ul>
+<li>使用相同的配置创建另外两个部署 grpc-v2 和 grpc-v3，只需提供不同的版本。</li>
+</ul>
+<pre tabindex="0"><code>app.kubernetes.io/version: l2
+&amp;
+app.kubernetes.io/version: l3
+</code></pre><ul>
+<li>基于上述部署创建一个 Kubernetes 服务。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Service</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l">TCP</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">9000</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">targetPort</span><span class="p">:</span><span class="w"> </span><span class="m">9000</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span></code></pre></div><ul>
+<li>在 test 命名空间中创建另一个 ConfigMap（如上所述）和名为 grpc-client 的部署（使用上述相同的定义）。它将用于调用名为 testString 的 gRPC 服务和 numRequest 在 ConfigMap 中定义。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="line"><span class="cl">    <span class="nd">@GET</span>
+</span></span><span class="line"><span class="cl">    <span class="nd">@Path</span><span class="o">(</span><span class="s">&#34;/grpc&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">    <span class="kd">public</span> <span class="n">String</span> <span class="nf">testGRPC</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span>
+</span></span><span class="line"><span class="cl">    <span class="o">{</span>
+</span></span><span class="line"><span class="cl">            <span class="n">MyClient</span> <span class="n">client</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MyClient</span><span class="o">(</span><span class="n">host</span><span class="o">,</span> <span class="n">9000</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">            <span class="k">try</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">                <span class="n">client</span><span class="o">.</span><span class="na">makeMultipleRequests</span><span class="o">(</span><span class="n">testString</span><span class="o">,</span> <span class="n">numRequest</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">            <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">                <span class="n">client</span><span class="o">.</span><span class="na">shutdown</span><span class="o">();</span>
+</span></span><span class="line"><span class="cl">            <span class="o">}</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="s">&#34;Hello&#34;</span><span class="o">;</span>
+</span></span><span class="line"><span class="cl">        <span class="o">}</span>
+</span></span><span class="line"><span class="cl">    <span class="kd">public</span> <span class="kd">class</span> <span class="nc">MyClient</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        <span class="kd">private</span> <span class="kd">final</span> <span class="n">ManagedChannel</span> <span class="n">channel</span><span class="o">;</span>
+</span></span><span class="line"><span class="cl">        <span class="kd">private</span> <span class="kd">final</span> <span class="n">GreeterGrpc</span><span class="o">.</span><span class="na">GreeterBlockingStub</span> <span class="n">blockingStub</span><span class="o">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kd">public</span> <span class="nf">MyClient</span><span class="o">(</span><span class="n">String</span> <span class="n">host</span><span class="o">,</span> <span class="kt">int</span> <span class="n">port</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">this</span><span class="o">(</span><span class="n">ManagedChannelBuilder</span><span class="o">.</span><span class="na">forAddress</span><span class="o">(</span><span class="n">host</span><span class="o">,</span> <span class="n">port</span><span class="o">).</span><span class="na">usePlaintext</span><span class="o">().</span><span class="na">build</span><span class="o">());</span>
+</span></span><span class="line"><span class="cl">    <span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kd">private</span> <span class="nf">MyClient</span><span class="o">(</span><span class="n">ManagedChannel</span> <span class="n">channel</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">this</span><span class="o">.</span><span class="na">channel</span> <span class="o">=</span> <span class="n">channel</span><span class="o">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">this</span><span class="o">.</span><span class="na">blockingStub</span> <span class="o">=</span> <span class="n">GreeterGrpc</span><span class="o">.</span><span class="na">newBlockingStub</span><span class="o">(</span><span class="n">channel</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">    <span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">shutdown</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">channel</span><span class="o">.</span><span class="na">shutdown</span><span class="o">().</span><span class="na">awaitTermination</span><span class="o">(</span><span class="n">5</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">    <span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">makeMultipleRequests</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">,</span> <span class="kt">int</span> <span class="n">numRequests</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">numRequests</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">            <span class="n">HelloRequest</span> <span class="n">request</span> <span class="o">=</span> <span class="n">HelloRequest</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">().</span><span class="na">setName</span><span class="o">(</span><span class="n">name</span> <span class="o">+</span> <span class="n">i</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
+</span></span><span class="line"><span class="cl">            <span class="n">HelloReply</span> <span class="n">response</span> <span class="o">=</span> <span class="n">blockingStub</span><span class="o">.</span><span class="na">sayHello</span><span class="o">(</span><span class="n">request</span><span class="o">);</span>
+</span></span><span class="line"><span class="cl">            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">response</span><span class="o">.</span><span class="na">getMessage</span><span class="o">());</span>
+</span></span><span class="line"><span class="cl">        <span class="o">}</span>
+</span></span><span class="line"><span class="cl">    <span class="o">}</span>
+</span></span></code></pre></div><h2 id="没有-istio-的-kubernetes-grpc-服务">没有 Istio 的 Kubernetes gRPC 服务</h2>
+<ul>
+<li>验证应用程序是否在 grpc 命名空间中运行。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">bash-3.2$ oc -n grpc get pods -l <span class="nv">app</span><span class="o">=</span>grpc
+</span></span><span class="line"><span class="cl">NAME                       READY   STATUS    RESTARTS   AGE
+</span></span><span class="line"><span class="cl">grpc-v1-7cc77c5cfc-tfbhf   1/1     Running   <span class="m">0</span>          9m15s
+</span></span><span class="line"><span class="cl">grpc-v2-977b698f6-rb9z6    1/1     Running   <span class="m">0</span>          9m14s
+</span></span><span class="line"><span class="cl">grpc-v3-8679b7f6ff-hxx9c   1/1     Running   <span class="m">0</span>          9m14s
+</span></span></code></pre></div><ul>
+<li>从测试命名空间测试请求。</li>
+</ul>
+<pre tabindex="0"><code>oc -n test exec deploy/grpc-client -- curl http://localhost:8080/hello/grpc
+</code></pre><ul>
+<li>检查所有 Pod 的日志，可以观察到只有一个 Pod 收到了所有的请求。</li>
+</ul>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  >
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="" srcset="
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/1_huac9be9daea226b91f233b9ad4907967c_88222_eb1cbcfcc6dcf5e3537762897a584e44.webp 400w,
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/1_huac9be9daea226b91f233b9ad4907967c_88222_ad19a0b1b0fcda94f964723b716e4af5.webp 760w,
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/1_huac9be9daea226b91f233b9ad4907967c_88222_1200x1200_fit_q75_h2_lanczos_2.webp 1200w"
+               src="/blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/1_huac9be9daea226b91f233b9ad4907967c_88222_eb1cbcfcc6dcf5e3537762897a584e44.webp"
+               width="760"
+               height="542"
+               loading="lazy" data-zoomable /></div>
+  </div></figure>
+</p>
+<p>上述行为的原因是gRPC构建在HTTP/2之上，而HTTP/2设计为具有单个持久的TCP连接，在该连接上所有请求都被<em>多路复用</em>，这意味着多个请求可以同时在同一个连接上进行。通常情况下，这是很好的，因为它减少了连接管理的开销。然而，这也意味着（可以想象）连接级别的负载均衡并不是非常有用。一旦连接建立完成，就没有更多的负载均衡可做了。所有请求将被固定到单个目标 Pod。</p>
+<h2 id="带有-istio-的-kubernetes-grpc-服务">带有 Istio 的 Kubernetes gRPC 服务</h2>
+<ul>
+<li>创建虚拟服务。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">networking.istio.io/v1alpha3</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">VirtualService</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">grpc-vs</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">hosts</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="l">grpc.grpc.svc.cluster.local</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">http</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">route</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">destination</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">port</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">number</span><span class="p">:</span><span class="w"> </span><span class="m">9000</span><span class="w">
+</span></span></span></code></pre></div><ul>
+<li>创建目标规则。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">networking.istio.io/v1alpha3</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">DestinationRule</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">grpc-dr</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">trafficPolicy</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">tls</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l">ISTIO_MUTUAL</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">connectionPool</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">http</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">http1MaxPendingRequests</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">http2MaxRequests</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">maxRequestsPerConnection</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">tcp</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">maxConnections</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">subsets</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">app.kubernetes.io/version</span><span class="p">:</span><span class="w"> </span><span class="l">l1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">v2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">app.kubernetes.io/version</span><span class="p">:</span><span class="w"> </span><span class="l">l2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">v3</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">app.kubernetes.io/version</span><span class="p">:</span><span class="w"> </span><span class="l">l3</span><span class="w">
+</span></span></span></code></pre></div><ul>
+<li>在 ServiceMeshMemberRoll 中添加 grpc 和 test 命名空间。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">maistra.io/v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ServiceMeshMemberRoll</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">default</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">istio-system</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">members</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="l">test</span><span class="w">
+</span></span></span></code></pre></div><ul>
+<li>重启 grpc 和 test 命名空间中的 Pod。现在 Envoy 代理作为 sidecar 附加。</li>
+</ul>
+<pre tabindex="0"><code>bash-3.2$ oc -n grpc get pods -l app=grpc
+NAME                       READY   STATUS    RESTARTS   AGE
+grpc-v1-7cc77c5cfc-fm9m4   2/2     Running   0          33s
+grpc-v2-977b698f6-hrmhq    2/2     Running   0          33s
+grpc-v3-8679b7f6ff-lw9fp   2/2     Running   0          32s
+bash-3.2$ oc -n test get pods -l app=grpc
+NAME                           READY   STATUS    RESTARTS   AGE
+grpc-client-65bb4d7c64-4ftpz   2/2     Running   0          37s
+</code></pre><ul>
+<li>再次测试服务。</li>
+</ul>
+<pre tabindex="0"><code>oc -n test exec deploy/grpc-client -- curl http://localhost:8080/hello/grpc
+</code></pre><ul>
+<li>在 Kiali 中验证图表。现在可以观察到负载均衡在所有 3 个 Pod 之间进行。</li>
+</ul>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  >
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="" srcset="
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/2_hueb676067109e1552c6e06d57c3369def_34210_f8aff9a8ba1128ae462d2e1f08870d93.webp 400w,
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/2_hueb676067109e1552c6e06d57c3369def_34210_a6ec66fb0ee458f86b4c5c675e984070.webp 760w,
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/2_hueb676067109e1552c6e06d57c3369def_34210_1200x1200_fit_q75_h2_lanczos_2.webp 1200w"
+               src="/blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/2_hueb676067109e1552c6e06d57c3369def_34210_f8aff9a8ba1128ae462d2e1f08870d93.webp"
+               width="760"
+               height="623"
+               loading="lazy" data-zoomable /></div>
+  </div></figure>
+</p>
+<p>上述行为的原因是，Istio（Envoy 代理）会对每个目标（所有 3 个 Pod）打开一个 HTTP/2 连接，并将请求<em>分流</em>到这些连接上。</p>
+<ul>
+<li>在 Jaeger 中进行验证。</li>
+</ul>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  >
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="" srcset="
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/3_hu6aa86e249d04a792684e40e494fbdc13_47168_8ee4b88a1cb496e4eda6c669ed192a8f.webp 400w,
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/3_hu6aa86e249d04a792684e40e494fbdc13_47168_4bb482ac268d22c57bae3a679b98b47b.webp 760w,
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/3_hu6aa86e249d04a792684e40e494fbdc13_47168_1200x1200_fit_q75_h2_lanczos_2.webp 1200w"
+               src="/blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/3_hu6aa86e249d04a792684e40e494fbdc13_47168_8ee4b88a1cb496e4eda6c669ed192a8f.webp"
+               width="760"
+               height="519"
+               loading="lazy" data-zoomable /></div>
+  </div></figure>
+</p>
+<h2 id="connectionpoolsetting">ConnectionPoolSetting</h2>
+<p>可以使用 DestinationRule ConnectionPool 设置来改变负载均衡的行为。</p>
+<ul>
+<li>从上述跟踪中获取请求 ID，并在 Istio 代理日志中查找。</li>
+</ul>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  >
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="" srcset="
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/4_hu7769cad1e425c27547a4457a00cf2bdd_139306_f0e56d4e39513588a316e393654178b0.webp 400w,
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/4_hu7769cad1e425c27547a4457a00cf2bdd_139306_0d76c0a567e2293811f41f71d1622bb8.webp 760w,
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/4_hu7769cad1e425c27547a4457a00cf2bdd_139306_1200x1200_fit_q75_h2_lanczos_2.webp 1200w"
+               src="/blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/4_hu7769cad1e425c27547a4457a00cf2bdd_139306_f0e56d4e39513588a316e393654178b0.webp"
+               width="760"
+               height="474"
+               loading="lazy" data-zoomable /></div>
+  </div></figure>
+</p>
+<p>观察上面的行（创建新连接）。这是因为在 DestinationRule ConnectionPool 设置中 (<strong>http2MaxRequests</strong>和<strong>maxRequestPerConnection</strong>被定义为 1)。每个请求都会创建一个新的连接，并在请求完成后关闭连接。</p>
+<ul>
+<li>更改 DestinationRule ConnectionPool 设置 (<strong>http2MaxRequests: 50, maxRequestsPerConnection: 100</strong>)</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">trafficPolicy</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">tls</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l">ISTIO_MUTUAL</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">connectionPool</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">http</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">http1MaxPendingRequests</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">http2MaxRequests</span><span class="p">:</span><span class="w"> </span><span class="m">50</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">maxRequestsPerConnection</span><span class="p">:</span><span class="w"> </span><span class="m">100</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">tcp</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">maxConnections</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span></span></span></code></pre></div><ul>
+<li>再次测试服务</li>
+</ul>
+<pre tabindex="0"><code>oc -n test exec deploy/grpc-client -- curl http://localhost:8080/hello/grpc
+</code></pre><ul>
+<li>从 Jaeger 中获取请求 ID，并查看 Envoy 代理日志。现在，我们每个连接的请求数大于 1，它将使用<strong>现有连接</strong>来处理请求。</li>
+</ul>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  >
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="" srcset="
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/5_hucddd6defa33875962afa0dd337fc6bf0_164098_8af626ba69967a109a5d7717cb2efdb0.webp 400w,
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/5_hucddd6defa33875962afa0dd337fc6bf0_164098_603e7058de8a12a9f18e75834d438acc.webp 760w,
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/5_hucddd6defa33875962afa0dd337fc6bf0_164098_1200x1200_fit_q75_h2_lanczos_2.webp 1200w"
+               src="/blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/5_hucddd6defa33875962afa0dd337fc6bf0_164098_8af626ba69967a109a5d7717cb2efdb0.webp"
+               width="760"
+               height="529"
+               loading="lazy" data-zoomable /></div>
+  </div></figure>
+</p>
+<h2 id="通过入口网关访问-grpc-服务">通过入口网关访问 gRPC 服务</h2>
+<p>Openshift 使用 HAProxy 作为入口控制器，默认情况下未启用 HTTP2。可以按如下方式<a href="https://docs.openshift.com/container-platform/4.12/networking/ingress-operator.html#nw-http2-haproxy_configuring-ingress" target="_blank" rel="noopener">启用</a>。</p>
+<pre tabindex="0"><code>oc annotate ingresses.config/cluster ingress.operator.openshift.io/default-enable-http2=true
+</code></pre><ul>
+<li>启用HAProxy的HTTP/2后，使用<a href="https://istio.io/latest/docs/tasks/traffic-management/ingress/secure-ingress/#configure-a-mutual-tls-ingress-gateway" target="_blank" rel="noopener">互相 TLS</a>创建一个网关定义。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">networking.istio.io/v1alpha3</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">grpc-gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">istio</span><span class="p">:</span><span class="w"> </span><span class="l">ingressgateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">servers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">hosts</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="l">grpc-istio-system.apps.ocp-XXX.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">port</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">number</span><span class="p">:</span><span class="w"> </span><span class="m">443</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l">https</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">HTTPS</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">tls</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l">MUTUAL</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">credentialName</span><span class="p">:</span><span class="w"> </span><span class="l">istio-ingressgateway-certs</span><span class="w">
+</span></span></span></code></pre></div><ul>
+<li>Openshift Service Mesh 会自动创建一个经过路由定义。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Route</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">route.openshift.io/v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">grpc-grpc-gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">istio-system</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">maistra.io/gateway-name</span><span class="p">:</span><span class="w"> </span><span class="l">grpc-gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">maistra.io/gateway-namespace</span><span class="p">:</span><span class="w"> </span><span class="l">grpc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">maistra.io/generated-by</span><span class="p">:</span><span class="w"> </span><span class="l">ior</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">annotations</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">maistra.io/original-host</span><span class="p">:</span><span class="w"> </span><span class="l">grpc-istio-system.apps.ocp-XXX.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l">grpc-istio-system.apps.ocp-XXX.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">to</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Service</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">istio-ingressgateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="m">100</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">targetPort</span><span class="p">:</span><span class="w"> </span><span class="l">https</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">tls</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">termination</span><span class="p">:</span><span class="w"> </span><span class="l">passthrough</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">wildcardPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">None</span><span class="w">
+</span></span></span></code></pre></div><ul>
+<li>验证 gRPC 服务是否正常工作。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ grpcurl --proto helloworld.proto -v  --insecure --cert istio/files/cert/client.example.com.crt --key istio/files/cert/client.example.com.key -d <span class="s1">&#39;{&#34;name&#34;: &#34;test&#34;}&#39;</span> grpc-istio-system.apps.ocp-XXX.com:443 helloworld.Greeter/SayHello
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">Resolved method descriptor:
+</span></span><span class="line"><span class="cl">// Sends a greeting
+</span></span><span class="line"><span class="cl">rpc SayHello <span class="o">(</span> .helloworld.HelloRequest <span class="o">)</span> returns <span class="o">(</span> .helloworld.HelloReply <span class="o">)</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">Request metadata to send:
+</span></span><span class="line"><span class="cl"><span class="o">(</span>empty<span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">Response headers received:
+</span></span><span class="line"><span class="cl">content-type: application/grpc
+</span></span><span class="line"><span class="cl">date: Fri, <span class="m">19</span> May <span class="m">2023</span> 15:40:14 GMT
+</span></span><span class="line"><span class="cl">grpc-accept-encoding: gzip
+</span></span><span class="line"><span class="cl">server: istio-envoy
+</span></span><span class="line"><span class="cl">x-envoy-upstream-service-time: <span class="m">12</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">Response contents:
+</span></span><span class="line"><span class="cl"><span class="o">{</span>
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;message&#34;</span>: <span class="s2">&#34;Hello test&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">Response trailers received:
+</span></span><span class="line"><span class="cl"><span class="o">(</span>empty<span class="o">)</span>
+</span></span><span class="line"><span class="cl">Sent <span class="m">1</span> request and received <span class="m">1</span> response
+</span></span></code></pre></div><p><strong>注意</strong>：有时由于定义未在 envoy 代理中同步，可能无法正常工作。在这种情况下，请重新启动入口网关。</p>
+<pre tabindex="0"><code>oc -n istio-system delete pod -l app=istio-ingressgateway
+</code></pre><ul>
+<li>在 Kiali 中进行验证。</li>
+</ul>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  >
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="" srcset="
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/7_hu082f1b9b9037eb5700c02ab8b904a7af_17346_a14269425dc9b28128faf7a45d64a832.webp 400w,
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/7_hu082f1b9b9037eb5700c02ab8b904a7af_17346_762233c40fbc1d9ff70de010e4632ec1.webp 760w,
+               /blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/7_hu082f1b9b9037eb5700c02ab8b904a7af_17346_1200x1200_fit_q75_h2_lanczos_2.webp 1200w"
+               src="/blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/7_hu082f1b9b9037eb5700c02ab8b904a7af_17346_a14269425dc9b28128faf7a45d64a832.webp"
+               width="760"
+               height="629"
+               loading="lazy" data-zoomable /></div>
+  </div></figure>
+</p>
+
+                </div>
+                
+
+<div class="article-tags">
+  
+  <a class="badge badge-light" href="/tag/istio/">Istio</a>
+  
+  <a class="badge badge-light" href="/tag/kubernetes/">Kubernetes</a>
+  
+  <a class="badge badge-light" href="/tag/grpc/">grpc</a>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+
+
+
+
+  
+
+
+
+
+
+<div class="article-widget">
+  
+<div class="container-xl row post-nav">
+  
+  
+  
+  <a class="col-6 post-nav-item btn btn-lg mb-md-1"  href="/blog/top-owasp-kubernetes/" rel="prev">
+    <div class="meta-nav">上一页</div>
+    <p>构建安全的 Kubernetes 环境：OWASP Kubernetes Top 10</p></a>
+  
+</div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/cloud-native-library//edit/master/content/blog/understanding-grpc-load-balancing-in-kubernetes-with-istio/index.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+
+  
+  
+  <div class="article-widget content-widget-hr">
+    <p class="related-title">相关推荐</p>
+    <ul>
+      
+      <li><a href="/blog/grpc-proxyless-service-mesh/">基于 gRPC 和 Istio 的无 sidecar 代理的服务网格</a></li>
+      
+      <li><a href="/blog/performance-and-scalability/">Istio 1.18 性能测试结果</a></li>
+      
+      <li><a href="/blog/istio-service-mesh-graduates-cncf/">Istio 成为最快的 CNCF 毕业项目</a></li>
+      
+      <li><a href="/blog/waypoint-proxy-made-simple/">Istio Ambient 模式使用 Waypoint 代理简化 Istio 部署</a></li>
+      
+      <li><a href="/blog/rust-based-ztunnel/">Istio Ambient Mesh 中基于 Rust 的 Ztunnel 组件介绍</a></li>
+      
+    </ul>
+  </div>
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments" class="mb-3 pt-0">
+    <script>
+  let themeNumber = localStorage.getItem('wcTheme');
+  var giscusTheme = "light";
+  if (themeNumber == 1){
+    giscusTheme = "dark";
+  }
+  console.log(giscusTheme)
+  let giscusAttributes = {
+    "src": "https://giscus.app/client.js",
+    "data-theme": giscusTheme,
+    "data-repo":"rootsongjc/cloud-native-library",
+    "data-repo-id":"MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg=",
+    "data-category":"Announcements",
+    "data-category-id":"DIC_kwDODMrxWM4CPL7J",
+    "data-mapping":"pathname",
+    "data-reactions-enabled":"1",
+    "data-emit-metadata":"0",
+    "data-input-position":"top",
+    "data-theme":giscusTheme,
+    "data-lang":"zh-CN",
+    "data-loading":"lazy",
+    "crossorigin":"anonymous",
+    "origins":"https://jimmysong.io",
+    "originsRegex":"http://localhost:[0-9]+",
+    "async": "",
+  };
+
+  let giscusScript = document.createElement("script");
+  Object.entries(giscusAttributes).forEach(([key, value]) => giscusScript.setAttribute(key, value));
+  document.querySelector('#comments').appendChild(giscusScript);
+</script>
+
+  </section>
+  
+
+
+
+            </article>
+        </main>
+    </div>
+</div>
+  </div>
+
+  <div class="page-footer">
+    
+    
+    <div class="container">
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2023 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+    </div>
+    
+  </div>
+
+  
+
+
+<script src="/js/vendor-bundle.min.46271ef31da3f018e9cd1b59300aa265.js"></script>
+
+
+
+
+  
+
+  
+  
+
+  
+
+  
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+    
+    
+  
+
+
+
+
+
+
+
+
+
+
+  
+  <script id="search-hit-fuse-template" type="text/x-template">
+    <div class="search-hit" id="summary-{{key}}">
+      <div class="search-hit-content">
+        <div class="search-hit-name">
+          <div class="article-metadata search-hit-type">{{relpermalink}}</div>
+          <a href="{{relpermalink}}">{{title}}</a>
+          <p class="search-hit-description">{{snippet}}</p>
+        </div>
+      </div>
+    </div>
+  </script>
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+
+
+
+
+
+
+
+<script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+<script src="/zh/js/wowchemy.min.24983018b0e5661cd5fe1822254286ea.js"></script>
+
+
+
+
+
+
+
+  
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script src="/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+<script>
+
+var mybutton = document.getElementById("backTopBtn");
+
+
+window.onscroll = function() {scrollFunction()};
+
+function scrollFunction() {
+  if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+    mybutton.style.display = "block";
+  } else {
+    mybutton.style.display = "none";
+  }
+}
+
+
+function topFunction() {
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
+}
+</script>
+
+
+
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+<script>
+  anchors.add();
+</script>
+
+
+
+<script>
+
+
+
+(function() {
+  'use strict';
+
+  if(!document.queryCommandSupported('copy')) {
+    return;
+  }
+
+  function flashCopyMessage(el, msg) {
+    el.className = "highlight-copy-btn";
+    el.textContent = msg;
+    setTimeout(function() {
+      el.textContent = "";
+      el.className = "highlight-copy-btn fa fa-copy";
+    }, 1000);
+  }
+
+  function selectText(node) {
+    var selection = window.getSelection();
+    var range = document.createRange();
+    range.selectNodeContents(node);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    return selection;
+  }
+
+  function addCopyButton(containerEl) {
+    var copyBtn = document.createElement("button");
+    copyBtn.className = "highlight-copy-btn fa fa-copy";
+    copyBtn.textContent = "";
+
+    var codeEl = containerEl.firstElementChild;
+    copyBtn.addEventListener('click', function() {
+      try {
+        var selection = selectText(codeEl);
+        document.execCommand('copy');
+        selection.removeAllRanges();
+        
+        flashCopyMessage(copyBtn, '已复制')
+        
+      } catch(e) {
+        console && console.log(e);
+        flashCopyMessage(copyBtn, 'Failed :\'(')
+      }
+    });
+
+    containerEl.appendChild(copyBtn);
+  }
+
+  
+  var highlightBlocks = document.getElementsByClassName('highlight');
+  Array.prototype.forEach.call(highlightBlocks, addCopyButton);
+})();
+</script>
+
+
+
+<script>
+
+function Collapse(e){
+  var node = document.getElementById(e);
+  if (node.className.indexOf('fa-angle-down') > -1){
+    node.setAttribute("class", "fa-solid fa-angle-right");
+    }else{
+    node.setAttribute("class", "fa-solid fa-angle-down");
+    }
+}
+</script>
+
+
+</body>
+</html>
