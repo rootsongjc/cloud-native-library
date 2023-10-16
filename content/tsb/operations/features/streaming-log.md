@@ -1,21 +1,22 @@
 ---
-title: Streaming Service Logs
-description: Enable service streaming log to show workload logs
+title: 流式服务日志
+description: 启用服务流式日志以显示工作负载日志。
+weight: 2
 ---
 
-:::warning Alpha Feature
-Streaming service logs is an Alpha feature and is not recommended for production usage. 
-:::
+{{<callout warning "Alpha 功能">}}
+流式服务日志是一个 Alpha 功能，不建议在生产环境中使用。
+{{</callout>}}
 
-TSB has the feature to view service logs directly from the TSB UI. Using this feature you will be able to view near real time logs from applications and sidecars for troubleshooting.
+TSB 具有直接从 TSB UI 查看服务日志的功能。使用此功能，您将能够查看应用程序和 sidecar 的几乎实时日志，以进行故障排除。
 
-:::note Log Storage
-TSB **DOES NOT** store any of your logs in a storage system. Logs are streamed directly from Clusters to Management Plane. 
-:::
+{{<callout note 日志存储>}}
+TSB **不会**将任何日志存储在存储系统中。日志直接从集群流式传输到管理平面。
+{{</callout>}}
 
-## Management Plane
+## 管理平面
 
-To enable streaming service logs in the Management Plane, add `streamingLogEnabled: true` under oap components in your `ManagementPlane` CR or Helm values then apply. 
+要在管理平面中启用服务日志流式传输，请在 `ManagementPlane` CR 或 Helm 值中的 oap 组件下添加 `streamingLogEnabled: true` ，然后应用。
 
 ```yaml
 spec:
@@ -28,9 +29,9 @@ spec:
       streamingLogEnabled: true  
 ```
 
-## Control Plane
+## 控制平面
 
-For each onboarded cluster, add `streamingLogEnabled: true` under oap components in your `ControlPlane` CR or Helm values then apply.
+对于每个注册的集群，请在 `ControlPlane` CR 或 Helm 值中的 oap 组件下添加 `streamingLogEnabled: true` ，然后应用。
 
 ```yaml
 spec:
@@ -46,16 +47,16 @@ spec:
       streamingLogEnabled: true
 ```
 
-## Streaming Service Log UI
+## 流式服务日志 UI
 
-To see the service logs in the TSB UI, go to Services and select a Controlled service. A controlled service is a service that is part of the mesh and has a proxy we can configure. 
+要在 TSB UI 中查看服务日志，请转到服务并选择受控服务。受控服务是网格的一部分，并且具有我们可以配置代理的服务。
 
-You will see the Logs tab and you can select which containers you want to see the logs for, then start streaming the logs by clicking the Start button.
+您将看到 Logs 选项卡，并且可以选择要查看其日志的容器，然后单击 Start 按钮开始流式传输日志。
 
-Following image shows the service logs for a service with a sidecar. You can select up to two containers and thus will be able to see both service and sidecar log side by side.
+下图显示了具有 sidecar 的服务的服务日志。您可以选择最多两个容器，因此将能够同时查看服务和 sidecar 日志。
 
-![](../../assets/operations/streaming-log-service.png)
+![](../../../assets/operations/streaming-log-service.png)
 
-Following image shows the service log for the TSB gateway. 
+下图显示了 TSB 网关的服务日志。
 
-![](../../assets/operations/streaming-log-gateway.png)
+![](../../../assets/operations/streaming-log-gateway.png)

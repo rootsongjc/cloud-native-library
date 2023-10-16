@@ -1,37 +1,30 @@
 ---
 title: GitOps
-description: Configure GitOps for TSB resources
+description: 配置 Tetrate Service Bridge（TSB）资源的 GitOps 集成。
+weight: 7
 ---
 
-This document describes how to configure the
-[GitOps](../../knowledge_base/gitops) integration for Tetrate Service Bridge
-(TSB). 
-GitOps integration in TSB allows you to integrate with the lifecycle of
-application packaging and deployment and the different Continuous Deployment
-(CD) Systems.
+本文档描述了如何为 Tetrate Service Bridge（TSB）配置 GitOps 集成。
 
-This document assumes that you already have working knowledge of configuring
-GitOps CD systems, such as [FluxCD](https://fluxcd.io/) or
-[ArgoCD](https://argo-cd.readthedocs.io/en/stable/).
+TSB 中的 GitOps 集成允许您与应用程序打包和部署的生命周期以及不同的持续部署（CD）系统进行集成。
 
-## How it works
+本文假设您已经具备了配置 GitOps CD 系统的工作知识，例如 [FluxCD](https://fluxcd.io/) 或 [ArgoCD](https://argo-cd.readthedocs.io/en/stable/)。
 
-Once enabled in a Management Plane cluster and/or an Application cluster, the CD System will be able to apply the
-TSB configurations in it, which then will be pushed to the TSB Management Plane.
+## 工作原理
 
-![](../../assets/operations/gitops.png)
+一旦在管理平面集群和/或应用程序集群中启用了 GitOps，CD 系统将能够将 TSB 配置应用于其中，然后将其推送到 TSB 管理平面。
 
-## Enabling GitOps
- 
-The GitOps component can be configured through `ManagementPlane` or `ControlPlane` CR or Helm values for each cluster.
+![](../../../assets/operations/gitops.png)
 
-:::note
-When enabling GitOps in both Management Plane and Control Plane, if both planes are deployed in the same cluster, which usually done
-for small environments or [demo installation](../../setup/self_managed/demo-installation), only one of both planes will effectively
-being enable. Concretely, the Control Plane will be the only enabled plane. This is to avoid both planes push multiple times the same resources.
-:::
+## 启用 GitOps
 
-Both `ManagementPlane` and `ControlPlane` CR have a component called `gitops`, setting `enabled: true` is what activates GitOps for that cluster.
+可以通过 `ManagementPlane` 或 `ControlPlane` CR 或 Helm 值为每个集群配置 GitOps 组件。
+
+{{<callout note "注意">}}
+在同时在管理平面和控制平面中启用 GitOps 时，如果两个平面部署在同一个集群中（通常用于小型环境或[演示安装](../../setup/self_managed/demo-installation)），则只有两者之一会生效。具体来说，控制平面将是唯一启用的平面。这是为了避免两个平面多次推送相同的资源。
+{{</callout>}}
+
+`ManagementPlane` 和 `ControlPlane` CR 都有一个名为 `gitops` 的组件，设置 `enabled: true` 将激活该集群的 GitOps。
 
 ```yaml
 spec:
@@ -42,19 +35,15 @@ spec:
       reconcileInterval: 600s
 ```
 
-:::note
-When enabling GitOps, it is highly recommended to configure user permissions in a way
-that regular users only have READ access to the TSB configurations. This will help ensure
-that only the configured cluster service account can manage configuration.
-:::
+{{<callout note "注意">}}
+在启用 GitOps 时，强烈建议以一种配置用户权限的方式，使得普通用户只能对 TSB 配置具有读取访问权限。这将有助于确保只有配置的集群服务账户可以管理配置。
+{{</callout>}}
 
-### Enabling GitOps in the Management Plane
+### 在管理平面中启用 GitOps
 
-Following is an example of custom resource YAML that enables GitOps for a
-`demo` cluster, which Management Plane is deployed in the `tsb`
-namespace. If you use Helm, you can update `spec` section of the control plane Helm values.
+以下是一个启用了 GitOps 的演示集群的自定义资源 YAML 示例，该管理平面部署在 `tsb` 命名空间中。如果使用 Helm，可以更新控制平面 Helm 值的 `spec` 部分。
 
-```bash{promptUser: "alice"}
+```bash
 kubectl edit -n tsb managementplane/managementplane
 ```
 
@@ -67,30 +56,19 @@ spec:
       reconcileInterval: 600s
 ```
 
-Setting `enabled: true` is what activates GitOps for the Management Plane cluster.
+设置 `enabled: true` 将激活该管理平面集群的 GitOps。
 
-Every time resources are applied by the CD system to the Management Plane cluster,
-the TSB GitOps component will push them to the Management Plane. Additionally,
-there is a periodic reconciliation process that ensures the Management Plane cluster
-remains the source of truth, and periodically pushes the information in it. The
-`reconcileInterval` attribute can be used to customize the interval at which
-the background reconciliation process runs. Further details and additional configuration
-options can be found in the [GitOps component reference](../../refs/install/managementplane/v1alpha1/spec#gitops).
+每当 CD 系统将资源应用于管理平面集群时，TSB GitOps 组件将它们推送到管理平面。此外，还有一个定期的协调过程，确保管理平面集群保持作为事实的源，并定期推送其中的信息。可以使用 `reconcileInterval` 属性来自定义后台协调过程运行的间隔。可以在[GitOps 组件参考](../../refs/install/managementplane/v1alpha1/spec#gitops)中找到更多详细信息和其他配置选项。
 
-The Management Plane cluster can push the configurations to the entire organization without 
-the need to grant any special permissions once GitOps is enabled in that plane.
+管理平面集群可以将配置推送到整个组织，而无需在该平面中授予任何特殊权限，一旦在该平面启用了 GitOps。
 
-After applying the changes to the `ManagementPlane` CR, the TSB operator will
-activate the feature for the cluster and it will start reacting to the applied
-TSB K8s resources.
+在对 `ManagementPlane` CR 应用更改后，TSB 操作员将为集群激活该功能，并开始响应应用的 TSB K8s 资源。
 
-### Enabling GitOps in the Control Plane
+### 在控制平面中启用 GitOps
 
-Following is an example of custom resource YAML that enables GitOps for a
-`demo` cluster, which Control Plane is deployed in the `istio-system`
-namespace. If you use Helm, you can update `spec` section of the control plane Helm values.
+以下是一个启用了 GitOps 的演示集群的自定义资源 YAML 示例，该控制平面部署在 `istio-system` 命名空间中。如果使用 Helm，可以更新控制平面 Helm 值的 `spec` 部分。
 
-```bash{promptUser: "alice"}
+```bash
 kubectl edit -n istio-system controlplane/controlplane
 ```
 
@@ -103,44 +81,26 @@ spec:
       reconcileInterval: 600s
 ```
 
-Setting `enabled: true` is what activates GitOps for that cluster.
+设置 `enabled: true` 将激活该集群的 GitOps。
 
-Every time resources are applied by the CD system to the application cluster,
-the TSB GitOps component will push them to the Management Plane. Additionally,
-there is a periodic reconciliation process that ensures the application cluster
-remains the source of truth, and periodically pushes the information in it. The
-`reconcileInterval` attribute can be used to customize the interval at which
-the background reconciliation process runs. Further details and additional configuration
-options can be found in the [GitOps component reference](../../refs/install/controlplane/v1alpha1/spec#gitops).
+每当 CD 系统将资源应用于应用程序集群时，TSB GitOps 组件将它们推送到管理平面。此外，还有一个定期的协调过程，确保应用程序集群保持作为事实的源，并定期推送其中的信息。可以使用 `reconcileInterval` 属性来自定义后台协调过程运行的间隔。可以在[GitOps 组件参考](../../../refs/install/controlplane/v1alpha1/spec#gitops)中找到更多详细信息和其他配置选项。
 
-Unlike in the Management Plane, in order to allow the Application cluster push the configurations to the
-Management Plane, permissions need to be granted to the cluster service
-account. This can be easily done as follows:
+与在管理平面中的情况不同，在授权应用程序集群将配置推送到管理平面之前，需要授予集群服务账户权限。可以通过以下方式轻松完成：
 
-```bash{promptUser: "alice"}
+```bash
 $ tctl x gitops grant demo
 ```
 
-This will grant permission to push configurations to the entire organization.
-If you want to further constrain where the cluster service account can push
-configurations, please take a look at the command documentation:
+这将授权推送配置到整个组织。如果要进一步限制集群服务账户可以推送配置的位置，请参阅命令文档：
 
-```bash{promptUser: "alice"}
+```bash
 $ tctl x gitops grant --help
 ```
 
-After applying the changes to the `ControlPlane` CR, the TSB operator will
-activate the feature for the cluster and it will start reacting to the applied
-TSB K8s resources.
+在对 `ControlPlane` CR 应用更改后，TSB 操作员将为集群激活该功能，并开始响应应用的 TSB K8s 资源。
 
-## Monitoring GitOps health
+## 监控 GitOps 健康状况
 
-The GitOps integration provides metrics and detailed logs that can be used to monitor
-the health of the different components involved in the GitOps process:
+GitOps 集成提供了指标和详细日志，可用于监控 GitOps 进程中涉及的不同组件的健康状况：
 
-* The [GitOps metrics](../telemetry/key-metrics#gitops-operational-status) provide insights about
-  the latency experienced when sending configurations to the Management Plane, error rates, etc.
-* Both `tsb-operator-management-plane` and `tsb-operator-control-plane` provides the `gitops` logger that can be
-  [enabled at debug level](../configure_log_levels) to get detailed log messages from the different
-  components that are part of the GitOps configuration propagation.
-
+* [GitOps 指标](../../telemetry/key-metrics#gitops-operational-status)提供了在将配置发送到管理平面时经历的延迟、错误率等。

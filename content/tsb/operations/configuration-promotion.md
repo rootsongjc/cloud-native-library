@@ -1,50 +1,31 @@
 ---
-title: Configuration Promotion
-description: TSB Configuration Promotion between different instances.
+title: 配置推广
+description: 在不同实例之间进行 TSB 配置推广。
+weight: 6
 ---
 
-:::danger Source of Truth
-We do not recommend the deployment architecture outlined in this document: a
-single instance of TSB is designed to be deployed across all of your
-environments (test, qa, staging, and prod). The best practice is to deploy a
-single TSB centrally and point all of your environments at that single TSB.
-Tetrate Service Bridge's built-in controls keep your environment's configuration
-isolated and safe.
-:::
+{{<callout note 事实来源>}}
+我们不建议在本文档中概述的部署架构：TSB 的单个实例设计为在所有环境（测试、QA、暂存和生产）中部署。最佳做法是在中心位置部署单个 TSB，并将所有环境指向该单个 TSB。Tetrate Service Bridge 内置的控制保持了您环境配置的隔离和安全性。
+{{</callout>}}
 
-A few sites have deployed separate TSB instances for each environment. This
-guide exists for those sites to ensure they can set up a process to control
-configuration promotion across environments, outside TSB itself.
+一些站点已经为每个环境部署了单独的 TSB 实例。本指南的存在是为了确保这些站点能够建立一个跨环境控制配置推广的流程，不依赖于 TSB 本身。
 
-## Configuration Promotion Caveats and Advisory
+## 配置推广注意事项和建议
 
-TSB configuration mostly consists of a number of `Kubernetes Objects`, e.g. 
-`Tenant` is an object of `api.tsb.tetrate.io/v2` `Kind` and so on.
+TSB 配置主要由许多 `Kubernetes 对象` 组成，例如 `Tenant` 是 `api.tsb.tetrate.io/v2` 中的一个对象。
 
-As such, the main recommendation is to treat TSB configuration just like any
-other k8s resource definition, i.e.
+因此，主要建议是将 TSB 配置视为任何其他 Kubernetes 资源定义，例如：
 
-✓ define resources declaratively. <br />
-✓ use GitOps for resource application. <br />
-✓ use `kustomize` or similar tools for configuration templating and rendering.
+- 声明性地定义资源。
+- 使用 GitOps 进行资源应用。
+- 使用 `kustomize` 或类似工具进行配置模板化和渲染。
 
-The main caveat when it comes to applying resources from one TSB installation to
-another is the way TSB stores configuration data when calculating and evaluating
-NGAC access rules, cluster/service parameters, etc.
+在将一个 TSB 安装的资源应用到另一个 TSB 安装时的主要注意事项是在计算和评估 NGAC 访问规则、集群/服务参数等时 TSB 存储配置数据的方式。
 
-Service Bridge uses persistent storage (PostgreSQL) as the Source of Truth and
-chooses the resource's fully-qualified name as its `primary key`. As such,
-"promoting" a configuration between two independent *(not sharing the same
-persistent state)* TSB installations MUST take into account the configuration
-resource naming to avoid `primary key` conflicts.
+Tetrate Service Bridge 使用持久存储（PostgreSQL）作为事实来源，并选择资源的完全限定名称作为其 `主键`。因此，在两个独立的 TSB 安装之间“推广”配置时，必须考虑配置资源命名，以避免 `主键` 冲突。
 
-In other words, to reliably promote configuration between independent instances,
-one should:
+换句话说，要在独立的实例之间可靠地推广配置，应该：
 
-- Name all TSB resources in both instances **exactly the same**, including the
-  resource path (i.e. `Cluster`s of the same name in one instance must belong to
-  the same `Tenant` as in the other and so on).
-- Avoid imperative configuration changes (e.g. adding a `Cluster` via UI/CLI in
-  one environment and not the other), rather using declarative definitions.
-- Always have a fresh persistent storage backup to be able to quickly roll back
-  in case of data model conflicts.
+- 在两个实例中将所有 TSB 资源的命名 **完全相同**，包括资源路径（即一个实例中具有相同名称的 `Cluster` 必须属于另一个实例中相同的 `Tenant` 等等）。
+- 避免使用命令式的配置更改（例如通过 UI/CLI 在一个环境中添加一个 `Cluster` 而在另一个环境中没有），而是使用声明性的定义。
+- 始终备份最近的持久存储数据，以便在数据模型冲突的情况下能够快速回滚。

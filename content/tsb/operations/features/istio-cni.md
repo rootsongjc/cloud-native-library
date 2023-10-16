@@ -1,23 +1,16 @@
 ---
 title: Istio CNI
-description: How to configure the Istio control plane to use the Istio CNI plugin.
+description: 如何配置 Istio 控制平面以使用 Istio CNI 插件
+weight: 3
 ---
 
-By default, Istio injects sidecar proxies into application's pods in order to
-handle the traffic for the pod. These sidecars need to be privileged containers
-as they need to manipulate `iptables` rules in the pod network namespace to be
-able to intercept the traffic coming in and out the pod.
+默认情况下，Istio 会将 sidecar 代理注入到应用程序的 pod 中，以便处理该 pod 的流量。这些 sidecar 需要成为特权容器，因为它们需要在 pod 网络命名空间中操作 `iptables` 规则，以便拦截进出该 pod 的流量。
 
-This default behavior is not desirable from a security standpoint as it
-effectively grants the application pods to run with these elevated privileges.
-The alternative Istio provides to this is the use of a
-[CNI plugin](https://istio.io/docs/setup/additional-setup/cni/) that handles the
-pod network namespace modifications at pod creation time.
+从安全性的角度来看，这种默认行为并不理想，因为它实际上授予了应用程序 pod 使用这些高级权限的权限。Istio 提供的替代方案是使用 [CNI 插件](https://istio.io/docs/setup/additional-setup/cni/)，它在 pod 创建时处理 pod 网络命名空间的修改。
 
-## Enable Istio CNI in control plane
+## 在控制平面中启用 Istio CNI
 
-In order to enable the Istio CNI plugin in your control plane, you will need to
-edit the `ControlPlane` CR or Helm values to include the CNI configuration.
+为了在您的控制平面中启用 Istio CNI 插件，您需要编辑 `ControlPlane` CR 或 Helm 值，以包括 CNI 配置。
 
 ```yaml
 spec:
@@ -41,19 +34,12 @@ spec:
       version: <elastic-version>
 ```
 
-The snippet above shows the default `ControlPlane` CR with the addition of
-`spec.components.istio.kubeSpec.CNI`. This will configure the Istio control
-plane to deploy the CNI plugin following the provided configuration. 
+上述片段显示了默认的 `ControlPlane` CR，其中包含了 `spec.components.istio.kubeSpec.CNI` 的附加部分。这将配置 Istio 控制平面以部署遵循所提供配置的 CNI 插件。
 
-:::note 
-Configuration values might change depending on the Kubernetes distribution you
-use, please refer to the 
-[Istio documentation](https://istio.io/docs/setup/additional-setup/cni/) for
-more information.
-:::
+{{<callout note 注意>}}
+配置值可能会根据您使用的 Kubernetes 发行版而发生变化，请参考[Istio 文档](https://istio.io/docs/setup/additional-setup/cni/)了解更多信息。
+{{</callout>}}
 
-:::note
-Istio CNI can also be bound to a specific Istio revision, and then can be upgraded
-from one Istio revision to another. Please refer [Istio CNI Upgrades](../../setup/upgrades/cni-upgrade)
-for more information.
-:::
+{{<callout note 注意>}}
+Istio CNI 也可以绑定到特定的 Istio 修订版，然后可以从一个 Istio 修订版升级到另一个。请参考 [Istio CNI 升级](../../../setup/upgrades/cni-upgrade)了解更多信息。
+{{</callout>}}

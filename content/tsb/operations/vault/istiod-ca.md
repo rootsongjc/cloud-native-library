@@ -1,73 +1,60 @@
 ---
 title: Istio CA
-description: How to combine Vault Agent Injector with Istiod CA Certificates.
+description: 如何将 Vault Agent 注入器与 Istiod CA 证书结合使用。
 ---
 
-Before you get started, you must have:<br />
-✓ Vault 1.3.1 or newer<br />
-✓ Vault Injector 0.3.0 or newer
+在开始之前，您必须拥有：
 
-## Setup Vault
+- Vault 1.3.1 或更新版本
+- Vault 注入器 0.3.0 或更新版本
 
-Install Vault (it does not need to be installed in the Kubernetes cluster, but
-should be reachable from inside the Kubernetes cluster). The Vault Injector
-(agent-injector) must be installed into the cluster and configured to inject
-sidecars. This is automatically done by the Helm chart `v0.5.0+` which installs
-Vault `0.12+` and Vault-Injector `0.3.0+`. The example below assumes that Vault
-is installed in the `tsb` namespace.
+## 设置 Vault
 
-For more details, check the
-[Vault documentation](https://www.vaultproject.io/docs/platform/k8s/injector/installation).
+安装 Vault（它不必安装在 Kubernetes 集群中，但应该可以从 Kubernetes 集群内部访问）。必须将 Vault 注入器（agent-injector）安装到集群中，并配置以注入 sidecar。Helm chart `v0.5.0+` 会自动完成这些工作，该 Helm chart 安装了 Vault `0.12+` 和 Vault-Injector `0.3.0+`。下面的示例假定 Vault 安装在 `tsb` 命名空间中。
+
+有关更多详细信息，请参阅 [Vault 文档](https://www.vaultproject.io/docs/platform/k8s/injector/installation)。
 
 ```bash
 helm install --name=vault --set='server.dev.enabled=true'
 ```
 
-Port forward the vault service to local and set environment values to authenticate to the API
+将 Vault 服务端口转发到本地，并设置环境变量以对 API 进行身份验证
+
 ```bash
-kubectl port-forward svc/vault  8200:8200 & # this will run it in the background
+kubectl port-forward svc/vault  8200:8200 & # 这将在后台运行
 export VAULT_ADDR='http://[::]:8200'
 export VAULT_TOKEN="root"
 ```
 
-### Create a CA Certificate
+### 创建 CA 证书
 
-:::note
-If you already have your own CA certificate and/or an intermediate CA
-certificate to use with Istio, skip to
-[Adding Intermediate CA Certificate to Vault](#adding-intermediate-ca-certificate-to-vault)
-:::
+{{<callout note 注意>}}
+如果您已经有自己的 CA 证书和/或用于 Istio 的中间 CA 证书，请跳到 [将中间 CA 证书添加到 Vault](#adding-intermediate-ca-certificate-to-vault)。
+{{</callout>}}
 
-Vault has a `PKI` Secret back-end that supports creation or management of CA
-Certificates. It is recommended users create an Intermediate CA certificate for
-Istio and keep the Root CA outside of Vault. Refer to
-[the Vault documentation](https://www.vaultproject.io/docs/secrets/pki) for more
-details.
+Vault 有一个支持创建或管理 CA 证书的 `PKI` Secret 后端。建议用户使用 Vault 创建一个用于 Istio 的中间 CA 证书，并将根 CA 保留在 Vault 之外。请参考 [Vault 文档](https://www.vaultproject.io/docs/secrets/pki) 了解更多细节。
 
-Generate a self-signed root CA certificate in Vault using the Vault PKI back-end.
+使用 Vault PKI 后端在 Vault 中生成一个自签名的根 CA 证书。
 
-```bash{outputLines: 3,6,9}
-# Add audit trail in Vault
+```bash
+# 在 Vault 中添加审计跟踪
 vault audit enable file file_path=/vault/vault-audit.log
 
-# Enable PKI secret back-end
+# 启用 PKI Secret 后端
 vault secrets enable pki
 
-# Update PKI lease to 1 year
+# 更新 PKI 租约为 1 年
 vault secrets tune -max-lease-ttl=8760h pki
 
-# Create a Self Signed CA
+# 创建自签名 CA
 vault write pki/root/generate/internal common_name=tetrate.io ttl=8760h
 ```
 
-### Intermediate CA for Istio
+### 为 Istio 创建中间 CA
 
-Now that we have a CA in Vault, we use it to create an intermediate CA for
-Istio. We re-use the `pki` Secret back-end but with a new path (`istioca`).
-This time we need to get the CA Key and will call the `exported` endpoint
-instead of `internal`:
+现在我们在 Vault 中有了一个 CA，我们将其用于创建 Istio 的中间 CA。我们重复使用 `pki` Secret 后端，但使用一个新路径 (`istioca`)。这次我们需要获取 CA 密钥，并调用 `exported` 端点而不是 `internal`。
 
-```bash{outputLines: 3,6,9-26}
+```bash
 # Enable PKI in a new path for intermediate CA
 vault secrets enable --path istioca pki
 
@@ -95,16 +82,13 @@ yri2DiQWzwk3zIvzNSSbQdACPPeF90BLFW9L4xvN8D6gBxFL0wBa7GY=
 private_key_type    rsa
 ```
 
-Copy the Certificate Signing Request (CSR) into a local file `istioca.csr`
-(including the `-----BEGIN CERTIFICATE REQUEST-----` and
-`-----END CERTIFICATE REQUEST-----`).
+将证书签名请求（CSR）复制到本地文件 `istioca.csr` 中（包括 `-----BEGIN CERTIFICATE REQUEST-----` 和 `-----END CERTIFICATE REQUEST-----`）。
 
-Copy the CA Key into a local file `istioca.key`. It is advised to keep a backup
-of this key in a secure place.
+将 CA 密钥复制到本地文件 `istioca.key` 中。建议在安全的地方备份此密钥。
 
-Now we can use the Vault CA to sign the CSR:
+现在我们可以使用 Vault CA 对 CSR 进行签名：
 
-```bash{outputLines: 2-19}
+```bash
 vault write pki/root/sign-intermediate csr=@istioca.csr format=pem_bundle ttl=43800h
  
 Key              Value
@@ -126,52 +110,53 @@ d4SklUyQdxnW96IdkHSPWf46jh31tDWqco6LzmrxD4OmjSeLaf0zeErU1i41xAnW
 serial_number    18:98:2...:f5
 ```
 
-Save the `certificate` to a file named `istioca.crt`.
+将 `certificate` 保存到名为 `istioca.crt` 的文件中。
 
-### Adding Intermediate CA Certificate to Vault
+### 将中间 CA 证书添加到 Vault
 
-We now need to put the signed Intermediate CA certificate into Vault.
+现在我们需要将已签名的中间 CA 证书放入 Vault 中。
 
 ```bash
 vault write istioca/intermediate/set-signed certificate=@istioca.crt
 ```
 
-Istio will also generate certificates based on the intermediate CA certificate
-and needs both the certificate and its key. While Vault can send the certificate
-using its API, we have to take care of the key. To do so, we make a copy of the
-key inside a Vault Secret for later.
+Istio 还将基于中间 CA 证书生成证书，并需要证书及其密钥。虽然 Vault 可以通过其 API 发送证书，但我们必须注意密钥。为此，我们将密钥的副本放在 Vault Secret 中以备后用。
 
-Enable the `kv` secrets engine if not enabled already.
-```bash{outputLines: 2}
+如果尚未启用，请启用 `kv` Secrets 引擎。
+
+```bash
 vault secrets enable kv
 Success! Enabled the kv secrets engine at: kv/
 ```
-Now save the CA key in it.
+
+现在将 CA 密钥保存在其中。
 
 ```bash
 vault kv put kv/istioca ca-key.pem=@istioca.key
 ```
 
-## Configure the Vault-Injector
+## 配置 Vault-Injector
 
-Configure a Vault role that will match the Kubernetes Service Account of Istio.
-This role will be used by the Vault-Injector. In the following example, the role
-is named `istiod` and is bound to the `istiod` service account,
-`istiod-service-account`.
+配置一个与 Istio 的 Kubernetes Service Account 匹配的 Vault 角色。这个角色将被 Vault-Injector 使用。在以下示例中，角色名为 `istiod`，与 `istiod` 服务帐户 `istiod-service-account` 绑定。
 
-Enable the Kubernetes auth method:
+启用 Kubernetes 认证方法：
+
 ```bash
 vault auth enable kubernetes
 ```
-Create the named role `istiod`
-```bash{outputLines: 2-5}
+
+创建名为 `istiod` 的角色：
+
+```bash
 vault write auth/kubernetes/role/istiod \
     bound_service_account_names=istiod-service-account \
     bound_service_account_namespaces=istio-system \
     policies=istioca \
     period=600s
 ```
-Enable the `istiod-service-account` to communicate via the vault-inject container to vault
+
+启用 `istiod-service-account` 以通过 vault-inject 容器与 Vault 进行通信：
+
 ```bash
 export VAULT_SA_NAME=$(kubectl get sa -n istio-system istiod-service-account \
     --output jsonpath="{.secrets[*]['name']}")
@@ -186,16 +171,11 @@ vault write auth/kubernetes/config \
         token_reviewer_jwt="$SA_JWT_TOKEN" \
         kubernetes_host="$K8S_HOST" \
         kubernetes_ca_cert="$SA_CA_CRT"
-
 ```
 
-Create the Policy that will allow the above mentioned role to access the PKI
-Secret back-end. This Policy enables Istio to read the key/values inside the
-secret `secret/data/istioca`, where we have stored the Key of the Intermediate
-CA. It also allows Istio to access the Intermediate CA and the CA chain (by
-using `*`) and finally the Root CA.
+创建一个允许上述角色访问 PKI Secret 后端的策略。此策略使 Istio 能够读取存储了中间 CA 密钥的 `secret/data/istioca` 中的键/值。它还允许 Istio 访问中间 CA 和 CA 链（通过使用 `*`）以及根 CA。
 
-```bash{outputLines: 2-9,10-12}
+```bash
 cat > policy.hcl <<EOF
 path "kv/istioca" {
     capabilities = ["read", "list"]
@@ -210,10 +190,9 @@ EOF
 vault policy write istioca policy.hcl
 ```
 
-## Configure TSB ControlPlane CRD
+## 配置 TSB ControlPlane CRD
 
-Update your `ControlPlane` CR or Helm values and add the specific `istiod` component
-configuration to use Vault:
+更新您的 `ControlPlane` CR 或 Helm 值，并添加特定的 `istiod` 组件配置以使用 Vault：
 
 ```yaml
 spec:
@@ -258,36 +237,31 @@ spec:
               vault.hashicorp.com/secret-volume-path: /etc/cacerts-vault
 ```
 
-Here, we add an environment variable `ROOT_CA_DIR` pointing Istio to the
-directory where we create the new CA files from Vault. Then we add the
-Vault-Injector annotations to create the certificates.
+这里，我们添加了一个名为 `ROOT_CA_DIR` 的环境变量，将 Istio 指向从 Vault 创建新 CA 文件的目录。然后，我们添加了 Vault-Injector 注释以创建证书。
 
-Annotations are composed of a `secret` from Vault and a template defining how to
-create the file on the disk. We create one file per certificate component
-(certificate, key, chain and root)
+注释由来自 Vault 的 `secret` 和定义如何在磁盘上创建文件的模板组成。我们为每个证书组件创建一个文件（证书、密钥、链和根）。
 
-## Troubleshooting
+## 故障排除
 
-If something is wrong, like the `istiod` pods not starting, check in the logs:
+如果出现问题，例如 `istiod` pod 无法启动，请检查日志：
 
-#### Pod is failing during Init phase
+#### 初始化阶段 Pod 失败
 
-Check the Vault-Injector logs in the `istiod` pod:
+检查 `istiod` pod 中的 Vault-Injector 日志：
 
 ```bash
 kubectl logs -n istio-system deployment/istiod -c vault-agent-init
 ```
 
-#### Pod is failing after Init
+#### 初始化后 Pod 失败
 
 ```bash
 kubectl logs -n istio-system deployment/istiod -c vault-agent
 ```
 
-#### `istiod` process is crashing
+#### `istiod` 进程崩溃
 
-If the certificate is not working, the Vault-Injector will work but `istiod`
-will not be able to start. Check `istiod` logs:
+如果证书不起作用，Vault-Injector 将正常工作，但 `istiod` 将无法启动。检查 `istiod` 日志：
 
 ```bash
 kubectl logs -n istio-system deployment/istiod -c discovery

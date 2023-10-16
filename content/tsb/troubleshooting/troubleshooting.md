@@ -1,6 +1,6 @@
 ---
-slug: troubleshooting
 title: Basic troubleshooting
+weight: 1
 ---
 
 This document explains some possible ways to do basic troubleshooting in TSB in order to find misconfiguration issues for a given route or common causes for `50x` errors.

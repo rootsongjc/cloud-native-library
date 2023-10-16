@@ -1,19 +1,19 @@
 ---
-title: Gateway Deletion Hold Webhook
-description: How to enable gateway delete webhook to hold delete operation and allow configuration change to propagate across all clusters
+title: 网关删除保持 Webhook
+description: 如何启用网关删除保持 Webhook 以保持删除操作并允许配置更改在所有集群间传播。
+weight: 4
 ---
 
-If a gateway is deleted (e.g. during a downscaling event), remote clusters would continue to attempt to send traffic to the gateway IP address until they received an update that the gateway’s IP address was removed. This may cause `503` errors for HTTP traffic or `000` errors for passthrough cross cluster traffic.
+如果删除网关（例如在缩容事件期间），远程集群将继续尝试将流量发送到网关 IP 地址，直到它们收到网关的 IP 地址已被移除的更新为止。这可能会导致 HTTP 流量的 `503` 错误或直通跨集群流量的 `000` 错误。
 
-Since TSB 1.6, you can delay gateway deletions by a configurable period to provide sufficient time for the gateway’s IP address removal to propagate across other clusters to avoid `503` or `000` errors. Currently this feature is disabled by default.
+自 TSB 1.6 版以来，您可以通过可配置的周期来延迟网关删除，以便提供足够的时间使网关的 IP 地址移除传播到其他集群，以避免 `503` 或 `000` 错误。目前，此功能默认处于禁用状态。
 
-## Enable Gateway Deletion Hold Webhook
+## 启用网关删除保持 Webhook
 
-In order to enable a gateway deletion hold webhook in your control plane, you will need to
-edit `xcp` component in `ControlPlane` CR or Helm values and add the following environment variables:
+为了在控制平面中启用网关删除保持 Webhook，您需要编辑 `ControlPlane` CR 或 Helm 值中的 `xcp` 组件，并添加以下环境变量：
 
-1. `ENABLE_GATEWAY_DELETE_HOLD` with value set to `true`
-2. `GATEWAY_DELETE_HOLD_SECONDS`. This is optional with default is 10 seconds
+1. `ENABLE_GATEWAY_DELETE_HOLD`，将其值设置为 `true`
+2. `GATEWAY_DELETE_HOLD_SECONDS`。这是可选的，默认值为 10 秒
 
 ```yaml
 spec:
@@ -30,4 +30,4 @@ spec:
   ...
 ```
 
-This will delay gateway deletions for 20 seconds while the deleted gateway IP is removed from remote clusters.
+这将在删除的网关 IP 从远程集群中移除时延迟网关删除 20 秒。
