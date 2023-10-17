@@ -1,5 +1,5 @@
 ---
-weight: 9
+weight: 10
 title: "知识库和 FAQ"
 ---
 

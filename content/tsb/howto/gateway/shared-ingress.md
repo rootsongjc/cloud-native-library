@@ -1,49 +1,50 @@
 ---
-title: Shared Ingress Gateway
-description: How to use TSB to configure a single Ingress Gateway Deployment rather than a deployment-per-Workspace like default.
-draft: true
+title: 共享入口网关
+description: 如何使用 TSB 配置单个入口网关部署，而不是默认情况下的每个工作区部署。
+weight: 3
 ---
 
-Tetrate Service Bridge takes an opinionated stance by deploying an ingress gateway per Workspace by default. We do this to keep teams isolated, preventing shared fate outages and enabling velocity with confidence. However, in large-scale deployments, this can be prohibitive for a number of reasons -- for example too many load balancer addresses or poor utilization of Gateway pods for low-traffic apps. Therefore, TSB supports configuring shared ingress gateway _deployments_: in other words, individual application teams can still publish their own configuration, but they all configure the same instances of Envoy at runtime.
+Tetrate Service Bridge 默认情况下会为每个工作区部署一个入口网关。我们这样做是为了保持团队隔离，防止共享故障和以信心实现高速度。然而，在大规模部署中，由于诸如负载均衡器地址过多或网关 Pod 在低流量应用中利用率低等原因，这可能是不可取的。因此，TSB 支持配置共享入口网关部署：换句话说，个别应用团队仍然可以发布自己的配置，但它们在运行时都会配置相同的 Envoy 实例。
 
-[![TSB allows many teams to configure a single shared gateway deployment.](../../assets/howto/gateway/shared-gateway-deploy.png)](../../assets/howto/gateway/shared-gateway-deploy.png)
+![TSB 允许许多团队配置单个共享网关部署。](../../../assets/howto/gateway/shared-gateway-deploy.svg)
+
+## 什么是网关？
+
+在 Istio 中，"网关" 这个词有点令人困惑，因为它指的是几个不同的事物：
+
+1. 作为 Kubernetes 入口网关运行的一组 Envoy，我们将其称为 "_网关部署_"。
+2. Istio 配置资源，即 Istio 网关 API — 用于在运行时配置 _网关部署_ 的端口、协议和证书。我们将其称为 "_Istio 网关 API 资源_"。
+3. 用于配置 Kubernetes 入口的 Kubernetes 网关 API — 它与 Istio 的 _网关 API 资源_ 做相同的事情，但是是一个原生的 Kubernetes 构造。我们将其称为 "_Kubernetes 网关 API 资源_"。
+
+_网关部署_ 是一组真正运行的 Envoy，而 _Istio 网关 API 资源_ 和 _Kubernetes 网关 API 资源_ 都是运行 Envoy 的配置。
 
 
-## What's a Gateway?
+![TSB 允许将多个网关设置和网关 API 资源配置到单个网关部署中。](../../../assets/howto/gateway/gateway-deploy-vs-config.svg)
 
-The word "gateway" is confusing in Istio because it refers to a few different things:
-1. A deployment of Envoys, acting as a Kubernetes Ingress Gateway. We'll call this a "_Gateway Deployment_".
-2. An Istio configuration resource, the Istio Gateway API -- it's used to configure ports, protocols, and certificates of a _gateway deployment_ at runtime. We'll call this the "_Istio Gateway API Resource_".
-3. Kubernetes Gateway API, for configuring Kubernetes Ingress -- this does the same thing as the Istio _Gateway API Resource_ but is a Kubernetes-native construct. We'll call this the "_Kubernetes Gateway API Resource_".
+在本文中，我们只会关注 TSB 应用入口网关，而不是应用边缘网关（有关 "[_网关术语_](../../../concepts/terminology#gateway)" 和 "[_TSB 中的网关_](../../../concepts/traffic-management##gateways-in-tsb)" 的更多信息）。
 
-A _gateway deployment_ is a real set of running Envoys, while the _Istio gateway API resource_ and _Kubernetes Gateway API Resource_ are both configurations for running Envoys.
+## 在 TSB 中创建共享网关
 
+当我们配置共享网关时，我们需要做一个基本的决定：谁来管理共享网关，以及应用程序的每个配置存放在哪里？
 
+通常情况下，一个中心团队，如平台或负载均衡组拥有（共享）网关部署，而个别应用团队希望配置它们。我们将共享网关部署称为 "共享网关"，并建议将它们放在自己专用的 Kubernetes 命名空间和 TSB 工作区中。我们将分别称之为 "共享网关命名空间" 和 "共享网关工作区"。
 
-[![TSB allows a single Gateway Deployment to be configured by many Gateway Settings and Gateway API Resources](../../assets/howto/gateway/gateway-deploy-vs-config.png)](../../assets/howto/gateway/gateway-deploy-vs-config.png)
+然后我们需要决定应用程序的每个配置存放在哪里：是在共享网关命名空间中与共享网关一起，还是在应用程序的命名空间中与应用程序一起。将配置放在共享网关命名空间中意味着共享网关所有者参与配置更改，并可以帮助防止共享故障中断，但这可能会导致共享网关所有者成为所有网关更改的瓶颈，可能会影响灵活性。将配置放在应用程序的命名空间中意味着它可以像应用程序本身一样快速更改，但由于没有中央所有者审查对共享网关的更改，可能会增加由于配置错误导致的共享故障的风险。
 
-In this article, we will only focus on TSB Application Ingress Gateway, not the Application Edge Gateway (More info about "[_Gateway terminology_](../../concepts/terminology#gateway)" and "[_Gateways in TSB_](../../concepts/traffic_management##gateways-in-tsb)").
+TSB 的桥接模式——[网关组](../../../refs/tsb/gateway/v2/gateway-group)，对于使用共享网关更安全（如阻止同一主机名的多个所有者）并且使得在网格中的大多数应用程序使用共享网关变得可行。您还可以使用直连模式—— `VirtualServices`，使用原始的 Istio 配置来配置共享网关，但您需要执行规则来防止共享故障（通常通过代码审查来实现）。
 
-## Creating a Shared Gateway in TSB
+最终，大多数组织将稳定性优先于功能速度，因此我们建议将应用程序配置放在共享网关命名空间中，以便由拥有共享网关的团队进行审查。
+## 部署 `httpbin` 服务
 
-When we configure a shared gateway, there's a fundamental decision we need to make: who manages the shared gateway, and where does the per-application configuration live?
+请按照[此文档中的说明](../../../reference/samples/httpbin)创建 `httpbin` 服务。完成该文档中的所有步骤。
 
-Usually, a central team, like the platform or load balancing group owns the (shared) gateway deployments which individual app teams want to configure. We call shared gateway deployments a "shared gateway" and recommend putting them in their own dedicated Kubernetes Namespace and TSB Workspace. We'll call these the "Shared Gateway Namespace" and "Shared Gateway Workspace" respectively.
+## 部署共享网关
 
-Then we need to decide where the per-application configuration lives: in the shared gateway namespace alongside the shared gateway itself, or the application's namespace alongside the application. Putting the configuration in the shared gateway namespace means the shared gateway owners are involved in configuration changes and can help prevent shared-fate outages -- at the cost of the shared gateway owners becoming a bottleneck for all gateway changes, potentially costing agility. Putting the configuration in the application's namespace means it can change as rapidly as the application itself, but increases the risk of shared-fate outages due to misconfiguration because there's not a central owner reviewing changes to the shared gateway.
+要部署共享网关，我们需要在 TSB 中创建一个工作区来托管我们的共享网关，以及为使用共享网关的应用程序创建工作区。
 
-TSB's Bridge Mode -- [Gateway Groups](../../refs/tsb/gateway/v2/gateway_group) -- encode rules that make it safer to use shared gateways (like preventing multiple owners of the same hostname), and make it tractable to use shared gateways for most applications in your mesh. You can also use Direct Mode -- `VirtualServices` -- to configure shared gateways with raw Istio configuration, but you'll need to enforce rules to prevent shared fate outages yourself (usually via code review)
+### TSB 设置
+首先，我们将创建一个 TSB 租户来保存我们的共享入口示例；在实际部署中，您可以使用现有的租户或为这类用途创建一个共享基础设施租户：
 
-Ultimately most organizations prioritize uptime over feature velocity, so we recommend housing application configuration in the shared gateway namespace, where it can be reviewed by the team that owns the shared gateway.
-## Deploy `httpbin` Service
-
-Follow [the instructions in this document](../../reference/samples/httpbin) to create the `httpbin` service. Complete all steps in that document.
-
-## Deploy the Shared Gateway
-To deploy a shared Gateway we'll need a Workspace in TSB to host our shared gateway, as well as Workspaces for our applications using the shared gateway.
-
-### TSB Setup
-First, we'll create a TSB Tenant to hold our shared ingress example; in a real deployment you'd use your existing Tenant or create a shared-infrastructure Tenant for these kinds of uses:
 
 ```yaml
 apiversion: api.tsb.tetrate.io/v2
@@ -56,7 +57,7 @@ spec:
   description: Tenant for the Shared Ingress example
 ```
 
-Then we'll create a Workspace and Group for our shared ingress:
+然后我们将为我们的共享入口创建一个工作区和组：
 ```yaml
 apiversion: api.tsb.tetrate.io/v2
 kind: Workspace
@@ -84,10 +85,11 @@ spec:
     names:
       - "*/shared-ingress-ns"
 ```
-`tctl apply` all of these files.
+`tctl apply` 所有这些文件。
 
-### Per Shared Gateway Instance
-Finally we'll deploy the shared gateway itself:
+### 每个共享网关实例
+
+最后我们部署共享网关本身：
 ```yaml
 apiVersion: install.tetrate.io/v1alpha1
 kind: IngressGateway
@@ -99,43 +101,48 @@ spec:
     service:
       type: LoadBalancer
 ```
-You'll need to `kubectl apply` this file in every cluster you want to host a shared ingress gateway deployment.
 
+您需要在要托管共享入口网关部署的每个集群中运行 `kubectl apply` 命令来应用此文件。
 
-## Configure the Shared Gateway
+## 配置共享网关
 
-Now we can proceed to configure the shared gateway deployment by _either_:
-- [Publish Configuration in the Shared Gateway Workspace](#publish-configuration-in-the-shared-gateway-workspace)
+现在我们可以继续配置共享网关部署，可以通过以下方式之一完成：
 
-_or_
-- [Publish Configuration in the App Workspace](#publish-configuration-in-the-app-workspace)
+- 在共享网关工作区中发布配置
 
-In both cases, all the magic in the `workloadSelector` we use to target the Gateway. In the App Workspace case we _also_ need a little extra configuration on our Gateway Deployment.
+或者
 
-:::danger For best results, don't mix Bridged and Direct Mode on the same Shared Gateway
-TSB's Bridged Mode helps ensure configuration from different teams is isolated, mitigating commonly shared fate outages. But TSB cannot provide the same guarantees for Direct Mode configuration. TSB supports both Bridged and Direct Mode configuration targeting the same shared gateway, but can't ensure all of Bridge Mode safety guarantees when you do. Therefore, we recommend that teams using Bridged Mode use a separate shared gateway deployment than teams using Direct Mode, to help isolate them from Direct Mode Istio configuration and let them fully benefit from TSB's Bridge Mode safety guarantees.
-:::
-## Publish Configuration in the Shared Gateway Workspace
-The shared gateway configuration for any given application will be applied in the __shared gateway Workspace__
+- 在应用程序工作区中发布配置
 
-:::note Where to store the TLS certificates
-For TLS enabled application, shared-gateway will need a certificate applied in the same namespace as the shared-gateway
-:::
+在这两种情况下，我们都会使用 `workloadSelector` 来定位网关。在应用程序工作区的情况下，我们还需要在网关部署上进行一些额外的配置。
 
-Here is the example of creating the secret that we will use in the following examples
+{{<callout "warning" "为获得最佳效果，请勿在同一个共享网关上混合使用桥接模式和直连模式">}}
+TSB 的桥接模式有助于确保来自不同团队的配置被隔离，从而减轻了常见的共享命运故障。但 TSB 无法为直连模式配置提供相同的保证。TSB 支持在针对同一个共享网关时同时使用桥接模式和直连模式配置，但无法在这样做时保证桥接模式的所有安全保证。因此，我们建议使用桥接模式的团队使用单独的共享网关部署，而使用直连模式的团队则与直连模式的 Istio 配置隔离开来，从而充分受益于 TSB 桥接模式的安全保证。
+{{</callout>}}
 
-```
+## 在共享网关工作区中发布配置
+对于任何给定应用程序，其共享网关配置将应用于 __共享网关工作区__。
+
+{{<callout note "存储 TLS 证书的位置">}}
+对于启用了 TLS 的应用程序，共享网关将需要在与共享网关相同的命名空间中应用证书。
+{{</callout>}}
+
+以下是创建我们将在接下来的示例中使用的 secret 的示例：
+
+```bash
 kubectl -n shared-ingress-ns create secret tls httpbin-certs \
   --key certs/httpbin.key \
   --cert certs/httpbin.crt
 ```
 
-Choose *one* method to configure application ingress via the shared gateway:
-- [Bridged Mode via the IngressGateway](#bridge-configure-with-ingressgateway)
-- [Direct Mode via Istio Gateway and VirtualService](#direct-configure-with-virtualservices)
+选择 *一种* 方法来通过共享网关配置应用程序入口：
 
-### Bridge: Configure with IngressGateway
-We can configure an `IngressGateway` in TSB to route the traffic from our shared gateway to our application:
+- 通过 IngressGateway 进行桥接模式配置
+- 通过 Istio Gateway 和 VirtualService 进行直连模式配置
+
+### 通过 IngressGateway 进行桥接模式配置
+我们可以在 TSB 中配置一个 `IngressGateway`，以将流量从共享网关路由到我们的应用程序：
+
 
 ```yaml
 apiVersion: gateway.tsb.tetrate.io/v2
@@ -168,9 +175,9 @@ spec:
         route:
           host: httpbin/httpbin.httpbin.svc.cluster.local
 ```
-`tctl apply` the config above to enable routing of `httpbin.tetrate.com` to the `httpbin` service via the shared gateway.
+请运行 `tctl apply` 命令来应用上述配置，从而通过共享网关实现对 `httpbin.tetrate.com` 到 `httpbin` 服务的路由。
 
-You can use the following command to send some traffic to our httpbin to validate the TSB config.
+您可以使用以下命令发送一些流量到我们的 httpbin 以验证 TSB 配置。
 
 
 ```bash
@@ -178,8 +185,10 @@ export GATEWAY_IP=$(kubectl -n shared-ingress-ns get service shared-gateway -o j
 curl -k --resolve httpbin.tetrate.com:443:$GATEWAY_IP https://httpbin.tetrate.com/
 ```
 
-### Direct: Configure with VirtualServices
-We can configure the shared gateway via Istio configuration directly as well, by creating a `Gateway` and `VirtualService`. In many environments the `Gateway` will be administered by the central team and you'll only need to publish the `VirtualService` -- you can check by doing a `kubectl get gateway --namespace shared-ingress-ns`:
+### 直接模式：使用 VirtualServices 配置
+
+我们也可以通过 Istio 配置直接配置共享网关，方法是创建一个 `Gateway` 和一个 `VirtualService`。在许多环境中，`Gateway` 将由中央团队管理，您只需要发布 `VirtualService` -- 您可以通过运行 `kubectl get gateway --namespace shared-ingress-ns` 来进行检查：
+
 ```yaml
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
@@ -230,9 +239,9 @@ spec:
       - destination:
           host: httpbin.httpbin
 ```
-`tctl apply` the config above to enable routing of `httpbin.tetrate.com` to the `httpbin` service via the shared gateway.
+请运行 `tctl apply` 上述命令以应用配置，从而通过共享网关实现对 `httpbin.tetrate.com` 到 `httpbin` 服务的路由。
 
-You can use the following command to send some traffic to our httpbin to validate the TSB config.
+您可以使用以下命令发送一些流量到我们的 httpbin 以验证 TSB 配置。
 
 
 ```bash
@@ -240,21 +249,24 @@ export GATEWAY_IP=$(kubectl -n shared-ingress-ns get service shared-gateway -o j
 curl -k --resolve httpbin.tetrate.com:443:$GATEWAY_IP https://httpbin.tetrate.com/
 ```
 
-## Publish Configuration in the App Workspace
-To enable cross-namespace Gateway configuration -- which we use here to allow applications to configure the shared gateway from their own namespace -- we need to update the shared gateway deployment to receive configuration from other namespaces:
+## 在应用工作区中发布配置
 
-:::note Where to store the TLS certificates
-We configure the gateway objects in the App workspace, but we will still need to store the certificate in the shared ingress namespace since the ingress pods still live in shared-ingress namespace
-:::
+要启用跨命名空间的网关配置（我们在这里使用它允许应用程序从其自己的命名空间配置共享网关），我们需要更新共享网关部署以接收来自其他命名空间的配置。
 
-Here is the example of creating the secret that we will use in the following examples
+{{<callout note "存储 TLS 证书的位置">}}
+我们在应用工作区中配置网关对象，但我们仍然需要将证书存储在共享入口命名空间中，因为入口 pod 仍然驻留在共享入口命名空间中
+{{</callout>}}
 
-```
+以下是我们将在接下来的示例中使用的创建密钥的示例：
+
+```bash
 kubectl -n shared-ingress-ns create secret tls httpbin-certs \
   --key certs/httpbin.key \
   --cert certs/httpbin.crt
 ```
-Since TSB by default use the ingress gateway per Workspace approach we need to apply the overlay. Istio will discover the gateway object from app workspace, not just from the shared-ingress namespace   
+
+由于 TSB 默认使用基于工作区的入口网关方法，我们需要应用该覆盖。Istio 将从应用程序工作区中发现网关对象，而不仅仅是从共享入口命名空间中发现。
+
 ````yaml
 apiVersion: install.tetrate.io/v1alpha1
 kind: ControlPlane
@@ -274,11 +286,11 @@ spec:
             value:
               name: PILOT_SCOPE_GATEWAY_TO_NAMESPACE
               value: "false"
-
 ````
 
-#### TSB Setup
-Usually, application teams will already have their own Workspace in Kubernetes. In this case, continuing the [`httpbin` example](../../reference/samples/httpbin), we'll assume the application is deployed into the `httpbin` namespace. As a result, we have the `httpbin` Workspace to house our configuration:
+#### TSB 设置
+
+通常，应用团队将在 Kubernetes 中拥有自己的工作区。在这种情况下，继续 [`httpbin` 示例](../../../reference/samples/httpbin)，我们假设该应用部署在 `httpbin` 命名空间中。因此，我们有了 `httpbin` 工作区来存储我们的配置：
 
 ```yaml
 apiversion: api.tsb.tetrate.io/v2
@@ -294,17 +306,20 @@ spec:
       - "*/httpbin"
 ```
 
-`tctl apply` the config above to make sure the Workspace exists for our example application.
+请运行 `tctl apply` 上述命令以确保示例应用的工作区存在。
 
-#### Configure Routing
-With cross-namespace discovery enabled for our Gateway, configuring it is identical to the steps above, except all of our configuration is published into the app namespace rather than the shared gateway namespace (`shared-ingress-ns`).
+#### 配置路由
 
-Choose *one* method to configure application ingress via the shared gateway:
-- [Bridged Mode via the IngressGateway](#publish-configuration-in-the-app-workspace-bridge-configure-with-ingressgateway)
-- [Direct Mode via Istio Gateway and VirtualService](#publish-configuration-in-the-app-workspace-direct-configure-with-virtualservices)
+启用了我们网关的跨命名空间发现后，配置方式与上述步骤完全相同，唯一的区别是我们的所有配置都发布到应用命名空间中，而不是共享网关命名空间 (`shared-ingress-ns`)。
 
-### Bridge: Configure with IngressGateway
-We can configure our shared gateway via a IngressGateway object identically to the [IngressGateway in the Shared Gateway Workspace](#bridge-configure-with-ingressgateway), just updating `metadata` to the application's Workspace and Group:
+请选择以下一种方法来通过共享网关配置应用程序入口：
+
+- 通过 IngressGateway 使用 Bridged 模式
+- 通过 Istio Gateway 和 VirtualService 使用 Direct 模式
+
+### 使用 IngressGateway 进行 Bridged 模式配置
+
+我们可以通过在 TSB 中配置一个 `IngressGateway` 来将流量从共享网关路由到我们的应用程序：
 
 ```yaml
 # Ensure we have a GatewayGroup to hang our config on
@@ -351,9 +366,9 @@ spec:
         route:
           host: httpbin/httpbin.httpbin.svc.cluster.local
 ```
-`tctl apply` the config above to enable routing of `httpbin.tetrate.com` to the `httpbin` service via the shared gateway.
+请运行 `tctl apply` 上述命令以应用配置，从而通过共享网关实现对 `httpbin.tetrate.com` 到 `httpbin` 服务的路由。
 
-You can use the following command to send some traffic to our httpbin to validate the TSB config.
+您可以使用以下命令发送一些流量到我们的 httpbin 以验证 TSB 配置。
 
 
 ```bash
@@ -361,8 +376,10 @@ export GATEWAY_IP=$(kubectl -n shared-ingress-ns get service shared-gateway -o j
 curl -k --resolve httpbin.tetrate.com:443:$GATEWAY_IP https://httpbin.tetrate.com/
 ```
 
-### Direct: Configure with VirtualServices
-We can configure our shared gateway via an Istio Gateway and VirtualService identically to the [Gateway and VirtualService in the Shared Gateway Workspace](#direct-configure-with-virtualservices), just updating `metadata` to the application's namespace:
+### 使用 VirtualServices 进行 Direct 模式配置
+
+我们也可以通过 Istio 配置直接配置共享网关，方法是创建一个 `Gateway` 和一个 `VirtualService`。在许多环境中，`Gateway` 将由中央团队管理，您只需要发布 `VirtualService`：
+
 ```yaml
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
@@ -413,9 +430,9 @@ spec:
       - destination:
           host: httpbin.httpbin
 ```
-`tctl apply` the config above to enable routing of `httpbin.tetrate.com` to the `httpbin` service via the shared gateway.
+请运行上述命令以应用配置，从而通过共享网关实现对 `httpbin.tetrate.com` 到 `httpbin` 服务的路由。
 
-You can use the following command to send some traffic to our httpbin to validate the TSB config.
+您可以使用以下命令发送一些流量到我们的 httpbin 以验证 TSB 配置。
 
 
 ```bash
