@@ -21,7 +21,7 @@
     &lt;p&gt;事实来源&lt;/p&gt;
 &lt;/div&gt;
 &lt;div class=&#34;alert alert-note&#34;&gt;
-    我们不建议在本文档中概述的部署架构：TSB 的单个实例设计为在所有环境（测试、QA、暂存和生产）中部署。最佳做法是在中心位置部署单个 TSB，并将所有环境指向该单个 TSB。Tetrate Service Bridge 内置的控制保持了您环境配置的隔离和安全性。
+    我们不建议在本文档中概述的部署架构：TSB 的单个实例设计为在所有环境（测试、QA、暂存和生产）中部署。最佳做法是在中心位置部署单个 TSB，并将所有环境指向该单个 TSB。Tetrate Service Bridge 内置的控制保持了你环境配置的隔离和安全性。
 &lt;/div&gt;
 
 &lt;p&gt;一些站点已经为每个环境部署了单独的 TSB 实例。本指南的存在是为了确保这些站点能够建立一个跨环境控制配置推广的流程，不依赖于 TSB 本身。&lt;/p&gt;
@@ -57,14 +57,14 @@
     本文档仅适用于 TSB 版本 &amp;lt;= &lt;code&gt;1.4.x&lt;/code&gt;。
 &lt;/div&gt;
 
-&lt;p&gt;在开始之前，请确保您已经完成了以下工作：&lt;/p&gt;
+&lt;p&gt;在开始之前，请确保你已经完成了以下工作：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;熟悉 &lt;a href=&#34;../../concepts/&#34;&gt;TSB 概念&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;安装了 TSB 环境。您可以使用 &lt;a href=&#34;../../setup/requirements-and-download&#34;&gt;TSB 演示&lt;/a&gt; 进行快速安装&lt;/li&gt;
-&lt;li&gt;完成了 &lt;a href=&#34;../../quickstart&#34;&gt;TSB 使用快速入门&lt;/a&gt;。本文假设您已经创建了租户并熟悉了工作区和配置组。另外，您需要将 tctl 配置到 TSB 环境&lt;/li&gt;
+&lt;li&gt;安装了 TSB 环境。你可以使用 &lt;a href=&#34;../../setup/requirements-and-download&#34;&gt;TSB 演示&lt;/a&gt; 进行快速安装&lt;/li&gt;
+&lt;li&gt;完成了 &lt;a href=&#34;../../quickstart&#34;&gt;TSB 使用快速入门&lt;/a&gt;。本文假设你已经创建了租户并熟悉了工作区和配置组。另外，你需要将 tctl 配置到 TSB 环境&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;../../reference/samples/httpbin#deploy-the-httpbin-pod-and-service&#34;&gt;安装 httpbin&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;当您发出删除请求来删除 Kubernetes 集群中的一个 pod 时，将发送 SIGTERM 给该 pod 中的所有容器。如果 pod 中仅包含一个容器，则它将接收到 SIGTERM 并进入终止状态。
+&lt;p&gt;当你发出删除请求来删除 Kubernetes 集群中的一个 pod 时，将发送 SIGTERM 给该 pod 中的所有容器。如果 pod 中仅包含一个容器，则它将接收到 SIGTERM 并进入终止状态。
 然而，如果 pod 包含一个 sidecar（在我们的情况下是一个 &lt;code&gt;istio-proxy&lt;/code&gt; sidecar），则不能自动保证主应用程序在 sidecar 之前终止。&lt;/p&gt;
 &lt;p&gt;如果在应用程序之前终止了 &lt;code&gt;istio-proxy&lt;/code&gt; sidecar，可能会发生以下问题：&lt;/p&gt;
 &lt;ol&gt;
@@ -73,9 +73,9 @@
 &lt;/ol&gt;
 &lt;p&gt;虽然有一个&lt;a href=&#34;https://github.com/kubernetes/enhancements/tree/master/keps/sig-node/753-sidecar-containers&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;针对此问题的提案 KEP&lt;/a&gt;，但目前没有直接的方法告诉 Kubernetes 在 sidecar 之前终止应用程序。&lt;/p&gt;
 &lt;p&gt;但是，可以通过配置 &lt;a href=&#34;https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;drainDuration&lt;/code&gt;&lt;/a&gt; 参数来解决此问题。此配置参数控制底层的 &lt;code&gt;envoy&lt;/code&gt; 代理在完全终止之前排空正在进行的连接的时间。&lt;/p&gt;
-&lt;p&gt;要利用 &lt;code&gt;drainDuration&lt;/code&gt; 参数，您需要在容器 sidecar 和 TSB 网关中都对其进行配置。&lt;/p&gt;
+&lt;p&gt;要利用 &lt;code&gt;drainDuration&lt;/code&gt; 参数，你需要在容器 sidecar 和 TSB 网关中都对其进行配置。&lt;/p&gt;
 &lt;h2 id=&#34;为-istio-proxy-容器配置-drainduration-时间&#34;&gt;为 &lt;code&gt;istio-proxy&lt;/code&gt; 容器配置 &lt;code&gt;drainDuration&lt;/code&gt; 时间&lt;/h2&gt;
-&lt;p&gt;您需要向 &lt;code&gt;ControlPlane&lt;/code&gt; CR 或 Helm 值应用一个 overlay 来设置 &lt;code&gt;drainDuration&lt;/code&gt;。考虑以下示例。注意，只显示了适用部分 &amp;ndash; 您很可能需要为控制平面配置更多内容。&lt;/p&gt;
+&lt;p&gt;你需要向 &lt;code&gt;ControlPlane&lt;/code&gt; CR 或 Helm 值应用一个 overlay 来设置 &lt;code&gt;drainDuration&lt;/code&gt;。考虑以下示例。注意，只显示了适用部分 &amp;ndash; 你很可能需要为控制平面配置更多内容。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; 
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;components&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -93,12 +93,12 @@
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -f controlplane.yaml
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果使用 Helm，可以更新控制平面 Helm 值的 &lt;code&gt;spec&lt;/code&gt; 部分，然后执行 &lt;code&gt;helm upgrade&lt;/code&gt;。&lt;/p&gt;
 &lt;h2 id=&#34;验证-drainduration&#34;&gt;验证 &lt;code&gt;drainDuration&lt;/code&gt;&lt;/h2&gt;
-&lt;p&gt;必须重新启动具有 &lt;code&gt;istio-proxy&lt;/code&gt; 的工作负载，以使 &lt;code&gt;drainDuration&lt;/code&gt; 生效。一旦重新启动了工作负载，您可以通过检查 &lt;code&gt;envoy&lt;/code&gt; 的配置转储来验证它：&lt;/p&gt;
+&lt;p&gt;必须重新启动具有 &lt;code&gt;istio-proxy&lt;/code&gt; 的工作负载，以使 &lt;code&gt;drainDuration&lt;/code&gt; 生效。一旦重新启动了工作负载，你可以通过检查 &lt;code&gt;envoy&lt;/code&gt; 的配置转储来验证它：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl &lt;span class=&#34;nb&#34;&gt;exec&lt;/span&gt; helloworld-v1-59fdd6b476-pjrtr -n helloworld -c istio-proxy -- pilot-agent request GET config_dump &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;grep -i drainDuration
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;       &lt;span class=&#34;s2&#34;&gt;&amp;#34;drainDuration&amp;#34;&lt;/span&gt;: &lt;span class=&#34;s2&#34;&gt;&amp;#34;50s&amp;#34;&lt;/span&gt;,
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;为-tsb-网关配置-drainduration&#34;&gt;为 TSB 网关配置 &lt;code&gt;drainDuration&lt;/code&gt;&lt;/h2&gt;
-&lt;p&gt;如果您使用的是 TSB 网关（例如 &lt;code&gt;IngressGateway&lt;/code&gt;、&lt;code&gt;EgressGateway&lt;/code&gt; 或 &lt;code&gt;Tier1Gateway&lt;/code&gt;），则需要使用 &lt;code&gt;connectionDrainDuration&lt;/code&gt; 参数配置适当的网关类型。&lt;/p&gt;
-&lt;p&gt;您可以通过发出以下命令来查询网关自定义资源上的 &lt;code&gt;connectionDrainDuration&lt;/code&gt; 字段的当前值：&lt;/p&gt;
+&lt;p&gt;如果你使用的是 TSB 网关（例如 &lt;code&gt;IngressGateway&lt;/code&gt;、&lt;code&gt;EgressGateway&lt;/code&gt; 或 &lt;code&gt;Tier1Gateway&lt;/code&gt;），则需要使用 &lt;code&gt;connectionDrainDuration&lt;/code&gt; 参数配置适当的网关类型。&lt;/p&gt;
+&lt;p&gt;你可以通过发出以下命令来查询网关自定义资源上的 &lt;code&gt;connectionDrainDuration&lt;/code&gt; 字段的当前值：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl get ingress helloworld-gateway  -n helloworld -oyaml &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep connectionDrainDuration:
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  connectionDrainDuration: 22s
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;以下示例显示了如何设置 &lt;code&gt;connectionDrainDuration&lt;/code&gt;。请阅读规范以获取有关此字段的更多信息。&lt;/p&gt;
@@ -110,10 +110,10 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;connectionDrainDuration&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;10s&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c&#34;&gt;#  ... &amp;lt;snip&amp;gt; ...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;在-tsb-网关中验证-drainduration&#34;&gt;在 TSB 网关中验证 &lt;code&gt;drainDuration&lt;/code&gt;&lt;/h2&gt;
-&lt;p&gt;要检查在 pod 上设置的 &lt;code&gt;drainDuration&lt;/code&gt; 值，您可以查询环境变量：&lt;/p&gt;
+&lt;p&gt;要检查在 pod 上设置的 &lt;code&gt;drainDuration&lt;/code&gt; 值，你可以查询环境变量：&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bash{pomptUser:&#34; data-lang=&#34;bash{pomptUser:&#34;&gt;kubectl describe po helloworld-gateway-7d5d4c8d57-msfd6 -n helloworld | grep -i DRAIN
       TERMINATION_DRAIN_DURATION_SECONDS:  22
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;您还可以在终止网关时查看网关 pod 的日志来验证此值。如果在终止网关 pod 时观察日志，您应该会看到类似以下的消息：&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;你还可以在终止网关时查看网关 pod 的日志来验证此值。如果在终止网关 pod 时观察日志，你应该会看到类似以下的消息：&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2022-03-29T06:02:50.423789Z     info    Graceful termination period is 22s, starting...
 2022-03-29T06:03:12.423988Z     info    Graceful termination period complete, terminating remaining proxies.
 &lt;/code&gt;&lt;/pre&gt;</description>
