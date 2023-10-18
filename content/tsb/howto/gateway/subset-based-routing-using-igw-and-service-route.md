@@ -185,7 +185,7 @@ spec:
 kubectl apply -f helloworld-ingress.yaml
 ```
 
-获取网关IP：
+获取网关 IP：
 
 ```bash
 export GATEWAY_IP=$(kubectl -n helloworld get service tsb-helloworld-gateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
@@ -194,7 +194,7 @@ echo $GATEWAY_IP
 
 ## 网关证书
 
-在本例中，你将在网关处使用简单的TLS公开应用程序。你需要为它提供一个存储在Kubernetes密钥中的TLS证书：
+在本例中，你将在网关处使用简单的 TLS 公开应用程序。你需要为它提供一个存储在 Kubernetes 密钥中的 TLS 证书：
 
 ```bash
 kubectl create secret tls -n helloworld helloworld-cert \
@@ -310,7 +310,7 @@ tctl apply -f helloworld-header-based-routing-service-route.yaml
 
 ###  带标头的请求
 
-发送带有标头 `end-user: jason` 的连续curl请求。流量将以 80:20 的比例在 `v1` 和 `v2` 之间路由。
+发送带有标头 `end-user: jason` 的连续 curl 请求。流量将以 80:20 的比例在 `v1` 和 `v2` 之间路由。
 
 ```bash
 for i in {1..20}; do curl -k "https://helloworld.tetrate.com/hello" \

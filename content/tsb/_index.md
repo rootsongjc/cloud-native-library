@@ -70,7 +70,7 @@ cascade:
 3. [应用程序板载集群](./setup/self-managed/onboarding-clusters)
 4. [部署和配置入口代理](./quickstart/ingress-gateway)
 5. [了解证书要求](./setup/certificate/certificate-requirements)
-6. [ 升级TSB版本](./setup/self-managed/upgrade)
+6. [ 升级 TSB 版本](./setup/self-managed/upgrade)
 7. [管理 TSB ImagePullSecret](./setup/remote-registry)
 8. [将 GitOps 与服务网格结合使用](./knowledge-base/gitops)
 9. [监控配置状态](./troubleshooting/configuration-status)

@@ -3,7 +3,7 @@ title: Istio CA
 description: 如何将 Vault Agent 注入器与 Istiod CA 证书结合使用。
 ---
 
-在开始之前，您必须拥有：
+在开始之前，你必须拥有：
 
 - Vault 1.3.1 或更新版本
 - Vault 注入器 0.3.0 或更新版本
@@ -29,7 +29,7 @@ export VAULT_TOKEN="root"
 ### 创建 CA 证书
 
 {{<callout note 注意>}}
-如果您已经有自己的 CA 证书和/或用于 Istio 的中间 CA 证书，请跳到 [将中间 CA 证书添加到 Vault](#adding-intermediate-ca-certificate-to-vault)。
+如果你已经有自己的 CA 证书和/或用于 Istio 的中间 CA 证书，请跳到 [将中间 CA 证书添加到 Vault](#adding-intermediate-ca-certificate-to-vault)。
 {{</callout>}}
 
 Vault 有一个支持创建或管理 CA 证书的 `PKI` Secret 后端。建议用户使用 Vault 创建一个用于 Istio 的中间 CA 证书，并将根 CA 保留在 Vault 之外。请参考 [Vault 文档](https://www.vaultproject.io/docs/secrets/pki) 了解更多细节。
@@ -192,7 +192,7 @@ vault policy write istioca policy.hcl
 
 ## 配置 TSB ControlPlane CRD
 
-更新您的 `ControlPlane` CR 或 Helm 值，并添加特定的 `istiod` 组件配置以使用 Vault：
+更新你的 `ControlPlane` CR 或 Helm 值，并添加特定的 `istiod` 组件配置以使用 Vault：
 
 ```yaml
 spec:

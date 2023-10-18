@@ -1,50 +1,50 @@
 ---
 weight: 1
 title: "统一网关"
-description: "本文介绍了Tetrate Service Bridge（TSB）生态系统中统一网关的概念，解释了其重要性，并提供了详细的使用场景。"
+description: "本文介绍了 Tetrate Service Bridge（TSB）生态系统中统一网关的概念，解释了其重要性，并提供了详细的使用场景。"
 ---
 
-本文介绍了Tetrate Service Bridge（TSB）生态系统中统一网关的概念，解释了其重要性，并提供了详细的使用场景。
+本文介绍了 Tetrate Service Bridge（TSB）生态系统中统一网关的概念，解释了其重要性，并提供了详细的使用场景。
 
 ## 简介
 
-统一网关是在TSB 1.7.0中引入的关键功能，它将[Tier1Gateway](https://docs.tetrate.io/service-bridge/next/refs/tsb/gateway/v2/tier1_gateway)和[IngressGateway](https://docs.tetrate.io/service-bridge/next/refs/tsb/gateway/v2/ingress_gateway)的功能合并到一个称为[Gateway](https://docs.tetrate.io/service-bridge/next/refs/tsb/gateway/v2/gateway)的公共资源中。这种统一简化了网关管理过程，并提供了更一致的体验。
+统一网关是在 TSB 1.7.0 中引入的关键功能，它将[Tier1Gateway](https://docs.tetrate.io/service-bridge/next/refs/tsb/gateway/v2/tier1_gateway)和[IngressGateway](https://docs.tetrate.io/service-bridge/next/refs/tsb/gateway/v2/ingress_gateway)的功能合并到一个称为[Gateway](https://docs.tetrate.io/service-bridge/next/refs/tsb/gateway/v2/gateway)的公共资源中。这种统一简化了网关管理过程，并提供了更一致的体验。
 
-从TSB 1.7.0开始，Tier1Gateway和IngressGateway资源将被弃用，我们强烈建议使用Gateway资源满足你的所有网关需求。前Tier1 Gateway现在将被统称为[Edge Gateway](https://docs.tetrate.io/service-bridge/next/concepts/glossary/#edge-gateway)。
+从 TSB 1.7.0 开始，Tier1Gateway 和 IngressGateway 资源将被弃用，我们强烈建议使用 Gateway 资源满足你的所有网关需求。前 Tier1 Gateway 现在将被统称为[Edge Gateway](https://docs.tetrate.io/service-bridge/next/concepts/glossary/#edge-gateway)。
 
-统一网关选项卡无缝集成到TSB UI中，使得任何网关的配置都变得容易，不管它是作为Tier 1还是Tier 2网关工作。
+统一网关选项卡无缝集成到 TSB UI 中，使得任何网关的配置都变得容易，不管它是作为 Tier 1 还是 Tier 2 网关工作。
 
 ![TSB UI 中的 Unified Gateway](../../../assets/howto/gateway/unified-gateway.png)
 
 ## 为什么需要统一网关？
 
-在我们的旅程早期，我们认识到我们的客户对集群特定（Tier 2）和跨云供应商（Tier1）网关有不同的需求。因此，我们开发了不同的网关解决方案来满足这些不同的需求。然而，随着我们的Gateway API的发展和客户需求变得更加复杂，我们不断增强Tier1网关的能力的需求变得明显。
+在我们的旅程早期，我们认识到我们的客户对集群特定（Tier 2）和跨云供应商（Tier1）网关有不同的需求。因此，我们开发了不同的网关解决方案来满足这些不同的需求。然而，随着我们的 Gateway API 的发展和客户需求变得更加复杂，我们不断增强 Tier1 网关的能力的需求变得明显。
 
-这种发展带来了挑战——持续的工程努力、客户教育何时选择Tier1或Tier2以及维护并行代码库。我们已经着手开展一项开创性的工作：统一网关，以简化这些复杂性并提供更一致的体验。
+这种发展带来了挑战——持续的工程努力、客户教育何时选择 Tier1 或 Tier2 以及维护并行代码库。我们已经着手开展一项开创性的工作：统一网关，以简化这些复杂性并提供更一致的体验。
 
 ## 统一网关的优势
 
-统一网关不仅是Tier 1和Tier 2网关的融合，它是网关管理的范式转变。以下是你需要了解这个变革性解决方案的内容：
+统一网关不仅是 Tier 1 和 Tier 2 网关的融合，它是网关管理的范式转变。以下是你需要了解这个变革性解决方案的内容：
 
 ### 全面的功能
 
-统一网关结合了TSB版本1.6.X中Tier 1和Tier 2网关的强大功能，确保你获得最佳的两个世界。无论是处理重试、故障转移还是任何其他高级功能，统一网关都可以为你提供支持，无论它是作为Tier 1还是Tier 2网关配置的。
+统一网关结合了 TSB 版本 1.6.X 中 Tier 1 和 Tier 2 网关的强大功能，确保你获得最佳的两个世界。无论是处理重试、故障转移还是任何其他高级功能，统一网关都可以为你提供支持，无论它是作为 Tier 1 还是 Tier 2 网关配置的。
 
 ### 无缝过渡
 
-对于我们现有的客户，我们了解连续性的重要性。不用担心，你的Tier 1和Tier 2网关将继续像往常一样使用1.6.X版本提供的功能。但我们不会止步于此。我们正在引入一个无缝的过渡过程，将你现有的网关过渡到统一网关模型，增强Tier 1功能，如重试等等。
+对于我们现有的客户，我们了解连续性的重要性。不用担心，你的 Tier 1 和 Tier 2 网关将继续像往常一样使用 1.6.X 版本提供的功能。但我们不会止步于此。我们正在引入一个无缝的过渡过程，将你现有的网关过渡到统一网关模型，增强 Tier 1 功能，如重试等等。
 
-### 统一网关的新API
+### 统一网关的新 API
 
-拥抱创新并不意味着忽略过去。在为新机遇引入新的统一网关API的同时，我们致力于支持后续三个TSB版本的先前API。这确保你可以按照自己的节奏切换，而不会受到干扰。
+拥抱创新并不意味着忽略过去。在为新机遇引入新的统一网关 API 的同时，我们致力于支持后续三个 TSB 版本的先前 API。这确保你可以按照自己的节奏切换，而不会受到干扰。
 
 ### 授权直连模式
 
-统一网关不仅仅是网关，而是赋能。新老客户都可以通过直连模式发挥网关API的全部功能，从而对其网格基础设施获得无与伦比的控制和自定义。
+统一网关不仅仅是网关，而是赋能。新老客户都可以通过直连模式发挥网关 API 的全部功能，从而对其网格基础设施获得无与伦比的控制和自定义。
 
-### 与开放API策略相符
+### 与开放 API 策略相符
 
-我们相信开放标准的力量。统一网关与我们的开放API策略完美契合，使你可以使用标准化的Open API规范配置统一网关。这种方法促进了一致性，并简化了与现有工具链的集成。
+我们相信开放标准的力量。统一网关与我们的开放 API 策略完美契合，使你可以使用标准化的 Open API 规范配置统一网关。这种方法促进了一致性，并简化了与现有工具链的集成。
 
 ## 使用案例
 
@@ -52,7 +52,7 @@ description: "本文介绍了Tetrate Service Bridge（TSB）生态系统中统�
 
 ### 准备集群
 
-下图显示了我们在本文档中使用的部署架构。我们在GKE中创建了3个集群，在其中一个集群中部署了TSB，将另外三个集群加载到了TSB中，并在基础设施下的集群中部署了bookinfo应用程序。
+下图显示了我们在本文档中使用的部署架构。我们在 GKE 中创建了 3 个集群，在其中一个集群中部署了 TSB，将另外三个集群加载到了 TSB 中，并在基础设施下的集群中部署了 bookinfo 应用程序。
 
 ![基础设施拓扑](../../../assets/howto/gateway/unified-gateway-infrastructure.svg)
 
@@ -68,21 +68,21 @@ description: "本文介绍了Tetrate Service Bridge（TSB）生态系统中统�
 
 本节介绍了统一网关的使用场景。
 
-### 场景1：基于集群的路由，使用HTTP路径和Header匹配
+### 场景 1：基于集群的路由，使用 HTTP 路径和 Header 匹配
 
-在这种情况下，我们将使用Gateway资源来公开`bookinfo.tetrate.io`和`httpbin.tetrate.io`。我们将利用基于Gateway的集群路由功能，根据Gateway上的路径前缀将bookinfo前端服务路由到cp-cluster-1，将其他后端服务路由到cp-cluster-2。使用Gateway，用户可以公开多个具有clusterDestination的主机，只要主机：端口组合是唯一的即可。
+在这种情况下，我们将使用 Gateway 资源来公开`bookinfo.tetrate.io`和`httpbin.tetrate.io`。我们将利用基于 Gateway 的集群路由功能，根据 Gateway 上的路径前缀将 bookinfo 前端服务路由到 cp-cluster-1，将其他后端服务路由到 cp-cluster-2。使用 Gateway，用户可以公开多个具有 clusterDestination 的主机，只要主机：端口组合是唯一的即可。
 
-![基于集群的路由，使用HTTP路径和Header匹配](../../../assets/howto/gateway/unified-gateway-scenario-1.svg)
+![基于集群的路由，使用 HTTP 路径和 Header 匹配](../../../assets/howto/gateway/unified-gateway-scenario-1.svg)
 
 **部署拓扑和流量路由**
 
 我们设置了以下部署拓扑：
 
-- **Tier 1集群**：该集群用作外部流量的入口点，并将其路由到相应的后端集群。
+- **Tier 1 集群**：该集群用作外部流量的入口点，并将其路由到相应的后端集群。
 - **后端集群**：有三个后端集群，每个集群托管不同的服务：
   1. `cp-cluster-1`托管“Bookinfo”应用程序的前端服务。
   2. `cp-cluster-2`托管“Bookinfo”应用程序的后端服务。
-  3. `cp-cluster-3`托管名为`httpbin`的HTTP服务。
+  3. `cp-cluster-3`托管名为`httpbin`的 HTTP 服务。
 
 **配置**
 
@@ -204,7 +204,7 @@ curl -Ss "<http://bookinfo.tetrate.io/productpage>" --resolve "bookinfo.tetrate.
 
 同样，你可以根据定义的路由规则测试其他路由和服务。
 
-### 场景2：主机路由与网关标头重写
+### 场景 2：主机路由与网关标头重写
 
 此场景展示了统一网关的权限重写或标头重写功能。我们在 `tier1` 集群中部署边缘网关，以在不同集群之间路由流量，并使用 IngressGateways 为每个控制平面集群接收流量。
 
@@ -218,7 +218,7 @@ curl -Ss "<http://bookinfo.tetrate.io/productpage>" --resolve "bookinfo.tetrate.
 
 - 后端集群：
 
-   有三个后端集群，每个集群托管不同的服务:
+   有三个后端集群，每个集群托管不同的服务：
 
   1. `cp-cluster-1` 托管"Bookinfo"应用程序的前端服务。
   2. `cp-cluster-2` 托管"Bookinfo"应用程序的后端服务。
@@ -317,7 +317,7 @@ curl -Ss "<http://bookinfo.tetrate.io/productpage>" --resolve "bookinfo.tetrate.
 
 类似地，你可以根据定义的路由规则测试其他路由和服务。
 
-### 场景3：使用 TSB 应用和 OpenAPI 规范创建 UnifiedGateway
+### 场景 3：使用 TSB 应用和 OpenAPI 规范创建 UnifiedGateway
 
 此场景演示了如何使用 OpenAPI 规范和 Tetrate Service Bridge (TSB) 为 Tier 1 和 Tier 2 用例创建 Unified Gateways。此方法允许你使用 OpenAPI 规范定义应用程序的流量路由。
 
@@ -352,7 +352,7 @@ curl -Ss "<http://bookinfo.tetrate.io/productpage>" --resolve "bookinfo.tetrate.
 
 **验证**
 
-要验证路由设置，你可以使用 curl 等工具向公开服务发出请求。例如，要测试 `/api/v1/products/*` 路由:
+要验证路由设置，你可以使用 curl 等工具向公开服务发出请求。例如，要测试 `/api/v1/products/*` 路由：
 
 ```bash
 # Export the Load Balancer IP of the tier1-gateway
@@ -362,7 +362,7 @@ export GATEWAY_IP=$(kubectl -n tier1 get service tier1-gateway -o jsonpath='{.st
 curl -Ss "<http://bookinfo.tetrate.io/api/v1/products/1/reviews>" --resolve "bookinfo.tetrate.io:80:$GATEWAY_IP" -v
 ```
 
-### 场景4：实现 HTTP 到 HTTPS 重定向
+### 场景 4：实现 HTTP 到 HTTPS 重定向
 
 此场景演示了如何配置 `Gateway` 资源以实现 HTTP 到 HTTPS 重定向。这对于通过 HTTPS 安全地公开服务并支持使用普通 HTTP 的传统应用程序非常有用。
 
@@ -468,7 +468,7 @@ curl -Ss "<http://bookinfo.tetrate.io/api/v1/products/1/reviews>" --resolve "boo
 
 **验证**
 
-要验证 HTTP 到 HTTPS 重定向，请执行以下操作:
+要验证 HTTP 到 HTTPS 重定向，请执行以下操作：
 
 1. 要在浏览器中查看重定向，你需要更新你的 `/etc/hosts` 文件，以使 `bookinfo.tetrate.io` 解析为你的 Edge Gateway IP：
 
@@ -479,7 +479,7 @@ curl -Ss "<http://bookinfo.tetrate.io/api/v1/products/1/reviews>" --resolve "boo
 
 2. 在浏览器中访问 `http://bookinfo.tetrate.io/productpage`。你应该会自动重定向到 `https://bookinfo.tetrate.io/productpage`，以确保安全通信。
 
-### 场景5：配置外部服务
+### 场景 5：配置外部服务
 
 在此场景中，我们使用统一网关为转发外部服务流量配置专用出口网关。我们在 `httpbin` 命名空间中部署 `IngressGateway` (在两个集群中都部署) 并设置 `ServiceEntry` 以定义外部服务。
 

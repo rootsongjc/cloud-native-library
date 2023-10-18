@@ -31,7 +31,7 @@ _网关部署_ 是一组真正运行的 Envoy，而 _Istio 网关 API 资源_ �
 
 然后我们需要决定应用程序的每个配置存放在哪里：是在共享网关命名空间中与共享网关一起，还是在应用程序的命名空间中与应用程序一起。将配置放在共享网关命名空间中意味着共享网关所有者参与配置更改，并可以帮助防止共享故障中断，但这可能会导致共享网关所有者成为所有网关更改的瓶颈，可能会影响灵活性。将配置放在应用程序的命名空间中意味着它可以像应用程序本身一样快速更改，但由于没有中央所有者审查对共享网关的更改，可能会增加由于配置错误导致的共享故障的风险。
 
-TSB 的桥接模式——[网关组](../../../refs/tsb/gateway/v2/gateway-group)，对于使用共享网关更安全（如阻止同一主机名的多个所有者）并且使得在网格中的大多数应用程序使用共享网关变得可行。您还可以使用直连模式—— `VirtualServices`，使用原始的 Istio 配置来配置共享网关，但您需要执行规则来防止共享故障（通常通过代码审查来实现）。
+TSB 的桥接模式——[网关组](../../../refs/tsb/gateway/v2/gateway-group)，对于使用共享网关更安全（如阻止同一主机名的多个所有者）并且使得在网格中的大多数应用程序使用共享网关变得可行。你还可以使用直连模式—— `VirtualServices`，使用原始的 Istio 配置来配置共享网关，但你需要执行规则来防止共享故障（通常通过代码审查来实现）。
 
 最终，大多数组织将稳定性优先于功能速度，因此我们建议将应用程序配置放在共享网关命名空间中，以便由拥有共享网关的团队进行审查。
 ## 部署 `httpbin` 服务
@@ -43,7 +43,7 @@ TSB 的桥接模式——[网关组](../../../refs/tsb/gateway/v2/gateway-group)
 要部署共享网关，我们需要在 TSB 中创建一个工作区来托管我们的共享网关，以及为使用共享网关的应用程序创建工作区。
 
 ### TSB 设置
-首先，我们将创建一个 TSB 租户来保存我们的共享入口示例；在实际部署中，您可以使用现有的租户或为这类用途创建一个共享基础设施租户：
+首先，我们将创建一个 TSB 租户来保存我们的共享入口示例；在实际部署中，你可以使用现有的租户或为这类用途创建一个共享基础设施租户：
 
 
 ```yaml
@@ -102,7 +102,7 @@ spec:
       type: LoadBalancer
 ```
 
-您需要在要托管共享入口网关部署的每个集群中运行 `kubectl apply` 命令来应用此文件。
+你需要在要托管共享入口网关部署的每个集群中运行 `kubectl apply` 命令来应用此文件。
 
 ## 配置共享网关
 
@@ -177,7 +177,7 @@ spec:
 ```
 请运行 `tctl apply` 命令来应用上述配置，从而通过共享网关实现对 `httpbin.tetrate.com` 到 `httpbin` 服务的路由。
 
-您可以使用以下命令发送一些流量到我们的 httpbin 以验证 TSB 配置。
+你可以使用以下命令发送一些流量到我们的 httpbin 以验证 TSB 配置。
 
 
 ```bash
@@ -187,7 +187,7 @@ curl -k --resolve httpbin.tetrate.com:443:$GATEWAY_IP https://httpbin.tetrate.co
 
 ### 直接模式：使用 VirtualServices 配置
 
-我们也可以通过 Istio 配置直接配置共享网关，方法是创建一个 `Gateway` 和一个 `VirtualService`。在许多环境中，`Gateway` 将由中央团队管理，您只需要发布 `VirtualService` -- 您可以通过运行 `kubectl get gateway --namespace shared-ingress-ns` 来进行检查：
+我们也可以通过 Istio 配置直接配置共享网关，方法是创建一个 `Gateway` 和一个 `VirtualService`。在许多环境中，`Gateway` 将由中央团队管理，你只需要发布 `VirtualService` -- 你可以通过运行 `kubectl get gateway --namespace shared-ingress-ns` 来进行检查：
 
 ```yaml
 apiVersion: networking.istio.io/v1alpha3
@@ -241,7 +241,7 @@ spec:
 ```
 请运行 `tctl apply` 上述命令以应用配置，从而通过共享网关实现对 `httpbin.tetrate.com` 到 `httpbin` 服务的路由。
 
-您可以使用以下命令发送一些流量到我们的 httpbin 以验证 TSB 配置。
+你可以使用以下命令发送一些流量到我们的 httpbin 以验证 TSB 配置。
 
 
 ```bash
@@ -368,7 +368,7 @@ spec:
 ```
 请运行 `tctl apply` 上述命令以应用配置，从而通过共享网关实现对 `httpbin.tetrate.com` 到 `httpbin` 服务的路由。
 
-您可以使用以下命令发送一些流量到我们的 httpbin 以验证 TSB 配置。
+你可以使用以下命令发送一些流量到我们的 httpbin 以验证 TSB 配置。
 
 
 ```bash
@@ -378,7 +378,7 @@ curl -k --resolve httpbin.tetrate.com:443:$GATEWAY_IP https://httpbin.tetrate.co
 
 ### 使用 VirtualServices 进行 Direct 模式配置
 
-我们也可以通过 Istio 配置直接配置共享网关，方法是创建一个 `Gateway` 和一个 `VirtualService`。在许多环境中，`Gateway` 将由中央团队管理，您只需要发布 `VirtualService`：
+我们也可以通过 Istio 配置直接配置共享网关，方法是创建一个 `Gateway` 和一个 `VirtualService`。在许多环境中，`Gateway` 将由中央团队管理，你只需要发布 `VirtualService`：
 
 ```yaml
 apiVersion: networking.istio.io/v1alpha3
@@ -432,7 +432,7 @@ spec:
 ```
 请运行上述命令以应用配置，从而通过共享网关实现对 `httpbin.tetrate.com` 到 `httpbin` 服务的路由。
 
-您可以使用以下命令发送一些流量到我们的 httpbin 以验证 TSB 配置。
+你可以使用以下命令发送一些流量到我们的 httpbin 以验证 TSB 配置。
 
 
 ```bash

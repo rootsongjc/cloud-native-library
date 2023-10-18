@@ -9,13 +9,13 @@ Tetrate 管理平面从每个接入的工作负载平台以及启用了适当 Sk
 
 查看 [TSB](../../../quickstart/observability) 或 [TSE](https://docs.tetrate.io/service-express/getting-started/observability) 示例以获取更多详细信息。
 
-用户需要访问 Tetrate UI 才能查看这些指标。在简单的单团队部署中可能是可行的，并且在 TSB 中，可以通过为应用程序所有者提供基于角色的访问权限，在非常大规模的情况下也可能是可行的，但在许多情况下，为您的应用程序所有者团队提供访问权限可能不是可行的或不适当的做法。
+用户需要访问 Tetrate UI 才能查看这些指标。在简单的单团队部署中可能是可行的，并且在 TSB 中，可以通过为应用程序所有者提供基于角色的访问权限，在非常大规模的情况下也可能是可行的，但在许多情况下，为你的应用程序所有者团队提供访问权限可能不是可行的或不适当的做法。
 
-另一种方法是将 Tetrate 收集的指标导出到第三方仪表板，如 Grafana。这通常是提供大量用户访问 Tetrate 指标的最合适方式，特别是如果您已经有一个成熟的企业仪表板解决方案。
+另一种方法是将 Tetrate 收集的指标导出到第三方仪表板，如 Grafana。这通常是提供大量用户访问 Tetrate 指标的最合适方式，特别是如果你已经有一个成熟的企业仪表板解决方案。
 
 ## 在第三方仪表板中公开 Tetrate 指标
 
-您需要公开您的 TSE 指标并安排一个仪表板收集器来抓取并标记它们。以下资源可能会对您有所帮助：
+你需要公开你的 TSE 指标并安排一个仪表板收集器来抓取并标记它们。以下资源可能会对你有所帮助：
 
 - 了解 [Tetrate 指标架构](https://docs.tetrate.io/service-bridge/operations/telemetry)
 - TSE [AWS 托管 Grafana 集成指南](https://docs.tetrate.io/service-express/integrations/grafana)

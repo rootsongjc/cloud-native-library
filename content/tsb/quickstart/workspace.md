@@ -30,7 +30,7 @@ weight: 4
 -  4 服务
 -  1 个工作区
 
-## 使用tctl
+## 使用 tctl
 
 创建以下 `workspace.yaml` 文件：
 

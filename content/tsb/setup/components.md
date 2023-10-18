@@ -5,9 +5,9 @@ date: '2023-09-19T12:00:00+08:00'
 weight: 9
 ---
 
-本页面将详细解释 TSB 组件和您必须提供和连接以运行 TSB 的外部依赖项。
+本页面将详细解释 TSB 组件和你必须提供和连接以运行 TSB 的外部依赖项。
 
-在继续之前，请确保您已经：
+在继续之前，请确保你已经：
 
 查看了 [TSB 架构](../../concepts/architecture) 并理解了 [TSB 的四个层次](../../concepts/architecture#overall-architecture)：数据平面（Envoy 代理）、本地控制平面（Istio）、全局控制平面（XCP）和管理平面（TSB 本身）。
 
@@ -44,7 +44,7 @@ TSB 的前置 Envoy 可以作为配置在 `ManagementPlane` CR 中的 Elasticsea
 | MPC（MP Controller）         | 在 TSB API 和 XCP 中央之间提供双向配置和集群状态同步。       |
 | XCP Central                  | 协调多集群发现。将配置发送到所有连接的在集群中运行的 XCP Edge。接收来自 XCP 边缘的集群状态和配置状态更新。此组件由 XCP 中央 Operator 管理。 |
 | OAP（SkyWalking）            | 用于 UI 查询以从所有集群的 OAP 获取聚合指标和跟踪。使用 Elasticsearch 作为后端存储。 |
-| OTEL Collector               | 从管理平面中的不同组件中收集指标。从每个控制平面的 OpenTelemetry（OTEL）收集器接收指标。请注意，OTEL 收集器严格用于 TSB 组件监视，而不是您的应用程序。 |
+| OTEL Collector               | 从管理平面中的不同组件中收集指标。从每个控制平面的 OpenTelemetry（OTEL）收集器接收指标。请注意，OTEL 收集器严格用于 TSB 组件监视，而不是你的应用程序。 |
 | teamsync                     | 使用 LDAP 和 Azure AD 作为 IdP 时创建。从 IdP 检索用户和组并将其同步到 TSB 存储中。 |
 | cert-manager                 | 使用 `INTERNAL` cert-manager 时创建。`cert-manager` 为内部 TSB 组件提供证书，例如 Webhook 证书等的目的。 |
 
@@ -64,7 +64,7 @@ TSB 的前置 Envoy 可以作为配置在 `ManagementPlane` CR 中的 Elasticsea
 | Onboarding  Operator | 用于管理所需组件的生命周期，以将 VM 工作负载（也称为网格扩展）纳入网格。 |
 
 {{<callout note 修订的控制平面>}}
-TSB 1.5 引入了修订的控制平面。当您使用修订的控制平面时，由 XCP 边缘 Operator 部署 Istio  Operator，而不是 TSB 控制平面 Operator。要了解有关修订的控制平面的更多信息，请转到 [Istio 隔离边界](../../setup/isolation-boundaries)。
+TSB 1.5 引入了修订的控制平面。当你使用修订的控制平面时，由 XCP 边缘 Operator 部署 Istio  Operator，而不是 TSB 控制平面 Operator。要了解有关修订的控制平面的更多信息，请转到 [Istio 隔离边界](../../setup/isolation-boundaries)。
 {{</callout>}}
 
 以下是控制平面组件。有关更多参考，请查看 [控制平面安装 API](../../refs/install/controlplane/v1alpha1/spec)。
@@ -74,7 +74,7 @@ TSB 1.5 引入了修订的控制平面。当您使用修订的控制平面时，
 | XCP edge              | 接收来自 XCP 中央的配置并将其转化为 Istio 配置。向 XCP 中央发送关于配置状态和集群清单的更新。由 XCP 边缘 Operator 管理。 |
 | Istiod                | 提供服务发现、将配置分发到 Envoy 代理以及工作负载证书管理的 Istio 组件。由 Istio  Operator 管理。 |
 | OAP（SkyWalking）     | 接收来自集群中所有 Istio sidecar 和网关的访问日志和跟踪。处理这些访问日志并生成指标。指标和跟踪将被发送到 Elasticsearch。 |
-| OTEL Collector        | 从控制平面中的不同 TSB 组件中收集指标。将指标导出到同一 pod 中的 Prometheus 导出器以及通过前置 Envoy 到管理平面的 OTEL 收集器。请注意，OTEL 收集器严格用于 TSB 组件监视，而不是您的应用程序。 |
+| OTEL Collector        | 从控制平面中的不同 TSB 组件中收集指标。将指标导出到同一 pod 中的 Prometheus 导出器以及通过前置 Envoy 到管理平面的 OTEL 收集器。请注意，OTEL 收集器严格用于 TSB 组件监视，而不是你的应用程序。 |
 | SkyWalking HPA        | 提供外部指标适配器，Kubernetes 水平 Pod 自动缩放（HPA）控制器可以从中检索指标。 |
 | 速率限制服务器        | 提供内建的速率限制功能的可选组件。                           |
 | VM Gateway            | 在启用网格扩展时部署。VM 网关提供与在 VM 中运行的 sidecar 的 Istiod 和 OAP 的连接。 |
@@ -85,7 +85,7 @@ TSB 1.5 引入了修订的控制平面。当您使用修订的控制平面时，
 ## 数据平面
 
 {{<callout note 修订的控制平面>}}
-TSB 1.5 引入了修订的控制平面。当您使用修订的控制平面时，不再需要 Data Plane  Operator 来管理 Istio 网关。要了解有关修订的控制平面的更多信息，请转到 [Istio 隔离边界](../../setup/isolation-boundaries)。
+TSB 1.5 引入了修订的控制平面。当你使用修订的控制平面时，不再需要 Data Plane  Operator 来管理 Istio 网关。要了解有关修订的控制平面的更多信息，请转到 [Istio 隔离边界](../../setup/isolation-boundaries)。
 {{</callout>}}
 
 在数据平面中有两个运行的 Operator，用于管理网关部署的生命周期：

@@ -5,7 +5,7 @@ weight: 6
 
 # 集群之间的连接与故障切换
 
-Tetrate使应用所有者能够轻松地在多个集群中部署应用程序。可以在选择的工作区中部署东西向网关，并将一些或所有服务暴露给其他集群。 Tetrate的中央服务注册表用于在其他集群中为这些暴露的服务创建虚拟端点（**ServiceEntries**），以便客户端可以发现和使用这些服务，就像它们在本地运行一样。
+Tetrate 使应用所有者能够轻松地在多个集群中部署应用程序。可以在选择的工作区中部署东西向网关，并将一些或所有服务暴露给其他集群。Tetrate 的中央服务注册表用于在其他集群中为这些暴露的服务创建虚拟端点（**ServiceEntries**），以便客户端可以发现和使用这些服务，就像它们在本地运行一样。
 
 这项功能可用于：
  * 在不同的集群中分发应用程序的组件
@@ -35,12 +35,12 @@ Tetrate使应用所有者能够轻松地在多个集群中部署应用程序。�
 
 ## 平台：开始之前
 
-在开始之前，您需要知道：
+在开始之前，你需要知道：
 
  * 共享服务所在的工作区
  * 应暴露哪些服务；默认情况下，工作区中的所有服务都会被暴露
 
-您还可以查看 TSE 入门用例：[高可用性](https://docs.tetrate.io/service-express/getting-started/ha-eastwest) 和 [跨集群通信](https://docs.tetrate.io/service-express/getting-started/cross-cluster)。
+你还可以查看 TSE 入门用例：[高可用性](https://docs.tetrate.io/service-express/getting-started/ha-eastwest) 和 [跨集群通信](https://docs.tetrate.io/service-express/getting-started/cross-cluster)。
 
 
 ## 平台：部署东西向网关
@@ -89,7 +89,7 @@ spec:
 
 请注意，**defaultEastWestGatewaySettings** 使用 **workloadSelector** 识别东西向网关，并具有一个可选的 **exposedServices** 部分。
 
-应用程序所有者可以从远程集群中发现和使用这些共享服务。 它们作为 **xcp-multicluster** 命名空间中的 **ServiceEntries** 暴露，并且使用与第一个集群中相同的 FQDN：
+应用程序所有者可以从远程集群中发现和使用这些共享服务。它们作为 **xcp-multicluster** 命名空间中的 **ServiceEntries** 暴露，并且使用与第一个集群中相同的 FQDN：
 
 ```bash
 kubectl get serviceentry -n xcp-multicluster
@@ -99,23 +99,23 @@ kubectl get serviceentry -n xcp-multicluster
 
 ## 应用程序：访问已暴露的服务
 
-一旦在源集群中部署了东西向网关，并使用 **WorkspaceSettings:defaultEastWestGatewaySettings** 选择了要暴露的服务，就可以在源集群中部署服务。 匹配的服务将在远程集群中暴露出来。
+一旦在源集群中部署了东西向网关，并使用 **WorkspaceSettings:defaultEastWestGatewaySettings** 选择了要暴露的服务，就可以在源集群中部署服务。匹配的服务将在远程集群中暴露出来。
 
-您可以通过以下方式在远程集群中查看暴露服务的列表如下：
+你可以通过以下方式在远程集群中查看暴露服务的列表如下：
 
 ```bash
 kubectl get serviceentry -n xcp-multicluster
 ```
 
-这些服务的完全限定域名（FQDN）在远程集群中是可寻址的，这意味着远程集群中的任何客户端服务都可以访问原始服务，无需进行任何修改。Tetrate平台会保持**ServiceEntries**与原始服务的存在和状态同步。
+这些服务的完全限定域名（FQDN）在远程集群中是可寻址的，这意味着远程集群中的任何客户端服务都可以访问原始服务，无需进行任何修改。Tetrate 平台会保持**ServiceEntries**与原始服务的存在和状态同步。
 ## 平台：为内部故障切换部署东西向网关
 
-在这种情况下，我们将准备平台以便在一个集群与另一个集群之间进行内部服务的故障转移。例如，一个应用所有者可以将一个多组件的应用程序（如 **bookinfo**）部署到两个集群中。每个应用程序将使用本地版本的依赖服务，除非本地实例失败，在这种情况下，Tetrate平台将自动将流量切换到另一个集群。应用所有者不需要进行任何应用程序修改。
+在这种情况下，我们将准备平台以便在一个集群与另一个集群之间进行内部服务的故障转移。例如，一个应用所有者可以将一个多组件的应用程序（如 **bookinfo**）部署到两个集群中。每个应用程序将使用本地版本的依赖服务，除非本地实例失败，在这种情况下，Tetrate 平台将自动将流量切换到另一个集群。应用所有者不需要进行任何应用程序修改。
 
 #### 先决条件
 
 1. 必须在每个工作负载集群中创建应用程序的命名空间。
-2. Tetrate工作区必须包括这些命名空间，并且必须跨足每个工作负载集群。
+2. Tetrate 工作区必须包括这些命名空间，并且必须跨足每个工作负载集群。
 
 例如，如果要在命名空间 **bookinfo** 中部署应用程序，那么这个命名空间必须在每个集群中存在，并且 **Workspace** 配置应引用所有实例，例如，使用以下 **namespaceSelector**：
 
@@ -146,11 +146,11 @@ kubectl apply -f eastwest-gateway.yaml
 
 ## 应用程序：在集群之间测试故障转移
 
-通过上述配置，您可以将应用程序部署到多个集群中。如果一个集群中的服务实例因任何原因失败，Tetrate平台将检测到并将流量透明地切换到远程工作正常的服务实例。
+通过上述配置，你可以将应用程序部署到多个集群中。如果一个集群中的服务实例因任何原因失败，Tetrate 平台将检测到并将流量透明地切换到远程工作正常的服务实例。
 
-Tetrate平台为集群中的每个远程服务实例创建了影子 **WorkloadEntries**，这些实例存在于本地实例所在的集群和命名空间中。例如，如果您将 **bookinfo** 应用程序部署到两个配置有高可用性的集群中，然后您可以检查每个集群以查看影子 **WorkloadEntries** 是否存在。
+Tetrate 平台为集群中的每个远程服务实例创建了影子 **WorkloadEntries**，这些实例存在于本地实例所在的集群和命名空间中。例如，如果你将 **bookinfo** 应用程序部署到两个配置有高可用性的集群中，然后你可以检查每个集群以查看影子 **WorkloadEntries** 是否存在。
 
-在下面的案例中，我们只暴露了 **details** 和 **reviews** 服务，并且云平台在三个IP地址上暴露了 **eastwest-gateway**：
+在下面的案例中，我们只暴露了 **details** 和 **reviews** 服务，并且云平台在三个 IP 地址上暴露了 **eastwest-gateway**：
 
 ```bash
 kubectl get workloadentries -n bookinfo

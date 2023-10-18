@@ -4,7 +4,7 @@ description: "Tetrate Service Bridge 1.6 发行说明。"
 weight: 1
 ---
 
-欢迎使用 Tetrate Service Bridge (TSB) 版本 1.6 的发行说明。此版本引入了多项新功能，可增强可用性、安全性和可见性。 TSB 继续提供统一的方法来连接和保护不同环境中的服务，包括 Kubernetes 集群、虚拟机和裸机工作负载。
+欢迎使用 Tetrate Service Bridge (TSB) 版本 1.6 的发行说明。此版本引入了多项新功能，可增强可用性、安全性和可见性。TSB 继续提供统一的方法来连接和保护不同环境中的服务，包括 Kubernetes 集群、虚拟机和裸机工作负载。
 
 ##  主要亮点
 

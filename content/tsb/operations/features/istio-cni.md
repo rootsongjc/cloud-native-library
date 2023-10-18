@@ -10,7 +10,7 @@ weight: 3
 
 ## 在控制平面中启用 Istio CNI
 
-为了在您的控制平面中启用 Istio CNI 插件，您需要编辑 `ControlPlane` CR 或 Helm 值，以包括 CNI 配置。
+为了在你的控制平面中启用 Istio CNI 插件，你需要编辑 `ControlPlane` CR 或 Helm 值，以包括 CNI 配置。
 
 ```yaml
 spec:
@@ -37,7 +37,7 @@ spec:
 上述片段显示了默认的 `ControlPlane` CR，其中包含了 `spec.components.istio.kubeSpec.CNI` 的附加部分。这将配置 Istio 控制平面以部署遵循所提供配置的 CNI 插件。
 
 {{<callout note 注意>}}
-配置值可能会根据您使用的 Kubernetes 发行版而发生变化，请参考[Istio 文档](https://istio.io/docs/setup/additional-setup/cni/)了解更多信息。
+配置值可能会根据你使用的 Kubernetes 发行版而发生变化，请参考[Istio 文档](https://istio.io/docs/setup/additional-setup/cni/)了解更多信息。
 {{</callout>}}
 
 {{<callout note 注意>}}

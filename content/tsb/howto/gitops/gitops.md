@@ -34,9 +34,9 @@ spec:
       - "*/bookinfo"
 ```
 
-它们与您可以使用 [tctl 应用](../../reference/cli/reference/apply)的资源非常相似，不同之处在于：
+它们与你可以使用 [tctl 应用](../../reference/cli/reference/apply)的资源非常相似，不同之处在于：
 
-* `spec` 的内容在 [YAML API 参考](../../reference/yaml-api)中定义。规格与您在 `tctl` 中使用的规格相同。
+* `spec` 的内容在 [YAML API 参考](../../reference/yaml-api)中定义。规格与你在 `tctl` 中使用的规格相同。
 * 元数据部分不具有 TSB 属性，如 `organization`、`tenant` 等。相反，必须使用以下适当的注释提供层次结构信息：
   * _tsb.tetrate.io/organization_
   * _tsb.tetrate.io/tenant_
@@ -91,7 +91,7 @@ spec:
 
 ## 应用 TSB 自定义资源
 
-TSB 自定义资源可以使用 `kubectl` 正常应用。例如，要应用上面示例中的工作区，您只需运行：
+TSB 自定义资源可以使用 `kubectl` 正常应用。例如，要应用上面示例中的工作区，你只需运行：
 
 ```bash
 kubectl apply -f workspace.yaml
@@ -101,7 +101,7 @@ NAMESPACE   NAME       PRIVILEGED   TENANT    AGE
 bookinfo    bookinfo                engineering   4m20s
 ```
 
-如果您想要验证对象是否已在管理平面中正确创建，您也可以使用 `tctl` 在那里查看对象：
+如果你想要验证对象是否已在管理平面中正确创建，你也可以使用 `tctl` 在那里查看对象：
 
 ```bash
 $ tctl get ws bookinfo
@@ -111,6 +111,6 @@ bookinfo
 
 ## 与持续部署解决方案集成
 
-TSB GitOps 功能允许您轻松将 TSB 配置工作流与 CI/CD 解决方案集成。以下页面提供了一些配置示例，您可以按照这些示例来了解它的工作原理：
+TSB GitOps 功能允许你轻松将 TSB 配置工作流与 CI/CD 解决方案集成。以下页面提供了一些配置示例，你可以按照这些示例来了解它的工作原理：
 
 * [配置 Flux CD 以在 TSB 中使用 GitOps](../flux)

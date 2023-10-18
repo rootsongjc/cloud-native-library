@@ -167,7 +167,7 @@ oc exec "$(oc get pod -l app=sleep -n sleep -o jsonpath={.items..metadata.name})
 9. 单击授权设置并将模式字段设置为工作空间。
 10.  单击保存更改。
 
-### 使用tctl
+### 使用 tctl
 
 创建以下 `security.yaml` 文件：
 

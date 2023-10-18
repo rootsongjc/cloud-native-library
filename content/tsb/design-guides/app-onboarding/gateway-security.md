@@ -26,7 +26,7 @@ weight: 8
 
 Tetrate 平台提供了授权功能，以授权由 Ingress Gateway 接收的每个 HTTP 请求。它支持使用 JWT 声明进行本地授权，并支持外部授权（[ext-authz](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/ext_authz_filter)）来确定是否允许或拒绝请求。
 
-如果您有一个单独的内部系统，或者希望使用与 JWT 不同的其他身份验证架构，或者希望与第三方授权解决方案（如 Open Policy Agent (OPA) 或 PlainID）集成，您可能会决定使用外部授权系统：
+如果你有一个单独的内部系统，或者希望使用与 JWT 不同的其他身份验证架构，或者希望与第三方授权解决方案（如 Open Policy Agent (OPA) 或 PlainID）集成，你可能会决定使用外部授权系统：
 
 ```yaml
 apiVersion: gateway.tsb.tetrate.io/v2
@@ -72,7 +72,7 @@ spec:
 
 ## 应用程序：配置速率限制
 
-速率限制允许您将流量通过您的 Ingress Gateway 限制到预定的限制。您可以对流量属性进行分类，如源 IP 地址和 HTTP 标头，分别对每个类别进行速率限制。
+速率限制允许你将流量通过你的 Ingress Gateway 限制到预定的限制。你可以对流量属性进行分类，如源 IP 地址和 HTTP 标头，分别对每个类别进行速率限制。
 
 ```yaml
 apiVersion: gateway.tsb.tetrate.io/v2
@@ -135,11 +135,11 @@ spec:
             unit: SECOND
 ```
 
-如果您关心以下任何方面，您可能需要考虑速率限制：
+如果你关心以下任何方面，你可能需要考虑速率限制：
 
  * 防止恶意的基于容量的活动，如 DDoS 攻击或暴力攻击
  * 限制不良行为的蜘蛛、机器人或爬取器的影响
- * 防止您的应用程序及其资源（如数据库）过载
+ * 防止你的应用程序及其资源（如数据库）过载
  * 实施公平的业务逻辑，如为不同的用户组应用不同的 API 限制。
 
 有关详细信息，请查看 [Tetrate Service Bridge 速率限制文档](https://docs.tetrate.io/service-bridge/howto/rate_limiting/)，这也适用于 TSE。

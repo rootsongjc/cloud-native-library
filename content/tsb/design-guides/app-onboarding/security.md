@@ -3,9 +3,9 @@ title: 扩展安全策略
 weight: 6
 ---
 
-Tetrate 允许您创建一个明确定义、准确可持续发展的安全策略，可以与您的 Tetrate 管理的系统平滑地同步发展。
+Tetrate 允许你创建一个明确定义、准确可持续发展的安全策略，可以与你的 Tetrate 管理的系统平滑地同步发展。
 
-平台所有者（"Platform"）和应用程序所有者（"Apps"）共同合作创建您的安全策略的元素：
+平台所有者（"Platform"）和应用程序所有者（"Apps"）共同合作创建你的安全策略的元素：
 
 1. 识别安全阻塞
    应用程序所有者识别当前 Tetrate 安全策略阻止的必需流量。
@@ -26,7 +26,7 @@ Tetrate 允许您创建一个明确定义、准确可持续发展的安全策略
 * 默认情况下，所有通信都被拒绝，只有解锁了工作区，并且内部流量是允许的。
 * 默认的安全传播策略是 REPLACE
 
-### 您需要了解的内容
+### 你需要了解的内容
 
 使用 **SecuritySetting** 部分配置 Tetrate 安全姿态。这些部分以资源的层次结构呈现：
 
@@ -36,7 +36,7 @@ Tetrate 允许您创建一个明确定义、准确可持续发展的安全策略
 1. 每个安全组级别的 [**SecuritySetting**](https://docs.tetrate.io/service-bridge/refs/tsb/security/v2/security_setting)。安全组允许将工作区细分为更小的命名空间集合。
 1. 每个服务级别的 [**ServiceSecuritySetting**](https://docs.tetrate.io/service-bridge/refs/tsb/security/v2/service_security_setting)。在安全组内，可以为单个服务应用规则。
 
-在每个资源中，您可以配置一个 [**SecuritySetting**](https://docs.tetrate.io/service-bridge/refs/tsb/security/v2/security_setting#tetrateio-api-tsb-security-v2-securitysetting) 部分。
+在每个资源中，你可以配置一个 [**SecuritySetting**](https://docs.tetrate.io/service-bridge/refs/tsb/security/v2/security_setting#tetrateio-api-tsb-security-v2-securitysetting) 部分。
 
 ### 传播策略
 
@@ -59,15 +59,15 @@ Tetrate 允许您创建一个明确定义、准确可持续发展的安全策略
 
     * 不要在组织级别启用 'Deny-All'，但是将 **propagationStrategy** 设置为 **STRICTER**。
     
-    一旦在较低级别定义了 **Allow** 规则，那些不匹配该规则的请求将被拒绝，然后将这个拒绝传播到默认情况下拒绝所有其他请求的层次结构中。然后，您可以维护一个显式的 Allow 规则列表，知道其他所有东西都将被拒绝。
+    一旦在较低级别定义了 **Allow** 规则，那些不匹配该规则的请求将被拒绝，然后将这个拒绝传播到默认情况下拒绝所有其他请求的层次结构中。然后，你可以维护一个显式的 Allow 规则列表，知道其他所有东西都将被拒绝。
 
-    这种方法更难以管理，因为您需要声明每个 **Allow** 规则，但它提供了更严格的安全性。
+    这种方法更难以管理，因为你需要声明每个 **Allow** 规则，但它提供了更严格的安全性。
 
 ## 应用程序：识别安全阻塞
 
-当您希望访问目标服务时，您需要知道该服务的 FQDN（全限定域名）。通常情况下，这会在 Tetrate 服务注册表中列出，但也可能以其他形式存在，例如 **ServiceEntry**。服务所有者应该能够提供 FQDN。
+当你希望访问目标服务时，你需要知道该服务的 FQDN（全限定域名）。通常情况下，这会在 Tetrate 服务注册表中列出，但也可能以其他形式存在，例如 **ServiceEntry**。服务所有者应该能够提供 FQDN。
 
-在调试访问控制问题时，您可以从客户端容器向目标服务发出简单的 HTTP 请求开始：
+在调试访问控制问题时，你可以从客户端容器向目标服务发出简单的 HTTP 请求开始：
 
 ```bash
 CLIENT=$(kubectl get pod -n bookinfo -l app=ratings -o jsonpath='{.items[0].metadata.name}')
@@ -100,7 +100,7 @@ _对于客户端和目标服务都是如此，平台所有者需要知道：_
 
 | 目标是什么？           | 如何定义规则的位置                                           |
 | ---------------------- | ------------------------------------------------------------ |
-| 工作区中的所有命名空间 | 更新 **WorkspaceSetting/defaultSecuritySetting** 中的 **authorization** 部分。<br/>或者，您可能希望将 **WorkspaceSetting/defaultSecuritySetting** 视为不可变的，并在整个工作区范围内的 **安全组** 中进行更改 |
+| 工作区中的所有命名空间 | 更新 **WorkspaceSetting/defaultSecuritySetting** 中的 **authorization** 部分。<br/>或者，你可能希望将 **WorkspaceSetting/defaultSecuritySetting** 视为不可变的，并在整个工作区范围内的 **安全组** 中进行更改 |
 | 工作区中的某些命名空间 | 为目标创建一个适当的 **安全组**，并在附加到该 **安全         |
 
 组** 的 **SecuritySetting** 中更新 **authorization** 部分 |
@@ -128,7 +128,7 @@ Tetrate 管理平台将会将这些 **DIRECT** 模式配置与其他 **BRIDGED**
 
 ## 平台：审计安全规则
 
-定期地，您可能希望审计 Tetrate 实施的安全规则。您可以使用几种行业标准工具来可视化规则：
+定期地，你可能希望审计 Tetrate 实施的安全规则。你可以使用几种行业标准工具来可视化规则：
 
 * [Kiali](https://kiali.io/docs/features/security/) 可以检查和可视化生成的 Istio 配置
 * Tetrate 平台可以生成源自平台所有者配置的分层访问控制策略的 L3/4 网络策略。然后，可以使用各种第三方 Kubernetes 网络策略可视化工具来检查和可视化这些 L3/4 Kubernetes 网络策略。

@@ -6,9 +6,9 @@ weight: 7
 
 本文档描述了如何为 Tetrate Service Bridge（TSB）配置 GitOps 集成。
 
-TSB 中的 GitOps 集成允许您与应用程序打包和部署的生命周期以及不同的持续部署（CD）系统进行集成。
+TSB 中的 GitOps 集成允许你与应用程序打包和部署的生命周期以及不同的持续部署（CD）系统进行集成。
 
-本文假设您已经具备了配置 GitOps CD 系统的工作知识，例如 [FluxCD](https://fluxcd.io/) 或 [ArgoCD](https://argo-cd.readthedocs.io/en/stable/)。
+本文假设你已经具备了配置 GitOps CD 系统的工作知识，例如 [FluxCD](https://fluxcd.io/) 或 [ArgoCD](https://argo-cd.readthedocs.io/en/stable/)。
 
 ## 工作原理
 

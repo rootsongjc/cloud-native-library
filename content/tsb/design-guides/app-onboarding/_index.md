@@ -19,9 +19,9 @@ weight: 1
 <details>
 <summary><b>TSB 用户和角色层次结构</b></summary>
 
-TSB 提供了一个非常丰富的[用户和角色层次结构](https://docs.tetrate.io/service-bridge/latest/concepts/security)，允许平台所有者将有限的 TSB 功能委托给其他用户类型，包括多个应用所有者用户和团队。本文档不涵盖这些更复杂的情况。
+TSB 提供了一个非常丰富的 [用户和角色层次结构](https://docs.tetrate.io/service-bridge/latest/concepts/security)，允许平台所有者将有限的 TSB 功能委托给其他用户类型，包括多个应用所有者用户和团队。本文档不涵盖这些更复杂的情况。
 
-相反，本文档适用于由 TSE 和 TSB 支持的更简单的 "一个平台所有者团队，多个应用所有者，高信任" 情况。它假定您将使用 [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) 或类似的方法来控制应用所有者如何访问 Kubernetes 命名空间。本文档使用 Tetrate 的“GitOps”集成来授予应用所有者访问某些 Tetrate 特定功能的权限，例如部署入口网关。 GitOps 在 [TSE 中默认启用](https://docs.tetrate.io/service-express/gitops/gitops-tse)，并且可以在 [TSB 中启用和配置](https://docs.tetrate.io/service-bridge/1.6.x/operations/features/configure_gitops)。
+相反，本文档适用于由 TSE 和 TSB 支持的更简单的 "一个平台所有者团队，多个应用所有者，高信任" 情况。它假定你将使用 [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) 或类似的方法来控制应用所有者如何访问 Kubernetes 命名空间。本文档使用 Tetrate 的“GitOps”集成来授予应用所有者访问某些 Tetrate 特定功能的权限，例如部署入口网关。GitOps 在 [TSE 中默认启用](https://docs.tetrate.io/service-express/gitops/gitops-tse)，并且可以在 [TSB 中启用和配置](https://docs.tetrate.io/service-bridge/1.6.x/operations/features/configure_gitops)。
 
 </details>
 
@@ -51,5 +51,5 @@ TSB 提供了一个非常丰富的[用户和角色层次结构](https://docs.tet
 
 ## 高级主题
 
- * **共享网关:** 了解如何在工作区之间[共享入口网关](../../howto/gateway/shared-ingress)，以减少在大规模部署中网关的数量。
- * **Route 53 集成:** 了解如何微调 [Tetrate 的 Route 53 集成](https://docs.tetrate.io/service-express/integrations/route53)。
+ * **共享网关：** 了解如何在工作区之间[共享入口网关](../../howto/gateway/shared-ingress)，以减少在大规模部署中网关的数量。
+ * **Route 53 集成：** 了解如何微调 [Tetrate 的 Route 53 集成](https://docs.tetrate.io/service-express/integrations/route53)。

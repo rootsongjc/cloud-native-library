@@ -37,7 +37,7 @@ weight: 6
 4. 选择 `Writer` 角色。
 5. 单击右下角的保存更改按钮。
 
-## 使用tctl
+## 使用 tctl
 
 你还可以通过应用 YAML 文件中定义的 `AccessBindings` 使用 `tctl` 实现相同的配置：
 

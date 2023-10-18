@@ -6,7 +6,7 @@ weight: 3
 
 本页介绍如何利用 TSB Operator 来管理数据平面的网关配置。
 
-TSB Operator 配置为监督数据平面网关组件的生命周期，主动监控所有命名空间中的 `IngressGateway` 、 `Tier1Gateway` 和 `EgressGateway` 自定义资源 (CR)集群。默认情况下，数据平面网关组件驻留在 `istio-gateway` 命名空间中。你可以在数据平面安装 API 参考文档中找到有关自定义资源 API 的全面详细信息。
+TSB Operator 配置为监督数据平面网关组件的生命周期，主动监控所有命名空间中的 `IngressGateway` 、 `Tier1Gateway` 和 `EgressGateway` 自定义资源 (CR) 集群。默认情况下，数据平面网关组件驻留在 `istio-gateway` 命名空间中。你可以在数据平面安装 API 参考文档中找到有关自定义资源 API 的全面详细信息。
 
 数据平面 Operator 监视其创建的 Kubernetes 资源。每当它检测到监视事件（例如删除部署）时，它都会启动协调以将系统恢复到所需状态，从而有效地重新创建任何已删除的部署。
 
@@ -24,7 +24,7 @@ TSB Operator 配置为监督数据平面网关组件的生命周期，主动监�
 
 | 组件  | Service                                                      | Deployment                                                   |
 | :---- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| istio | istio-operator-metrics（用户在应用程序命名空间中配置的 istio 代理服务） | istio-operator  （由用户在应用程序命名空间中配置的 istio 代理部署） |
+| istio | istio-operator-metrics（用户在应用程序命名空间中配置的 istio 代理服务） | istio-operator（由用户在应用程序命名空间中配置的 istio 代理部署） |
 
 在其专用命名空间中，TSB Operator 生成名为 `tsb-gateways` 的 `IstioOperator` 自定义资源 (CR)，并继续部署 Istio Operator。
 

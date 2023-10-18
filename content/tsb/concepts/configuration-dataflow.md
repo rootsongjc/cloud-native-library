@@ -14,7 +14,7 @@ TSB 中的所有配置更改均源自管理平面。用户通过各种接口与 
 
 {{<callout note "MPC 组件">}}
 
-由于遗留原因，XCP Central 通过 Kubernetes CRD 接收其配置。名为“MPC”的 shim 服务器建立到 TSB 的 API 服务器的 gRPC 流，以接收配置并将相应的 CR 推送到托管 XCP Central 的 Kubernetes 集群中。 MPC 还会从 XCP Central 向 TSB 发送系统运行时状态的报告，以帮助用户管理网格。
+由于遗留原因，XCP Central 通过 Kubernetes CRD 接收其配置。名为“MPC”的 shim 服务器建立到 TSB 的 API 服务器的 gRPC 流，以接收配置并将相应的 CR 推送到托管 XCP Central 的 Kubernetes 集群中。MPC 还会从 XCP Central 向 TSB 发送系统运行时状态的报告，以帮助用户管理网格。
 
 即将发布的 TSB 版本将删除该组件，TSB 的 API Server 和 XCP Central 将直接通过 gRPC 进行通信。
 
@@ -22,7 +22,7 @@ TSB 中的所有配置更改均源自管理平面。用户通过各种接口与 
 
 ## 全局控制平面 - XCP Central
 
-XCP Central 充当应用程序集群中管理平面和本地控制平面之间的中介。它处理运行时配置、服务发现信息和管理元数据的分发。这种通信通过 gRPC 流进行，从而实现 XCP Central 和 XCP Edge 实例之间的双向交互。 XCP Central 发送新的用户配置，而 XCP Edge 报告服务发现更改和管理数据。 XCP Central 还将其本地状态的快照存储为其运行的集群中的 Kubernetes 自定义资源 (CR)。
+XCP Central 充当应用程序集群中管理平面和本地控制平面之间的中介。它处理运行时配置、服务发现信息和管理元数据的分发。这种通信通过 gRPC 流进行，从而实现 XCP Central 和 XCP Edge 实例之间的双向交互。XCP Central 发送新的用户配置，而 XCP Edge 报告服务发现更改和管理数据。XCP Central 还将其本地状态的快照存储为其运行的集群中的 Kubernetes 自定义资源 (CR)。
 
 {{<callout note "XCP Central Data Store">}}
 
@@ -34,7 +34,7 @@ XCP Central 充当应用程序集群中管理平面和本地控制平面之间�
 
 ## 本地控制平面 - XCP Edge
 
-XCP Edge 负责将从 XCP Central 接收到的配置转换为特定于本地集群的本机 Istio 对象。它将这些配置发布到 Kubernetes API 服务器中，Istio 在其中照常处理它们。 XCP Edge 还管理跨网格的服务公开，有助于跨集群通信和功能。从 XCP Central 接收的配置信息存储在控制平面命名空间 ( `istio-system` ) 中，确保本地缓存在连接丢失时可用。
+XCP Edge 负责将从 XCP Central 接收到的配置转换为特定于本地集群的本机 Istio 对象。它将这些配置发布到 Kubernetes API 服务器中，Istio 在其中照常处理它们。XCP Edge 还管理跨网格的服务公开，有助于跨集群通信和功能。从 XCP Central 接收的配置信息存储在控制平面命名空间 ( `istio-system` ) 中，确保本地缓存在连接丢失时可用。
 
 ##  详细的数据流
 

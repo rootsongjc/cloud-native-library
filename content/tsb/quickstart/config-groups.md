@@ -10,7 +10,7 @@ weight: 5
 在继续阅读本指南之前，请确保你已完成以下步骤：
 
 - 熟悉 TSB 概念
-- 安装TSB演示环境
+- 安装 TSB 演示环境
 - 部署 Istio Bookinfo 示例应用程序
 -  创建租户
 -  创建工作区
@@ -30,7 +30,7 @@ weight: 5
 
 对使用组 ID `bookinfo-traffic` 的流量组和使用组 ID `bookinfo-security` 的安全组重复相同的步骤。
 
-## 使用tctl
+## 使用 tctl
 
 创建 `groups.yaml` 文件：
 

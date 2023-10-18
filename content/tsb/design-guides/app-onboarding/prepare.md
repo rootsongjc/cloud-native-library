@@ -41,7 +41,7 @@ weight: 1
 
 ## 平台：启用严格安全
 
-您应该使用 TSE/TSB 配置平台以零信任方式运行。具体来说：
+你应该使用 TSE/TSB 配置平台以零信任方式运行。具体来说：
 
  * 组件与应用所有者服务之间的所有通信都使用 mTLS 进行安全保护。这意味着外部的第三方，例如集群中的其他服务或具有数据路径访问权限的服务，不能读取事务、修改事务或冒充客户或服务。
  * 默认情况下拒绝所有通信。平台所有者必须明确打开所需的通信路径。这意味着只允许明确允许的通信。
@@ -54,11 +54,11 @@ weight: 1
 
 ![TSE 安全设置](../images/tse-security.png)
 
-您也可以使用 Tetrate API 配置严格安全，方法是遵循 Tetrate Service Bridge 的说明。
+你也可以使用 Tetrate API 配置严格安全，方法是遵循 Tetrate Service Bridge 的说明。
 
 在 Tetrate 产品中，默认设置与顶级组织关联，顶级组织在 TSB 中是可定义的，而在 TSE 中设置为值 `tse`。
 
-您将在名为 **default** 的 **OrganizationSetting** 中的 **OrganizationSetting.spec.defaultSecuritySetting** 部分中找到安全设置：
+你将在名为 **default** 的 **OrganizationSetting** 中的 **OrganizationSetting.spec.defaultSecuritySetting** 部分中找到安全设置：
 
 ```bash
 tctl get os -o yaml
@@ -72,7 +72,7 @@ tctl get os -o yaml
 
 可以在 [TSB API 参考](https://docs.tetrate.io/service-bridge/latest/refs/tsb/v2/organization_setting) 中找到这些设置的描述。
 
-稍后，您将有选择地覆盖这些设置以允许允许的流量。
+稍后，你将有选择地覆盖这些设置以允许允许的流量。
 
 ## 平台：创建 Kubernetes 命名空间
 
@@ -102,7 +102,7 @@ Tetrate Service Express（TSE）提供一个单一的组织（用于全局设置
 
 Tetrate Service Bridge 添加了一个中间层的 **租户** 概念，允许在顶级组织内拥有多个独立的团队。**租户** 可以在团队层面上应用额外的隔离，并可以覆盖全局设置。
 
-在本文档中，我们假设组织内只有一个团队，因此所有设置将应用于工作区级别。示例将使用名为 `tse` 的组织和名为 `tse` 的租户；当使用 TSB 时，您应该将这些更改为反映您选择的层次结构。
+在本文档中，我们假设组织内只有一个团队，因此所有设置将应用于工作区级别。示例将使用名为 `tse` 的组织和名为 `tse` 的租户；当使用 TSB 时，你应该将这些更改为反映你选择的层次结构。
 </details>
 
 为每个应用程序创建 Tetrate 工作区，覆盖分配给该应用程序的命名空间：
@@ -141,15 +141,15 @@ EOF
 tctl apply -f bookinfo-ws.yaml
 ```
 
-在打开一个工作区（**authorization.mode: WORKSPACE**）时，您在零信任环境中创建了一个“泡泡”。该工作区内的所有服务可以相互通信，但必须使用 mTLS。
+在打开一个工作区（**authorization.mode: WORKSPACE**）时，你在零信任环境中创建了一个“泡泡”。该工作区内的所有服务可以相互通信，但必须使用 mTLS。
 
 ## 平台：部署入口网关
 
-通常，您会希望安排外部流量到达工作区内的特定服务。为此，您首先应在每个集群中的每个工作区部署一个**入口网关**。应用程序所有者随后可以定义通过此入口网关公开其服务的网关规则。
+通常，你会希望安排外部流量到达工作区内的特定服务。为此，你首先应在每个集群中的每个工作区部署一个**入口网关**。应用程序所有者随后可以定义通过此入口网关公开其服务的网关规则。
 
 ### 创建 Tetrate 网关组
 
-首先，创建一个 Tetrate 网关组，其范围限定在将托管入口网关的每个工作区和集群内。例如，如果 **Bookinfo** 工作区跨足了 **cluster-1** 和 **cluster-2**，您可以为此工作区创建两个网关组，每个集群一个：
+首先，创建一个 Tetrate 网关组，其范围限定在将托管入口网关的每个工作区和集群内。例如，如果 **Bookinfo** 工作区跨足了 **cluster-1** 和 **cluster-2**，你可以为此工作区创建两个网关组，每个集群一个：
 
 ```bash
 cat <<EOF > bookinfo-gwgroup-cluster-1.yaml
@@ -189,7 +189,7 @@ EOF
 kubectl apply -f bookinfo-ingress-gw.yaml
 ```
 
-这一步将在相应的命名空间中创建一个 **envoy 代理** pod，它将作为入口网关运行（```kubectl get pod -n bookinfo -l app=bookinfo-ingress-gw```）。请注意，您使用 IngressGateway 在特定集群中创建资源，因此使用 ```kubectl``` 部署资源。
+这一步将在相应的命名空间中创建一个 **envoy 代理** pod，它将作为入口网关运行（```kubectl get pod -n bookinfo -l app=bookinfo-ingress-gw```）。请注意，你使用 IngressGateway 在特定集群中创建资源，因此使用 ```kubectl``` 部署资源。
 
 稍后，应用程序所有者将想要创建 **Gateway** 资源以公开其选择的服务。他们需要知道：
 
@@ -197,7 +197,7 @@ kubectl apply -f bookinfo-ingress-gw.yaml
  * 每个集群上 Tetrate 网关组的名称，例如 **bookinfo-gwgroup-cluster-1**
  * 每个集群上入口网关的名称，例如 **bookinfo-ingress-gw**。可以在所有集群上使用相同的名称
 
-入口网关非常轻量级，并且为了安全和容错目的，为每个工作区运行一个单独的入口网关提供了隔离。对于非常大型的部署，您可能希望在多个工作区之间[共享入口网关](../../howto/gateway/shared-ingress)。
+入口网关非常轻量级，并且为了安全和容错目的，为每个工作区运行一个单独的入口网关提供了隔离。对于非常大型的部署，你可能希望在多个工作区之间[共享入口网关](../../howto/gateway/shared-ingress)。
 
 ## 平台：启用 GitOps 集成
 
@@ -211,13 +211,13 @@ kubectl apply -f bookinfo-ingress-gw.yaml
 Tetrate 的 GitOps 集成允许用户使用 Kubernetes API 提供平台范围的配置。GitOps 应该在一个或多个集群上启用；该过程会安装 Tetrate 平台范围配置的 CRD，任何资源都会自动从集群推送到 Tetrate API 服务器：
 
  * **Tetrate Service Express：** 在 Tetrate Service Express 上默认启用 GitOps 集成。有关集成的概述，请参阅 [TSE 中的 GitOps](https://docs.tetrate.io/service-express/gitops/gitops-tse) 指南。
- * **Tetrate Service Bridge：** 您需要在 Tetrate Service Bridge 上明确启用 GitOps。有关详细信息，请参阅 TSB 文档中的 [配置 GitOps](../../../operations/features/configure-gitops)。
+ * **Tetrate Service Bridge：** 你需要在 Tetrate Service Bridge 上明确启用 GitOps。有关详细信息，请参阅 TSB 文档中的 [配置 GitOps](../../../operations/features/configure-gitops)。
 
 总的来说，GitOps 不仅适用于 GitOps 的用例。即使在组织采用 GitOps 姿态来管理配置之前，它也是有用的；GitOps 也可以用于允许选定的 K8s 用户管理 Tetrate 配置。这意味着用户不必拥有 Tetrate 用户/角色，他们可以使用他们已经习惯的 K8s 工具。
 
 ## 平台：启用额外的集成
 
-您可能希望为您的平台启用其他集成。例如，在使用 AWS 时：
+你可能希望为你的平台启用其他集成。例如，在使用 AWS 时：
 
  * 安装 [AWS 负载均衡控制器](http://docs.tetrate.io/service-express/installation/eks-cluster#install-aws-load-balancer-controller) 以实现更好的负载均衡器集成
  * 启用 [AWS Route 53 控制器](https://docs.tetrate.io/service-express/integrations/route53#enabling-the-integration) 以管理由应用程序所有者公开的服务的 DNS 记录条目

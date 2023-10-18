@@ -37,7 +37,7 @@ weight: 9
 
 13.  单击保存更改。
 
-### 使用tctl
+### 使用 tctl
 
 创建以下 `reviews.yaml` 文件：
 
@@ -81,7 +81,7 @@ tctl apply -f reviews.yaml
    - 单击添加标签，并将标签设置为 `version` ，将值设置为 `v2` 。
 5. 单击保存更改。
 
-### 使用tctl
+### 使用 tctl
 
 更新 `reviews.yaml` 文件以在 `v1` 和 `v2` 之间均匀分配流量：
 
@@ -127,7 +127,7 @@ tctl apply -f reviews.yaml
 4. 将权重设置为 `100` 。
 5. 单击保存更改。
 
-### 使用tctl
+### 使用 tctl
 
 更新 `reviews.yaml` 文件以将 100% 流量路由到 `v2` 版本：
 
