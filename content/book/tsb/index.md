@@ -1,5 +1,5 @@
 ---
-title: Tetrate Service Bridge 中文文档
+title: Tetrate Service Bridge 手册
 tags:
   - Handbook 系列
 date: 2023-09-19

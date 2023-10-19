@@ -1,7 +1,7 @@
 ---
 weight: 1
-title: Tetrate Service Bridge 中文文档
-summary: "Tetrate Service Bridge（TSB）文档：安装、使用和升级。"
+title: Tetrate Service Bridge 手册
+summary: "Tetrate Service Bridge（TSB）中文文档：安装、使用和升级。"
 type: book
 icon: book
 icon_pack: fas

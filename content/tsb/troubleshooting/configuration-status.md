@@ -1,64 +1,55 @@
 ---
-title: Configuration status troubleshooting
-description: Use tctl to understand what's the deployment status of TSB configurations
+title: 配置状态故障排除
+description: 使用 tctl 了解 TSB 配置的部署状态。
+weight: 3
 ---
 
-Tetrate Service Bridge's [tctl CLI](../reference/cli/guide/index) lets you
-interact with the TSB API to apply objects's configurations. This document
-describes how to use tctl to understand what's the deployment status of a
-resource configuration within the system.
+Tetrate Service Bridge 的 tctl CLI 允许你与 TSB API 交互以应用对象的配置。本文档介绍如何使用 tctl 了解系统中资源配置的部署状态。
 
-## Resource Status
+## 资源状态
 
-TSB tracks the lifecycle of configuration changes as ResourceStatus. You can
-fetch them using [tctl x
-status](../reference/cli/reference/experimental#tctl-experimental-status). Run
-`tctl x status --help` to see all the possible options.
+TSB 通过 ResourceStatus 跟踪配置更改的生命周期。你可以使用 [tctl x status](../../reference/cli/reference/experimental#tctl-experimental-status) 获取它们。运行 `tctl x status --help` 可查看所有可能的选项。
 
-There are different types of resources, depending on how their configuration status is computed.
+根据资源的配置状态计算方式，有不同类型的资源。
 
-| Resource Type | Configuration Status | Examples |
-| - | - | - |
-| Parent | Aggregate the status of their children resources. | `workspace`, `trafficgroup`, `gatewaygroup`, `securitygroup` |
-| Child | Does not depend on other resources. | `ingressgateway`, `egressgateway`, `trafficsettings`, etc |
-| Non-configurable| Do not get directly materialized as configurations in the target cluster. | `organizations`, `tenants`, `users` |
-| With dependencies | High-level resources. | `applications` and `apis` |
+| 资源类型           | 配置状态                           | 示例                                                         |
+| ------------------ | ---------------------------------- | ------------------------------------------------------------ |
+| 父资源             | 聚合其子资源的状态。               | `workspace`, `trafficgroup`, `gatewaygroup`, `securitygroup` |
+| 子资源             | 不依赖于其他资源。                 | `ingressgateway`, `egressgateway`, `trafficsettings` 等      |
+| 不可配置资源       | 不会直接在目标集群中实体化为配置。 | `organizations`, `tenants`, `users`                          |
+| 具有依赖关系的资源 | 高级别资源。                       | `applications` 和 `apis`                                     |
 
-A resource status can have several values, depending on on how far its
-configuration has been propagated across the [TSB
-components](../concepts/architecture).
+资源状态可以具有多个值，这取决于其配置在[TSB 组件](../../concepts/architecture)中的传播程度。
 
-| Type | Status | Condition |
-| - | - | - |
-| Child and non-configurable | `ACCEPTED` | Their configuration has been validated and persisted. This is the initial value for valid configurations. |
-| | `READY` | Their configuration have been propagated to all the destination clusters. This is also the default state for non-configurable resources. |
-| | `PARTIAL` | Some of their configuration are ready in some destination clusters, but not in all of them. |
-| | `FAILED` | Their configuration has triggered some internal error in some, or all, destination clusters. |
-| | `FAILED` | An offending resource in a destination clusters affects the correct behaviour of the configuration. |
-| | | | 
-| Parent | `ACCEPTED` | All their children resources either `ACCEPTED` or `READY`. |
-| | `READY` | All their children resources `READY`. |
-| | `FAILED` | Any of their children has `FAILED`. |
-| | | | 
-| With dependencies | `ACCEPTED` | All their dependent configurations are `ACCEPTED`. |
-| | `READY` | All their dependent configurations are `READY`. |
-| | `DIRTY` | All their dependent configurations are `DIRTY`. |
-| | `FAILED` | Any of their dependent configurations are `FAILED`. |
-| | `PARTIAL` | Their dependent configurations are in a mix of `READY`, `ACCEPTED` and/or `DIRTY`. |
+| 类型                 | 状态       | 条件                                                         |
+| -------------------- | ---------- | ------------------------------------------------------------ |
+| 子资源和不可配置资源 | `ACCEPTED` | 它们的配置已经通过验证并持久化。这是对有效配置的初始值。     |
+|                      | `READY`    | 它们的配置已传播到所有目标集群。这也是不可配置资源的默认状态。 |
+|                      | `PARTIAL`  | 其中一些配置在某些目标集群中是就绪的，但在其中一些目标集群中不是。 |
+|                      | `FAILED`   | 它们的配置在一些或所有目标集群中触发了一些内部错误。         |
+|                      | `FAILED`   | 目标集群中的某个问题资源会影响配置的正确行为。               |
+|                      |            |                                                              |
+| 父资源               | `ACCEPTED` | 它们的所有子资源都是 `ACCEPTED` 或 `READY`。                 |
+|                      | `READY`    | 它们的所有子资源都是 `READY`。                               |
+|                      | `FAILED`   | 它们的任何子资源都是 `FAILED`。                              |
+|                      |            |                                                              |
+| 具有依赖关系的资源   | `ACCEPTED` | 其所有依赖配置都是 `ACCEPTED`。                              |
+|                      | `READY`    | 其所有依赖配置都是 `READY`。                                 |
+|                      | `DIRTY`    | 其所有依赖配置都是 `DIRTY`。                                 |
+|                      | `FAILED`   | 其任何依赖配置都是 `FAILED`。                                |
+|                      | `PARTIAL`  | 其依赖配置处于 `READY`, `ACCEPTED` 和/或 `DIRTY` 的混合状态。 |
 
-You can read more about the status types in [the Status API spec](../refs/tsb/v2/status#status).
+你可以在 [状态 API 规范](../../refs/tsb/v2/status#status) 中了解更多关于状态类型的信息。
 
-## Using tctl to understand the status of config objects
+## 使用 tctl 了解配置对象的状态
 
-Let's see some examples in a scenario where the `bookinfo` app is deployed.
+让我们在部署了 `bookinfo` 应用程序的情况下，看看一些示例。
 
-:::note
-We assume the Bookinfo application has been deployed in its own workspace, as
-in our [Quick Start](../quickstart/introduction) tutorials, and has been
-configured with the corresponding groups.
-:::
+{{<callout note 提示>}}
+我们假设 Bookinfo 应用程序已在其自己的工作区中部署，就像在我们的 [快速入门](../../quickstart/introduction) 教程中一样，并已配置相应的组。
+{{</callout>}}
 
-You can check the status of the `bookinfo` ingress gateway with `tctl x status`:
+你可以使用 `tctl x status` 检查 `bookinfo` 入口网关的状态：
 
 ```bash
 $ tctl x status ig --tenant tetrate --workspace bookinfo --gatewaygroup bookinfo bookinfo
@@ -66,11 +57,9 @@ NAME        STATUS      LAST EVENT      MESSAGE
 bookinfo    ACCEPTED    XCP_ACCEPTED
 ```
 
-This shows that its configuration has been validated and persisted.
+这显示其配置已被验证并持久化。
 
-If you want further information, its yaml version will show you the history of
-events of this resource status. This information is very useful for
-troubleshooting the lifecycle of a resource configuration.
+如果你想获取更多信息，它的 YAML 版本将显示此资源状态的事件历史记录。这些信息对于排查资源配置的生命周期非常有用。
 
 ```bash
 $ tctl x status ig --tenant tetrate --workspace bookinfo --gatewaygroup bookinfo bookinfo
@@ -97,24 +86,17 @@ spec:
   status: ACCEPTED
 ```
 
-Here you can see the historic of events that changed the status of the last
-version `sMlEWPbvm6M=` of this `ingressgateway` resource, most recent first.
+在这里，你可以看到更改了最后一个版本 `sMlEWPbvm6M=` 的此 `ingressgateway` 资源的状态的事件历史记录，最近的事件排在最前面。
 
-In this example, the resource was initially accepted by TSB Server, then by MPC
-and finally by the XCP component.
+在此示例中，资源首先被 TSB 服务器接受，然后是 MPC，最后是 XCP 组件。
 
-Note that just the historic of the latest resource version is persisted. In the
-following section your will learn how to use Audit Logs to display the historic
-for all the versions.
+请注意，只有最新资源版本的历史记录会被保留。在接下来的部分中，你将学会如何使用审计日志来显示所有版本的历史记录。
 
-## Using the TSB audit logs to understand the lifecycle of config objects
+## 使用 TSB 审计日志了解配置对象的生命周期
 
-TSB has the notion of audit logs that show everything that happens to a TSB
-resource. Who did what and when, on each resource, and it also gives insights
-on the different stages of its config.
+TSB 有一个称为审计日志的概念，显示了发生在 TSB 资源上的所有事件。谁在何时对每个资源进行了什么操作，它还可以提供有关其配置的不同阶段的见解。
 
-For example, you could use the following command to get a list of all the events
-that happened on the bookinfo workspace and all the resources contained in it.
+例如，你可以使用以下命令获取在 bookinfo 工作区中发生的所有事件的列表以及其中包含的所有资源。
 
 ```bash
 $ tctl x audit ws bookinfo --recursive --text bookinfo
@@ -131,8 +113,7 @@ TIME                   SEVERITY    TYPE                                        O
 2022/02/10 17:02:48    INFO        gateway.tsb.tetrate.io/v2/IngressGateway    create                  admin    Create IngressGateway "bookinfo" by "admin"
 ```
 
-Some errors are identified in the audit logs that you can further inspect by
-retrieving the details of the config status for those objects:
+审核日志中标识了一些错误，你可以通过检索那些对象的配置状态的详细信息来进一步检查这些错误：
 
 ```bash
 $ tctl x status ig --workspace bookinfo --gatewaygroup bookinfo bookinfo
@@ -140,14 +121,9 @@ NAME        STATUS    LAST EVENT              MESSAGE
 bookinfo    FAILED    XCP_CENTRAL_REJECTED    admission webhook "central-validation.xcp.tetrate.io" denied the request: configuration is invalid: domain name "tetrate.io---" invalid (label "io---" invalid)
 ```
 
-As you can see in the command output, the configuration has been rejected by the
-XCP component and flagged as invalid, and it will not be propagated to the
-target clusters.
+正如你在命令输出中所看到的，配置已被 XCP 组件拒绝，并标记为无效，它将不会传播到目标集群。
 
-You can also get insights by querying the status of the workspace. It will show
-any errors in its child resources. This way it is very easy to navigate from
-any workspace or top-level element to the specific errors that configuration
-objects may present.
+你还可以通过查询工作区的状态来获取见解。它将显示其子资源中的任何错误。通过这种方式，从任何工作区或顶级元素轻松导航到配置对象可能存在的特定错误非常容易。
 
 ```bash
 $ tctl x status ws bookinfo
@@ -155,7 +131,7 @@ NAME        STATUS    LAST EVENT    MESSAGE
 bookinfo    FAILED                  The following children are failing: organizations/tetrate/tenants/tetrate/workspaces/bookinfo/gatewaygroups/bookinfo
 ```
 
-Or its extended yaml version:
+或其扩展的 YAML 版本：
 
 ```bash
 $ tctl x status ws bookinfo -o yaml
@@ -184,30 +160,28 @@ spec:
         timestamp: "2022-02-10T18:32:29.576374660Z"
         type: MPC_ACCEPTED
       - etag: '"GBcgtWe3R80="'
-        timestamp: "2022-02-10T18:32:24.679197258Z"
+        timestamp: "2022-02-10T18:32
+
+:24.679197258Z"
         type: TSB_ACCEPTED
   message: 'The following children resources have issues: organizations/tetrate/tenants/tetrate/workspaces/bookinfo/gatewaygroups/bookinfo'
   status: FAILED
 ```
 
-Finally, audit logs help easily identify when config issues were introduced and
-the exact changes that have been applied at any point in time. Here you can
-clearly see that an update for admin triggered a change in the config resource
-that was rejected, and you can see the exact fields that were changed, causing
-the issue:
+最后，审计日志帮助轻松识别配置问题是何时引入的，以及在任何时间点应用的确切更改。在这里，你可以清楚地看到一个对管理员的更新触发了配置资源的更改，并且可以看到导致问题的确切字段：
 
 ```bash
 $ tctl x audit ig --workspace bookinfo --gatewaygroup bookinfo bookinfo
 TIME                   SEVERITY    TYPE                                        OPERATION               USER     MESSAGE
 2022/02/10 22:04:14    INFO        api.tsb.tetrate.io/v2/ResourceStatus        XCP_CENTRAL_REJECTED    mpc      New FAILED status due to XCP_CENTRAL_REJECTED event for ingressgateway "bookinfo" version "O0HhTEHkvjA="
-2022/02/10 22:04:14    INFO        api.tsb.tetrate.io/v2/ResourceStatus        MPC_ACCEPTED            mpc      New ACCEPTED status due to MPC_ACCEPTED event for ingressgateway "bookinfo" version "O0HhTEHkvjA="
+2022/02/10/22:04:14    INFO        api.tsb.tetrate.io/v2/ResourceStatus        MPC_ACCEPTED            mpc      New ACCEPTED status due to MPC_ACCEPTED event for ingressgateway "bookinfo" version "O0HhTEHkvjA="
 2022/02/10 22:04:12    INFO        gateway.tsb.tetrate.io/v2/IngressGateway    update                  admin    Update IngressGateway "bookinfo" by "admin"
 2021/11/25 16:02:53    INFO        api.tsb.tetrate.io/v2/ResourceStatus        XCP_CENTRAL_ACCEPTED    mpc      New ACCEPTED status due to XCP_CENTRAL_ACCEPTED event for ingressgateway "bookinfo" version "sMlEWPbvm6M="
 2021/11/25 16:02:52    INFO        api.tsb.tetrate.io/v2/ResourceStatus        MPC_ACCEPTED            mpc      New ACCEPTED status due to MPC_ACCEPTED event for ingressgateway "bookinfo" version "sMlEWPbvm6M="
 2021/11/25 16:02:48    INFO        gateway.tsb.tetrate.io/v2/IngressGateway    create                  admin    Create IngressGateway "bookinfo" by "admin"
 ```
 
-Displaying the yaml with a date filter will output:
+以日期过滤器显示 yaml 将输出：
 
 ```bash
 $ tctl x audit ig --workspace bookinfo --gatewaygroup bookinfo bookinfo --operation update --since "2022/02/10 22:04:12" -o yaml
@@ -261,16 +235,5 @@ spec:
   triggeredBy: admin
 ```
 
-You can easily see in a `diff` format the exact fields that were changed.
+你可以很容易地以 `diff` 格式看到确切更改的字段。
 
-## Summary
-
-- You can use the config status commands to get status details and errors on
-  individual resources.
-- You can use it as well on top-level resources to quickly identify offending
-  resources down the hierarchy.
-- You can use the audit logs to have a global view of all events that happened
-  on any TSB resource.
-- You can correlate those audit logs with the configuration statuses.
-- Audit logs give you details on the exact changes that were made to any
-  resource.

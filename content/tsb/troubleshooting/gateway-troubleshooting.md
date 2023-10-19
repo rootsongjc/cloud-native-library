@@ -1,14 +1,14 @@
 ---
-title: Ingress Gateway故障排除
-描述: 在TSB中排查入口路由问题。
+title: Ingress Gateway 故障排除
+description: 在 TSB 中排查入口路由问题。
 weight: 2
 ---
 
-无论我们是使用TSB的`IngressGateway`还是Istio的`Gateway`和`VirtualService`资源将外部流量路由到我们的服务，都可能会遇到我们暴露的路由问题。在本文档中，我们将展示一些最常见的故障场景以及如何进行故障排查。
+无论我们是使用 TSB 的`IngressGateway`还是 Istio 的`Gateway`和`VirtualService`资源将外部流量路由到我们的服务，都可能会遇到我们暴露的路由问题。在本文档中，我们将展示一些最常见的故障场景以及如何进行故障排查。
 
 ## 缺少配置
 
-首先要检查的一件事是我们在TSB中创建的配置是否存在于目标集群中。例如，在这种情况下：
+首先要检查的一件事是我们在 TSB 中创建的配置是否存在于目标集群中。例如，在这种情况下：
 
 ```
 $ curl -vk http://helloworld.tetrate.io/hello
@@ -26,10 +26,10 @@ $ curl -vk http://helloworld.tetrate.io/hello
 <
 ```
 
-我们得到了一个404的HTTP响应（未找到），对于刚刚配置的入口路由，这是一个问题。要检查的第一件事是[资源状态](./configuration_status)。确保您的入口资源的状态为`ACCEPTED`。
+我们得到了一个 404 的 HTTP 响应（未找到），对于刚刚配置的入口路由，这是一个问题。要检查的第一件事是[资源状态](./configuration_status)。确保你的入口资源的状态为`ACCEPTED`。
 
 {{<callout note "注意 404">}}
-Envoy返回的404响应不包含正文，如上所示。如果您看到404和一些“未找到”的消息，通常表示路由配置正确，但您正在访问错误的URL。例如：
+Envoy 返回的 404 响应不包含正文，如上所示。如果你看到 404 和一些“未找到”的消息，通常表示路由配置正确，但你正在访问错误的 URL。例如：
 
 ```
 $ curl -vk https://httpbin.tetrate.io/foobar
@@ -49,7 +49,7 @@ $ curl -vk https://httpbin.tetrate.io/foobar
 <p>The requested URL was not found on the server.  If you entered the URL manually please check your spelling and try again.</p>
 ```
 
-您在那里看到的HTML代码是应用程序本身发送的，这意味着路由正常工作，但您正在访问错误的路径。
+你在那里看到的 HTML 代码是应用程序本身发送的，这意味着路由正常工作，但你正在访问错误的路径。
 {{</callout>}}
 
 ```
@@ -74,12 +74,12 @@ NAME     STATUS    LAST EVENT    MESSAGE
 hello    FAILED    MPC_FAILED    no gateway object found for reference "helloworld/hellogw" in "organizations/tetrate/tenants/tetrate/workspaces/hello/gatewaygroups/hello/virtualservices/hello"
 ```
 
-此时我们可以确定缺少配置的原因实际上是与配置本身有关的问题，因此可以进行修复以使其部署，从而修复我们之前看到的404错误。状态对象中的错误消息将引导您找到错误所在。
+此时我们可以确定缺少配置的原因实际上是与配置本身有关的问题，因此可以进行修复以使其部署，从而修复我们之前看到的 404 错误。状态对象中的错误消息将引导你找到错误所在。
 
-## Envoy访问日志
+## Envoy 访问日志
 
 {{<callout note "X-REQUEST-ID HEADER">}}
-您可以发送 `X-REQUEST-ID` 头以关联日志中的请求。您可以使用任意随机字符串作为请求ID。Envoy代理将在其创建的每个日志语句中包含该ID。以下是示例：
+你可以发送 `X-REQUEST-ID` 头以关联日志中的请求。你可以使用任意随机字符串作为请求 ID。Envoy 代理将在其创建的每个日志语句中包含该 ID。以下是示例：
 
 ```bash
 $ curl -vk -H "X-REQUEST-ID:4e3e3e04-6509-43d4-9a97-52b7b2cea0e8" http://helloworld.tetrate.io/hello
@@ -87,7 +87,7 @@ $ curl -vk -H "X-REQUEST-ID:4e3e3e04-6509-43d4-9a97-52b7b2cea0e8" http://hellowo
 
 {{</callout>}}
 
-TSB配置了Istio以便Envoy在`stdout`中打印访问日志，并仅对特定模块的错误进行记录。如果从`istiod`接收到的配置无效，您将会看到一条消息，但对于失败的请求，您将会看到一个带有一些标志的`503`响应，这些标志在[Envoy文档](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage)中有说明（请参阅`%RESPONSE_FLAGS%`部分）。让我们看看以下示例。
+TSB 配置了 Istio 以便 Envoy 在`stdout`中打印访问日志，并仅对特定模块的错误进行记录。如果从`istiod`接收到的配置无效，你将会看到一条消息，但对于失败的请求，你将会看到一个带有一些标志的`503`响应，这些标志在[Envoy 文档](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage)中有说明（请参阅`%RESPONSE_FLAGS%`部分）。让我们看看以下示例。
 
 ```
 $ curl -vk https://httpbin.tetrate.io/foobar
@@ -107,7 +107,7 @@ no healthy upstream
 [2022-04-27T15:02:20.472Z] "GET /foobar HTTP/2" 503 UH no_healthy_upstream - "-" 0 19 0 - "X.X.X.X" "curl/7.81.0" "55fef75a-70e5-449f-ad01-cd34960f465c" "httpbin.tetrate.io" "-" outbound|8000||httpbin.httpbin.svc.cluster.local - 10.16.0.20:8443 X.X.X.X:36009 httpbin.tetrate.io httpbin
 ```
 
-好的，我们可以看到日志的时间戳，请求的一些HTTP信息（方法、路径、协议），然后可以看到响应代码`503`，后跟标志`UH`，与我们在响应中得到的消息相匹配，说明没有可用的上游服务。当前用于此入口路由的`VirtualService`是：
+好的，我们可以看到日志的时间戳，请求的一些 HTTP 信息（方法、路径、协议），然后可以看到响应代码`503`，后跟标志`UH`，与我们在响应中得到的消息相匹配，说明没有可用的上游服务。当前用于此入口路由的`VirtualService`是：
 
 ```yaml
 kind: VirtualService
@@ -144,7 +144,7 @@ httpbin-gateway   10.16.0.20:8080,10.16.0.20:8443,10.16.0.20:15443   48m
 
 ## 调试或跟踪日志
 
-还有其他情况可能需要提高Envoy日志的详细程度，以找出问题所在。假设我们创建了一个应用程序，它执行：
+还有其他情况可能需要提高 Envoy 日志的详细程度，以找出问题所在。假设我们创建了一个应用程序，它执行：
 
 ```bash
 $ curl localhost:8090/
@@ -172,7 +172,7 @@ $ curl -v http://fun.tetrate.io/
 upstream connect error or disconnect/reset before headers. reset reason: protocol error
 ```
 
-HTTP状态代码`502`表示“网关错误”，因此问题不应出现在我们的应用程序中。
+HTTP 状态代码`502`表示“网关错误”，因此问题不应出现在我们的应用程序中。
 
 检查网关的日志显示：
 
@@ -186,9 +186,9 @@ HTTP状态代码`502`表示“网关错误”，因此问题不应出现在我�
 [2022-04-28T10:58:59.089Z] "GET / HTTP/1.1" 502 UPE upstream_reset_before_response_started{protocol_error} - "-" 0 87 1 - "X.X.X.X" "curl/7.81.0" "3d1f5c5c-e788-4f55-ba0f-00f15b749767" "fun.tetrate.io" "10.16.0.40:8090" inbound|8090|| 127.0.0.6:36281 10.16.0.40:8090 X.X.X.X:0 outbound_.8090_._.faulty-http.faulty-http.svc.cluster.local default
 ```
 
-好的，在这里我们可以看到HTTP状态代码`502`以及标志`UPE`，根据Envoy文档的说明，这表示“上游响应存在HTTP协议错误”。好的，但这并没有告诉我们到底发生了什么。
+好的，在这里我们可以看到 HTTP 状态代码`502`以及标志`UPE`，根据 Envoy 文档的说明，这表示“上游响应存在 HTTP 协议错误”。好的，但这并没有告诉我们到底发生了什么。
 
-此时，我们将提高Envoy日志的详细程度，以查看到底发生了什么。我们将使用一些`tctl`命令的组合来获取与我们的主机URL匹配的配置，然后提高相关组件的日志级别。首先，我们要运行的命令是 `tctl get all`，以获取与我们的URL `fun.tetrate.io` 相关的配置。
+此时，我们将提高 Envoy 日志的详细程度，以查看到底发生了什么。我们将使用一些`tctl`命令的组合来获取与我们的主机 URL 匹配的配置，然后提高相关组件的日志级别。首先，我们要运行的命令是 `tctl get all`，以获取与我们的 URL `fun.tetrate.io` 相关的配置。
 
 ```
 $ tctl get all --fqdn fun.tetrate.io > fun.tetrate.io.config.yaml
@@ -197,7 +197,7 @@ kind: VirtualService
 kind: Gateway
 ```
 
-为了公开 `fun.tetrate.io`，我们正在使用一个Istio `Gateway` 和一个 `VirtualService`。现在我们可以运行一个命令，该命令将把与这两个对象相关的Pod的日志级别调整为 `trace`（我们可以使用 `debug`，但是在某些情况下 `trace` 可能会提供一些额外的信息），然后我们将指示 `tctl` 在我们进行测试时等待，因此它将在测试之后收集日志。
+为了公开 `fun.tetrate.io`，我们正在使用一个 Istio `Gateway` 和一个 `VirtualService`。现在我们可以运行一个命令，该命令将把与这两个对象相关的 Pod 的日志级别调整为 `trace`（我们可以使用 `debug`，但是在某些情况下 `trace` 可能会提供一些额外的信息），然后我们将指示 `tctl` 在我们进行测试时等待，因此它将在测试之后收集日志。
 
 ```
 $ tctl experimental debug log-level -f fun.tetrate.io.config.yaml --level trace --wait -o /tmp/logs
@@ -226,12 +226,12 @@ active loggers:
 Waiting for logs to populate. Press Ctrl+C to stop and dump logs to files...
 ```
 
-您可以看到 `tctl` 标识了两个要更改日志级别的Pod：
+你可以看到 `tctl` 标识了两个要更改日志级别的 Pod：
 
-- `faulty-http/faulty-http-75cd76d866-x9hqx` 是匹配目标 `VirtualService` 中的服务的选择器的一个Pod。
-- `faulty-http/faulty-http-gw-7fbd455c4c-q8lr8` 是匹配Istio `Gateway` 对象中的 `selector` 的一个Pod。
+- `faulty-http/faulty-http-75cd76d866-x9hqx` 是匹配目标 `VirtualService` 中的服务的选择器的一个 Pod。
+- `faulty-http/faulty-http-gw-7fbd455c4c-q8lr8` 是匹配 Istio `Gateway` 对象中的 `selector` 的一个 Pod。
 
-对于这两个Pod，`tctl` 将日志级别更改为指定的 `trace` 级别，然后它将挂起等待用户按下 `Ctrl+C` 以停止等待日志。此时，我们将在另一个终端中启动并发出我们之前使用过的 `curl` 请求几次。之后，我们将返回到运行 `tctl` 命令的终端并按下 `Ctrl+C`。
+对于这两个 Pod，`tctl` 将日志级别更改为指定的 `trace` 级别，然后它将挂起等待用户按下 `Ctrl+C` 以停止等待日志。此时，我们将在另一个终端中启动并发出我们之前使用过的 `curl` 请求几次。之后，我们将返回到运行 `tctl` 命令的终端并按下 `Ctrl+C`。
 
 ```
 Waiting for logs to populate. Press Ctrl+C to stop and dump logs to files...
@@ -250,7 +250,7 @@ $ ls -lrt /tmp/logs
 -rw-r--r--   1 chirauki  staff  111970 28 Apr 16:17 faulty-http-faulty-http-gw-7fbd455c4c-q8lr8-istio-proxy.log
 ```
 
-从上到下，这些是应用程序容器日志，应用程序sidecar容器日志和网关日志。让我们检查sidecar容器的日志。如果我们在URL中搜索主机名 `fun.tetrate.io`，我们将看到进入网关的请求：
+从上到下，这些是应用程序容器日志，应用程序 sidecar 容器日志和网关日志。让我们检查 sidecar 容器的日志。如果我们在 URL 中搜索主机名 `fun.tetrate.io`，我们将看到进入网关的请求：
 
 ```
 2022-04-28T14:17:49.024048Z     debug   envoy filter    original_dst: new connection accepted
@@ -353,15 +353,15 @@ ZWN0X251bWJlchIOGgw3MjIxNDUyMjA2ODcKHgoNV09SS0xPQURfTkFNRRINGgtmYXVsdHktaHR0cA==
 'server', 'istio-envoy'
 ```
 
-好的，等等。我们看到Envoy开始解析响应头部，但最终打印了这行：
+好的，等等。我们看到 Envoy 开始解析响应头部，但最终打印了这行：
 
 ```
 2022-04-28T14:17:49.028350Z     debug   envoy client    [C6170] Error dispatching received data: headers count exceeds limit
 ```
 
-以某种方式，响应中的头部似乎比Envoy希望的多。如果我们搜索[Envoy文档](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#config-core-v3-httpprotocoloptions)（特别是检查 `max_headers_count`），我们会看到，默认情况下，Envoy允许一个HTTP请求或响应中的最多100个头部，而我们超过了这个数字。在这种情
+以某种方式，响应中的头部似乎比 Envoy 希望的多。如果我们搜索[Envoy 文档](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#config-core-v3-httpprotocoloptions)（特别是检查 `max_headers_count`），我们会看到，默认情况下，Envoy 允许一个 HTTP 请求或响应中的最多 100 个头部，而我们超过了这个数字。在这种情
 
-况下，应用程序中的问题会导致Envoy出现错误，因此修复应用程序将解决此问题。
+况下，应用程序中的问题会导致 Envoy 出现错误，因此修复应用程序将解决此问题。
 
 此时，我们可以再次使用 `tctl` 将日志级别恢复为默认值。
 
@@ -369,8 +369,8 @@ ZWN0X251bWJlchIOGgw3MjIxNDUyMjA2ODcKHgoNV09SS0xPQURfTkFNRRINGgtmYXVsdHktaHR0cA==
 $ tctl experimental debug log-level -f fun.tetrate.io.config.yaml --level info -y
 ```
 
-## Gateway自动缩放和删除
+## Gateway 自动缩放和删除
 
-当发生网关Pod删除事件时，TSB需要将服务信息传播到其他集群，以便跨集群流量不会针对已删除的Pod的NodePort IP地址。您可以配置TSB控制平面以启用一个Webhook，拦截网关Pod删除事件，将删除操作保留一段可配置的时间。这样可以为配置更改在所有集群中传播并让所有网格组件删除即将删除的IP地址提供足够的时间。如果配置未完全传播，您可能会观察到HTTP流量的`503`错误或通过传递跨集群流量的`000`错误。
+当发生网关 Pod 删除事件时，TSB 需要将服务信息传播到其他集群，以便跨集群流量不会针对已删除的 Pod 的 NodePort IP 地址。你可以配置 TSB 控制平面以启用一个 Webhook，拦截网关 Pod 删除事件，将删除操作保留一段可配置的时间。这样可以为配置更改在所有集群中传播并让所有网格组件删除即将删除的 IP 地址提供足够的时间。如果配置未完全传播，你可能会观察到 HTTP 流量的`503`错误或通过传递跨集群流量的`000`错误。
 
-请参阅[网关删除保持Webhook](../../operations/features/gateway-deletion-webhook)以启用Webhook。
+请参阅[网关删除保持 Webhook](../../operations/features/gateway-deletion-webhook)以启用 Webhook。
