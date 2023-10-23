@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>概念 | 云原生资料库</title>
+    <link>https://lib.jimmysong.io/spiffe-and-spire/concept/</link>
+      <atom:link href="https://lib.jimmysong.io/spiffe-and-spire/concept/index.xml" rel="self" type="application/rss+xml" />
+    <description>概念</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Mon, 23 Oct 2023 00:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://lib.jimmysong.io/media/sharing.png</url>
+      <title>概念</title>
+      <link>https://lib.jimmysong.io/spiffe-and-spire/concept/</link>
+    </image>
+    
+    <item>
+      <title>SPIFFE 基本概念</title>
+      <link>https://lib.jimmysong.io/spiffe-and-spire/concept/spiffe/</link>
+      <pubDate>Mon, 23 Oct 2023 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/spiffe-and-spire/concept/spiffe/</guid>
+      <description>&lt;p&gt;SPIFFE，即普适安全生产身份框架（Secure Production Identity Framework for Everyone），是一套开源标准，用于在动态和异构环境中安全地进行身份识别。采用 SPIFFE 的系统无论在哪里运行，都可以轻松可靠地相互认证。&lt;/p&gt;
+&lt;p&gt;SPIFFE 开源规范的核心是——通过简单 API 定义了一个短期的加密身份文件 SVID。然后，工作负载进行认证时可以使用该身份文件，例如建立 TLS 连接或签署和验证 JWT 令牌等。&lt;/p&gt;
+&lt;p&gt;SPIFFE 已经在云原生应用中得到了大量的应用，尤其是在 Istio 和 Envoy 中。下面将向你介绍 SPIFFE 的一些基本概念。&lt;/p&gt;
+&lt;h2 id=&#34;工作负载&#34;&gt;工作负载&lt;/h2&gt;
+&lt;p&gt;工作负载是一个单一的软件实体，通过特定配置部署，用于单一目的；它可能包括多个运行中的软件实例，所有这些实例执行相同的任务。术语“工作负载”可能涵盖软件系统的各种不同定义，包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;运行 Python Web 应用程序的 Web 服务器，部署在一组虚拟机上，前面有一个负载均衡器。&lt;/li&gt;
+&lt;li&gt;一个 MySQL 数据库的实例。&lt;/li&gt;
+&lt;li&gt;处理队列中条目的工作程序。&lt;/li&gt;
+&lt;li&gt;一组独立部署的系统共同工作，例如使用数据库服务的 Web 应用程序。Web 应用程序和数据库也可以分别被视为工作负载。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;对于 SPIFFE 来说，工作负载往往比物理或虚拟节点更精细 - 通常精细到节点上的单个进程。对于在容器编排器中托管的工作负载而言，这对于多个工作负载可以共存（但在彼此之间隔离）于单个节点的情况非常重要。&lt;/p&gt;
+&lt;p&gt;对于 SPIFFE 来说，工作负载也可能跨越多个节点 - 例如，一个可以在多台机器上同时运行的弹性缩放的 Web 服务器。&lt;/p&gt;
+&lt;p&gt;尽管在不同的上下文中，将何为工作负载的粒度会有所不同，但对于 SPIFFE 的目的而言，&lt;em&gt;假定&lt;/em&gt;工作负载与其他工作负载隔离得足够好，以至于恶意的工作负载在发放证书后无法窃取另一个工作负载的凭据。此隔离的稳固性以及其实现机制超出了 SPIFFE 的范围。&lt;/p&gt;
+&lt;h2 id=&#34;spiffe-id&#34;&gt;SPIFFE ID&lt;/h2&gt;
+&lt;p&gt;SPIFFE ID 是一个字符串，唯一且具体地标识一个工作负载。SPIFFE ID 也可以分配给工作负载运行在的中间系统（如一组虚拟机）。例如，&lt;strong&gt;spiffe://acme.com/billing/payments&lt;/strong&gt; 是一个有效的 SPIFFE ID。&lt;/p&gt;
+&lt;p&gt;SPIFFE ID 是一个&lt;a href=&#34;https://tools.ietf.org/html/rfc3986&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;统一资源标识符 (URI)&lt;/a&gt;，其格式如下：&lt;strong&gt;spiffe://信任域/工作负载标识符&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;工作负载标识符&lt;/em&gt;唯一地标识&lt;a href=&#34;https://spiffe.io/docs/latest/spiffe-about/spiffe-concepts/#trust-domain&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;信任域&lt;/a&gt;中的特定工作负载。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIFFE 规范&lt;/a&gt;详细描述了 SPIFFE ID 的格式和用途。&lt;/p&gt;
+&lt;h2 id=&#34;信任域&#34;&gt;信任域&lt;/h2&gt;
+&lt;p&gt;信任域对应于系统的信任根。信任域可以代表运行其独立 SPIFFE 基础设施的个人、组织、环境或部门。在相同信任域中标识的所有工作负载都会收到可以与信任域的根密钥进行验证的身份文件。&lt;/p&gt;
+&lt;p&gt;通常建议将位于不同物理位置（例如不同数据中心或云区域）或应用不同安全实践的环境（例如与生产环境相比的暂存或实验环境）的工作负载保持在不同的信任域中。&lt;/p&gt;
+&lt;h2 id=&#34;spiffe-可验证身份文件svid&#34;&gt;SPIFFE 可验证身份文件（SVID）&lt;/h2&gt;
+&lt;p&gt;SVID 是工作负载用于向资源或调用方证明其身份的文档。如果由 SPIFFE ID 信任域内的权威签名，SVID 被认为是有效的。&lt;/p&gt;
+&lt;p&gt;一个 SVID 包含一个单一的 SPIFFE ID，代表了呈现它的服务的身份。它将 SPIFFE ID 编码在一个密码学可验证的文档中，支持两种当前支持的格式之一：X.509 证书或 JWT 令牌。&lt;/p&gt;
+&lt;p&gt;由于令牌容易受到&lt;em&gt;重放攻击&lt;/em&gt;，在传输中获取了令牌后，攻击者可以使用它来冒充一个工作负载，因此建议尽可能使用 X.509-SVIDs。但是，在某些情况下，JWT 令牌格式可能是唯一的选择，例如当你的架构在两个工作负载之间有一个 L7 代理或负载均衡器时。&lt;/p&gt;
+&lt;p&gt;有关 SVID 的详细信息，请参阅&lt;a href=&#34;https://github.com/spiffe/spiffe/blob/main/standards/X509-SVID.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SVID 规范&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;spiffe-工作负载-api&#34;&gt;SPIFFE 工作负载 API&lt;/h2&gt;
+&lt;p&gt;工作负载 API 提供以下功能：&lt;/p&gt;
+&lt;p&gt;对于 X.509 格式的身份文件（X.509-SVID）：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;其身份，以 SPIFFE ID 形式描述。&lt;/li&gt;
+&lt;li&gt;与该 ID 相关的私钥，可用于代表工作负载对数据进行签名。还创建了相应的短暂的 X.509 证书，即 X509-SVID。这可用于建立 TLS 连接或以其他方式对其他工作负载进行身份验证。&lt;/li&gt;
+&lt;li&gt;一组证书 - 称为&lt;a href=&#34;https://spiffe.io/docs/latest/spiffe-about/spiffe-concepts/#trust-bundle&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;信任捆绑包&lt;/a&gt; - 可用于验证另一个工作负载呈现的 X.509-SVID。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;对于 JWT 格式的身份文件（JWT-SVID）：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;其身份，以 SPIFFE ID 形式描述。&lt;/li&gt;
+&lt;li&gt;JWT 令牌&lt;/li&gt;
+&lt;li&gt;一组证书 - 称为&lt;a href=&#34;https://spiffe.io/docs/latest/spiffe-about/spiffe-concepts/#trust-bundle&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;信任捆绑包&lt;/a&gt; - 可用于验证其他工作负载的身份。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;与&lt;a href=&#34;https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Amazon EC2 实例元数据 API&lt;/a&gt;和&lt;a href=&#34;https://cloud.google.com/compute/docs/storing-retrieving-metadata&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Google GCE 实例元数据 API&lt;/a&gt;类似，工作负载 API 不要求调用工作负载具有自己的身份知识，或在调用 API 时拥有任何身份验证令牌。这意味着你的应用程序无需将任何身份验证密钥与工作负载一起部署。&lt;/p&gt;
+&lt;p&gt;然而，与这些其他 API 不同，工作负载 API 是平台无关的，并且可以在进程级别以及内核级别识别运行的服务 - 这使其适用于与容器调度器（如 Kubernetes）一起使用。&lt;/p&gt;
+&lt;p&gt;为了最小化由于密钥泄露或被破坏而造成的风险，所有私钥（及相应的证书）都是短暂的，会经常自动轮换。在相应的密钥到期之前，工作负载可以从工作负载 API 请求新的密钥和信任捆绑包。&lt;/p&gt;
+&lt;h2 id=&#34;信任捆绑包&#34;&gt;信任捆绑包&lt;/h2&gt;
+&lt;p&gt;在使用 X.509-SVID 时，信任捆绑包用于由目标工作负载验证源工作负载的身份。信任捆绑包是一个包含一个或多个证书颁发机构（CA）根证书的集合，工作负载应将其视为可信任的。信任捆绑包包含了验证 X.509 和 JWT SVID 的公钥材料。&lt;/p&gt;
+&lt;p&gt;用于验证 X.509 SVID 的公钥材料是一组证书。用于验证 JWT 的公钥材料是一个原始的公钥。信任捆绑包的内容经常会发生变化。在调用工作负载 API 时，工作负载会检索信任捆绑包。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>SPIRE 基本概念</title>
+      <link>https://lib.jimmysong.io/spiffe-and-spire/concept/spire/</link>
+      <pubDate>Mon, 23 Oct 2023 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/spiffe-and-spire/concept/spire/</guid>
+      <description>&lt;p&gt;SPIRE 是 &lt;a href=&#34;../spiffe&#34;&gt;SPIFFE API&lt;/a&gt; 的一个生产就绪的实现，它执行节点和工作负载认证，以便根据一组预先定义的条件，安全地向工作负载发出 SVID，并验证其他工作负载的 SVID。&lt;/p&gt;
+&lt;h2 id=&#34;spire-架构和组件&#34;&gt;SPIRE 架构和组件&lt;/h2&gt;
+&lt;p&gt;SPIRE 部署由一个 SPIRE 服务器和一个或多个 SPIRE 代理组成。服务器充当通过代理向一组工作负载发放身份的签名机构。它还维护一个工作负载身份的注册表，以及为签发这些身份而必须验证的条件。代理在本地向工作负载公开 SPIFFE 工作负载 API，必须安装在工作负载运行的每个节点上。&lt;/p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-spire-架构图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/spire-arch.svg&#34; alt=&#34;SPIRE 架构图&#34; loading=&#34;lazy&#34; data-zoomable width=&#34;30%&#34; /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      SPIRE 架构图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;h2 id=&#34;服务器&#34;&gt;服务器&lt;/h2&gt;
+&lt;p&gt;SPIRE 服务器负责管理和发布其配置的 SPIFFE 信任域中的所有身份。它存储注册条目（指定决定特定 SPIFFE ID 应被签发的条件的选择器）和签名密钥，使用节点证明来自动验证代理的身份，并在被验证的代理请求时为工作负载创建 SVID。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-spire-服务器&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/spire-server.svg&#34; alt=&#34;SPIRE 服务器&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      SPIRE 服务器
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;服务器的行为是通过一系列的插件决定的。SPIRE 包含几个插件，你可以建立额外的插件来扩展 SPIRE 以满足特定的使用情况。插件的类型包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;节点证明器插件&lt;/strong&gt;：与代理节点证明器一起，验证代理运行的节点的身份。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;节点解析器插件&lt;/strong&gt;：它通过验证关于节点的额外属性来扩展服务器可以用来识别节点的选择器集合。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;数据存储插件&lt;/strong&gt;：服务器用它来存储、查询和更新各种信息，如注册条目、哪些节点已认证、这些节点的选择器是什么。有一个内置的数据存储插件，可以使用 MySQL、SQLite3 或 PostgresSQL 数据库来存储必要的数据。默认情况下，使用 SQLite 3。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;密钥管理器插件&lt;/strong&gt;：控制服务器如何存储用于签署 X.509-SVID 和 JWT-SVID 的私钥。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;上游权威机构插件&lt;/strong&gt;：默认情况下，SPIRE 服务器充当其自身的证书授权机构。但是，你可以使用上游权威机构插件来使用来自不同 PKI 系统的不同 CA。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;你可以通过配置插件和其他各种配置变量来定制服务器的行为。详见 &lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_server/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 服务器配置参考&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;代理&#34;&gt;代理&lt;/h2&gt;
+&lt;p&gt;SPIRE 代理在已识别的工作负载所运行的每个节点上运行。该代理：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;从服务器上请求 SVID，并将其缓存起来，直到工作负载请求其 SVID 为止。&lt;/li&gt;
+&lt;li&gt;向节点上的工作负载公开 SPIFFE 工作负载 API，并证明调用它的工作负载的身份&lt;/li&gt;
+&lt;li&gt;为已识别的工作负载提供其 SVID&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-spire-代理&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/spire-agent.svg&#34; alt=&#34;SPIRE 代理&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      SPIRE 代理
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;该代理的主要组成部分包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;节点证明器插件&lt;/strong&gt;：与服务器节点证明器一起，验证代理运行的节点的身份。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;工作负载证明器插件&lt;/strong&gt;：通过从节点操作系统中查询有关工作负载进程的信息，并将其与你在使用选择器注册工作负载属性时提供给服务器的信息进行比较，来验证节点上工作负载进程的身份。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;密钥管理器插件&lt;/strong&gt;：代理用来生成和使用颁发给工作负载的 X.509-SVID 的私钥。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;你可以通过配置插件和其他配置变量来定制代理的行为。详见《&lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_agent/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 代理配置参考》&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;自定义服务器和代理插件&#34;&gt;自定义服务器和代理插件&lt;/h2&gt;
+&lt;p&gt;你可以为特定的平台和架构创建自定义的服务器和代理插件，而 SPIRE 并不包括这些插件。例如，你可以为一个架构创建服务器和代理节点验证器，而不是在节点验证下总结的那些。或者你可以创建一个自定义密钥管理器插件，以 SPIRE 目前不支持的方式处理私钥。因为 SPIRE 在运行时加载自定义插件，你不需要重新编译 SPIRE 来启用它们。&lt;/p&gt;
+&lt;h2 id=&#34;工作负载注册&#34;&gt;工作负载注册&lt;/h2&gt;
+&lt;p&gt;为了让 SPIRE 识别工作负载，你必须通过注册条目向 SPIRE 服务器注册工作负载。工作负载注册告诉 SPIRE 如何识别工作负载以及为其提供哪个 SPIFFE ID。&lt;/p&gt;
+&lt;p&gt;注册条目将身份（以 SPIFFE ID 的形式）映射到一组称为选择器的属性，工作负载必须拥有这些属性才能获得特定身份。在工作负载证明期间，代理使用这些选择器值来验证工作负载的身份。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://spiffe.io/docs/latest/spire/using/registering/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 文档&lt;/a&gt;中详细介绍了工作负载注册。&lt;/p&gt;
+&lt;h2 id=&#34;证明&#34;&gt;证明&lt;/h2&gt;
+&lt;p&gt;SPIRE 上下文中的证明（attestation）是断言工作负载的身份。SPIRE 通过从受信任的第三方收集工作负载进程本身和运行 SPIRE 代理的节点的属性并将它们与工作负载注册时定义的一组选择器进行比较来实现这一点。&lt;/p&gt;
+&lt;p&gt;用于执行证明的可信第三方 SPIRE 查询是特定于平台的。&lt;/p&gt;
+&lt;p&gt;SPIRE 分两个阶段执行证明：首先是节点证明（其中验证工作负载正在运行的节点的身份），然后是工作负载证明（其中验证节点上的工作负载）。&lt;/p&gt;
+&lt;p&gt;SPIRE 有一个灵活的架构，允许它根据工作负载运行的环境，使用许多不同的受信第三方进行节点和工作负载验证。你通过代理和服务器配置文件中的条目告诉 SPIRE 使用哪些受信任的第三方，并通过你在注册工作负载时指定的选择器值告诉 SPIRE 使用哪些类型的信息进行验证。&lt;/p&gt;
+&lt;h3 id=&#34;节点证明&#34;&gt;节点证明&lt;/h3&gt;
+&lt;p&gt;SPIRE 要求每个代理在首次连接到服务器时进行身份验证和自我验证；这个过程称为节点证明（Node Attestation）。在节点证明期间，代理和服务器一起验证运行代理的节点的身份。他们通过称为节点证明器的插件来做到这一点。所有节点证明器都向节点及其环境询问只有该节点拥有的信息片段，以证明该节点的身份。&lt;/p&gt;
+&lt;p&gt;节点证明的成功后，代理收到唯一的 SPIFFE ID。然后，代理的 SPIFFE ID 充当其负责的工作负载的“父级”。&lt;/p&gt;
+&lt;p&gt;节点身份证明的示例包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;通过云平台交付给节点的身份证明文件（例如 AWS Instance 身份证明文件）&lt;/li&gt;
+&lt;li&gt;验证存储在连接到节点的硬件安全模块或可信平台模块上的私钥&lt;/li&gt;
+&lt;li&gt;安装代理时通过加入令牌提供的手动验证&lt;/li&gt;
+&lt;li&gt;多节点软件系统安装在节点上时提供的标识凭据（例如 Kubernetes 服务账户令牌）&lt;/li&gt;
+&lt;li&gt;其他机器身份证明（例如部署的服务器证书）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;节点证明器向服务器返回一组（可选）节点选择器，用于标识特定机器（例如 Amazon 实例 ID）。由于在定义工作负载的身份时，单个机器的特定身份通常没有用处，因此 SPIRE 会查询&lt;a href=&#34;https://spiffe.io/docs/latest/spire-about/spire-concepts/#node-resolution&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;节点解析器&lt;/a&gt;（如果有）以查看可以验证被证明节点的哪些附加属性（例如，如果节点是 AWS 安全组的成员）。来自证明器和解析者的选择器集成为与代理节点的 SPIFFE ID 关联的选择器集。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;注意&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    节点证明不需要节点选择器，除非你&lt;a href=&#34;https://spiffe.io/docs/latest/spire/using/registering/#mapping-workloads-to-multiple-nodes&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;将工作负载映射到多个节点&lt;/a&gt;。
+&lt;/div&gt;
+
+&lt;p&gt;下图说明了节点证明中的步骤。在此图中，底层平台是 AWS：&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-spire-节点证明步骤&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/spire-node-attestor.svg&#34; alt=&#34;SPIRE 节点证明步骤&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      SPIRE 节点证明步骤
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h4 id=&#34;步骤总结节点证明&#34;&gt;步骤总结：节点证明&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;代理 AWS 节点证明器插件向 AWS 查询节点身份证明，并将该信息提供给代理。&lt;/li&gt;
+&lt;li&gt;代理将此身份证明传递给服务器。服务器将此数据传递给其 AWS 节点证明器。&lt;/li&gt;
+&lt;li&gt;服务器 AWS 节点证明器独立验证身份证明，或者通过调用 AWS API，使用它在步骤 2 中获得的信息。节点证明器还为代理创建一个 SPIFFE ID，并将其传递回服务器进程，以及它发现的任何节点选择器。&lt;/li&gt;
+&lt;li&gt;服务器发回代理节点的 SVID。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4 id=&#34;节点证明器&#34;&gt;节点证明器&lt;/h4&gt;
+&lt;p&gt;代理和服务器通过它们各自的节点证明器询问底层平台。SPIRE 支持节点证明器在各种环境中证明节点身份，包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;AWS 上的 EC2 实例（使用 EC2 实例身份文档）&lt;/li&gt;
+&lt;li&gt;Microsoft Azure 上的 VM（使用 Azure 托管服务标识）&lt;/li&gt;
+&lt;li&gt;Google Cloud Platform 上的 Google Compute Engine 实例（使用 GCE 实例身份令牌）&lt;/li&gt;
+&lt;li&gt;作为 Kubernetes 集群成员的节点（使用 Kubernetes 服务账户令牌）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;对于没有平台可以直接识别节点的情况，SPIRE 包括用于证明的节点证明器：&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;使用服务器生成的加入令牌&lt;/strong&gt;—— 加入令牌（join token）是 SPIRE 服务器和代理之间的预共享密钥。服务器可以在安装后生成加入令牌，该令牌可用于在代理启动时对其进行验证。为帮助防止滥用，加入令牌在使用后立即过期。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;使用现有的 X.509 证书&lt;/strong&gt;—— 有关配置节点证明器的信息，请参阅 &lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_server/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 服务器配置参考&lt;/a&gt;和 &lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_agent/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 代理配置参考&lt;/a&gt;。&lt;/p&gt;
+&lt;h4 id=&#34;节点解析&#34;&gt;节点解析&lt;/h4&gt;
+&lt;p&gt;一旦验证了单个节点的身份，“节点解析器”插件就会扩展一组选择器，这些选择器可用于通过验证节点的其他属性来识别节点（例如，如果节点是特定 AWS 安全组的成员） ，或具有与之关联的特定标签）。只有服务器参与节点解析。SPIRE 在证明之后直接运行一次节点解析器。&lt;/p&gt;
+&lt;h4 id=&#34;节点解析器&#34;&gt;节点解析器&lt;/h4&gt;
+&lt;p&gt;服务器支持以下平台的节点解析器插件：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;亚马逊网络服务（AWS）&lt;/li&gt;
+&lt;li&gt;微软 Azure&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;工作负载证明&#34;&gt;工作负载证明&lt;/h3&gt;
+&lt;p&gt;工作负载证明提出了一个问题：“这是谁的进程？”代理通过询问本地可用的权限（例如节点的操作系统内核，或在同一节点上运行的本地 kubelet）来回答这个问题，以确定调用工作负载 API 的进程的属性。&lt;/p&gt;
+&lt;p&gt;然后，当你使用选择器注册工作负载的属性时，将这些属性与提供给服务器的信息进行比较。&lt;/p&gt;
+&lt;p&gt;这些类型的信息可能包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;底层操作系统如何调度进程。在基于 Unix 的系统上，这可能是用户 ID (uid)、组 ID (gid)、文件系统路径等。）&lt;/li&gt;
+&lt;li&gt;进程是如何由 Kubernetes 等编排系统调度的。在这种情况下，工作负载可能由运行它的 Kubernetes 服务账户或命名空间来描述。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;虽然代理和服务器都在节点证明中发挥作用，但只有代理参与工作负载证明。&lt;/p&gt;
+&lt;p&gt;下图说明了工作负载证明的步骤：&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-工作负载证明&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/workload-attestation.svg&#34; alt=&#34;工作负载证明&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      工作负载证明
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h4 id=&#34;步骤摘要工作负载证明&#34;&gt;步骤摘要：工作负载证明&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;工作负载调用工作负载 API 以请求 SVID。在 Unix 系统上，这被暴露为 Unix 域套接字。&lt;/li&gt;
+&lt;li&gt;代理询问节点的内核以识别调用者的进程 ID。然后，它调用任何已配置的工作负载证明器插件，为它们提供工作负载的进程 ID。&lt;/li&gt;
+&lt;li&gt;工作负载证明者使用进程 ID 来发现有关工作负载的其他信息，并根据需要查询相邻平台特定的组件，例如 Kubernetes kubelet。通常，这些组件也与代理驻留在同一节点上。&lt;/li&gt;
+&lt;li&gt;证明者将发现的信息以选择器的形式返回给代理。&lt;/li&gt;
+&lt;li&gt;代理通过将发现的选择器与注册条目进行比较来确定工作负载的身份，并将正确的缓存 SVID 返回给工作负载。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4 id=&#34;工作负载证明者&#34;&gt;工作负载证明者&lt;/h4&gt;
+&lt;p&gt;SPIRE 包括适用于 Unix、Kubernetes 和 Docker 的工作负载证明器插件。&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
