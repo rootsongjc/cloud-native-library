@@ -1,0 +1,630 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>架构 | 云原生资料库</title>
+    <link>https://lib.jimmysong.io/spiffe-and-spire/architecture/</link>
+      <atom:link href="https://lib.jimmysong.io/spiffe-and-spire/architecture/index.xml" rel="self" type="application/rss+xml" />
+    <description>架构</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Mon, 23 Oct 2023 00:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://lib.jimmysong.io/media/sharing.png</url>
+      <title>架构</title>
+      <link>https://lib.jimmysong.io/spiffe-and-spire/architecture/</link>
+    </image>
+    
+    <item>
+      <title>扩展 SPIRE 部署：支持的 SPIRE 拓扑结构、身份联合和规模考虑</title>
+      <link>https://lib.jimmysong.io/spiffe-and-spire/architecture/scaling-spire/</link>
+      <pubDate>Mon, 23 Oct 2023 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/spiffe-and-spire/architecture/scaling-spire/</guid>
+      <description>&lt;p&gt;扩展 SPIRE 可以通过嵌套拓扑和联合拓扑来实现。&lt;strong&gt;嵌套拓扑允许将多个 SPIRE 服务器链接在一起，以发放属于同一信任域的身份。联合拓扑用于在不同信任域之间建立信任，使工作负载能够在不同信任域中进行身份验证&lt;/strong&gt;。SPIRE 还可以与其他 SPIFFE 兼容系统和 OIDC 提供者系统进行联合，以实现安全的身份验证和通信。在部署规模时，需要考虑 SVID 和根证书的生存时间、工作负载数量和分布、JWT-SVID 的使用等因素，并注意数据存储的设计和规划。&lt;/p&gt;
+&lt;p&gt;SPIRE 部署可以根据工作负载的增长来调整大小或规模。一个 SPIRE 部署由一个或多个共享复制数据存储的 SPIRE 服务器组成，或者相反，由在同一信任域中的一组 SPIRE 服务器和至少一个 SPIRE 代理（通常是一个以上）组成。&lt;/p&gt;
+&lt;p&gt;部署的大小范围广泛。单个 SPIRE 服务器可以容纳多个代理和工作负载注册条目。一个规模大小的考虑是，由于涉及到管理和发放与这些条目相对应的身份所涉及的操作数量，SPIRE 服务器实例的内存和 CPU 消耗往往与部署中的工作负载注册条目数量成比例增长。单个 SPIRE 服务器实例也代表了一个单点故障。&lt;/p&gt;
+&lt;p&gt;为了支持给定部署中更多的代理和工作负载（数以万计或数十万个节点），可以水平扩展 SPIRE 服务器的数量。有了多个服务器，SPIRE 服务器执行的计算工作将在所有 SPIRE 服务器实例之间分布。除了额外的容量之外，使用多个 SPIRE 服务器实例还可以消除单点故障，实现高可用性。&lt;/p&gt;
+&lt;h3 id=&#34;高可用性模式下的-spire-服务器&#34;&gt;高可用性模式下的 SPIRE 服务器&lt;/h3&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/ha_mode.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;要水平扩展 SPIRE 服务器，无论是出于高可用性还是负载分配目的，都要配置所有属于同一信任域的服务器以读写相同的共享数据存储。&lt;/p&gt;
+&lt;p&gt;数据存储是 SPIRE 服务器持久保存动态配置信息的地方，例如注册条目和身份映射策略。SQLite 已捆绑到 SPIRE 服务器中，它是默认的数据存储。支持一些兼容的 SQL 数据库，以及一个用于使用 Kubernetes CRD 的 Kubernetes 插件。在水平扩展 SPIRE 服务器时，请选择符合您要求的数据存储，并配置所有 SPIRE 服务器以使用所选的数据存储。有关详细信息，请参阅 &lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_datastore_sql.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;数据存储插件配置参考&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;在高可用性模式下，每个服务器都维护自己的证书颁发机构，可以是自签名证书，也可以是从共享根证书颁发机构获取的中间证书（即在配置了上游机构时）。&lt;/p&gt;
+&lt;h2 id=&#34;选择-spire-部署拓扑&#34;&gt;选择 SPIRE 部署拓扑&lt;/h2&gt;
+&lt;p&gt;有三种主要的 SPIRE 部署拓扑：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;单一信任域&lt;/li&gt;
+&lt;li&gt;嵌套 SPIRE&lt;/li&gt;
+&lt;li&gt;联合 SPIRE&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;诸如管理域边界、工作负载数量、可用性要求、云供应商数量和身份验证要求等因素将决定您环境中的适当拓扑，如下所述。&lt;/p&gt;
+&lt;h3 id=&#34;单一信任域&#34;&gt;单一信任域&lt;/h3&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/single_trust_domain.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;单一信任域最适合个体环境或在管理域内具有相似特征的环境。创建一个单一的主导信任域的主要动机是从单个证书颁发机构中发放身份，因为这会减少在不同部署中管理的 SPIRE 服务器数量。&lt;/p&gt;
+&lt;p&gt;然而，当将单个 SPIRE 信任域部署以跨越地理区域、平台和云提供商环境时，在跨越地理位置或跨越云提供商边界的多个地方管理共享数据存储会带来一定的复杂性。在这些情况下，当部署扩展以覆盖多个环境时，解决在单一信任域上使用共享数据存储的问题的方法是在嵌套拓扑中配置 SPIRE 服务器。&lt;/p&gt;
+&lt;h3 id=&#34;嵌套-spire&#34;&gt;嵌套 SPIRE&lt;/h3&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/nested_spire.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;嵌套 SPIRE 允许 SPIRE 服务器被“链接”在一起，所有服务器仍然发放属于同一信任域的身份，这意味着在同一信任域中识别的所有工作负载都会获得可以与信任域的根密钥进行验证的身份文档。&lt;/p&gt;
+&lt;p&gt;嵌套拓扑通过在每个下游 SPIRE 服务器与“链接”的 SPIRE 代理共存来工作。下游 SPIRE 服务器通过 Workload API 获取凭据，然后使用这些凭据直接与上游 SPIRE 服务器进行身份验证以获取中间 CA。&lt;/p&gt;
+&lt;p&gt;一个有助于理解嵌套拓扑功能的心理模型是将顶级 SPIRE 服务器想象成是一个全局服务器（或一组用于高可用性的服务器），而下游 SPIRE 服务器是区域或集群级别的服务器。&lt;/p&gt;
+&lt;p&gt;在此配置中，顶层 SPIRE 服务器保存根证书/密钥，而下游服务器请求中间签名证书，用作下游服务器的 X.509 签名授权机构。这提供了弹性，因为顶层可能会崩溃，中间服务器将继续运行。&lt;/p&gt;
+&lt;p&gt;嵌套拓扑非常适用于多云部署。由于能够混合匹配节点证明者，下游服务器可以驻留在不同云提供商环境中，为不同云提供商环境中的工作负载和代理提供身份。&lt;/p&gt;
+&lt;p&gt;作为为了实现高可用性和负载平衡而将 SPIRE 服务器水平扩展的补充，嵌套拓扑可以用作分隔故障域的约束策略。&lt;/p&gt;
+&lt;h3 id=&#34;联合-spire&#34;&gt;联合 SPIRE&lt;/h3&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/federated_spire.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;部署可能需要多个信任根：也许因为一个组织有不同的组织部门，各自有不同的管理员，或者因为它们有单独的临时和生产环境，需要偶尔进行通信。&lt;/p&gt;
+&lt;p&gt;另一个用例是在组织之间实现 SPIFFE 互操作性，例如在云提供商和其客户之间。&lt;/p&gt;
+&lt;p&gt;这些多信任域和互操作性用例都需要一种明确定义的、可互操作的方法，使一个信任域中的工作负载能够对另一个信任域中的工作负载进行身份验证。首先通过验证各自的束终点来建立不同信任域之间的信任，然后通过经过身份验证的端点检索外部信任域束。&lt;/p&gt;
+&lt;p&gt;有关如何实现这一点的更多细节，请参阅以下 SPIFFE 规范，其中描述了这种机制：&lt;a href=&#34;https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Trust_Domain_and_Bundle.md#5-spiffe-bundle-endpoint&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIFFE 信任域和束&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;有关配置联合 SPIRE 的教程，请参阅：&lt;a href=&#34;https://github.com/spiffe/spire-tutorials/tree/main/docker-compose/federation&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;联合 SPIRE 教程&lt;/a&gt;&lt;/p&gt;
+&lt;h2 id=&#34;与外部系统的交互&#34;&gt;与外部系统的交互&lt;/h2&gt;
+&lt;h3 id=&#34;与与-spiffe-兼容的系统联合&#34;&gt;与“与 SPIFFE 兼容”的系统联合&lt;/h3&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/spiffe_compatible.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;SPIFFE 身份颁发者可以与其他暴露 SPIFFE 联合 API 实现的 SPIFFE 身份颁发者联合，使联合域中的工作负载能够安全地进行身份验证和通信。与在 SPIRE 部署之间建立联合一样，SPIFFE 联合用于在 SPIFFE 兼容系统之间启用联合，比如在一个 Istio 服务网格和另一个 Istio 服务网格之间运行的 Istio 服务网格。&lt;/p&gt;
+&lt;p&gt;例如，在当前的 Istio 中，服务网格上的所有应用程序都位于同一个信任域中，因此共享一个共同的信任根。可能会有不止一个服务网格，或者在服务网格中通信到需要进行身份验证的外部服务。使用联合功能可以使得 SPIFFE 兼容的系统，比如多个 Istio 服务网格，能够为安全的跨网格和脱网通信建立信任。&lt;/p&gt;
+&lt;h3 id=&#34;与-oidc-提供者系统的联合&#34;&gt;与 OIDC 提供者系统的联合&lt;/h3&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/oidc_federation.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;SPIRE 具有一个特性，可以代表已识别的工作负载对远程系统进行编程身份验证，例如与支持 OIDC 联合的公共云提供商服务和密钥存储进行交互。例如，在亚马逊网络服务的情况下，一个经过 SPIRE 认证的工作负载可以对接 AWS S3 存储桶、AWS RDS 实例或 AWS CodePipeline 进行身份验证和通信。&lt;/p&gt;
+&lt;p&gt;SPIRE OIDC 发现提供者使用 ACME 协议检索 WebPKI 证书，用于保护一个端点，该端点提供 OIDC 兼容的 JWKS 束和标准 OIDC 发现文档。然后需要配置远程 OIDC 认证服务以定位该端点并确定 WebPKI 服务。一旦完成此配置，可以设置远程系统的 IAM 策略和角色以映射到特定的 SPIFFE ID。工作负载随后将通过发送 JWT-SVID 与 OIDC 认证系统通信。然后，目标系统从预定义的 URI 获取 JWKS，该 URI 由 OIDC 发现提供者提供。目标系统使用 JWKS 文件验证 JWT-SVID，如果 JWT-SVID 中包含的 SPIFFE ID 被授权访问所请求的资源，则服务请求。然后，工作负载就能够访问外部远程服务，而无需拥有由其提供的任何凭据。&lt;/p&gt;
+&lt;p&gt;有关 OIDC 发现提供者的配置参考，请参阅：&lt;a href=&#34;https://github.com/spiffe/spire/tree/main/support/oidc-discovery-provider&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;OIDC 发现提供者配置参考&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;有关在 Amazon Web Services 配置 OIDC 联合的详细教程，请参阅：&lt;a href=&#34;https://spiffe.io/spire/try/oidc-federation-aws/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;配置 OIDC 到 Amazon Web Services&lt;/a&gt;&lt;/p&gt;
+&lt;h2 id=&#34;部署规模考虑&#34;&gt;部署规模考虑&lt;/h2&gt;
+&lt;p&gt;在为 SPIRE 部署调整大小以实现最佳性能时，需要考虑的因素包括但不限于以下内容：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;SVID 和根证书的生存时间&lt;/li&gt;
+&lt;li&gt;每个节点的工作负载数量和分布&lt;/li&gt;
+&lt;li&gt;大量 JWT-SVID 的使用（因为 JWT 需要根据需要进行签名，而不像 x509 那样预先存储）&lt;/li&gt;
+&lt;li&gt;注册更改的频率&lt;/li&gt;
+&lt;li&gt;在 SPIRE 服务器节点上运行的其他进程&lt;/li&gt;
+&lt;li&gt;基础架构环境的“形状”和“大小”&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;特别要注意对数据存储的设计和规划。请注意，数据存储的性能在上述列表中没有得到解决，并且可能会限制 SPIRE 的性能。由于每个代理同步（每 5 秒一次）都会进行授权检查，因此数据存储通常是性能瓶颈。在嵌套拓扑中，由于嵌套拓扑中的每个 SPIRE 服务器集群都有自己的数据存储，因此可以降低此成本。&lt;/p&gt;
+&lt;p&gt;下表旨在提供关于在 SPIRE 部署中调整 SPIRE 服务器大小的参考信息。这些参考数字基于测试环境。它们仅作为数量级指南，不代表任何特定用户环境的性能保证。网络带宽和数据库查询信息未包含在内。此外，所显示的工作负载和代理数量不代表在理论上可能的 SPIRE 部署规模。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;工作负载数量&lt;/th&gt;
+&lt;th&gt;10 代理&lt;/th&gt;
+&lt;th&gt;100 代理&lt;/th&gt;
+&lt;th&gt;1000 代理&lt;/th&gt;
+&lt;th&gt;5000 代理&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;10 工作负载&lt;/td&gt;
+&lt;td&gt;2 个服务器单元，1 个 CPU 核心，1GB RAM&lt;/td&gt;
+&lt;td&gt;2 个服务器单元，2 个 CPU 核心，2GB RAM&lt;/td&gt;
+&lt;td&gt;2 个服务器单元，4 个 CPU 核心，4GB RAM&lt;/td&gt;
+&lt;td&gt;2 个服务器单元，8 个 CPU 核心，8GB RAM&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;100 工作负载&lt;/td&gt;
+&lt;td&gt;2 个服务器单元，2 个 CPU 核心，2GB RAM&lt;/td&gt;
+&lt;td&gt;2 个服务器单元，2 个 CPU 核心，2GB RAM&lt;/td&gt;
+&lt;td&gt;2 个服务器单元，8 个 CPU 核心，8GB RAM&lt;/td&gt;
+&lt;td&gt;2 个服务器单元，16 个 CPU 核心，16GB RAM&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;1000 工作负载&lt;/td&gt;
+&lt;td&gt;2 个服务器单元，16 个 CPU 核心，8GB RAM&lt;/td&gt;
+&lt;td&gt;2 个服务器单元，16 个 CPU 核心，8GB RAM&lt;/td&gt;
+&lt;td&gt;2 个服务器单元，16 个 CPU 核心，8GB RAM&lt;/td&gt;
+&lt;td&gt;4 个服务器单元，16 个 CPU 核心，8GB RAM&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;10000 工作负载&lt;/td&gt;
+&lt;td&gt;每个 4 个服务器单元，16 个 CPU 核心，16GB RAM&lt;/td&gt;
+&lt;td&gt;每个 4 个服务器单元，16 个 CPU 核心，16GB RAM&lt;/td&gt;
+&lt;td&gt;每个 4 个服务器单元，16 个 CPU 核心，16GB RAM&lt;/td&gt;
+&lt;td&gt;每个 8 个服务器单元，16 个 CPU 核心，16GB RAM&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>SPIRE 嵌套架构：将 SPIRE 服务器链接为同一信任域</title>
+      <link>https://lib.jimmysong.io/spiffe-and-spire/architecture/nested/</link>
+      <pubDate>Mon, 23 Oct 2023 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/spiffe-and-spire/architecture/nested/</guid>
+      <description>&lt;p&gt;嵌套 SPIRE 允许将 SPIRE 服务器“链接”在一起，并且所有 SPIRE 服务器都可以在同一信任域中发放身份，这意味着在同一信任域中标识的所有工作负载都可以使用根密钥验证其身份文档。&lt;/p&gt;
+&lt;p&gt;嵌套拓扑结构通过将一个 SPIRE 代理与每个下游 SPIRE 服务器“链接”在一起来实现。下游 SPIRE 服务器通过 Workload API 获得凭证，然后直接与上游 SPIRE 服务器进行身份验证，以获取一个中间 CA。&lt;/p&gt;
+&lt;p&gt;为了演示嵌套拓扑中的 SPIRE 部署，我们使用 Docker Compose 创建了一个场景，其中包括一个根 SPIRE 部署和两个嵌套的 SPIRE 部署。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/Nested_SPIRE_Diagram.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;嵌套拓扑结构非常适合多云部署。由于可以混合匹配节点验证者，下游 SPIRE 服务器可以位于不同的云提供商环境中，并为工作负载和 SPIRE 代理提供身份。&lt;/p&gt;
+&lt;p&gt;在本教程中，您将学习以下内容：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;在嵌套拓扑中配置 SPIRE&lt;/li&gt;
+&lt;li&gt;配置 UpstreamAuthority 插件&lt;/li&gt;
+&lt;li&gt;为嵌套 SPIRE 服务器创建注册条目&lt;/li&gt;
+&lt;li&gt;测试在整个信任域中创建的 SVID 是否有效&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;先决条件&#34;&gt;先决条件&lt;/h2&gt;
+&lt;p&gt;本教程的所需文件可以在 &lt;a href=&#34;https://github.com/spiffe/spire-tutorials&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://github.com/spiffe/spire-tutorials&lt;/a&gt; 的 &lt;code&gt;docker-compose/nested-spire&lt;/code&gt; 目录中找到。如果尚未克隆存储库，请现在进行克隆。&lt;/p&gt;
+&lt;p&gt;在继续之前，请查看以下系统要求：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;64 位 Linux 或 macOS 环境&lt;/li&gt;
+&lt;li&gt;已安装 &lt;a href=&#34;https://docs.docker.com/get-docker/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Docker&lt;/a&gt; 和 &lt;a href=&#34;https://docs.docker.com/compose/install/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Docker Compose&lt;/a&gt;（macOS Docker Desktop 包含 Docker Compose）&lt;/li&gt;
+&lt;li&gt;已安装 &lt;a href=&#34;https://golang.org/dl/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Go&lt;/a&gt; 1.14.4 或更高版本&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;第一部分运行服务&#34;&gt;第一部分：运行服务&lt;/h2&gt;
+&lt;p&gt;本教程的“nested-spire”主目录包含三个子目录，分别用于存放 SPIRE 部署的配置文件：&lt;code&gt;root&lt;/code&gt;、&lt;code&gt;nestedA&lt;/code&gt;和&lt;code&gt;nestedB&lt;/code&gt;。这些目录包含用于验证 Agents 在 Servers 上的身份的私钥和证书。这些私钥和证书是在场景初始化时使用 Go 应用程序创建的，其详细信息超出了本教程的范围。&lt;/p&gt;
+&lt;h3 id=&#34;创建共享目录&#34;&gt;创建共享目录&lt;/h3&gt;
+&lt;p&gt;首先，需要一个本地目录，在服务上进行卷挂载，以在根 SPIRE Agent 和嵌套 SPIRE Servers 之间共享工作负载 API。本教程使用&lt;code&gt;.../spire-tutorials/docker-compose/nested-spire/sharedRootSocket&lt;/code&gt;作为共享目录。&lt;/p&gt;
+&lt;h3 id=&#34;配置根-spire-部署&#34;&gt;配置根 SPIRE 部署&lt;/h3&gt;
+&lt;p&gt;根 SPIRE 服务器和代理的配置文件与默认的&lt;code&gt;server.conf&lt;/code&gt;和&lt;code&gt;agent.conf&lt;/code&gt;文件没有改动，但值得注意的是 SPIRE 代理定义绑定工作负载 API socket 的位置：&lt;code&gt;socket_path =&amp;quot;/opt/spire/sockets/workload_api.sock&amp;quot;&lt;/code&gt;。稍后将使用此路径来配置卷，以便与嵌套 SPIRE Servers 共享工作负载 API。&lt;/p&gt;
+&lt;p&gt;我们在&lt;a href=&#34;https://github.com/spiffe/spire-tutorials/blob/main/docker-compose/nested-spire/docker-compose.yaml&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;docker-compose.yaml&lt;/a&gt;文件中定义了本教程中的所有服务。在&lt;code&gt;root-agent&lt;/code&gt;服务定义中，我们将 SPIRE Agent 容器中的&lt;code&gt;/opt/spire/sockets&lt;/code&gt;目录挂载到新的本地目录&lt;code&gt;sharedRootSocket&lt;/code&gt;上。在下一节中，当定义嵌套 SPIRE Server 服务时，我们将使用此目录将&lt;code&gt;root-agent&lt;/code&gt;套接字挂载到 SPIRE Server 容器上。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;services&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# Root&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;root-server&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;image&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ghcr.io/spiffe/spire-server:1.5.1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;hostname&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;root-server&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;./root/server:/opt/spire/conf/server&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;command&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;-config&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;/opt/spire/conf/server/server.conf&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;root-agent&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# Share the host pid namespace so this agent can attest the nested servers&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;pid&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;host&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;image&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ghcr.io/spiffe/spire-agent:1.5.1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;depends_on&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;root-server&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;hostname&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;root-agent&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# Share root agent socket to be accessed by nestedA and nestedB servers&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;./sharedRootSocket:/opt/spire/sockets&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;./root/agent:/opt/spire/conf/agent&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;/var/run/:/var/run/&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;command&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;-config&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;/opt/spire/conf/agent/agent.conf&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;配置嵌套-a-spire-部署&#34;&gt;配置嵌套 A SPIRE 部署&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;nestedB&lt;/code&gt; SPIRE 部署需要相同的一组配置，但本文不描述这些更改，以避免重复。&lt;/p&gt;
+&lt;p&gt;SPIRE Agent 和 Server 可以通过各种&lt;a href=&#34;https://spiffe.io/spire/docs/extending/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;插件&lt;/a&gt;进行扩展。&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/spire_server.md#built-in-plugins&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;UpstreamAuthority 插件&lt;/a&gt;类型允许 SPIRE Server 与现有 PKI 系统集成。UpstreamAuthority 插件可以使用从磁盘加载的 CA 进行证书签名，第三方工具如 AWS 和 Vault 等。嵌套 SPIRE 部署需要使用&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_upstreamauthority_spire.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;spire UpstreamAuthority 插件&lt;/a&gt;，该插件使用同一信任域中的上游 SPIRE Server 获取 SPIRE Server 的中间签名证书。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;*&lt;a href=&#34;https://github.com/spiffe/spire-tutorials/blob/main/docker-compose/nested-spire/nestedA/server/server.conf&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;nestedA-server 的配置文件&lt;/a&gt;*包括&lt;code&gt;spire&lt;/code&gt; UpstreamAuthority 插件定义，其中&lt;code&gt;root-server&lt;/code&gt;被定义为其上游 SPIRE Server。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   &lt;span class=&#34;na&#34;&gt;UpstreamAuthority &amp;#34;spire&amp;#34; {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; 	   &lt;span class=&#34;na&#34;&gt;plugin_data&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;{
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt; 	       server_address      = &amp;#34;root-server&amp;#34;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt; 	       server_port         = 8081
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt; 	       workload_api_socket = &amp;#34;/opt/spire/sockets/workload_api.sock&amp;#34;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt; 	   }
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s&#34;&gt;    }&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在&lt;a href=&#34;https://github.com/spiffe/spire-tutorials/blob/main/docker-compose/nested-spire/docker-compose.yaml&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;docker-compose.yaml&lt;/a&gt;文件中，&lt;code&gt;nestedA-server&lt;/code&gt;服务的 Docker Compose 定义将新的本地目录&lt;code&gt;sharedRootSocket&lt;/code&gt;作为卷进行挂载。请记住，前一节中将&lt;code&gt;root-agent&lt;/code&gt;套接字挂载在该目录上。这样，&lt;code&gt;nestedA-server&lt;/code&gt;就可以访问&lt;code&gt;root-agent&lt;/code&gt;的工作负载 API 并获取其 SVID。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;nestedA-server&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# Share the host pid namespace so this server can be attested by the root agent&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;pid&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;host&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;image&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ghcr.io/spiffe/spire-server:1.5.1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;hostname&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;nestedA-server&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;labels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# label to attest nestedA-server against root-agent&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;org.example.name=nestedA&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# Add root agent socket&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;./shared/rootSocket:/opt/spire/sockets&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;./nestedA/server:/opt/spire/conf/server&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;command&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;-config&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;/opt/spire/conf/server/server.conf&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;创建下游注册项&#34;&gt;创建下游注册项&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;nestedA-server&lt;/code&gt;必须在&lt;code&gt;root-server&lt;/code&gt;中注册，以获取其身份，该身份将用于生成 SVID。我们通过在根 SPIRE Server 中创建一个注册项来实现为&lt;code&gt;nestedA-server&lt;/code&gt;。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker-compose &lt;span class=&#34;nb&#34;&gt;exec&lt;/span&gt; -T root-server &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    /opt/spire/bin/spire-server entry create &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -parentID &lt;span class=&#34;s2&#34;&gt;&amp;#34;spiffe://example.org/spire/agent/x509pop/&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;fingerprint root/agent/agent.crt.pem&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -spiffeID &lt;span class=&#34;s2&#34;&gt;&amp;#34;spiffe://example.org/nestedA&amp;#34;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -selector &lt;span class=&#34;s2&#34;&gt;&amp;#34;docker:label:org.example.name:nestedA-server&amp;#34;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -downstream
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;parentID&lt;/code&gt;标志包含&lt;code&gt;root-agent&lt;/code&gt;的 SPIFFE ID。&lt;code&gt;root-agent&lt;/code&gt;的 SPIFFE ID 是由&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_x509pop.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;x509pop Node Attestor 插件&lt;/a&gt;创建的，该插件将 SPIFFE ID 定义为&lt;code&gt;spiffe://&amp;lt;trust domain&amp;gt;/spire/agent/x509pop/&amp;lt;fingerprint&amp;gt;&lt;/code&gt;。shell 脚本中的&lt;code&gt;fingerprint()&lt;/code&gt;函数计算证书的 SHA1 指纹。另一个要注意的是&lt;code&gt;downstream&lt;/code&gt;选项。设置此选项时，表示该条目描述的是下游 SPIRE Server。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;运行场景&#34;&gt;运行场景&lt;/h3&gt;
+&lt;p&gt;使用&lt;code&gt;set-env.sh&lt;/code&gt;脚本来运行构成场景的所有服务。该脚本使用之前描述的配置选项启动&lt;code&gt;root&lt;/code&gt;、&lt;code&gt;nestedA&lt;/code&gt;和&lt;code&gt;nestedB&lt;/code&gt;服务。&lt;/p&gt;
+&lt;p&gt;确保当前工作目录是&lt;code&gt;.../spire-tutorials/docker-compose/nested-spire&lt;/code&gt;，然后运行以下命令：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;bash scripts/set-env.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;脚本完成后，在另一个终端中运行以下命令以查看所有服务的日志：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker-compose logs -f -t
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;第二部分测试部署&#34;&gt;第二部分：测试部署&lt;/h2&gt;
+&lt;p&gt;现在 SPIRE 部署已准备就绪，让我们测试所配置的场景。&lt;/p&gt;
+&lt;h3 id=&#34;创建工作负载注册项&#34;&gt;创建工作负载注册项&lt;/h3&gt;
+&lt;p&gt;为了测试场景，我们创建两个工作负载注册项，一个用于每个嵌套 SPIRE Server（&lt;code&gt;nestedA&lt;/code&gt;和&lt;code&gt;nestedB&lt;/code&gt;）。测试的目标是演示在嵌套配置中创建的 SVID 在整个信任域中都有效，而不仅仅在生成 SVID 的 SPIRE Server 的范围内。以下命令演示了我们将用于创建这两个工作负载注册项的命令行选项，但您可以使用下面显示的&lt;code&gt;create-workload-registration-entries.sh&lt;/code&gt;脚本运行这些命令。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# nestedA部署的工作负载&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker-compose &lt;span class=&#34;nb&#34;&gt;exec&lt;/span&gt; -T nestedA-server &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    /opt/spire/bin/spire-server entry create &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -parentID &lt;span class=&#34;s2&#34;&gt;&amp;#34;spiffe://example.org/spire/agent/x509pop/&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;fingerprint nestedA/agent/agent.crt.pem&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -spiffeID &lt;span class=&#34;s2&#34;&gt;&amp;#34;spiffe://example.org/nestedA/workload&amp;#34;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -selector &lt;span class=&#34;s2&#34;&gt;&amp;#34;unix:uid:1001&amp;#34;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# nestedB部署的工作负载&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker-compose &lt;span class=&#34;nb&#34;&gt;exec&lt;/span&gt; -T nestedB-server &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    /opt/spire/bin/spire-server entry create &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -parentID &lt;span class=&#34;s2&#34;&gt;&amp;#34;spiffe://example.org/spire/agent/x509pop/&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;fingerprint nestedB/agent/agent.crt.pem&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -spiffeID &lt;span class=&#34;s2&#34;&gt;&amp;#34;spiffe://example.org/nestedB/workload&amp;#34;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -selector &lt;span class=&#34;s2&#34;&gt;&amp;#34;unix:uid:1001&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;示例再次使用&lt;code&gt;fingerprint path/to/nested-agent-cert&lt;/code&gt;的形式，以显示&lt;code&gt;-parentID&lt;/code&gt;标志指定了嵌套 SPIRE Agent 的 SPIFFE ID。最后，在两种情况下，Unix 选择器将 SPIFFE ID 分配给 uid 为 1001 的任何进程。&lt;/p&gt;
+&lt;p&gt;使用以下 Bash 脚本使用刚才描述的选项创建注册条目：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;bash scripts/create-workload-registration-entries.sh
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;运行测试&#34;&gt;运行测试&lt;/h3&gt;
+&lt;p&gt;一旦两个工作负载注册条目被传播，我们可以测试在嵌套配置中创建的 SVID 是否在整个信任域中有效，而不仅仅在生成 SVID 的 SPIRE Server 的范围内。&lt;/p&gt;
+&lt;p&gt;该测试包括从&lt;code&gt;nestedA-agent&lt;/code&gt; SPIRE Agent 获取 JWT-SVID，并使用&lt;code&gt;nestedB-agent&lt;/code&gt;对其进行验证。在两种情况下，Docker Compose 使用 uid 1001 运行进程，以匹配在上一节中创建的工作负载注册条目。&lt;/p&gt;
+&lt;p&gt;输入以下命令从&lt;code&gt;nestedA&lt;/code&gt; SPIRE Agent 获取 JWT-SVID，并从 JWT-SVID 中提取令牌：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;token&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;docker-compose &lt;span class=&#34;nb&#34;&gt;exec&lt;/span&gt; -u &lt;span class=&#34;m&#34;&gt;1001&lt;/span&gt; -T nestedA-agent &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    /opt/spire/bin/spire-agent api fetch jwt -audience nested-test -socketPath /opt/spire/sockets/workload_api.sock &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; sed -n &lt;span class=&#34;s1&#34;&gt;&amp;#39;2p&amp;#39;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;运行以下命令在&lt;code&gt;nestedB&lt;/code&gt; SPIRE Agent 上验证&lt;code&gt;nestedA&lt;/code&gt;的令牌：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker-compose &lt;span class=&#34;nb&#34;&gt;exec&lt;/span&gt; -u &lt;span class=&#34;m&#34;&gt;1001&lt;/span&gt; -T nestedB-agent &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    /opt/spire/bin/spire-agent api validate jwt -audience nested-test  -svid &lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;token&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;      -socketPath /opt/spire/sockets/workload_api.sock
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;nestedB&lt;/code&gt; SPIRE Agent 输出如下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    SVID is valid.
+    SPIFFE ID : spiffe://example.org/nestedA/workload
+    Claims    : {&amp;#34;aud&amp;#34;:[&amp;#34;nested-test&amp;#34;],&amp;#34;exp&amp;#34;:1595814190,&amp;#34;iat&amp;#34;:1595813890,&amp;#34;sub&amp;#34;:&amp;#34;spiffe://example.org/nestedA/workload&amp;#34;}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出表示 JWT-SVID 是有效的。此外，尽管 SPIFFE ID 注册在&lt;code&gt;nestedA&lt;/code&gt;而不是&lt;code&gt;nestedB&lt;/code&gt;上，但该 SPIFFE ID 在&lt;code&gt;nestedB&lt;/code&gt; SPIRE Agent 上仍然有效，因为 SPIRE Agents 在嵌套 SPIRE 拓扑中处于相同的信任域。&lt;/p&gt;
+&lt;p&gt;在 SPIRE 中，这是通过将每个 JWT-SVID 公共签名密钥传播到整个拓扑来实现的。在 X509-SVID 的情况下，由于 X.509 的链式语义，这很容易实现。&lt;/p&gt;
+&lt;h2 id=&#34;清理&#34;&gt;清理&lt;/h2&gt;
+&lt;p&gt;完成本教程后，您可以使用以下 Bash 脚本停止所有容器：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;bash scripts/clean-env.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    
+    <item>
+      <title>SPIRE 联邦：验证来自不同 SPIRE 服务器的工作负载</title>
+      <link>https://lib.jimmysong.io/spiffe-and-spire/architecture/federation/</link>
+      <pubDate>Mon, 23 Oct 2023 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/spiffe-and-spire/architecture/federation/</guid>
+      <description>&lt;p&gt;本教程展示了如何对由两个不同 SPIRE 服务器识别的两个 SPIFFE 标识的工作负载进行身份验证。&lt;/p&gt;
+&lt;p&gt;本文的第一部分演示了如何通过显示 SPIRE 配置文件更改和 &lt;code&gt;spire-server&lt;/code&gt; 命令来配置 SPIFFE 联邦，以设置股票报价 web 应用的前端和服务后端。本文的第二部分列出了您可以在此教程目录中包含的 Docker Compose 文件中运行的步骤，以显示场景的实际操作。&lt;/p&gt;
+&lt;p&gt;在本教程中，您将学到如何：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;配置每个 SPIRE 服务器以使用 SPIFFE 身份验证和 Web PKI 身份验证公开其 SPIFFE 联邦捆绑点。&lt;/li&gt;
+&lt;li&gt;配置 SPIRE 服务器以从彼此检索信任捆绑点。&lt;/li&gt;
+&lt;li&gt;使用不同的信任域引导两个 SPIRE 服务器之间的联合。&lt;/li&gt;
+&lt;li&gt;为工作负载创建注册条目，以便它们可以与其他信任域进行联合。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;先决条件&#34;&gt;先决条件&lt;/h2&gt;
+&lt;p&gt;SPIFFE 联邦的基线组件包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;运行版本为 1.5.1 的两个 SPIRE 服务器实例。&lt;/li&gt;
+&lt;li&gt;运行版本为 1.5.1 的两个 SPIRE 代理。一个连接到一个 SPIRE 服务器，另一个连接到另一个 SPIRE 服务器。&lt;/li&gt;
+&lt;li&gt;两个需要通过 mTLS 进行通信的工作负载，并使用工作负载 API 获取 SVID 和信任捆绑点。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;场景&#34;&gt;场景&lt;/h2&gt;
+&lt;p&gt;假设我们有一个股票经纪人的 web 应用程序，它希望从股票市场 web 服务提供商那里获取股票报价并显示它们。情景如下：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;用户在浏览器中输入经纪人 web 应用的股票报价 URL。&lt;/li&gt;
+&lt;li&gt;Web 应用的工作负载接收到请求并使用 mTLS 向股票市场服务发出获取报价的 HTTP 请求。&lt;/li&gt;
+&lt;li&gt;股票市场服务收到请求并在响应中发送报价。&lt;/li&gt;
+&lt;li&gt;Web 应用呈现使用返回的报价的股票报价页面并将其发送到浏览器。&lt;/li&gt;
+&lt;li&gt;浏览器向用户显示报价。Web 应用包括一些 JavaScript 以便每隔 1 秒刷新页面，因此每秒都会执行这些步骤。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;除了上述内容，本教程的其余部分中，我们将假设以下 &lt;a href=&#34;https://spiffe.io/docs/latest/spiffe/concepts/#trust-domain&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;信任域&lt;/a&gt; 名称用于这些示例 SPIRE 安装：&lt;code&gt;broker.example&lt;/code&gt; 和 &lt;code&gt;stockmarket.example&lt;/code&gt;。请注意，信任域不需要对应实际的 DNS 域名。此外，应用程序直接访问 WorkloadAPI 以获取 SVID 和信任捆绑点，这意味着在所描述的情景中没有代理。&lt;/p&gt;
+&lt;h2 id=&#34;配置-spiffe-联邦捆绑点&#34;&gt;配置 SPIFFE 联邦捆绑点&lt;/h2&gt;
+&lt;p&gt;为了使联邦工作，并且因为 web 应用程序和报价服务将使用 &lt;code&gt;mTLS&lt;/code&gt;，两个 SPIRE 服务器都需要彼此的信任捆绑点。在某种程度上，这是通过在每个 SPIRE 服务器上配置所谓的联邦捆绑点来完成的，该捆绑点提供了由其他信任域中的 SPIRE 服务器使用的 API，以获取他们要与之联合的信任域的信任捆绑点。&lt;/p&gt;
+&lt;p&gt;由 SPIRE 服务器公开的联邦捆绑点可以配置为使用两种身份验证方法之一：SPIFFE 身份验证或 Web PKI 身份验证。&lt;/p&gt;
+&lt;h3 id=&#34;使用-spiffe-身份验证配置联邦捆绑点&#34;&gt;使用 SPIFFE 身份验证配置联邦捆绑点&lt;/h3&gt;
+&lt;p&gt;要配置经纪人的 SPIRE 服务器捆绑点端点，我们在经纪人的 SPIRE 服务器配置文件中使用了 &lt;code&gt;federation&lt;/code&gt; 部分（默认为 &lt;code&gt;server.conf&lt;/code&gt;）：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt; server {
+     .
+     .
+     trust_domain = &amp;#34;broker.example&amp;#34;
+     .
+     .
+ 
+     federation {
+         bundle_endpoint {
+             address = &amp;#34;0.0.0.0&amp;#34;
+             port = 8443
+         }
+     }
+ }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这将在运行 SPIRE 服务器的主机中的任何 IP 地址上的端口 8443 上发布联邦捆绑点。&lt;/p&gt;
+&lt;p&gt;另一方面，股票市场服务提供商的 SPIRE 服务器配置类似：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;na&#34;&gt;server {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;trust_domain&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;stockmarket.example&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;federation {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;         &lt;span class=&#34;na&#34;&gt;bundle_endpoint {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;address&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;0.0.0.0&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;port&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;8443&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;         &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;此时，两个 SPIRE 服务器都暴露了它们的联邦捆绑点以提供它们的信任捆绑点，但它们都不知道如何到达彼此的联邦捆绑点。&lt;/p&gt;
+&lt;h3 id=&#34;使用-web-pki-身份验证配置联邦捆绑点&#34;&gt;使用 Web PKI 身份验证配置联邦捆绑点&lt;/h3&gt;
+&lt;p&gt;我们将假设仅经纪人的 SPIRE 服务器将使用 Web PKI 身份验证来配置其联邦捆绑点。股票市场 SPIRE 服务器仍将使用 SPIFFE 身份验证。因此，股票市场 SPIRE 服务器配置与前一节中所见相同。&lt;/p&gt;
+&lt;p&gt;然后，要配置经纪人的 SPIRE 服务器捆绑点端点，我们将 &lt;code&gt;federation&lt;/code&gt; 部分配置如下：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;na&#34;&gt;server {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;trust_domain&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;broker.example&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;federation {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;         &lt;span class=&#34;na&#34;&gt;bundle_endpoint {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;address&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;0.0.0.0&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;port&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;443&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;acme {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                 &lt;span class=&#34;na&#34;&gt;domain_name&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;broker.example&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                 &lt;span class=&#34;na&#34;&gt;email&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;some@email.com&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                 &lt;span class=&#34;na&#34;&gt;tos_accepted&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;true&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;         &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;这将在任何 IP 地址上的端口 443 上发布联邦捆绑点。我们使用端口 443，因为我们演示了使用 Let&amp;rsquo;s Encrypt 作为我们的 ACME 提供商（如果您要使用其他提供商，则必须设置 &lt;code&gt;directory_url&lt;/code&gt; 可配置）。请注意，&lt;code&gt;tos_accepted&lt;/code&gt; 设置为 &lt;code&gt;true&lt;/code&gt;，这意味着我们接受了我们的 ACME 提供商的服务条款，这在使用 Let&amp;rsquo;s Encrypt 时是必要的。&lt;/p&gt;
+&lt;p&gt;要使使用 Web PKI 的 SPIFFE 联邦正常工作，您必须拥有为 &lt;code&gt;domain_name&lt;/code&gt;（在我们的示例中为 &lt;code&gt;broker.example&lt;/code&gt;）指定的 DNS 域名，并且该域名必须解析到公开联邦捆绑点的 SPIRE 服务器 IP 地址。&lt;/p&gt;
+&lt;h2 id=&#34;配置-spire-服务器以从彼此检索信任捆绑点&#34;&gt;配置 SPIRE 服务器以从彼此检索信任捆绑点&lt;/h2&gt;
+&lt;p&gt;在配置联邦端点后，启用 SPIFFE 联邦的下一步是配置 SPIRE 服务器以查找其他信任域的信任捆绑点。在 &lt;code&gt;server.conf&lt;/code&gt; 中的 &lt;code&gt;federates_with&lt;/code&gt; 配置选项是您指定另一个信任域的端点的地方。在使用不同的身份验证方法时，该部分的配置有一些细微的差异，根据每个端点配置文件的要求。&lt;/p&gt;
+&lt;h3 id=&#34;使用-spiffe-身份验证配置信任捆绑点位置https_spiffe&#34;&gt;使用 SPIFFE 身份验证配置信任捆绑点位置（https_spiffe）&lt;/h3&gt;
+&lt;p&gt;如前所述，股票市场服务提供商的 SPIRE 服务器将其联邦端点监听在任何 IP 地址的端口 &lt;code&gt;8443&lt;/code&gt; 上。我们还假设 &lt;code&gt;spire-server-stock&lt;/code&gt; 是一个解析为股票市场服务的 SPIRE 服务器 IP 地址的 DNS 名称。 （这里的 Docker Compose 演示使用主机名 &lt;code&gt;spire-server-stock&lt;/code&gt;，但在典型的使用中，您会指定一个 FQDN。）然后，经纪人的 SPIRE 服务器必须配置以下 &lt;code&gt;federates_with&lt;/code&gt; 部分：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;na&#34;&gt;server {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;trust_domain&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;broker.example&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;federation {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;         &lt;span class=&#34;na&#34;&gt;bundle_endpoint {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;address&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;0.0.0.0&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;port&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;8443&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;         &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;         &lt;span class=&#34;na&#34;&gt;federates_with &amp;#34;stockmarket.example&amp;#34; {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;bundle_endpoint_url&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;https://spire-server-stock:8443&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;bundle_endpoint_profile &amp;#34;https_spiffe&amp;#34; {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                 &lt;span class=&#34;na&#34;&gt;endpoint_spiffe_id&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;spiffe://stockmarket.example/spire/server&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;         &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;现在，经纪人的 SPIRE 服务器知道在哪里找到可以用于验证包含来自 &lt;code&gt;stockmarket.example&lt;/code&gt; 信任域的身份的信任捆绑点。&lt;/p&gt;
+&lt;p&gt;另一方面，股票市场服务提供商的 SPIRE 服务器必须以类似的方式进行配置：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;na&#34;&gt;server {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;trust_domain&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;stockmarket.example&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;federation {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;         &lt;span class=&#34;na&#34;&gt;bundle_endpoint {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;address&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;0.0.0.0&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;port&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;8443&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;         &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;         &lt;span class=&#34;na&#34;&gt;federates_with &amp;#34;broker.example&amp;#34; {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;bundle_endpoint_url&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;https://spire-server-broker:8443&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;bundle_endpoint_profile &amp;#34;https_spiffe&amp;#34; {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;                 &lt;span class=&#34;na&#34;&gt;endpoint_spiffe_id&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;spiffe://broker.example/spire/server&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;         &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请注意，指定了 &amp;ldquo;https_spiffe&amp;rdquo; 配置文件，指示了联邦捆绑点的预期 SPIFFE ID。指定 &lt;code&gt;server.conf&lt;/code&gt; 的 &lt;code&gt;federation&lt;/code&gt; 部分和 &lt;code&gt;federates_with&lt;/code&gt; 子部分是配置 SPIFFE 联邦所需的全部内容。要完成启用 SPIFFE 联邦，我们需要使用下面描述的 &lt;code&gt;spire-server&lt;/code&gt; 命令来引导信任捆绑点和注册工作负载。&lt;/p&gt;
+&lt;h3 id=&#34;使用-web-pki-身份验证配置信任捆绑点位置https_web&#34;&gt;使用 Web PKI 身份验证配置信任捆绑点位置（https_web）&lt;/h3&gt;
+&lt;p&gt;如前所述，在这种备选方案中，我们假设只有经纪人的 SPIRE 服务器将使用 Web PKI 身份验证来配置其联邦端点，因此经纪人服务器的 &lt;code&gt;federates_with&lt;/code&gt; 配置与前一节中所见相同。然而，股票市场服务提供商的 SPIRE 服务器需要一个不同的配置，它使用 &amp;ldquo;https_web&amp;rdquo; 配置文件而不是 &amp;ldquo;https_spiffe&amp;rdquo;：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;na&#34;&gt;server {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;trust_domain&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;stockmarket.example&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;federation {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;         &lt;span class=&#34;na&#34;&gt;bundle_endpoint {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;address&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;0.0.0.0&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;port&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;8443&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;         &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;         &lt;span class=&#34;na&#34;&gt;federates_with &amp;#34;broker.example&amp;#34; {&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;bundle_endpoint_url&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;https://spire-server-broker:8443&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;             &lt;span class=&#34;na&#34;&gt;bundle_endpoint_profile &amp;#34;https_web&amp;#34; {}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;         &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;na&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;可以注意到 &amp;ldquo;https_web&amp;rdquo; 配置文件不需要额外的配置设置。端点使用安装在操作系统中的相同公共 CA 证书进行身份验证。&lt;/p&gt;
+&lt;h2 id=&#34;引导联邦&#34;&gt;引导联邦&lt;/h2&gt;
+&lt;p&gt;我们已经配置了 SPIRE 服务器的联邦端点地址，但这并不足以使联邦正常工作。为了使 SPIRE 服务器能够从彼此获取信任捆绑点，它们首先需要彼此的信任捆绑点，因为它们必须对试图访问联邦端点的联合服务器的 SPIFFE 身份进行身份验证。一旦联邦被引导，就可以使用当前信任捆绑点通过联邦端点 API 获取信任捆绑点更新。&lt;/p&gt;
+&lt;p&gt;引导工作是通过使用 SPIRE Server 命令 &lt;code&gt;bundle show&lt;/code&gt; 和 &lt;code&gt;bundle set&lt;/code&gt; 来完成的。&lt;/p&gt;
+&lt;h3 id=&#34;获取引导信任捆绑点&#34;&gt;获取引导信任捆绑点&lt;/h3&gt;
+&lt;p&gt;假设我们想要获取经纪人的 SPIRE 服务器信任捆绑点。在运行经纪人的 SPIRE 服务器的节点上运行：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;broker&amp;gt; spire-server bundle show -format spiffe &amp;gt; broker.example.bundle
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这会将信任捆绑点保存在 &lt;code&gt;broker.example.bundle&lt;/code&gt; 文件中。然后，经纪人必须将此文件的副本提供给股票市场服务人员，以便他们可以将此信任&lt;/p&gt;
+&lt;p&gt;捆绑点存储在他们的 SPIRE 服务器上，并将其与 &lt;code&gt;broker.example&lt;/code&gt; 信任域关联起来。要做到这一点，股票市场服务人员必须在他们运行 SPIRE 服务器的节点上运行以下命令：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;stock-market&amp;gt; spire-server bundle set -format spiffe -id spiffe://broker.example -path /some/path/broker.example.bundle
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;此时，股票市场服务的 SPIRE 服务器可以验证具有 &lt;code&gt;broker.example&lt;/code&gt; 信任域的 SPIFFE ID 的 SVID。但是，经纪人的 SPIRE 服务器尚无法验证具有 &lt;code&gt;stockmarket.example&lt;/code&gt; 信任域的 SPIFFE ID 的 SVID。要使此成为可能，股票市场人员必须在他们运行 SPIRE 服务器的节点上运行以下命令：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;stock-market&amp;gt; spire-server bundle show -format spiffe &amp;gt; stockmarket.example.bundle
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;然后，股票市场人员必须将此文件的副本提供给经纪人，以便他们可以将此信任捆绑点存储在他们的 SPIRE 服务器上，并将其与 &lt;code&gt;stockmarket.example&lt;/code&gt; 信任域关联起来。要做到这一点，经纪人必须在他们运行 SPIRE 服务器的节点上运行以下命令：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;broker&amp;gt; spire-server bundle set -format spiffe -id spiffe://stockmarket.example -path /some/path/stockmarket.example.bundle
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;现在，两台 SPIRE 服务器都可以验证具有彼此信任域的 SPIFFE ID 的 SVID，因此两者可以开始从彼此的联邦端点获取信任捆绑点更新。此外，从现在起，他们可以创建用于联合的注册条目，如下一节所示。&lt;/p&gt;
+&lt;p&gt;请注意，在经纪人的 SPIRE 服务器为其联邦捆绑点使用 Web PKI 身份验证时，不需要创建 &lt;code&gt;broker.example.bundle&lt;/code&gt; 文件（后来由股票市场服务导入）。&lt;/p&gt;
+&lt;h2 id=&#34;为联合创建注册条目&#34;&gt;为联合创建注册条目&lt;/h2&gt;
+&lt;p&gt;现在，SPIRE 服务器具有了彼此的信任捆绑点，让我们看看它们如何创建用于联合的注册条目。&lt;/p&gt;
+&lt;p&gt;为简化起见，我们假设股票市场 Web 应用程序和行情服务都在运行 Linux 箱子上，一个属于股票市场组织，另一个属于经纪人。由于它们使用 SPIRE，每个 Linux 箱子上还安装了一个 SPIRE 代理。除此之外，Web 应用程序是使用 &lt;code&gt;webapp&lt;/code&gt; 用户运行的，行情服务是使用 &lt;code&gt;quotes-service&lt;/code&gt; 用户运行的。&lt;/p&gt;
+&lt;p&gt;在经纪人的 SPIRE Server 节点上，经纪人必须创建一个注册条目。&lt;code&gt;-federatesWith&lt;/code&gt; 标志是必需的，以启用 SPIFFE 联邦：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;broker&amp;gt; spire-server entry create \
+   -parentID &amp;lt;SPIRE 代理的 SPIFFE ID&amp;gt; \
+   -spiffeID spiffe://broker.example/webapp \
+   -selector unix:user:webapp \
+   -federatesWith &amp;#34;spiffe://stockmarket.example&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;通过指定 &lt;code&gt;-federatesWith&lt;/code&gt; 标志，创建了此注册条目后，当 Web 应用程序的 SPIRE 服务器请求 SVID 时，它将从经纪人的 SPIRE 服务器获取一个具有 &lt;code&gt;spiffe://broker.example/webapp&lt;/code&gt; 身份的 SVID，并附带与 &lt;code&gt;stockmarket.example&lt;/code&gt; 信任域关联的信任捆绑点。&lt;/p&gt;
+&lt;p&gt;在股票市场服务的一侧，他们必须创建一个注册条目，如下所示：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;stock-market&amp;gt; spire-server entry create \
+   -parentID &amp;lt;SPIRE 代理的 SPIFFE ID&amp;gt; \
+   -spiffeID spiffe://stockmarket.example/quotes-service \
+   -selector unix:user:quotes-service \
+   -federatesWith &amp;#34;spiffe://broker.example&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;类似地，创建了此注册条目后，当行情服务请求 SVID 时，它将获得一个具有 &lt;code&gt;spiffe://stockmarket.example/quotes-service&lt;/code&gt; 身份的 SVID，并附带与 &lt;code&gt;broker.example&lt;/code&gt; 信任域关联的信任捆绑点。&lt;/p&gt;
+&lt;p&gt;以上就是全部内容。现在，所有的组件都已就绪，可以使联邦正常工作，并演示 Web 应用程序如何在具有不同信任域的身份的情况下与行情服务通信。&lt;/p&gt;
+&lt;h1 id=&#34;使用-spiffe-身份验证的联邦示例&#34;&gt;使用 SPIFFE 身份验证的联邦示例&lt;/h1&gt;
+&lt;p&gt;本节将解释如何使用 Docker Compose 尝试此教程中描述的 SPIFFE 身份验证场景的示例实现。&lt;/p&gt;
+&lt;p&gt;尽管此处没有显示出来，但您可以对 Web PKI 身份验证部分中显示的更改进行更改以尝试 Web PKI 场景。请记住，要配置 Web PKI，&lt;code&gt;domain_name&lt;/code&gt; 指定的 FQDN 必须由您拥有，并且可以通过 DNS 通过互联网进行解析。&lt;/p&gt;
+&lt;h2 id=&#34;要求&#34;&gt;要求&lt;/h2&gt;
+&lt;p&gt;本教程的所需文件可以在 &lt;a href=&#34;https://github.com/spiffe/spire-tutorials&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://github.com/spiffe/spire-tutorials&lt;/a&gt; 的 &lt;code&gt;docker-compose/federation&lt;/code&gt; 目录中找到。如果您尚未克隆该存储库，请立即执行此操作。&lt;/p&gt;
+&lt;p&gt;在继续之前，请查看以下系统要求：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;64 位 Linux 或 macOS 环境&lt;/li&gt;
+&lt;li&gt;安装了 &lt;a href=&#34;https://docs.docker.com/get-docker/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Docker&lt;/a&gt; 和 &lt;a href=&#34;https://docs.docker.com/compose/install/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Docker Compose&lt;/a&gt;（Docker Compose 包含在 macOS Docker Desktop 中）&lt;/li&gt;
+&lt;li&gt;安装了 &lt;a href=&#34;https://golang.org/dl/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Go&lt;/a&gt; 1.14.4 或更高版本&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;构建&#34;&gt;构建&lt;/h2&gt;
+&lt;p&gt;确保当前工作目录是 &lt;code&gt;.../spire-tutorials/docker-compose/federation&lt;/code&gt;，并运行以下命令以创建 Docker Compose 所需的文件：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ ./build.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;运行&#34;&gt;运行&lt;/h2&gt;
+&lt;p&gt;运行以下命令以启动 SPIRE 服务器和应用程序：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ docker-compose up -d
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;启动-spire-代理&#34;&gt;启动 SPIRE 代理&lt;/h2&gt;
+&lt;p&gt;运行以下命&lt;/p&gt;
+&lt;p&gt;令以启动 SPIRE 代理：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ ./agent.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;启动-web-应用程序&#34;&gt;启动 Web 应用程序&lt;/h2&gt;
+&lt;p&gt;运行以下命令以启动 Web 应用程序：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ ./webapp.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;启动行情服务&#34;&gt;启动行情服务&lt;/h2&gt;
+&lt;p&gt;运行以下命令以启动行情服务：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ ./quotes.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;测试&#34;&gt;测试&lt;/h2&gt;
+&lt;p&gt;现在，您可以在浏览器中访问 &lt;code&gt;http://localhost:8080&lt;/code&gt; 来查看股票报价。&lt;/p&gt;
+&lt;h2 id=&#34;清理&#34;&gt;清理&lt;/h2&gt;
+&lt;p&gt;要清理所有 Docker 容器和卷，请运行以下命令：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ docker-compose down -v
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;这将关闭并删除所有正在运行的容器，并删除由 &lt;code&gt;docker-compose up&lt;/code&gt; 创建的卷。&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

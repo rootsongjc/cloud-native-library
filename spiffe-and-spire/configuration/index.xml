@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>配置 | 云原生资料库</title>
+    <link>https://lib.jimmysong.io/spiffe-and-spire/configuration/</link>
+      <atom:link href="https://lib.jimmysong.io/spiffe-and-spire/configuration/index.xml" rel="self" type="application/rss+xml" />
+    <description>配置</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Mon, 23 Oct 2023 00:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://lib.jimmysong.io/media/sharing.png</url>
+      <title>配置</title>
+      <link>https://lib.jimmysong.io/spiffe-and-spire/configuration/</link>
+    </image>
+    
+    <item>
+      <title>配置 SPIRE</title>
+      <link>https://lib.jimmysong.io/spiffe-and-spire/configuration/configuring/</link>
+      <pubDate>Mon, 23 Oct 2023 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/spiffe-and-spire/configuration/configuring/</guid>
+      <description>&lt;p&gt;要根据你的应用程序需求自定义 SPIRE 服务器和 SPIRE 代理的行为，你需要编辑服务器和代理的配置文件。&lt;/p&gt;
+&lt;h2 id=&#34;如何配置-spire&#34;&gt;如何配置 SPIRE&lt;/h2&gt;
+&lt;p&gt;SPIRE 服务器和代理的配置文件分别为 &lt;code&gt;server.conf&lt;/code&gt; 和 &lt;code&gt;agent.conf&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;默认情况下，服务器期望配置文件位于 &lt;code&gt;conf/server/server.conf&lt;/code&gt;，但是服务器可以通过 &lt;code&gt;--config&lt;/code&gt; 标志配置为使用不同位置的配置文件。有关更多信息，请参阅 &lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_server/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 服务器参考&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;同样，代理期望配置文件位于 &lt;code&gt;conf/agent/agent.conf&lt;/code&gt;，但是代理可以通过 &lt;code&gt;--config&lt;/code&gt; 标志配置为使用不同位置的配置文件。有关更多信息，请参阅 &lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_agent/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 代理参考&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;配置文件在启动服务器或代理时加载一次。如果更改了服务器或代理的配置文件，则必须重新启动服务器或代理以使配置生效。&lt;/p&gt;
+&lt;p&gt;在 Kubernetes 中运行 SPIRE 时，通常将配置文件存储在 &lt;code&gt;ConfigMap&lt;/code&gt; 对象中，然后将其作为文件挂载到运行代理或服务器进程的容器中。&lt;/p&gt;
+&lt;p&gt;SPIRE 代理支持使用 &lt;a href=&#34;https://github.com/hashicorp/hcl&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;HCL&lt;/a&gt; 或 &lt;a href=&#34;http://www.json.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;JSON&lt;/a&gt; 作为配置文件结构语法。下面的示例将假定使用 HCL。&lt;/p&gt;
+&lt;h2 id=&#34;配置信任域&#34;&gt;配置信任域&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;此配置适用于 SPIRE 服务器和 SPIRE 代理&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;信任域对应于 SPIFFE 身份提供者的信任根。信任域可以表示运行其自己独立的 SPIFFE 基础设施的个人、组织、环境或部门。在同一信任域中标识的所有工作负载都将获得可以与信任域的根密钥进行验证的身份文件。&lt;/p&gt;
+&lt;p&gt;每个 SPIRE 服务器关联一个必须在该组织内唯一的信任域。信任域采用与 DNS 名称相同的形式（例如，&lt;code&gt;prod.acme.com&lt;/code&gt;），但不需要与任何 DNS 基础设施对应。&lt;/p&gt;
+&lt;p&gt;在首次启动服务器之前，需要在 SPIRE 服务器中配置信任域。通过在配置文件的 &lt;code&gt;server&lt;/code&gt; 部分的 &lt;code&gt;trust_domain&lt;/code&gt; 参数中配置。例如，如果服务器的信任域应配置为 &lt;code&gt;prod.acme.com&lt;/code&gt;，则应设置为：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;trust_domain = &amp;#34;prod.acme.com&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;同样，代理必须通过在代理配置文件的 &lt;code&gt;agent&lt;/code&gt; 部分的 &lt;code&gt;trust_domain&lt;/code&gt; 参数中配置来为相同的信任域颁发身份。&lt;/p&gt;
+&lt;p&gt;SPIRE 服务器和代理只能为单个信任域&lt;em&gt;颁发&lt;/em&gt;身份，代理配置的信任域必须与其连接的服务器的信任域匹配。&lt;/p&gt;
+&lt;h2 id=&#34;配置服务器监听代理的端口&#34;&gt;配置服务器监听代理的端口&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;此配置适用于 SPIRE 服务器&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;默认情况下，SPIRE 服务器在端口 8081 上监听来自 SPIRE 代理的传入连接；要选择不同的值，请编辑 &lt;code&gt;server.conf&lt;/code&gt; 文件中的 &lt;code&gt;bind_port&lt;/code&gt; 参数。例如，要将监听端口更改为 9090：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;bind_port = &amp;#34;9090&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果从服务器的默认配置更改了此配置，则还必须在代理上更改服务端口的配置。&lt;/p&gt;
+&lt;h2 id=&#34;配置节点认证&#34;&gt;配置节点认证&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;此配置适用于 SPIRE 服务器和 SPIRE 代理&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;SPIFFE 服务器通过节点认证和解析的过程来识别和验证代理。这是通过节点验证器和节点解析器插件来完成的，你需要在服务器中配置和启用它们。&lt;/p&gt;
+&lt;p&gt;你选择的节点认证方法将确定你在 SPIRE 配置文件的服务器插件和代理插件部分中配置 SPIRE 使用哪些节点验证器插件。服务器上必须配置&lt;em&gt;至少一个&lt;/em&gt;节点验证器，每个代理上只能配置&lt;em&gt;一个&lt;/em&gt;节点验证器。&lt;/p&gt;
+&lt;h3 id=&#34;对运行在-kubernetes-上的节点进行认证&#34;&gt;对运行在 Kubernetes 上的节点进行认证&lt;/h3&gt;
+&lt;p&gt;为了向在 Kubernetes 集群中运行的工作负载发放身份，需要在每个运行负载的集群节点上部署一个 SPIRE 代理。（&lt;a href=&#34;https://spiffe.io/docs/latest/spire/installing/install-agents/#installing-spire-agents-on-kubernetes&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;在 Kubernetes 上安装 SPIRE 代理&lt;/a&gt;了解如何在 Kubernetes 上安装 SPIRE 代理）。&lt;/p&gt;
+&lt;p&gt;可以使用 Kubernetes 的 &lt;a href=&#34;https://kubernetes.io/docs/reference/kubernetes-api/authentication-resources/token-review-v1/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Token Review API&lt;/a&gt; 对服务帐户令牌进行验证。因此，SPIRE 服务器本身不需要在 Kubernetes 上运行，并且单个 SPIRE 服务器可以支持在启用了 PSAT 认证的多个 Kubernetes 集群上运行的代理。&lt;/p&gt;
+&lt;h4 id=&#34;projected-service-account-tokens&#34;&gt;Projected Service Account Tokens&lt;/h4&gt;
+&lt;p&gt;在撰写本文时，预投影的服务帐户是 Kubernetes 的一个相对较新的功能，不是所有部署都支持它们。你的 Kubernetes 平台文档将告诉你是否支持此功能。如果你的 Kubernetes 部署不支持预投影的服务帐户令牌，则应启用服务帐户令牌。&lt;/p&gt;
+&lt;p&gt;使用 Kubernetes 的&lt;a href=&#34;https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-token-volume-projection&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Projected Service Account Tokens&lt;/a&gt; (PSATs) 对节点进行认证允许 SPIRE 服务器验证在 Kubernetes 集群上运行的 SPIRE 代理的身份。预投影的服务帐户令牌相对于传统的 Kubernetes 服务帐户令牌提供了额外的安全保证，因此，如果 Kubernetes 集群支持，PSAT 是推荐的认证策略。&lt;/p&gt;
+&lt;p&gt;要使用 PSAT 节点认证，请在&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_k8s_psat.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE Server&lt;/a&gt;和&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_k8s_psat.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE Agent&lt;/a&gt;上配置启用 PSAT 节点认证器插件。&lt;/p&gt;
+&lt;h4 id=&#34;服务帐户令牌&#34;&gt;服务帐户令牌&lt;/h4&gt;
+&lt;p&gt;在 Kubernetes 上运行工作负载时，如果集群上没有 Projected Service Account Token 功能，则 SPIRE 可以使用 Service Account Tokens 在 Server 和 Agent 之间建立信任。与使用 Projected Service Account Tokens 不同，此方法要求 SPIRE Server 和 SPIRE Agent 都部署在同一个 Kubernetes 集群上。&lt;/p&gt;
+&lt;p&gt;由于服务帐户令牌不包含可用于强力识别运行Agent的节点/守护程序/POD的声明，因此任何在允许的服务帐户下运行的容器都可以冒充Agent。因此，强烈建议在使用此认证方法时，Agent应在专用的服务帐户下运行。&lt;/p&gt;
+&lt;p&gt;要使用 SAT 节点认证，请在&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_k8s_sat.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE Server&lt;/a&gt;和&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_k8s_sat.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE Agent&lt;/a&gt;上配置和启用 SAT 节点认证器插件。&lt;/p&gt;
+&lt;h3 id=&#34;对运行-linux-的节点进行认证&#34;&gt;对运行 Linux 的节点进行认证&lt;/h3&gt;
+&lt;p&gt;SPIRE 能够对运行 Linux 的物理或虚拟机（节点）上的工作负载的身份进行认证。作为认证过程的一部分，SPIRE Server 需要建立与运行 Linux 节点上的 SPIRE Agent 的信任关系。根据节点运行的位置，SPIRE 支持各种节点认证器，这些节点认证器允许在创建注册项时使用不同的选择器来标识特定的工作负载。&lt;/p&gt;
+&lt;h4 id=&#34;加入令牌&#34;&gt;加入令牌&lt;/h4&gt;
+&lt;p&gt;加入令牌是一种使用单次使用的令牌来对服务器进行认证的简单方法，该令牌在服务器上生成并在启动代理时提供给代理。它适用于在 Linux 上运行的任何节点。&lt;/p&gt;
+&lt;p&gt;SPIRE 服务器可以通过在&lt;code&gt;server.conf&lt;/code&gt;配置文件中启用内置的&lt;code&gt;join-token&lt;/code&gt; NodeAttestor 插件来支持加入令牌认证，如下所示：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;NodeAttestor &amp;#34;join_token&amp;#34; {
+    plugin_data {
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;配置了加入令牌节点认证之后，可以使用&lt;code&gt;spire-server token generate&lt;/code&gt;命令在服务器上生成加入令牌。可以使用&lt;code&gt;-spiffeID&lt;/code&gt;标志将特定的 SPIFFE ID 与加入令牌关联起来。&lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_server/#spire-server-token-generate&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;在此处阅读更多&lt;/a&gt;有关使用此命令的更多信息。&lt;/p&gt;
+&lt;p&gt;当第一次启动启用加入令牌证明的 SPIRE 代理时，可以使用 &lt;code&gt;spire-agent run&lt;/code&gt; 命令启动代理，并使用 &lt;code&gt;-joinToken&lt;/code&gt; 标志指定服务器生成的加入令牌。有关此命令的详细信息，请阅读&lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_agent/#spire-agent-run&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;更多&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;服务器将验证加入令牌并向代理颁发 SVID（SPIFFE 身份验证信息文档）。只要代理与服务器保持连接，SVID 将自动轮换。在以后的启动中，除非 SVID 已过期且未续订，否则代理将使用该 SVID 对服务器进行身份验证。&lt;/p&gt;
+&lt;p&gt;要使用加入令牌节点证明，请在&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_jointoken.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 服务器&lt;/a&gt;和&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_jointoken.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 代理&lt;/a&gt;上配置和启用加入令牌节点证明插件。&lt;/p&gt;
+&lt;p&gt;要在服务器上禁用加入令牌证明，请在启动之前从配置文件中注释或删除此部分。&lt;/p&gt;
+&lt;h4 id=&#34;x509-证书&#34;&gt;X.509 证书&lt;/h4&gt;
+&lt;p&gt;在许多情况下，特别是在手动配置节点的情况下（例如在数据中心），可以通过验证先前安装在节点上的现有 X.509 叶子证书来识别节点并唯一标识它。&lt;/p&gt;
+&lt;p&gt;通常，这些叶子证书是从单个公共密钥和证书（在本指南中称为&lt;em&gt;根证书包&lt;/em&gt;）生成的。服务器必须配置根密钥和任何中间证书，以便能够验证特定机器呈现的叶子证书。只有找到可以通过证书链验证到服务器的证书时，节点证明才会成功，并且可以向该节点上的工作负载发布 SPIFFE ID。&lt;/p&gt;
+&lt;p&gt;此外，证明者公开了&lt;code&gt;subject:cn&lt;/code&gt;选择器，该选择器将匹配满足以下条件的证书：（a）有效，如上所述，（b）其通用名称（CN）与选择器中描述的通用名称匹配。&lt;/p&gt;
+&lt;p&gt;要使用 X.509 证书节点证明，请在&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_x509pop.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 服务器&lt;/a&gt;和&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_x509pop.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 代理&lt;/a&gt;上配置和启用 x509pop 节点证明插件。&lt;/p&gt;
+&lt;h4 id=&#34;ssh-证书&#34;&gt;SSH 证书&lt;/h4&gt;
+&lt;p&gt;在某些环境中，每个节点都会自动配备一个有效且唯一的 SSH 证书，用于标识该节点。SPIRE 可以使用此证书来引导其身份验证。&lt;/p&gt;
+&lt;p&gt;通过这种方法进行验证的节点会自动获得形式为的 SPIFFE ID：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;spiffe://&amp;lt;trust-domain&amp;gt;/spire/agent/sshpop/&amp;lt;fingerprint&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;其中 &lt;code&gt;&amp;lt;fingerprint&amp;gt;&lt;/code&gt; 是证书本身的哈希值。然后，可以使用此 SPIFFE ID 作为其他工作负载注册条目的基础。&lt;/p&gt;
+&lt;p&gt;要使用 SSH 证书节点验证，请在 SPIRE 服务器和 SPIRE 代理上配置并启用 sshpop 节点验证插件。&lt;/p&gt;
+&lt;h3 id=&#34;云供应商上的-linux-节点验证&#34;&gt;云供应商上的 Linux 节点验证&lt;/h3&gt;
+&lt;p&gt;许多云供应商提供特权 API，允许在由该供应商托管的特定节点上运行的进程能够证明其所在的节点。SPIRE 可以配置为利用这些 API 进行节点验证。这对于自动化来说特别方便，因为在新实例上首次启动代理时，代理可以自动向 SPIRE 服务器证明其身份，而无需为其发行预先存在的证书或加入令牌。&lt;/p&gt;
+&lt;h4 id=&#34;google-compute-engine-实例&#34;&gt;Google Compute Engine 实例&lt;/h4&gt;
+&lt;p&gt;Google Compute Engine（GCE）节点验证和解析允许 SPIRE 服务器自动识别和验证在 GCP GCE 实例上运行的 SPIRE 代理。简而言之，通过以下步骤完成：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;SPIRE 代理 gcp_iit 节点验证插件检索 GCP 实例的实例标识令牌，并向 SPIRE 服务器 gcp_iit 节点验证插件标识自身。&lt;/li&gt;
+&lt;li&gt;如果 &lt;code&gt;use_instance_metadata&lt;/code&gt; 配置值设置为 &lt;code&gt;true&lt;/code&gt;，SPIRE 服务器 gcp_iit 节点验证插件调用 GCP API 验证令牌的有效性。&lt;/li&gt;
+&lt;li&gt;验证完成后，SPIRE 代理被视为经过验证，并分配其自己的 SPIFFE ID。&lt;/li&gt;
+&lt;li&gt;最后，如果工作负载与注册条目匹配，SPIRE 会向节点上的工作负载发放 SVID。注册条目可以包括节点验证插件或解析器公开的选择器，或者将 SPIRE 代理的 SPIFFE ID 作为父级。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;要使用 GCP IIT 节点验证，请在 SPIRE 服务器和 SPIRE 代理上配置并启用 gcp_iit 节点验证插件。&lt;/p&gt;
+&lt;h4 id=&#34;amazon-ec2-实例&#34;&gt;Amazon EC2 实例&lt;/h4&gt;
+&lt;p&gt;EC2 节点认证和解析允许 SPIRE 服务器自动识别和验证在 AWS EC2 实例上运行的 SPIRE Agent。简而言之，通过以下方式实现：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;SPIRE Agent 的 aws_iid 节点证明插件检索 AWS 实例的实例身份文档，并向 SPIRE Server 的 aws_iid 节点证明插件进行身份验证。&lt;/li&gt;
+&lt;li&gt;SPIRE Server 的 aws_iid 节点证明插件使用具有有限权限的 AWS IAM 角色调用 AWS API 来验证文档的有效性。&lt;/li&gt;
+&lt;li&gt;如果配置了 aws_iid 节点解析器插件，则 SPIRE 将使用节点的已验证身份查找有关节点的其他信息。此元数据可以用作注册条目中的选择器。&lt;/li&gt;
+&lt;li&gt;验证完成后，SPIRE Agent 被视为经过验证的，并被分配其自己的 SPIFFE ID。&lt;/li&gt;
+&lt;li&gt;最后，如果工作负载与注册条目匹配，SPIRE 为节点上的工作负载发放 SVID。注册条目可以包含节点证明者或解析器提供的选择器，或者将 SPIRE Agent 的 SPIFFE ID 作为父级。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;有关配置 AWS EC2 节点证明者或解析器插件的更多信息，请参阅 SPIRE 服务器的相应 SPIRE 文档，其中包括 &lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_aws_iid.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 服务器节点证明者&lt;/a&gt; 和 &lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_noderesolver_aws_iid.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 服务器节点解析器&lt;/a&gt;，以及代理上的 &lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_aws_iid.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE Agent 节点证明者&lt;/a&gt;。&lt;/p&gt;
+&lt;h4 id=&#34;azure-虚拟机&#34;&gt;Azure 虚拟机&lt;/h4&gt;
+&lt;p&gt;Azure MSI 节点认证和解析允许 SPIRE 服务器自动识别和验证在 Azure VM 上运行的 SPIRE Agent。SPIRE 使用 MSI 令牌来验证代理。如果拦截，MSI 令牌必须进行范围限制以防止滥用。简而言之，通过以下方式实现：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;SPIRE Agent 的 azure_msi 节点证明插件检索 Azure VM 的 MSI 令牌，并向 SPIRE Server 的 azure_msi 节点证明插件进行身份验证。&lt;/li&gt;
+&lt;li&gt;SPIRE Server 的 azure_msi 节点证明插件通过 API 调用从 Azure 检索 JSON Web Key Set (JWKS) 文档，并使用 JWKS 信息验证 MSI 令牌。&lt;/li&gt;
+&lt;li&gt;SPIRE Server 的 azure_msi 节点解析器插件与 Azure 交互，获取有关代理 VM 的信息，例如订阅 ID、VM 名称、网络安全组、虚拟网络和虚拟网络子网，以构建有关代理 VM 的属性集，然后可以将其用作 Azure 节点集的节点选择器。&lt;/li&gt;
+&lt;li&gt;一旦验证完成，SPIRE 代理将被视为已验证，并发放其自己的 SPIFFE ID。&lt;/li&gt;
+&lt;li&gt;最后，如果工作负载与注册条目匹配，SPIRE 将向节点上的工作负载发放 SVID。注册条目可以包括节点验证器或解析器公开的选择器，或者将 SPIRE 代理的 SPIFFE ID 作为父级。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;默认情况下，代理插件分配的资源范围相对较大，它使用 Azure 资源管理器 (&lt;code&gt;https://management.azure.com&lt;/code&gt; 端点) 的资源 ID。出于安全考虑，考虑使用自定义资源 ID 来进行更精细的范围设置。&lt;/p&gt;
+&lt;p&gt;如果在代理配置文件中配置自定义资源 ID，则必须在 &lt;code&gt;server.conf&lt;/code&gt; 配置文件的 &lt;code&gt;NodeAttestor&lt;/code&gt; 部分中为每个租户指定自定义资源 ID。&lt;/p&gt;
+&lt;p&gt;有关配置 Azure MSI 节点验证器或解析器插件的更多信息，请参阅对应的 SPIRE 文档，包括 Azure MSI &lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_azure_msi.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE Server 节点验证器&lt;/a&gt;，&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_noderesolver_azure_msi.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE Server 节点解析器&lt;/a&gt;，以及代理上的 &lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_azure_msi.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 代理节点验证器&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;配置工作负载验证&#34;&gt;配置工作负载验证&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;此配置适用于 SPIRE 代理&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;与节点验证器关注的是 SPIRE Server 如何在特定物理或虚拟机上识别 SPIRE 代理不同，工作负载验证关注的是 SPIRE 代理如何识别特定进程。通常，两者结合使用以识别特定的工作负载。&lt;/p&gt;
+&lt;p&gt;与节点验证类似，工作负载验证通过启用相关插件来完成。不同的插件提供了不同的选择器，可在注册条目中使用这些选择器来识别特定的工作负载。与节点验证不同，对于单个工作负载，工作负载验证可以使用多种策略。例如，对于给定的 Unix 组，可能要求单个工作负载运行，并从特定的 Docker 镜像启动。&lt;/p&gt;
+&lt;h3 id=&#34;为由-kubernetes-调度的工作负载进行工作负载证明&#34;&gt;为由 Kubernetes 调度的工作负载进行工作负载证明&lt;/h3&gt;
+&lt;p&gt;当工作负载在 Kubernetes 中运行时，能够用 Kubernetes 构造描述它们是非常有价值的，比如与工作负载运行的 Pod 相关联的命名空间、服务账户或标签。&lt;/p&gt;
+&lt;p&gt;Kubernetes 工作负载证明插件通过与本地的 Kubelet 进行交互来检索有关特定进程的 Kubernetes 特定元数据，当它调用工作负载 API 时，使用这些元数据来识别与注册条目匹配的工作负载。&lt;/p&gt;
+&lt;p&gt;有关更多信息，包括暴露的选择器的详细信息，请参阅&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_workloadattestor_k8s.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kubernetes 工作负载证明插件的相应 SPIRE 文档&lt;/a&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;为-docker-容器进行工作负载证明&#34;&gt;为 Docker 容器进行工作负载证明&lt;/h3&gt;
+&lt;p&gt;当工作负载在 Docker 容器中运行时，能够用该容器的属性来描述它们是很有帮助的，比如容器启动的 Docker 镜像或特定环境变量的值。&lt;/p&gt;
+&lt;p&gt;Docker 工作负载证明插件通过与本地的 Docker 守护程序进行交互来检索有关特定进程的 Docker 特定元数据，当它调用工作负载 API 时。&lt;/p&gt;
+&lt;p&gt;有关更多信息，包括暴露的选择器的详细信息，请参阅&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_workloadattestor_docker.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Docker 工作负载证明插件的相应 SPIRE 文档&lt;/a&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;为-unix-进程进行工作负载证明&#34;&gt;为 Unix 进程进行工作负载证明&lt;/h3&gt;
+&lt;p&gt;当工作负载在 Unix 上运行时，能够用进程在 Unix 中的管理方式来描述它们是很有帮助的，比如它正在运行的 Unix 组的名称。&lt;/p&gt;
+&lt;p&gt;Unix 工作负载证明通过检查 Unix 域套接字的调用者来确定调用 Workload API 的工作负载的内核元数据。&lt;/p&gt;
+&lt;p&gt;有关更多信息，包括暴露的选择器的详细信息，请参阅&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_workloadattestor_unix.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Unix 工作负载证明插件的相应 SPIRE 文档&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;配置代理和服务器数据存储位置&#34;&gt;配置代理和服务器数据存储位置&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;此配置适用于 SPIRE 服务器和 SPIRE 代理&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;agent.conf&lt;/code&gt;和&lt;code&gt;server.conf&lt;/code&gt;配置文件中的&lt;code&gt;data_dir&lt;/code&gt;选项设置了 SPIRE 运行时数据的目录。&lt;/p&gt;
+&lt;p&gt;如果你为&lt;code&gt;data_dir&lt;/code&gt;指定了相对路径，即以&lt;code&gt;./&lt;/code&gt;开头的路径，则&lt;code&gt;data_dir&lt;/code&gt;将基于你执行&lt;code&gt;spire-agent&lt;/code&gt;或&lt;code&gt;spire-server&lt;/code&gt;命令时的当前工作目录进行评估。使用相对路径的&lt;code&gt;data_dir&lt;/code&gt;对于对 SPIRE 进行初始评估可能很有用，但对于生产部署，你可能希望将&lt;code&gt;data_dir&lt;/code&gt;设置为绝对路径。按照惯例，如果你已在&lt;code&gt;/opt/spire&lt;/code&gt;安装了 SPIRE，则将&lt;code&gt;data_dir&lt;/code&gt;指定为&lt;code&gt;&amp;quot;/opt/spire/data&amp;quot;&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;确保你为&lt;code&gt;data_dir&lt;/code&gt;指定的路径及其所有子目录对运行 SPIRE 代理或服务器可执行文件的 Linux 用户可读取。你可能需要使用&lt;a href=&#34;http://man7.org/linux/man-pages/man1/chown.1.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;chown&lt;/a&gt;来更改这些数据目录的所有权，以便其归属于将运行可执行文件的 Linux 用户。&lt;/p&gt;
+&lt;p&gt;如果你为&lt;code&gt;data_dir&lt;/code&gt;指定的路径不存在，则 SPIRE 代理或服务器可执行文件将在具有执行权限的情况下创建该路径。&lt;/p&gt;
+&lt;p&gt;通常，你应该将&lt;code&gt;data_dir&lt;/code&gt;的值用作在&lt;code&gt;agent.conf&lt;/code&gt;和&lt;code&gt;server.conf&lt;/code&gt;配置文件中配置的其他数据路径的基目录。例如，如果你在&lt;code&gt;agent.conf&lt;/code&gt;中将&lt;code&gt;data_dir&lt;/code&gt;设置为&lt;code&gt;&amp;quot;/opt/spire/data&amp;quot;&lt;/code&gt;，则将&lt;code&gt;KeyManager“disk”plugin_data directory&lt;/code&gt;设置为&lt;code&gt;&amp;quot;/opt/spire/data/agent&amp;quot;&lt;/code&gt;。或者，如果你在&lt;code&gt;server.conf&lt;/code&gt;中将&lt;code&gt;data_dir&lt;/code&gt;设置为&lt;code&gt;/opt/spire/data&lt;/code&gt;，则将&lt;code&gt;connection_string&lt;/code&gt;设置为&lt;code&gt;&amp;quot;/opt/spire/data/server/datastore.sqlite3&amp;quot;&lt;/code&gt;，如果你使用 SQLite 作为 SPIRE Server 数据存储，则如下所述。&lt;/p&gt;
+&lt;h2 id=&#34;配置服务器数据存储方式&#34;&gt;配置服务器数据存储方式&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;此配置适用于 SPIRE 服务器&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;数据存储是 SPIRE 服务器用于持久化动态配置的地方，例如从 SPIRE 服务器检索的注册条目和标识映射策略。默认情况下，SPIRE 使用 SQLite 捆绑并将其设置为默认的服务器数据存储方式。SPIRE 还支持其他兼容的数据存储。对于生产用途，你应该仔细考虑使用哪个数据库，特别是在将 SPIRE 部署在高可用配置时。&lt;/p&gt;
+&lt;p&gt;可以通过配置默认的 SQL 数据存储插件来将 SPIRE 服务器配置为使用不同的 SQL 兼容存储后端，如下所述。有关如何配置此块的完整参考，请参阅&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_datastore_sql.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 文档&lt;/a&gt;。&lt;/p&gt;
+&lt;h4 id=&#34;将-sqlite-配置为-spire-数据存储&#34;&gt;将 SQLite 配置为 SPIRE 数据存储&lt;/h4&gt;
+&lt;p&gt;默认情况下，SPIRE 服务器会创建并使用本地 SQLite 数据库来备份和存储配置数据。虽然对于测试来说很方便，但是在生产部署中通常不推荐使用，因为很难在多台机器上共享 SQLite 数据存储，这会使备份、HA 部署和升级变得复杂。&lt;/p&gt;
+&lt;p&gt;要配置服务器使用 SQLite 数据库，请在配置文件中启用以下类似的部分：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    DataStore &amp;#34;sql&amp;#34; {
+        plugin_data {
+            database_type = &amp;#34;sqlite3&amp;#34;
+            connection_string = &amp;#34;/opt/spire/data/server/datastore.sqlite3&amp;#34;
+        }
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;配置文件中不应该有其他（取消注释的）&lt;code&gt;DataStore&lt;/code&gt;部分。&lt;/p&gt;
+&lt;p&gt;数据库将在&lt;code&gt;connection_string&lt;/code&gt;中指定的路径中创建。有关选择 SPIRE 相关数据位置的更多信息，请参见&lt;a href=&#34;https://spiffe.io/docs/latest/deploying/configuring/#configuring-where-to-store-agent-and-server-data&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;配置代理和服务器数据存储位置&lt;/a&gt;。&lt;/p&gt;
+&lt;h4 id=&#34;将-mysql-配置为数据存储&#34;&gt;将 MySQL 配置为数据存储&lt;/h4&gt;
+&lt;p&gt;在生产环境中，建议使用专用数据库来备份和存储配置数据。尽管安装和配置 MySQL 数据库不在本指南的范围内，但值得注意的是 SPIRE 服务器需要：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;用于 SPIRE 服务器配置的 MySQL 服务器上的专用数据库。&lt;/li&gt;
+&lt;li&gt;具有能力连接到运行 SPIRE 服务器的任何 EC2 实例，并能向该数据库中的表、列和行插入和删除的 MySQL 用户。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;要配置 SPIRE 服务器使用 MySQL 数据库，请在配置文件中启用以下类似的部分：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    DataStore &amp;#34;sql&amp;#34; {
+        plugin_data {
+            database_type = &amp;#34;mysql&amp;#34;
+            connection_string = &amp;#34;username:password@tcp(localhost:3306)/dbname?parseTime=true&amp;#34;
+        }
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在上述连接字符串中，用以下内容替换：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;username&lt;/code&gt;：要用于访问数据库的 MySQL 用户的用户名&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;password&lt;/code&gt;：MySQL 用户的密码&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;localhost:3306&lt;/code&gt;：MySQL 服务器的 IP 地址或主机名和端口号&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;dbname&lt;/code&gt;：数据库的名称&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;将-postgres-配置为数据存储&#34;&gt;将 Postgres 配置为数据存储&lt;/h4&gt;
+&lt;p&gt;在生产环境中，建议使用专用数据库来备份和存储配置数据。尽管安装和配置 Postgres 数据库不在本指南的范围内，但值得注意的是 SPIRE 服务器需要：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;用于 SPIRE 服务器配置的 Postgres 服务器上的专用数据库。&lt;/li&gt;
+&lt;li&gt;具有能力连接到运行 SPIRE 服务器的任何实例，并能向该数据库中的表、列和行插入和删除的 Postgres 用户。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;要配置 SPIRE 服务器使用 Postgres 数据库，请在服务器配置文件中启用以下部分：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    DataStore &amp;#34;sql&amp;#34; {
+        plugin_data {
+            database_type = &amp;#34;postgres&amp;#34;
+            connection_string = &amp;#34;dbname=[database_name] user=[username]
+                                 password=[password] host=[hostname] port=[port]&amp;#34;
+        }
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;connection_string&lt;/code&gt; 的值采用键=值格式，但也可以使用连接 URI（参见 Postgres 文档中支持的连接字符串格式的&lt;a href=&#34;https://www.postgresql.org/docs/11/libpq-connect.html#LIBPQ-CONNSTRING&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;34.1.1. 连接字符串&lt;/a&gt;）。&lt;/p&gt;
+&lt;p&gt;以下是你设置的连接字符串值的摘要：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;[database-name]：数据库的名称&lt;/li&gt;
+&lt;li&gt;[username]：访问数据库的 Postgres 用户的用户名&lt;/li&gt;
+&lt;li&gt;[password]：用户的密码&lt;/li&gt;
+&lt;li&gt;[hostname]：Postgres 服务器的 IP 地址或主机名&lt;/li&gt;
+&lt;li&gt;[port]：Postgres 服务器的端口号&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;配置代理和服务器上存储生成的密钥的方式&#34;&gt;配置代理和服务器上存储生成的密钥的方式&lt;/h4&gt;
+&lt;p&gt;&lt;em&gt;此配置适用于 SPIRE 服务器和 SPIRE 代理&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;SPIRE 代理和 SPIRE 服务器在正常运行过程中会生成私钥和证书。保持这些密钥和证书的完整性非常重要，以确保维护所发行的 SPIFFE 身份的完整性。&lt;/p&gt;
+&lt;p&gt;目前，SPIRE 在代理和服务器上支持两种密钥管理策略。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;存储于内存中。在此策略中，密钥和证书仅存储在内存中。这意味着，如果服务器或代理崩溃或重新启动，则必须重新生成密钥。对于 SPIRE 代理来说，这通常需要代理在重新启动时重新对服务器进行验证。通过启用和配置内存密钥管理器插件来管理此策略，可用于&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_keymanager_memory.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 服务器&lt;/a&gt;和/或&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_keymanager_memory.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 代理&lt;/a&gt;*。&lt;/li&gt;
+&lt;li&gt;存储在磁盘上。在此策略中，密钥和证书存储在指定的磁盘文件中。使用此方法的一个优点是它们在 SPIRE 服务器或代理重新启动后仍然存在。缺点是，由于密钥存储在磁盘文件中，必须采取其他预防措施，以防止恶意进程读取这些文件。通过启用和配置磁盘密钥管理器插件来管理此策略，可用于&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_keymanager_disk.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 服务器&lt;/a&gt;和/或&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_keymanager_disk.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 代理&lt;/a&gt;*。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;另外，SPIRE 可以配置为通过第三方密钥管理器插件集成自定义后端，例如秘密存储。&lt;a href=&#34;https://spiffe.io/docs/latest/spire/developing/extending/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;扩展 SPIRE&lt;/a&gt;指南对此进行了更详细的介绍。&lt;/p&gt;
+&lt;h2 id=&#34;配置应用程序将使用的信任根上游授权机构&#34;&gt;配置应用程序将使用的信任根/“上游授权机构”&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;此配置适用于 SPIRE 服务器&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;每个 SPIRE 服务器使用特定的根签名密钥，用于执行几个重要操作：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;通过 SPIRE 代理对 SPIRE 服务器建立信任，因为代理持有由该密钥签名的证书（但请注意，服务器对代理的信任是通过验证建立的）。&lt;/li&gt;
+&lt;li&gt;生成发放给工作负载的 X.509 或 JWT SVID。&lt;/li&gt;
+&lt;li&gt;生成用于与其他 SPIRE 服务器建立信任的 SPIFFE 信任捆绑。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;应将此签名密钥视为非常敏感的，因为获取它将允许恶意行为者冒充 SPIRE 服务器并代表其发放身份。&lt;/p&gt;
+&lt;p&gt;为了确保签名密钥的完整性，SPIRE 服务器可以自行对材料进行签名，使用存储在磁盘上的签名密钥，或委托签名给独立的证书颁发机构（CA），例如 AWS Secrets Manager。此行为通过&lt;code&gt;server.conf&lt;/code&gt;文件中的&lt;code&gt;UpstreamAuthority&lt;/code&gt;部分进行配置。&lt;/p&gt;
+&lt;p&gt;有关完整的服务器配置参考，请参阅&lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_server/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 服务器配置参考&lt;/a&gt;。&lt;/p&gt;
+&lt;h4 id=&#34;配置磁盘上的签名密钥&#34;&gt;配置磁盘上的签名密钥&lt;/h4&gt;
+&lt;p&gt;SPIRE 服务器可以配置为从磁盘加载 CA 凭据，使用它们为服务器的签名机构生成中间签名证书。&lt;/p&gt;
+&lt;p&gt;SPIRE 服务器附带了一个“虚拟”密钥和证书，可用于简化测试，但由于该密钥分发给所有 SPIRE 用户，因此不应将其用于除测试目的之外的任何用途。相反，应生成一个在磁盘上的签名密钥。&lt;/p&gt;
+&lt;p&gt;如果已安装&lt;code&gt;openssl&lt;/code&gt;工具，则可以使用类似以下命令生成有效的根密钥和证书：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo openssl req &lt;span class=&#34;se&#34;&gt;\\\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;       -subj &lt;span class=&#34;s2&#34;&gt;&amp;#34;/C=/ST=/L=/O=/CN=acme.com&amp;#34;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\\\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;       -newkey rsa:2048 -nodes -keyout /opt/spire/conf/root.key &lt;span class=&#34;se&#34;&gt;\\\\&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;       -x509 -days &lt;span class=&#34;m&#34;&gt;365&lt;/span&gt; -out /opt/spire/conf/root.crt
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;通过启用和配置磁盘&lt;code&gt;UpstreamAuthority&lt;/code&gt;插件，可以管理此策略，用于&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_upstreamauthority_disk.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 服务器&lt;/a&gt;。&lt;/p&gt;
+&lt;h4 id=&#34;配置-aws-证书管理器&#34;&gt;配置 AWS 证书管理器&lt;/h4&gt;
+&lt;p&gt;可以配置 SPIRE 服务器从亚马逊网络服务的证书管理器（&lt;a href=&#34;https://aws.amazon.com/certificate-manager/private-certificate-authority/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Private Certificate Authority&lt;/a&gt;）加载 CA 凭据，并使用它们生成服务器签名授权的中间签名证书。&lt;/p&gt;
+&lt;p&gt;可以通过启用和配置 &lt;code&gt;aws_pca&lt;/code&gt; UpstreamAuthority 插件来管理此策略，有关详细信息，请参阅 &lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_upstreamauthority_aws_pca.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 服务器&lt;/a&gt;。&lt;/p&gt;
+&lt;h4 id=&#34;配置另一个-spire-安装&#34;&gt;配置另一个 SPIRE 安装&lt;/h4&gt;
+&lt;p&gt;可以配置 SPIRE 服务器从另一个 SPIFFE 实现（例如 SPIRE）的 Workload API 加载 CA 凭据。这使得可以使用一种称为“嵌套 SPIRE”的技术，作为 HA 部署的补充，允许独立的 SPIRE 服务器针对单个信任域发出标识。&lt;/p&gt;
+&lt;p&gt;关于嵌套 SPIRE 的完整处理超出了本指南的范围。但是，可以通过启用和配置 &lt;code&gt;spire&lt;/code&gt; UpstreamAuthority 插件来管理此策略，有关详细信息，请参阅 &lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_upstreamauthority_spire.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE 服务器&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;导出用于监控的指标&#34;&gt;导出用于监控的指标&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;此配置适用于 SPIRE 服务器和 SPIRE Agent&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;要将 SPIRE 服务器或 Agent 配置为将数据输出到指标收集器，请编辑 &lt;code&gt;server.conf&lt;/code&gt; 或 &lt;code&gt;agent.conf&lt;/code&gt; 中的遥测部分。SPIRE 可以将指标导出到 &lt;a href=&#34;https://docs.datadoghq.com/developers/dogstatsd/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Datadog&lt;/a&gt; （DogStatsD 格式）、&lt;a href=&#34;https://github.com/m3db/m3&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;M3&lt;/a&gt;、&lt;a href=&#34;https://prometheus.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Prometheus&lt;/a&gt; 和 &lt;a href=&#34;https://github.com/statsd/statsd&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;StatsD&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;可以同时配置多个收集器。在要将指标发送到多个收集器的情况下，DogStatsD、M3 和 StatsD 支持多个声明。&lt;/p&gt;
+&lt;p&gt;如果要使用 Amazon CloudWatch 进行指标收集，请查阅 &lt;a href=&#34;https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-custom-metrics-statsd.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;此文档&lt;/a&gt; 以了解使用 CloudWatch 代理程序和 StatsD 检索自定义指标的方法。&lt;/p&gt;
+&lt;p&gt;以下是将遥测导出到 Datadog、M3、Prometheus 和 StatsD 并禁用内存收集器的 &lt;code&gt;agent.conf&lt;/code&gt; 或 &lt;code&gt;server.conf&lt;/code&gt; 的配置块示例：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;telemetry {
+        Prometheus {
+                port = 9988
+        }
+
+        DogStatsd = [
+            { address = &amp;#34;localhost:8125&amp;#34; },
+        ]
+
+        Statsd = [
+            { address = &amp;#34;localhost:1337&amp;#34; },
+            { address = &amp;#34;collector.example.org:8125&amp;#34; },
+        ]
+
+        M3 = [
+            { address = &amp;#34;localhost:9000&amp;#34; env = &amp;#34;prod&amp;#34; },
+        ]
+
+        InMem {
+            enabled = false
+        }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;有关更多信息，请参阅 &lt;a href=&#34;https://spiffe.io/docs/latest/deploying/telemetry_config/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;遥测配置&lt;/a&gt; 指南。&lt;/p&gt;
+&lt;h2 id=&#34;日志记录&#34;&gt;日志记录&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;此配置适用于 SPIRE 服务器和 SPIRE Agent&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;可以在各自的配置文件中设置 SPIRE 服务器和 SPIRE Agent 的日志文件位置和日志级别。编辑 &lt;code&gt;log_file&lt;/code&gt; 值以设置日志文件位置，编辑 &lt;code&gt;log_level&lt;/code&gt; 值以设置日志级别。此值可以是 DEBUG、INFO、WARN 或 ERROR 中的一个。&lt;/p&gt;
+&lt;p&gt;默认情况下，SPIRE 日志将输出到 STDOUT。但是，可以通过在 &lt;code&gt;log_file&lt;/code&gt; 属性中指定文件路径，将 SPIRE Agent 和 Server 配置为直接将日志写入文件。&lt;/p&gt;
+&lt;h2 id=&#34;下一步是什么&#34;&gt;下一步是什么？&lt;/h2&gt;
+&lt;p&gt;在配置完服务器和代理后，请考虑阅读关于&lt;a href=&#34;https://spiffe.io/docs/latest/spire/using/registering/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;注册工作负载&lt;/a&gt;的指南。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>注册工作负载</title>
+      <link>https://lib.jimmysong.io/spiffe-and-spire/configuration/registering/</link>
+      <pubDate>Mon, 23 Oct 2023 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/spiffe-and-spire/configuration/registering/</guid>
+      <description>&lt;p&gt;本文将指导你在SPIRE服务器中使用SPIFFE ID注册工作负载。&lt;/p&gt;
+&lt;h2 id=&#34;如何创建注册条目&#34;&gt;如何创建注册条目&lt;/h2&gt;
+&lt;p&gt;注册条目包含以下内容：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;SPIFFE ID&lt;/li&gt;
+&lt;li&gt;一个或多个选择器集合&lt;/li&gt;
+&lt;li&gt;父级ID&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;服务器将向代理发送所有有权在该节点上运行的工作负载的注册条目列表。代理缓存这些注册条目并保持其更新。&lt;/p&gt;
+&lt;p&gt;在工作负载认证期间，代理会发现选择器并将其与缓存的注册条目中的选择器进行比较，以确定应该为工作负载分配哪些SVID。&lt;/p&gt;
+&lt;p&gt;您可以通过在命令行中发出&lt;code&gt;spire-server entry create&lt;/code&gt;命令或直接调用Entry API来注册工作负载，具体方法请参阅 &lt;a href=&#34;https://github.com/spiffe/spire-api-sdk/blob/v1.8.2/proto/spire/api/server/entry/v1/entry.proto&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Entry API文档&lt;/a&gt;。可以使用&lt;code&gt;spire-server entry update&lt;/code&gt;命令修改现有条目。&lt;/p&gt;
+&lt;p&gt;在Kubernetes上运行时，调用SPIRE服务器的常见方法是通过在运行SPIRE服务器的Pod上使用&lt;code&gt;kubectl exec&lt;/code&gt;命令。例如：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl &lt;span class=&#34;nb&#34;&gt;exec&lt;/span&gt; -n spire spire-server-0 -- &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    /opt/spire/bin/spire-server entry create &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -spiffeID spiffe://example.org/ns/default/sa/default &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -parentID spiffe://example.org/ns/spire/sa/spire-agent &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -selector k8s:ns:default &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;有关&lt;code&gt;spire-server entry create&lt;/code&gt;和&lt;code&gt;spire-server entry update&lt;/code&gt;命令和选项的更多信息，请参阅 &lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_server/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE服务器参考指南&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;如何注册工作负载&#34;&gt;如何注册工作负载&lt;/h2&gt;
+&lt;p&gt;通过在SPIRE服务器中创建一个或多个注册条目来注册工作负载。要注册工作负载，需要告诉SPIRE：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;分配给在工作负载有权运行的节点上运行的代理的SPIFFE ID。&lt;/li&gt;
+&lt;li&gt;运行在这些机器上的工作负载本身的属性。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;1-定义代理的spiffe-id&#34;&gt;1. 定义代理的SPIFFE ID&lt;/h3&gt;
+&lt;p&gt;分配给代理的SPIFFE ID可能是作为节点认证过程的一部分自动分配的ID。例如，当代理经过AWS IID节点认证时，会自动分配形式为&lt;code&gt;spiffe://example.org/agent/aws_iid/ACCOUNT_ID/REGION/INSTANCE_ID&lt;/code&gt;的SPIFFE ID。&lt;/p&gt;
+&lt;p&gt;或者，可以通过创建一个指定了选择器的&lt;a href=&#34;https://spiffe.io/docs/latest/deploying/registering/#create-registration-entry&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;注册条目&lt;/a&gt;来为一个或多个代理分配SPIFFE ID。例如，可以通过创建以下注册条目将SPIFFE ID &lt;code&gt;spiffe://acme.com/web-cluster&lt;/code&gt;分配给在标记&lt;code&gt;app&lt;/code&gt;设置为&lt;code&gt;webserver&lt;/code&gt;的一组EC2实例上运行的任何SPIRE代理：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;spire-server entry create \
+    -node \
+    -spiffeID spiffe://acme.com/web-cluster \
+    -selector tag:app:webserver
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;选择器是SPIRE可以在发出身份之前验证的节点或工作负载的本机属性。单个注册条目可以包含节点选择器或工作负载选择器，但不能同时包含两者。请注意上述命令中的&lt;code&gt;-node&lt;/code&gt;标志，它表示此命令正在指定节点选择器。&lt;/p&gt;
+&lt;p&gt;根据工作负载应用程序运行的平台或架构，提供了不同的选择器。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;平台&lt;/th&gt;
+&lt;th&gt;请访问&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Kubernetes&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_k8s_sat.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;GitHub&lt;/a&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;AWS&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_aws_iid.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;GitHub&lt;/a&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Azure&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_noderesolver_azure_msi.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;GitHub&lt;/a&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;2-定义工作负载的spiffe-id&#34;&gt;2. 定义工作负载的SPIFFE ID&lt;/h3&gt;
+&lt;p&gt;一旦代理或代理有一个分配的SPIFFE ID，就可以创建另一个注册条目来标识在调用该代理公开的工作负载API时的特定工作负载。&lt;/p&gt;
+&lt;p&gt;例如，要创建一个注册条目，以匹配在标识为&lt;code&gt;spiffe://acme.com/web-cluster&lt;/code&gt;的代理上运行的Unix组ID 1000下运行的Linux进程，可以使用以下命令：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;spire-server entry create \
+    -parentID spiffe://acme.com/web-cluster \
+    -spiffeID spiffe://acme.com/webapp  \
+    -selector unix:gid:1000
+&lt;/code&gt;&lt;/pre&gt;&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;平台&lt;/th&gt;
+&lt;th&gt;请访问&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Unix&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_workloadattestor_unix.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;GitHub&lt;/a&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Kubernetes&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_workloadattestor_k8s.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;GitHub&lt;/a&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Docker&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_workloadattestor_docker.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;GitHub&lt;/a&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h2 id=&#34;如何列出注册条目&#34;&gt;如何列出注册条目&lt;/h2&gt;
+&lt;p&gt;要列出所有现有的注册条目，请使用命令&lt;code&gt;spire-server entry show&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;要将注册条目筛选为与特定SPIFFE ID、父级SPIFFE ID或注册条目ID匹配的条目，请分别使用&lt;code&gt;-spiffeID&lt;/code&gt;、&lt;code&gt;-parentID&lt;/code&gt;、&lt;code&gt;-selector&lt;/code&gt;或&lt;code&gt;-entryID&lt;/code&gt;标志。&lt;/p&gt;
+&lt;p&gt;请注意，每个注册条目都有一个唯一的注册条目ID，但是多个注册条目可以指定相同的SPIFFE ID。&lt;/p&gt;
+&lt;p&gt;例如，要列出与标记&lt;code&gt;app&lt;/code&gt;设置为&lt;code&gt;webserver&lt;/code&gt;的一组EC2实例匹配的所有注册条目，请运行以下命令：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;spire-server entry show -selector tag:app:webserver
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;有关&lt;code&gt;spire-server entry show&lt;/code&gt;命令和选项的更多信息，请参阅&lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_server/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE服务器参考指南&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;如何删除注册条目&#34;&gt;如何删除注册条目&lt;/h2&gt;
+&lt;p&gt;要永久删除现有的注册条目，请使用&lt;code&gt;spire-server entry delete&lt;/code&gt;命令，并指定相关的注册条目ID。&lt;/p&gt;
+&lt;p&gt;例如：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;spire-server entry delete -entryID 92f4518e-61c9-420d-b984-074afa7c7002
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;有关&lt;code&gt;spire-server entry delete&lt;/code&gt;命令和选项的更多信息，请参阅&lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_server/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE服务器参考指南&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;将工作负载映射到多个节点&#34;&gt;将工作负载映射到多个节点&lt;/h2&gt;
+&lt;p&gt;工作负载注册条目可以有一个父级ID。这可以是特定节点的SPIFFE ID（即通过节点认证获得的代理的SPIFFE ID），也可以是节点注册条目（有时称为节点别名/集合）的SPIFFE ID。节点别名（或集合）是具有相似特征的一组节点，它们被赋予了一个共享的身份。节点注册条目具有节点选择器，要求节点至少具有这些选择器才能符合共享的身份。这意味着具有至少与节点注册条目中定义的选择器相同的任何节点都被赋予该别名（或属于该节点集）。当工作负载注册条目使用节点别名的SPIFFE ID作为父级时，具有该别名的任何节点都有权为该工作负载获取SVID&lt;/p&gt;
+&lt;h2 id=&#34;接下来怎么做&#34;&gt;接下来怎么做？&lt;/h2&gt;
+&lt;p&gt;一旦学会了如何创建、更新和删除注册条目，请考虑查看关于&lt;a href=&#34;https://spiffe.io/docs/latest/spire/developing/svids/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;如何使用SVID&lt;/a&gt;的指南。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>使用 SVID</title>
+      <link>https://lib.jimmysong.io/spiffe-and-spire/configuration/svids/</link>
+      <pubDate>Mon, 23 Oct 2023 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/spiffe-and-spire/configuration/svids/</guid>
+      <description>&lt;p&gt;本文指导你如何编写与 SPIFFE SVID 相关的代码。&lt;/p&gt;
+&lt;p&gt;SPIRE 等符合 SPIFFE 的身份提供者将通过 SPIFFE Workload API 公开 SPIFFE 可验证身份文档（SVID）。工作负载可以使用从此 API 检索到的 SVID 来验证消息的来源或在两个工作负载之间建立相互 TLS 安全通道。&lt;/p&gt;
+&lt;h1 id=&#34;与-workload-api-交互&#34;&gt;与 Workload API 交互&lt;/h1&gt;
+&lt;p&gt;开发需要与 SPIFFE 进行交互的新工作负载的开发人员可以直接与 SPIFFE Workload API 进行交互，以便：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;检索工作负载的身份，描述为 SPIFFE ID，例如 &lt;code&gt;spiffe://prod.acme.com/billing/api&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;代表工作负载生成短期密钥和证书，具体包括：
+&lt;ul&gt;
+&lt;li&gt;与该 SPIFFE ID 相关联的私钥，可用于代表工作负载签署数据。&lt;/li&gt;
+&lt;li&gt;对应的短期 X.509 证书 - 一种称为 X509-SVID 的证书。该证书可用于建立 TLS 或以其他方式对其他工作负载进行身份验证。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;一组证书 - 称为信任捆绑包（trust bundle） - 工作负载可以使用它来验证同一信任域或联合信任域中的另一个工作负载呈现的 X.509-SVID。&lt;/li&gt;
+&lt;li&gt;生成或验证代表工作负载或同一信任域或联合信任域中另一个工作负载的 JSON Web Token（JWT-SVID）。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Workload API 不需要任何显式的身份验证（如密钥）。相反，SPIFFE 规范将身份验证工作留给 SPIFFE Workload API 的实现来确定。在 SPIRE 的情况下，这是通过检查 SPIRE 代理在工作负载调用 API 时收集的 Unix 内核元数据来实现的。&lt;/p&gt;
+&lt;p&gt;该 API 是基于 gRPC 的 API，派生自 &lt;a href=&#34;https://github.com/spiffe/go-spiffe/blob/main/v2/proto/spiffe/workload/workload.proto&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;protobuf&lt;/a&gt;。&lt;a href=&#34;https://grpc.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;gRPC 项目&lt;/a&gt; 提供了从 protobuf 生成各种语言的客户端库的工具。&lt;/p&gt;
+&lt;h2 id=&#34;在-go-中使用-svid&#34;&gt;在 Go 中使用 SVID&lt;/h2&gt;
+&lt;p&gt;如果您在使用 Go 进行开发，SPIFFE 项目维护了一个 Go 客户端库，提供以下功能：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;一个命令行实用程序，用于解析和验证 X.509 证书中编码的 SPIFFE 身份，如 SPIFFE 标准中所述。&lt;/li&gt;
+&lt;li&gt;一个客户端库，提供与 SPIFFE Workload API 的交互界面。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;您可以在 &lt;a href=&#34;https://github.com/spiffe/go-spiffe&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;GitHub&lt;/a&gt; 上找到该库以及 GoDoc 的链接。&lt;/p&gt;
+&lt;h1 id=&#34;使用-spiffe-helper-实用程序&#34;&gt;使用 SPIFFE Helper 实用程序&lt;/h1&gt;
+&lt;p&gt;SPIFFE Helper 实用程序是一个通用实用程序，用于构建或与无法直接写入 Workload API 的应用程序集成时非常有用。大体上，该实用程序能够：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;获取用于验证 X.509-SVID 的 X.509-SVID、密钥和信任捆绑包（证书链），并将它们写入磁盘上的特定位置。&lt;/li&gt;
+&lt;li&gt;启动一个子进程，该子进程可以使用这些密钥和证书。&lt;/li&gt;
+&lt;li&gt;主动监视其过期时间，并根据需要从 Workload API 请求刷新的证书和密钥。&lt;/li&gt;
+&lt;li&gt;一旦获取到更换的证书，向任何已启动的子进程发送信号。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;使用-spire-agent&#34;&gt;使用 SPIRE Agent&lt;/h1&gt;
+&lt;p&gt;SPIRE Agent 二进制文件可用作作为 SPIFFE Workload API 的实现时的 SPIRE 部署的一部分，但它也可以作为 Workload API 的客户端运行，并提供一些简单的实用程序与其进行交互以检索 SPIFFE 凭据。&lt;/p&gt;
+&lt;p&gt;例如，运行以下命令：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo -u webapp ./spire-agent api fetch x509 -socketPath /run/spire/sockets/agent.sock -write /tmp/
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;将会：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;连接到 Unix 域套接字 &lt;code&gt;/run/spire/sockets/agent.sock&lt;/code&gt; 上的 Workload API（即使 SPIRE 不提供 API）。&lt;/li&gt;
+&lt;li&gt;检索与该进程所运行的用户相关联的任何身份（在此示例中为 &lt;code&gt;webapp&lt;/code&gt;）。&lt;/li&gt;
+&lt;li&gt;将每个身份关联的 X.509-SVID、私钥写入 &lt;code&gt;/tmp/&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;将用于验证在该信任域下颁发的 X.509-SVID 的信任捆绑包（证书链）写入 &lt;code&gt;/tmp/&lt;/code&gt;。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;有关相关命令的完整列表，请参阅 &lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_agent/#command-line-options&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE Agent 文档&lt;/a&gt;。&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
