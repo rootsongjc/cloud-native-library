@@ -1,5 +1,5 @@
 ---
-weight: 2
+weight: 3
 title: "SPIFFE 工作负载 API"
 ---
 
