@@ -1078,293 +1078,6 @@ Selector      : k8s:sa:default
     </item>
     
     <item>
-      <title>SPIFFE 工作负载 API</title>
-      <link>https://lib.jimmysong.io/spiffe-and-spire/standard/spiffe-workload-api/</link>
-      <pubDate>Mon, 23 Oct 2023 00:00:00 +0800</pubDate>
-      <guid>https://lib.jimmysong.io/spiffe-and-spire/standard/spiffe-workload-api/</guid>
-      <description>&lt;p&gt;对于互联网工作负载而言，可移植和互操作的网络工作负载的加密身份可能是 SPIFFE 的核心用例。为了完全满足这个需求，社区必须达成一致，采用一种标准化的方式来检索、验证和与 SPIFFE 身份进行交互。本规范概述了要支持基于 SPIFFE 的身份验证系统所需的 API 签名和客户端/服务器行为。&lt;/p&gt;
-&lt;h2 id=&#34;引言&#34;&gt;引言&lt;/h2&gt;
-&lt;p&gt;SPIFFE 工作负载 API 是一个 API，它提供了信息和服务，使工作负载或计算进程能够利用 SPIFFE 身份和基于 SPIFFE 的身份验证系统。它由 SPIFFE 工作负载端点提供，并由一些服务或“概要”组成。&lt;/p&gt;
-&lt;p&gt;目前，有两个概要：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;X.509-SVID 概要&lt;/li&gt;
-&lt;li&gt;JWT-SVID 概要&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;这两个概要是强制性的，并且 SPIFFE 实现必须支持它们。但是，运营商可以在部署中禁用特定的概要。&lt;/p&gt;
-&lt;p&gt;本规范的未来版本可能会引入其他概要或使一个或多个概要成为可选项。&lt;/p&gt;
-&lt;h2 id=&#34;可扩展性&#34;&gt;可扩展性&lt;/h2&gt;
-&lt;p&gt;SPIFFE 工作负载 API 不能超出本规范进行扩展。希望提供扩展功能的实现者可以通过引入新的 gRPC 服务来实现，这是根据 SPIFFE 工作负载端点规范中概述的可扩展性方法来实现的。&lt;/p&gt;
-&lt;h2 id=&#34;服务定义&#34;&gt;服务定义&lt;/h2&gt;
-&lt;p&gt;SPIFFE 工作负载 API 由一份协议缓冲区（版本 3）服务定义来定义。完整的定义可以在 workloadapi.proto 中找到。&lt;/p&gt;
-&lt;p&gt;概要作为单个&lt;code&gt;WorkloadAPI&lt;/code&gt;服务中的一组相关的 RPC 实现。&lt;/p&gt;
-&lt;h2 id=&#34;客户端和服务器行为&#34;&gt;客户端和服务器行为&lt;/h2&gt;
-&lt;h3 id=&#34;身份标识调用者&#34;&gt;身份标识调用者&lt;/h3&gt;
-&lt;p&gt;SPIFFE 工作负载 API 支持任意数量的本地客户端，使其能够引导任何能够访问它的进程的身份标识。通常，希望为每个进程分配身份标识，其中某些进程被授予特定的身份标识。为了做到这一点，SPIFFE 工作负载 API 实现必须能够确定调用者的身份标识。&lt;/p&gt;
-&lt;p&gt;SPIFFE 工作负载端点规范规定了不直接进行客户端身份验证的要求，而是依赖于带外真实性检查。因此，SPIFFE 工作负载端点实现有责任识别调用者。然后，SPIFFE 工作负载 API 可以利用有关调用者的信息来确定要提供的适当内容。有关详细信息，请参阅 SPIFFE 工作负载端点规范中的身份验证部分。&lt;/p&gt;
-&lt;h3 id=&#34;连接生命周期&#34;&gt;连接生命周期&lt;/h3&gt;
-&lt;p&gt;SPIFFE 工作负载 API 的客户端应尽可能保持打开连接的状态，等待流上接收服务器的响应消息。连接可以随时由服务器或客户端终止。在这种情况下，客户端应立即建立新连接。这有助于确保工作负载保持最新的身份相关材料。SPIFFE 工作负载 API 服务器实现者可以假设此属性，如果未能及时接收到消息，则工作负载可能过时，可能会影响其可用性。&lt;/p&gt;
-&lt;h3 id=&#34;流式响应&#34;&gt;流式响应&lt;/h3&gt;
-&lt;p&gt;SPIFFE 工作负载 API 包括使用 gRPC 服务器端流式传输的 RPC，以促进快速传播更新，例如吊销和 CA 证书引入。这使得客户端可以循环遍历服务器响应，接受发生的更新。&lt;/p&gt;
-&lt;p&gt;服务器发送的每个流式响应消息都必须包含完整的信息集，而不仅仅是发生更改的信息。这避免了在客户端和服务器实现上进行状态跟踪的复杂性，包括对反熵机制的需求。&lt;/p&gt;
-&lt;p&gt;服务器响应消息的确切定时是特定于实现的，并且应由更改响应的事件（例如 SVID 旋转、CRL 更新等）来决定。从客户端接收到请求消息被视为生成响应的事件。换句话说，服务器响应流的第一个响应消息（基于连接的基础上）应尽快发送，不延迟。&lt;/p&gt;
-&lt;p&gt;最后，SPIFFE 工作负载 API 服务器的实现者应小心地推送更新的响应消息。一些软件可能会在接收到新信息后自动重新加载，如果所有实例同时重新加载，可能会导致一段时间的不可用。&lt;/p&gt;
-&lt;h2 id=&#34;默认值和删除的信息&#34;&gt;默认值和删除的信息&lt;/h2&gt;
-&lt;p&gt;SPIFFE Workload API 响应消息是对先前发送的响应消息的完整更新。当响应消息包含设置为默认值或空值的字段时，客户端必须将这些字段的值解释为已设置为它们的默认值或空值；在接收到字段的默认值或空值之后，先前接收到的非默认值或非空值不应由客户端保留。例如，如果客户端在&lt;code&gt;federated_bundles&lt;/code&gt;字段中接收到默认值，则应舍弃先前接收到的&lt;code&gt;federated_bundles&lt;/code&gt;值。&lt;/p&gt;
-&lt;p&gt;由于每个消息必须包含完整的信息集（请参阅 Stream Responses 部分），客户端应将数据的缺失解释为删除。例如，如果客户端加载了&lt;code&gt;spiffe://foo.bar&lt;/code&gt;的 bundle，并接收到不包含&lt;code&gt;spiffe://foo.bar&lt;/code&gt;的 bundle 的消息，则应卸载该 bundle。&lt;/p&gt;
-&lt;h3 id=&#34;强制字段&#34;&gt;强制字段&lt;/h3&gt;
-&lt;p&gt;为了执行 profile RPC，交换的消息由强制和可选字段组成。服务器在接收到具有默认值的强制字段的消息时，应使用“InvalidArgument”gRPC 状态代码进行响应（有关更多信息，请参阅 SPIFFE Workload Endpoint 规范中的错误代码部分）。当客户端接收到具有默认值的强制字段的消息时，应报告错误并丢弃该消息。&lt;/p&gt;
-&lt;h3 id=&#34;联邦-bundle&#34;&gt;联邦 Bundle&lt;/h3&gt;
-&lt;p&gt;在此规范中定义的各种 RPC 可以返回来自外部信任域的信任 Bundle。包含外部 Bundle 可以使工作负载在信任域之间进行通信，并且是启用联邦的主要机制。代表外部信任域的 Bundle 称为&lt;em&gt;联邦 Bundle&lt;/em&gt;。&lt;/p&gt;
-&lt;p&gt;在验证客户端时，验证器会选择代表客户端所呈现的信任域的 Bundle 进行验证。同样，在验证服务器时，客户端会使用代表服务器所在的信任域的 Bundle。如果在使用的 SVID 的 SVID 中不存在匹配的 Bundle，则对等方是不受信任的。这种方法是必需的，以解决常见 X.509 库中对 SAN URI Name Constraints 的广泛支持的缺乏。&lt;/p&gt;
-&lt;h2 id=&#34;x509-svid-profile&#34;&gt;X.509-SVID Profile&lt;/h2&gt;
-&lt;p&gt;SPIFFE Workload API 的 X.509-SVID 配置文件提供了一组 gRPC 方法，工作负载可以使用这些方法来检索 X.509-SVIDs 及其相关的信任捆绑包。该配置文件概述了这些方法的签名，以及相关的客户端和服务器行为。&lt;/p&gt;
-&lt;h3 id=&#34;配置文件定义&#34;&gt;配置文件定义&lt;/h3&gt;
-&lt;p&gt;下面定义了 X.509-SVID 配置文件中的 RPC 和相关的消息。有关完整的 Workload API 服务定义，请参见 workloadapi.proto。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-protobuf&#34; data-lang=&#34;protobuf&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kd&#34;&gt;service&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;SpiffeWorkloadAPI&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;/////////////////////////////////////////////////////////////////////////
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// X509-SVID配置文件
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;/////////////////////////////////////////////////////////////////////////
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 获取工作负载有权访问的所有SPIFFE标识的X.509-SVID，以及与之相关的信任捆绑包和CRL。随着信息的更改，后续的消息将从服务器流式传输。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;rpc&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;FetchX509SVID&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;X509SVIDRequest&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;returns&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;stream&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;X509SVIDResponse&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 获取信任捆绑包和CRL。对于仅需要验证SVID而不获取SVID自身的客户端非常有用。随着信息的更改，后续的消息将从服务器流式传输。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;rpc&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;FetchX509Bundles&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;X509BundlesRequest&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;returns&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;stream&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;X509BundlesResponse&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// ... 其他配置文件的RPC ...
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// X509SVIDRequest消息传递请求X.509-SVID的参数。目前没有此类参数。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;X509SVIDRequest&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// X509SVIDResponse消息携带X.509-SVID和相关信息，包括用于与外部信任域联合的全局CRL集合和捆绑列表。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;X509SVIDResponse&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必需。X509SVID消息列表，每个消息包括单个X.509-SVID、其私钥和信任域的捆绑。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;repeated&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;X509SVID&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;svids&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 可选。ASN.1 DER编码的证书吊销列表。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;repeated&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bytes&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;crl&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 可选。工作负载应该信任的外部信任域的CA证书捆绑，按照外部信任域的SPIFFE ID进行索引。捆绑包是ASN.1 DER编码的。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;map&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bytes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;federated_bundles&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// X509SVID消息携带单个SVID和所有相关信息，包括信任域的X.509捆绑包。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;X509SVID&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必需。此条目中的SVID的SPIFFE ID
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;spiffe_id&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必需。ASN.1 DER编码的证书链。可以包括中间证书，但必须首先是叶子证书（或SVID本身）。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;bytes&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;x509_svid&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必需。ASN.1 DER编码的PKCS#8私钥。必须是未加密的。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;bytes&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;x509_svid_key&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必需。信任域的ASN.1 DER编码的X.509捆绑包。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;bytes&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bundle&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;4&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 可选。操作员指定的字符串，用于在返回多个SVID时为工作负载提供其使用方式的指导。例如，`internal`和`external`分别表示内部或外部使用的SVID。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;hint&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// X509BundlesRequest消息传递请求X.509捆绑包的参数。目前没有这样的参数。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;X509BundlesRequest&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// X509BundlesResponse消息携带一组全局CRL和工作负载应该信任的信任域的映射的CA证书捆绑包。由SPIFFE ID的信任域键控。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;X509BundlesResponse&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 可选。ASN.1 DER编码的证书吊销列表。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;repeated&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bytes&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;crl&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必需。工作负载应该信任的信任域的CA证书捆绑包，由SPIFFE ID的信任域键控。捆绑包是ASN.1 DER编码的。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;map&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bytes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bundles&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;profile-rpcs&#34;&gt;Profile RPCs&lt;/h3&gt;
-&lt;h3 id=&#34;fetchx509svid&#34;&gt;FetchX509SVID&lt;/h3&gt;
-&lt;p&gt;&lt;code&gt;FetchX509SVID&lt;/code&gt; RPC 流式返回 X509-SVID 和信任域以及外部信任域的 X.509 捆绑包。这些捆绑包只能用于验证 X509-SVID。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;X509SVIDRequest&lt;/code&gt;请求消息当前为空，是将来扩展的占位符。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;X509SVIDResponse&lt;/code&gt;响应由一个必需的&lt;code&gt;svids&lt;/code&gt;字段组成，该字段必须包含一个或多个&lt;code&gt;X509SVID&lt;/code&gt;消息（每个授予客户端的标识一个）。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;X509SVID&lt;/code&gt;消息中的所有字段都是必需的，除了&lt;code&gt;hint&lt;/code&gt;字段。当设置&lt;code&gt;hint&lt;/code&gt;字段时（即非空），SPIFFE Workload API 服务器必须确保其值在任何给定的&lt;code&gt;X509SVIDResponse&lt;/code&gt;消息中是唯一的。如果 SPIFFE Workload API 客户端遇到具有相同设置的&lt;code&gt;hint&lt;/code&gt;值的多个&lt;code&gt;X509SVID&lt;/code&gt;消息，则应选择列表中的第一个消息。&lt;/p&gt;
-&lt;p&gt;如果客户端没有权限接收任何 X509-SVID，则服务器应以“PermissionDenied”gRPC 状态代码响应（有关更多信息，请参见 SPIFFE Workload Endpoint 规范中的“错误代码”部分）。在这种情况下，客户端可以在退避后尝试重新连接到&lt;code&gt;FetchX509SVID&lt;/code&gt; RPC 的另一个调用。&lt;/p&gt;
-&lt;p&gt;如流式响应所述，每个 FetchX509SVID 流返回的 X509SVIDResponse 消息都包含客户端在那个时间点上的授权 SVID 和 bundle 的完整集合。因此，如果服务器从后续响应中删除了 SVID（或全部 SVID，即返回“PermissionDenied”gRPC 状态代码），客户端应停止使用已删除的 SVID。&lt;/p&gt;
-&lt;h3 id=&#34;fetchx509bundles&#34;&gt;FetchX509Bundles&lt;/h3&gt;
-&lt;p&gt;FetchX509Bundles RPC 流返回服务器所在的信任域和外部信任域的 X.509 bundles。这些 bundles 只用于验证 X509-SVID。&lt;/p&gt;
-&lt;p&gt;X509BundlesRequest 请求消息目前为空，是未来扩展的占位符。&lt;/p&gt;
-&lt;p&gt;X509BundlesResponse 响应消息有一个强制性的 bundles 字段，必须至少包含服务器所在信任域的信任 bundle。crl 字段是可选的。&lt;/p&gt;
-&lt;p&gt;如果客户端无权接收任何 X.509 bundles，那么服务器应以“PermissionDenied”gRPC 状态代码响应（有关更多信息，请参见 SPIFFE Workload Endpoint 规范中的错误代码部分）。客户端可以在退避后尝试重新连接 FetchX509Bundles RPC。&lt;/p&gt;
-&lt;p&gt;如流式响应所述，每个 X509BundleResponse 响应在那个时间点上包含客户端的授权 X.509 bundles 的完整集合。因此，如果服务器从后续响应中删除了 bundles（或全部 bundles，即返回“PermissionDenied”gRPC 状态代码），客户端应停止使用已删除的 bundles。&lt;/p&gt;
-&lt;h3 id=&#34;默认身份&#34;&gt;默认身份&lt;/h3&gt;
-&lt;p&gt;通常情况下，工作负载不知道它应该扮演什么身份。决定何时扮演何种身份是特定于站点的问题，因此，SPIFFE 规范不涉及如何做到这一点。&lt;/p&gt;
-&lt;p&gt;为了支持最广泛的用例，X.509-SVID 配置文件支持发出多个身份，并定义了默认身份。预计了解多个身份的工作负载可以自行进行决策。不了解如何利用多个身份的工作负载可以使用默认身份。默认身份是在 X509SVIDResponse 消息中返回的&lt;code&gt;svids&lt;/code&gt;列表中的第一个。协议缓冲区确保列表的顺序得到保留。&lt;/p&gt;
-&lt;p&gt;了解如何使用多个身份的工作负载可以利用可选的&lt;code&gt;hint&lt;/code&gt;字段，该字段可用于消除身份的歧义，并告知工作负载应该为何目的使用哪个身份。例如，&lt;code&gt;internal&lt;/code&gt;和&lt;code&gt;external&lt;/code&gt;分别表示用于内部或外部使用的 SVID。SPIFFE Workload API 实现不应支持超过 1024 字节长度的值。&lt;code&gt;hint&lt;/code&gt;字段的确切值是操作员的选择，除此规范外并无限制。&lt;/p&gt;
-&lt;p&gt;工作负载有责任处理预期提示的缺失或意外存在（例如，失败、警告等）。&lt;/p&gt;
-&lt;h2 id=&#34;jwt-svid-配置文件&#34;&gt;JWT-SVID 配置文件&lt;/h2&gt;
-&lt;p&gt;SPIFFE Workload API 的 JWT-SVID 配置文件提供了一组 gRPC 方法，可以用于工作负载获取 JWT-SVID 及其相关的信任包。该配置文件概述了这些方法的签名，以及相关的客户端和服务器行为。&lt;/p&gt;
-&lt;h3 id=&#34;配置文件定义-1&#34;&gt;配置文件定义&lt;/h3&gt;
-&lt;p&gt;JWT-SVID 配置文件的 RPC 和相关消息如下所定义。有关完整的 Workload API 服务定义，请参见 workloadapi.proto。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-protobuf&#34; data-lang=&#34;protobuf&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kd&#34;&gt;service&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;SpiffeWorkloadAPI&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;/////////////////////////////////////////////////////////////////////////
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// JWT-SVID配置文件
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;/////////////////////////////////////////////////////////////////////////
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 获取工作负载有权访问的所有SPIFFE标识的JWT-SVID，用于请求的受众。如果请求了可选的SPIFFE ID，则仅返回该SPIFFE ID的JWT-SVID。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;rpc&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;FetchJWTSVID&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;JWTSVIDRequest&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;returns&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;JWTSVIDResponse&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 获取以JWKS文档格式表示的JWT信任包，由信任域的SPIFFE ID作为键。随着这些信息的更改，后续的消息将从服务器流式传输。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;rpc&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;FetchJWTBundles&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;JWTBundlesRequest&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;returns&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;stream&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;JWTBundlesResponse&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 根据请求的受众验证JWT-SVID。返回JWT-SVID的SPIFFE ID和JWT声明。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;rpc&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ValidateJWTSVID&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ValidateJWTSVIDRequest&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;returns&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ValidateJWTSVIDResponse&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// ... 其他配置文件的RPC ...
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;JWTSVIDRequest&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。工作负载打算进行身份验证的受众。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;repeated&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;audience&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 可选。请求的JWT-SVID的SPIFFE ID。如果未设置，则返回工作负载有权访问的所有标识的JWT-SVID。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;spiffe_id&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// JWTSVIDResponse消息传递JWT-SVID。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;JWTSVIDResponse&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。返回的JWT-SVID列表。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;repeated&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;JWTSVID&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;svids&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// JWTSVID消息携带JWT-SVID令牌和相关元数据。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;JWTSVID&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。JWT-SVID的SPIFFE ID。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;spiffe_id&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。使用JWS紧凑序列化的编码JWT。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;svid&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 可选。操作员指定的字符串，用于在返回多个SVID时为工作负载提供如何使用此标识的指导。例如，`internal`和`external`分别表示用于内部或外部使用的SVID。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;hint&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// JWTBundlesRequest消息传递请求JWT信任包的参数。目前没有请求参数。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;JWTBundlesRequest&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// JWTBundlesReponse传递JWT信任包。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;JWTBundlesResponse&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。以信任域的SPIFFE ID为键的JWK编码的JWT信任包。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;map&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bytes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bundles&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// ValidateJWTSVIDRequest消息传递JWT-SVID验证的请求参数。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;ValidateJWTSVIDRequest&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。验证方的受众。JWT-SVID必须包含一个包含此值的受众声明才能成功验证。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;audience&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。要验证的JWT-SVID，使用JWS紧凑序列化进行编码。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;svid&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// ValidateJWTSVIDReponse消息传递JWT-SVID验证结果。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;ValidateJWTSVIDResponse&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。验证的JWT-SVID的SPIFFE ID。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;spiffe_id&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。验证的JWT-SVID有效载荷中包含的声明。包括SPIFFE所需和非所需的声明。
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;google.protobuf.Struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;claims&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;配置文件-rpc&#34;&gt;配置文件 RPC&lt;/h3&gt;
-&lt;h3 id=&#34;获取-jwtsvid&#34;&gt;获取 JWTSVID&lt;/h3&gt;
-&lt;p&gt;&lt;code&gt;FetchJWTSVID&lt;/code&gt; RPC 允许客户端请求一个或多个特定受众的短期 JWT-SVID。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;JWTSVIDRequest&lt;/code&gt; 请求消息包含一个必填的&lt;code&gt;audience&lt;/code&gt;字段，该字段必须包含要嵌入返回的 JWT-SVID 中的受众声明的值。&lt;code&gt;spiffe_id&lt;/code&gt;字段是可选的，用于请求特定 SPIFFE ID 的 JWT-SVID。如果未指定，服务器必须返回授权给客户端的所有身份的 JWT-SVID。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;JWTSVIDResponse&lt;/code&gt; 响应消息由一个必填的&lt;code&gt;svids&lt;/code&gt;字段组成，该字段必须包含一个或多个&lt;code&gt;JWTSVID&lt;/code&gt;消息。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;JWTSVID&lt;/code&gt;消息中的所有字段都是必填的，除了&lt;code&gt;hint&lt;/code&gt;字段。当设置了&lt;code&gt;hint&lt;/code&gt;字段（即非空）时，SPIFFE Workload API 服务器必须确保其值在给定的&lt;code&gt;JWTSVIDResponse&lt;/code&gt;消息中的返回的 SVID 集合中是唯一的。如果 SPIFFE Workload API 客户端遇到具有相同&lt;code&gt;hint&lt;/code&gt;值设置的多个&lt;code&gt;JWTSVID&lt;/code&gt;消息，则应选择列表中的第一个消息。&lt;/p&gt;
-&lt;p&gt;如果客户端没有授权任何身份，或者未经授权访问&lt;code&gt;spiffe_id&lt;/code&gt;字段请求的特定身份，则服务器应使用“PermissionDenied”gRPC 状态代码进行响应（有关更多信息，请参见 SPIFFE Workload 端点规范中的错误代码部分）。&lt;/p&gt;
-&lt;h3 id=&#34;获取-jwt-bundles&#34;&gt;获取 JWT Bundles&lt;/h3&gt;
-&lt;p&gt;&lt;code&gt;FetchJWTBundles&lt;/code&gt; RPC 返回服务器所在的信任域和外部信任域的 JWT bundles。这些 bundles 必须仅用于认证 JWT-SVID。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;JWTBundlesRequest&lt;/code&gt;请求消息目前为空，是未来扩展的占位符。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;JWTBundlesResponse&lt;/code&gt;响应消息由一个必填的&lt;code&gt;bundles&lt;/code&gt;字段组成，该字段必须至少包含服务器所在信任域的 JWT bundle。&lt;/p&gt;
-&lt;p&gt;返回的 bundles 以&lt;a href=&#34;https://tools.ietf.org/html/rfc7517&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;RFC 7517&lt;/a&gt;定义的标准 JWK Set 格式进行编码，其中包含信任域的 JWT-SVID 签名密钥。这些密钥可能仅表示 SPIFFE 信任域中的密钥子集。服务器不得在返回的 JWT bundles 中包含其他用途的密钥。&lt;/p&gt;
-&lt;p&gt;如果客户端无权接收任何 JWT bundles，则服务器应使用“PermissionDenied”gRPC 状态代码进行响应（有关更多信息，请参见 SPIFFE Workload 端点规范中的错误代码部分）。客户端可以在退避后尝试重新连接到&lt;code&gt;FetchJWTBundles&lt;/code&gt; RPC 的另一个调用。&lt;/p&gt;
-&lt;p&gt;如流式响应中所述，每个&lt;code&gt;JWTBundleResponse&lt;/code&gt;响应在当前时间点包含客户端的所有授权 JWT bundles 的完整集合。因此，如果服务器从后续响应中删除 bundles（或所有 bundles，即返回“PermissionDenied”gRPC 状态代码），客户端应停止使用被删除的 bundles。&lt;/p&gt;
-&lt;h3 id=&#34;验证-jwtsvid&#34;&gt;验证 JWTSVID&lt;/h3&gt;
-&lt;p&gt;&lt;code&gt;ValidateJWTSVID&lt;/code&gt; RPC 代表客户端验证特定受众的 JWT-SVID。此外，服务器必须根据 JWT-SVID 规范中概述的规则解析和验证 JWT-SVID。JWT-SVID 负载中嵌入的声明应在&lt;code&gt;ValidateJWTSVIDResponse&lt;/code&gt;中的&lt;code&gt;claims&lt;/code&gt;字段中提供；本规范中定义的声明是必需的，但实现可能会在将它们返回给客户端之前过滤非 SPIFFE 声明。SPIFFE 声明对于互操作性是必需的。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;ValidateJWTSVIDRequest&lt;/code&gt;和&lt;code&gt;ValidateJWTSVIDResponse&lt;/code&gt;消息中的所有字段都是必填的。&lt;/p&gt;
-&lt;h3 id=&#34;jwt-svid-验证&#34;&gt;JWT-SVID 验证&lt;/h3&gt;
-&lt;p&gt;如果客户端支持，Workload API 客户端应使用&lt;code&gt;ValidateJWTSVID&lt;/code&gt;方法进行 JWT 验证，允许 SPIFFE Workload API 代表其执行验证。这样做可以避免工作负载实现验证逻辑，从而减少出错的可能性。&lt;/p&gt;
-&lt;p&gt;当与传统的 JWT 验证器进行交互时，可以使用&lt;code&gt;FetchJWTBundles&lt;/code&gt;方法获取 JWKS bundles，用于验证 JWT-SVID 的签名。例如，如果 SPIFFE Workload API 可用，但 JWT 验证软件不知道 Workload API（因此无法调用&lt;code&gt;ValidateJWTSVID&lt;/code&gt;），则实现可以单独检索每个 bundle 并将其提供给传统工作负载进行验证。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;FetchJWTBundles&lt;/code&gt;方法返回以信任域的 SPIFFE ID 为键的 bundles。在验证 JWT-SVID 时，验证器必须使用与主题的信任域对应的 bundle。如果指定信任域的 JWT bundle 不存在，则令牌是不可信的。&lt;/p&gt;
-&lt;h2 id=&#34;附录-a-示例实现状态机&#34;&gt;附录 A. 示例实现状态机&lt;/h2&gt;
-&lt;p&gt;为了提供清晰度，作者认为包括 SPIFFE Workload API 的客户端和服务器实现的示例状态图可能是有用的。应注意，有许多实现方式可以符合本规范，此特定实现仅供参考。&lt;/p&gt;
-&lt;h3 id=&#34;服务器状态机&#34;&gt;服务器状态机&lt;/h3&gt;
-&lt;p&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  id=&#34;figure-服务器状态机&#34;&gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/workload_api_server_diagram.png&#34; alt=&#34;服务器状态机&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;figcaption&gt;
-      服务器状态机
-    &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;SPIFFE Workload 端点侦听器正在启动。&lt;/li&gt;
-&lt;li&gt;使用 SPIFFE Workload API 处理程序启动 gRPC 服务器，现在可以接受连接。&lt;/li&gt;
-&lt;li&gt;正在验证传入的 FetchX509SVIDRequest。这包括检查强制性的安全头，并确保调用方可用身份。&lt;/li&gt;
-&lt;li&gt;Workload API 正在向客户端发送 FetchX509SVIDResponse。&lt;/li&gt;
-&lt;li&gt;Workload API 处于等待状态。从等待状态过渡需要中断或取消。中断等待状态的典型原因是响应中的信息已更新（例如，SVID 已旋转或 CRL 已更改）。&lt;/li&gt;
-&lt;li&gt;对待处理的响应执行验证。确保客户端仍有权使用身份，并且请求尚未取消。&lt;/li&gt;
-&lt;li&gt;服务器正在关闭流，为客户端提供正确的错误代码以表示遇到的条件。&lt;/li&gt;
-&lt;li&gt;服务器遇到致命错误，必须停止。这可能发生在无法创建侦听器或 gRPC 服务器遇到致命错误的情况下。&lt;/li&gt;
-&lt;/ol&gt;
-&lt;h3 id=&#34;客户端状态机&#34;&gt;客户端状态机&lt;/h3&gt;
-&lt;p&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  id=&#34;figure-客户端状态机&#34;&gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/workload_api_client_diagram.png&#34; alt=&#34;客户端状态机&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;figcaption&gt;
-      客户端状态机
-    &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;Workload API 客户端正在拨号 SPIFFE Workload 端点。&lt;/li&gt;
-&lt;li&gt;客户端正在调用 FetchX509SVID RPC 调用，向服务器发送请求。&lt;/li&gt;
-&lt;li&gt;客户端正在阻塞等待从服务器接收 X509SVIDResponse 消息。&lt;/li&gt;
-&lt;li&gt;客户端正在使用从服务器响应中接收的 SVIDs、CRLs 和 bundles 更新其配置。此时，它可以将接收到的信息与当前配置进行比较，确定是否需要重新加载。&lt;/li&gt;
-&lt;li&gt;客户端遇到致命错误，必须退出。&lt;/li&gt;
-&lt;li&gt;客户端正在执行指数回退。&lt;/li&gt;
-&lt;/ol&gt;
-</description>
-    </item>
-    
-    <item>
       <title>SPIRE 基本概念</title>
       <link>https://lib.jimmysong.io/spiffe-and-spire/concept/spire/</link>
       <pubDate>Mon, 23 Oct 2023 00:00:00 +0800</pubDate>
@@ -1747,6 +1460,138 @@ Selector      : k8s:sa:default
 &lt;p&gt;完成本教程后，您可以使用以下 Bash 脚本停止所有容器：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;bash scripts/clean-env.sh
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    
+    <item>
+      <title>X.509 SPIFFE 可验证身份文档</title>
+      <link>https://lib.jimmysong.io/spiffe-and-spire/standard/x509-svid/</link>
+      <pubDate>Mon, 23 Oct 2023 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/spiffe-and-spire/standard/x509-svid/</guid>
+      <description>&lt;p&gt;SPIFFE 标准提供了一种框架的规范，能够在异构环境和组织边界中引导和发放服务的身份。它定义了一种称为 SPIFFE 可验证身份文档（SVID）的身份文档。&lt;/p&gt;
+&lt;p&gt;SVID 本身并不代表一种新的文档类型。相反，我们提出了一个规范，定义了如何将 SVID 信息编码到现有文档类型中。&lt;/p&gt;
+&lt;p&gt;本文档定义了一种标准，其中将 X.509 证书用作 SVID。假设读者对 X.509 有基本的了解。关于 X.509 的具体信息，请参考&lt;a href=&#34;https://tools.ietf.org/html/rfc5280&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;RFC 5280&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;引言&#34;&gt;引言&lt;/h2&gt;
+&lt;p&gt;SPIFFE 的最重要的功能之一是保护进程间通信。核心标准允许进行身份验证，但利用加密身份来构建安全的通信通道也是非常有益的。由于 TLS 被广泛采用，并且使用基于 X.509 的身份验证，将 X.509 用作 SPIFFE SVID 显然是有优势的。&lt;/p&gt;
+&lt;p&gt;本规范讨论了将 SVID 信息编码到 X.509 证书中的约束条件，以及如何验证 X.509 SVID。&lt;/p&gt;
+&lt;h2 id=&#34;spiffe-id&#34;&gt;SPIFFE ID&lt;/h2&gt;
+&lt;p&gt;在 X.509 SVID 中，对应的 SPIFFE ID 被设置为主题备用名称扩展（SAN 扩展，参见&lt;a href=&#34;https://tools.ietf.org/html/rfc5280#section-4.2.1.6&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;RFC 5280 第 4.2.1.6 节&lt;/a&gt;）。一个 X.509 SVID 必须恰好包含一个 URI SAN，因此也只包含一个 SPIFFE ID。包含多个 SPIFFE ID 的 SVID 会引入与审计和授权逻辑相关的挑战，包含多个 URI SAN 的 SVID 会引入与 SPIFFE ID 验证相关的挑战。遇到包含多个 URI SAN 的 SVID 的验证器必须拒绝该 SVID。有关更多信息，请参见验证部分。&lt;/p&gt;
+&lt;p&gt;一个 X.509 SVID 可以包含任意数量的其他 SAN 字段类型，包括 DNS SAN。&lt;/p&gt;
+&lt;h2 id=&#34;层级关系&#34;&gt;层级关系&lt;/h2&gt;
+&lt;p&gt;本节讨论了叶证书、根证书和中间证书之间的关系，以及对每个证书的要求。&lt;/p&gt;
+&lt;h3 id=&#34;叶证书&#34;&gt;叶证书&lt;/h3&gt;
+&lt;p&gt;叶证书是用于标识调用方或资源的 SVID，适用于身份验证过程。叶证书（相对于签名证书，第 3.2 节）是唯一能够用于标识资源或调用方的类型。&lt;/p&gt;
+&lt;p&gt;叶证书的 SPIFFE ID 必须具有非根路径组件。如果省略了主题字段，则不需要主题字段，但如果省略了主题字段，则 URI SAN 扩展必须标记为关键扩展，根据&lt;a href=&#34;https://tools.ietf.org/html/rfc5280&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;RFC 5280 第 4.1.2.6 节&lt;/a&gt;的规定。有关区分叶证书和签名证书的 X.509 特定属性的信息，请参见第 4.1 节。&lt;/p&gt;
+&lt;h3 id=&#34;签名证书&#34;&gt;签名证书&lt;/h3&gt;
+&lt;p&gt;X.509 SVID 签名证书是具有在密钥用途扩展中设置&lt;code&gt;keyCertSign&lt;/code&gt;的证书。它还在基本约束扩展中将&lt;code&gt;CA&lt;/code&gt;标志设置为&lt;code&gt;true&lt;/code&gt;（参见第 4.1 节）。也就是说，它是一个 CA 证书。&lt;/p&gt;
+&lt;p&gt;签名证书应该本身是一个 SVID。如果存在，签名证书的 SPIFFE ID 必须没有路径组件，并且可以位于其发行的任何叶 SVID 的信任域中。签名证书可以用于在相同或不同的信任域中发行进一步的签名证书。&lt;/p&gt;
+&lt;p&gt;签名证书不能用于身份验证目的。它们只作为验证材料，并且可以像&lt;a href=&#34;https://tools.ietf.org/html/rfc5280&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;RFC 5280&lt;/a&gt;中描述的那样以典型的 X.509 方式链接在一起。请参见第 4.3 节和第 4.4 节以获取有关签名证书的 X.509 特定限制的更多信息。&lt;/p&gt;
+&lt;h2 id=&#34;约束和用途&#34;&gt;约束和用途&lt;/h2&gt;
+&lt;p&gt;叶证书和签名证书具有不同的 X.509 属性 - 一些用于安全目的，一些用于支持其特殊的功能。本节描述了两种类型 X.509 SVID 的约束和密钥用法配置。&lt;/p&gt;
+&lt;h3 id=&#34;基本约束&#34;&gt;基本约束&lt;/h3&gt;
+&lt;p&gt;基本约束 X.509 扩展标识证书是否为签名证书，以及包括该证书在内的有效证书路径的最大深度。它在&lt;a href=&#34;https://tools.ietf.org/html/rfc5280#section-4.2.1.9&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;RFC 5280 第 4.2.1.9 节&lt;/a&gt;中定义。&lt;/p&gt;
+&lt;p&gt;有效的 X.509 SVID 签名证书可以设置&lt;code&gt;pathLenConstraint&lt;/code&gt;字段。签名证书必须将&lt;code&gt;cA&lt;/code&gt;字段设置为&lt;code&gt;true&lt;/code&gt;，而叶证书必须将&lt;code&gt;cA&lt;/code&gt;字段设置为&lt;code&gt;false&lt;/code&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;名称约束&#34;&gt;名称约束&lt;/h3&gt;
+&lt;p&gt;名称约束指示了一个命名空间，其中后续证书中的所有 SPIFFE ID 必须位于其中。它们用于将受损的签名证书的影响范围限制在命名的信任域内，并在&lt;a href=&#34;https://tools.ietf.org/html/rfc5280#section-4.2.1.10&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;RFC 5280 第 4.2.1.10 节&lt;/a&gt;中定义。本节仅适用于签名证书。&lt;/p&gt;
+&lt;p&gt;名称约束的类型与主题备用名称相同。由于 SVID 关心的仅是 SPIFFE ID，并且 SPIFFE ID 被定义为 SAN 类型 URI，因此我们只定义 URI 类型名称约束的语义。&lt;/p&gt;
+&lt;p&gt;目前，对 URI 类型名称约束的支持相对较少。不支持它们的库将拒绝此类证书，阻止路径验证成功。虽然名称约束是 SPIFFE 希望使用的 X.509 功能，但作者认识到广泛支持的缺乏可能会给实现和/或部署带来重大痛苦。因此，X.509 SVID 签名证书可以根据实现者的意愿应用 URI 名称约束，但在此领域应谨慎使用。SPIFFE 社区正在努力在各种平台上启用对 URI 名称约束的支持，并且应该预期在未来的版本中，随着广泛支持的实现，本节中定义的要求将变得更加严格。&lt;/p&gt;
+&lt;h3 id=&#34;密钥用法&#34;&gt;密钥用法&lt;/h3&gt;
+&lt;p&gt;密钥用法扩展定义了证书中包含的密钥的用途。当要限制可以用于多个操作的密钥时，可以使用此用法限制。密钥用法扩展在&lt;a href=&#34;https://tools.ietf.org/html/rfc5280#section-4.2.1.3&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;RFC 5280 第 4.2.1.3 节&lt;/a&gt;中定义。&lt;/p&gt;
+&lt;p&gt;密钥用法扩展必须在所有 SVID 上设置，并且必须标记为关键扩展。&lt;/p&gt;
+&lt;p&gt;SVID 签名证书必须设置&lt;code&gt;keyCertSign&lt;/code&gt;。它们可以设置&lt;code&gt;cRLSign&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;叶 SVID 必须设置&lt;code&gt;digitalSignature&lt;/code&gt;。它们可以设置&lt;code&gt;keyEncipherment&lt;/code&gt;和/或&lt;code&gt;keyAgreement&lt;/code&gt;；这些对于 RSA 密钥的证书来说通常只有在需要的情况下才有意义，即使在那种情况下通常也不需要。叶 SVID 不能设置&lt;code&gt;keyCertSign&lt;/code&gt;或&lt;code&gt;cRLSign&lt;/code&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;扩展密钥用途&#34;&gt;扩展密钥用途&lt;/h3&gt;
+&lt;p&gt;该扩展指示证书中包含的密钥可以用于的一个或多个目的，除了或代替密钥用途扩展中指示的基本目的之外。它在&lt;a href=&#34;https://tools.ietf.org/html/rfc5280#section-4.2.1.2&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;RFC 5280，第 4.2.1.2 节&lt;/a&gt;中定义。&lt;/p&gt;
+&lt;p&gt;Leaf SVID 应包括此扩展，并且可以将其标记为关键。当包含时，字段&lt;code&gt;id-kp-serverAuth&lt;/code&gt;和&lt;code&gt;id-kp-clientAuth&lt;/code&gt;必须设置。&lt;/p&gt;
+&lt;p&gt;签名证书可以包括扩展密钥用途。请注意，X.509 证书验证库中间 CA 证书中扩展密钥用途的处理方式因实现而异。有些 X.509 实现会对信任链中其下的所有证书都施加中间 CA 证书中的扩展密钥用途约束，而其他实现则不会。&lt;/p&gt;
+&lt;h2 id=&#34;验证&#34;&gt;验证&lt;/h2&gt;
+&lt;p&gt;本节描述了如何验证 X.509 SVID。该过程使用标准的 X.509 验证，以及一系列 SPIFFE 特定的验证步骤。&lt;/p&gt;
+&lt;h3 id=&#34;路径验证&#34;&gt;路径验证&lt;/h3&gt;
+&lt;p&gt;对给定 SVID 的信任验证基于标准的 X.509 路径验证，并且必须遵循&lt;a href=&#34;https://tools.ietf.org/html/rfc5280&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;RFC 5280&lt;/a&gt;的路径验证语义。&lt;/p&gt;
+&lt;p&gt;证书路径验证需要提供叶子 SVID 证书和一个或多个 SVID 签名证书。用于验证的签名证书集合称为 CA 捆绑包。实体检索相关 CA 捆绑包的机制不在本文档范围内，而是在 SPIFFE 工作负载 API 规范中定义。&lt;/p&gt;
+&lt;h3 id=&#34;叶子验证&#34;&gt;叶子验证&lt;/h3&gt;
+&lt;p&gt;在验证资源或调用方时，需要进行超出 X.509 标准范围的验证。即，我们必须确保 1）证书是叶子证书，2）签发机构有权签发它。&lt;/p&gt;
+&lt;p&gt;在验证用于身份验证目的的 X.509 SVID 时，验证器必须确保基本约束扩展中的&lt;code&gt;CA&lt;/code&gt;字段设置为&lt;code&gt;false&lt;/code&gt;，并且密钥用途扩展中未设置&lt;code&gt;keyCertSign&lt;/code&gt;和&lt;code&gt;cRLSign&lt;/code&gt;。验证器还必须确保 SPIFFE ID 的方案设置为&lt;code&gt;spiffe://&lt;/code&gt;。包含多个 URI SAN 的 SVID 必须被拒绝。&lt;/p&gt;
+&lt;p&gt;随着 URI 名称约束的支持越来越广泛，本文档的未来版本可能会更新本节中设定的要求，以便更好地利用名称约束验证。&lt;/p&gt;
+&lt;h2 id=&#34;在-spiffe-捆绑包中的表示&#34;&gt;在 SPIFFE 捆绑包中的表示&lt;/h2&gt;
+&lt;p&gt;本节描述了如何将 X509-SVID CA 证书发布到 SPIFFE 捆绑包中，并从中使用。有关 SPIFFE 捆绑包的更多信息，请参阅 SPIFFE 信任域和捆绑包规范。&lt;/p&gt;
+&lt;h3 id=&#34;发布-spiffe-捆绑包元素&#34;&gt;发布 SPIFFE 捆绑包元素&lt;/h3&gt;
+&lt;p&gt;给定信任域的 X509-SVID CA 证书在 SPIFFE 捆绑包中表示为&lt;a href=&#34;https://tools.ietf.org/html/rfc7517&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;RFC 7517 兼容&lt;/a&gt;的 JWK 条目，每个 CA 证书一个条目。&lt;/p&gt;
+&lt;p&gt;每个 JWK 条目的&lt;code&gt;use&lt;/code&gt;参数必须设置为&lt;code&gt;x509-svid&lt;/code&gt;。另外，每个 JWK 条目的&lt;code&gt;kid&lt;/code&gt;参数不能设置。&lt;/p&gt;
+&lt;p&gt;除了&lt;a href=&#34;https://tools.ietf.org/html/rfc7517&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;RFC 7517&lt;/a&gt;要求的参数之外，表示 X509-SVID CA 证书的每个条目必须包含具有与该条目表示的基于 Base64 编码的 DER CA 证书相等的值的&lt;code&gt;x5c&lt;/code&gt;参数。该值必须包含且仅包含一个 CA 证书，并且该证书应为自签名。&lt;/p&gt;
+&lt;h3 id=&#34;使用-spiffe-捆绑包&#34;&gt;使用 SPIFFE 捆绑包&lt;/h3&gt;
+&lt;p&gt;从外部信任域使用 SPIFFE 捆绑包时，需要提取 X509-SVID CA 证书以供实际使用。SPIFFE 捆绑包可以包含许多不同类型的 SVID 条目，因此第一步是识别表示 X509-SVID CA 证书的条目。&lt;/p&gt;
+&lt;p&gt;对于捆绑包中&lt;code&gt;use&lt;/code&gt;参数设置为&lt;code&gt;x509-svid&lt;/code&gt;的每个 JWK 条目，请检查&lt;code&gt;x5c&lt;/code&gt;参数是否设置并且至少具有一个值。如果&lt;code&gt;x5c&lt;/code&gt;未设置或为空，则必须忽略该条目。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;x5c&lt;/code&gt;参数的第一个值是该条目表示的 Base64 DER 编码的 CA 证书。如果&lt;code&gt;x5c&lt;/code&gt;参数包含多个值，则除第一个值外的所有值都必须被忽略。然后，X509-SVID CA 捆绑包是从&lt;code&gt;x509-svid&lt;/code&gt; JWK 条目中提取的 CA 证书的并集。如果捆绑包中不存在&lt;code&gt;x509-svid&lt;/code&gt; JWK 条目，则信任域不支持 X509-SVID。&lt;/p&gt;
+&lt;h2 id=&#34;结论&#34;&gt;结论&lt;/h2&gt;
+&lt;p&gt;本文档提出了 X.509 基于 SPIFFE 可验证身份文档的约定和标准。它构成了现实世界 SPIFFE 服务身份验证和 SVID 验证的基础。通过遵守 X.509 SVID 标准，可以构建一个可互操作且与平台无关的身份和身份验证系统。&lt;/p&gt;
+&lt;h2 id=&#34;附录-a-x509-字段参考&#34;&gt;附录 A. X.509 字段参考&lt;/h2&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;扩展&lt;/th&gt;
+&lt;th&gt;字段&lt;/th&gt;
+&lt;th&gt;描述&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;主题备用名称&lt;/td&gt;
+&lt;td&gt;uniformResourceIdentifier&lt;/td&gt;
+&lt;td&gt;此字段设置为 SPIFFE ID。仅允许一个此字段的实例。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;基本约束&lt;/td&gt;
+&lt;td&gt;CA&lt;/td&gt;
+&lt;td&gt;如果 SVID 是签名证书，则必须将此字段设置为 true。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;基本约束&lt;/td&gt;
+&lt;td&gt;pathLenConstraint&lt;/td&gt;
+&lt;td&gt;如果实现者希望执行有限的 CA 层次结构深度约束（例如，从现有私钥基础设施（PKI）继承），则可以设置此字段。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;名称约束&lt;/td&gt;
+&lt;td&gt;permittedSubtrees&lt;/td&gt;
+&lt;td&gt;如果实现者希望使用 URI 名称约束，则可以设置此字段。这将在本文档的未来版本中要求。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;密钥用途&lt;/td&gt;
+&lt;td&gt;keyCertSign&lt;/td&gt;
+&lt;td&gt;如果 SVID 是签名证书，则必须设置此字段。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;密钥用途&lt;/td&gt;
+&lt;td&gt;cRLSign&lt;/td&gt;
+&lt;td&gt;如果 SVID 是签名证书，则可以设置此字段。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;密钥用途&lt;/td&gt;
+&lt;td&gt;keyAgreement&lt;/td&gt;
+&lt;td&gt;如果 SVID 是叶子证书，则可以设置此字段。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;密钥用途&lt;/td&gt;
+&lt;td&gt;keyEncipherment&lt;/td&gt;
+&lt;td&gt;如果 SVID 是叶子证书，则可以设置此字段。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;密钥用途&lt;/td&gt;
+&lt;td&gt;digitalSignature&lt;/td&gt;
+&lt;td&gt;如果 SVID 是叶子证书，则必须设置此字段。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;扩展密钥用途&lt;/td&gt;
+&lt;td&gt;id-kp-serverAuth&lt;/td&gt;
+&lt;td&gt;此字段可为叶子证书或签名证书设置。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;扩展密钥用途&lt;/td&gt;
+&lt;td&gt;id-kp-clientAuth&lt;/td&gt;
+&lt;td&gt;此字段可为叶子证书或签名证书设置。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+</description>
     </item>
     
     <item>
@@ -2300,69 +2145,289 @@ Selector      : k8s:container-name:auth-helper
     </item>
     
     <item>
-      <title>SPIFFE 工作负载端点</title>
-      <link>https://lib.jimmysong.io/spiffe-and-spire/standard/spiffe-workload-endpoint/</link>
+      <title>SPIFFE 工作负载 API</title>
+      <link>https://lib.jimmysong.io/spiffe-and-spire/standard/spiffe-workload-api/</link>
       <pubDate>Mon, 23 Oct 2023 00:00:00 +0800</pubDate>
-      <guid>https://lib.jimmysong.io/spiffe-and-spire/standard/spiffe-workload-endpoint/</guid>
-      <description>&lt;p&gt;对于网络工作负载而言，可移植且互操作的加密身份可能是 SPIFFE 的核心用例之一。为了完全满足这一要求，社区必须达成一致，以标准化检索身份和在运行时使用身份相关服务的方式。&lt;/p&gt;
-&lt;p&gt;SPIFFE 工作负载终端点规范通过定义一个终端点来提供 SPIFFE 可验证身份文档（SVIDs）和相关服务。具体而言，它概述了如何定位终端点以及如何服务或使用它。这个终端点所暴露的服务集合超出了本文档的范围，但有一个例外，即 SPIFFE 工作负载 API。&lt;/p&gt;
+      <guid>https://lib.jimmysong.io/spiffe-and-spire/standard/spiffe-workload-api/</guid>
+      <description>&lt;p&gt;对于互联网工作负载而言，可移植和互操作的网络工作负载的加密身份可能是 SPIFFE 的核心用例。为了完全满足这个需求，社区必须达成一致，采用一种标准化的方式来检索、验证和与 SPIFFE 身份进行交互。本规范概述了要支持基于 SPIFFE 的身份验证系统所需的 API 签名和客户端/服务器行为。&lt;/p&gt;
 &lt;h2 id=&#34;引言&#34;&gt;引言&lt;/h2&gt;
-&lt;p&gt;SPIFFE 工作负载终端点是一个 API 终端点，工作负载或正在运行的计算进程可以通过它在运行时访问与身份相关的服务（如身份签发或身份验证）。这个终端点可以暴露任意数量的与身份相关的服务，但至少，符合规范的环境中运行的工作负载可以期望 SPIFFE 工作负载 API 可用。&lt;/p&gt;
-&lt;p&gt;本文档详细介绍了 SPIFFE 工作负载终端点的可访问性和范围、传输协议、身份验证过程以及可扩展性/发现机制。&lt;/p&gt;
-&lt;h2 id=&#34;可访问性&#34;&gt;可访问性&lt;/h2&gt;
-&lt;p&gt;SPIFFE 工作负载终端点通常用作初始身份引导的机制，包括传递和管理信任根的过程。由于在早期阶段，工作负载可能对自己的身份或应该信任的对象没有任何先验知识，因此很难确保对终端点的访问安全。因此，SPIFFE 工作负载终端点应通过本地终端点公开，并且实现者不应将同一终端点实例公开给多个主机。将终端点和相关流量限制在单个主机上可以减轻与初始身份验证和签发安全相关的引导问题。更多详细信息，请参见 传输 和 身份验证 部分。&lt;/p&gt;
-&lt;h2 id=&#34;传输&#34;&gt;传输&lt;/h2&gt;
-&lt;p&gt;SPIFFE 工作负载终端点必须通过 gRPC 进行提供，并且符合规范的客户端必须支持 gRPC。它可以作为 Unix 域套接字（Unix Domain Socket，UDS）或 TCP 监听套接字公开。实现者应优先选择 Unix 域套接字传输，但如果 Unix 域套接字不可行或不可能，也可以支持 TCP 传输。除非底层网络允许工作负载终端点服务器根据源 IP 地址（例如通过本地主机或链路本地网络）或其他强网络级断言（例如通过 SDN 策略）对工作负载进行强身份验证，否则不得使用 TCP 传输。&lt;/p&gt;
-&lt;p&gt;为了防止 &lt;a href=&#34;https://www.owasp.org/index.php/Server_Side_Request_Forgery&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;服务器端请求伪造&lt;/a&gt;（SSRF）攻击，每个客户端请求 SPIFFE 工作负载终端点时，都必须包含静态的 gRPC 元数据键 &lt;code&gt;workload.spiffe.io&lt;/code&gt;，其值为 &lt;code&gt;true&lt;/code&gt;（区分大小写）。未包含此元数据键/值的请求必须被 SPIFFE 工作负载终端点拒绝（有关详细信息，请参见 错误代码 部分）。这样可以防止攻击者利用 SSRF 漏洞访问 SPIFFE 工作负载终端点，除非该漏洞还使攻击者能够控制出站 gRPC 元数据。&lt;/p&gt;
-&lt;h3 id=&#34;传输安全&#34;&gt;传输安全&lt;/h3&gt;
-&lt;p&gt;尽管 gRPC 强烈推荐使用传输层安全（Transport Layer Security，TLS），但不得要求 SPIFFE 工作负载终端点。由于 SPIFFE 工作负载终端点通常传递和管理信任根，我们不能指望工作负载具有对活跃根的先进知识。因此，在早期阶段，工作负载可能无法验证所呈现身份的真实性，除非通过 Workload API 实现的特权位置。这是 SPIFFE 工作负载终端点实例不应公开给多个主机的另一个原因。有关更多信息，请参见 身份验证 部分。&lt;/p&gt;
-&lt;h2 id=&#34;定位终端点&#34;&gt;定位终端点&lt;/h2&gt;
-&lt;p&gt;客户端可以显式配置套接字位置，也可以使用名为 &lt;code&gt;SPIFFE_ENDPOINT_SOCKET&lt;/code&gt; 的众所周知的环境变量。如果没有显式配置，符合规范的客户端必须回退到环境变量。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;SPIFFE_ENDPOINT_SOCKET&lt;/code&gt; 环境变量的值结构化为 &lt;a href=&#34;https://www.ietf.org/rfc/rfc3986.txt&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;RFC 3986&lt;/a&gt; URI。方案（scheme）必须设置为 &lt;code&gt;unix&lt;/code&gt; 或 &lt;code&gt;tcp&lt;/code&gt;，分别表示终端点通过 Unix 域套接字或 TCP 监听套接字提供服务。&lt;/p&gt;
-&lt;p&gt;如果方案设置为 &lt;code&gt;unix&lt;/code&gt;，则授权组件不得设置，路径组件必须设置为 SPIFFE 工作负载终端点 Unix 域套接字的绝对路径（例如 &lt;code&gt;unix:///path/to/endpoint.sock&lt;/code&gt;）。方案和路径组件是强制的，不得设置其他组件。&lt;/p&gt;
-&lt;p&gt;如果方案设置为 &lt;code&gt;tcp&lt;/code&gt;，则授权的主机组件必须设置为 IP 地址，授权的端口组件必须设置为 SPIFFE 工作负载终端点 TCP 监听套接字的 TCP 端口号。方案、主机和端口组件是强制的，不得设置其他组件。例如，&lt;code&gt;tcp://127.0.0.1:8000&lt;/code&gt; 是有效的，而 &lt;code&gt;tcp://127.0.0.1:8000/foo&lt;/code&gt; 是无效的。&lt;/p&gt;
-&lt;h2 id=&#34;身份验证&#34;&gt;身份验证&lt;/h2&gt;
-&lt;p&gt;SPIFFE 工作负载终端点通常用作初始身份引导的机制。因此，预期工作负载没有任何可用于自身身份验证的“秘密”材料。为了适应这一非常重要的用例，SPIFFE 工作负载终端点不得要求直接对其客户端进行身份验证。&lt;/p&gt;
-&lt;p&gt;实现者应该执行带外真实性检查，而不是直接的客户端身份验证。这可以包括内核检查或编排工具询问等技术。例如，可以通过检查内核套接字状态来了解调用 API 的进程是哪个。另一种方法是允许编排工具将 Unix 域套接字放入特定容器中，向 SPIFFE 工作负载终端点实现传递容器的属性/身份信息。然后可以将此信息用作身份验证机制。&lt;/p&gt;
-&lt;p&gt;应注意，虽然如何实现这一点的方法是特定于实现的，但所选择的方法不得要求工作负载积极参与其中。&lt;/p&gt;
-&lt;h2 id=&#34;错误代码&#34;&gt;错误代码&lt;/h2&gt;
-&lt;p&gt;在与 SPIFFE Workload 端点交互时，客户端可能会遇到多种错误条件。例如，客户端请求可能省略了必需的安全头部（请参阅传输部分获取更多信息），或者 SPIFFE Workload 端点实现可能仍在初始化或无法使用。&lt;/p&gt;
-&lt;p&gt;如果收到不包含必需安全头部的客户端请求，实现必须使用 gRPC 状态码 &amp;ldquo;InvalidArgument&amp;rdquo; 进行响应。如果客户端收到 &amp;ldquo;InvalidArgument&amp;rdquo; 状态码，不应重试，因为这表示客户端实现有误，不可恢复。&lt;/p&gt;
-&lt;p&gt;如果 SPIFFE Workload 端点实现正在运行但不可用，例如仍在初始化或执行负载均衡，客户端将收到 gRPC 状态码 &amp;ldquo;Unavailable&amp;rdquo;。如果客户端收到这个状态码，或者无法到达 SPIFFE Workload 端点，可以使用指数退避重试。&lt;/p&gt;
-&lt;p&gt;最后，如果给定调用者/客户端没有为 SPIFFE Workload 端点服务定义身份，服务应使用 gRPC 状态码 &amp;ldquo;PermissionDenied&amp;rdquo; 进行响应。如果客户端收到这个状态码，可以使用指数退避重试，因为在实现最终一致性的情况下可能会遇到此类响应。&lt;/p&gt;
-&lt;p&gt;请参阅 附录 A 获取错误条件和代码的摘要。&lt;/p&gt;
-&lt;h2 id=&#34;可扩展性和提供的服务&#34;&gt;可扩展性和提供的服务&lt;/h2&gt;
-&lt;p&gt;SPIFFE Workload 端点可以提供多种与身份相关的服务，例如身份发放或身份验证。通过使用 gRPC/Protobuf 服务原语来公开单个服务。为了扩展 SPIFFE Workload 端点，必须引入一个新的（唯一命名的）服务。&lt;/p&gt;
-&lt;p&gt;由于本规范承诺提供强大的可移植性，作者认为允许扩展现有逻辑服务与 SPIFFE 的精神相悖。如果通过向现有逻辑服务添加端点来提供附加功能，那么在从一个符合 SPIFFE 的环境移动到另一个环境时，无法保证可移植性。因此，不能直接扩展现有的 gRPC 逻辑服务，如 SPIFFE Workload API。相反，可以通过添加 SPIFFE 规范集中未描述的独立逻辑服务来增强端点。&lt;/p&gt;
-&lt;p&gt;虽然所有 SPIFFE Workload 端点实现都必须公开 SPIFFE Workload API，但有时很难知道给定环境中支持哪些附加服务。因此，端点实现者应该包含对 &lt;a href=&#34;https://github.com/grpc/grpc/blob/master/doc/server-reflection.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;gRPC Server Reflection&lt;/a&gt; 的支持。如果客户端遇到不支持 gRPC Server Reflection 的端点，应假设唯一可用的服务是 SPIFFE Workload API 中定义的那些。&lt;/p&gt;
-&lt;h2 id=&#34;附录-a-错误代码列表&#34;&gt;附录 A. 错误代码列表&lt;/h2&gt;
-&lt;p&gt;本节列出了 SPIFFE Workload 端点实现可能返回的各种错误代码、返回条件以及如何处理它们。请参阅 错误代码 部分和 &lt;a href=&#34;https://godoc.org/google.golang.org/grpc/codes&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;gRPC Code package 文档&lt;/a&gt; 以获取有关这些代码的更多信息。&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;代码&lt;/th&gt;
-&lt;th&gt;条件&lt;/th&gt;
-&lt;th&gt;客户端行为&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;InvalidArgument&lt;/td&gt;
-&lt;td&gt;客户端请求中未包含 gRPC 安全头部。请参阅 传输部分 获取更多信息。&lt;/td&gt;
-&lt;td&gt;报告错误，不要重试。&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Unavailable&lt;/td&gt;
-&lt;td&gt;SPIFFE Workload 端点实现无法处理请求。&lt;/td&gt;
-&lt;td&gt;使用指数退避重试。&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;PermissionDenied&lt;/td&gt;
-&lt;td&gt;客户端无权执行请求的操作。根据实现的情况，这可能表示工作负载在身份或信任域被配置之前就已启动。&lt;/td&gt;
-&lt;td&gt;使用指数退避重试。&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
+&lt;p&gt;SPIFFE 工作负载 API 是一个 API，它提供了信息和服务，使工作负载或计算进程能够利用 SPIFFE 身份和基于 SPIFFE 的身份验证系统。它由 SPIFFE 工作负载端点提供，并由一些服务或“概要”组成。&lt;/p&gt;
+&lt;p&gt;目前，有两个概要：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;X.509-SVID 概要&lt;/li&gt;
+&lt;li&gt;JWT-SVID 概要&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这两个概要是强制性的，并且 SPIFFE 实现必须支持它们。但是，运营商可以在部署中禁用特定的概要。&lt;/p&gt;
+&lt;p&gt;本规范的未来版本可能会引入其他概要或使一个或多个概要成为可选项。&lt;/p&gt;
+&lt;h2 id=&#34;可扩展性&#34;&gt;可扩展性&lt;/h2&gt;
+&lt;p&gt;SPIFFE 工作负载 API 不能超出本规范进行扩展。希望提供扩展功能的实现者可以通过引入新的 gRPC 服务来实现，这是根据 SPIFFE 工作负载端点规范中概述的可扩展性方法来实现的。&lt;/p&gt;
+&lt;h2 id=&#34;服务定义&#34;&gt;服务定义&lt;/h2&gt;
+&lt;p&gt;SPIFFE 工作负载 API 由一份协议缓冲区（版本 3）服务定义来定义。完整的定义可以在 workloadapi.proto 中找到。&lt;/p&gt;
+&lt;p&gt;概要作为单个&lt;code&gt;WorkloadAPI&lt;/code&gt;服务中的一组相关的 RPC 实现。&lt;/p&gt;
+&lt;h2 id=&#34;客户端和服务器行为&#34;&gt;客户端和服务器行为&lt;/h2&gt;
+&lt;h3 id=&#34;身份标识调用者&#34;&gt;身份标识调用者&lt;/h3&gt;
+&lt;p&gt;SPIFFE 工作负载 API 支持任意数量的本地客户端，使其能够引导任何能够访问它的进程的身份标识。通常，希望为每个进程分配身份标识，其中某些进程被授予特定的身份标识。为了做到这一点，SPIFFE 工作负载 API 实现必须能够确定调用者的身份标识。&lt;/p&gt;
+&lt;p&gt;SPIFFE 工作负载端点规范规定了不直接进行客户端身份验证的要求，而是依赖于带外真实性检查。因此，SPIFFE 工作负载端点实现有责任识别调用者。然后，SPIFFE 工作负载 API 可以利用有关调用者的信息来确定要提供的适当内容。有关详细信息，请参阅 SPIFFE 工作负载端点规范中的身份验证部分。&lt;/p&gt;
+&lt;h3 id=&#34;连接生命周期&#34;&gt;连接生命周期&lt;/h3&gt;
+&lt;p&gt;SPIFFE 工作负载 API 的客户端应尽可能保持打开连接的状态，等待流上接收服务器的响应消息。连接可以随时由服务器或客户端终止。在这种情况下，客户端应立即建立新连接。这有助于确保工作负载保持最新的身份相关材料。SPIFFE 工作负载 API 服务器实现者可以假设此属性，如果未能及时接收到消息，则工作负载可能过时，可能会影响其可用性。&lt;/p&gt;
+&lt;h3 id=&#34;流式响应&#34;&gt;流式响应&lt;/h3&gt;
+&lt;p&gt;SPIFFE 工作负载 API 包括使用 gRPC 服务器端流式传输的 RPC，以促进快速传播更新，例如吊销和 CA 证书引入。这使得客户端可以循环遍历服务器响应，接受发生的更新。&lt;/p&gt;
+&lt;p&gt;服务器发送的每个流式响应消息都必须包含完整的信息集，而不仅仅是发生更改的信息。这避免了在客户端和服务器实现上进行状态跟踪的复杂性，包括对反熵机制的需求。&lt;/p&gt;
+&lt;p&gt;服务器响应消息的确切定时是特定于实现的，并且应由更改响应的事件（例如 SVID 旋转、CRL 更新等）来决定。从客户端接收到请求消息被视为生成响应的事件。换句话说，服务器响应流的第一个响应消息（基于连接的基础上）应尽快发送，不延迟。&lt;/p&gt;
+&lt;p&gt;最后，SPIFFE 工作负载 API 服务器的实现者应小心地推送更新的响应消息。一些软件可能会在接收到新信息后自动重新加载，如果所有实例同时重新加载，可能会导致一段时间的不可用。&lt;/p&gt;
+&lt;h2 id=&#34;默认值和删除的信息&#34;&gt;默认值和删除的信息&lt;/h2&gt;
+&lt;p&gt;SPIFFE Workload API 响应消息是对先前发送的响应消息的完整更新。当响应消息包含设置为默认值或空值的字段时，客户端必须将这些字段的值解释为已设置为它们的默认值或空值；在接收到字段的默认值或空值之后，先前接收到的非默认值或非空值不应由客户端保留。例如，如果客户端在&lt;code&gt;federated_bundles&lt;/code&gt;字段中接收到默认值，则应舍弃先前接收到的&lt;code&gt;federated_bundles&lt;/code&gt;值。&lt;/p&gt;
+&lt;p&gt;由于每个消息必须包含完整的信息集（请参阅 Stream Responses 部分），客户端应将数据的缺失解释为删除。例如，如果客户端加载了&lt;code&gt;spiffe://foo.bar&lt;/code&gt;的 bundle，并接收到不包含&lt;code&gt;spiffe://foo.bar&lt;/code&gt;的 bundle 的消息，则应卸载该 bundle。&lt;/p&gt;
+&lt;h3 id=&#34;强制字段&#34;&gt;强制字段&lt;/h3&gt;
+&lt;p&gt;为了执行 profile RPC，交换的消息由强制和可选字段组成。服务器在接收到具有默认值的强制字段的消息时，应使用“InvalidArgument”gRPC 状态代码进行响应（有关更多信息，请参阅 SPIFFE Workload Endpoint 规范中的错误代码部分）。当客户端接收到具有默认值的强制字段的消息时，应报告错误并丢弃该消息。&lt;/p&gt;
+&lt;h3 id=&#34;联邦-bundle&#34;&gt;联邦 Bundle&lt;/h3&gt;
+&lt;p&gt;在此规范中定义的各种 RPC 可以返回来自外部信任域的信任 Bundle。包含外部 Bundle 可以使工作负载在信任域之间进行通信，并且是启用联邦的主要机制。代表外部信任域的 Bundle 称为&lt;em&gt;联邦 Bundle&lt;/em&gt;。&lt;/p&gt;
+&lt;p&gt;在验证客户端时，验证器会选择代表客户端所呈现的信任域的 Bundle 进行验证。同样，在验证服务器时，客户端会使用代表服务器所在的信任域的 Bundle。如果在使用的 SVID 的 SVID 中不存在匹配的 Bundle，则对等方是不受信任的。这种方法是必需的，以解决常见 X.509 库中对 SAN URI Name Constraints 的广泛支持的缺乏。&lt;/p&gt;
+&lt;h2 id=&#34;x509-svid-profile&#34;&gt;X.509-SVID Profile&lt;/h2&gt;
+&lt;p&gt;SPIFFE Workload API 的 X.509-SVID 配置文件提供了一组 gRPC 方法，工作负载可以使用这些方法来检索 X.509-SVIDs 及其相关的信任捆绑包。该配置文件概述了这些方法的签名，以及相关的客户端和服务器行为。&lt;/p&gt;
+&lt;h3 id=&#34;配置文件定义&#34;&gt;配置文件定义&lt;/h3&gt;
+&lt;p&gt;下面定义了 X.509-SVID 配置文件中的 RPC 和相关的消息。有关完整的 Workload API 服务定义，请参见 workloadapi.proto。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-protobuf&#34; data-lang=&#34;protobuf&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kd&#34;&gt;service&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;SpiffeWorkloadAPI&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;/////////////////////////////////////////////////////////////////////////
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// X509-SVID配置文件
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;/////////////////////////////////////////////////////////////////////////
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 获取工作负载有权访问的所有SPIFFE标识的X.509-SVID，以及与之相关的信任捆绑包和CRL。随着信息的更改，后续的消息将从服务器流式传输。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;rpc&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;FetchX509SVID&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;X509SVIDRequest&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;returns&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;stream&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;X509SVIDResponse&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 获取信任捆绑包和CRL。对于仅需要验证SVID而不获取SVID自身的客户端非常有用。随着信息的更改，后续的消息将从服务器流式传输。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;rpc&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;FetchX509Bundles&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;X509BundlesRequest&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;returns&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;stream&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;X509BundlesResponse&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// ... 其他配置文件的RPC ...
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// X509SVIDRequest消息传递请求X.509-SVID的参数。目前没有此类参数。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;X509SVIDRequest&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// X509SVIDResponse消息携带X.509-SVID和相关信息，包括用于与外部信任域联合的全局CRL集合和捆绑列表。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;X509SVIDResponse&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必需。X509SVID消息列表，每个消息包括单个X.509-SVID、其私钥和信任域的捆绑。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;repeated&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;X509SVID&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;svids&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 可选。ASN.1 DER编码的证书吊销列表。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;repeated&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bytes&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;crl&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 可选。工作负载应该信任的外部信任域的CA证书捆绑，按照外部信任域的SPIFFE ID进行索引。捆绑包是ASN.1 DER编码的。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;map&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bytes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;federated_bundles&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// X509SVID消息携带单个SVID和所有相关信息，包括信任域的X.509捆绑包。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;X509SVID&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必需。此条目中的SVID的SPIFFE ID
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;spiffe_id&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必需。ASN.1 DER编码的证书链。可以包括中间证书，但必须首先是叶子证书（或SVID本身）。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;bytes&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;x509_svid&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必需。ASN.1 DER编码的PKCS#8私钥。必须是未加密的。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;bytes&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;x509_svid_key&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必需。信任域的ASN.1 DER编码的X.509捆绑包。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;bytes&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bundle&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;4&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 可选。操作员指定的字符串，用于在返回多个SVID时为工作负载提供其使用方式的指导。例如，`internal`和`external`分别表示内部或外部使用的SVID。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;hint&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// X509BundlesRequest消息传递请求X.509捆绑包的参数。目前没有这样的参数。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;X509BundlesRequest&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// X509BundlesResponse消息携带一组全局CRL和工作负载应该信任的信任域的映射的CA证书捆绑包。由SPIFFE ID的信任域键控。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;X509BundlesResponse&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 可选。ASN.1 DER编码的证书吊销列表。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;repeated&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bytes&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;crl&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必需。工作负载应该信任的信任域的CA证书捆绑包，由SPIFFE ID的信任域键控。捆绑包是ASN.1 DER编码的。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;map&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bytes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bundles&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;profile-rpcs&#34;&gt;Profile RPCs&lt;/h3&gt;
+&lt;h3 id=&#34;fetchx509svid&#34;&gt;FetchX509SVID&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;FetchX509SVID&lt;/code&gt; RPC 流式返回 X509-SVID 和信任域以及外部信任域的 X.509 捆绑包。这些捆绑包只能用于验证 X509-SVID。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;X509SVIDRequest&lt;/code&gt;请求消息当前为空，是将来扩展的占位符。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;X509SVIDResponse&lt;/code&gt;响应由一个必需的&lt;code&gt;svids&lt;/code&gt;字段组成，该字段必须包含一个或多个&lt;code&gt;X509SVID&lt;/code&gt;消息（每个授予客户端的标识一个）。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;X509SVID&lt;/code&gt;消息中的所有字段都是必需的，除了&lt;code&gt;hint&lt;/code&gt;字段。当设置&lt;code&gt;hint&lt;/code&gt;字段时（即非空），SPIFFE Workload API 服务器必须确保其值在任何给定的&lt;code&gt;X509SVIDResponse&lt;/code&gt;消息中是唯一的。如果 SPIFFE Workload API 客户端遇到具有相同设置的&lt;code&gt;hint&lt;/code&gt;值的多个&lt;code&gt;X509SVID&lt;/code&gt;消息，则应选择列表中的第一个消息。&lt;/p&gt;
+&lt;p&gt;如果客户端没有权限接收任何 X509-SVID，则服务器应以“PermissionDenied”gRPC 状态代码响应（有关更多信息，请参见 SPIFFE Workload Endpoint 规范中的“错误代码”部分）。在这种情况下，客户端可以在退避后尝试重新连接到&lt;code&gt;FetchX509SVID&lt;/code&gt; RPC 的另一个调用。&lt;/p&gt;
+&lt;p&gt;如流式响应所述，每个 FetchX509SVID 流返回的 X509SVIDResponse 消息都包含客户端在那个时间点上的授权 SVID 和 bundle 的完整集合。因此，如果服务器从后续响应中删除了 SVID（或全部 SVID，即返回“PermissionDenied”gRPC 状态代码），客户端应停止使用已删除的 SVID。&lt;/p&gt;
+&lt;h3 id=&#34;fetchx509bundles&#34;&gt;FetchX509Bundles&lt;/h3&gt;
+&lt;p&gt;FetchX509Bundles RPC 流返回服务器所在的信任域和外部信任域的 X.509 bundles。这些 bundles 只用于验证 X509-SVID。&lt;/p&gt;
+&lt;p&gt;X509BundlesRequest 请求消息目前为空，是未来扩展的占位符。&lt;/p&gt;
+&lt;p&gt;X509BundlesResponse 响应消息有一个强制性的 bundles 字段，必须至少包含服务器所在信任域的信任 bundle。crl 字段是可选的。&lt;/p&gt;
+&lt;p&gt;如果客户端无权接收任何 X.509 bundles，那么服务器应以“PermissionDenied”gRPC 状态代码响应（有关更多信息，请参见 SPIFFE Workload Endpoint 规范中的错误代码部分）。客户端可以在退避后尝试重新连接 FetchX509Bundles RPC。&lt;/p&gt;
+&lt;p&gt;如流式响应所述，每个 X509BundleResponse 响应在那个时间点上包含客户端的授权 X.509 bundles 的完整集合。因此，如果服务器从后续响应中删除了 bundles（或全部 bundles，即返回“PermissionDenied”gRPC 状态代码），客户端应停止使用已删除的 bundles。&lt;/p&gt;
+&lt;h3 id=&#34;默认身份&#34;&gt;默认身份&lt;/h3&gt;
+&lt;p&gt;通常情况下，工作负载不知道它应该扮演什么身份。决定何时扮演何种身份是特定于站点的问题，因此，SPIFFE 规范不涉及如何做到这一点。&lt;/p&gt;
+&lt;p&gt;为了支持最广泛的用例，X.509-SVID 配置文件支持发出多个身份，并定义了默认身份。预计了解多个身份的工作负载可以自行进行决策。不了解如何利用多个身份的工作负载可以使用默认身份。默认身份是在 X509SVIDResponse 消息中返回的&lt;code&gt;svids&lt;/code&gt;列表中的第一个。协议缓冲区确保列表的顺序得到保留。&lt;/p&gt;
+&lt;p&gt;了解如何使用多个身份的工作负载可以利用可选的&lt;code&gt;hint&lt;/code&gt;字段，该字段可用于消除身份的歧义，并告知工作负载应该为何目的使用哪个身份。例如，&lt;code&gt;internal&lt;/code&gt;和&lt;code&gt;external&lt;/code&gt;分别表示用于内部或外部使用的 SVID。SPIFFE Workload API 实现不应支持超过 1024 字节长度的值。&lt;code&gt;hint&lt;/code&gt;字段的确切值是操作员的选择，除此规范外并无限制。&lt;/p&gt;
+&lt;p&gt;工作负载有责任处理预期提示的缺失或意外存在（例如，失败、警告等）。&lt;/p&gt;
+&lt;h2 id=&#34;jwt-svid-配置文件&#34;&gt;JWT-SVID 配置文件&lt;/h2&gt;
+&lt;p&gt;SPIFFE Workload API 的 JWT-SVID 配置文件提供了一组 gRPC 方法，可以用于工作负载获取 JWT-SVID 及其相关的信任包。该配置文件概述了这些方法的签名，以及相关的客户端和服务器行为。&lt;/p&gt;
+&lt;h3 id=&#34;配置文件定义-1&#34;&gt;配置文件定义&lt;/h3&gt;
+&lt;p&gt;JWT-SVID 配置文件的 RPC 和相关消息如下所定义。有关完整的 Workload API 服务定义，请参见 workloadapi.proto。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-protobuf&#34; data-lang=&#34;protobuf&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kd&#34;&gt;service&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;SpiffeWorkloadAPI&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;/////////////////////////////////////////////////////////////////////////
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// JWT-SVID配置文件
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;/////////////////////////////////////////////////////////////////////////
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 获取工作负载有权访问的所有SPIFFE标识的JWT-SVID，用于请求的受众。如果请求了可选的SPIFFE ID，则仅返回该SPIFFE ID的JWT-SVID。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;rpc&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;FetchJWTSVID&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;JWTSVIDRequest&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;returns&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;JWTSVIDResponse&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 获取以JWKS文档格式表示的JWT信任包，由信任域的SPIFFE ID作为键。随着这些信息的更改，后续的消息将从服务器流式传输。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;rpc&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;FetchJWTBundles&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;JWTBundlesRequest&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;returns&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;stream&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;JWTBundlesResponse&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 根据请求的受众验证JWT-SVID。返回JWT-SVID的SPIFFE ID和JWT声明。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;rpc&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ValidateJWTSVID&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ValidateJWTSVIDRequest&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;returns&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ValidateJWTSVIDResponse&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// ... 其他配置文件的RPC ...
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;JWTSVIDRequest&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。工作负载打算进行身份验证的受众。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;repeated&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;audience&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 可选。请求的JWT-SVID的SPIFFE ID。如果未设置，则返回工作负载有权访问的所有标识的JWT-SVID。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;spiffe_id&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// JWTSVIDResponse消息传递JWT-SVID。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;JWTSVIDResponse&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。返回的JWT-SVID列表。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;repeated&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;JWTSVID&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;svids&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// JWTSVID消息携带JWT-SVID令牌和相关元数据。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;JWTSVID&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。JWT-SVID的SPIFFE ID。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;spiffe_id&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。使用JWS紧凑序列化的编码JWT。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;svid&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 可选。操作员指定的字符串，用于在返回多个SVID时为工作负载提供如何使用此标识的指导。例如，`internal`和`external`分别表示用于内部或外部使用的SVID。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;hint&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// JWTBundlesRequest消息传递请求JWT信任包的参数。目前没有请求参数。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;JWTBundlesRequest&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// JWTBundlesReponse传递JWT信任包。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;JWTBundlesResponse&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。以信任域的SPIFFE ID为键的JWK编码的JWT信任包。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;map&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bytes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bundles&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// ValidateJWTSVIDRequest消息传递JWT-SVID验证的请求参数。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;ValidateJWTSVIDRequest&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。验证方的受众。JWT-SVID必须包含一个包含此值的受众声明才能成功验证。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;audience&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。要验证的JWT-SVID，使用JWS紧凑序列化进行编码。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;svid&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// ValidateJWTSVIDReponse消息传递JWT-SVID验证结果。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;message&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;ValidateJWTSVIDResponse&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。验证的JWT-SVID的SPIFFE ID。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;spiffe_id&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// 必填。验证的JWT-SVID有效载荷中包含的声明。包括SPIFFE所需和非所需的声明。
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;google.protobuf.Struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;claims&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;配置文件-rpc&#34;&gt;配置文件 RPC&lt;/h3&gt;
+&lt;h3 id=&#34;获取-jwtsvid&#34;&gt;获取 JWTSVID&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;FetchJWTSVID&lt;/code&gt; RPC 允许客户端请求一个或多个特定受众的短期 JWT-SVID。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;JWTSVIDRequest&lt;/code&gt; 请求消息包含一个必填的&lt;code&gt;audience&lt;/code&gt;字段，该字段必须包含要嵌入返回的 JWT-SVID 中的受众声明的值。&lt;code&gt;spiffe_id&lt;/code&gt;字段是可选的，用于请求特定 SPIFFE ID 的 JWT-SVID。如果未指定，服务器必须返回授权给客户端的所有身份的 JWT-SVID。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;JWTSVIDResponse&lt;/code&gt; 响应消息由一个必填的&lt;code&gt;svids&lt;/code&gt;字段组成，该字段必须包含一个或多个&lt;code&gt;JWTSVID&lt;/code&gt;消息。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;JWTSVID&lt;/code&gt;消息中的所有字段都是必填的，除了&lt;code&gt;hint&lt;/code&gt;字段。当设置了&lt;code&gt;hint&lt;/code&gt;字段（即非空）时，SPIFFE Workload API 服务器必须确保其值在给定的&lt;code&gt;JWTSVIDResponse&lt;/code&gt;消息中的返回的 SVID 集合中是唯一的。如果 SPIFFE Workload API 客户端遇到具有相同&lt;code&gt;hint&lt;/code&gt;值设置的多个&lt;code&gt;JWTSVID&lt;/code&gt;消息，则应选择列表中的第一个消息。&lt;/p&gt;
+&lt;p&gt;如果客户端没有授权任何身份，或者未经授权访问&lt;code&gt;spiffe_id&lt;/code&gt;字段请求的特定身份，则服务器应使用“PermissionDenied”gRPC 状态代码进行响应（有关更多信息，请参见 SPIFFE Workload 端点规范中的错误代码部分）。&lt;/p&gt;
+&lt;h3 id=&#34;获取-jwt-bundles&#34;&gt;获取 JWT Bundles&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;FetchJWTBundles&lt;/code&gt; RPC 返回服务器所在的信任域和外部信任域的 JWT bundles。这些 bundles 必须仅用于认证 JWT-SVID。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;JWTBundlesRequest&lt;/code&gt;请求消息目前为空，是未来扩展的占位符。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;JWTBundlesResponse&lt;/code&gt;响应消息由一个必填的&lt;code&gt;bundles&lt;/code&gt;字段组成，该字段必须至少包含服务器所在信任域的 JWT bundle。&lt;/p&gt;
+&lt;p&gt;返回的 bundles 以&lt;a href=&#34;https://tools.ietf.org/html/rfc7517&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;RFC 7517&lt;/a&gt;定义的标准 JWK Set 格式进行编码，其中包含信任域的 JWT-SVID 签名密钥。这些密钥可能仅表示 SPIFFE 信任域中的密钥子集。服务器不得在返回的 JWT bundles 中包含其他用途的密钥。&lt;/p&gt;
+&lt;p&gt;如果客户端无权接收任何 JWT bundles，则服务器应使用“PermissionDenied”gRPC 状态代码进行响应（有关更多信息，请参见 SPIFFE Workload 端点规范中的错误代码部分）。客户端可以在退避后尝试重新连接到&lt;code&gt;FetchJWTBundles&lt;/code&gt; RPC 的另一个调用。&lt;/p&gt;
+&lt;p&gt;如流式响应中所述，每个&lt;code&gt;JWTBundleResponse&lt;/code&gt;响应在当前时间点包含客户端的所有授权 JWT bundles 的完整集合。因此，如果服务器从后续响应中删除 bundles（或所有 bundles，即返回“PermissionDenied”gRPC 状态代码），客户端应停止使用被删除的 bundles。&lt;/p&gt;
+&lt;h3 id=&#34;验证-jwtsvid&#34;&gt;验证 JWTSVID&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;ValidateJWTSVID&lt;/code&gt; RPC 代表客户端验证特定受众的 JWT-SVID。此外，服务器必须根据 JWT-SVID 规范中概述的规则解析和验证 JWT-SVID。JWT-SVID 负载中嵌入的声明应在&lt;code&gt;ValidateJWTSVIDResponse&lt;/code&gt;中的&lt;code&gt;claims&lt;/code&gt;字段中提供；本规范中定义的声明是必需的，但实现可能会在将它们返回给客户端之前过滤非 SPIFFE 声明。SPIFFE 声明对于互操作性是必需的。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;ValidateJWTSVIDRequest&lt;/code&gt;和&lt;code&gt;ValidateJWTSVIDResponse&lt;/code&gt;消息中的所有字段都是必填的。&lt;/p&gt;
+&lt;h3 id=&#34;jwt-svid-验证&#34;&gt;JWT-SVID 验证&lt;/h3&gt;
+&lt;p&gt;如果客户端支持，Workload API 客户端应使用&lt;code&gt;ValidateJWTSVID&lt;/code&gt;方法进行 JWT 验证，允许 SPIFFE Workload API 代表其执行验证。这样做可以避免工作负载实现验证逻辑，从而减少出错的可能性。&lt;/p&gt;
+&lt;p&gt;当与传统的 JWT 验证器进行交互时，可以使用&lt;code&gt;FetchJWTBundles&lt;/code&gt;方法获取 JWKS bundles，用于验证 JWT-SVID 的签名。例如，如果 SPIFFE Workload API 可用，但 JWT 验证软件不知道 Workload API（因此无法调用&lt;code&gt;ValidateJWTSVID&lt;/code&gt;），则实现可以单独检索每个 bundle 并将其提供给传统工作负载进行验证。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;FetchJWTBundles&lt;/code&gt;方法返回以信任域的 SPIFFE ID 为键的 bundles。在验证 JWT-SVID 时，验证器必须使用与主题的信任域对应的 bundle。如果指定信任域的 JWT bundle 不存在，则令牌是不可信的。&lt;/p&gt;
+&lt;h2 id=&#34;附录-a-示例实现状态机&#34;&gt;附录 A. 示例实现状态机&lt;/h2&gt;
+&lt;p&gt;为了提供清晰度，作者认为包括 SPIFFE Workload API 的客户端和服务器实现的示例状态图可能是有用的。应注意，有许多实现方式可以符合本规范，此特定实现仅供参考。&lt;/p&gt;
+&lt;h3 id=&#34;服务器状态机&#34;&gt;服务器状态机&lt;/h3&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-服务器状态机&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/workload_api_server_diagram.png&#34; alt=&#34;服务器状态机&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      服务器状态机
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;SPIFFE Workload 端点侦听器正在启动。&lt;/li&gt;
+&lt;li&gt;使用 SPIFFE Workload API 处理程序启动 gRPC 服务器，现在可以接受连接。&lt;/li&gt;
+&lt;li&gt;正在验证传入的 FetchX509SVIDRequest。这包括检查强制性的安全头，并确保调用方可用身份。&lt;/li&gt;
+&lt;li&gt;Workload API 正在向客户端发送 FetchX509SVIDResponse。&lt;/li&gt;
+&lt;li&gt;Workload API 处于等待状态。从等待状态过渡需要中断或取消。中断等待状态的典型原因是响应中的信息已更新（例如，SVID 已旋转或 CRL 已更改）。&lt;/li&gt;
+&lt;li&gt;对待处理的响应执行验证。确保客户端仍有权使用身份，并且请求尚未取消。&lt;/li&gt;
+&lt;li&gt;服务器正在关闭流，为客户端提供正确的错误代码以表示遇到的条件。&lt;/li&gt;
+&lt;li&gt;服务器遇到致命错误，必须停止。这可能发生在无法创建侦听器或 gRPC 服务器遇到致命错误的情况下。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;客户端状态机&#34;&gt;客户端状态机&lt;/h3&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-客户端状态机&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/workload_api_client_diagram.png&#34; alt=&#34;客户端状态机&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      客户端状态机
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Workload API 客户端正在拨号 SPIFFE Workload 端点。&lt;/li&gt;
+&lt;li&gt;客户端正在调用 FetchX509SVID RPC 调用，向服务器发送请求。&lt;/li&gt;
+&lt;li&gt;客户端正在阻塞等待从服务器接收 X509SVIDResponse 消息。&lt;/li&gt;
+&lt;li&gt;客户端正在使用从服务器响应中接收的 SVIDs、CRLs 和 bundles 更新其配置。此时，它可以将接收到的信息与当前配置进行比较，确定是否需要重新加载。&lt;/li&gt;
+&lt;li&gt;客户端遇到致命错误，必须退出。&lt;/li&gt;
+&lt;li&gt;客户端正在执行指数回退。&lt;/li&gt;
+&lt;/ol&gt;
 </description>
     </item>
     
@@ -2741,6 +2806,73 @@ sudo ln -s /opt/spire/bin/spire-agent /usr/bin/spire-agent
 &lt;li&gt;将用于验证在该信任域下颁发的 X.509-SVID 的信任捆绑包（证书链）写入 &lt;code&gt;/tmp/&lt;/code&gt;。&lt;/li&gt;
 &lt;/ol&gt;
 &lt;p&gt;有关相关命令的完整列表，请参阅 &lt;a href=&#34;https://spiffe.io/docs/latest/deploying/spire_agent/#command-line-options&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE Agent 文档&lt;/a&gt;。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>SPIFFE 工作负载端点</title>
+      <link>https://lib.jimmysong.io/spiffe-and-spire/standard/spiffe-workload-endpoint/</link>
+      <pubDate>Mon, 23 Oct 2023 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/spiffe-and-spire/standard/spiffe-workload-endpoint/</guid>
+      <description>&lt;p&gt;对于网络工作负载而言，可移植且互操作的加密身份可能是 SPIFFE 的核心用例之一。为了完全满足这一要求，社区必须达成一致，以标准化检索身份和在运行时使用身份相关服务的方式。&lt;/p&gt;
+&lt;p&gt;SPIFFE 工作负载终端点规范通过定义一个终端点来提供 SPIFFE 可验证身份文档（SVIDs）和相关服务。具体而言，它概述了如何定位终端点以及如何服务或使用它。这个终端点所暴露的服务集合超出了本文档的范围，但有一个例外，即 SPIFFE 工作负载 API。&lt;/p&gt;
+&lt;h2 id=&#34;引言&#34;&gt;引言&lt;/h2&gt;
+&lt;p&gt;SPIFFE 工作负载终端点是一个 API 终端点，工作负载或正在运行的计算进程可以通过它在运行时访问与身份相关的服务（如身份签发或身份验证）。这个终端点可以暴露任意数量的与身份相关的服务，但至少，符合规范的环境中运行的工作负载可以期望 SPIFFE 工作负载 API 可用。&lt;/p&gt;
+&lt;p&gt;本文档详细介绍了 SPIFFE 工作负载终端点的可访问性和范围、传输协议、身份验证过程以及可扩展性/发现机制。&lt;/p&gt;
+&lt;h2 id=&#34;可访问性&#34;&gt;可访问性&lt;/h2&gt;
+&lt;p&gt;SPIFFE 工作负载终端点通常用作初始身份引导的机制，包括传递和管理信任根的过程。由于在早期阶段，工作负载可能对自己的身份或应该信任的对象没有任何先验知识，因此很难确保对终端点的访问安全。因此，SPIFFE 工作负载终端点应通过本地终端点公开，并且实现者不应将同一终端点实例公开给多个主机。将终端点和相关流量限制在单个主机上可以减轻与初始身份验证和签发安全相关的引导问题。更多详细信息，请参见 传输 和 身份验证 部分。&lt;/p&gt;
+&lt;h2 id=&#34;传输&#34;&gt;传输&lt;/h2&gt;
+&lt;p&gt;SPIFFE 工作负载终端点必须通过 gRPC 进行提供，并且符合规范的客户端必须支持 gRPC。它可以作为 Unix 域套接字（Unix Domain Socket，UDS）或 TCP 监听套接字公开。实现者应优先选择 Unix 域套接字传输，但如果 Unix 域套接字不可行或不可能，也可以支持 TCP 传输。除非底层网络允许工作负载终端点服务器根据源 IP 地址（例如通过本地主机或链路本地网络）或其他强网络级断言（例如通过 SDN 策略）对工作负载进行强身份验证，否则不得使用 TCP 传输。&lt;/p&gt;
+&lt;p&gt;为了防止 &lt;a href=&#34;https://www.owasp.org/index.php/Server_Side_Request_Forgery&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;服务器端请求伪造&lt;/a&gt;（SSRF）攻击，每个客户端请求 SPIFFE 工作负载终端点时，都必须包含静态的 gRPC 元数据键 &lt;code&gt;workload.spiffe.io&lt;/code&gt;，其值为 &lt;code&gt;true&lt;/code&gt;（区分大小写）。未包含此元数据键/值的请求必须被 SPIFFE 工作负载终端点拒绝（有关详细信息，请参见 错误代码 部分）。这样可以防止攻击者利用 SSRF 漏洞访问 SPIFFE 工作负载终端点，除非该漏洞还使攻击者能够控制出站 gRPC 元数据。&lt;/p&gt;
+&lt;h3 id=&#34;传输安全&#34;&gt;传输安全&lt;/h3&gt;
+&lt;p&gt;尽管 gRPC 强烈推荐使用传输层安全（Transport Layer Security，TLS），但不得要求 SPIFFE 工作负载终端点。由于 SPIFFE 工作负载终端点通常传递和管理信任根，我们不能指望工作负载具有对活跃根的先进知识。因此，在早期阶段，工作负载可能无法验证所呈现身份的真实性，除非通过 Workload API 实现的特权位置。这是 SPIFFE 工作负载终端点实例不应公开给多个主机的另一个原因。有关更多信息，请参见 身份验证 部分。&lt;/p&gt;
+&lt;h2 id=&#34;定位终端点&#34;&gt;定位终端点&lt;/h2&gt;
+&lt;p&gt;客户端可以显式配置套接字位置，也可以使用名为 &lt;code&gt;SPIFFE_ENDPOINT_SOCKET&lt;/code&gt; 的众所周知的环境变量。如果没有显式配置，符合规范的客户端必须回退到环境变量。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;SPIFFE_ENDPOINT_SOCKET&lt;/code&gt; 环境变量的值结构化为 &lt;a href=&#34;https://www.ietf.org/rfc/rfc3986.txt&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;RFC 3986&lt;/a&gt; URI。方案（scheme）必须设置为 &lt;code&gt;unix&lt;/code&gt; 或 &lt;code&gt;tcp&lt;/code&gt;，分别表示终端点通过 Unix 域套接字或 TCP 监听套接字提供服务。&lt;/p&gt;
+&lt;p&gt;如果方案设置为 &lt;code&gt;unix&lt;/code&gt;，则授权组件不得设置，路径组件必须设置为 SPIFFE 工作负载终端点 Unix 域套接字的绝对路径（例如 &lt;code&gt;unix:///path/to/endpoint.sock&lt;/code&gt;）。方案和路径组件是强制的，不得设置其他组件。&lt;/p&gt;
+&lt;p&gt;如果方案设置为 &lt;code&gt;tcp&lt;/code&gt;，则授权的主机组件必须设置为 IP 地址，授权的端口组件必须设置为 SPIFFE 工作负载终端点 TCP 监听套接字的 TCP 端口号。方案、主机和端口组件是强制的，不得设置其他组件。例如，&lt;code&gt;tcp://127.0.0.1:8000&lt;/code&gt; 是有效的，而 &lt;code&gt;tcp://127.0.0.1:8000/foo&lt;/code&gt; 是无效的。&lt;/p&gt;
+&lt;h2 id=&#34;身份验证&#34;&gt;身份验证&lt;/h2&gt;
+&lt;p&gt;SPIFFE 工作负载终端点通常用作初始身份引导的机制。因此，预期工作负载没有任何可用于自身身份验证的“秘密”材料。为了适应这一非常重要的用例，SPIFFE 工作负载终端点不得要求直接对其客户端进行身份验证。&lt;/p&gt;
+&lt;p&gt;实现者应该执行带外真实性检查，而不是直接的客户端身份验证。这可以包括内核检查或编排工具询问等技术。例如，可以通过检查内核套接字状态来了解调用 API 的进程是哪个。另一种方法是允许编排工具将 Unix 域套接字放入特定容器中，向 SPIFFE 工作负载终端点实现传递容器的属性/身份信息。然后可以将此信息用作身份验证机制。&lt;/p&gt;
+&lt;p&gt;应注意，虽然如何实现这一点的方法是特定于实现的，但所选择的方法不得要求工作负载积极参与其中。&lt;/p&gt;
+&lt;h2 id=&#34;错误代码&#34;&gt;错误代码&lt;/h2&gt;
+&lt;p&gt;在与 SPIFFE Workload 端点交互时，客户端可能会遇到多种错误条件。例如，客户端请求可能省略了必需的安全头部（请参阅传输部分获取更多信息），或者 SPIFFE Workload 端点实现可能仍在初始化或无法使用。&lt;/p&gt;
+&lt;p&gt;如果收到不包含必需安全头部的客户端请求，实现必须使用 gRPC 状态码 &amp;ldquo;InvalidArgument&amp;rdquo; 进行响应。如果客户端收到 &amp;ldquo;InvalidArgument&amp;rdquo; 状态码，不应重试，因为这表示客户端实现有误，不可恢复。&lt;/p&gt;
+&lt;p&gt;如果 SPIFFE Workload 端点实现正在运行但不可用，例如仍在初始化或执行负载均衡，客户端将收到 gRPC 状态码 &amp;ldquo;Unavailable&amp;rdquo;。如果客户端收到这个状态码，或者无法到达 SPIFFE Workload 端点，可以使用指数退避重试。&lt;/p&gt;
+&lt;p&gt;最后，如果给定调用者/客户端没有为 SPIFFE Workload 端点服务定义身份，服务应使用 gRPC 状态码 &amp;ldquo;PermissionDenied&amp;rdquo; 进行响应。如果客户端收到这个状态码，可以使用指数退避重试，因为在实现最终一致性的情况下可能会遇到此类响应。&lt;/p&gt;
+&lt;p&gt;请参阅 附录 A 获取错误条件和代码的摘要。&lt;/p&gt;
+&lt;h2 id=&#34;可扩展性和提供的服务&#34;&gt;可扩展性和提供的服务&lt;/h2&gt;
+&lt;p&gt;SPIFFE Workload 端点可以提供多种与身份相关的服务，例如身份发放或身份验证。通过使用 gRPC/Protobuf 服务原语来公开单个服务。为了扩展 SPIFFE Workload 端点，必须引入一个新的（唯一命名的）服务。&lt;/p&gt;
+&lt;p&gt;由于本规范承诺提供强大的可移植性，作者认为允许扩展现有逻辑服务与 SPIFFE 的精神相悖。如果通过向现有逻辑服务添加端点来提供附加功能，那么在从一个符合 SPIFFE 的环境移动到另一个环境时，无法保证可移植性。因此，不能直接扩展现有的 gRPC 逻辑服务，如 SPIFFE Workload API。相反，可以通过添加 SPIFFE 规范集中未描述的独立逻辑服务来增强端点。&lt;/p&gt;
+&lt;p&gt;虽然所有 SPIFFE Workload 端点实现都必须公开 SPIFFE Workload API，但有时很难知道给定环境中支持哪些附加服务。因此，端点实现者应该包含对 &lt;a href=&#34;https://github.com/grpc/grpc/blob/master/doc/server-reflection.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;gRPC Server Reflection&lt;/a&gt; 的支持。如果客户端遇到不支持 gRPC Server Reflection 的端点，应假设唯一可用的服务是 SPIFFE Workload API 中定义的那些。&lt;/p&gt;
+&lt;h2 id=&#34;附录-a-错误代码列表&#34;&gt;附录 A. 错误代码列表&lt;/h2&gt;
+&lt;p&gt;本节列出了 SPIFFE Workload 端点实现可能返回的各种错误代码、返回条件以及如何处理它们。请参阅 错误代码 部分和 &lt;a href=&#34;https://godoc.org/google.golang.org/grpc/codes&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;gRPC Code package 文档&lt;/a&gt; 以获取有关这些代码的更多信息。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;代码&lt;/th&gt;
+&lt;th&gt;条件&lt;/th&gt;
+&lt;th&gt;客户端行为&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;InvalidArgument&lt;/td&gt;
+&lt;td&gt;客户端请求中未包含 gRPC 安全头部。请参阅 传输部分 获取更多信息。&lt;/td&gt;
+&lt;td&gt;报告错误，不要重试。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Unavailable&lt;/td&gt;
+&lt;td&gt;SPIFFE Workload 端点实现无法处理请求。&lt;/td&gt;
+&lt;td&gt;使用指数退避重试。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;PermissionDenied&lt;/td&gt;
+&lt;td&gt;客户端无权执行请求的操作。根据实现的情况，这可能表示工作负载在身份或信任域被配置之前就已启动。&lt;/td&gt;
+&lt;td&gt;使用指数退避重试。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
 </description>
     </item>
     
