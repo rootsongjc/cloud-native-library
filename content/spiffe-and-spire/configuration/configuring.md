@@ -67,27 +67,27 @@ SPIFFE 服务器通过节点认证和解析的过程来识别和验证代理。�
 
 在撰写本文时，预投影的服务帐户是 Kubernetes 的一个相对较新的功能，不是所有部署都支持它们。你的 Kubernetes 平台文档将告诉你是否支持此功能。如果你的 Kubernetes 部署不支持预投影的服务帐户令牌，则应启用服务帐户令牌。
 
-使用 Kubernetes 的[Projected Service Account Tokens](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-token-volume-projection) (PSATs) 对节点进行认证允许 SPIRE 服务器验证在 Kubernetes 集群上运行的 SPIRE 代理的身份。预投影的服务帐户令牌相对于传统的 Kubernetes 服务帐户令牌提供了额外的安全保证，因此，如果 Kubernetes 集群支持，PSAT 是推荐的认证策略。
+使用 Kubernetes 的 [Projected Service Account Tokens](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-token-volume-projection) (PSATs) 对节点进行认证允许 SPIRE 服务器验证在 Kubernetes 集群上运行的 SPIRE 代理的身份。预投影的服务帐户令牌相对于传统的 Kubernetes 服务帐户令牌提供了额外的安全保证，因此，如果 Kubernetes 集群支持，PSAT 是推荐的认证策略。
 
-要使用 PSAT 节点认证，请在[SPIRE Server](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_k8s_psat.md)和[SPIRE Agent](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_k8s_psat.md)上配置启用 PSAT 节点认证器插件。
+要使用 PSAT 节点认证，请在 [SPIRE Server](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_k8s_psat.md) 和 [SPIRE Agent](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_k8s_psat.md) 上配置启用 PSAT 节点认证器插件。
 
 #### 服务帐户令牌
 
 在 Kubernetes 上运行工作负载时，如果集群上没有 Projected Service Account Token 功能，则 SPIRE 可以使用 Service Account Tokens 在 Server 和 Agent 之间建立信任。与使用 Projected Service Account Tokens 不同，此方法要求 SPIRE Server 和 SPIRE Agent 都部署在同一个 Kubernetes 集群上。
 
-由于服务帐户令牌不包含可用于强力识别运行Agent的节点/守护程序/POD的声明，因此任何在允许的服务帐户下运行的容器都可以冒充Agent。因此，强烈建议在使用此认证方法时，Agent应在专用的服务帐户下运行。
+由于服务帐户令牌不包含可用于强力识别运行 Agent 的节点/守护程序/Pod 的声明，因此任何在允许的服务帐户下运行的容器都可以冒充 Agent。因此，强烈建议在使用此认证方法时，Agent 应在专用的服务帐户下运行。
 
-要使用 SAT 节点认证，请在[SPIRE Server](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_k8s_sat.md)和[SPIRE Agent](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_k8s_sat.md)上配置和启用 SAT 节点认证器插件。
+要使用 SAT 节点认证，请在 [SPIRE Server](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_k8s_sat.md) 和 [SPIRE Agent](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_k8s_sat.md) 上配置和启用 SAT 节点认证器插件。
 
 ### 对运行 Linux 的节点进行认证
 
 SPIRE 能够对运行 Linux 的物理或虚拟机（节点）上的工作负载的身份进行认证。作为认证过程的一部分，SPIRE Server 需要建立与运行 Linux 节点上的 SPIRE Agent 的信任关系。根据节点运行的位置，SPIRE 支持各种节点认证器，这些节点认证器允许在创建注册项时使用不同的选择器来标识特定的工作负载。
 
-#### 加入令牌
+#### 加入令牌（Join Token）
 
 加入令牌是一种使用单次使用的令牌来对服务器进行认证的简单方法，该令牌在服务器上生成并在启动代理时提供给代理。它适用于在 Linux 上运行的任何节点。
 
-SPIRE 服务器可以通过在`server.conf`配置文件中启用内置的`join-token` NodeAttestor 插件来支持加入令牌认证，如下所示：
+SPIRE 服务器可以通过在 `server.conf` 配置文件中启用内置的`join-token` NodeAttestor 插件来支持加入令牌认证，如下所示：
 
 ```
 NodeAttestor "join_token" {
@@ -102,7 +102,7 @@ NodeAttestor "join_token" {
 
 服务器将验证加入令牌并向代理颁发 SVID（SPIFFE 身份验证信息文档）。只要代理与服务器保持连接，SVID 将自动轮换。在以后的启动中，除非 SVID 已过期且未续订，否则代理将使用该 SVID 对服务器进行身份验证。
 
-要使用加入令牌节点证明，请在[SPIRE 服务器](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_jointoken.md)和[SPIRE 代理](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_jointoken.md)上配置和启用加入令牌节点证明插件。
+要使用加入令牌节点证明，请在 [SPIRE 服务器](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_jointoken.md)和 [SPIRE 代理](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_jointoken.md)上配置和启用加入令牌节点证明插件。
 
 要在服务器上禁用加入令牌证明，请在启动之前从配置文件中注释或删除此部分。
 
@@ -112,9 +112,9 @@ NodeAttestor "join_token" {
 
 通常，这些叶子证书是从单个公共密钥和证书（在本指南中称为*根证书包*）生成的。服务器必须配置根密钥和任何中间证书，以便能够验证特定机器呈现的叶子证书。只有找到可以通过证书链验证到服务器的证书时，节点证明才会成功，并且可以向该节点上的工作负载发布 SPIFFE ID。
 
-此外，证明者公开了`subject:cn`选择器，该选择器将匹配满足以下条件的证书：（a）有效，如上所述，（b）其通用名称（CN）与选择器中描述的通用名称匹配。
+此外，证明者公开了 `subject:cn ` 选择器，该选择器将匹配满足以下条件的证书：（a）有效，如上所述，（b）其通用名称（CN）与选择器中描述的通用名称匹配。
 
-要使用 X.509 证书节点证明，请在[SPIRE 服务器](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_x509pop.md)和[SPIRE 代理](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_x509pop.md)上配置和启用 x509pop 节点证明插件。
+要使用 X.509 证书节点证明，请在 [SPIRE 服务器](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_x509pop.md)和 [SPIRE 代理](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_x509pop.md)上配置和启用 x509pop 节点证明插件。
 
 #### SSH 证书
 
@@ -187,7 +187,7 @@ Azure MSI 节点认证和解析允许 SPIRE 服务器自动识别和验证在 Az
 
 Kubernetes 工作负载证明插件通过与本地的 Kubelet 进行交互来检索有关特定进程的 Kubernetes 特定元数据，当它调用工作负载 API 时，使用这些元数据来识别与注册条目匹配的工作负载。
 
-有关更多信息，包括暴露的选择器的详细信息，请参阅[Kubernetes 工作负载证明插件的相应 SPIRE 文档](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_workloadattestor_k8s.md)。
+有关更多信息，包括暴露的选择器的详细信息，请参阅 [Kubernetes 工作负载证明插件的相应 SPIRE 文档](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_workloadattestor_k8s.md)。
 
 ### 为 Docker 容器进行工作负载证明
 
@@ -195,7 +195,7 @@ Kubernetes 工作负载证明插件通过与本地的 Kubelet 进行交互来检
 
 Docker 工作负载证明插件通过与本地的 Docker 守护程序进行交互来检索有关特定进程的 Docker 特定元数据，当它调用工作负载 API 时。
 
-有关更多信息，包括暴露的选择器的详细信息，请参阅[Docker 工作负载证明插件的相应 SPIRE 文档](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_workloadattestor_docker.md)。
+有关更多信息，包括暴露的选择器的详细信息，请参阅 [Docker 工作负载证明插件的相应 SPIRE 文档](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_workloadattestor_docker.md)。
 
 ### 为 Unix 进程进行工作负载证明
 
@@ -203,21 +203,21 @@ Docker 工作负载证明插件通过与本地的 Docker 守护程序进行交�
 
 Unix 工作负载证明通过检查 Unix 域套接字的调用者来确定调用 Workload API 的工作负载的内核元数据。
 
-有关更多信息，包括暴露的选择器的详细信息，请参阅[Unix 工作负载证明插件的相应 SPIRE 文档](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_workloadattestor_unix.md)。
+有关更多信息，包括暴露的选择器的详细信息，请参阅 [Unix 工作负载证明插件的相应 SPIRE 文档](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_workloadattestor_unix.md)。
 
 ## 配置代理和服务器数据存储位置
 
 *此配置适用于 SPIRE 服务器和 SPIRE 代理*
 
-`agent.conf`和`server.conf`配置文件中的`data_dir`选项设置了 SPIRE 运行时数据的目录。
+`agent.conf` 和 `server.conf` 配置文件中的 `data_dir` 选项设置了 SPIRE 运行时数据的目录。
 
-如果你为`data_dir`指定了相对路径，即以`./`开头的路径，则`data_dir`将基于你执行`spire-agent`或`spire-server`命令时的当前工作目录进行评估。使用相对路径的`data_dir`对于对 SPIRE 进行初始评估可能很有用，但对于生产部署，你可能希望将`data_dir`设置为绝对路径。按照惯例，如果你已在`/opt/spire`安装了 SPIRE，则将`data_dir`指定为`"/opt/spire/data"`。
+如果你为 `data_dir` 指定了相对路径，即以 `./` 开头的路径，则 `data_dir` 将基于你执行 `spire-agent` 或 `spire-server` 命令时的当前工作目录进行评估。使用相对路径的 `data_dir` 对于对 SPIRE 进行初始评估可能很有用，但对于生产部署，你可能希望将 `data_dir` 设置为绝对路径。按照惯例，如果你已在 `/opt/spire` 安装了 SPIRE，则将 `data_dir` 指定为 `"/opt/spire/data"`。
 
-确保你为`data_dir`指定的路径及其所有子目录对运行 SPIRE 代理或服务器可执行文件的 Linux 用户可读取。你可能需要使用[chown](http://man7.org/linux/man-pages/man1/chown.1.html)来更改这些数据目录的所有权，以便其归属于将运行可执行文件的 Linux 用户。
+确保你为 `data_dir` 指定的路径及其所有子目录对运行 SPIRE 代理或服务器可执行文件的 Linux 用户可读取。你可能需要使用 [chown](http://man7.org/linux/man-pages/man1/chown.1.html) 来更改这些数据目录的所有权，以便其归属于将运行可执行文件的 Linux 用户。
 
-如果你为`data_dir`指定的路径不存在，则 SPIRE 代理或服务器可执行文件将在具有执行权限的情况下创建该路径。
+如果你为 `data_dir` 指定的路径不存在，则 SPIRE 代理或服务器可执行文件将在具有执行权限的情况下创建该路径。
 
-通常，你应该将`data_dir`的值用作在`agent.conf`和`server.conf`配置文件中配置的其他数据路径的基目录。例如，如果你在`agent.conf`中将`data_dir`设置为`"/opt/spire/data"`，则将`KeyManager“disk”plugin_data directory`设置为`"/opt/spire/data/agent"`。或者，如果你在`server.conf`中将`data_dir`设置为`/opt/spire/data`，则将`connection_string`设置为`"/opt/spire/data/server/datastore.sqlite3"`，如果你使用 SQLite 作为 SPIRE Server 数据存储，则如下所述。
+通常，你应该将 `data_dir` 的值用作在 `agent.conf` 和 `server.conf` 配置文件中配置的其他数据路径的基目录。例如，如果你在 `agent.conf` 中将 `data_dir` 设置为 `"/opt/spire/data"`，则将 `KeyManager“disk”plugin_data directory` 设置为 `"/opt/spire/data/agent"`。或者，如果你在 `server.conf` 中将 `data_dir` 设置为 `/opt/spire/data`，则将 `connection_string` 设置为 `"/opt/spire/data/server/datastore.sqlite3"`，如果你使用 SQLite 作为 SPIRE Server 数据存储，则如下所述。
 
 ## 配置服务器数据存储方式
 
@@ -242,9 +242,9 @@ Unix 工作负载证明通过检查 Unix 域套接字的调用者来确定调用
     }
 ```
 
-配置文件中不应该有其他（取消注释的）`DataStore`部分。
+配置文件中不应该有其他（取消注释的）`DataStore` 部分。
 
-数据库将在`connection_string`中指定的路径中创建。有关选择 SPIRE 相关数据位置的更多信息，请参见[配置代理和服务器数据存储位置](https://spiffe.io/docs/latest/deploying/configuring/#configuring-where-to-store-agent-and-server-data)。
+数据库将在 `connection_string` 中指定的路径中创建。有关选择 SPIRE 相关数据位置的更多信息，请参见[配置代理和服务器数据存储位置](https://spiffe.io/docs/latest/deploying/configuring/#configuring-where-to-store-agent-and-server-data)。
 
 #### 将 MySQL 配置为数据存储
 
@@ -290,7 +290,7 @@ Unix 工作负载证明通过检查 Unix 域套接字的调用者来确定调用
     }
 ```
 
-`connection_string` 的值采用键=值格式，但也可以使用连接 URI（参见 Postgres 文档中支持的连接字符串格式的[34.1.1. 连接字符串](https://www.postgresql.org/docs/11/libpq-connect.html#LIBPQ-CONNSTRING)）。
+`connection_string` 的值采用键=值格式，但也可以使用连接 URI（参见 Postgres 文档中支持的连接字符串格式的 [34.1.1. 连接字符串](https://www.postgresql.org/docs/11/libpq-connect.html#LIBPQ-CONNSTRING)）。
 
 以下是你设置的连接字符串值的摘要：
 
@@ -308,10 +308,10 @@ SPIRE 代理和 SPIRE 服务器在正常运行过程中会生成私钥和证书�
 
 目前，SPIRE 在代理和服务器上支持两种密钥管理策略。
 
-- 存储于内存中。在此策略中，密钥和证书仅存储在内存中。这意味着，如果服务器或代理崩溃或重新启动，则必须重新生成密钥。对于 SPIRE 代理来说，这通常需要代理在重新启动时重新对服务器进行验证。通过启用和配置内存密钥管理器插件来管理此策略，可用于[SPIRE 服务器](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_keymanager_memory.md)和/或[SPIRE 代理](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_keymanager_memory.md)*。
-- 存储在磁盘上。在此策略中，密钥和证书存储在指定的磁盘文件中。使用此方法的一个优点是它们在 SPIRE 服务器或代理重新启动后仍然存在。缺点是，由于密钥存储在磁盘文件中，必须采取其他预防措施，以防止恶意进程读取这些文件。通过启用和配置磁盘密钥管理器插件来管理此策略，可用于[SPIRE 服务器](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_keymanager_disk.md)和/或[SPIRE 代理](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_keymanager_disk.md)*。
+- 存储于内存中。在此策略中，密钥和证书仅存储在内存中。这意味着，如果服务器或代理崩溃或重新启动，则必须重新生成密钥。对于 SPIRE 代理来说，这通常需要代理在重新启动时重新对服务器进行验证。通过启用和配置内存密钥管理器插件来管理此策略，可用于 [SPIRE 服务器](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_keymanager_memory.md)和/或 [SPIRE 代理](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_keymanager_memory.md)。
+- 存储在磁盘上。在此策略中，密钥和证书存储在指定的磁盘文件中。使用此方法的一个优点是它们在 SPIRE 服务器或代理重新启动后仍然存在。缺点是，由于密钥存储在磁盘文件中，必须采取其他预防措施，以防止恶意进程读取这些文件。通过启用和配置磁盘密钥管理器插件来管理此策略，可用于 [SPIRE 服务器](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_keymanager_disk.md)和/或 [SPIRE 代理](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_keymanager_disk.md)。
 
-另外，SPIRE 可以配置为通过第三方密钥管理器插件集成自定义后端，例如秘密存储。[扩展 SPIRE](https://spiffe.io/docs/latest/spire/developing/extending/)指南对此进行了更详细的介绍。
+另外，SPIRE 可以配置为通过第三方密钥管理器插件集成自定义后端，例如秘密存储。[扩展 SPIRE](https://spiffe.io/docs/latest/spire/developing/extending/) 指南对此进行了更详细的介绍。
 
 ## 配置应用程序将使用的信任根/“上游授权机构”
 
@@ -325,9 +325,9 @@ SPIRE 代理和 SPIRE 服务器在正常运行过程中会生成私钥和证书�
 
 应将此签名密钥视为非常敏感的，因为获取它将允许恶意行为者冒充 SPIRE 服务器并代表其发放身份。
 
-为了确保签名密钥的完整性，SPIRE 服务器可以自行对材料进行签名，使用存储在磁盘上的签名密钥，或委托签名给独立的证书颁发机构（CA），例如 AWS Secrets Manager。此行为通过`server.conf`文件中的`UpstreamAuthority`部分进行配置。
+为了确保签名密钥的完整性，SPIRE 服务器可以自行对材料进行签名，使用存储在磁盘上的签名密钥，或委托签名给独立的证书颁发机构（CA），例如 AWS Secrets Manager。此行为通过 `server.conf` 文件中的 `UpstreamAuthority` 部分进行配置。
 
-有关完整的服务器配置参考，请参阅[SPIRE 服务器配置参考](https://spiffe.io/docs/latest/deploying/spire_server/)。
+有关完整的服务器配置参考，请参阅 [SPIRE 服务器配置参考](https://spiffe.io/docs/latest/deploying/spire_server/)。
 
 #### 配置磁盘上的签名密钥
 
@@ -344,7 +344,7 @@ sudo openssl req \\\\
        -x509 -days 365 -out /opt/spire/conf/root.crt
 ```
 
-通过启用和配置磁盘`UpstreamAuthority`插件，可以管理此策略，用于[SPIRE 服务器](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_upstreamauthority_disk.md)。
+通过启用和配置磁盘 `UpstreamAuthority` 插件，可以管理此策略，用于 [SPIRE 服务器](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_upstreamauthority_disk.md)。
 
 #### 配置 AWS 证书管理器
 
@@ -404,7 +404,3 @@ telemetry {
 可以在各自的配置文件中设置 SPIRE 服务器和 SPIRE Agent 的日志文件位置和日志级别。编辑 `log_file` 值以设置日志文件位置，编辑 `log_level` 值以设置日志级别。此值可以是 DEBUG、INFO、WARN 或 ERROR 中的一个。
 
 默认情况下，SPIRE 日志将输出到 STDOUT。但是，可以通过在 `log_file` 属性中指定文件路径，将 SPIRE Agent 和 Server 配置为直接将日志写入文件。
-
-## 下一步是什么？
-
-在配置完服务器和代理后，请考虑阅读关于[注册工作负载](https://spiffe.io/docs/latest/spire/using/registering/)的指南。

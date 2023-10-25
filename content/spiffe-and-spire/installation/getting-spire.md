@@ -12,7 +12,7 @@ weight: 1
 
 ## Kubernetes
 
-- SPIRE 没有官方的 Helm chart、Kustomize 文件或自定义资源操作器，但[Kubernetes 快速入门](https://spiffe.io/docs/latest/spire/installing/getting-started-k8s/) 包括一套用于测试 SPIRE Server 和 Agent 的基本 Kubernetes YAML 文件
+- SPIRE 没有官方的 Helm chart、Kustomize 文件或自定义资源操作器，但 [Kubernetes 快速入门](https://spiffe.io/docs/latest/spire/installing/getting-started-k8s/) 包括一套用于测试 SPIRE Server 和 Agent 的基本 Kubernetes YAML 文件
 - [spire-tutorials](https://github.com/spiffe/spire-tutorials) 存储库中提供了其他 Kubernetes 演示
 
 ## Linux
@@ -23,4 +23,4 @@ weight: 1
 
 ## MacOS
 
-- 没有预编译的 MacOS 可执行文件可用，但[Linux 和 MacOS X 快速入门](https://spiffe.io/docs/latest/spire/installing/getting-started-linux-macos-x/)* 介绍了如何下载和构建 SPIRE 以测试 SPIRE Server 和 Agent 的简单单节点安装
+- 没有预编译的 MacOS 可执行文件可用，但 [Linux 和 MacOS X 快速入门](https://spiffe.io/docs/latest/spire/installing/getting-started-linux-macos-x/) 介绍了如何下载和构建 SPIRE 以测试 SPIRE Server 和 Agent 的简单单节点安装

@@ -1,5 +1,5 @@
 ---
-weight: 5
+weight: 6
 title: "SPIFFE 信任域和 Bundle"
 ---
 

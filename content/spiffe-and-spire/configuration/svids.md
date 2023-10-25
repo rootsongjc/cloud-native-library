@@ -7,7 +7,7 @@ title: "使用 SVID"
 
 SPIRE 等符合 SPIFFE 的身份提供者将通过 SPIFFE Workload API 公开 SPIFFE 可验证身份文档（SVID）。工作负载可以使用从此 API 检索到的 SVID 来验证消息的来源或在两个工作负载之间建立相互 TLS 安全通道。
 
-# 与 Workload API 交互
+## 与 Workload API 交互
 
 开发需要与 SPIFFE 进行交互的新工作负载的开发人员可以直接与 SPIFFE Workload API 进行交互，以便：
 
@@ -22,16 +22,16 @@ Workload API 不需要任何显式的身份验证（如密钥）。相反，SPIF
 
 该 API 是基于 gRPC 的 API，派生自 [protobuf](https://github.com/spiffe/go-spiffe/blob/main/v2/proto/spiffe/workload/workload.proto)。[gRPC 项目](https://grpc.io/) 提供了从 protobuf 生成各种语言的客户端库的工具。
 
-## 在 Go 中使用 SVID
+### 在 Go 中使用 SVID
 
-如果您在使用 Go 进行开发，SPIFFE 项目维护了一个 Go 客户端库，提供以下功能：
+如果你在使用 Go 进行开发，SPIFFE 项目维护了一个 Go 客户端库，提供以下功能：
 
 - 一个命令行实用程序，用于解析和验证 X.509 证书中编码的 SPIFFE 身份，如 SPIFFE 标准中所述。
 - 一个客户端库，提供与 SPIFFE Workload API 的交互界面。
 
-您可以在 [GitHub](https://github.com/spiffe/go-spiffe) 上找到该库以及 GoDoc 的链接。
+你可以在 [GitHub](https://github.com/spiffe/go-spiffe) 上找到该库以及 GoDoc 的链接。
 
-# 使用 SPIFFE Helper 实用程序
+## 使用 SPIFFE Helper 实用程序
 
 SPIFFE Helper 实用程序是一个通用实用程序，用于构建或与无法直接写入 Workload API 的应用程序集成时非常有用。大体上，该实用程序能够：
 
@@ -40,7 +40,7 @@ SPIFFE Helper 实用程序是一个通用实用程序，用于构建或与无法
 - 主动监视其过期时间，并根据需要从 Workload API 请求刷新的证书和密钥。
 - 一旦获取到更换的证书，向任何已启动的子进程发送信号。
 
-# 使用 SPIRE Agent
+## 使用 SPIRE Agent
 
 SPIRE Agent 二进制文件可用作作为 SPIFFE Workload API 的实现时的 SPIRE 部署的一部分，但它也可以作为 Workload API 的客户端运行，并提供一些简单的实用程序与其进行交互以检索 SPIFFE 凭据。
 

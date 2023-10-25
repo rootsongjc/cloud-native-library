@@ -6,9 +6,9 @@ linkTitle: "SPIRE 联邦架构"
 
 本教程展示了如何对由两个不同 SPIRE 服务器识别的两个 SPIFFE 标识的工作负载进行身份验证。
 
-本文的第一部分演示了如何通过显示 SPIRE 配置文件更改和 `spire-server` 命令来配置 SPIFFE 联邦，以设置股票报价 web 应用的前端和服务后端。本文的第二部分列出了您可以在此教程目录中包含的 Docker Compose 文件中运行的步骤，以显示场景的实际操作。
+本文的第一部分演示了如何通过显示 SPIRE 配置文件更改和 `spire-server` 命令来配置 SPIFFE 联邦，以设置股票报价 web 应用的前端和服务后端。本文的第二部分列出了你可以在此教程目录中包含的 Docker Compose 文件中运行的步骤，以显示场景的实际操作。
 
-在本教程中，您将学到如何：
+在本教程中，你将学到如何：
 
 - 配置每个 SPIRE 服务器以使用 SPIFFE 身份验证和 Web PKI 身份验证公开其 SPIFFE 联邦捆绑点。
 - 配置 SPIRE 服务器以从彼此检索信任捆绑点。
@@ -113,17 +113,17 @@ SPIFFE 联邦的基线组件包括：
  }
 ```
 
-这将在任何 IP 地址上的端口 443 上发布联邦捆绑点。我们使用端口 443，因为我们演示了使用 Let's Encrypt 作为我们的 ACME 提供商（如果您要使用其他提供商，则必须设置 `directory_url` 可配置）。请注意，`tos_accepted` 设置为 `true`，这意味着我们接受了我们的 ACME 提供商的服务条款，这在使用 Let's Encrypt 时是必要的。
+这将在任何 IP 地址上的端口 443 上发布联邦捆绑点。我们使用端口 443，因为我们演示了使用 Let's Encrypt 作为我们的 ACME 提供商（如果你要使用其他提供商，则必须设置 `directory_url` 可配置）。请注意，`tos_accepted` 设置为 `true`，这意味着我们接受了我们的 ACME 提供商的服务条款，这在使用 Let's Encrypt 时是必要的。
 
-要使使用 Web PKI 的 SPIFFE 联邦正常工作，您必须拥有为 `domain_name`（在我们的示例中为 `broker.example`）指定的 DNS 域名，并且该域名必须解析到公开联邦捆绑点的 SPIRE 服务器 IP 地址。
+要使使用 Web PKI 的 SPIFFE 联邦正常工作，你必须拥有为 `domain_name`（在我们的示例中为 `broker.example`）指定的 DNS 域名，并且该域名必须解析到公开联邦捆绑点的 SPIRE 服务器 IP 地址。
 
 ## 配置 SPIRE 服务器以从彼此检索信任捆绑点
 
-在配置联邦端点后，启用 SPIFFE 联邦的下一步是配置 SPIRE 服务器以查找其他信任域的信任捆绑点。在 `server.conf` 中的 `federates_with` 配置选项是您指定另一个信任域的端点的地方。在使用不同的身份验证方法时，该部分的配置有一些细微的差异，根据每个端点配置文件的要求。
+在配置联邦端点后，启用 SPIFFE 联邦的下一步是配置 SPIRE 服务器以查找其他信任域的信任捆绑点。在 `server.conf` 中的 `federates_with` 配置选项是你指定另一个信任域的端点的地方。在使用不同的身份验证方法时，该部分的配置有一些细微的差异，根据每个端点配置文件的要求。
 
 ### 使用 SPIFFE 身份验证配置信任捆绑点位置（https_spiffe）
 
-如前所述，股票市场服务提供商的 SPIRE 服务器将其联邦端点监听在任何 IP 地址的端口 `8443` 上。我们还假设 `spire-server-stock` 是一个解析为股票市场服务的 SPIRE 服务器 IP 地址的 DNS 名称。 （这里的 Docker Compose 演示使用主机名 `spire-server-stock`，但在典型的使用中，您会指定一个 FQDN。）然后，经纪人的 SPIRE 服务器必须配置以下 `federates_with` 部分：
+如前所述，股票市场服务提供商的 SPIRE 服务器将其联邦端点监听在任何 IP 地址的端口 `8443` 上。我们还假设 `spire-server-stock` 是一个解析为股票市场服务的 SPIRE 服务器 IP 地址的 DNS 名称。 （这里的 Docker Compose 演示使用主机名 `spire-server-stock`，但在典型的使用中，你会指定一个 FQDN。）然后，经纪人的 SPIRE 服务器必须配置以下 `federates_with` 部分：
 
 ```ini
  server {
@@ -278,11 +278,11 @@ stock-market> spire-server entry create \
 
 本节将解释如何使用 Docker Compose 尝试此教程中描述的 SPIFFE 身份验证场景的示例实现。
 
-尽管此处没有显示出来，但您可以对 Web PKI 身份验证部分中显示的更改进行更改以尝试 Web PKI 场景。请记住，要配置 Web PKI，`domain_name` 指定的 FQDN 必须由您拥有，并且可以通过 DNS 通过互联网进行解析。
+尽管此处没有显示出来，但你可以对 Web PKI 身份验证部分中显示的更改进行更改以尝试 Web PKI 场景。请记住，要配置 Web PKI，`domain_name` 指定的 FQDN 必须由你拥有，并且可以通过 DNS 通过互联网进行解析。
 
 ## 要求
 
-本教程的所需文件可以在 [https://github.com/spiffe/spire-tutorials](https://github.com/spiffe/spire-tutorials) 的 `docker-compose/federation` 目录中找到。如果您尚未克隆该存储库，请立即执行此操作。
+本教程的所需文件可以在 [https://github.com/spiffe/spire-tutorials](https://github.com/spiffe/spire-tutorials) 的 `docker-compose/federation` 目录中找到。如果你尚未克隆该存储库，请立即执行此操作。
 
 在继续之前，请查看以下系统要求：
 
@@ -334,7 +334,7 @@ $ ./quotes.sh
 
 ## 测试
 
-现在，您可以在浏览器中访问 `http://localhost:8080` 来查看股票报价。
+现在，你可以在浏览器中访问 `http://localhost:8080` 来查看股票报价。
 
 ## 清理
 

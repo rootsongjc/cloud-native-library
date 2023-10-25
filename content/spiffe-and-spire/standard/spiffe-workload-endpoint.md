@@ -1,5 +1,5 @@
 ---
-weight: 4
+weight: 5
 title: SPIFFE 工作负载端点
 ---
 

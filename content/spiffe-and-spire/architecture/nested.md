@@ -14,7 +14,7 @@ linkTitle: "SPIRE 嵌套架构"
 
 嵌套拓扑结构非常适合多云部署。由于可以混合匹配节点验证者，下游 SPIRE 服务器可以位于不同的云提供商环境中，并为工作负载和 SPIRE 代理提供身份。
 
-在本教程中，您将学习以下内容：
+在本教程中，你将学习以下内容：
 
 - 在嵌套拓扑中配置 SPIRE
 - 配置 UpstreamAuthority 插件
@@ -141,7 +141,7 @@ docker-compose logs -f -t
 
 ### 创建工作负载注册项
 
-为了测试场景，我们创建两个工作负载注册项，一个用于每个嵌套 SPIRE Server（`nestedA`和`nestedB`）。测试的目标是演示在嵌套配置中创建的 SVID 在整个信任域中都有效，而不仅仅在生成 SVID 的 SPIRE Server 的范围内。以下命令演示了我们将用于创建这两个工作负载注册项的命令行选项，但您可以使用下面显示的`create-workload-registration-entries.sh`脚本运行这些命令。
+为了测试场景，我们创建两个工作负载注册项，一个用于每个嵌套 SPIRE Server（`nestedA`和`nestedB`）。测试的目标是演示在嵌套配置中创建的 SVID 在整个信任域中都有效，而不仅仅在生成 SVID 的 SPIRE Server 的范围内。以下命令演示了我们将用于创建这两个工作负载注册项的命令行选项，但你可以使用下面显示的`create-workload-registration-entries.sh`脚本运行这些命令。
 
 ```bash
 # nestedA部署的工作负载
@@ -202,7 +202,7 @@ docker-compose exec -u 1001 -T nestedB-agent \
 
 ## 清理
 
-完成本教程后，您可以使用以下 Bash 脚本停止所有容器：
+完成本教程后，你可以使用以下 Bash 脚本停止所有容器：
 
 ```bash
 bash scripts/clean-env.sh
