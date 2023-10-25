@@ -339,7 +339,7 @@
         content="2023-10-23T00:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2023-10-25T11:53:22&#43;08:00">
+    <meta property="article:modified_time" content="2023-10-25T19:21:02&#43;08:00">
   
 
   
@@ -923,6 +923,11 @@
 
 
 
+  <li class="child level1 "><a href="/spiffe-and-spire/standard/jwt-svid/">JWT SVID</a></li>
+
+
+
+
   <li class="child level1 "><a href="/spiffe-and-spire/standard/spiffe-workload-api/">SPIFFE 工作负载 API</a></li>
 
 
@@ -1202,9 +1207,9 @@
     <li><a href="#步骤-3配置-spire-服务器">步骤 3：配置 SPIRE 服务器</a>
       <ul>
         <li><a href="#创建服务器服务帐户">创建服务器服务帐户</a></li>
-        <li><a href="#创建服务器捆绑包配置映射角色和-clusterrolebinding">创建服务器捆绑包配置映射、角色和 ClusterRoleBinding</a></li>
-        <li><a href="#创建服务器配置映射">创建服务器配置映射</a></li>
-        <li><a href="#创建服务器有状态集">创建服务器有状态集</a></li>
+        <li><a href="#创建服务器捆绑包-configmap角色和-clusterrolebinding">创建服务器捆绑包 ConfigMap、角色和 ClusterRoleBinding</a></li>
+        <li><a href="#创建服务器-configmap">创建服务器 ConfigMap</a></li>
+        <li><a href="#创建服务器-statefulset">创建服务器 StatefulSet</a></li>
         <li><a href="#创建服务器服务">创建服务器服务</a></li>
       </ul>
     </li>
@@ -1255,13 +1260,13 @@
 <p>要安装服务器和代理，请执行以下操作：</p>
 <ol>
 <li>
-<p>从<a href="https://spiffe.io/downloads/#spire-releases" target="_blank" rel="noopener">SPIRE 下载页面</a>获取最新的 tarball，然后使用以下命令将其解压缩到/opt/spire 目录中：</p>
+<p>从 <a href="https://spiffe.io/downloads/#spire-releases" target="_blank" rel="noopener">SPIRE 下载页面</a>获取最新的 tarball，然后使用以下命令将其解压缩到 <code>/opt/spire</code> 目录中：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">wget https://github.com/spiffe/spire/releases/download/v1.8.2/spire-1.8.2-linux-amd64-musl.tar.gz
 </span></span><span class="line"><span class="cl">tar zvxf spire-1.8.2-linux-amd64-musl.tar.gz
 </span></span><span class="line"><span class="cl">sudo cp -r spire-1.8.2/. /opt/spire/
 </span></span></code></pre></div></li>
 <li>
-<p>为了方便起见，将<code>spire-server</code>和<code>spire-agent</code>添加到你的 $PATH 中：</p>
+<p>为了方便起见，将 <code>spire-server</code> 和 <code>spire-agent</code> 添加到你的 <code>$PATH</code> 中：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo ln -s /opt/spire/bin/spire-server /usr/bin/spire-server
 </span></span><span class="line"><span class="cl">sudo ln -s /opt/spire/bin/spire-agent /usr/bin/spire-agent
 </span></span></code></pre></div></li>
@@ -1272,18 +1277,18 @@
 <li>配置信任域</li>
 <li>配置服务器证书颁发机构（CA），可能包括配置 UpstreamAuthority 插件</li>
 <li>配置节点认证插件</li>
-<li>配置用于持久化数据的默认.data 目录</li>
+<li>配置用于持久化数据的默认 <code>.data</code> 目录</li>
 </ol>
 <p>但是，为了简单起见，仅需完成步骤 1、2 和 3 即可快速部署演示目的。</p>
-<p>要配置步骤 1、2 和 4 中的项，请编辑服务器的配置文件，位于/opt/spire/conf/server/server.conf。</p>
+<p>要配置步骤 1、2 和 4 中的项，请编辑服务器的配置文件，位于 <code>/opt/spire/conf/server/server.conf</code>。</p>
 <p>有关如何配置 SPIRE 的详细信息，请参阅<a href="https://spiffe.io/docs/latest/spire/using/configuring/" target="_blank" rel="noopener">配置 SPIRE</a>，特别是节点认证和工作负载认证。</p>
 <p>注意，SPIRE 服务器在修改配置后必须重新启动才能生效。</p>
 <p>请参阅<a href="https://spiffe.io/docs/latest/spire/installing/install-agents/" target="_blank" rel="noopener">安装 SPIRE 代理</a>，了解如何安装 SPIRE 代理。</p>
 <h1 id="如何在-kubernetes-上安装-spire-服务器">如何在 Kubernetes 上安装 SPIRE 服务器</h1>
 <p>本节将逐步向你介绍在 Kubernetes 集群中运行服务器并配置工作负载容器以访问 SPIRE 的方法。</p>
-<p>你必须从包含用于配置的.yaml 文件的目录中运行所有命令。</p>
+<p>你必须从包含用于配置的 <code>.yaml</code> 文件的目录中运行所有命令。</p>
 <h2 id="步骤-1获取所需文件">步骤 1：获取所需文件</h2>
-<p>要获取所需的.yaml 文件，请克隆 <a href="https://github.com/spiffe/spire-tutorials" target="_blank" rel="noopener">https://github.com/spiffe/spire-tutorials</a> 并从 spire-tutorials/k8s/quickstart 子目录复制.yaml 文件。</p>
+<p>要获取所需的.yaml 文件，请克隆 <a href="https://github.com/spiffe/spire-tutorials" target="_blank" rel="noopener">https://github.com/spiffe/spire-tutorials</a> 并从 <code>spire-tutorials/k8s/quickstart</code> 子目录复制 <code>.yaml</code> 文件。</p>
 <h2 id="步骤-2为-spire-组件配置-kubernetes-命名空间">步骤 2：为 SPIRE 组件配置 Kubernetes 命名空间</h2>
 <p>按照以下步骤配置部署 SPIRE 服务器和 SPIRE 代理的 spire 命名空间。</p>
 <ol>
@@ -1300,9 +1305,9 @@
 <p>要在 Kubernetes 上配置 SPIRE 服务器，你需要：</p>
 <ol>
 <li>创建服务器服务帐户</li>
-<li>创建服务器捆绑包配置映射</li>
-<li>创建服务器配置映射</li>
-<li>创建服务器有状态集</li>
+<li>创建服务器捆绑包 ConfigMap</li>
+<li>创建服务器 ConfigMap</li>
+<li>创建服务器 StatefulSet</li>
 <li>创建服务器服务</li>
 </ol>
 <p>有关详细信息，请参阅以下各节。</p>
@@ -1311,28 +1316,28 @@
 <pre tabindex="0"><code>$ kubectl apply -f server-account.yaml
 </code></pre><p>通过运行以下命令确认成功创建，并验证该服务帐户是否出现在以下命令的输出中：</p>
 <pre tabindex="0"><code>$ kubectl get serviceaccount --namespace spire
-</code></pre><h3 id="创建服务器捆绑包配置映射角色和-clusterrolebinding">创建服务器捆绑包配置映射、角色和 ClusterRoleBinding</h3>
-<p>为了使服务器能够为代理提供证书以用于在建立连接时验证服务器的身份，服务器需要具备在 spire 命名空间中获取和修补配置映射对象的功能。</p>
-<p>在这种部署中，代理和服务器共享同一集群，SPIRE 可以配置为定期生成这些证书并将证书内容更新到配置映射中。为此，服务器需要能够在 Kubernetes RBAC 中获取和修补配置映射对象。</p>
-<p>通过应用 spire-bundle-configmap.yaml 配置文件来创建名为 spire-bundle 的配置映射：</p>
+</code></pre><h3 id="创建服务器捆绑包-configmap角色和-clusterrolebinding">创建服务器捆绑包 ConfigMap、角色和 ClusterRoleBinding</h3>
+<p>为了使服务器能够为代理提供证书以用于在建立连接时验证服务器的身份，服务器需要具备在 spire 命名空间中获取和修补 ConfigMap 对象的功能。</p>
+<p>在这种部署中，代理和服务器共享同一集群，SPIRE 可以配置为定期生成这些证书并将证书内容更新到 ConfigMap 中。为此，服务器需要能够在 Kubernetes RBAC 中获取和修补 ConfigMap 对象。</p>
+<p>通过应用 <code>spire-bundle-configmap.yaml</code> 配置文件来创建名为 <code>spire-bundle</code> 的 ConfigMap：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ kubectl apply -f spire-bundle-configmap.yaml
-</span></span></code></pre></div><p>通过运行以下命令确认成功创建，并验证 spire-bundle 配置映射是否列在以下命令的输出中：</p>
+</span></span></code></pre></div><p>通过运行以下命令确认成功创建，并验证 <code>spire-bundle</code> ConfigMap 是否列在以下命令的输出中：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ kubectl get configmaps --namespace spire <span class="p">|</span> grep spire
-</span></span></code></pre></div><p>为了允许服务器读取和写入此配置映射，必须创建一个 ClusterRole，授予 Kubernetes RBAC 相应的特权，并将 ClusterRoleBinding 与前一步创建的服务帐户关联。</p>
-<p>通过应用 server-cluster-role.yaml 配置文件来创建名为 spire-server-trust-role 的 ClusterRole 和相应的 ClusterRoleBinding：</p>
+</span></span></code></pre></div><p>为了允许服务器读取和写入此 ConfigMap，必须创建一个 ClusterRole，授予 Kubernetes RBAC 相应的特权，并将 ClusterRoleBinding 与前一步创建的服务帐户关联。</p>
+<p>通过应用 <code>server-cluster-role.yaml</code> 配置文件来创建名为 <code>spire-server-trust-role</code> 的 ClusterRole 和相应的 ClusterRoleBinding：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ kubectl apply -f server-cluster-role.yaml
-</span></span></code></pre></div><p>通过运行以下命令确认成功创建，并验证 spire-server-trust-role ClusterRole 是否出现在以下命令的输出中：</p>
+</span></span></code></pre></div><p>通过运行以下命令确认成功创建，并验证 <code>spire-server-trust-role</code> ClusterRole 是否出现在以下命令的输出中：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ kubectl get clusterroles --namespace spire <span class="p">|</span> grep spire
-</span></span></code></pre></div><h3 id="创建服务器配置映射">创建服务器配置映射</h3>
-<p>服务器在 Kubernetes 配置映射中进行配置，该配置映射在 <code>server-configmap.yaml</code> 中指定了一些重要的目录，特别是 <code>/run/spire/data和/run/spire/config</code>。这些卷在部署服务器容器时绑定。</p>
+</span></span></code></pre></div><h3 id="创建服务器-configmap">创建服务器 ConfigMap</h3>
+<p>服务器在 Kubernetes ConfigMap 中进行配置，该 ConfigMap 在 <code>server-configmap.yaml</code> 中指定了一些重要的目录，特别是 <code>/run/spire/data和/run/spire/config</code>。这些卷在部署服务器容器时绑定。</p>
 <p>请参阅<a href="https://spiffe.io/docs/latest/spire/using/configuring/" target="_blank" rel="noopener">配置 SPIRE</a>部分，了解如何配置 SPIRE 服务器的详细信息，特别是节点认证和工作负载认证。</p>
 <p>注意，SPIRE 服务器在修改配置后必须重新启动才能生效。</p>
-<p>使用以下命令将服务器配置映射应用到你的集群：</p>
+<p>使用以下命令将服务器 ConfigMap 应用到你的集群：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ kubectl apply -f server-configmap.yaml
-</span></span></code></pre></div><h3 id="创建服务器有状态集">创建服务器有状态集</h3>
-<p>通过应用 server-statefulset.yaml 配置文件来部署服务器：</p>
+</span></span></code></pre></div><h3 id="创建服务器-statefulset">创建服务器 StatefulSet</h3>
+<p>通过应用 <code>server-statefulset.yaml</code> 配置文件来部署服务器：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ kubectl apply -f server-statefulset.yaml
-</span></span></code></pre></div><p>这将在 spire 命名空间中创建一个名为 spire-server 的有状态集，并启动一个 spire-server 的 Pod，如以下两个命令的输出所示：</p>
+</span></span></code></pre></div><p>这将在 spire 命名空间中创建一个名为 <code>spire-server</code> 的 StatefulSet，并启动一个 <code>spire-server</code> 的 Pod，如以下两个命令的输出所示：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ kubectl get statefulset --namespace spire
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl">NAME           READY   AGE
@@ -1342,7 +1347,7 @@
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl">NAME                           READY   STATUS    RESTARTS   AGE
 </span></span><span class="line"><span class="cl">spire-server-0                 1/1     Running   <span class="m">0</span>          86m
-</span></span></code></pre></div><p>当你部署服务器时，它会自动在 SPIRE 服务器的 GRPC 端口上配置 livenessProbe，以确保容器的可用性。</p>
+</span></span></code></pre></div><p>当你部署服务器时，它会自动在 SPIRE 服务器的 gRPC 端口上配置 livenessProbe，以确保容器的可用性。</p>
 <p>服务器部署时，绑定到以下表中总结的卷：</p>
 <table>
 <thead>
@@ -1355,20 +1360,20 @@
 <tbody>
 <tr>
 <td>spire-config</td>
-<td>引用在前一步中创建的 spire-server 配置映射</td>
-<td>/run/spire/config</td>
+<td>引用在前一步中创建的 spire-server ConfigMap</td>
+<td><code>/run/spire/config</code></td>
 </tr>
 <tr>
 <td>spire-data</td>
 <td>服务器的 SQLite 数据库和密钥文件的 hostPath</td>
-<td>/run/spire/data</td>
+<td><code>/run/spire/data</code></td>
 </tr>
 </tbody>
 </table>
 <h3 id="创建服务器服务">创建服务器服务</h3>
 <p>通过应用 server-service.yaml 配置文件来创建服务器服务：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ kubectl apply -f server-service.yaml
-</span></span></code></pre></div><p>通过运行以下命令确认成功创建，并验证 spire 命名空间现在是否有一个名为 spire-server 的服务：</p>
+</span></span></code></pre></div><p>通过运行以下命令确认成功创建，并验证 spire 命名空间现在是否有一个名为 <code>spire-server</code> 的服务：</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ kubectl get services --namespace spire
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl">NAME           TYPE       CLUSTER-IP      EXTERNAL-IP   PORT<span class="o">(</span>S<span class="o">)</span>          AGE
