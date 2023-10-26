@@ -25,11 +25,11 @@ SPIFFE 联邦的基线组件包括：
 
 ## 场景
 
-假设我们有一个股票经纪人的 web 应用程序，它希望从股票市场 web 服务提供商那里获取股票报价并显示它们。情景如下：
+假设我们有一个股票 broker（经纪人）的 web 应用程序，它希望从股票 market web 服务提供商那里获取股票报价并显示它们。情景如下：
 
-1. 用户在浏览器中输入经纪人 web 应用的股票报价 URL。
-2. Web 应用的工作负载接收到请求并使用 mTLS 向股票市场服务发出获取报价的 HTTP 请求。
-3. 股票市场服务收到请求并在响应中发送报价。
+1. 用户在浏览器中输入 broker web 应用的股票报价 URL。
+2. Web 应用的工作负载接收到请求并使用 mTLS 向股票 market 服务发出获取报价的 HTTP 请求。
+3. 股票 market 服务收到请求并在响应中发送报价。
 4. Web 应用呈现使用返回的报价的股票报价页面并将其发送到浏览器。
 5. 浏览器向用户显示报价。Web 应用包括一些 JavaScript 以便每隔 1 秒刷新页面，因此每秒都会执行这些步骤。
 
@@ -43,7 +43,7 @@ SPIFFE 联邦的基线组件包括：
 
 ### 使用 SPIFFE 身份验证配置联邦捆绑点
 
-要配置经纪人的 SPIRE 服务器捆绑点端点，我们在经纪人的 SPIRE 服务器配置文件中使用了 `federation` 部分（默认为 `server.conf`）：
+要配置 broker 的 SPIRE 服务器捆绑点端点，我们在 broker 的 SPIRE 服务器配置文件中使用了 `federation` 部分（默认为 `server.conf`）：
 
 ```
  server {
@@ -64,7 +64,7 @@ SPIFFE 联邦的基线组件包括：
 
 这将在运行 SPIRE 服务器的主机中的任何 IP 地址上的端口 8443 上发布联邦捆绑点。
 
-另一方面，股票市场服务提供商的 SPIRE 服务器配置类似：
+另一方面，股票 market 服务提供商的 SPIRE 服务器配置类似：
 
 ```ini
  server {
@@ -87,9 +87,9 @@ SPIFFE 联邦的基线组件包括：
 
 ### 使用 Web PKI 身份验证配置联邦捆绑点
 
-我们将假设仅经纪人的 SPIRE 服务器将使用 Web PKI 身份验证来配置其联邦捆绑点。股票市场 SPIRE 服务器仍将使用 SPIFFE 身份验证。因此，股票市场 SPIRE 服务器配置与前一节中所见相同。
+我们将假设仅 broker 的 SPIRE 服务器将使用 Web PKI 身份验证来配置其联邦捆绑点。股票 market SPIRE 服务器仍将使用 SPIFFE 身份验证。因此，股票 market SPIRE 服务器配置与前一节中所见相同。
 
-然后，要配置经纪人的 SPIRE 服务器捆绑点端点，我们将 `federation` 部分配置如下：
+然后，要配置 broker 的 SPIRE 服务器捆绑点端点，我们将 `federation` 部分配置如下：
 
 ```ini
  server {
@@ -123,7 +123,7 @@ SPIFFE 联邦的基线组件包括：
 
 ### 使用 SPIFFE 身份验证配置信任捆绑点位置（https_spiffe）
 
-如前所述，股票市场服务提供商的 SPIRE 服务器将其联邦端点监听在任何 IP 地址的端口 `8443` 上。我们还假设 `spire-server-stock` 是一个解析为股票市场服务的 SPIRE 服务器 IP 地址的 DNS 名称。 （这里的 Docker Compose 演示使用主机名 `spire-server-stock`，但在典型的使用中，你会指定一个 FQDN。）然后，经纪人的 SPIRE 服务器必须配置以下 `federates_with` 部分：
+如前所述，股票 market 服务提供商的 SPIRE 服务器将其联邦端点监听在任何 IP 地址的端口 `8443` 上。我们还假设 `spire-server-stock` 是一个解析为股票 market 服务的 SPIRE 服务器 IP 地址的 DNS 名称。 （这里的 Docker Compose 演示使用主机名 `spire-server-stock`，但在典型的使用中，你会指定一个 FQDN。）然后，broker 的 SPIRE 服务器必须配置以下 `federates_with` 部分：
 
 ```ini
  server {
@@ -148,9 +148,9 @@ SPIFFE 联邦的基线组件包括：
  }
 ```
 
-现在，经纪人的 SPIRE 服务器知道在哪里找到可以用于验证包含来自 `stockmarket.example` 信任域的身份的信任捆绑点。
+现在，broker 的 SPIRE 服务器知道在哪里找到可以用于验证包含来自 `stockmarket.example` 信任域的身份的信任捆绑点。
 
-另一方面，股票市场服务提供商的 SPIRE 服务器必须以类似的方式进行配置：
+另一方面，股票 market 服务提供商的 SPIRE 服务器必须以类似的方式进行配置：
 
 ```ini
  server {
@@ -179,7 +179,7 @@ SPIFFE 联邦的基线组件包括：
 
 ### 使用 Web PKI 身份验证配置信任捆绑点位置（https_web）
 
-如前所述，在这种备选方案中，我们假设只有经纪人的 SPIRE 服务器将使用 Web PKI 身份验证来配置其联邦端点，因此经纪人服务器的 `federates_with` 配置与前一节中所见相同。然而，股票市场服务提供商的 SPIRE 服务器需要一个不同的配置，它使用 "https_web" 配置文件而不是 "https_spiffe"：
+如前所述，在这种备选方案中，我们假设只有 broker 的 SPIRE 服务器将使用 Web PKI 身份验证来配置其联邦端点，因此 broker 服务器的 `federates_with` 配置与前一节中所见相同。然而，股票 market 服务提供商的 SPIRE 服务器需要一个不同的配置，它使用 "https_web" 配置文件而不是 "https_spiffe"：
 
 ```ini
  server {
@@ -212,27 +212,27 @@ SPIFFE 联邦的基线组件包括：
 
 ### 获取引导信任捆绑点
 
-假设我们想要获取经纪人的 SPIRE 服务器信任捆绑点。在运行经纪人的 SPIRE 服务器的节点上运行：
+假设我们想要获取 broker 的 SPIRE 服务器信任捆绑点。在运行 broker 的 SPIRE 服务器的节点上运行：
 
-```
+```bash
 broker> spire-server bundle show -format spiffe > broker.example.bundle
 ```
 
-这会将信任捆绑点保存在 `broker.example.bundle` 文件中。然后，经纪人必须将此文件的副本提供给股票市场服务人员，以便他们可以将此信任
+这会将信任捆绑点保存在 `broker.example.bundle` 文件中。然后，broker 必须将此文件的副本提供给股票 market 服务人员，以便他们可以将此信任
 
-捆绑点存储在他们的 SPIRE 服务器上，并将其与 `broker.example` 信任域关联起来。要做到这一点，股票市场服务人员必须在他们运行 SPIRE 服务器的节点上运行以下命令：
+捆绑点存储在他们的 SPIRE 服务器上，并将其与 `broker.example` 信任域关联起来。要做到这一点，股票 market 服务人员必须在他们运行 SPIRE 服务器的节点上运行以下命令：
 
-```
+```bash
 stock-market> spire-server bundle set -format spiffe -id spiffe://broker.example -path /some/path/broker.example.bundle
 ```
 
-此时，股票市场服务的 SPIRE 服务器可以验证具有 `broker.example` 信任域的 SPIFFE ID 的 SVID。但是，经纪人的 SPIRE 服务器尚无法验证具有 `stockmarket.example` 信任域的 SPIFFE ID 的 SVID。要使此成为可能，股票市场人员必须在他们运行 SPIRE 服务器的节点上运行以下命令：
+此时，股票 market 服务的 SPIRE 服务器可以验证具有 `broker.example` 信任域的 SPIFFE ID 的 SVID。但是，broker 的 SPIRE 服务器尚无法验证具有 `stockmarket.example` 信任域的 SPIFFE ID 的 SVID。要使此成为可能，股票 market 人员必须在他们运行 SPIRE 服务器的节点上运行以下命令：
 
 ```
 stock-market> spire-server bundle show -format spiffe > stockmarket.example.bundle
 ```
 
-然后，股票市场人员必须将此文件的副本提供给经纪人，以便他们可以将此信任捆绑点存储在他们的 SPIRE 服务器上，并将其与 `stockmarket.example` 信任域关联起来。要做到这一点，经纪人必须在他们运行 SPIRE 服务器的节点上运行以下命令：
+然后，股票 market 人员必须将此文件的副本提供给 broker，以便他们可以将此信任捆绑点存储在他们的 SPIRE 服务器上，并将其与 `stockmarket.example` 信任域关联起来。要做到这一点，broker 必须在他们运行 SPIRE 服务器的节点上运行以下命令：
 
 ```
 broker> spire-server bundle set -format spiffe -id spiffe://stockmarket.example -path /some/path/stockmarket.example.bundle
@@ -240,15 +240,15 @@ broker> spire-server bundle set -format spiffe -id spiffe://stockmarket.example 
 
 现在，两台 SPIRE 服务器都可以验证具有彼此信任域的 SPIFFE ID 的 SVID，因此两者可以开始从彼此的联邦端点获取信任捆绑点更新。此外，从现在起，他们可以创建用于联合的注册条目，如下一节所示。
 
-请注意，在经纪人的 SPIRE 服务器为其联邦捆绑点使用 Web PKI 身份验证时，不需要创建 `broker.example.bundle` 文件（后来由股票市场服务导入）。
+请注意，在 broker 的 SPIRE 服务器为其联邦捆绑点使用 Web PKI 身份验证时，不需要创建 `broker.example.bundle` 文件（后来由股票 market 服务导入）。
 
 ## 为联合创建注册条目
 
 现在，SPIRE 服务器具有了彼此的信任捆绑点，让我们看看它们如何创建用于联合的注册条目。
 
-为简化起见，我们假设股票市场 Web 应用程序和行情服务都在运行 Linux 箱子上，一个属于股票市场组织，另一个属于经纪人。由于它们使用 SPIRE，每个 Linux 箱子上还安装了一个 SPIRE 代理。除此之外，Web 应用程序是使用 `webapp` 用户运行的，行情服务是使用 `quotes-service` 用户运行的。
+为简化起见，我们假设股票 market Web 应用程序和行情服务都在运行 Linux 箱子上，一个属于股票 market 组织，另一个属于 broker。由于它们使用 SPIRE，每个 Linux 箱子上还安装了一个 SPIRE 代理。除此之外，Web 应用程序是使用 `webapp` 用户运行的，行情服务是使用 `quotes-service` 用户运行的。
 
-在经纪人的 SPIRE Server 节点上，经纪人必须创建一个注册条目。`-federatesWith` 标志是必需的，以启用 SPIFFE 联邦：
+在 broker 的 SPIRE Server 节点上，broker 必须创建一个注册条目。`-federatesWith` 标志是必需的，以启用 SPIFFE 联邦：
 
 ```
 broker> spire-server entry create \
@@ -258,9 +258,9 @@ broker> spire-server entry create \
    -federatesWith "spiffe://stockmarket.example"
 ```
 
-通过指定 `-federatesWith` 标志，创建了此注册条目后，当 Web 应用程序的 SPIRE 服务器请求 SVID 时，它将从经纪人的 SPIRE 服务器获取一个具有 `spiffe://broker.example/webapp` 身份的 SVID，并附带与 `stockmarket.example` 信任域关联的信任捆绑点。
+通过指定 `-federatesWith` 标志，创建了此注册条目后，当 Web 应用程序的 SPIRE 服务器请求 SVID 时，它将从 broker 的 SPIRE 服务器获取一个具有 `spiffe://broker.example/webapp` 身份的 SVID，并附带与 `stockmarket.example` 信任域关联的信任捆绑点。
 
-在股票市场服务的一侧，他们必须创建一个注册条目，如下所示：
+在股票 market 服务的一侧，他们必须创建一个注册条目，如下所示：
 
 ```
 stock-market> spire-server entry create \
