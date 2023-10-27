@@ -65,7 +65,7 @@ SPIRE 配置文件可以用 HCL 或 JSON 表示。请参阅示例配置文件部
 | `profiling_names`                 | 将在每个分析标记上转储到磁盘的配置文件名称列表，请参阅分析名称 |                                  |
 | `profiling_port`                  | net/http/pprof 端点的端口号。仅当 `profiling_enabled` 为 `true` 时使用。 |                                  |
 | `server_address`                  | SPIRE 服务器的 DNS 名称或 IP 地址                            |                                  |
-| `server_port`                     | SPIRE服务器的端口号                                          |                                  |
+| `server_port`                     | SPIRE 服务器的端口号                                          |                                  |
 | `socket_path`                     | 绑定 SPIRE Agent API 套接字的位置（仅限 Unix）               | /tmp/spire-agent/public/api.sock |
 | `sds`                             | 可选的 SDS 配置部分                                          |                                  |
 | `trust_bundle_path`               | SPIRE 服务器 CA 捆绑包的路径                                 |                                  |
@@ -77,7 +77,7 @@ SPIRE 配置文件可以用 HCL 或 JSON 表示。请参阅示例配置文件部
 | 实验性的          | 描述                                                        | 默认                    |
 | ----------------- | ----------------------------------------------------------- | ----------------------- |
 | `named_pipe_name` | 用于绑定 SPIRE Agent API 命名管道的管道名称（仅限 Windows） | \spire-agent\public\api |
-| `sync_interval`   | 与指数退避的 SPIRE 服务器同步间隔                           | 5秒                     |
+| `sync_interval`   | 与指数退避的 SPIRE 服务器同步间隔                           | 5 秒                     |
 
 ### 初始信任捆绑配置
 
@@ -170,7 +170,7 @@ health_checks {
 | `-logFormat`                     | 日志格式，                                |                      |
 | `-logLevel`                      | 调试、信息、警告或错误                    |                      |
 | `-serverAddress`                 | SPIRE 服务器的 IP 地址或 DNS 名称         |                      |
-| `-serverPort`                    | SPIRE服务器的端口号                       |                      |
+| `-serverPort`                    | SPIRE 服务器的端口号                       |                      |
 | `-socketPath`                    | 绑定工作负载 API 套接字的位置             |                      |
 | `-trustBundle`                   | SPIRE 服务器 CA 捆绑包的路径              |                      |
 | `-trustBundleUrl`                | 下载 SPIRE 服务器 CA 捆绑包的 URL         |                      |
@@ -180,7 +180,7 @@ health_checks {
 
 在 Windows 平台上，SPIRE Agent 可以选择作为 Windows 服务运行。作为 Windows 服务运行时，唯一支持的命令是 `run` 命令。
 
-*注意：SPIRE不会自动在系统中创建该服务，必须由用户创建。启动服务时，使用 `run` 命令执行 SPIRE Agent 的所有参数都必须作为服务参数传递。*
+*注意：SPIRE 不会自动在系统中创建该服务，必须由用户创建。启动服务时，使用 `run` 命令执行 SPIRE Agent 的所有参数都必须作为服务参数传递。*
 
 ##### 创建 SPIRE Agent Windows 服务的示例
 
@@ -203,7 +203,7 @@ health_checks {
 | `-silent`     | 抑制标准输出                 |                                  |
 | `-socketPath` | SPIRE Agent API 套接字的路径 | /tmp/spire-agent/public/api.sock |
 | `-timeout`    | 等待回复的时间               | 1s                               |
-| `-write`      | 将SVID数据写入指定路径       |                                  |
+| `-write`      | 将 SVID 数据写入指定路径       |                                  |
 
 ### `spire-agent api fetch jwt`
 
@@ -225,7 +225,7 @@ health_checks {
 | `-silent`     | 抑制标准输出                 |                                  |
 | `-socketPath` | SPIRE Agent API 套接字的路径 | /tmp/spire-agent/public/api.sock |
 | `-timeout`    | 等待回复的时间               | 1s                               |
-| `-write`      | 将SVID数据写入指定路径       |                                  |
+| `-write`      | 将 SVID 数据写入指定路径       |                                  |
 
 ### `spire-agent api validate jwt`
 
@@ -309,13 +309,13 @@ plugins {
 }
 ```
 
-## 委托身份API
+## 委托身份 API
 
 委派身份 API 允许授权（即委派）工作负载代表无法由 SPIRE Agent 直接证明的工作负载获取 SVID 和捆绑包。授权工作负载通过向 SPIRE Agent 提供通常在工作负载证明期间获取的选择器来实现此目的。委派身份 API 通过管理 API 端点提供服务。
 
 要启用委派身份 API，请配置管理 API 端点地址和授权委派的 SPIFFE ID 列表。例如：
 
- Unix系统：
+ Unix 系统：
 
 ```hcl
 agent {
@@ -347,13 +347,13 @@ agent {
 
 ## Envoy SDS 支持
 
-SPIRE 代理支持 Envoy Secret Discovery Service (SDS)。 SDS 通过与工作负载 API 相同的 Unix 域套接字提供服务。连接到 SDS 的 Envoy 进程被证明为工作负载。
+SPIRE 代理支持 Envoy Secret Discovery Service (SDS)。SDS 通过与工作负载 API 相同的 Unix 域套接字提供服务。连接到 SDS 的 Envoy 进程被证明为工作负载。
 
 可以使用工作负载的 SPIFFE ID 作为资源名称（例如 `spiffe://example.org/database` ）来获取包含 X509-SVID 的 `tlsv3.TlsCertificate` 资源。或者，如果使用默认名称“default”，则会获取包含工作负载（即 Envoy）的默认 X509-SVID 的 `tlsv3.TlsCertificate` 。默认名称是可配置的（请参阅 SDS 配置下的 `default_svid_name` ）。
 
 可以使用所需信任域的 SPIFFE ID 作为资源名称（例如 `spiffe://example.org` ）来获取包含受信任 CA 证书的 `tlsv3.CertificateValidationContext` 资源。此外，还有另外两个特殊资源名称可用。第一个默认为“ROOTCA”，为代理所属的信任域提供 CA 证书。第二个默认为“ALL”，返回代理所属信任域以及适用于 Envoy 工作负载的任何联合信任域的可信 CA 证书。这些资源名称的默认名称可分别通过 `default_bundle_name` 和 `default_all_bundles_name` 进行配置。 “ALL”资源名称需要支持 SPIFFE 证书验证器扩展，该扩展仅从 Envoy 1.18 开始可用。默认名称是可配置的（请参阅 SDS 配置下的 `default_all_bundles_name` 。
 
-SPIFFE 证书验证器将 Envoy 配置为执行 SPIFFE 身份验证。 SPIRE Agent 返回的验证上下文默认包含此扩展。然而，如果需要标准 X.509 链验证，SPIRE Agent 可以配置为省略扩展。可以通过在 SDS 配置中配置 `disable_spiffe_cert_validation` 来更改默认行为。各个 Envoy 实例还可以通过在 Envoy 节点元数据中配置设置 `disable_spiffe_cert_validation` 键来覆盖默认行为。
+SPIFFE 证书验证器将 Envoy 配置为执行 SPIFFE 身份验证。SPIRE Agent 返回的验证上下文默认包含此扩展。然而，如果需要标准 X.509 链验证，SPIRE Agent 可以配置为省略扩展。可以通过在 SDS 配置中配置 `disable_spiffe_cert_validation` 来更改默认行为。各个 Envoy 实例还可以通过在 Envoy 节点元数据中配置设置 `disable_spiffe_cert_validation` 键来覆盖默认行为。
 
 ## OpenShift 支持
 

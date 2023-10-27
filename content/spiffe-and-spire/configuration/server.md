@@ -12,7 +12,7 @@ linkTitle: "SPIRE Server"
 
 | 类型              | 描述                                                         |
 | ----------------- | ------------------------------------------------------------ |
-| DataStore         | 提供持久存储和HA功能。注意：不再支持数据存储的可插入性。只能使用内置的 SQL 插件。 |
+| DataStore         | 提供持久存储和 HA 功能。注意：不再支持数据存储的可插入性。只能使用内置的 SQL 插件。 |
 | KeyManager        | 为服务器的签名操作实现签名和密钥存储逻辑。对于利用基于硬件的关键操作很有用。 |
 | NodeAttestor      | 为尝试断言其身份的节点实现验证逻辑。一般与同类型的代理插件搭配使用。 |
 | UpstreamAuthority | 允许 SPIRE 服务器与现有 PKI 系统集成。                       |
@@ -80,7 +80,7 @@ SPIRE 配置文件可以用 HCL 或 JSON 表示。请参阅示例配置文件部
 | `profiling_port`        | net/http/pprof 端点的端口号。仅当 `profiling_enabled` 为 `true` 时使用。 |                                                   |
 | `ratelimit`             | 速率限制配置，通常在服务器位于负载均衡器后面时使用（见下文） |                                                   |
 | `socket_path`           | 将 SPIRE 服务器 API 套接字绑定到的路径（仅限 Unix）          | /tmp/spire-server/private/api.sock                |
-| `trust_domain`          | 该服务器所属的信任域（不应超过255个字符）                    |                                                   |
+| `trust_domain`          | 该服务器所属的信任域（不应超过 255 个字符）                    |                                                   |
 
 | ca_subject     | 描述                  | 默认 |
 | -------------- | --------------------- | ---- |
@@ -147,7 +147,7 @@ plugins {
 
 ## 联邦配置
 
-SPIRE 服务器可以配置为与位于不同信任域中的其他 SPIRE 服务器联合。 SPIRE 支持在 SPIRE 服务器配置文件中（静态关系）和通过信任域 API（动态关系）配置联合关系。本节介绍如何在配置文件中配置静态定义的关系。
+SPIRE 服务器可以配置为与位于不同信任域中的其他 SPIRE 服务器联合。SPIRE 支持在 SPIRE 服务器配置文件中（静态关系）和通过信任域 API（动态关系）配置联合关系。本节介绍如何在配置文件中配置静态定义的关系。
 
 *注意：静态关系优先于动态关系。如果需要配置动态关系，请参见 `federation` 命令。静态关系不会反映在 `federation` 命令中。*
 
@@ -212,7 +212,7 @@ server {
 | ------------- | ------------------------------------------------------------ | ---------------------------------------------- |
 | directory_url | 目录端点 URL                                                 | https://acme-v02.api.letsencrypt.org/directory |
 | domain_name   | 证书管理器尝试检索新证书的域                                 |                                                |
-| email         | 联系电子邮件地址。 Let's Encrypt 等 CA 使用它来通知已颁发证书的问题 |                                                |
+| email         | 联系电子邮件地址。Let's Encrypt 等 CA 使用它来通知已颁发证书的问题 |                                                |
 | tos_acceptted | 接受 ACME 服务条款。如果没有设置为 true，并且提供商要求接受，则证书检索将失败 | false                                          |
 
 ### `federation.bundle_endpoint.profile "https_spiffe"` 的配置选项
@@ -269,15 +269,15 @@ health_checks {
 | `-logFile`     | 将日志写入的文件                          |                         |
 | `-logFormat`   | 日志格式，                                |                         |
 | `-logLevel`    | 调试、信息、警告或错误                    |                         |
-| `-serverPort`  | SPIRE服务器的端口号                       |                         |
+| `-serverPort`  | SPIRE 服务器的端口号                       |                         |
 | `-socketPath`  | 将 SPIRE 服务器 API 套接字绑定到的路径    |                         |
-| `-trustDomain` | 该服务器所属的信任域（不应超过255个字符） |                         |
+| `-trustDomain` | 该服务器所属的信任域（不应超过 255 个字符） |                         |
 
 #### 将 SPIRE Server 作为 Windows 服务运行
 
 在 Windows 平台上，SPIRE Server 可以选择作为 Windows 服务运行。作为 Windows 服务运行时，唯一支持的命令是 `run` 命令。
 
-*注意：SPIRE不会自动在系统中创建该服务，必须由用户创建。启动服务时，使用 `run` 命令执行 SPIRE Server 的所有参数都必须作为服务参数传递。*
+*注意：SPIRE 不会自动在系统中创建该服务，必须由用户创建。启动服务时，使用 `run` 命令执行 SPIRE Server 的所有参数都必须作为服务参数传递。*
 
 ##### 创建 SPIRE Server Windows 服务的示例
 
@@ -319,8 +319,8 @@ health_checks {
 | `-selector`      | 用于证明的冒号分隔的类型：值选择器。该参数可以多次使用，以指定必须满足的多个选择器。 |                                        |
 | `-socketPath`    | SPIRE 服务器 API 套接字的路径                                | /tmp/spire-server/private/api.sock     |
 | `-spiffeID`      | 该记录代表的 SPIFFE ID 并将被设置为颁发的 SVID。             |                                        |
-| `-x509SVIDTTL`   | 作为此记录的结果而发出的任何 X509-SVID 的 TTL（以秒为单位）。覆盖 `-ttl` 值。 | 使用 `default_x509_svid_ttl` 配置的TTL |
-| `-jwtSVIDTTL`    | 作为此记录的结果而发出的任何 JWT-SVID 的 TTL（以秒为单位）。覆盖 `-ttl` 值。 | 使用 `default_jwt_svid_ttl` 配置的TTL  |
+| `-x509SVIDTTL`   | 作为此记录的结果而发出的任何 X509-SVID 的 TTL（以秒为单位）。覆盖 `-ttl` 值。 | 使用 `default_x509_svid_ttl` 配置的 TTL |
+| `-jwtSVIDTTL`    | 作为此记录的结果而发出的任何 JWT-SVID 的 TTL（以秒为单位）。覆盖 `-ttl` 值。 | 使用 `default_jwt_svid_ttl` 配置的 TTL  |
 | `-storeSVID`     | 一个布尔值，设置后表示必须通过 SVIDStore 插件存储从此条目生成的 SVID |                                        |
 
 ### `spire-server entry update`
@@ -340,8 +340,8 @@ health_checks {
 | `-selector`      | 用于证明的冒号分隔的类型：值选择器。该参数可以多次使用，以指定必须满足的多个选择器。 |                                        |
 | `-socketPath`    | SPIRE 服务器 API 套接字的路径                                | /tmp/spire-server/private/api.sock     |
 | `-spiffeID`      | 该记录代表的 SPIFFE ID 并将被设置为颁发的 SVID。             |                                        |
-| `-x509SVIDTTL`   | 作为此记录的结果而发出的任何 X509-SVID 的 TTL（以秒为单位）。覆盖 `-ttl` 值。 | 使用 `default_x509_svid_ttl` 配置的TTL |
-| `-jwtSVIDTTL`    | 作为此记录的结果而发出的任何 JWT-SVID 的 TTL（以秒为单位）。覆盖 `-ttl` 值。 | 使用 `default_jwt_svid_ttl` 配置的TTL  |
+| `-x509SVIDTTL`   | 作为此记录的结果而发出的任何 X509-SVID 的 TTL（以秒为单位）。覆盖 `-ttl` 值。 | 使用 `default_x509_svid_ttl` 配置的 TTL |
+| `-jwtSVIDTTL`    | 作为此记录的结果而发出的任何 JWT-SVID 的 TTL（以秒为单位）。覆盖 `-ttl` 值。 | 使用 `default_jwt_svid_ttl` 配置的 TTL  |
 | `storeSVID`      | 一个布尔值，设置后表示必须通过 SVIDStore 插件存储从此条目生成的 SVID |                                        |
 
 ### `spire-server entry count`
@@ -585,7 +585,7 @@ health_checks {
 }
 ```
 
-入口对象在公共protobuf文件中由 `RegistrationEntry` 描述。
+入口对象在公共 protobuf 文件中由 `RegistrationEntry` 描述。
 
 *注意：要创建节点条目，请将 `parent_id` 设置为特殊值 `spiffe://<your-trust-domain>/spire/server` 。这就是在 cli 上传递 `-node` 标志时代码所做的事情。*
 

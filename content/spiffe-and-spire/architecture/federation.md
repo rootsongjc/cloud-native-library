@@ -218,9 +218,7 @@ SPIFFE 联邦的基线组件包括：
 broker> spire-server bundle show -format spiffe > broker.example.bundle
 ```
 
-这会将信任捆绑点保存在 `broker.example.bundle` 文件中。然后，broker 必须将此文件的副本提供给股票 market 服务人员，以便他们可以将此信任
-
-捆绑点存储在他们的 SPIRE 服务器上，并将其与 `broker.example` 信任域关联起来。要做到这一点，股票 market 服务人员必须在他们运行 SPIRE 服务器的节点上运行以下命令：
+这会将信任捆绑点保存在 `broker.example.bundle` 文件中。然后，broker 必须将此文件的副本提供给股票 market 服务人员，以便他们可以将此信任捆绑点存储在他们的 SPIRE 服务器上，并将其与 `broker.example` 信任域关联起来。要做到这一点，股票 market 服务人员必须在他们运行 SPIRE 服务器的节点上运行以下命令：
 
 ```bash
 stock-market> spire-server bundle set -format spiffe -id spiffe://broker.example -path /some/path/broker.example.bundle
@@ -228,13 +226,13 @@ stock-market> spire-server bundle set -format spiffe -id spiffe://broker.example
 
 此时，股票 market 服务的 SPIRE 服务器可以验证具有 `broker.example` 信任域的 SPIFFE ID 的 SVID。但是，broker 的 SPIRE 服务器尚无法验证具有 `stockmarket.example` 信任域的 SPIFFE ID 的 SVID。要使此成为可能，股票 market 人员必须在他们运行 SPIRE 服务器的节点上运行以下命令：
 
-```
+```bash
 stock-market> spire-server bundle show -format spiffe > stockmarket.example.bundle
 ```
 
 然后，股票 market 人员必须将此文件的副本提供给 broker，以便他们可以将此信任捆绑点存储在他们的 SPIRE 服务器上，并将其与 `stockmarket.example` 信任域关联起来。要做到这一点，broker 必须在他们运行 SPIRE 服务器的节点上运行以下命令：
 
-```
+```bash
 broker> spire-server bundle set -format spiffe -id spiffe://stockmarket.example -path /some/path/stockmarket.example.bundle
 ```
 
@@ -246,11 +244,11 @@ broker> spire-server bundle set -format spiffe -id spiffe://stockmarket.example 
 
 现在，SPIRE 服务器具有了彼此的信任捆绑点，让我们看看它们如何创建用于联合的注册条目。
 
-为简化起见，我们假设股票 market Web 应用程序和行情服务都在运行 Linux 箱子上，一个属于股票 market 组织，另一个属于 broker。由于它们使用 SPIRE，每个 Linux 箱子上还安装了一个 SPIRE 代理。除此之外，Web 应用程序是使用 `webapp` 用户运行的，行情服务是使用 `quotes-service` 用户运行的。
+为简化起见，我们假设股票 market Web 应用程序和行情服务都在运行在 Linux 主机上，一个属于股票 market 组织，另一个属于 broker。由于它们使用 SPIRE，每个 Linux 主机上还安装了一个 SPIRE 代理。除此之外，Web 应用程序是使用 `webapp` 用户运行的，行情服务是使用 `quotes-service` 用户运行的。
 
 在 broker 的 SPIRE Server 节点上，broker 必须创建一个注册条目。`-federatesWith` 标志是必需的，以启用 SPIFFE 联邦：
 
-```
+```bash
 broker> spire-server entry create \
    -parentID <SPIRE 代理的 SPIFFE ID> \
    -spiffeID spiffe://broker.example/webapp \
@@ -262,7 +260,7 @@ broker> spire-server entry create \
 
 在股票 market 服务的一侧，他们必须创建一个注册条目，如下所示：
 
-```
+```bash
 stock-market> spire-server entry create \
    -parentID <SPIRE 代理的 SPIFFE ID> \
    -spiffeID spiffe://stockmarket.example/quotes-service \
@@ -274,13 +272,13 @@ stock-market> spire-server entry create \
 
 以上就是全部内容。现在，所有的组件都已就绪，可以使联邦正常工作，并演示 Web 应用程序如何在具有不同信任域的身份的情况下与行情服务通信。
 
-# 使用 SPIFFE 身份验证的联邦示例
+## 使用 SPIFFE 身份验证的联邦示例
 
 本节将解释如何使用 Docker Compose 尝试此教程中描述的 SPIFFE 身份验证场景的示例实现。
 
 尽管此处没有显示出来，但你可以对 Web PKI 身份验证部分中显示的更改进行更改以尝试 Web PKI 场景。请记住，要配置 Web PKI，`domain_name` 指定的 FQDN 必须由你拥有，并且可以通过 DNS 通过互联网进行解析。
 
-## 要求
+### 要求
 
 本教程的所需文件可以在 [https://github.com/spiffe/spire-tutorials](https://github.com/spiffe/spire-tutorials) 的 `docker-compose/federation` 目录中找到。如果你尚未克隆该存储库，请立即执行此操作。
 
@@ -290,7 +288,7 @@ stock-market> spire-server entry create \
 - 安装了 [Docker](https://docs.docker.com/get-docker/) 和 [Docker Compose](https://docs.docker.com/compose/install/)（Docker Compose 包含在 macOS Docker Desktop 中）
 - 安装了 [Go](https://golang.org/dl/) 1.14.4 或更高版本
 
-## 构建
+### 构建
 
 确保当前工作目录是 `.../spire-tutorials/docker-compose/federation`，并运行以下命令以创建 Docker Compose 所需的文件：
 
@@ -298,7 +296,7 @@ stock-market> spire-server entry create \
 $ ./build.sh
 ```
 
-## 运行
+### 运行
 
 运行以下命令以启动 SPIRE 服务器和应用程序：
 
@@ -306,42 +304,196 @@ $ ./build.sh
 $ docker-compose up -d
 ```
 
-## 启动 SPIRE 代理
+### 启动 SPIRE Agents
 
-运行以下命
-
-令以启动 SPIRE 代理：
+运行以下命令以启动 SPIRE Agents：
 
 ```bash
-$ ./agent.sh
+$ ./1-start-spire-agents.sh
 ```
 
-## 启动 Web 应用程序
+### 引导联邦
 
-运行以下命令以启动 Web 应用程序：
+运行以下命令以引导联邦：
 
 ```bash
-$ ./webapp.sh
+$ ./2-bootstrap-federation.sh
 ```
 
-## 启动行情服务
+### 创建工作负载注册条目
 
-运行以下命令以启动行情服务：
+运行以下命令以创建工作负载注册条目：
 
 ```bash
-$ ./quotes.sh
+$ ./3-create-registration-entries.sh
 ```
 
-## 测试
+运行此脚本后，应用程序可能需要几秒钟才能收到其 SVID（SPIFFE 身份验证信息）和信任捆绑包。
 
-现在，你可以在浏览器中访问 `http://localhost:8080` 来查看股票报价。
+### 在浏览器中查看场景工作
 
-## 清理
+在浏览器中打开 http://localhost:8080/quotes，你应该看到一个显示每秒更新的随机生成的虚假股票报价的网格。
 
-要清理所有 Docker 容器和卷，请运行以下命令：
+### 查看配置
+
+要查看经纪人的 SPIRE 服务器配置，可以运行以下命令：
 
 ```bash
-$ docker-compose down -v
+$ docker-compose exec spire-server-broker cat conf/server/server.conf
 ```
 
-这将关闭并删除所有正在运行的容器，并删除由 `docker-compose up` 创建的卷。
+你应该会看到：
+
+```hcl
+ server {
+     bind_address = "0.0.0.0"
+     bind_port = "8081"
+     socket_path = "/tmp/spire-server/private/api.sock"
+     trust_domain = "broker.example"
+     data_dir = "/opt/spire/data/server"
+     log_level = "DEBUG"
+     log_file = "/opt/spire/server.log"
+     default_svid_ttl = "1h"
+     ca_subject = {
+         country = ["US"],
+         organization = ["SPIFFE"],
+         common_name = "",
+     }
+
+     federation {
+         bundle_endpoint {
+             address = "0.0.0.0"
+             port = 8443
+         }
+         federates_with "stockmarket.example" {
+             bundle_endpoint_url = "<https://spire-server-stock:8443>"
+             bundle_endpoint_profile "https_spiffe" {
+                 endpoint_spiffe_id = "spiffe://stockmarket.example/spire/server"
+             }
+         }
+     }
+ }
+
+ plugins {
+     DataStore "sql" {
+         plugin_data {
+             database_type = "sqlite3"
+             connection_string = "/opt/spire/data/server/datastore.sqlite3"
+         }
+     }
+
+   NodeAttestor "x509pop" {
+     plugin_data {
+       ca_bundle_path = "/opt/spire/conf/server/agent-cacert.pem"
+     }
+   }
+
+     KeyManager "memory" {
+         plugin_data = {}
+     }
+ }
+```
+
+要查看股票 market 的 SPIRE 服务器配置，可以运行以下命令：
+
+```bash
+$ docker-compose exec spire-server-stock cat conf/server/server.conf
+```
+
+你应该会看到：
+
+```hcl
+ server {
+     bind_address = "0.0.0.0"
+     bind_port = "8081"
+     socket_path = "/tmp/spire-server/private/api.sock"
+     trust_domain = "stockmarket.example"
+     data_dir = "/opt/spire/data/server"
+     log_level = "DEBUG"
+     log_file = "/opt/spire/server.log"
+     default_svid_ttl = "1h"
+     ca_subject = {
+         country = ["US"],
+         organization = ["SPIFFE"],
+         common_name = "",
+     }
+
+     federation {
+         bundle_endpoint {
+             address = "0.0.0.0"
+             port = 8443
+         }
+         federates_with "broker.example" {
+             bundle_endpoint_url = "https://spire-server-broker:8443"
+             bundle_endpoint_profile "https_spiffe" {
+                 endpoint_spiffe_id = "spiffe://broker.example/spire/server"
+             }
+         }
+     }
+ }
+
+ plugins {
+     DataStore "sql" {
+         plugin_data {
+             database_type = "sqlite3"
+             connection_string = "/opt/spire/data/server/datastore.sqlite3"
+         }
+     }
+
+   NodeAttestor "x509pop" {
+     plugin_data {
+       ca_bundle_path = "/opt/spire/conf/server/agent-cacert.pem"
+     }
+   }
+
+     KeyManager "memory" {
+         plugin_data = {}
+     }
+ }
+```
+
+### 查看注册条目
+
+要查看经纪人的 SPIRE 服务器注册条目，可以运行以下命令：
+
+```bash
+$ docker-compose exec spire-server-broker bin/spire-server entry show
+```
+
+你应该会看到类似以下内容：
+
+```
+ Found 1 entry
+ Entry ID      : 2d799235-ddca-4088-ba6f-bf54d2af918f
+ SPIFFE ID     : spiffe://broker.example/webapp
+ Parent ID     : spiffe://broker.example/spire/agent/x509pop/4f9238aaa7a93cf96ca3d6060abe27bc51a267e7
+ Revision      : 0
+ TTL           : 3600
+ Selector      : unix:user:root
+ FederatesWith : spiffe://stockmarket.example
+```
+
+要查看股票 market 的 SPIRE 服务器注册条目，可以运行以下命令：
+
+```bash
+$ docker-compose exec spire-server-stock bin/spire-server entry show
+```
+
+你应该会看到类似以下内容：
+
+```
+ Found 1 entry
+ Entry ID      : e42e8d6b-0a0a-4e38-b544-08510c35cbbe
+ SPIFFE ID     : spiffe://stockmarket.example/quotes-service
+ Parent ID     : spiffe://stockmarket.example/spire/agent/x509pop/50686366996ece3ca8e528765af685fe81f81435
+ Revision      : 0
+ TTL           : 3600
+ Selector      : unix:user:root
+ FederatesWith : spiffe://broker.example
+```
+
+### 清理
+
+```bash
+ $ docker-compose down
+```
