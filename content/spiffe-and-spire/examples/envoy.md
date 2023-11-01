@@ -10,7 +10,7 @@ Envoy 是一种流行的开源服务代理，广泛用于提供抽象、安全�
 
 该配置系统的一个组成部分是 Secret Discovery Service 协议或 SDS。Envoy 使用 SDS 从 SDS 提供者检索和维护更新的“密钥”。在 TLS 身份验证的上下文中，这些密钥是 TLS 证书、私钥和可信 CA 证书。SPIRE 代理可以配置为 Envoy 的 SDS 提供者，使其能够直接向 Envoy 提供所需的密钥材料以进行 TLS 身份验证。SPIRE 代理还会根据需要重新生成短期密钥和证书。
 
-有关如何将 SPIRE 与 Envoy 集成的基于 Kubernetes 的示例，请参阅[使用 X.509 证书集成 Envoy](https://github.com/spiffe/spire-tutorials/tree/main/k8s/envoy-x509)和[使用 JWT 集成 Envoy](https://github.com/spiffe/spire-tutorials/tree/main/k8s/envoy-jwt)。
+有关如何将 SPIRE 与 Envoy 集成的基于 Kubernetes 的示例，请参阅[使用 X.509 证书集成 Envoy](https://github.com/spiffe/spire-tutorials/tree/main/k8s/envoy-x509) 和[使用 JWT 集成 Envoy](https://github.com/spiffe/spire-tutorials/tree/main/k8s/envoy-jwt)。
 
 ## 工作原理
 
@@ -18,9 +18,7 @@ Envoy 是一种流行的开源服务代理，广泛用于提供抽象、安全�
 
 随着服务标识和 CA 证书的轮换，更新会流式传输回 Envoy，使其可以立即将其应用于新连接，无需中断或停机，并且无需私钥接触磁盘。换句话说，SPIRE 丰富的定义和验证服务的方法可以用于定位 Envoy 进程、为其定义标识，并为其提供 Envoy 可用于 TLS 通信的 X.509 证书和信任信息。
 
-![](../../images/spire_plus_envoy.png)
-
-**高级别图示，显示了两个 Envoy 代理在使用 SPIRE 代理 SDS 实现获取用于相互认证的 TLS 通信的密钥的两个服务之间。**
+![示意图展示了两个 Envoy 代理在使用 SPIRE 代理 SDS，实现获取用于服务间相互认证的 TLS 通信的密钥。](../../images/spire_plus_envoy.png)
 
 ## 配置 SPIRE
 

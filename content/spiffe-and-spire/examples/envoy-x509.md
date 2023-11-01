@@ -4,9 +4,9 @@ linktitle: "Envoy + X.509"
 title: "使用 Envoy 和 X.509-SVID"
 ---
 
-本教程在[Kubernetes 快速入门教程](https://spiffe.io/docs/latest/try/getting-started-k8s/)的基础上，演示了如何配置 SPIRE 以提供动态的 X.509 证书形式的服务身份，并由 Envoy 秘密发现服务（SDS）进行使用。本教程中展示了实现 X.509 SVID 身份验证所需的更改，因此你应该首先运行或至少阅读 Kubernetes 快速入门教程。
+本教程在 [Kubernetes 快速入门教程](https://spiffe.io/docs/latest/try/getting-started-k8s/)的基础上，演示了如何配置 SPIRE 以提供动态的 X.509 证书形式的服务身份，并由 Envoy 秘密发现服务（SDS）使用。本教程中展示了实现 X.509 SVID 身份验证所需的更改，因此你应该首先运行或至少阅读 Kubernetes 快速入门教程。
 
-为了演示 X.509 身份验证，我们创建了一个简单的场景，包含三个服务。其中一个服务是后端服务，是一个简单的 nginx 实例，用于提供静态数据。另一方面，我们运行两个`Symbank`演示银行应用作为前端服务。`Symbank`前端服务向 nginx 后端发送 HTTP 请求以获取用户账户详细信息。
+为了演示 X.509 身份验证，我们创建了一个简单的场景，包含三个服务。其中一个服务是后端服务，是一个简单的 nginx 实例，用于提供静态数据。我们另外运行两个 `Symbank` 演示银行应用作为前端服务。`Symbank` 前端服务向 nginx 后端发送 HTTP 请求以获取用户账户详细信息。
 
 ![](../../images/SPIRE_Envoy_diagram.png)
 
@@ -24,12 +24,12 @@ title: "使用 Envoy 和 X.509-SVID"
 
 在继续之前，请先阅读以下内容：
 
-- 你需要访问通过[Kubernetes 快速入门教程](https://spiffe.io/docs/latest/try/getting-started-k8s/)配置的 Kubernetes 环境。可选地，你可以使用下面描述的 `pre-set-env.sh` 脚本创建 Kubernetes 环境。Kubernetes 环境必须能够将 Ingress 公开到公共互联网上。**注意：对于本地 Kubernetes 环境（例如 Minikube），通常不适用此条件**。
-- 本教程所需的 YAML 文件可在 https://github.com/spiffe/spire-tutorials 的 `k8s/envoy-x509` 目录中找到。如果你尚未克隆*Kubernetes 快速入门教程*的存储库，请现在进行克隆。
+- 你需要访问通过 [Kubernetes 快速入门教程](https://spiffe.io/docs/latest/try/getting-started-k8s/)配置的 Kubernetes 环境。可选地，你可以使用下面描述的 `pre-set-env.sh` 脚本创建 Kubernetes 环境。Kubernetes 环境必须能够将 Ingress 公开到公共互联网上。**注意：对于本地 Kubernetes 环境（例如 Minikube），通常不适用此条件**。
+- 本教程所需的 YAML 文件可在 https://github.com/spiffe/spire-tutorials 的 `k8s/envoy-x509` 目录中找到。如果你尚未克隆 *Kubernetes 快速入门教程*的存储库，请现在进行克隆。
 
-如果*Kubernetes 快速入门教程*环境不可用，你可以使用以下脚本创建该环境，并将其用作本教程的起点。从`k8s/envoy-x509`目录中运行以下命令：
+如果 *Kubernetes 快速入门教程*环境不可用，你可以使用以下脚本创建该环境，并将其用作本教程的起点。从`k8s/envoy-x509`目录中运行以下命令：
 
-```
+```bash
 $ bash scripts/pre-set-env.sh
 ```
 
@@ -64,15 +64,15 @@ SPIRE 代理原生支持 Envoy Secret Discovery Service（SDS）。SDS 通过与
 
 ## 第 1 部分：运行工作负载
 
-现在，让我们部署本教程中将使用的工作负载。它由三个工作负载组成：如前所述，两个*Symbank*演示应用程序的实例将充当前端服务，另一个提供静态文件的 nginx 实例将充当后端服务。
+现在，让我们部署本教程中将使用的工作负载。它由三个工作负载组成：如前所述，两个 *Symbank* 演示应用程序的实例将充当前端服务，另一个提供静态文件的 nginx 实例将充当后端服务。
 
-为了区分两个*Symbank*应用程序的实例，让我们将其称为*frontend*和*frontend-2*。前者配置为显示与用户*Jacob Marley*相关的数据，而后者将显示用户*Alex Fergus*的帐户详细信息。
+为了区分两个 *Symbank* 应用程序的实例，让我们将其称为 *frontend* 和 *frontend-2*。前者配置为显示与用户 *Jacob Marley* 相关的数据，而后者将显示用户 *Alex Fergus* 的帐户详细信息。
 
 ## 部署所有工作负载
 
 确保当前的工作目录是 `.../spire-tutorials/k8s/envoy-x509`，然后使用以下命令部署新的资源：
 
-```
+```bash
 $ kubectl apply -k k8s/.
 configmap/backend-balance-json-data created
 configmap/backend-envoy created
@@ -226,19 +226,19 @@ frontend-2      LoadBalancer   10.8.7.57     35.222.190.182   3002:32056/TCP   6
 kubernetes      ClusterIP      10.8.0.1      <none>           443/TCP          59m
 ```
 
-`frontend`服务将在`EXTERNAL-IP`值和端口`3000`处可用，这是我们容器配置的端口。在上面显示的示例输出中，导航的 URL 为`http://35.222.164.221:3000`。打开浏览器并导航到环境中显示的`frontend`的 IP 地址，添加端口`:3000`。页面加载完成后，你将看到用户*Jacob Marley*的账户详细信息。
+`frontend` 服务将在 `EXTERNAL-IP` 值和端口 `3000` 处可用，这是我们容器配置的端口。在上面显示的示例输出中，导航的 URL 为 `http://35.222.164.221:3000`。打开浏览器并导航到环境中显示的 `frontend` 的 IP 地址，添加端口 `:3000`。页面加载完成后，你将看到用户 *Jacob Marley* 的账户详细信息。
 
 ![](../../images/frontend_view.png)
 
-按照相同的步骤，当你连接到`frontend-2`服务的 URL 时（例如`http://35.222.190.182:3002`），浏览器将显示用户*Alex Fergus*的账户详细信息。
+按照相同的步骤，当你连接到 `frontend-2` 服务的 URL 时（例如 `http://35.222.190.182:3002`），浏览器将显示用户 *Alex Fergus* 的账户详细信息。
 
 ![](../../images/frontend-2_view.png)
 
 ### 更新 TLS 配置以便只有一个前端可以访问后端
 
-`backend`服务的 Envoy 配置使用 TLS 配置来通过验证 TLS 连接上呈现的证书的主题备用名称 (SAN) 来过滤传入的连接。对于 SVIDs，证书的 SAN 字段设置为与服务关联的 SPIFFE ID。因此，通过在`combined_validation_context`部分的[Envoy 配置](https://github.com/spiffe/spire-tutorials/blob/main/k8s/envoy-x509/k8s/backend/config/envoy.yaml#L49)中删除`frontend-2`服务的 SPIFFE ID，可以使`backend`服务的 Envoy 配置允许仅来自`frontend`服务的请求。更新后的配置如下所示：
+`backend` 服务的 Envoy 配置使用 TLS 配置来通过验证 TLS 连接上呈现的证书的主题备用名称 (SAN) 来过滤传入的连接。对于 SVIDs，证书的 SAN 字段设置为与服务关联的 SPIFFE ID。因此，通过在 `combined_validation_context` 部分的 [Envoy 配置](https://github.com/spiffe/spire-tutorials/blob/main/k8s/envoy-x509/k8s/backend/config/envoy.yaml#L49)中删除 `frontend-2` 服务的 SPIFFE ID，可以使`backend`服务的 Envoy 配置允许仅来自 `frontend`服务的请求。更新后的配置如下所示：
 
-```
+```yaml
 combined_validation_context:
   # validate the SPIFFE ID of incoming clients (optionally)
   default_validation_context:
@@ -263,21 +263,21 @@ $ kubectl scale deployment backend --replicas=0
 $ kubectl scale deployment backend --replicas=1
 ```
 
-在尝试再次在浏览器中查看`frontend-2`服务之前，请等待几秒钟以使部署生效。一旦 Pod 准备就绪，请使用`frontend-2`服务的正确 URL（例如`http://35.222.190.182:3002`）刷新浏览器。结果，现在 Envoy 不允许请求到达`backend`服务，并且浏览器中不显示账户详细信息。
+在尝试再次在浏览器中查看`frontend-2`服务之前，请等待几秒钟以使部署生效。一旦 Pod 准备就绪，请使用 `frontend-2` 服务的正确 URL（例如 `http://35.222.190.182:3002`）刷新浏览器。结果，现在 Envoy 不允许请求到达 `backend` 服务，并且浏览器中不显示账户详细信息。
 
 ![](../../images/frontend-2_view_no_details.png)
 
-另一方面，你可以检查`frontend`服务仍然能够从`backend`获得响应。刷新浏览器以正确的 URL（例如`http://35.222.164.221:3000`），并确认对*Jacob Marley*的账户显示账户详细信息。
+另一方面，你可以检查`frontend`服务仍然能够从 `backend` 获得响应。刷新浏览器以正确的 URL（例如 `http://35.222.164.221:3000`），并确认对*Jacob Marley*的账户显示账户详细信息。
 
 ## 通过基于角色的访问控制过滤器扩展场景
 
 Envoy 提供了一种基于角色的访问控制（RBAC）HTTP 过滤器，它根据一组策略检查请求。策略由权限和主体组成，其中主体指的是请求的下游客户端身份，例如下游客户端证书的 URI SAN。因此，我们可以使用为服务分配的 SPIFFE ID 创建策略，以实现更细粒度的访问控制。
 
-“Symbank”演示应用程序使用三个不同的端点来获取有关银行账户的所有信息。`/profiles`端点提供账户所有者的姓名和地址。另外两个端点，`/balances`和`/transactions`，提供账户的余额和交易信息。
+“Symbank”演示应用程序使用三个不同的端点来获取有关银行账户的所有信息。`/profiles` 端点提供账户所有者的姓名和地址。另外两个端点，`/balances` 和 `/transactions`，提供账户的余额和交易信息。
 
-为了演示 Envoy 的 RBAC 过滤器，我们可以创建一个策略，允许“frontend”服务仅获取`/profiles`端点的数据，并拒绝发送到其他端点的请求。这可以通过定义一个主体与服务的 SPIFFE ID 匹配以及只允许对`/profiles`资源进行 GET 请求的权限来实现。
+为了演示 Envoy 的 RBAC 过滤器，我们可以创建一个策略，允许“frontend”服务仅获取 `/profiles` 端点的数据，并拒绝发送到其他端点的请求。这可以通过定义一个主体与服务的 SPIFFE ID 匹配以及只允许对 `/profiles` 资源进行 GET 请求的权限来实现。
 
-可以将以下代码片段添加到`backend`服务的 Envoy 配置中作为新的 HTTP 过滤器来测试该策略。*注意：为了使 Envoy 配置正常工作，必须在现有的`envoy.router`过滤器之前添加此代码片段*。
+可以将以下代码片段添加到`backend`服务的 Envoy 配置中作为新的 HTTP 过滤器来测试该策略。*注意：为了使 Envoy 配置正常工作，必须在现有的  `envoy.router`  过滤器之前添加此代码片段*。
 
 ```yaml
 - name: envoy.filters.http.rbac

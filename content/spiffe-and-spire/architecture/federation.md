@@ -6,7 +6,7 @@ linkTitle: "SPIRE 联邦架构"
 
 本教程展示了如何对由两个不同 SPIRE 服务器识别的两个 SPIFFE 标识的工作负载进行身份验证。
 
-本文的第一部分演示了如何通过显示 SPIRE 配置文件更改和 `spire-server` 命令来配置 SPIFFE 联邦，以设置股票报价 web 应用的前端和服务后端。本文的第二部分列出了你可以在此教程目录中包含的 Docker Compose 文件中运行的步骤，以显示场景的实际操作。
+本文的第一部分演示了如何通过显示 SPIRE 配置文件更改和 `spire-server` 命令来配置 SPIFFE 联邦，以设置股票报价 web 应用的前端和服务后端为例。本文的第二部分列出了你可以在此教程目录中包含的 Docker Compose 文件中运行的步骤，以显示场景的实际操作。
 
 在本教程中，你将学到如何：
 
@@ -25,7 +25,7 @@ SPIFFE 联邦的基线组件包括：
 
 ## 场景
 
-假设我们有一个股票 broker（经纪人）的 web 应用程序，它希望从股票 market web 服务提供商那里获取股票报价并显示它们。情景如下：
+假设我们有一个股票 broker（经纪人）的 web 应用程序，它希望从股票 market web 服务提供商那里获取股票报价并显示。情景如下：
 
 1. 用户在浏览器中输入 broker web 应用的股票报价 URL。
 2. Web 应用的工作负载接收到请求并使用 mTLS 向股票 market 服务发出获取报价的 HTTP 请求。
@@ -45,7 +45,7 @@ SPIFFE 联邦的基线组件包括：
 
 要配置 broker 的 SPIRE 服务器捆绑点端点，我们在 broker 的 SPIRE 服务器配置文件中使用了 `federation` 部分（默认为 `server.conf`）：
 
-```
+```hcl
  server {
      .
      .
@@ -66,7 +66,7 @@ SPIFFE 联邦的基线组件包括：
 
 另一方面，股票 market 服务提供商的 SPIRE 服务器配置类似：
 
-```ini
+```hcl
  server {
      .
      .
@@ -91,7 +91,7 @@ SPIFFE 联邦的基线组件包括：
 
 然后，要配置 broker 的 SPIRE 服务器捆绑点端点，我们将 `federation` 部分配置如下：
 
-```ini
+```hcl
  server {
      .
      .
@@ -125,7 +125,7 @@ SPIFFE 联邦的基线组件包括：
 
 如前所述，股票 market 服务提供商的 SPIRE 服务器将其联邦端点监听在任何 IP 地址的端口 `8443` 上。我们还假设 `spire-server-stock` 是一个解析为股票 market 服务的 SPIRE 服务器 IP 地址的 DNS 名称。 （这里的 Docker Compose 演示使用主机名 `spire-server-stock`，但在典型的使用中，你会指定一个 FQDN。）然后，broker 的 SPIRE 服务器必须配置以下 `federates_with` 部分：
 
-```ini
+```hcl
  server {
      .
      .
@@ -152,7 +152,7 @@ SPIFFE 联邦的基线组件包括：
 
 另一方面，股票 market 服务提供商的 SPIRE 服务器必须以类似的方式进行配置：
 
-```ini
+```hcl
  server {
      .
      .
@@ -181,7 +181,7 @@ SPIFFE 联邦的基线组件包括：
 
 如前所述，在这种备选方案中，我们假设只有 broker 的 SPIRE 服务器将使用 Web PKI 身份验证来配置其联邦端点，因此 broker 服务器的 `federates_with` 配置与前一节中所见相同。然而，股票 market 服务提供商的 SPIRE 服务器需要一个不同的配置，它使用 "https_web" 配置文件而不是 "https_spiffe"：
 
-```ini
+```hcl
  server {
      .
      .
@@ -240,7 +240,7 @@ broker> spire-server bundle set -format spiffe -id spiffe://stockmarket.example 
 
 请注意，在 broker 的 SPIRE 服务器为其联邦捆绑点使用 Web PKI 身份验证时，不需要创建 `broker.example.bundle` 文件（后来由股票 market 服务导入）。
 
-## 为联合创建注册条目
+## 为联邦创建注册条目
 
 现在，SPIRE 服务器具有了彼此的信任捆绑点，让我们看看它们如何创建用于联合的注册条目。
 
