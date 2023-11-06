@@ -33,6 +33,10 @@ SPIFFE 联邦的基线组件包括：
 4. Web 应用呈现使用返回的报价的股票报价页面并将其发送到浏览器。
 5. 浏览器向用户显示报价。Web 应用包括一些 JavaScript 以便每隔 1 秒刷新页面，因此每秒都会执行这些步骤。
 
+下图详细描绘了本场景。
+
+![联邦场景](../../images/federation-scenario.svg)
+
 除了上述内容，本教程的其余部分中，我们将假设以下 [信任域](https://spiffe.io/docs/latest/spiffe/concepts/#trust-domain) 名称用于这些示例 SPIRE 安装：`broker.example` 和 `stockmarket.example`。请注意，信任域不需要对应实际的 DNS 域名。此外，应用程序直接访问 WorkloadAPI 以获取 SVID 和信任捆绑点，这意味着在所描述的情景中没有代理。
 
 ## 配置 SPIFFE 联邦捆绑点
