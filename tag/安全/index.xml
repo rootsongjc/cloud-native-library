@@ -2582,6 +2582,30 @@ Selector      : k8s:container-name:auth-helper
 &lt;li&gt;Web 应用呈现使用返回的报价的股票报价页面并将其发送到浏览器。&lt;/li&gt;
 &lt;li&gt;浏览器向用户显示报价。Web 应用包括一些 JavaScript 以便每隔 1 秒刷新页面，因此每秒都会执行这些步骤。&lt;/li&gt;
 &lt;/ol&gt;
+&lt;p&gt;下图详细描绘了本场景。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-联邦场景&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/federation-scenario.svg&#34; alt=&#34;联邦场景&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      联邦场景
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
 &lt;p&gt;除了上述内容，本教程的其余部分中，我们将假设以下 &lt;a href=&#34;https://spiffe.io/docs/latest/spiffe/concepts/#trust-domain&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;信任域&lt;/a&gt; 名称用于这些示例 SPIRE 安装：&lt;code&gt;broker.example&lt;/code&gt; 和 &lt;code&gt;stockmarket.example&lt;/code&gt;。请注意，信任域不需要对应实际的 DNS 域名。此外，应用程序直接访问 WorkloadAPI 以获取 SVID 和信任捆绑点，这意味着在所描述的情景中没有代理。&lt;/p&gt;
 &lt;h2 id=&#34;配置-spiffe-联邦捆绑点&#34;&gt;配置 SPIFFE 联邦捆绑点&lt;/h2&gt;
 &lt;p&gt;为了使联邦工作，并且因为 web 应用程序和报价服务将使用 &lt;code&gt;mTLS&lt;/code&gt;，两个 SPIRE 服务器都需要彼此的信任捆绑点。在某种程度上，这是通过在每个 SPIRE 服务器上配置所谓的联邦捆绑点来完成的，该捆绑点提供了由其他信任域中的 SPIRE 服务器使用的 API，以获取他们要与之联合的信任域的信任捆绑点。&lt;/p&gt;
@@ -4329,6 +4353,308 @@ Selector      : k8s:container-name:auth-helper
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;spire&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;由于 SCC 在 Pod 准入时应用，因此请删除任何现有的 Spire Agent Pod。所有新接纳的 pod 将利用 &lt;code&gt;spire&lt;/code&gt; SCC，以便在 OpenShift 中使用。&lt;/p&gt;
 </description>
+    </item>
+    
+    <item>
+      <title>使用 Envoy 和 X.509-SVID 进行 OPA 授权</title>
+      <link>https://lib.jimmysong.io/spiffe-and-spire/examples/envoy-opa/</link>
+      <pubDate>Mon, 23 Oct 2023 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/spiffe-and-spire/examples/envoy-opa/</guid>
+      <description>&lt;p&gt;通过 Envoy 与 X.509-SVIDs 实现安全通信并结合 Open Policy Agent（OPA）进行授权。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.openpolicyagent.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Open Policy Agent&lt;/a&gt;（OPA）是一个开源通用策略引擎，其提供的授权（AuthZ）是对 SPIRE 提供的认证（AuthN）的很好补充。&lt;/p&gt;
+&lt;p&gt;本教程将在 &lt;a href=&#34;https://github.com/spiffe/spire-tutorials/blob/main/envoy-x509/README.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE Envoy-X.509 教程&lt;/a&gt; 的基础上添加 &lt;a href=&#34;https://www.openpolicyagent.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Open Policy Agent&lt;/a&gt;（OPA）以演示如何将 SPIRE、Envoy 和 OPA 结合使用，实现 X.509 SVID 认证和请求授权。本教程将演示如何在现有教程的基础上实现使用 OPA 进行请求授权。&lt;/p&gt;
+&lt;p&gt;为了便于说明，让我们通过将 OPA 代理实例作为后端服务的新侧车来扩展 Envoy X.509 教程中创建的场景。借助 Envoy 的外部授权过滤器功能，结合 OPA 作为授权服务，可以实现对传入后端服务的每个请求执行安全策略。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-spire-envoy-opa-集成图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/SPIRE_Envoy_OPA_X509_diagram.png&#34; alt=&#34;SPIRE Envoy OPA 集成图&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      SPIRE Envoy OPA 集成图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;如图所示，前端服务通过 Envoy 实例连接到后端服务，Envoy 实例使用 SPIRE 代理提供的 SDS 模块进行身份验证，从而建立了 mTLS 连接。Envoy 通过 mTLS 连接将 HTTP 请求发送到后端，后端通过 OPA 代理实例根据安全策略对 HTTP 请求进行授权或拒绝。&lt;/p&gt;
+&lt;p&gt;在本教程中，你将学到：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;将 OPA 代理添加到现有的 Envoy X.509 教程的后端服务中&lt;/li&gt;
+&lt;li&gt;将外部授权过滤器添加到将 Envoy 连接到 OPA 的 Envoy 配置中&lt;/li&gt;
+&lt;li&gt;使用 SPIRE 与 Envoy 进行 OPA 授权的测试&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;先决条件&#34;&gt;先决条件&lt;/h1&gt;
+&lt;p&gt;在继续之前，请查看以下内容：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;当通过 &lt;a href=&#34;https://github.com/spiffe/spire-tutorials/blob/main/envoy-x509/README.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE Envoy-X.509 教程&lt;/a&gt; 进行配置时，你将需要访问 Kubernetes 环境。可选择使用 &lt;code&gt;pre-set-env.sh&lt;/code&gt; 脚本创建 Kubernetes 环境。&lt;/li&gt;
+&lt;li&gt;本教程所需的 YAML 文件可以在 &lt;a href=&#34;https://github.com/spiffe/spire-tutorials&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://github.com/spiffe/spire-tutorials&lt;/a&gt; 的 &lt;code&gt;k8s/envoy-opa&lt;/code&gt; 目录中找到。如果尚未克隆 spire-tutorials 存储库，请立即执行。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;如果 Kubernetes 中的 &lt;em&gt;配置 Envoy 进行 X.509 SVID 认证&lt;/em&gt; 教程环境不可用，你可以使用以下脚本创建该环境，并将其用作本教程的起点。从 &lt;code&gt;k8s/envoy-opa&lt;/code&gt; 目录运行以下 Bash 脚本：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ bash scripts/pre-set-env.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;该脚本将创建集群中所需的所有 SPIRE 服务器和 SPIRE 代理资源，然后将为 SPIRE Envoy X.509 教程创建所有资源，该教程是 SPIRE Envoy 和 OPA 教程的基本场景。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;注意：&lt;/strong&gt; 本教程中所需的配置更改已显示为教程中的代码段。但是，所有这些设置已经配置好了。你无需编辑任何配置文件。&lt;/p&gt;
+&lt;h2 id=&#34;外部-ip-支持&#34;&gt;外部 IP 支持&lt;/h2&gt;
+&lt;p&gt;本教程需要一个能够分配外部 IP（例如 &lt;a href=&#34;https://metallb.universe.tf/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;metallb&lt;/a&gt;）的负载均衡器。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;等待 metallb 启动：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl &lt;span class=&#34;nb&#34;&gt;wait&lt;/span&gt; --namespace metallb-system &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;                --for&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;condition&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;ready pod &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;                --selector&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;metallb &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;                --timeout&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;90s
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;应用 metallb 配置：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl apply -f ../envoy-x509/metallb-config.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;第一部分部署更新和新资源&#34;&gt;第一部分：部署更新和新资源&lt;/h1&gt;
+&lt;p&gt;假设以 SPIRE Envoy X.509 教程为起点，需要更新一些资源并创建其他资源。目标是在请求到达 &lt;code&gt;backend&lt;/code&gt; 服务之前，通过 OPA 让其进行授权。Envoy 实例之间已经建立了 mTLS 连接，因此唯一缺&lt;/p&gt;
+&lt;p&gt;失的部分是将 OPA 作为 sidecar 添加到部署中。可以通过以下方式将新容器添加到 &lt;a href=&#34;https://github.com/spiffe/spire-tutorials/blob/main/k8s/envoy-opa/k8s/backend/backend-deployment.yaml&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;backend-deployment.yaml&lt;/code&gt;&lt;/a&gt; 中：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;opa&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;image&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;openpolicyagent/opa:0.50.2-envoy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;imagePullPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;IfNotPresent&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;ports&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;opa-envoy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;containerPort&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;8182&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;protocol&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;TCP&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;opa-api-port&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;containerPort&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;8181&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;protocol&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;TCP&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;args&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;run&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;--server&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;--config-file=/run/opa/opa-config.yaml&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;/run/opa/opa-policy.rego&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;volumeMounts&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;backend-opa-policy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;mountPath&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;/run/opa&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;readOnly&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请注意使用了 &lt;code&gt;openpolicyagent/opa:0.50.2-envoy&lt;/code&gt; 镜像。该镜像通过在 OPA 中扩展了一个实现 Envoy 外部授权 API 的 gRPC 服务器，以便 OPA 可以与 Envoy 通信以做出策略决策。&lt;/p&gt;
+&lt;p&gt;必须在 &lt;code&gt;volumes&lt;/code&gt; 部分中添加 ConfigMap &lt;code&gt;backend-opa-policy&lt;/code&gt;，如下所示：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;backend-opa-policy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;configMap&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;backend-opa-policy-config&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;ConfigMap &lt;code&gt;backend-opa-policy&lt;/code&gt; 提供了两个资源，分别是在 &lt;a href=&#34;https://spiffe.io/docs/latest/microservices/envoy-opa/readme/#opa-configuration&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;OPA Configuration&lt;/a&gt; 中描述的 &lt;code&gt;opa-config.yaml&lt;/code&gt; 和在 &lt;a href=&#34;https://spiffe.io/docs/latest/microservices/envoy-opa/readme/#opa-policy&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Rego Policy&lt;/a&gt; 部分中解释的 &lt;code&gt;opa-policy.rego&lt;/code&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;opa-配置&#34;&gt;OPA 配置&lt;/h2&gt;
+&lt;p&gt;在本教程中，我们将在 &lt;a href=&#34;https://github.com/spiffe/spire-tutorials/blob/main/k8s/envoy-opa/k8s/backend/config/opa-config.yaml&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;opa-config.yaml&lt;/code&gt;&lt;/a&gt; 中创建以下 OPA 配置文件：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;decision_logs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;bash&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;plugins&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;envoy_ext_authz_grpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;addr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;8182&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;query&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;data.envoy.authz.allow&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在这里，&lt;code&gt;decision_logs.bash: true&lt;/code&gt; 强制 OPA 在本地以 info 级别记录决策。稍后在教程中，我们将使用这些日志来检查不同请求的结果。&lt;/p&gt;
+&lt;p&gt;接下来，让我们来查看 &lt;code&gt;envoy_ext_authz_grpc&lt;/code&gt; 插件的配置。首先，&lt;code&gt;addr&lt;/code&gt; 键设置了 Envoy 外部授权 gRPC 服务器的监听地址。这必须与 Envoy 过滤器资源中配置的值相匹配，后面的章节将详细介绍。&lt;code&gt;query&lt;/code&gt; 键定义了要查询的策略的名称。接下来的部分将重点介绍针对 &lt;code&gt;query&lt;/code&gt; 键指定的 &lt;code&gt;envoy.authz.allow&lt;/code&gt; 策略的详细信息。&lt;/p&gt;
+&lt;h2 id=&#34;opa-策略&#34;&gt;OPA 策略&lt;/h2&gt;
+&lt;p&gt;OPA 策略以一种称为 Rego 的高级声明性语言表达。在本教程中，我们创建了一个名为 &lt;code&gt;allow&lt;/code&gt; 的示例规则，其中包含三个表达式（参见 &lt;a href=&#34;https://github.com/spiffe/spire-tutorials/blob/main/k8s/envoy-opa/k8s/backend/config/opa-policy.rego&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;opa-policy.rego&lt;/code&gt;&lt;/a&gt;）。为了使规则成立，所有表达式都必须为 true。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;default allow = false
+
+allow {
+   valid_path
+   http_request.method == &amp;#34;GET&amp;#34;
+   svc_spiffe_id == &amp;#34;spiffe://example.org/ns/default/sa/default/frontend&amp;#34;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;让我们逐个查看每个表达式。&lt;code&gt;valid_path&lt;/code&gt; 是一个用户定义的函数，用于确保仅允许发送到允许资源的请求。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;import input.attributes.request.http as http_request
+
+valid_path {
+   glob.match(&amp;#34;/balances/*&amp;#34;, [], http_request.path)
+}
+
+valid_path {
+   glob.match(&amp;#34;/profiles/*&amp;#34;, [], http_request.path)
+}
+
+valid_path {
+   glob.match(&amp;#34;/transactions/*&amp;#34;, [], http_request.path)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;函数 &lt;code&gt;valid_path&lt;/code&gt; 利用了内置函数 &lt;code&gt;glob.match(&lt;/code&gt;&lt;em&gt;pattern&lt;/em&gt;, &lt;em&gt;delimiters&lt;/em&gt;, &lt;em&gt;match&lt;/em&gt;&lt;code&gt;)&lt;/code&gt;，其输出为 true，如果 &lt;em&gt;match&lt;/em&gt; 可以在以 &lt;em&gt;delimiters&lt;/em&gt; 分隔的 &lt;em&gt;pattern&lt;/em&gt; 中找到，然后在 Rego 中为了表示逻辑或，你定义具有相同名称的多个规则。这就是为什么有三个定义 &lt;code&gt;valid_path&lt;/code&gt; 的规则，每个规则对应一个有效资源。&lt;/p&gt;
+&lt;p&gt;接下来的表达式定义了请求的 HTTP 方法必须等于 &lt;code&gt;GET&lt;/code&gt;：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;http_request.method == &amp;#34;GET&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;最后一个表达式也是一个用户定义的函数：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;svc_spiffe_id == &amp;#34;spiffe://example.org/ns/default/sa/default/frontend&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;svc_spiffe_id&lt;/code&gt; 函数从请求中的 &lt;code&gt;x-forwarded-client-cert&lt;/code&gt;（XFCC）头中提取服务的 SPIFFE ID。XFCC 头是一个代理头，指示请求已通过的某些或所有客户端或代理的证书信息。&lt;code&gt;svc_spiffe_id&lt;/code&gt; 函数利用了来自 &lt;code&gt;envoy.yaml&lt;/code&gt; 的两个 Envoy 设置，这些设置修改了 HTTP 头：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;forward_client_cert_details: sanitize_set
+set_current_client_cert_details:
+   uri: true
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当客户端连接为 mTLS 时，例如在此场景中，&lt;code&gt;forward_client_cert_details: sanitize_set&lt;/code&gt; 会将 XFCC 头重置为客户端证书信息，&lt;code&gt;set_current_client_cert_details&lt;/code&gt; 指定要转发的客户端证书中的字段。&lt;/p&gt;
+&lt;p&gt;XFCC 头值是一个以逗号（“,”）分隔的字符串。每个子字符串都是一个 XFCC 元素，每个 XFCC 元素都是一个以分号（“;”）分隔的字符串。每个子字符串都是一个键值对，由等号（“=”）组合在一起。Envoy 支持以下键：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;By&lt;/code&gt; 当前代理证书的主题可选名称（URI 类型）。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Hash&lt;/code&gt; 当前客户端证书的 SHA 256 摘要。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Cert&lt;/code&gt; 整个客户端证书的 URL 编码 PEM 格式。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Subject&lt;/code&gt; 当前客户端证书的 Subject 字段。值总是被双引号引起来。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;URI&lt;/code&gt; 当前客户端证书的 URI 类型主题可选名称字段。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;DNS&lt;/code&gt; 当前客户端证书的 DNS 类型主题可选名称字段。客户端证书可能包含多个 DNS 类型的主题可选名称，每个都将是一个单独的键值对。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;以下是带有示例值的 XFCC 头，为了便于阅读，该值分为两行：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;x-forwarded-client-cert: By=spiffe://example.org/ns/default/sa/default/backend;Hash=a9317919875e178ce6d6
+1eaa023490a2091299753ca5cd01d5323e40696d690b;URI=spiffe://example.org/ns/default/sa/default/frontend
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在 &lt;code&gt;x-forwarded-client-cert&lt;/code&gt; 头中，&lt;code&gt;Hash&lt;/code&gt; 总是设置的，当客户端证书呈现 URI 类型的主题可选名称值时，&lt;code&gt;By&lt;/code&gt; 也总是设置的，这在使用 X.509 SVIDs 时是真的。然后 &lt;code&gt;set_current_client_cert_details: uri: true&lt;/code&gt; 确保了 URI 类型的主题可选名称（SAN）字段被转发。&lt;/p&gt;
+&lt;p&gt;了解了 XFCC 头的这些细节，并知道 X.509 SVID &lt;strong&gt;必须&lt;/strong&gt; 包含一个 URI SAN，SPIFFE ID 设置为 SAN 扩展中的 URI 类型，那么就可以使用以下函数从 Envoy 设置的 XFCC 头中提取 SPIFFE ID：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;svc_spiffe_id = spiffe_id {
+   [_, _, uri_type_san] := split(http_request.headers[&amp;#34;x-forwarded-client-cert&amp;#34;], &amp;#34;;&amp;#34;)
+   [_, spiffe_id] := split(uri_type_san, &amp;#34;=&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;因此，只有当请求发送到有效的资源（/balances/，/profiles/ 或者 /transactions/）时，使用 &lt;code&gt;GET&lt;/code&gt; 方法，并且请求来自 SPIFFE ID 等于 &lt;code&gt;spiffe://example.org/ns/default/sa/default/frontend&lt;/code&gt; 的工作负载时，策略才会评估为真。在所有其他情况下，请求都不会被 OPA 授权，因此会被 Envoy 拒绝。&lt;/p&gt;
+&lt;h2 id=&#34;添加外部授权过滤器&#34;&gt;添加外部授权过滤器&lt;/h2&gt;
+&lt;p&gt;最后，此设置需要添加一个连接到 OPA 实例的外部授权过滤器。这个新的 HTTP 过滤器与 OPA 一起作为授权服务使用，以通过 Envoy 接收的 API 请求来执行安全策略。这是通过在 &lt;code&gt;envoy.yaml&lt;/code&gt; 中添加一个新的 HTTP 过滤器来实现的：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;envoy.ext_authz&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;typed_config&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;@type&amp;#34;: &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;transport_api_version&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;V3&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;with_request_body&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;max_request_bytes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;8192&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;allow_partial_message&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;failure_mode_allow&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;false&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;grpc_service&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;google_grpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;target_uri&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;127.0.0.1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;8182&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;stat_prefix&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ext_authz&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;timeout&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0.&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;5s&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请注意，&lt;code&gt;target_uri&lt;/code&gt; 配置为与前一步中定义的 OPA 服务通信。如果你感兴趣，完整的配置文件位于 &lt;a href=&#34;https://github.com/spiffe/spire-tutorials/blob/main/k8s/envoy-opa/k8s/backend/config/envoy.yaml&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;k8s/backend/config/envoy.yaml&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;应用新资源&#34;&gt;应用新资源&lt;/h2&gt;
+&lt;p&gt;为了使新配置生效，需要应用 OPA 配置的 ConfigMap，并更新 Envoy 配置。确保当前工作目录是 &lt;code&gt;.../spire-tutorials/k8s/envoy-opa&lt;/code&gt;，并使用以下命令应用新配置：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl apply -k k8s/.
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;configmap/backend-envoy configured
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;configmap/backend-opa-policy-config configured
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;deployment.apps/backend configured
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;接下来，需要重启 &lt;code&gt;backend&lt;/code&gt; pod 以获取新配置：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl scale deployment backend --replicas&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl scale deployment backend --replicas&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;第-2-部分测试连接&#34;&gt;第 2 部分：测试连接&lt;/h1&gt;
+&lt;p&gt;现在，服务已经部署并在 SPIRE 中注册了，让我们测试一下我们已经配置的授权。&lt;/p&gt;
+&lt;h2 id=&#34;测试有效请求&#34;&gt;测试有效请求&lt;/h2&gt;
+&lt;p&gt;第一个测试将演示满足策略的请求允许显示关联的数据。要运行此测试，我们需要找到构成用于访问数据的 URL 的 IP 地址和端口。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl get services
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;NAME            TYPE           CLUSTER-IP    EXTERNAL-IP      PORT&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;S&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;          AGE
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;backend-envoy   ClusterIP      None          &amp;lt;none&amp;gt;           9001/TCP         6m53s
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;frontend        LoadBalancer   10.8.14.117   35.222.164.221   3000:32586/TCP   6m52s
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;frontend-2      LoadBalancer   10.8.7.57     35.222.190.182   3002:32056/TCP   6m53s
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubernetes      ClusterIP      10.8.0.1      &amp;lt;none&amp;gt;           443/TCP          59m
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;frontend&lt;/code&gt; 服务将在 &lt;code&gt;EXTERNAL-IP&lt;/code&gt; 值和端口 &lt;code&gt;3000&lt;/code&gt; 上可用，这是我们为容器配置的。在上面显示的示例输出中，要导航到的 URL 是 &lt;code&gt;http://35.222.164.221:3000&lt;/code&gt;。打开浏览器，导航到环境中显示的 &lt;code&gt;frontend&lt;/code&gt; 的 IP 地址，添加端口 &lt;code&gt;:3000&lt;/code&gt;。一旦页面加载，你将看到用户 &lt;em&gt;Jacob Marley&lt;/em&gt; 的账户详细信息。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-前端视图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/frontend_view.png&#34; alt=&#34;前端视图&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      前端视图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;让我们看一下 OPA 代理的日志，看看后台正在发生什么。使用以下 Bash 脚本获取运行在 &lt;code&gt;backend&lt;/code&gt; 服务旁边的 OPA 实例的日志，并使用 &lt;code&gt;[jq](&amp;lt;https://stedolan.github.io/jq/&amp;gt;)&lt;/code&gt; 处理输出：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ bash scripts/backend-opa-logs.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;输出显示了每个请求的决定。例如，对 &lt;code&gt;frontend&lt;/code&gt; 服务的请求可能会产生类似于以下的日志条目：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;decision_id&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;207b7b54-0ec0-4ffb-a531-c86a9f05c38d&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;input&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;nt&#34;&gt;&amp;#34;attributes&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;err&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;nt&#34;&gt;&amp;#34;request&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;nt&#34;&gt;&amp;#34;http&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;          &lt;span class=&#34;nt&#34;&gt;&amp;#34;headers&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;:authority&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;localhost:3003&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;:method&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;GET&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;:path&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;/profiles/2&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;accept-encoding&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;gzip&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;content-length&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;0&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;user-agent&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;Go-http-client/1.1&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;x-forwarded-client-cert&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;By=spiffe://example.org/ns/default/sa/default/backend;Hash=a9317919875e178ce6d61eaa023490a2091299753ca5cd01d5323e40696d690b;URI=spiffe://example.org/ns/default/sa/default/frontend&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;x-forwarded-proto&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;http&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;x-request-id&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;e0939bcf-8beb-4910-a980-be0468ec023f&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;          &lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;          &lt;span class=&#34;nt&#34;&gt;&amp;#34;method&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;GET&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;          &lt;span class=&#34;nt&#34;&gt;&amp;#34;path&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;/profiles/2&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;          &lt;span class=&#34;nt&#34;&gt;&amp;#34;protocol&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;HTTP/1.1&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;err&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;err&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   &lt;span class=&#34;err&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;msg&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;Decision Log&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;query&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;data.envoy.authz.allow&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;requested_by&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;result&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;time&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;2020-06-11T18:58:47Z&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;timestamp&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;2020-06-11T18:58:47.840319148Z&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;openpolicyagent.org/decision_logs&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在这种情况下，OPA &lt;code&gt;result&lt;/code&gt; 决定为真，意味着请求被允许通过过滤器并到达 &lt;code&gt;backend&lt;/code&gt; 服务，因为满足了 &lt;code&gt;opa-policy.rego&lt;/code&gt; Rego 策略中定义的所有以下条件：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;从 &lt;code&gt;x-forwarded-client-cert&lt;/code&gt;（XFCC）头中提取的 SPIFFE ID URI 匹配预期的 SPIFFE ID：&lt;code&gt;spiffe://example.org/ns/default/sa/default/frontend&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;请求的路径匹配：&lt;code&gt;/profiles/2&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;HTTP 方法匹配：&lt;code&gt;GET&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;测试无效请求&#34;&gt;测试无效请求&lt;/h2&gt;
+&lt;p&gt;另一方面，按照相同的步骤，我们可以确认不满足策略的请求阻止了相关数据的显示。在此情况下，&lt;code&gt;frontend-2&lt;/code&gt;服务无法与&lt;code&gt;backend&lt;/code&gt;服务通信，因为其 SPIFFE ID 不满足 OPA Agent 的策略。因此，当你连接到&lt;code&gt;frontend-2&lt;/code&gt;服务的 URL（例如&lt;code&gt;http://35.222.190.182:3002&lt;/code&gt;），浏览器只显示标题，没有任何帐户详细信息。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-浏览器视图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/frontend-2_view_no_details.png&#34; alt=&#34;浏览器视图&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      浏览器视图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;尝试显示&lt;code&gt;frontend-2&lt;/code&gt;数据后，你可以使用与上一节相同的&lt;code&gt;scripts/backend-opa-logs.sh&lt;/code&gt;脚本来验证 OPA 做出的决定。由于 SPIFFE ID 不匹配，&lt;code&gt;frontend-2&lt;/code&gt;服务有类似的日志条目，但结果等于&lt;code&gt;false&lt;/code&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;使用新策略重新测试-frontend-2&#34;&gt;使用新策略重新测试 frontend-2&lt;/h2&gt;
+&lt;p&gt;让我们更新 Rego 策略以匹配&lt;code&gt;frontend-2&lt;/code&gt;的 SPIFFE ID，然后再进行测试。我们可以利用一个 Bash 脚本来完成这个任务。执行后，它将打开由你的&lt;code&gt;KUBE_EDITOR&lt;/code&gt;或&lt;code&gt;EDITOR&lt;/code&gt;环境变量定义的编辑器，或者在 Linux 上回退到&lt;code&gt;vi&lt;/code&gt;，在 Windows 上回退到 Notepad。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ bash scripts/backend-update-policy.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;打开编辑器后，寻找指定 SPIFFE ID 的以下行：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;svc_spiffe_id == &amp;#34;spiffe://example.org/ns/default/sa/default/frontend&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;更新该行以匹配&lt;code&gt;frontend-2&lt;/code&gt;工作负载的 SPIFFE ID：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;svc_spiffe_id == &amp;#34;spiffe://example.org/ns/default/sa/default/frontend-2&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;保存更改并退出。&lt;code&gt;backend-update-policy.sh&lt;/code&gt;脚本恢复。该脚本应用 ConfigMap 的新版本，然后重新启动&lt;code&gt;backend&lt;/code&gt;pod 以获取新的规则。等待几秒钟，等待部署传播，然后再尝试在浏览器中查看&lt;code&gt;frontend-2&lt;/code&gt;服务。一旦 pod 准备就绪，刷新浏览器，使用&lt;code&gt;frontend-2&lt;/code&gt;服务的正确 URL（例如&lt;code&gt;http://35.222.190.182:3002&lt;/code&gt;）。结果，现在页面显示了用户&lt;em&gt;Alex Fergus&lt;/em&gt;的帐户详细信息。&lt;/p&gt;
+&lt;p&gt;另一方面，如果你现在连接到&lt;code&gt;frontend&lt;/code&gt;服务的 URL（例如&lt;code&gt;http://35.222.164.221:3000&lt;/code&gt;），浏览器只显示标题，没有任何帐户详细信息。这是预期的行为，因为策略已经更新，现在&lt;code&gt;frontend&lt;/code&gt;服务的 SPIFFE ID 不再满足策略。&lt;/p&gt;
+&lt;h1 id=&#34;清理&#34;&gt;清理&lt;/h1&gt;
+&lt;p&gt;当你完成时，你可以使用以下命令清理为教程创建的环境。它将删除：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;为此 SPIRE - Envoy 与 OPA 集成教程创建的所有资源&lt;/li&gt;
+&lt;li&gt;为 SPIRE - Envoy X.509 集成教程创建的所有资源&lt;/li&gt;
+&lt;li&gt;SPIRE Agent，SPIRE Server 和命名空间的所有部署和配置&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ bash scripts/clean-env.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
     </item>
     
     <item>
@@ -6161,6 +6487,314 @@ Selector      : k8s:container-name:auth-helper
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        }
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    }
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    
+    <item>
+      <title>使用 Envoy 和 JWT-SVIDs 进行 OPA 授权</title>
+      <link>https://lib.jimmysong.io/spiffe-and-spire/examples/envoy-jwt-opa/</link>
+      <pubDate>Mon, 23 Oct 2023 00:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/spiffe-and-spire/examples/envoy-jwt-opa/</guid>
+      <description>&lt;p&gt;本文指导你如何使用 Envoy 和 JWT-SVIDs 以及开放策略代理进行安全通信。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.openpolicyagent.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;开放策略代理&lt;/a&gt;（OPA）是一个开源的、通用的策略引擎。OPA 提供的授权（AuthZ）可以很好地补充 SPIRE 提供的认证（AuthN）。&lt;/p&gt;
+&lt;p&gt;本教程基于&lt;a href=&#34;https://github.com/spiffe/spire-tutorials/blob/main/envoy-jwt/README.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE Envoy-JWT 教程&lt;/a&gt;，演示如何结合 SPIRE、Envoy 和 OPA 进行 JWT SVID 认证和请求授权。实现 OPA 请求授权所需的更改在本教程中以增量形式展示，因此你应先运行或至少阅读 SPIRE Envoy-JWT 教程。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-架构图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/SPIRE-Envoy_JWT_OPA_diagram.png&#34; alt=&#34;架构图&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      架构图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;为了说明如何使用 OPA 进行请求授权，我们在 SPIRE Envoy JWT 教程中使用的后端服务中添加了一个新的 sidecar。新的 sidecar 充当 Envoy 的新&lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/v1.25.1/intro/arch_overview/security/ext_authz_filter#arch-overview-ext-authz&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;外部授权过滤器&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;如图所示，前端服务通过由 Envoy 实例建立的 mTLS 连接连接到后端服务。Envoy 通过 mTLS 连接发送 HTTP 请求，其中携带了用于认证的 JWT-SVID。JWT-SVID 由 SPIRE Agent 提供并验证，然后，请求会根据安全策略由 OPA Agent 实例授权或拒绝。&lt;/p&gt;
+&lt;p&gt;在本教程中，你将学习如何：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;将 OPA Agent 添加到 SPIRE Envoy JWT 教程中现有的后端服务&lt;/li&gt;
+&lt;li&gt;在连接 Envoy 到 OPA 的 Envoy 配置中添加一个外部授权过滤器&lt;/li&gt;
+&lt;li&gt;测试成功的使用 SPIRE 和 OPA 授权的 JWT 认证&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;先决条件&#34;&gt;先决条件&lt;/h1&gt;
+&lt;h2 id=&#34;外部-ip-支持&#34;&gt;外部 IP 支持&lt;/h2&gt;
+&lt;p&gt;本教程需要一个负载均衡器，该负载均衡器能够分配外部 IP（例如，&lt;a href=&#34;https://metallb.universe.tf/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;metallb&lt;/a&gt;）&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;等到 metallb 启动&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl &lt;span class=&#34;nb&#34;&gt;wait&lt;/span&gt; --namespace metallb-system &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;                --for&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;condition&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;ready pod &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;                --selector&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;metallb &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;                --timeout&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;90s
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;应用 metallb 配置：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl apply -f ../envoy-x509/metallb-config.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;授权助手镜像&#34;&gt;授权助手镜像&lt;/h2&gt;
+&lt;p&gt;使用&lt;a href=&#34;https://github.com/spiffe/spire-tutorials/blob/main/envoy-jwt-auth-helper&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy-jwt-auth-helper&lt;/a&gt;实现了一个外部授权过滤器，提供了一个脚本来简化使用&lt;code&gt;kind&lt;/code&gt;或&lt;code&gt;minikube&lt;/code&gt;的构建和导入&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ bash ./scripts/build-helper.sh kind
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;之前的-spire-安装&#34;&gt;之前的 SPIRE 安装&lt;/h2&gt;
+&lt;p&gt;在开始之前，回顾以下内容：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;你需要访问在完成 &lt;a href=&#34;https://github.com/spiffe/spire-tutorials/blob/main/envoy-jwt/README.md&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SPIRE Envoy-JWT 教程&lt;/a&gt;时配置的 Kubernetes 环境。或者，你可以使用下面描述的&lt;code&gt;pre-set-env.sh&lt;/code&gt;脚本创建 Kubernetes 环境。&lt;/li&gt;
+&lt;li&gt;此教程所需的 YAML 文件可以在  &lt;a href=&#34;https://github.com/spiffe/spire-tutorials&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://github.com/spiffe/spire-tutorials&lt;/a&gt; 的 &lt;code&gt;k8s/envoy-jwt-opa&lt;/code&gt; 目录中找到。如果你还没有克隆 spire-tutorials 存储库，请立即这样做。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;如果 Kubernetes &lt;em&gt;配置 Envoy 以执行 JWT SVID 身份验证&lt;/em&gt;教程环境不可用，你可以使用以下脚本创建它，并将它用作本教程的起点。从&lt;code&gt;k8s/envoy-jwt-opa&lt;/code&gt;目录中，运行以下 Bash 脚本：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ bash scripts/pre-set-env.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;该脚本将创建 SPIRE 服务器和 SPIRE 代理在集群中可用所需的所有资源，然后将为 SPIRE Envoy JWT 教程创建所有资源，这是此 SPIRE Envoy JWT 与 OPA 教程的基础场景。&lt;/p&gt;
+&lt;p&gt;注意：本教程中显示的配置更改需要使 Envoy 和 OPA 与 SPIRE 一起工作。但是，所有这些设置已经配置好了。你不需要编辑任何配置文件。&lt;/p&gt;
+&lt;h1 id=&#34;第一部分部署更新和新资源&#34;&gt;第一部分：部署更新和新资源&lt;/h1&gt;
+&lt;p&gt;假定 SPIRE Envoy JWT 教程为起点，需要创建一些资源。目标是在请求到达&lt;code&gt;backend&lt;/code&gt;服务之前，由 OPA 代理对其进行授权。在 Envoy 实例之间建立了 mTLS 连接，其中 JWT SVID 在请求中作为&lt;code&gt;authorization&lt;/code&gt;头部传输。因此，缺少的部分是添加一个 OPA 代理以根据策略对请求进行授权。在本教程中应用的解决方案包括向运行在&lt;code&gt;backend&lt;/code&gt;服务前的 Envoy 实例添加新的外部授权过滤器。新的过滤器在请求通过 Envoy JWT Auth Helper（第一个过滤器）之后调用 OPA 代理，其作用是检查是否应授权或拒绝请求。&lt;/p&gt;
+&lt;h2 id=&#34;更新部署&#34;&gt;更新部署&lt;/h2&gt;
+&lt;p&gt;为了让 OPA 授权或拒绝发送到&lt;code&gt;backend&lt;/code&gt;服务的请求，我们需要将 OPA 添加为部署的 sidecar。我们使用&lt;code&gt;openpolicyagent/opa:0.50.2-envoy&lt;/code&gt;镜像，该镜像扩展了 OPA 并添加了一个实现 Envoy 外部授权 API 的 gRPC 服务器，因此 OPA 可以与 Envoy 通信策略决策。在 &lt;a href=&#34;https://github.com/spiffe/spire-tutorials/blob/main/k8s/envoy-jwt-opa/k8s/backend/backend-deployment.yaml&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;backend-deployment.yaml&lt;/code&gt;&lt;/a&gt;中，添加并配置新的容器，如下所示：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;opa&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;image&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;openpolicyagent/opa:0.50.2-envoy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;imagePullPolicy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;IfNotPresent&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;ports&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;opa-envoy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;containerPort&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;8182&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;protocol&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;TCP&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;opa-api-port&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;containerPort&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;8181&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;protocol&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;TCP&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;args&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;run&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;--server&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;--config-file=/run/opa/opa-config.yaml&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;/run/opa/opa-policy.rego&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;volumeMounts&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;backend-opa-policy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;mountPath&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;/run/opa&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;readOnly&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;需要将&lt;code&gt;backend-opa-policy&lt;/code&gt; ConfigMap 添加到&lt;code&gt;volumes&lt;/code&gt;部分，如下所示：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;backend-opa-policy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;configMap&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;backend-opa-policy-config&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;backend-opa-policy&lt;/code&gt; ConfigMap 提供了两个资源，&lt;code&gt;opa-config.yaml&lt;/code&gt;在&lt;a href=&#34;https://spiffe.io/docs/latest/microservices/envoy-jwt-opa/readme/#opa-configuration&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;OPA 配置&lt;/a&gt;中描述，而&lt;code&gt;opa-policy.rego&lt;/code&gt;策略在&lt;a href=&#34;https://spiffe.io/docs/latest/microservices/envoy-jwt-opa/readme/#opa-policy&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;OPA 策略&lt;/a&gt;部分解释。&lt;/p&gt;
+&lt;h2 id=&#34;opa-配置&#34;&gt;OPA 配置&lt;/h2&gt;
+&lt;p&gt;对于本教程，我们在 &lt;a href=&#34;https://github.com/spiffe/spire-tutorials/blob/main/k8s/envoy-jwt-opa/k8s/backend/config/opa-config.yaml&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;opa-config.yaml&lt;/code&gt;&lt;/a&gt; 中创建了以下 OPA 配置文件：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;decision_logs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;console&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;plugins&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;envoy_ext_authz_grpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;addr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;8182&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;query&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;data.envoy.authz.allow&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;选项&lt;code&gt;decision_logs.console: true&lt;/code&gt;强制 OPA 将决策在控制台上以信息级别本地记录。稍后在教程中，我们将使用这些日志来检查不同请求的结果。&lt;/p&gt;
+&lt;p&gt;接下来，让我们回顾一下&lt;code&gt;envoy_ext_authz_grpc&lt;/code&gt;插件的配置。&lt;code&gt;addr&lt;/code&gt;键设置实现 Envoy 外部授权 API 的 gRPC 服务器的监听地址。这必须与接下来的部分中详细描述的 Envoy 过滤器资源中配置的值匹配。&lt;code&gt;query&lt;/code&gt;键定义要查询的策略决策的名称。下一部分将关注为&lt;code&gt;query&lt;/code&gt;键指定的&lt;code&gt;envoy.authz.allow&lt;/code&gt;策略的细节。&lt;/p&gt;
+&lt;h2 id=&#34;opa-策略&#34;&gt;OPA 策略&lt;/h2&gt;
+&lt;p&gt;OPA 政策使用高级声明性语言 Rego 表达。对于本教程，我们创建了一个名为&lt;code&gt;allow&lt;/code&gt;的样本规则，该规则包含三个表达式（请参见 &lt;a href=&#34;https://github.com/spiffe/spire-tutorials/blob/main/k8s/envoy-jwt-opa/k8s/backend/config/opa-policy.rego&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;opa-policy.rego&lt;/code&gt;&lt;/a&gt;）。所有表达式必须为真，该规则才为真。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package envoy.authz
+
+default allow = false
+
+allow {
+    valid_path
+    http_request.method == &amp;#34;GET&amp;#34;
+    svc_spiffe_id == &amp;#34;spiffe://example.org/ns/default/sa/default/frontend&amp;#34;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;让我们逐一查看每个表达式。&lt;code&gt;valid_path&lt;/code&gt;是一个用户定义的函数，用于确保只允许发送给允许的资源的请求。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;import input.attributes.request.http as http_request
+
+valid_path {
+   glob.match(&amp;#34;/balances/*&amp;#34;, [], http_request.path)
+}
+
+valid_path {
+   glob.match(&amp;#34;/profiles/*&amp;#34;, [], http_request.path)
+}
+
+valid_path {
+   glob.match(&amp;#34;/transactions/*&amp;#34;, [], http_request.path)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;函数&lt;code&gt;valid_path&lt;/code&gt;利用内置函数&lt;code&gt;glob.match(&lt;/code&gt; &lt;em&gt;pattern, delimiters, match&lt;/em&gt;&lt;code&gt;)&lt;/code&gt;的输出，如果在由&lt;em&gt;delimiters&lt;/em&gt;分隔的&lt;em&gt;pattern&lt;/em&gt;中可以找到&lt;em&gt;match&lt;/em&gt;，则其输出为真。然后，要在 Rego 中表示逻辑 OR，你需要定义具有相同名称的多个规则。这就是为什么&lt;code&gt;valid_path&lt;/code&gt;有三个定义，每个有效资源一个。&lt;/p&gt;
+&lt;p&gt;以下表达式定义了请求的 HTTP 方法必须等于&lt;code&gt;GET&lt;/code&gt;:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;http_request.method == &amp;#34;GET&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;最后一个表达式也对应于一个用户定义的函数，只有当 JWT-SVID 中编码的 SPIFFE ID 等于分配给&lt;code&gt;frontend&lt;/code&gt;服务的 SPIFFE ID 时，该函数才会为真。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;svc_spiffe_id == &amp;#34;spiffe://example.org/ns/default/sa/default/frontend&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;函数&lt;code&gt;svc_spiffe_id&lt;/code&gt;从请求中的&lt;code&gt;authorization&lt;/code&gt;头中提取服务的 SPIFFE ID。因为请求已经通过了第一个 Envoy 筛选器（以验证模式运行的 Envoy JWT Auth Helper），我们知道它有一个有效的 JWT，我们可以解码来提取调用服务的 SPIFFE ID。OPA 提供了一个处理 JWT 的特殊代码，我们可以利用它来解码 JWT 并提取 SPIFFE ID：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;svc_spiffe_id = payload.sub {
+   [_, encoded_token] := split(http_request.headers.authorization, &amp;#34; &amp;#34;)
+   [_, payload, _] := io.jwt.decode(encoded_token)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;因此，只有当请求被发送到一个有效的资源（/balances/，/profiles/或/transactions/）并且请求的方法为&lt;code&gt;GET&lt;/code&gt;，且请求来自一个用等于 &lt;code&gt;spiffe://example.org/ns/default/sa/default/frontend&lt;/code&gt; 的 SPIFFE ID 认证的工作负载时，策略才会评估为真。在所有其他情况下，请求都不会被 OPA 授权，因此会被 Envoy 拒绝。&lt;/p&gt;
+&lt;h2 id=&#34;在-envoy-中添加一个新的外部授权过滤器&#34;&gt;在 Envoy 中添加一个新的外部授权过滤器&lt;/h2&gt;
+&lt;p&gt;Envoy 需要知道如何联系刚刚配置的 OPA Agent，以执行每个请求的授权。为了完成设置，我们在&lt;a href=&#34;https://github.com/spiffe/spire-tutorials/blob/main/k8s/envoy-jwt-opa/k8s/backend/config/envoy.yaml&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy 配置&lt;/a&gt;的&lt;code&gt;http_filters&lt;/code&gt;部分添加一个类型为 External Authorization Filter 的新过滤器，如下所示：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;envoy.filters.http.ext_authz&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;typed_config&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;@type&amp;#34;: &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;with_request_body&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;max_request_bytes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;8192&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;allow_partial_message&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;failure_mode_allow&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;false&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;transport_api_version&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;V3&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;grpc_service&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;google_grpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;target_uri&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;127.0.0.1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;8182&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;stat_prefix&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ext_authz&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;timeout&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0.&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;5s&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;该配置告诉 Envoy 联系 OPA Agent，地址为 127.0.0.1，端口为 8182。这与在&lt;a href=&#34;https://spiffe.io/docs/latest/microservices/envoy-jwt-opa/readme/#opa-configuration&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;OPA 配置&lt;/a&gt;部分解释的 OPA 配置相匹配。&lt;/p&gt;
+&lt;h2 id=&#34;应用新资源&#34;&gt;应用新资源&lt;/h2&gt;
+&lt;p&gt;确保当前的工作目录是&lt;code&gt;.../spire-tutorials/k8s/envoy-jwt-opa&lt;/code&gt;，并使用以下命令部署新资源：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl apply -k k8s/.
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;configmap/backend-envoy configured
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;configmap/backend-opa-policy-config created
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;deployment.apps/backend configured
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;为了使新配置生效，需要重启&lt;code&gt;backend&lt;/code&gt;服务。运行以下两个命令来强制重启：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl scale deployment backend --replicas&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl scale deployment backend --replicas&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;第二部分测试连接&#34;&gt;第二部分：测试连接&lt;/h1&gt;
+&lt;p&gt;现在服务已经更新和部署，让我们测试我们已经配置的授权。&lt;/p&gt;
+&lt;h2 id=&#34;测试有效请求&#34;&gt;测试有效请求&lt;/h2&gt;
+&lt;p&gt;第一个测试将演示如何允许满足策略的请求显示关联数据。为了运行这个测试，我们需要找到组成用于访问数据的 URL 的 IP 地址和端口。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl get services
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;NAME            TYPE           CLUSTER-IP    EXTERNAL-IP      PORT&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;S&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;          AGE
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;backend-envoy   ClusterIP      None            &amp;lt;none&amp;gt;           9001/TCP         5m56s
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;frontend        LoadBalancer   10.96.194.108   172.18.255.200   3000:30824/TCP   5m56s
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;frontend-2      LoadBalancer   10.96.61.216    172.18.255.201   3002:31960/TCP   5m56s
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubernetes      ClusterIP      10.96.0.1       &amp;lt;none&amp;gt;           443/TCP          14m
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;frontend&lt;/code&gt;服务将在&lt;code&gt;EXTERNAL-IP&lt;/code&gt;值和端口&lt;code&gt;3000&lt;/code&gt;处可用，这是我们为容器配置的。在上面显示的示例输出中，导航到的 URL 是&lt;code&gt;http://172.18.255.200:3000&lt;/code&gt;。打开浏览器，并导航到你的环境中显示为&lt;code&gt;frontend&lt;/code&gt;的 IP 地址，添加端口&lt;code&gt;:3000&lt;/code&gt;。一旦页面加载，你将看到用户&lt;em&gt;Jacob Marley&lt;/em&gt;的账户详情。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-前端&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/frontend_view.png&#34; alt=&#34;前端&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      前端
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;让我们看看 OPA Agent 的日志，看看幕后发生了什么。使用以下 Bash 脚本获取运行在&lt;code&gt;backend&lt;/code&gt;服务旁的 OPA 实例的日志，并使用 &lt;a href=&#34;https://stedolan.github.io/jq/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;jq&lt;/a&gt; 处理输出：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ bash scripts/backend-opa-logs.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;输出显示了每个请求的决策。例如，对&lt;code&gt;frontend&lt;/code&gt;服务的请求可能会产生类似于以下的日志条目：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;decision_id&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;96ed5a6c-c2d3-493a-bdd2-bf8b94036bfb&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;input&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;nt&#34;&gt;&amp;#34;attributes&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;err&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;nt&#34;&gt;&amp;#34;request&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;nt&#34;&gt;&amp;#34;http&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;          &lt;span class=&#34;nt&#34;&gt;&amp;#34;headers&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;:authority&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;localhost:3001&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;:method&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;GET&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;:path&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;/transactions/1&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;accept-encoding&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;gzip&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;authorization&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImU2d3JsNkw3Nm5HS3VVVDlJdVhoVEpFbFVIaExSZFJrIiwidHlwIjoiSldUIn0.eyJhdWQiOlsic3BpZmZlOi8vZXhhbXBsZS5vcmcvbnMvZGVmYXVsdC9zYS9kZWZhdWx0L2JhY2tlbmQiXSwiZXhwIjoxNTk0MjM5NzQ3LCJpYXQiOjE1OTQyMzk0NDcsInN1YiI6InNwaWZmZTovL2V4YW1wbGUub3JnL25zL2RlZmF1bHQvc2EvZGVmYXVsdC9mcm9udGVuZCJ9.YiS52Y44iOGgaRPcXmhm_FRHgjGIPknx3HqHvVsQNiQw4uJx3eICPECQqTpFOh3flEqvDizlpehipHHdhKEy8TvZtJRnPQ69Jofce4aCx5wF0KQtOBZ79bx9H0Y0gcWWzIDb3YW3uNVfZnHvojlLnzqJb3axIhAqgNbURmlm4STTISxJxNzYcr24Zio6uTYSEJmLtQlFVShhUUQr0zFyj_tbyc9RRcX3MNWLFrkWS8eVIQvkvKBO2zYt2FA0GACBnSFDcR6u2G-5QCU7mzlOnqCrMZ6q4aaRp86v33fYbKZKSfghfcmAeOKc-aai92sTlSPSpWnv5qLKIs6GpT6H7A&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;content-length&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;0&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;user-agent&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;Go-http-client/1.1&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;x-forwarded-proto&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;http&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;            &lt;span class=&#34;nt&#34;&gt;&amp;#34;x-request-id&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;fad45df6-3cc1-4ce9-9cad-fb3b65eff037&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;          &lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;          &lt;span class=&#34;nt&#34;&gt;&amp;#34;host&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;localhost:3001&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;          &lt;span class=&#34;nt&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;10476077497628160603&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;          &lt;span class=&#34;nt&#34;&gt;&amp;#34;method&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;GET&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;          &lt;span class=&#34;nt&#34;&gt;&amp;#34;path&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;/transactions/1&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;          &lt;span class=&#34;nt&#34;&gt;&amp;#34;protocol&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;HTTP/1.1&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;err&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;err&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;err&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;err&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;s2&#34;&gt;&amp;#34;msg&amp;#34;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;Decision Log&amp;#34;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;s2&#34;&gt;&amp;#34;query&amp;#34;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;data.envoy.authz.allow&amp;#34;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;s2&#34;&gt;&amp;#34;requested_by&amp;#34;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;s2&#34;&gt;&amp;#34;result&amp;#34;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;s2&#34;&gt;&amp;#34;time&amp;#34;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;2020-07-08T20:17:27Z&amp;#34;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;s2&#34;&gt;&amp;#34;timestamp&amp;#34;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;2020-07-08T20:17:27.7568234Z&amp;#34;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;s2&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;openpolicyagent.org/decision_logs&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;err&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;注意 &lt;code&gt;authorization&lt;/code&gt; 头中包含了 JWT。如 &lt;a href=&#34;https://spiffe.io/docs/latest/microservices/envoy-jwt-opa/readme/#opa-policy&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;OPA 策略&lt;/a&gt; 部分所解释的，这个 JWT 使用 OPA 提供的专用代码进行解码，然后提取 SPIFFE ID。我们已经知道，&lt;code&gt;frontend&lt;/code&gt; 服务的 SPIFFE ID 与为 OPA Agent 配置的 Rego 策略中定义的 SPIFFE ID 匹配。此外，请求的路径和方法也匹配规则，所以决策的 &lt;code&gt;result&lt;/code&gt; 为 &lt;code&gt;true&lt;/code&gt;，请求被允许通过过滤器并到达 &lt;code&gt;backend&lt;/code&gt; 服务。&lt;/p&gt;
+&lt;h2 id=&#34;测试无效的请求&#34;&gt;测试无效的请求&lt;/h2&gt;
+&lt;p&gt;另一方面，当你连接到 &lt;code&gt;frontend-2&lt;/code&gt; 服务的 URL (例如 &lt;code&gt;http://172.18.255.201:3002&lt;/code&gt;) 时，浏览器只显示标题，没有任何账户详情。这是因为 &lt;code&gt;frontend-2&lt;/code&gt; 服务的 SPIFFE ID（&lt;code&gt;spiffe://example.org/ns/default/sa/default/frontend-2&lt;/code&gt;）不满足 OPA Agent 的策略。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/frontend-2_view_no_details.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;在尝试显示 &lt;code&gt;frontend-2&lt;/code&gt; 数据后，你可以使用与前一节中执行的相同的 &lt;code&gt;scripts/backend-opa-logs.sh&lt;/code&gt; 脚本来验证 OPA 做出的决定。对于 &lt;code&gt;frontend-2&lt;/code&gt; 服务，有一个类似的日志条目，但是由于 SPIFFE ID 不匹配，&lt;code&gt;result&lt;/code&gt; 等于 &lt;code&gt;false&lt;/code&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;用新策略重新测试-frontend-2&#34;&gt;用新策略重新测试 frontend-2&lt;/h2&gt;
+&lt;p&gt;让我们更新 Rego 策略以匹配 &lt;code&gt;frontend-2&lt;/code&gt; 服务的 SPIFFE ID，然后再测试。你可以利用一个 Bash 脚本来完成这个任务。一旦执行，它会打开你的 &lt;code&gt;KUBE_EDITOR&lt;/code&gt; 或 &lt;code&gt;EDITOR&lt;/code&gt; 环境变量定义的编辑器，或者回退到 Linux 的 &lt;code&gt;vi&lt;/code&gt; 或 Windows 的 Notepad。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ bash scripts/backend-update-policy.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;打开编辑器后，寻找指定规则要匹配的 SPIFFE ID 的以下行：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;svc_spiffe_id == &amp;#34;spiffe://example.org/ns/default/sa/default/frontend&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;更新该行以匹配 &lt;code&gt;frontend-2&lt;/code&gt; 服务的 SPIFFE ID：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;svc_spiffe_id == &amp;#34;spiffe://example.org/ns/default/sa/default/frontend-2&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;保存更改并退出。&lt;code&gt;backend-update-policy.sh&lt;/code&gt; 脚本恢复。该脚本应用 ConfigMap 的新版本，然后重启 &lt;code&gt;backend&lt;/code&gt; pod 以获取新规则。在尝试再次在浏览器中查看 &lt;code&gt;frontend-2&lt;/code&gt; 服务之前，等待一些秒钟以便部署传播。一旦 pod 准备好，刷新使用 &lt;code&gt;frontend-2&lt;/code&gt; 服务的正确 URL（例如 &lt;code&gt;http://172.18.255.201:3002&lt;/code&gt;）的浏览器。结果，现在页面显示了用户 &lt;em&gt;Alex Fergus&lt;/em&gt; 的帐户详细信息。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../images/frontend-2_view.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;另一方面，如果你现在连接到 &lt;code&gt;frontend&lt;/code&gt; 服务的 URL（例如 &lt;code&gt;http://172.18.255.200:3000&lt;/code&gt;），浏览器只显示标题，没有任何账户详情。这是预期的行为，因为策略已经更新，现在 &lt;code&gt;frontend&lt;/code&gt; 服务的 SPIFFE ID 不再满足策略。&lt;/p&gt;
+&lt;h1 id=&#34;清理&#34;&gt;清理&lt;/h1&gt;
+&lt;p&gt;当你完成后，你可以使用以下命令清理为教程创建的环境。它将移除：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;为这个 SPIRE - Envoy JWT 与 OPA 集成教程创建的所有资源&lt;/li&gt;
+&lt;li&gt;为 SPIRE - Envoy JWT 集成教程创建的所有资源&lt;/li&gt;
+&lt;li&gt;SPIRE Agent、SPIRE Server 和命名空间的所有部署和配置&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ bash scripts/clean-env.sh
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
     </item>
     
