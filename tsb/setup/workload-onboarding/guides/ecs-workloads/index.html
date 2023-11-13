@@ -343,7 +343,7 @@ Context Every workload that gets onboarded into the mesh by Workload Onboarding 
         content="2023-08-09T12:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2023-11-06T17:21:52&#43;08:00">
+    <meta property="article:modified_time" content="2023-11-13T16:31:15&#43;08:00">
   
 
   
@@ -3584,12 +3584,14 @@ different container registry, sync the images to it by
 <p>This should match the image registry and tag used by the other TSB images in
 your cluster, you can find the correct image by first extracting the image
 using <code>kubectl</code>:</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">kubectl get deploy -n istio-system onboarding-plane -o jsonpath=&#34;{.spec.template.spec.containers[0].image}&#34;
-</code></pre><p>This will return an image such as:</p>
+</li>
+</ol>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">   kubectl get deploy -n istio-system onboarding-plane -o <span class="nv">jsonpath</span><span class="o">=</span><span class="s2">&#34;{.spec.template.spec.containers[0].image}&#34;</span>
+</span></span></code></pre></div><p>This will return an image such as:</p>
 <pre tabindex="0"><code>123456789012.dkr.ecr.us-east-1.amazonaws.com/registry/onboarding-plane-server:1.5.0
 </code></pre><p>The corresponding Workload Onboarding Agent image will be:</p>
 <pre tabindex="0"><code>123456789012.dkr.ecr.us-east-1.amazonaws.com/registry/onboarding-agent:1.5.0
-</code></pre></li>
+</code></pre><ol start="3">
 <li>
 <p>The user must be set to the root user by using a UID of <code>0</code>.</p>
 </li>
@@ -3676,76 +3678,76 @@ configuration will take the form:</p>
 </ol>
 <h3 id="example-task-definition">Example task definition</h3>
 <p>An example command for creating a task definition is as follows:</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:"># Compact and escape quotes in the onboarding config for encoding in the JSON container definition
-ONBOARDING_CONFIG=$(jq --compact-output . &lt;&lt;&#39;EOF&#39; | sed &#39;s/&#34;/\\&#34;/g&#39;
-{
-  &#34;apiVersion&#34;: &#34;config.agent.onboarding.tetrate.io/v1alpha1&#34;,
-  &#34;kind&#34;: &#34;OnboardingConfiguration&#34;,
-  &#34;onboardingEndpoint&#34;: {
-    &#34;host&#34;: &#34;abcdef-123456789.us-east-1.elb.amazonaws.com&#34;,
-  },
-  &#34;workload&#34;: {
-    &#34;labels&#34;: {
-      &#34;version&#34;: &#34;v5&#34;
-    }
-  },
-  &#34;workloadGroup&#34;: {
-    &#34;name&#34;: &#34;app&#34;,
-    &#34;namespace&#34;: &#34;app-namespace&#34;
-  }
-}
-EOF
-)
-
-# Replace line breaks in the root cert PEM with \n for encoding in the JSON container definition
-ONBOARDING_AGENT_ROOT_CERTS=$(awk &#39;{printf &#34;%s\\n&#34;, $0}&#39; root-ca-cert.pem)
-
-aws ecs register-task-definition \
-  --task-role-arn=&#34;arn:aws:iam::123456789012:role/app-task&#34; \
-  --execution-role-arn=&#34;arn:aws:iam::123456789012:role/ecsTaskExecutionRole&#34; \
-  --family=&#34;app&#34; \
-  --network-mode=&#34;awsvpc&#34; \
-  --cpu=256 \
-  --memory=512 \
-  --requires-compatibilities FARGATE EC2 \
-  --container-definitions=&#39;[
-  {
-    &#34;name&#34;: &#34;onboarding-agent&#34;,
-    &#34;image&#34;: &#34;123456789012.dkr.ecr.us-east-1.amazonaws.com/registry/onboarding-agent:1.5.0&#34;,
-    &#34;user&#34;: &#34;0&#34;,
-    &#34;environment&#34;: [
-      {
-        &#34;name&#34;: &#34;ONBOARDING_CONFIG&#34;,
-        &#34;value&#34;: &#34;&#39;&#34;${ONBOARDING_CONFIG}&#34;&#39;&#34;
-      },
-      {
-        &#34;name&#34;: &#34;ONBOARDING_AGENT_ROOT_CERTS&#34;,
-        &#34;value&#34;: &#34;&#39;&#34;${ONBOARDING_AGENT_ROOT_CERTS}&#34;&#39;&#34;
-      }
-    ],
-    &#34;logConfiguration&#34;: {
-      &#34;logDriver&#34;: &#34;awslogs&#34;,
-      &#34;options&#34;: {
-        &#34;awslogs-group&#34;: &#34;/ecs/app&#34;,
-        &#34;awslogs-region&#34;: &#34;us-east-1&#34;,
-        &#34;awslogs-stream-prefix&#34;: &#34;ecs&#34;
-      }
-    }
-  },
-  {
-    &#34;name&#34;: &#34;app&#34;,
-    &#34;image&#34;: &#34;123456789012.dkr.ecr.us-east-1.amazonaws.com/registry/app:1.2.3&#34;,
-    &#34;logConfiguration&#34;: {
-      &#34;logDriver&#34;: &#34;awslogs&#34;,
-      &#34;options&#34;: {
-        &#34;awslogs-group&#34;: &#34;/ecs/app&#34;,
-        &#34;awslogs-region&#34;: &#34;us-east-1&#34;,
-        &#34;awslogs-stream-prefix&#34;: &#34;ecs&#34;
-      }
-    }
-  }
-]&#39;
-</code></pre><h2 id="using-an-internal-load-balancer">Using an internal load balancer</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Compact and escape quotes in the onboarding config for encoding in the JSON container definition</span>
+</span></span><span class="line"><span class="cl"><span class="nv">ONBOARDING_CONFIG</span><span class="o">=</span><span class="k">$(</span>jq --compact-output . <span class="s">&lt;&lt;&#39;EOF&#39; | sed &#39;s/&#34;/\\&#34;/g&#39;
+</span></span></span><span class="line"><span class="cl"><span class="s">{
+</span></span></span><span class="line"><span class="cl"><span class="s">  &#34;apiVersion&#34;: &#34;config.agent.onboarding.tetrate.io/v1alpha1&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">  &#34;kind&#34;: &#34;OnboardingConfiguration&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">  &#34;onboardingEndpoint&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s">    &#34;host&#34;: &#34;abcdef-123456789.us-east-1.elb.amazonaws.com&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">  },
+</span></span></span><span class="line"><span class="cl"><span class="s">  &#34;workload&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s">    &#34;labels&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s">      &#34;version&#34;: &#34;v5&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s">    }
+</span></span></span><span class="line"><span class="cl"><span class="s">  },
+</span></span></span><span class="line"><span class="cl"><span class="s">  &#34;workloadGroup&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s">    &#34;name&#34;: &#34;app&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">    &#34;namespace&#34;: &#34;app-namespace&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s">  }
+</span></span></span><span class="line"><span class="cl"><span class="s">}
+</span></span></span><span class="line"><span class="cl"><span class="s">EOF</span>
+</span></span><span class="line"><span class="cl"><span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Replace line breaks in the root cert PEM with \n for encoding in the JSON container definition</span>
+</span></span><span class="line"><span class="cl"><span class="nv">ONBOARDING_AGENT_ROOT_CERTS</span><span class="o">=</span><span class="k">$(</span>awk <span class="s1">&#39;{printf &#34;%s\\n&#34;, $0}&#39;</span> root-ca-cert.pem<span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws ecs register-task-definition <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --task-role-arn<span class="o">=</span><span class="s2">&#34;arn:aws:iam::123456789012:role/app-task&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --execution-role-arn<span class="o">=</span><span class="s2">&#34;arn:aws:iam::123456789012:role/ecsTaskExecutionRole&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --family<span class="o">=</span><span class="s2">&#34;app&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --network-mode<span class="o">=</span><span class="s2">&#34;awsvpc&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --cpu<span class="o">=</span><span class="m">256</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --memory<span class="o">=</span><span class="m">512</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --requires-compatibilities FARGATE EC2 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --container-definitions<span class="o">=</span><span class="s1">&#39;[
+</span></span></span><span class="line"><span class="cl"><span class="s1">  {
+</span></span></span><span class="line"><span class="cl"><span class="s1">    &#34;name&#34;: &#34;onboarding-agent&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">    &#34;image&#34;: &#34;123456789012.dkr.ecr.us-east-1.amazonaws.com/registry/onboarding-agent:1.5.0&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">    &#34;user&#34;: &#34;0&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">    &#34;environment&#34;: [
+</span></span></span><span class="line"><span class="cl"><span class="s1">      {
+</span></span></span><span class="line"><span class="cl"><span class="s1">        &#34;name&#34;: &#34;ONBOARDING_CONFIG&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">        &#34;value&#34;: &#34;&#39;</span><span class="s2">&#34;</span><span class="si">${</span><span class="nv">ONBOARDING_CONFIG</span><span class="si">}</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s1">      },
+</span></span></span><span class="line"><span class="cl"><span class="s1">      {
+</span></span></span><span class="line"><span class="cl"><span class="s1">        &#34;name&#34;: &#34;ONBOARDING_AGENT_ROOT_CERTS&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">        &#34;value&#34;: &#34;&#39;</span><span class="s2">&#34;</span><span class="si">${</span><span class="nv">ONBOARDING_AGENT_ROOT_CERTS</span><span class="si">}</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s1">      }
+</span></span></span><span class="line"><span class="cl"><span class="s1">    ],
+</span></span></span><span class="line"><span class="cl"><span class="s1">    &#34;logConfiguration&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s1">      &#34;logDriver&#34;: &#34;awslogs&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">      &#34;options&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s1">        &#34;awslogs-group&#34;: &#34;/ecs/app&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">        &#34;awslogs-region&#34;: &#34;us-east-1&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">        &#34;awslogs-stream-prefix&#34;: &#34;ecs&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s1">      }
+</span></span></span><span class="line"><span class="cl"><span class="s1">    }
+</span></span></span><span class="line"><span class="cl"><span class="s1">  },
+</span></span></span><span class="line"><span class="cl"><span class="s1">  {
+</span></span></span><span class="line"><span class="cl"><span class="s1">    &#34;name&#34;: &#34;app&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">    &#34;image&#34;: &#34;123456789012.dkr.ecr.us-east-1.amazonaws.com/registry/app:1.2.3&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">    &#34;logConfiguration&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s1">      &#34;logDriver&#34;: &#34;awslogs&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">      &#34;options&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s1">        &#34;awslogs-group&#34;: &#34;/ecs/app&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">        &#34;awslogs-region&#34;: &#34;us-east-1&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">        &#34;awslogs-stream-prefix&#34;: &#34;ecs&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s1">      }
+</span></span></span><span class="line"><span class="cl"><span class="s1">    }
+</span></span></span><span class="line"><span class="cl"><span class="s1">  }
+</span></span></span><span class="line"><span class="cl"><span class="s1">]&#39;</span>
+</span></span></code></pre></div><h2 id="using-an-internal-load-balancer">Using an internal load balancer</h2>
 <p>In the default configuration, the Workload Onboarding Plane in your EKS
 cluster uses an internet-facing load balancer. This means that traffic from
 the Onboarding Agent and Istio will not stay within your VPC.</p>
@@ -3767,26 +3769,26 @@ by adding an overlay in the <code>ControlPlane</code> CR or Helm values of the f
 </span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">value</span><span class="p">:</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">service.beta.kubernetes.io/aws-load-balancer-scheme</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;internal&#34;</span><span class="w">
 </span></span></span></code></pre></div><p>If there are no other overlays, this can be applied using the following command:</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">kubectl patch -n istio-system controlplane/controlplane --type json --patch &#39;
-- op: add
-  path: &#34;/spec/components/istio/kubeSpec/overlays&#34;
-  value:
-    - apiVersion: install.istio.io/v1alpha1
-      kind: IstioOperator
-      name: tsb-istiocontrolplane
-      patches:
-      - path: spec.components.ingressGateways.[name:vmgateway].k8s.serviceAnnotations
-        value:
-          service.beta.kubernetes.io/aws-load-balancer-scheme: &#34;internal&#34;
-&#39;
-</code></pre><p>After making this change, you should see the Workload Onboarding Endpoint
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl patch -n istio-system controlplane/controlplane --type json --patch <span class="s1">&#39;
+</span></span></span><span class="line"><span class="cl"><span class="s1">- op: add
+</span></span></span><span class="line"><span class="cl"><span class="s1">  path: &#34;/spec/components/istio/kubeSpec/overlays&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s1">  value:
+</span></span></span><span class="line"><span class="cl"><span class="s1">    - apiVersion: install.istio.io/v1alpha1
+</span></span></span><span class="line"><span class="cl"><span class="s1">      kind: IstioOperator
+</span></span></span><span class="line"><span class="cl"><span class="s1">      name: tsb-istiocontrolplane
+</span></span></span><span class="line"><span class="cl"><span class="s1">      patches:
+</span></span></span><span class="line"><span class="cl"><span class="s1">      - path: spec.components.ingressGateways.[name:vmgateway].k8s.serviceAnnotations
+</span></span></span><span class="line"><span class="cl"><span class="s1">        value:
+</span></span></span><span class="line"><span class="cl"><span class="s1">          service.beta.kubernetes.io/aws-load-balancer-scheme: &#34;internal&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s1">&#39;</span>
+</span></span></code></pre></div><p>After making this change, you should see the Workload Onboarding Endpoint
 address update to be of the form
 <code>internal-abcxyz.us-east-1.elb.amazonaws.com</code>. You can query this address
 using the following command:</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">kubectl get svc vmgateway \
-  -n istio-system \
-  -ojsonpath=&#34;{.status.loadBalancer.ingress[0][&#39;hostname&#39;, &#39;ip&#39;]}&#34;
-</code></pre><p>Once the internal load balancer address has been assigned, ensure the
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl get svc vmgateway <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -n istio-system <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -ojsonpath<span class="o">=</span><span class="s2">&#34;{.status.loadBalancer.ingress[0][&#39;hostname&#39;, &#39;ip&#39;]}&#34;</span>
+</span></span></code></pre></div><p>Once the internal load balancer address has been assigned, ensure the
 <code>onboardingEndpoint</code> field in your
 <a href="../../../refs/onboarding/config/agent/v1alpha1/onboarding_configuration">onboarding configuration</a>
 uses the new value.</p>
@@ -3827,7 +3829,7 @@ uses the new value.</p>
           
 
         <div class="body-footer">
-          <p>最近更新于 2023-11-06</p>
+          <p>最近更新于 2023-11-13</p>
 
           
 

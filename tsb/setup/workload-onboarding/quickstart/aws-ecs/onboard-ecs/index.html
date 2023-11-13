@@ -343,7 +343,7 @@ aws ecs create-cluster --cluster-name bookinfo --capacity-providers FARGATE Crea
         content="2023-08-09T12:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2023-11-06T17:21:52&#43;08:00">
+    <meta property="article:modified_time" content="2023-11-13T16:31:15&#43;08:00">
   
 
   
@@ -3502,330 +3502,330 @@ with this task definition</li>
 <h2 id="create-an-aws-ecs-cluster">Create an AWS ECS cluster</h2>
 <p>Create an AWS ECS cluster called <code>bookinfo</code> using <code>FARGATE</code> as the capacity
 provider.</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">aws ecs create-cluster --cluster-name bookinfo --capacity-providers FARGATE
-</code></pre><h2 id="create-an-iam-role-for-the-task">Create an IAM role for the task</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">aws ecs create-cluster --cluster-name bookinfo --capacity-providers FARGATE
+</span></span></code></pre></div><h2 id="create-an-iam-role-for-the-task">Create an IAM role for the task</h2>
 <p>Create an IAM role for the task with the following trust policy.</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">cat &lt;&lt; EOF &gt; task-role-trust-policy.json
-{
-  &#34;Version&#34;: &#34;2012-10-17&#34;,
-  &#34;Statement&#34;: [
-    {
-      &#34;Effect&#34;: &#34;Allow&#34;,
-      &#34;Principal&#34;: {
-        &#34;Service&#34;: &#34;ecs-tasks.amazonaws.com&#34;
-      },
-      &#34;Action&#34;: &#34;sts:AssumeRole&#34;
-    }
-  ]
-}
-EOF
-
-aws iam create-role \
-  --role-name bookinfoECSTaskRole \
-  --assume-role-policy-document file://task-role-trust-policy.json
-</code></pre><p>Configure this role with the following policy to allow
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">cat <span class="s">&lt;&lt; EOF &gt; task-role-trust-policy.json
+</span></span></span><span class="line"><span class="cl"><span class="s">{
+</span></span></span><span class="line"><span class="cl"><span class="s">  &#34;Version&#34;: &#34;2012-10-17&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">  &#34;Statement&#34;: [
+</span></span></span><span class="line"><span class="cl"><span class="s">    {
+</span></span></span><span class="line"><span class="cl"><span class="s">      &#34;Effect&#34;: &#34;Allow&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">      &#34;Principal&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s">        &#34;Service&#34;: &#34;ecs-tasks.amazonaws.com&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s">      },
+</span></span></span><span class="line"><span class="cl"><span class="s">      &#34;Action&#34;: &#34;sts:AssumeRole&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s">    }
+</span></span></span><span class="line"><span class="cl"><span class="s">  ]
+</span></span></span><span class="line"><span class="cl"><span class="s">}
+</span></span></span><span class="line"><span class="cl"><span class="s">EOF</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws iam create-role <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --role-name bookinfoECSTaskRole <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --assume-role-policy-document file://task-role-trust-policy.json
+</span></span></code></pre></div><p>Configure this role with the following policy to allow
 <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html" target="_blank" rel="noopener">ECS Exec</a>.
 This is not required for the task to join the mesh, but is used later in the
 guide to verify traffic from the task to Kubernetes services.</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">cat &lt;&lt; EOF &gt; ecs-exec-policy.json
-{
-  &#34;Version&#34;: &#34;2012-10-17&#34;,
-  &#34;Statement&#34;: [
-    {
-      &#34;Effect&#34;: &#34;Allow&#34;,
-      &#34;Action&#34;: [
-        &#34;ssmmessages:CreateControlChannel&#34;,
-        &#34;ssmmessages:CreateDataChannel&#34;,
-        &#34;ssmmessages:OpenControlChannel&#34;,
-        &#34;ssmmessages:OpenDataChannel&#34;
-      ],
-      &#34;Resource&#34;: &#34;*&#34;
-    }
-  ]
-}
-EOF
-
-aws iam put-role-policy \
-  --role-name bookinfoECSTaskRole \
-  --policy-name bookinfoECSExecPolicy \
-  --policy-document file://ecs-exec-policy.json
-</code></pre><h2 id="create-a-task-execution-iam-role">Create a task execution IAM role</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">cat <span class="s">&lt;&lt; EOF &gt; ecs-exec-policy.json
+</span></span></span><span class="line"><span class="cl"><span class="s">{
+</span></span></span><span class="line"><span class="cl"><span class="s">  &#34;Version&#34;: &#34;2012-10-17&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">  &#34;Statement&#34;: [
+</span></span></span><span class="line"><span class="cl"><span class="s">    {
+</span></span></span><span class="line"><span class="cl"><span class="s">      &#34;Effect&#34;: &#34;Allow&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">      &#34;Action&#34;: [
+</span></span></span><span class="line"><span class="cl"><span class="s">        &#34;ssmmessages:CreateControlChannel&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">        &#34;ssmmessages:CreateDataChannel&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">        &#34;ssmmessages:OpenControlChannel&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">        &#34;ssmmessages:OpenDataChannel&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s">      ],
+</span></span></span><span class="line"><span class="cl"><span class="s">      &#34;Resource&#34;: &#34;*&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s">    }
+</span></span></span><span class="line"><span class="cl"><span class="s">  ]
+</span></span></span><span class="line"><span class="cl"><span class="s">}
+</span></span></span><span class="line"><span class="cl"><span class="s">EOF</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws iam put-role-policy <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --role-name bookinfoECSTaskRole <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --policy-name bookinfoECSExecPolicy <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --policy-document file://ecs-exec-policy.json
+</span></span></code></pre></div><h2 id="create-a-task-execution-iam-role">Create a task execution IAM role</h2>
 <p>Create a task execution IAM role with the following trust policy and configure
 it to use the AWS managed <code>AmazonECSTaskExecutionRolePolicy</code> policy. This
 policy gives the task permissions to access images in your Elastic Container
 Registry (ECR) and to write logs.</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">cat &lt;&lt; EOF &gt; task-exec-role-trust-policy.json
-{
-  &#34;Version&#34;: &#34;2012-10-17&#34;,
-  &#34;Statement&#34;: [
-    {
-      &#34;Effect&#34;: &#34;Allow&#34;,
-      &#34;Principal&#34;: {
-          &#34;Service&#34;: &#34;ecs-tasks.amazonaws.com&#34;
-      },
-      &#34;Action&#34;: &#34;sts:AssumeRole&#34;
-    }
-  ]
-}
-EOF
-
-aws iam create-role \
-  --role-name bookinfoECSTaskExecRole \
-  --assume-role-policy-document file://task-exec-role-trust-policy.json
-
-aws iam attach-role-policy \
-  --role-name bookinfoECSTaskExecRole \
-  --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
-</code></pre><h2 id="create-an-aws-ecs-task-definition">Create an AWS ECS task definition</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">cat <span class="s">&lt;&lt; EOF &gt; task-exec-role-trust-policy.json
+</span></span></span><span class="line"><span class="cl"><span class="s">{
+</span></span></span><span class="line"><span class="cl"><span class="s">  &#34;Version&#34;: &#34;2012-10-17&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">  &#34;Statement&#34;: [
+</span></span></span><span class="line"><span class="cl"><span class="s">    {
+</span></span></span><span class="line"><span class="cl"><span class="s">      &#34;Effect&#34;: &#34;Allow&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">      &#34;Principal&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s">          &#34;Service&#34;: &#34;ecs-tasks.amazonaws.com&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s">      },
+</span></span></span><span class="line"><span class="cl"><span class="s">      &#34;Action&#34;: &#34;sts:AssumeRole&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s">    }
+</span></span></span><span class="line"><span class="cl"><span class="s">  ]
+</span></span></span><span class="line"><span class="cl"><span class="s">}
+</span></span></span><span class="line"><span class="cl"><span class="s">EOF</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws iam create-role <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --role-name bookinfoECSTaskExecRole <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --assume-role-policy-document file://task-exec-role-trust-policy.json
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws iam attach-role-policy <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --role-name bookinfoECSTaskExecRole <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+</span></span></code></pre></div><h2 id="create-an-aws-ecs-task-definition">Create an AWS ECS task definition</h2>
 <p>Set the onboarding configuration as JSON in a shell variable, with spaces
 removed and quotes escaped so that it can be encoded in the ECS task container
 definition. Replace <code>ONBOARDING_ENDPOINT_ADDRESS</code> with
 <a href="../aws-ec2/enable-workload-onboarding#verify-the-workload-onboarding-endpoint">the value that you have obtained earlier</a>.</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">ONBOARDING_CONFIG=$(jq --compact-output . &lt;&lt;&#39;EOF&#39; | sed &#39;s/&#34;/\\&#34;/g&#39;
-{
-  &#34;apiVersion&#34;: &#34;config.agent.onboarding.tetrate.io/v1alpha1&#34;,
-  &#34;kind&#34;: &#34;OnboardingConfiguration&#34;,
-  &#34;onboardingEndpoint&#34;: {
-    &#34;host&#34;: &#34;&lt;ONBOARDING_ENDPOINT_ADDRESS&gt;&#34;,
-    &#34;transportSecurity&#34;: {
-      &#34;tls&#34;: {
-        &#34;sni&#34;: &#34;onboarding-endpoint.example&#34;
-      }
-    }
-  },
-  &#34;workload&#34;: {
-    &#34;labels&#34;: {
-      &#34;version&#34;: &#34;v5&#34;
-    }
-  },
-  &#34;workloadGroup&#34;: {
-    &#34;name&#34;: &#34;ratings&#34;,
-    &#34;namespace&#34;: &#34;bookinfo&#34;
-  }
-}
-EOF
-)
-</code></pre><p>Set the self-signed root certificate used for signing the onboarding plane TLS
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nv">ONBOARDING_CONFIG</span><span class="o">=</span><span class="k">$(</span>jq --compact-output . <span class="s">&lt;&lt;&#39;EOF&#39; | sed &#39;s/&#34;/\\&#34;/g&#39;
+</span></span></span><span class="line"><span class="cl"><span class="s">{
+</span></span></span><span class="line"><span class="cl"><span class="s">  &#34;apiVersion&#34;: &#34;config.agent.onboarding.tetrate.io/v1alpha1&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">  &#34;kind&#34;: &#34;OnboardingConfiguration&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">  &#34;onboardingEndpoint&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s">    &#34;host&#34;: &#34;&lt;ONBOARDING_ENDPOINT_ADDRESS&gt;&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">    &#34;transportSecurity&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s">      &#34;tls&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s">        &#34;sni&#34;: &#34;onboarding-endpoint.example&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s">      }
+</span></span></span><span class="line"><span class="cl"><span class="s">    }
+</span></span></span><span class="line"><span class="cl"><span class="s">  },
+</span></span></span><span class="line"><span class="cl"><span class="s">  &#34;workload&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s">    &#34;labels&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s">      &#34;version&#34;: &#34;v5&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s">    }
+</span></span></span><span class="line"><span class="cl"><span class="s">  },
+</span></span></span><span class="line"><span class="cl"><span class="s">  &#34;workloadGroup&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s">    &#34;name&#34;: &#34;ratings&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s">    &#34;namespace&#34;: &#34;bookinfo&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s">  }
+</span></span></span><span class="line"><span class="cl"><span class="s">}
+</span></span></span><span class="line"><span class="cl"><span class="s">EOF</span>
+</span></span><span class="line"><span class="cl"><span class="k">)</span>
+</span></span></code></pre></div><p>Set the self-signed root certificate used for signing the onboarding plane TLS
 certificate in a shell variable, with the line breaks escaped so that it can
 be encoded in the ECS task container definition. <code>example-ca.crt.pem</code> is the
 self-signed cert created earlier when
 <a href="../aws-ec2/enable-workload-onboarding#prepare-the-certificates">enabling workload onboarding</a>.</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">ONBOARDING_AGENT_ROOT_CERTS=$(awk &#39;{printf &#34;%s\\n&#34;, $0}&#39; example-ca.crt.pem)
-</code></pre><p>Now create the ECS task definition with the following command:</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">AWS_REGION=$(aws configure get region)
-TASK_ROLE_ARN=$(aws iam get-role --role-name bookinfoECSTaskRole --query &#39;Role.Arn&#39; --output text)
-TASK_EXECUTION_ROLE_ARN=$(aws iam get-role --role-name bookinfoECSTaskExecRole --query &#39;Role.Arn&#39; --output text)
-ONBOARDING_AGENT_IMAGE=$(kubectl get deploy onboarding-operator -n istio-system -ojsonpath=&#39;{.spec.template.spec.containers[?(@.name==&#34;onboarding-operator&#34;)].image}&#39; | sed &#39;s|/onboarding-operator-server:|/onboarding-agent:|&#39;)
-
-aws ecs register-task-definition \
-  --task-role-arn=&#34;${TASK_ROLE_ARN}&#34; \
-  --execution-role-arn=&#34;${TASK_EXECUTION_ROLE_ARN}&#34; \
-  --family=&#34;bookinfo_ratings&#34; \
-  --network-mode=&#34;awsvpc&#34; \
-  --cpu=256 \
-  --memory=512 \
-  --requires-compatibilities FARGATE \
-  --container-definitions=&#39;[
-   {
-       &#34;name&#34;: &#34;onboarding-agent&#34;,
-       &#34;image&#34;: &#34;&#39;&#34;${ONBOARDING_AGENT_IMAGE}&#34;&#39;&#34;,
-       &#34;user&#34;: &#34;0&#34;,
-       &#34;environment&#34;: [
-           {
-               &#34;name&#34;: &#34;ONBOARDING_CONFIG&#34;,
-               &#34;value&#34;: &#34;&#39;&#34;${ONBOARDING_CONFIG}&#34;&#39;&#34;
-           },
-           {
-               &#34;name&#34;: &#34;ONBOARDING_AGENT_ROOT_CERTS&#34;,
-               &#34;value&#34;: &#34;&#39;&#34;${ONBOARDING_AGENT_ROOT_CERTS}&#34;&#39;&#34;
-           }
-       ],
-       &#34;logConfiguration&#34;: {
-           &#34;logDriver&#34;: &#34;awslogs&#34;,
-           &#34;options&#34;: {
-               &#34;awslogs-group&#34;: &#34;/ecs/bookinfo_ratings&#34;,
-               &#34;awslogs-region&#34;: &#34;&#39;&#34;${AWS_REGION}&#34;&#39;&#34;,
-               &#34;awslogs-stream-prefix&#34;: &#34;ecs&#34;
-           }
-       }
-   },
-   {
-       &#34;name&#34;: &#34;ratings&#34;,
-       &#34;image&#34;: &#34;docker.io/tetrate/tetrate-examples-bookinfo-ratings-localhost-v1:1.16.4&#34;,
-       &#34;essential&#34;: true,
-       &#34;logConfiguration&#34;: {
-           &#34;logDriver&#34;: &#34;awslogs&#34;,
-           &#34;options&#34;: {
-               &#34;awslogs-group&#34;: &#34;/ecs/bookinfo_ratings&#34;,
-               &#34;awslogs-region&#34;: &#34;&#39;&#34;${AWS_REGION}&#34;&#39;&#34;,
-               &#34;awslogs-stream-prefix&#34;: &#34;ecs&#34;
-           }
-       }
-   }
-]&#39;
-</code></pre><p>This configures the task to write logs using the
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nv">ONBOARDING_AGENT_ROOT_CERTS</span><span class="o">=</span><span class="k">$(</span>awk <span class="s1">&#39;{printf &#34;%s\\n&#34;, $0}&#39;</span> example-ca.crt.pem<span class="k">)</span>
+</span></span></code></pre></div><p>Now create the ECS task definition with the following command:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nv">AWS_REGION</span><span class="o">=</span><span class="k">$(</span>aws configure get region<span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">TASK_ROLE_ARN</span><span class="o">=</span><span class="k">$(</span>aws iam get-role --role-name bookinfoECSTaskRole --query <span class="s1">&#39;Role.Arn&#39;</span> --output text<span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">TASK_EXECUTION_ROLE_ARN</span><span class="o">=</span><span class="k">$(</span>aws iam get-role --role-name bookinfoECSTaskExecRole --query <span class="s1">&#39;Role.Arn&#39;</span> --output text<span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">ONBOARDING_AGENT_IMAGE</span><span class="o">=</span><span class="k">$(</span>kubectl get deploy onboarding-operator -n istio-system -ojsonpath<span class="o">=</span><span class="s1">&#39;{.spec.template.spec.containers[?(@.name==&#34;onboarding-operator&#34;)].image}&#39;</span> <span class="p">|</span> sed <span class="s1">&#39;s|/onboarding-operator-server:|/onboarding-agent:|&#39;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws ecs register-task-definition <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --task-role-arn<span class="o">=</span><span class="s2">&#34;</span><span class="si">${</span><span class="nv">TASK_ROLE_ARN</span><span class="si">}</span><span class="s2">&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --execution-role-arn<span class="o">=</span><span class="s2">&#34;</span><span class="si">${</span><span class="nv">TASK_EXECUTION_ROLE_ARN</span><span class="si">}</span><span class="s2">&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --family<span class="o">=</span><span class="s2">&#34;bookinfo_ratings&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --network-mode<span class="o">=</span><span class="s2">&#34;awsvpc&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --cpu<span class="o">=</span><span class="m">256</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --memory<span class="o">=</span><span class="m">512</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --requires-compatibilities FARGATE <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --container-definitions<span class="o">=</span><span class="s1">&#39;[
+</span></span></span><span class="line"><span class="cl"><span class="s1">   {
+</span></span></span><span class="line"><span class="cl"><span class="s1">       &#34;name&#34;: &#34;onboarding-agent&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">       &#34;image&#34;: &#34;&#39;</span><span class="s2">&#34;</span><span class="si">${</span><span class="nv">ONBOARDING_AGENT_IMAGE</span><span class="si">}</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">       &#34;user&#34;: &#34;0&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">       &#34;environment&#34;: [
+</span></span></span><span class="line"><span class="cl"><span class="s1">           {
+</span></span></span><span class="line"><span class="cl"><span class="s1">               &#34;name&#34;: &#34;ONBOARDING_CONFIG&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">               &#34;value&#34;: &#34;&#39;</span><span class="s2">&#34;</span><span class="si">${</span><span class="nv">ONBOARDING_CONFIG</span><span class="si">}</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s1">           },
+</span></span></span><span class="line"><span class="cl"><span class="s1">           {
+</span></span></span><span class="line"><span class="cl"><span class="s1">               &#34;name&#34;: &#34;ONBOARDING_AGENT_ROOT_CERTS&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">               &#34;value&#34;: &#34;&#39;</span><span class="s2">&#34;</span><span class="si">${</span><span class="nv">ONBOARDING_AGENT_ROOT_CERTS</span><span class="si">}</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s1">           }
+</span></span></span><span class="line"><span class="cl"><span class="s1">       ],
+</span></span></span><span class="line"><span class="cl"><span class="s1">       &#34;logConfiguration&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s1">           &#34;logDriver&#34;: &#34;awslogs&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">           &#34;options&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s1">               &#34;awslogs-group&#34;: &#34;/ecs/bookinfo_ratings&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">               &#34;awslogs-region&#34;: &#34;&#39;</span><span class="s2">&#34;</span><span class="si">${</span><span class="nv">AWS_REGION</span><span class="si">}</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">               &#34;awslogs-stream-prefix&#34;: &#34;ecs&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s1">           }
+</span></span></span><span class="line"><span class="cl"><span class="s1">       }
+</span></span></span><span class="line"><span class="cl"><span class="s1">   },
+</span></span></span><span class="line"><span class="cl"><span class="s1">   {
+</span></span></span><span class="line"><span class="cl"><span class="s1">       &#34;name&#34;: &#34;ratings&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">       &#34;image&#34;: &#34;docker.io/tetrate/tetrate-examples-bookinfo-ratings-localhost-v1:1.16.4&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">       &#34;essential&#34;: true,
+</span></span></span><span class="line"><span class="cl"><span class="s1">       &#34;logConfiguration&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s1">           &#34;logDriver&#34;: &#34;awslogs&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">           &#34;options&#34;: {
+</span></span></span><span class="line"><span class="cl"><span class="s1">               &#34;awslogs-group&#34;: &#34;/ecs/bookinfo_ratings&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">               &#34;awslogs-region&#34;: &#34;&#39;</span><span class="s2">&#34;</span><span class="si">${</span><span class="nv">AWS_REGION</span><span class="si">}</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;,
+</span></span></span><span class="line"><span class="cl"><span class="s1">               &#34;awslogs-stream-prefix&#34;: &#34;ecs&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s1">           }
+</span></span></span><span class="line"><span class="cl"><span class="s1">       }
+</span></span></span><span class="line"><span class="cl"><span class="s1">   }
+</span></span></span><span class="line"><span class="cl"><span class="s1">]&#39;</span>
+</span></span></code></pre></div><p>This configures the task to write logs using the
 <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html" target="_blank" rel="noopener">awslogs driver</a>
 to the <code>/ecs/bookinfo_ratings</code> log group. Create this group with the following
 command:</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">aws logs create-log-group --log-group-name &#34;/ecs/bookinfo_ratings&#34;
-</code></pre><h2 id="create-a-subnet">Create a subnet</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">aws logs create-log-group --log-group-name <span class="s2">&#34;/ecs/bookinfo_ratings&#34;</span>
+</span></span></code></pre></div><h2 id="create-a-subnet">Create a subnet</h2>
 <h3 id="ensure-that-there-is-a-nat-gateway-in-your-vpc">Ensure that there is a NAT gateway in your VPC</h3>
 <p>Ensure that there is a NAT gateway in your VPC by running commands below,
 replacing <code>EKS_CLUSTER_NAME</code> with the name of your EKS cluster.</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">VPC_ID=$(aws eks describe-cluster --name &lt;EKS_CLUSTER_NAME&gt; --query &#39;cluster.resourcesVpcConfig.vpcId&#39; --output text)
-
-aws ec2 describe-nat-gateways --filter Name=vpc-id,Values=${VPC_ID}
-</code></pre><p>If the returned list is empty, create a public subnet and NAT gateway using
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nv">VPC_ID</span><span class="o">=</span><span class="k">$(</span>aws eks describe-cluster --name &lt;EKS_CLUSTER_NAME&gt; --query <span class="s1">&#39;cluster.resourcesVpcConfig.vpcId&#39;</span> --output text<span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws ec2 describe-nat-gateways --filter <span class="nv">Name</span><span class="o">=</span>vpc-id,Values<span class="o">=</span><span class="si">${</span><span class="nv">VPC_ID</span><span class="si">}</span>
+</span></span></code></pre></div><p>If the returned list is empty, create a public subnet and NAT gateway using
 the commands below, replacing <code>CIDR_BLOCK</code> with the desired CIDR block to use
 for the subnet, e.g. <code>10.0.3.0/24</code>.</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">INTERNET_GATEWAY_ID=$(aws ec2 describe-internet-gateways --filters Name=attachment.vpc-id,Values=${VPC_ID} --query &#39;InternetGateways[0].InternetGatewayId&#39; --output text)
-
-aws ec2 create-subnet \
-  --vpc-id &#34;${VPC_ID}&#34; \
-  --cidr-block &lt;CIDR_BLOCK&gt; \
-  --tag-specifications &#39;ResourceType=subnet,Tags=[{Key=Name,Value=bookinfo-ecs-nat-gw-subnet}]&#39;
-
-NAT_GW_SUBNET_ID=$(aws ec2 describe-subnets --filters Name=tag:Name,Values=bookinfo-ecs-nat-gw-subnet --query &#39;Subnets[0].SubnetId&#39; --output text)
-
-aws ec2 create-route-table \
-  --vpc-id &#34;${VPC_ID}&#34; \
-  --tag-specifications &#39;ResourceType=route-table,Tags=[{Key=Name,Value=bookinfo-ecs-nat-gw-rtb}]&#39;
-
-NAT_GW_ROUTE_TABLE_ID=$(aws ec2 describe-route-tables --filters Name=tag:Name,Values=bookinfo-ecs-nat-gw-rtb --query &#39;RouteTables[0].RouteTableId&#39; --output text)
-
-aws ec2 create-route \
-  --route-table-id &#34;${NAT_GW_ROUTE_TABLE_ID}&#34; \
-  --destination-cidr-block 0.0.0.0/0 \
-  --gateway-id &#34;${INTERNET_GATEWAY_ID}&#34;
-
-aws ec2 associate-route-table \
-  --route-table-id &#34;${NAT_GW_ROUTE_TABLE_ID}&#34; \
-  --subnet-id &#34;${NAT_GW_SUBNET_ID}&#34;
-
-aws ec2 allocate-address \
-  --tag-specifications &#39;ResourceType=elastic-ip,Tags=[{Key=Name,Value=bookinfo-ecs-nat-gw-ip}]&#39;
-
-NAT_GW_EIP_ID=$(aws ec2 describe-addresses --filters Name=tag:Name,Values=bookinfo-ecs-nat-gw-ip --query &#39;Addresses[0].AllocationId&#39; --output text)
-
-aws ec2 create-nat-gateway \
-  --subnet-id &#34;${NAT_GW_SUBNET_ID}&#34; \
-  --allocation-id &#34;${NAT_GW_EIP_ID}&#34;
-</code></pre><h3 id="create-a-subnet-for-the-ecs-tasks">Create a subnet for the ECS tasks</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nv">INTERNET_GATEWAY_ID</span><span class="o">=</span><span class="k">$(</span>aws ec2 describe-internet-gateways --filters <span class="nv">Name</span><span class="o">=</span>attachment.vpc-id,Values<span class="o">=</span><span class="si">${</span><span class="nv">VPC_ID</span><span class="si">}</span> --query <span class="s1">&#39;InternetGateways[0].InternetGatewayId&#39;</span> --output text<span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws ec2 create-subnet <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --vpc-id <span class="s2">&#34;</span><span class="si">${</span><span class="nv">VPC_ID</span><span class="si">}</span><span class="s2">&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --cidr-block &lt;CIDR_BLOCK&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --tag-specifications <span class="s1">&#39;ResourceType=subnet,Tags=[{Key=Name,Value=bookinfo-ecs-nat-gw-subnet}]&#39;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nv">NAT_GW_SUBNET_ID</span><span class="o">=</span><span class="k">$(</span>aws ec2 describe-subnets --filters <span class="nv">Name</span><span class="o">=</span>tag:Name,Values<span class="o">=</span>bookinfo-ecs-nat-gw-subnet --query <span class="s1">&#39;Subnets[0].SubnetId&#39;</span> --output text<span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws ec2 create-route-table <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --vpc-id <span class="s2">&#34;</span><span class="si">${</span><span class="nv">VPC_ID</span><span class="si">}</span><span class="s2">&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --tag-specifications <span class="s1">&#39;ResourceType=route-table,Tags=[{Key=Name,Value=bookinfo-ecs-nat-gw-rtb}]&#39;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nv">NAT_GW_ROUTE_TABLE_ID</span><span class="o">=</span><span class="k">$(</span>aws ec2 describe-route-tables --filters <span class="nv">Name</span><span class="o">=</span>tag:Name,Values<span class="o">=</span>bookinfo-ecs-nat-gw-rtb --query <span class="s1">&#39;RouteTables[0].RouteTableId&#39;</span> --output text<span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws ec2 create-route <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --route-table-id <span class="s2">&#34;</span><span class="si">${</span><span class="nv">NAT_GW_ROUTE_TABLE_ID</span><span class="si">}</span><span class="s2">&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --destination-cidr-block 0.0.0.0/0 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --gateway-id <span class="s2">&#34;</span><span class="si">${</span><span class="nv">INTERNET_GATEWAY_ID</span><span class="si">}</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws ec2 associate-route-table <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --route-table-id <span class="s2">&#34;</span><span class="si">${</span><span class="nv">NAT_GW_ROUTE_TABLE_ID</span><span class="si">}</span><span class="s2">&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --subnet-id <span class="s2">&#34;</span><span class="si">${</span><span class="nv">NAT_GW_SUBNET_ID</span><span class="si">}</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws ec2 allocate-address <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --tag-specifications <span class="s1">&#39;ResourceType=elastic-ip,Tags=[{Key=Name,Value=bookinfo-ecs-nat-gw-ip}]&#39;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nv">NAT_GW_EIP_ID</span><span class="o">=</span><span class="k">$(</span>aws ec2 describe-addresses --filters <span class="nv">Name</span><span class="o">=</span>tag:Name,Values<span class="o">=</span>bookinfo-ecs-nat-gw-ip --query <span class="s1">&#39;Addresses[0].AllocationId&#39;</span> --output text<span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws ec2 create-nat-gateway <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --subnet-id <span class="s2">&#34;</span><span class="si">${</span><span class="nv">NAT_GW_SUBNET_ID</span><span class="si">}</span><span class="s2">&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --allocation-id <span class="s2">&#34;</span><span class="si">${</span><span class="nv">NAT_GW_EIP_ID</span><span class="si">}</span><span class="s2">&#34;</span>
+</span></span></code></pre></div><h3 id="create-a-subnet-for-the-ecs-tasks">Create a subnet for the ECS tasks</h3>
 <p>If you already have a private subnet configured with a NAT gateway that you
 want to use for deploying tasks, set its ID in the shell variable <code>SUBNET_ID</code>,
 i.e.</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">SUBNET_ID=&lt;YOUR_SUBNET_ID&gt;
-</code></pre><p>Otherwise, create a subnet using the NAT gateway found or created above using
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nv">SUBNET_ID</span><span class="o">=</span>&lt;YOUR_SUBNET_ID&gt;
+</span></span></code></pre></div><p>Otherwise, create a subnet using the NAT gateway found or created above using
 the commands below, replacing <code>CIDR_BLOCK</code> with the desired CIDR block to use
 for the subnet, e.g. <code>10.0.4.0/24</code>.</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">NAT_GATEWAY_ID=$(aws ec2 describe-nat-gateways --filter Name=vpc-id,Values=${VPC_ID} --query &#39;NatGateways[0].NatGatewayId&#39; --output text)
-
-aws ec2 create-subnet \
-  --vpc-id &#34;${VPC_ID}&#34; \
-  --cidr-block &lt;CIDR_BLOCK&gt; \
-  --tag-specifications &#39;ResourceType=subnet,Tags=[{Key=Name,Value=bookinfo-ecs-subnet}]&#39;
-
-SUBNET_ID=$(aws ec2 describe-subnets --filters Name=tag:Name,Values=bookinfo-ecs-subnet --query &#39;Subnets[0].SubnetId&#39; --output text)
-
-aws ec2 create-route-table \
-  --vpc-id &#34;${VPC_ID}&#34; \
-  --tag-specifications &#39;ResourceType=route-table,Tags=[{Key=Name,Value=bookinfo-ecs-rtb}]&#39;
-
-ROUTE_TABLE_ID=$(aws ec2 describe-route-tables --filters Name=tag:Name,Values=bookinfo-ecs-rtb --query &#39;RouteTables[0].RouteTableId&#39; --output text)
-
-aws ec2 create-route \
-  --route-table-id &#34;${ROUTE_TABLE_ID}&#34; \
-  --destination-cidr-block 0.0.0.0/0 \
-  --gateway-id &#34;${NAT_GATEWAY_ID}&#34;
-
-aws ec2 associate-route-table \
-  --route-table-id &#34;${ROUTE_TABLE_ID}&#34; \
-  --subnet-id &#34;${SUBNET_ID}&#34;
-</code></pre><h2 id="create-a-security-group">Create a security group</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nv">NAT_GATEWAY_ID</span><span class="o">=</span><span class="k">$(</span>aws ec2 describe-nat-gateways --filter <span class="nv">Name</span><span class="o">=</span>vpc-id,Values<span class="o">=</span><span class="si">${</span><span class="nv">VPC_ID</span><span class="si">}</span> --query <span class="s1">&#39;NatGateways[0].NatGatewayId&#39;</span> --output text<span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws ec2 create-subnet <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --vpc-id <span class="s2">&#34;</span><span class="si">${</span><span class="nv">VPC_ID</span><span class="si">}</span><span class="s2">&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --cidr-block &lt;CIDR_BLOCK&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --tag-specifications <span class="s1">&#39;ResourceType=subnet,Tags=[{Key=Name,Value=bookinfo-ecs-subnet}]&#39;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nv">SUBNET_ID</span><span class="o">=</span><span class="k">$(</span>aws ec2 describe-subnets --filters <span class="nv">Name</span><span class="o">=</span>tag:Name,Values<span class="o">=</span>bookinfo-ecs-subnet --query <span class="s1">&#39;Subnets[0].SubnetId&#39;</span> --output text<span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws ec2 create-route-table <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --vpc-id <span class="s2">&#34;</span><span class="si">${</span><span class="nv">VPC_ID</span><span class="si">}</span><span class="s2">&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --tag-specifications <span class="s1">&#39;ResourceType=route-table,Tags=[{Key=Name,Value=bookinfo-ecs-rtb}]&#39;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nv">ROUTE_TABLE_ID</span><span class="o">=</span><span class="k">$(</span>aws ec2 describe-route-tables --filters <span class="nv">Name</span><span class="o">=</span>tag:Name,Values<span class="o">=</span>bookinfo-ecs-rtb --query <span class="s1">&#39;RouteTables[0].RouteTableId&#39;</span> --output text<span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws ec2 create-route <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --route-table-id <span class="s2">&#34;</span><span class="si">${</span><span class="nv">ROUTE_TABLE_ID</span><span class="si">}</span><span class="s2">&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --destination-cidr-block 0.0.0.0/0 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --gateway-id <span class="s2">&#34;</span><span class="si">${</span><span class="nv">NAT_GATEWAY_ID</span><span class="si">}</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws ec2 associate-route-table <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --route-table-id <span class="s2">&#34;</span><span class="si">${</span><span class="nv">ROUTE_TABLE_ID</span><span class="si">}</span><span class="s2">&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --subnet-id <span class="s2">&#34;</span><span class="si">${</span><span class="nv">SUBNET_ID</span><span class="si">}</span><span class="s2">&#34;</span>
+</span></span></code></pre></div><h2 id="create-a-security-group">Create a security group</h2>
 <p>A security group is needed with a rule allowing ingress traffic to port 9080
 for Istio to use. Create one using the commands below:</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">aws ec2 create-security-group \
-  --group-name BookinfoECSSecurityGroup \
-  --description &#34;Security group for ECS onboarding quickstart bookinfo tasks&#34; \
-  --vpc-id &#34;${VPC_ID}&#34;
-
-SECURITY_GROUP_ID=$(aws ec2 describe-security-groups --filters Name=vpc-id,Values=${VPC_ID} Name=group-name,Values=BookinfoECSSecurityGroup --query &#34;SecurityGroups[0].GroupId&#34; --output text)
-
-aws ec2 authorize-security-group-ingress \
-    --group-id &#34;${SECURITY_GROUP_ID}&#34; \
-    --protocol tcp \
-    --port 9080 \
-    --cidr 0.0.0.0/0
-</code></pre><h2 id="create-an-aws-ecs-service">Create an AWS ECS service</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">aws ec2 create-security-group <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --group-name BookinfoECSSecurityGroup <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --description <span class="s2">&#34;Security group for ECS onboarding quickstart bookinfo tasks&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --vpc-id <span class="s2">&#34;</span><span class="si">${</span><span class="nv">VPC_ID</span><span class="si">}</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nv">SECURITY_GROUP_ID</span><span class="o">=</span><span class="k">$(</span>aws ec2 describe-security-groups --filters <span class="nv">Name</span><span class="o">=</span>vpc-id,Values<span class="o">=</span><span class="si">${</span><span class="nv">VPC_ID</span><span class="si">}</span> <span class="nv">Name</span><span class="o">=</span>group-name,Values<span class="o">=</span>BookinfoECSSecurityGroup --query <span class="s2">&#34;SecurityGroups[0].GroupId&#34;</span> --output text<span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">aws ec2 authorize-security-group-ingress <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --group-id <span class="s2">&#34;</span><span class="si">${</span><span class="nv">SECURITY_GROUP_ID</span><span class="si">}</span><span class="s2">&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --protocol tcp <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --port <span class="m">9080</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --cidr 0.0.0.0/0
+</span></span></code></pre></div><h2 id="create-an-aws-ecs-service">Create an AWS ECS service</h2>
 <p>Create an AWS ECS service in your cluster that uses the task definition,
 subnet and security group using the following command. If you created
 multiple task definition versions, update the version passed in the
 <code>--task-definition</code> flag.</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">aws ecs create-service \
-  --cluster bookinfo \
-  --service-name ratings \
-  --task-definition bookinfo_ratings:1 \
-  --desired-count 1 \
-  --launch-type FARGATE \
-  --platform-version LATEST \
-  --network-configuration &#34;awsvpcConfiguration={subnets=[${SUBNET_ID}],securityGroups=[${SECURITY_GROUP_ID}]}&#34; \
-  --enable-execute-command
-</code></pre><p>Once you create this service, it will create an ECS task that will join the
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">aws ecs create-service <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --cluster bookinfo <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --service-name ratings <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --task-definition bookinfo_ratings:1 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --desired-count <span class="m">1</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --launch-type FARGATE <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --platform-version LATEST <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --network-configuration <span class="s2">&#34;awsvpcConfiguration={subnets=[</span><span class="si">${</span><span class="nv">SUBNET_ID</span><span class="si">}</span><span class="s2">],securityGroups=[</span><span class="si">${</span><span class="nv">SECURITY_GROUP_ID</span><span class="si">}</span><span class="s2">]}&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --enable-execute-command
+</span></span></code></pre></div><p>Once you create this service, it will create an ECS task that will join the
 mesh.</p>
 <h2 id="verify-the-workload">Verify the Workload</h2>
 <p>Verify that the workload has been properly onboarded by executing the
 following command:</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">kubectl get war -n bookinfo
-</code></pre><p>If the workload was properly onboarded, you should get an output similar to:</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">NAME                                                                                    AGENT CONNECTED   AGE
-ratings-aws-aws-123456789012-us-east-1a-ecs-bookinfo-3a151358f03a4e32bf8cd401c1c74653   True              1m
-</code></pre><h3 id="verify-traffic-from-kubernetes-to-the-task">Verify Traffic from Kubernetes to the task</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl get war -n bookinfo
+</span></span></code></pre></div><p>If the workload was properly onboarded, you should get an output similar to:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">NAME                                                                                    AGENT CONNECTED   AGE
+</span></span><span class="line"><span class="cl">ratings-aws-aws-123456789012-us-east-1a-ecs-bookinfo-3a151358f03a4e32bf8cd401c1c74653   True              1m
+</span></span></code></pre></div><h3 id="verify-traffic-from-kubernetes-to-the-task">Verify Traffic from Kubernetes to the task</h3>
 <p>To verify traffic from Kubernetes Pod(s) to the AWS ECS task, create
 some load on the bookinfo application deployed on Kubernetes and confirm
 that requests get routed into the <code>ratings</code> application deployed on the
 AWS ECS task.</p>
 <p><a href="../aws-ec2/bookinfo">Set up port forwarding</a> if you have not already done so.</p>
 <p>Then run the following commands:</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">for i in `seq 1 9`; do
-    curl -s &#34;http://localhost:9080/productpage?u=normal&#34; | grep -c &#34;glyphicon-star&#34; | awk &#39;{print $1&#34; stars on the page&#34;}&#39;
-done
-</code></pre><p>Two out of three times you should get a message <code>10 stars on the page</code>.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="k">for</span> i in <span class="sb">`</span>seq <span class="m">1</span> 9<span class="sb">`</span><span class="p">;</span> <span class="k">do</span>
+</span></span><span class="line"><span class="cl">    curl -s <span class="s2">&#34;http://localhost:9080/productpage?u=normal&#34;</span> <span class="p">|</span> grep -c <span class="s2">&#34;glyphicon-star&#34;</span> <span class="p">|</span> awk <span class="s1">&#39;{print $1&#34; stars on the page&#34;}&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="k">done</span>
+</span></span></code></pre></div><p>Two out of three times you should get a message <code>10 stars on the page</code>.</p>
 <p>Furthermore, you can verify that the task is receiving the traffic by
 inspecting the
 <a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage" target="_blank" rel="noopener">access logs</a>
 for the incoming HTTP requests proxied by the Istio sidecar.</p>
 <p>Execute the following command using the <code>ecs-cli</code> tool that can be
 <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html" target="_blank" rel="noopener">downloaded and installed here</a>:</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:"># Get the task ID from the WorkloadAutoRegistration resource
-TASK_ID=$(kubectl get war -n bookinfo -o jsonpath=&#34;{.items[0].spec.identity.aws.ecs.taskId}&#34;)
-
-ecs-cli logs --cluster bookinfo --task-id ${TASK_ID} --container-name onboarding-agent --follow
-</code></pre><p>You should see an output similar to:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Get the task ID from the WorkloadAutoRegistration resource</span>
+</span></span><span class="line"><span class="cl"><span class="nv">TASK_ID</span><span class="o">=</span><span class="k">$(</span>kubectl get war -n bookinfo -o <span class="nv">jsonpath</span><span class="o">=</span><span class="s2">&#34;{.items[0].spec.identity.aws.ecs.taskId}&#34;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">ecs-cli logs --cluster bookinfo --task-id <span class="si">${</span><span class="nv">TASK_ID</span><span class="si">}</span> --container-name onboarding-agent --follow
+</span></span></code></pre></div><p>You should see an output similar to:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-text" data-lang="text"><span class="line"><span class="cl">[2021-10-25T11:06:13.553Z] &#34;GET /ratings/0 HTTP/1.1&#34; 200 - via_upstream - &#34;-&#34; 0 48 3 2 &#34;-&#34; &#34;curl/7.68.0&#34; &#34;1928e798-dfe7-45a6-9020-d0f3a8641d03&#34; &#34;172.31.7.211:9080&#34; &#34;127.0.0.1:9080&#34; inbound|9080|| 127.0.0.1:40992 172.31.7.211:9080 172.31.7.211:35470 - default
 </span></span></code></pre></div><h3 id="verify-traffic-from-the-task-to-kubernetes">Verify Traffic from the task to Kubernetes</h3>
 <p>Start a shell in the task by running the following commands:</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:"># Get the task ID from the WorkloadAutoRegistration resource
-TASK_ID=$(kubectl get war -n bookinfo -o jsonpath=&#34;{.items[0].spec.identity.aws.ecs.taskId}&#34;)
-
-# Start a shell
-aws ecs execute-command --cluster bookinfo --task ${TASK_ID} --container onboarding-agent --interactive --command bash
-</code></pre><p>Then execute the following commands:</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">for i in `seq 1 5`; do
-  curl -i \
-    --resolve details.bookinfo:9080:127.0.0.2 \
-    details.bookinfo:9080/details/0
-done
-</code></pre><p>The above command will make <code>5</code> HTTP requests to Bookinfo <code>details</code> application.
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Get the task ID from the WorkloadAutoRegistration resource</span>
+</span></span><span class="line"><span class="cl"><span class="nv">TASK_ID</span><span class="o">=</span><span class="k">$(</span>kubectl get war -n bookinfo -o <span class="nv">jsonpath</span><span class="o">=</span><span class="s2">&#34;{.items[0].spec.identity.aws.ecs.taskId}&#34;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Start a shell</span>
+</span></span><span class="line"><span class="cl">aws ecs execute-command --cluster bookinfo --task <span class="si">${</span><span class="nv">TASK_ID</span><span class="si">}</span> --container onboarding-agent --interactive --command bash
+</span></span></code></pre></div><p>Then execute the following commands:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="k">for</span> i in <span class="sb">`</span>seq <span class="m">1</span> 5<span class="sb">`</span><span class="p">;</span> <span class="k">do</span>
+</span></span><span class="line"><span class="cl">  curl -i <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --resolve details.bookinfo:9080:127.0.0.2 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    details.bookinfo:9080/details/0
+</span></span><span class="line"><span class="cl"><span class="k">done</span>
+</span></span></code></pre></div><p>The above command will make <code>5</code> HTTP requests to Bookinfo <code>details</code> application.
 <code>curl</code> will resolve Kubernetes cluster-local DNS name <code>details.bookinfo</code>
 into the IP address of the <code>egress</code> listener of Istio proxy (<code>127.0.0.2</code> according
 to <a href="./configure-workload-onboarding#create-the-sidecar-configuration">the sidecar configuration you created earlier</a>).</p>
 <p>You should get an output similar to:</p>
-<pre tabindex="0"><code class="language-bash{promptUser:" data-lang="bash{promptUser:">HTTP/1.1 200 OK
-content-type: application/json
-server: envoy
-
-{&#34;id&#34;:0,&#34;author&#34;:&#34;William Shakespeare&#34;,&#34;year&#34;:1595,&#34;type&#34;:&#34;paperback&#34;,   &#34;pages&#34;:200,&#34;publisher&#34;:&#34;PublisherA&#34;,&#34;language&#34;:&#34;English&#34;,   &#34;ISBN-10&#34;:&#34;1234567890&#34;,&#34;ISBN-13&#34;:&#34;123-1234567890&#34;}
-</code></pre><p>If this returns an HTTP 503 error, ensure the security group for your EKS
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">HTTP/1.1 <span class="m">200</span> OK
+</span></span><span class="line"><span class="cl">content-type: application/json
+</span></span><span class="line"><span class="cl">server: envoy
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">{</span><span class="s2">&#34;id&#34;</span>:0,<span class="s2">&#34;author&#34;</span>:<span class="s2">&#34;William Shakespeare&#34;</span>,<span class="s2">&#34;year&#34;</span>:1595,<span class="s2">&#34;type&#34;</span>:<span class="s2">&#34;paperback&#34;</span>,   <span class="s2">&#34;pages&#34;</span>:200,<span class="s2">&#34;publisher&#34;</span>:<span class="s2">&#34;PublisherA&#34;</span>,<span class="s2">&#34;language&#34;</span>:<span class="s2">&#34;English&#34;</span>,   <span class="s2">&#34;ISBN-10&#34;</span>:<span class="s2">&#34;1234567890&#34;</span>,<span class="s2">&#34;ISBN-13&#34;</span>:<span class="s2">&#34;123-1234567890&#34;</span><span class="o">}</span>
+</span></span></code></pre></div><p>If this returns an HTTP 503 error, ensure the security group for your EKS
 cluster is set to allow traffic on port 9080 from the
 <code>BookinfoECSSecurityGroup</code> that the ECS tasks created here use.</p>
 
@@ -3860,7 +3860,7 @@ cluster is set to allow traffic on port 9080 from the
           
 
         <div class="body-footer">
-          <p>最近更新于 2023-11-06</p>
+          <p>最近更新于 2023-11-13</p>
 
           
 

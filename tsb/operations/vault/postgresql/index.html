@@ -349,7 +349,7 @@ helm install --name=vault --set=&#39;server.dev.enabled=true&#39; ./vault-helm S
         content="2023-08-09T12:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2023-11-06T17:21:52&#43;08:00">
+    <meta property="article:modified_time" content="2023-11-13T16:31:15&#43;08:00">
   
 
   
@@ -3501,21 +3501,21 @@ In the <code>connection_url</code> parameter, replace <code>postgres.tsb.svc:543
 full <code>host:port/db_name</code> of your PostgreSQL cluster. Only change the lower
 <code>username</code> and <code>password</code> with your own, don&rsquo;t edit the one between <code>{{ }}</code> in
 the URL, it is used as a template:</p>
-<pre tabindex="0"><code class="language-bash{outputLines:" data-lang="bash{outputLines:">vault write database/config/tsb \
-    plugin_name=postgresql-database-plugin \
-    allowed_roles=&#34;pg-role&#34; \
-    connection_url=&#34;postgresql://{{username}}:{{password}}@postgres.tsb.svc:5432/tsb?sslmode=disable&#34; \
-    username=&#34;&lt;postgres-username&gt;&#34; \
-    password=&#34;&lt;postgres-password&gt;&#34;
-</code></pre><p>You can review the configuration by using the <code>read</code> action:</p>
-<pre tabindex="0"><code class="language-bash{outputLines:" data-lang="bash{outputLines:">vault read  database/config/tsb
-# Key                                   Value
-# ---                                   -----
-# allowed_roles                         [pg-role]
-# connection_details                    map[connection_url:postgresql://{{username}}:{{password}}@postgres.tsb.svc:5432/?sslmode=disable username:postgres]
-# plugin_name                           postgresql-database-plugin
-# root_credentials_rotate_statements    []
-</code></pre><p>Configure a role that maps a name in Vault to a templated SQL statement which
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">vault write database/config/tsb <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">plugin_name</span><span class="o">=</span>postgresql-database-plugin <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">allowed_roles</span><span class="o">=</span><span class="s2">&#34;pg-role&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">connection_url</span><span class="o">=</span><span class="s2">&#34;postgresql://{{username}}:{{password}}@postgres.tsb.svc:5432/tsb?sslmode=disable&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">username</span><span class="o">=</span><span class="s2">&#34;&lt;postgres-username&gt;&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">password</span><span class="o">=</span><span class="s2">&#34;&lt;postgres-password&gt;&#34;</span>
+</span></span></code></pre></div><p>You can review the configuration by using the <code>read</code> action:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">vault <span class="nb">read</span>  database/config/tsb
+</span></span><span class="line"><span class="cl"><span class="c1"># Key                                   Value</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ---                                   -----</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># allowed_roles                         [pg-role]</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># connection_details                    map[connection_url:postgresql://{{username}}:{{password}}@postgres.tsb.svc:5432/?sslmode=disable username:postgres]</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># plugin_name                           postgresql-database-plugin</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># root_credentials_rotate_statements    []</span>
+</span></span></code></pre></div><p>Configure a role that maps a name in Vault to a templated SQL statement which
 Vault can execute to create database credentials.<br />
 The <code>max_ttl</code> defines how long the new credentials are valid.<br />
 The <code>default_ttl</code> defines a lease time, and the Vault-Injector will renew it
@@ -3524,72 +3524,72 @@ until we reach the <code>max_ttl</code>.</p>
 ensure they are all closed before the TTL expires.</p>
 <p>Run the command below, ensuring that you don&rsquo;t edit the parameters between
 <code>{{ }}</code> because they are used as a template by Vault:</p>
-<pre tabindex="0"><code class="language-bash{outputLines:" data-lang="bash{outputLines:">vault write database/roles/pg-role \
-    db_name=tsb \
-    creation_statements=&#34;CREATE ROLE \&#34;{{name}}\&#34; WITH LOGIN PASSWORD &#39;{{password}}&#39; VALID UNTIL &#39;{{expiration}}&#39;; \
-        GRANT ALL ON ALL TABLES IN SCHEMA public TO \&#34;{{name}}\&#34;;&#34; \
-    default_ttl=&#34;12h&#34; \
-    max_ttl=&#34;24h&#34;
-
-Success! Data written to: database/roles/pg-role
-</code></pre><p>Again, use the <code>read</code> action to verify the setup:</p>
-<pre tabindex="0"><code class="language-bash{outputLines:" data-lang="bash{outputLines:">vault read  database/roles/pg-role
-# Key                      Value
-# ---                      -----
-# creation_statements      [CREATE ROLE &#34;{{name}}&#34; WITH LOGIN PASSWORD &#39;{{password}}&#39; VALID UNTIL &#39;{{expiration}}&#39;;       GRANT SELECT ON ALL TABLES IN SCHEMA public TO &#34;{{name}}&#34;;]
-# db_name                  tsb
-# default_ttl              24h
-# max_ttl                  24h
-# renew_statements         []
-# revocation_statements    []
-# rollback_statements      []
-</code></pre><p>Now, generate a new credential by reading from the <code>/creds</code> endpoint with the
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">vault write database/roles/pg-role <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">db_name</span><span class="o">=</span>tsb <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">creation_statements</span><span class="o">=</span><span class="s2">&#34;CREATE ROLE \&#34;{{name}}\&#34; WITH LOGIN PASSWORD &#39;{{password}}&#39; VALID UNTIL &#39;{{expiration}}&#39;; \
+</span></span></span><span class="line"><span class="cl"><span class="s2">        GRANT ALL ON ALL TABLES IN SCHEMA public TO \&#34;{{name}}\&#34;;&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">default_ttl</span><span class="o">=</span><span class="s2">&#34;12h&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">max_ttl</span><span class="o">=</span><span class="s2">&#34;24h&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">Success! Data written to: database/roles/pg-role
+</span></span></code></pre></div><p>Again, use the <code>read</code> action to verify the setup:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">vault <span class="nb">read</span>  database/roles/pg-role
+</span></span><span class="line"><span class="cl"><span class="c1"># Key                      Value</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ---                      -----</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># creation_statements      [CREATE ROLE &#34;{{name}}&#34; WITH LOGIN PASSWORD &#39;{{password}}&#39; VALID UNTIL &#39;{{expiration}}&#39;;       GRANT SELECT ON ALL TABLES IN SCHEMA public TO &#34;{{name}}&#34;;]</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># db_name                  tsb</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># default_ttl              24h</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># max_ttl                  24h</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># renew_statements         []</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># revocation_statements    []</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># rollback_statements      []</span>
+</span></span></code></pre></div><p>Now, generate a new credential by reading from the <code>/creds</code> endpoint with the
 name of the role. This is the mechanism that will be used by the Vault-Injector
 to grab credentials for your Kubernetes application:</p>
-<pre tabindex="0"><code class="language-bash{outputLines:" data-lang="bash{outputLines:">vault read database/creds/pg-role
-Key                Value
----                -----
-lease_id           database/creds/pg-role/tUEs8eogkk9KL5erU5rLv7hD
-lease_duration     24h
-lease_renewable    true
-password           A1a-1ZYMcUHKJIJH6rrc
-username           v-token-pg-role-KQ4ze3GYi5He0D70tEmo-1587973449
-</code></pre><h2 id="set-up-kubernetes-secret-engine">Set up Kubernetes Secret Engine</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">vault <span class="nb">read</span> database/creds/pg-role
+</span></span><span class="line"><span class="cl">Key                Value
+</span></span><span class="line"><span class="cl">---                -----
+</span></span><span class="line"><span class="cl">lease_id           database/creds/pg-role/tUEs8eogkk9KL5erU5rLv7hD
+</span></span><span class="line"><span class="cl">lease_duration     24h
+</span></span><span class="line"><span class="cl">lease_renewable    <span class="nb">true</span>
+</span></span><span class="line"><span class="cl">password           A1a-1ZYMcUHKJIJH6rrc
+</span></span><span class="line"><span class="cl">username           v-token-pg-role-KQ4ze3GYi5He0D70tEmo-1587973449
+</span></span></code></pre></div><h2 id="set-up-kubernetes-secret-engine">Set up Kubernetes Secret Engine</h2>
 <p>Configure a policy named &ldquo;pg-auth&rdquo;. This is a very non-restrictive policy, and
 in a production setting, you should add more restrictions.</p>
-<pre tabindex="0"><code class="language-bash{outputLines:" data-lang="bash{outputLines:">vault policy write pg-auth - &lt;&lt;EOF
-path &#34;database/creds/*&#34; {
-    capabilities = [&#34;read&#34;]
-}
-EOF
-Success! Uploaded policy: pg-auth
-</code></pre><p>Configure Vault to enable access to the Kubernetes API. This example assumes
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">vault policy write pg-auth - <span class="s">&lt;&lt;EOF
+</span></span></span><span class="line"><span class="cl"><span class="s">path &#34;database/creds/*&#34; {
+</span></span></span><span class="line"><span class="cl"><span class="s">    capabilities = [&#34;read&#34;]
+</span></span></span><span class="line"><span class="cl"><span class="s">}
+</span></span></span><span class="line"><span class="cl"><span class="s">EOF</span>
+</span></span><span class="line"><span class="cl">Success! Uploaded policy: pg-auth
+</span></span></code></pre></div><p>Configure Vault to enable access to the Kubernetes API. This example assumes
 that you are running commands in the Vault pod using <code>kubectl exec</code>. If you are
 not, you will need to find the right JWT Token, Kubernetes API URL (that Vault
 will use to connect to Kubernetes) and the CA certificate of the <code>vaultserver</code>
 service account as described in
 <a href="https://learn.hashicorp.com/tutorials/vault/kubernetes-external-vault?in=vault/kubernetes#define-a-kubernetes-service-account" target="_blank" rel="noopener">Vault documentation</a>:</p>
-<pre tabindex="0"><code class="language-bash{outputLines:" data-lang="bash{outputLines:">vault auth enable kubernetes
-vault write auth/kubernetes/config \
-    token_reviewer_jwt=&#34;$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)&#34; \
-    kubernetes_host=https://${KUBERNETES_PORT_443_TCP_ADDR}:443 \
-    kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-</code></pre><p>Attach the database policy to service accounts from the management namespace
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">vault auth <span class="nb">enable</span> kubernetes
+</span></span><span class="line"><span class="cl">vault write auth/kubernetes/config <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">token_reviewer_jwt</span><span class="o">=</span><span class="s2">&#34;</span><span class="k">$(</span>cat /var/run/secrets/kubernetes.io/serviceaccount/token<span class="k">)</span><span class="s2">&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">kubernetes_host</span><span class="o">=</span>https://<span class="si">${</span><span class="nv">KUBERNETES_PORT_443_TCP_ADDR</span><span class="si">}</span>:443 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">kubernetes_ca_cert</span><span class="o">=</span>@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+</span></span></code></pre></div><p>Attach the database policy to service accounts from the management namespace
 (<code>tsb</code> namespace here):</p>
-<pre tabindex="0"><code class="language-bash{outputLines:" data-lang="bash{outputLines:">vault write auth/kubernetes/role/pg \
-    bound_service_account_names=* \
-    bound_service_account_namespaces=tsb \
-    policies=pg-auth \
-    ttl=24h
-</code></pre><p>To add more restrictions create one role per <code>ServiceAccount</code>. For PostgreSQL,
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">vault write auth/kubernetes/role/pg <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">bound_service_account_names</span><span class="o">=</span>* <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">bound_service_account_namespaces</span><span class="o">=</span>tsb <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">policies</span><span class="o">=</span>pg-auth <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">ttl</span><span class="o">=</span>24h
+</span></span></code></pre></div><p>To add more restrictions create one role per <code>ServiceAccount</code>. For PostgreSQL,
 you will need one for <code>tsb-iam</code>, <code>tsb-spm</code> and <code>default</code> service accounts
 because TSB API pods run with <code>default</code> service accounts:</p>
-<pre tabindex="0"><code class="language-bash{outputLines:" data-lang="bash{outputLines:">vault write auth/kubernetes/role/pg \
-    bound_service_account_names=default,tsb-spm,tsb-iam \
-    bound_service_account_namespaces=tsb \
-    policies=pg-auth \
-    ttl=24h
-</code></pre><h2 id="inject-secrets-into-the-pod">Inject secrets into the pod</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">vault write auth/kubernetes/role/pg <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">bound_service_account_names</span><span class="o">=</span>default,tsb-spm,tsb-iam <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">bound_service_account_namespaces</span><span class="o">=</span>tsb <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">policies</span><span class="o">=</span>pg-auth <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    <span class="nv">ttl</span><span class="o">=</span>24h
+</span></span></code></pre></div><h2 id="inject-secrets-into-the-pod">Inject secrets into the pod</h2>
 <p>To use Vault Agent Injector in combination with PostgreSQL, add the following
 deployment pod annotations and environment variables to the ManagementPlane
 custom resource.</p>
@@ -3765,7 +3765,7 @@ Here is an example with the role <code>v-kubernet-pg-role-5OUfsUQv3xAASWZkbECV-1
           
 
         <div class="body-footer">
-          <p>最近更新于 2023-11-06</p>
+          <p>最近更新于 2023-11-13</p>
 
           
 
