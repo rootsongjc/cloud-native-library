@@ -136,7 +136,7 @@ oc apply -n sleep -f sleep.yaml
 
 等待配置传播后，你可以从 `sleep` 服务 pod 调用 bookinfo 产品页面：
 
-```bash{promptUser: Alice}
+```bash
 oc exec "$(oc get pod -l app=sleep -n sleep -o jsonpath={.items..metadata.name})" -c sleep -n sleep -- curl -s http://productpage.bookinfo:9080/productpage | grep -o "<title>.*</title>"
 ```
 

@@ -151,7 +151,7 @@ spec:
 
 Assuming you have saved the above manifest in a file named `opa.yaml`, execute the following command to deploy:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl apply -f opa.yaml
 ```
 
@@ -169,7 +169,7 @@ Either use a certificate that was provided by your administrators, or use a self
 
 If you have not already done so, create the Secret to contain the certificates. The secret will be named `opa-certs`, and will be used later. Assuming you have generated the files `opa.key` and `opa.crt`, execute the command below to create the Secret.  Replace the value for `namespace` with an appropriate value.
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -n <namespace> create secret tls opa-certs \
   --key opa.key \
   --cert opa.crt
@@ -237,7 +237,7 @@ static_resources:
 
 Create a `ConfigMap` to store the configuration in Kubernetes. Replace the value for `namespace` with an appropriate value.
 
-```bash{promptUser: "alice"}
+```bash
 kubectl create configmap -n <namespace> opa-proxy \
   --from-file=config.yaml
 ```
@@ -349,7 +349,7 @@ spec:
 
 Apply `opa-tls.yaml` using kubectl:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl apply -f opa-tls.yaml
 ```
 

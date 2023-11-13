@@ -9,7 +9,7 @@ and onboard it into the service mesh.
 
 Execute the following command to create a `WorkloadGroup`:
 
-```bash{promptUser: "alice"}
+```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: networking.istio.io/v1alpha3
 kind: WorkloadGroup
@@ -39,7 +39,7 @@ The service account `bookinfo-ratings` was created during the
 
 Execute the following command to create a new sidecar configuration:
 
-```bash{promptUser: "alice"}
+```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: networking.istio.io/v1beta1
 kind: Sidecar
@@ -86,7 +86,7 @@ issued by the `Sample JWT Credential Plugin`.
 
 Execute the following command to download `Sample JWT Credential Plugin` locally:
 
-```bash{promptUser: "alice"}
+```bash
 curl -fL "https://dl.cloudsmith.io/public/tetrate/onboarding-examples/raw/files/onboarding-agent-sample-jwt-credential-plugin_0.0.1_$(uname -s)_$(uname -m).tar.gz" \
   | tar -xz onboarding-agent-sample-jwt-credential-plugin
 ```
@@ -94,7 +94,7 @@ curl -fL "https://dl.cloudsmith.io/public/tetrate/onboarding-examples/raw/files/
 Execute the following command to generate a unique signing key for use by the
 `Sample JWT Credential Plugin`:
 
-```bash{promptUser: "alice"}
+```bash
 ./onboarding-agent-sample-jwt-credential-plugin generate key \
   -o ./sample-jwt-issuer
 ```
@@ -109,7 +109,7 @@ The above command will generate 2 files:
 Execute the following command to configure `Workload Onboarding Plane` to trust
 [JWT Token]s signed by the key generated above:
 
-```bash{promptUser: "alice"}
+```bash
 cat << EOF > controlplane.patch.yaml
 spec:
   meshExpansion:
@@ -139,7 +139,7 @@ resource to explicitly authorize workloads deployed outside of Kubernetes to joi
 
 Execute the following command:
 
-```bash{promptUser: "alice"}
+```bash
 cat << EOF | kubectl apply -f -
 apiVersion: authorization.onboarding.tetrate.io/v1alpha1
 kind: OnboardingPolicy

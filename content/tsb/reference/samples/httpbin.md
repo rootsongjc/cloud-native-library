@@ -19,13 +19,13 @@ Unless otherwise stated, the `httpbin` service is assumed to be installed in the
 
 Run the following command to create the namespace if not already present:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl create namespace httpbin
 ```
 
 The `httpbin` pod in this namespace must have an Istio sidecar proxy running in it. To automatically enable the injection of this sidecar for all pods, execute the following:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl label namespace httpbin istio-injection=enabled --overwrite=true
 ```
 
@@ -37,7 +37,7 @@ Download the [`httpbin.yaml`](https://raw.githubusercontent.com/istio/istio/mast
 
 Run the following command to deploy the `httpbin` service in the `httpbin` namespace:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl apply -n httpbin -f httpbin.yaml
 ```
 
@@ -60,7 +60,7 @@ spec:
 
 Then deploy it using `kubectl`:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl apply -f httpbin-ingress-gateway.yaml
 ```
 
@@ -71,7 +71,7 @@ If a TLS certificate is required, you can prepare them by following these steps.
 
 Download the script [`gen-cert.sh`](../../assets/quickstart/gen-cert.sh) and execute the following to generate the necessary files. Refer to [this document](../../quickstart/ingress_gateway#certificate-for-gateway) for more details.
 
-```bash{promptUser: "alice"}
+```bash
 chmod +x ./gen-cert.sh
 mkdir certs
 ./gen-cert.sh httpbin httpbin.tetrate.com certs
@@ -81,7 +81,7 @@ The above assumes that you have exposed the `httpbin` service as `httpbin.tetrat
 
 Once you have the necessary files generated in the `certs` directory, create the Kubernetes secret.
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -n httpbin create secret tls httpbin-certs \
   --key certs/httpbin.key \
   --cert certs/httpbin.crt
@@ -116,7 +116,7 @@ spec:
 
 Apply the manifest using `tctl`:
 
-```bash{promptUser "alice"}
+```bash
 tctl apply -f httpbin-workspace.yaml
 ```
 
@@ -202,6 +202,6 @@ spec:
 
 Apply the manifest using `tctl`:
 
-```bash{promptUser "alice"}
+```bash
 tctl apply -f httpbin-application.yaml
 ```

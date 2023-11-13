@@ -20,7 +20,7 @@ Make sure to follow steps 1 and 2 before proceeding
 This needs to be done in all CP clusters onboarded in TSB.
 :::
 
-```bash{outputLines: 2}
+```bash
 kubectl -n ${CONTROL_NAMESPACE} scale deployment oap-deployment
 --replicas=0
 ```
@@ -82,7 +82,7 @@ components.
 This needs to be done in all CP clusters onboarded in TSB.
 :::
 
-```bash{outputLines: 2}
+```bash
 kubectl -n ${CONTROL_NAMESPACE} scale deployment oap-deployment \
 --replicas=1
 ```

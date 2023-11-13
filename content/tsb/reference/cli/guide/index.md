@@ -151,7 +151,7 @@ and users. One of the profiles will be used as default when the option
 `--profile` is not specified. You can change the current profile at any time as
 shown below.
 
-```bash{outputLines: 2-5,7,9-11}
+```bash
 tctl config profiles list
   CURRENT  NAME      CLUSTER      ACCOUNT
   *        default

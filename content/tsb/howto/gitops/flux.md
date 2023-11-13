@@ -27,7 +27,7 @@ Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-s
 (PAT) to input in the following command.
 :::
 
-```bash{promptUser: "alice"}
+```bash
 $ flux bootstrap github \
   --owner=your-org \
   --repository=git-ops \
@@ -49,7 +49,7 @@ debugging purposes.
 
 You can run this command to do a generic status check:
 
-```bash{promptUser: "alice"}
+```bash
 $ flux check
 ► checking prerequisites
 ✔ Kubernetes 1.20.15-gke.2500 >=1.20.6-0
@@ -73,7 +73,7 @@ source to store its own resources.
 
 You can query its status:
 
-```bash{promptUser: "alice"}
+```bash
 $ flux get all
 NAME                     	REVISION    	SUSPENDED	READY	MESSAGE
 gitrepository/flux-system	main/36dff73	False    	True 	stored artifact for revision 'main/36dff739b5ae411a7b4a64010d42937bd3ae4d25'
@@ -104,7 +104,7 @@ The goal for this section is to deploy the Helm chart of a
 TSB resources. 
 
 First, create the `bookinfo` namespace with sidecar injection:
-```bash{promptUser: "alice"}
+```bash
 kubectl create namespace bookinfo
 kubectl label namespace bookinfo istio-injection=enabled
 ```
@@ -166,13 +166,13 @@ with `kubectl`:
 
 Next, create the helm chart. Create the `apps/` directory, enter it and run:
 
-```bash{promptUser: "alice"}
+```bash
 $ helm create bookinfo
 ```
 
 This creates the following file tree:
 
-```bash{promptUser: "alice"}
+```bash
 $ tree
 .
 +-- bookinfo
@@ -196,7 +196,7 @@ Then, `cd` into `bookinfo/`.
 
 For simplicity reasons, remove the following not-needed content:
 
-```bash{promptUser: "alice"}
+```bash
 $ rm -rf values.yaml charts templates/NOTES.txt templates/*.yaml templates/tests/
 ```
 
@@ -214,7 +214,7 @@ appVersion: "0.1.0"
 Next, add the Bookinfo definitions to the `templates/` directory,
 gathering them from Istio's repository:
 
-```bash{promptUser: "alice"}
+```bash
 curl https://raw.githubusercontent.com/istio/istio/master/samples/bookinfo/platform/kube/bookinfo.yaml -o bookinfo.yaml
 ```
 
@@ -301,7 +301,7 @@ items:
 
 Before pushing, test that the chart is well constructed:
 
-```bash{promptUser: "alice"}
+```bash
 $ helm install bookinfo --dry-run .
 ```
 
@@ -312,7 +312,7 @@ Now it's time to push them and check the flux logs.
 If GitOps is properly configured in the cluster, pushing this chart will create
 the corresponding Kubernetes and TSB resources:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl get pods -n bookinfo
 NAME                                        READY   STATUS    RESTARTS   AGE
 details-v1-79f774bdb9-8fr6d                 1/1     Running   0          4m17s
@@ -340,7 +340,7 @@ If DNS is not configured in the cluster, or do you want to test it from your
 local environment, you can run a `curl` against the productpage service via its
 ingress gateway public IP like this.
 
-```bash{promptUser: "alice"}
+```bash
 $ export IP=$(kubectl -n bookinfo get service tsb-gateway-bookinfo -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 $ curl -H "Host: bookinfo.example.com" http://$IP/productpage
 ```
@@ -351,12 +351,12 @@ Remember to bump the chart version when publishing new changes to the Chart.
 
 If there are no changes and you want to force flux to re-run, do:
 
-```bash{promptUser: "alice"}
+```bash
 $ flux reconcile helmrelease bookinfo
 ```
 
 You can also check for issues in the Flux Kubernetes resources:
-```bash{promptUser: "alice"}
+```bash
 $ flux get helmreleases -A
 NAMESPACE  	NAME    	REVISION	SUSPENDED	READY	MESSAGE
 flux-system	bookinfo	        	False    	False	install retries exhausted
@@ -369,7 +369,7 @@ If you see a `upgrade retries exhausted` message, there is a [bug
 regression](https://github.com/fluxcd/helm-controller/issues/454). The workaround is
 to suspend and resume the `HelmRelease`:
 
-```bash{promptUser: "alice"}
+```bash
 $ flux suspend helmrelease bookinfo
 $ flux resume helmrelease bookinfo
 ```

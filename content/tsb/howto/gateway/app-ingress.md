@@ -21,7 +21,7 @@ In this example you will install `httpbin` in a namespace, and create an App Ing
 
 Create a namespace named `httpbin-appingress`.
 
-```bash{promptUser: "alice"}
+```bash
 kubectl create namespace httpbin-appingress
 ```
 
@@ -31,7 +31,7 @@ In this example the workload will be the `httpbin` service. [Install `httpbin` b
 
 Install the App Ingress using the following command.
 
-```bash{promptUser: "alice"}
+```bash
 tctl experimental app-ingress kubernetes generate -n httpbin-appingress | \
   kubectl apply -f -
 ```
@@ -42,7 +42,7 @@ You might see the error `unable to recognize "STDIN": no matches for kind "Istio
 
 Verify that the `httpbin`, `istio-ingressgateway`, and `istiod` pods are running properly in namespace `httpbin-appingress`:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl get pod -n httpbin-appingress
 
 NAME                                    READY   STATUS    RESTARTS   AGE
@@ -98,7 +98,7 @@ spec:
 
 Apply this using `kubectl`:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -n httpbin-appingress -f httpbin-appingress-virtualservice.yaml
 ```
 
@@ -106,14 +106,14 @@ Since you have not setup DNS for `httpbin-appingress.example.com`, you will need
 
 In a different terminal, set up port-forwarding to the `istio-ingressgateway` service in the `httpbin-appingress` namespace using local port 4040:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -n httpbin-appingress port-forward svc/istio-ingressgateway 4040:80 
 ```
 
 You should now be able to reach the `httpbin` application in the `httpbin-appingress` namespace through the `istio-ingressgateway` service
 using the following command:
 
-```bash{promptUser: "alice"}
+```bash
 curl -s -I \
   -H "Host: httpbin-appingress.example.com" \
   http://localhost:4040/status/200
@@ -127,20 +127,20 @@ In this example you will use the `bookinfo` sample application and use its OpenA
 
 Create a new namespace `bookinfo-openapi`:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl create namespace bookinfo-openapi
 ```
 
 Deploy the `bookinfo` sample into the `bookinfo-openapi` namespace:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl apply -n bookinfo-openapi \
    -f https://raw.githubusercontent.com/istio/istio/master/samples/bookinfo/platform/kube/bookinfo.yaml 
 ```
 
 Once you verify that the application has been properly deployed, deploy the App Ingress in the `bookinfo-openapi` namespace. You will need to specify the "backend" service (application) that the OpenAPI specification is describing as well.
 
-```bash{promptUser: "alice"}
+```bash
 tctl experimental app-ingress kubernetes generate \
   -n bookinfo-openapi \
   --openapi-translator \
@@ -154,21 +154,21 @@ You will have to obtain an OpenAPI spec for `bookinfo`, but [the sample that is 
 
 Create the `ConfigMap` using this file using the following command:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -n bookinfo-openapi create configmap openapi-translator \
   --from-file=bookinfo-openapi.yaml
 ```
 
 When the configuration is picked up by the OpenAPI Translator, Istio resources such as `Gateway` and `VirtualService` will be available in the namespace. You verify this by issuing `kubectl get gateway` and `kubectl get virtualservice` commands:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -n bookinfo-openapi get gateway
 
 NAME                                    AGE
 istio-ingressgateway-f6fb54b17b9120eb   64s
 ```
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -n bookinfo-openapi get virtualservice
 
 NAME                                                     GATEWAYS                                                     HOSTS                  AGE
@@ -199,19 +199,19 @@ Create the `cacerts` secret that contain the certificate and keys. For more info
 You can test this out by using the sample certs provided in the Istio release bundle.
 Run this command to download the Istio release bundle.
 
-```bash{promptUser: "alice"}
+```bash
 curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.11.3 sh -
 ```
 
 Run this commend to create the `cacerts` secret.
 
-```bash{promptUser: "alice"}
+```bash
 kubectl create secret generic cacerts -n bookinfo-appingress --from-file=ca-cert.pem=istio-1.11.3/samples/certs/ca-cert.pem --from-file=ca-key.pem=istio-1.11.3/samples/certs/ca-key.pem --from-file=root-cert.pem=istio-1.11.3/samples/certs/root-cert.pem --from-file=cert-chain.pem=istio-1.11.3/samples/certs/cert-chain.pem
 ```
 
 Then supply this file when you generate the manifest for App Ingress by specifying the `-f` (`--filename`) flag:
 
-```bash{promptUser: "alice"}
+```bash
 tctl experimental app-ingress kubernetes generate \
   -n bookinfo-appingress \
   -f configure-plug-in-certs.yaml \
@@ -236,7 +236,7 @@ Create a directory named `appingress-compose`. Later instructions will rely on t
 
 Generate and save the generated docker-compose file in the `appingress-compose` directory that defines all the App Ingress containers using the following command. Notice that `--openapi-translator` option is enabled, and that the backend service `http://httpbin.tetrate.com` is specified through `--openapi-backend-service`.
 
-```bash{promptUser: "alice"}
+```bash
 tctl x app-ingress docker-compose generate \
   --openapi-translator \
   --output-dir appingress-compose \
@@ -246,14 +246,14 @@ tctl x app-ingress docker-compose generate \
 ### Running docker-compose
 Lets run the containers using `docker-compose`
 
-```bash{promptUser: "alice"}
+```bash
 $ cd appingress-compose
 $ docker-compose up -d
 ```
 
 You should see the App Ingress containers starting,  as well as a new docker network named `appingress-compose_app-ingress` being created.
 
-```bash{promptUser: "alice"}
+```bash
 $ docker ps --filter="name=appingress"
 CONTAINER ID   IMAGE                                                                                          COMMAND                  CREATED       STATUS       PORTS                                            NAMES
 aeae400dcdc3   istio/proxyv2:1.11.3                                                                           "/usr/local/bin/pilo…"   2 hours ago   Up 2 hours   0.0.0.0:8080->8080/tcp, 0.0.0.0:8443->8443/tcp   appingress-compose_istio-ingressgateway_1
@@ -261,7 +261,7 @@ e7d988a02384   gcr.io/tetrate-internal-containers/genistio-watcher:7c8c123e620c2
 19539c0a28d3   istio/pilot:1.11.3                                                                             "/usr/local/bin/pilo…"   2 hours ago   Up 2 hours                                                    appingress-compose_pilot-discovery_1
 ```
 
-```bash{promptUser: "alice"}
+```bash
 $ docker network ls
 NETWORK ID     NAME                             DRIVER    SCOPE
 d5b159e5b631   appingress-compose_app-ingress   bridge    local
@@ -273,7 +273,7 @@ c955a05b02d1   none                             null      local
 ### Run an Application Container
 Start a container with the same name mentioned in the `--openapi-backend-service` argument, which should be `httpbin.tetrate.com` in this case. The current implementation requires that the name matches the backend service name. You also need to deploy it in the same `appingress-compose_app-ingress` network which was recently created by `docker-compose`
 
-```bash{promptUser: "alice"}
+```bash
 docker run --net appingress-compose_app-ingress --name httpbin.tetrate.com -d kennethreitz/httpbin
 ```
 
@@ -283,7 +283,7 @@ Download the file [`httpbin-openapi.json`](../../assets/howto/httpbin-openapi.js
 
 You should instantaneously see the generated Istio resource being created as a YAML file:
 
-```bash{promptUser: "alice"}
+```bash
 $ ls .app-ingress/config-sources/app-ingress.yaml
 .app-ingress/config-sources/app-ingress.yaml
 ```
@@ -293,7 +293,7 @@ You can include additional Istio resources such as Destination Rules, Envoy filt
 
 If everything is working, you should be able to access the application running in Docker.
 
-```bash{promptUser: "alice"}
+```bash
 $ curl -vvv -H "Host: httpbin.tetrate.com" http://localhost:8080/get
 *   Trying ::1...
 * TCP_NODELAY set

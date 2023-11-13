@@ -95,7 +95,7 @@ spec:
 
 要检查在 pod 上设置的 `drainDuration` 值，你可以查询环境变量：
 
-```bash{pomptUser: alice}
+```bash
 kubectl describe po helloworld-gateway-7d5d4c8d57-msfd6 -n helloworld | grep -i DRAIN
       TERMINATION_DRAIN_DURATION_SECONDS:  22
 ```

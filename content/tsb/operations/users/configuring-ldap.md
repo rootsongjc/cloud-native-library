@@ -114,7 +114,7 @@ Some operations require running privileged queries against the LDAP server, such
  
 You can use `tctl install manifest management-plane-secrets` to create required credentials and certificates to connect to your LDAP server. 
  
-```bash{promptUser: "alice"}
+```bash
 tctl install manifest management-plane-secrets \
     …
     --ldap-bind-dn <ldap-bind-dn> \

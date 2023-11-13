@@ -45,7 +45,7 @@ full `host:port/db_name` of your PostgreSQL cluster. Only change the lower
 `username` and `password` with your own, don't edit the one between `{{ }}` in
 the URL, it is used as a template:
 
-```bash{outputLines: 2-6}
+```bash
 vault write database/config/tsb \
     plugin_name=postgresql-database-plugin \
     allowed_roles="pg-role" \
@@ -56,7 +56,7 @@ vault write database/config/tsb \
 
 You can review the configuration by using the `read` action:
 
-```bash{outputLines: 2-7}
+```bash
 vault read  database/config/tsb
 # Key                                   Value
 # ---                                   -----
@@ -78,7 +78,7 @@ ensure they are all closed before the TTL expires.
 Run the command below, ensuring that you don't edit the parameters between
 `{{ }}` because they are used as a template by Vault:
 
-```bash{outputLines: 2-8}
+```bash
 vault write database/roles/pg-role \
     db_name=tsb \
     creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; \
@@ -91,7 +91,7 @@ Success! Data written to: database/roles/pg-role
 
 Again, use the `read` action to verify the setup:
 
-```bash{outputLines: 2-9,10}
+```bash
 vault read  database/roles/pg-role
 # Key                      Value
 # ---                      -----
@@ -108,7 +108,7 @@ Now, generate a new credential by reading from the `/creds` endpoint with the
 name of the role. This is the mechanism that will be used by the Vault-Injector
 to grab credentials for your Kubernetes application:
 
-```bash{outputLines: 2-8}
+```bash
 vault read database/creds/pg-role
 Key                Value
 ---                -----
@@ -124,7 +124,7 @@ username           v-token-pg-role-KQ4ze3GYi5He0D70tEmo-1587973449
 Configure a policy named "pg-auth". This is a very non-restrictive policy, and
 in a production setting, you should add more restrictions.
 
-```bash{outputLines: 2-6}
+```bash
 vault policy write pg-auth - <<EOF
 path "database/creds/*" {
     capabilities = ["read"]
@@ -140,7 +140,7 @@ will use to connect to Kubernetes) and the CA certificate of the `vaultserver`
 service account as described in
 [Vault documentation](https://learn.hashicorp.com/tutorials/vault/kubernetes-external-vault?in=vault/kubernetes#define-a-kubernetes-service-account):
 
-```bash{outputLines: 3-5}
+```bash
 vault auth enable kubernetes
 vault write auth/kubernetes/config \
     token_reviewer_jwt="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
@@ -151,7 +151,7 @@ vault write auth/kubernetes/config \
 Attach the database policy to service accounts from the management namespace
 (`tsb` namespace here):
 
-```bash{outputLines: 2-5}
+```bash
 vault write auth/kubernetes/role/pg \
     bound_service_account_names=* \
     bound_service_account_namespaces=tsb \
@@ -163,7 +163,7 @@ To add more restrictions create one role per `ServiceAccount`. For PostgreSQL,
 you will need one for `tsb-iam`, `tsb-spm` and `default` service accounts
 because TSB API pods run with `default` service accounts:
 
-```bash{outputLines: 2-5}
+```bash
 vault write auth/kubernetes/role/pg \
     bound_service_account_names=default,tsb-spm,tsb-iam \
     bound_service_account_namespaces=tsb \

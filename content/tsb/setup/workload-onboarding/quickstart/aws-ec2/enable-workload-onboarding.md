@@ -22,7 +22,7 @@ throughout the rest of this guide.
 Create a self-signed certificate (`example-ca.crt.pem`) and
 and CA private key (`example-ca.key.pem`) by issuing the following command:
 
-```bash{promptUser: "alice"}
+```bash
 openssl req \
   -x509 \
   -subj '/CN=Example CA' \
@@ -50,7 +50,7 @@ EOF
 Then, create the certificate signing request (`onboarding-endpoint.example.csr.pem`) and
 the private key for the Workload Onboarding Endpoint (`onboarding-endpoint.example.key.pem`):
 
-```bash{promptUser: "alice"}
+```bash
 openssl req \
   -subj '/CN=onboarding-endpoint.example' \
   -sha256 \
@@ -64,7 +64,7 @@ Finally create the certificate for the DNS name `onboarding-endpoint.example`
 (`onboarding-endpoint.example.crt.pem`) signed by the CA you created in
 previous steps:
 
-```bash{promptUser: "alice"}
+```bash
 openssl x509 \
   -req \
   -days 3650 \
@@ -94,7 +94,7 @@ EOF
 Then deploy the certificate into the Kubernetes cluster by issuing the
 following command:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl create secret tls onboarding-endpoint-tls-cert \
   -n istio-system \
   --cert=onboarding-endpoint.example.crt.pem \
@@ -106,7 +106,7 @@ kubectl create secret tls onboarding-endpoint-tls-cert \
 Once we the TLS certificates are ready you can enable Workload Onboarding
 by issuing the following command:
 
-```bash{promptUser: "alice"}
+```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: install.tetrate.io/v1alpha1
 kind: ControlPlane
@@ -134,7 +134,7 @@ Workload Onboarding Agent and Istio sidecar should be deployed.
 Once you execute the above command, wait until individual components
 Workload Onboarding are available:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl wait --for=condition=Available -n istio-system \
   deployment/vmgateway \
   deployment/onboarding-plane \
@@ -149,7 +149,7 @@ has been exposed.
 
 Execute the following to obtain the address (DNS name or IP address):
 
-```bash{promptUser: "alice"}
+```bash
 ONBOARDING_ENDPOINT_ADDRESS=$(kubectl get svc vmgateway \
   -n istio-system \
   -ojsonpath="{.status.loadBalancer.ingress[0]['hostname', 'ip']}")
@@ -161,7 +161,7 @@ variable throughout the rest of this guide.
 Finally, execute the following command to verify that the endpoint is
 available for external traffic. 
 
-```bash{promptUser: "alice"}
+```bash
 curl -f -i \
   --cacert example-ca.crt.pem \
   --connect-to "onboarding-endpoint.example:443:${ONBOARDING_ENDPOINT_ADDRESS}:443" \

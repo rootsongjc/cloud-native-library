@@ -21,7 +21,7 @@ Be careful enabling debug logging across all of TSB's scopes for extended period
 In order to change each components' log level you will need to know which components are available. For that, there is utility command in `tctl` that will leverage the current `kubectl` connection information
 (context) and list the available components in that cluster.
 
-```bash{outputLines: 2-30}
+```bash
 $ tctl experimental debug list-components 
 PLANE         COMPONENT                 DEPLOYMENTS                           
 management    ldap                      ldap                                     
@@ -63,7 +63,7 @@ TSB components are able to adjust the log levels for the different existing logg
 
 In order to check the available loggers for a component and check the current levels, run the command without any flag.
 
-```bash{outputLines: 2-30}
+```bash
 tctl experimental debug log-level management/iamserver
 Configuring the logging levels:
     POST /logging?level=value	  -> Configures all levels globally
@@ -104,7 +104,7 @@ In order to change the log levels, there are multiple ways to accomplish that, w
 
 Changing a single logger is possible by providing a logger name followed by a colon (`:`), followed by the desired level. For example:
 
-```bash{outputLines: 2-30}
+```bash
 tctl experimental debug log-level management/iamserver --level ldap:debug
 Configuring the logging levels:
     POST /logging?level=value	  -> Configures all levels globally
@@ -143,7 +143,7 @@ You can see by the output received that the `ldap` logger has changed its level 
 
 Changing multiple loggers at once is possible by providing a comma (`,`) separated list of logger name and level pairs. Items within a pair are separated by a colon (`:`). For example:
 
-```bash{outputLines: 2-30}
+```bash
 tctl experimental debug log-level management/iamserver --level jwt:error,auth:warn,health:error
 Configuring the logging levels:
     POST /logging?level=value	  -> Configures all levels globally
@@ -182,7 +182,7 @@ You can see how only the selected loggers have changed to the specified levels.
 
 You can also change all loggers at once to a given level by just providing the level name, for instance:
 
-```bash{outputLines: 2-30}
+```bash
 tctl experimental debug log-level management/iamserver --level info
 Configuring the logging levels:
     POST /logging?level=value	  -> Configures all levels globally
@@ -346,7 +346,7 @@ Take a look at different components and log levels supported by the components i
 
 In order to change the gateways log levels, the same procedure described above can be used. Note that the `list-components` command output also includes the gateways deployed in the current cluster under the `data` plane.
 
-```bash{outputLines: 2-30}
+```bash
 $ tctl experimental debug list-components  | egrep ^data
 data          tsb-operator              tsb-operator-data-plane                  
 data          operator                  istio-operator                           
@@ -359,7 +359,7 @@ data          tier1                     tier1/tier1
 
 The procedure to change the log level for a gateway will be the same as for the rest of the components. For instance, to verify the `bookinfo-gateway` log levels, the following command can be run:
 
-```bash{outputLines: 2-100}
+```bash
 $ tctl experimental debug log-level data/bookinfo-gateway
 active loggers:
   admin: trace
@@ -414,7 +414,7 @@ active loggers:
 
 And the log levels can be adjusted using the same procedure, for instance to turn all logger to `info` level, the following command can be used:
 
-```bash{outputLines: 2-100}
+```bash
 $ tctl experimental debug log-level data/bookinfo-gateway --level info
 active loggers:
   admin: info

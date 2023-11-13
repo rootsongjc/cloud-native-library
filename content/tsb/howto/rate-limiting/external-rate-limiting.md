@@ -20,7 +20,7 @@ While this document will only describe how to apply rate limiting using an exter
 In this example we will install the external rate limit service in `ext-ratelimit` namespace.
 Create the namespace if not already present in the target cluster by running the following command:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl create namespace ext-ratelimit
 ```
 
@@ -38,7 +38,7 @@ Create a file name [`ext-ratelimit-config.yaml`](../../assets/howto/rate_limitin
 
 Then create a `ConfigMap` using the file you created:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -n ext-ratelimit apply -f ext-ratelimit-config.yaml
 ```
 
@@ -50,14 +50,14 @@ Deploy Redis and `envoyproxy/ratelimit`. Create a file called [`redis-ratelimit.
   {redisRateLimitYAML}
 </CodeBlock>
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -f redis-ratelimit.yaml
 ```
 
 If everything is successful, you should have a working rate limit server. 
 Make sure that Redis and the rate limit server are running by executing the following command:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl get pods -n ext-ratelimit
 ```
 
@@ -81,7 +81,7 @@ The following sample sets rate limiting on requests in the `httpbin-ratelimit` d
 
 Save this to a file named [`ext-ratelimit-ingress-gateway.yaml`](../../assets/howto/rate_limiting/ext-ratelimit-ingress-gateway.yaml), and apply it using `tctl`:
 
-```bash{promptUser: "alice"}
+```bash
 tctl apply -f ext-ratelimit-ingress-gateway.yaml
 ```
 
@@ -93,14 +93,14 @@ In the following example, since you do not control httpbin.tetrate.com, you will
 
 Obtain the IP address of the Ingress Gateway that you previously created using the following command.
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -n httpbin get service httpbin-ingress-gateway \
   -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
 
 Then execute the following command to send HTTP requests to the httpbin service through the Ingress Gateway. Replace the gateway-ip with the value you obtained in the previous step.
 
-```bash{promptUser: "alice"}
+```bash
 curl -k "http://httpbin.tetrate.com/get" \
     --resolve "httpbin.tetrate.com:80:<gateway-ip>" \
     -s \
@@ -112,7 +112,7 @@ For the first 4 requests you should see "200" on your screen. After that, you sh
 
 You can change the request path to another unique value to get a successful response.
 
-```bash{promptUser: "alice"}
+```bash
 curl -k "http://httpbin.tetrate.com/headers" \
     --resolve "httpbin.tetrate.com:80:<gateway-ip>" \
     -s \

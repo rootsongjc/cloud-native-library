@@ -91,7 +91,7 @@ After you have transformed the IdP payload into TSB sync API payload, you can se
 
 The following example uses `curl` to send a request to the TSB API server running on `<tsb-host>:8443`, using the TSB admin user credentials. The TSB sync API payload is assumed to be stored in the file `/path/to/data.json`
 
-```bash{promptUser: "alice"}
+```bash
 curl --request POST \
   --url https://<tsb-host>:8443/v2/organizations/tetrate/sync \
   --header 'Authorization: Basic base64(<admin>:<admin-password>) \

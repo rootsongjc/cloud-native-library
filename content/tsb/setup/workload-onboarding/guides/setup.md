@@ -427,7 +427,7 @@ If you use an ARM-based VM, change `amd64` to `arm64` in the following examples.
 
 Run the following commands. Replace the `onboarding-endpoint-dns-name` with the appropriate value.
 
-```bash{promptUser: "alice"}
+```bash
 curl -fLO "https://<onboarding-endpoint-dns-name>/install/deb/amd64/onboarding-agent.deb"
 
 curl -fLO "https://<onboarding-endpoint-dns-name>/install/deb/amd64/onboarding-agent.deb.sha256"
@@ -443,7 +443,7 @@ rm onboarding-agent.deb onboarding-agent.deb.sha256
 
 Run the following commands. Replace the `onboarding-endpoint-dns-name` with the appropriate value.
 
-```bash{promptUser: "alice"}
+```bash
 curl -fLO "https://<onboarding-endpoint-dns-name>/install/rpm/amd64/onboarding-agent.rpm"
 
 curl -fLO "https://<onboarding-endpoint-dns-name>/install/rpm/amd64/onboarding-agent.rpm.sha256"
@@ -459,7 +459,7 @@ rm onboarding-agent.rpm onboarding-agent.rpm.sha256
 
 Run the following commands. Replace the `onboarding-endpoint-dns-name` with the appropriate value.
 
-```bash{promptUser: "alice"}
+```bash
 curl -fLO "https://<onboarding-endpoint-dns-name>/install/deb/amd64/istio-sidecar.deb"
 
 curl -fLO "https://<onboarding-endpoint-dns-name>/install/deb/amd64/istio-sidecar.deb.sha256"
@@ -475,7 +475,7 @@ rm istio-sidecar.deb istio-sidecar.deb.sha256
 
 Run the following commands. Replace the `onboarding-endpoint-dns-name` with the appropriate value.
 
-```bash{promptUser: "alice"}
+```bash
 curl -fLO "https://<onboarding-endpoint-dns-name>/install/rpm/amd64/istio-sidecar.rpm"
 
 curl -fLO "https://<onboarding-endpoint-dns-name>/install/rpm/amd64/istio-sidecar.rpm.sha256"

@@ -16,17 +16,17 @@ Before you get started, make sure: <br />
 Create a sample application using the below command. An example repository containing Istio's [bookinfo](https://istio.io/latest/docs/examples/bookinfo/) application and TSB configurations is available at [https://github.com/tetrateio/tsb-gitops-demo](https://github.com/tetrateio/tsb-gitops-demo).
 You can either use Argo CD CLI or their web UI to import application configurations directly from Git.
 
-```bash{promptUser: "alice"}
+```bash
 argocd app create bookinfo-app --repo https://github.com/tetrateio/tsb-gitops-demo.git --path application --dest-server https://kubernetes.default.svc --dest-namespace bookinfo --sync-policy automated --self-heal
 ```
 
 Check the status of your application
 
-```bash{promptUser: "alice"}
+```bash
 argocd app get bookinfo-app
 ```
 
-```bash{promptUser: "alice"}
+```bash
 Name:               bookinfo-app
 Project:            default
 Server:             https://kubernetes.default.svc
@@ -73,13 +73,13 @@ Since Argo Rollout require you to make some modifications on Istio `VirtualServi
 
 Create a `bookinfo-tsb-conf` app by importing the TSB configurations from [tsb-gitops-demo/argo/tsb/conf.yaml](https://github.com/tetrateio/tsb-gitops-demo/blob/main/argo/tsb/conf.yaml). You can also choose to keep it in the same repo. 
 
-```bash{promptUser: "alice"}
+```bash
 argocd app create bookinfo-tsb-conf --repo https://github.com/tetrateio/tsb-gitops-demo.git --path argo/tsb --dest-server https://kubernetes.default.svc --dest-namespace bookinfo --sync-policy automated --self-heal
 ```
 
 Check the status of TSB resources
 
-```bash{promptUser: "alice"}
+```bash
 argocd app get bookinfo-tsb-conf
 
 Name:               bookinfo-tsb-conf
@@ -117,13 +117,13 @@ install.tetrate.io       IngressGateway   bookinfo      tsb-gateway-bookinfo    
 
 Run the below command to export LB ip of `tsb-gateway-bookinfo`
 
-```bash{promptUser: "alice"}
+```bash
 export GATEWAY_IP=$(kubectl -n bookinfo get service tsb-gateway-bookinfo -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 ```
 
 Confirm that you can access bookinfo application. As you can see in the response, `review v1` service which we have currently deployed doesn't call `ratings` service.
 
-```bash{promptUser: "alice"}
+```bash
 curl -v "http://bookinfo.tetrate.com/api/v1/products/1/reviews" \
     --resolve "bookinfo.tetrate.com:80:$GATEWAY_IP"
 
@@ -260,13 +260,13 @@ spec:
 
 Run the below command to create a rollout app
 
-```bash{promptUser: "alice"}
+```bash
 argocd app create reviews-rollout --repo https://github.com/tetrateio/tsb-gitops-demo.git --path argo/rollout --dest-server https://kubernetes.default.svc --dest-namespace bookinfo --sync-policy automated --self-heal
 ```
 
 Check the status
 
-```bash{promptUser: "alice"}
+```bash
 argocd app get reviews-rollout
 
 Name:               reviews-rollout
@@ -292,7 +292,7 @@ argoproj.io  Rollout           bookinfo   reviews-rollout  Synced  Healthy      
 
 Update the `reviews` service deployment image to `v2` version. This will immediately trigger a canary deployment of `reviews v2` and will modify the traffic percentage as `90/10`.
 
-```bash{promptUser: "alice"}
+```bash
 kubectl argo rollouts set image reviews-rollout reviews=docker.io/istio/examples-bookinfo-reviews-v2:1.16.4 -n bookinfo
 ```
 
@@ -300,7 +300,7 @@ kubectl argo rollouts set image reviews-rollout reviews=docker.io/istio/examples
 
 Run the below command to monitor your canary deployment. 
 
-```bash{promptUser: "alice"}
+```bash
 kubectl argo rollouts get rollout reviews-rollout --watch -n bookinfo
 
 Name:            reviews-rollout
@@ -339,13 +339,13 @@ NAME                                         KIND        STATUS     AGE    INFO
 
 Run the below command to send some requests to bookinfo application.
 
-```bash{promptUser: "alice"}
+```bash
 while true; do curl -m 5 -v "http://bookinfo.tetrate.com/api/v1/products/1/reviews" --resolve "bookinfo.tetrate.com:80:$GATEWAY_IP";  sleep 2 ; done ;
 ```
 
 As you can see, some of the response will have the response from `ratings` service as `reviews-v2` calls `ratings` service.
 
-```bash{promptUser: "alice"}
+```bash
 > GET /api/v1/products/1/reviews HTTP/1.1
 > Host: bookinfo.tetrate.com
 > User-Agent: curl/7.79.1
@@ -381,7 +381,7 @@ As we have configured in the `rollout` object, canary `analysis` is going to run
 
 ### During Canary Analysis
 
-```bash{promptUser: "alice"}
+```bash
 kubectl argo rollouts promote reviews-rollout --full -n bookinfo
 
 Name:            reviews-rollout
@@ -422,7 +422,7 @@ NAME                                         KIND         STATUS     AGE   INFO
 
 Once all the steps gets executed with a `successfull` analysis run, argo completely rollout the image to version `v2` and marks that as `stable`. 
 
-```bash{promptUser: "alice"}
+```bash
 kubectl argo rollouts get rollout reviews-rollout --watch -n bookinfo
 
 Name:            reviews-rollout
@@ -458,7 +458,7 @@ NAME                                         KIND         STATUS        AGE    I
 
 You can either do a step promote which will proceed to the next steps mentioned in the Rollout by changing the traffic weight and it will eventually rollout the new version completely or you can do a full promote to the desired version by skipping analysis, pauses, and steps.
 
-```bash{promptUser: "alice"}
+```bash
 # step promotion
 kubectl argo rollouts promote reviews-rollout -n bookinfo
 

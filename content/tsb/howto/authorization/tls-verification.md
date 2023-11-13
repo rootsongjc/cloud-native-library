@@ -29,7 +29,7 @@ For the purpose of example, you can create self signed certificates using this [
 
 Once you have the files, create Kubernetes secret using server certificate and private key.
 
-```bash{promptUser: "alice"}
+```bash
 kubectl create secret tls -n httpbin opa-certs \
   --cert=authz.crt \
   --key=authz.key
@@ -38,7 +38,7 @@ kubectl create secret tls -n httpbin opa-certs \
 You will also need the CA certificate in to validate the TLS connection.
 Create a `ConfigMap` named `authz-ca` that will contain the CA certificate:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl create configmap -n httpbin authz-ca \
   --from-file=authz-ca.crt
 ```
@@ -82,7 +82,7 @@ spec:
 
 Apply with kubectl:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl apply -f httpbin-ingress-gateway.yaml
 ```
 
@@ -125,7 +125,7 @@ spec:
 
 Apply with tctl
 
-```bash{promptUser: "alice"}
+```bash
 tctl apply -f ext-authz-ingress-gateway-tls.yaml
 ```
 

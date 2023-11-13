@@ -20,7 +20,7 @@ Before you get started, make sure that you: <br />
 
 First, start by installing bookinfo in your cluster. 
 
-```bash{outputLines: 3-4}
+```bash
 kubectl create ns bookinfo
 kubectl apply -f \
     https://raw.githubusercontent.com/istio/istio/master/samples/bookinfo/platform/kube/bookinfo.yaml \
@@ -30,7 +30,7 @@ kubectl apply -f \
 Follow the [VM onboarding docs](../../setup/workload_onboarding/onboarding-vms). 
 During onboarding, run the Istio demo `ratings` app as your workload. 
 
-```bash{outputLines: 2-4} 
+```bash
 sudo docker run -d \
     --name ratings \
     -p 127.0.0.1:9080:9080 \

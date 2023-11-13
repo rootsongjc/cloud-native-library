@@ -17,7 +17,7 @@ Once you have the CLI installed and configured to talk to your TSB installation,
 you'll need to configure access to the TSB platform with the `tctl login`
 command:
 
-```bash{outputLines: 2-9}
+```bash
 tctl login
 ```
 
@@ -96,7 +96,7 @@ make sure the operation will not fail because a resource is missing its parent.
 The following example shows how to create a tenant and a workspace in an
 existing organization:
 
-```bash{outputLines: 2-9,10-24}
+```bash
 tctl apply -f - <<EOF
 apiVersion: api.tsb.tetrate.io/v2
 kind: Tenant
@@ -249,7 +249,7 @@ tctl delete trafficgroup test-tg --workspace test
 
 Query it again:
 
-```bash{outputLines: 2}
+```bash
 tctl get trafficgroup -w test
 No resources found
 ```

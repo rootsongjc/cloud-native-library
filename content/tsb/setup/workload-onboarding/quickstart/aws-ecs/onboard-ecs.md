@@ -27,7 +27,7 @@ these steps:
 Create an AWS ECS cluster called `bookinfo` using `FARGATE` as the capacity
 provider.
 
-```bash{promptUser: "alice"}
+```bash
 aws ecs create-cluster --cluster-name bookinfo --capacity-providers FARGATE
 ```
 
@@ -35,7 +35,7 @@ aws ecs create-cluster --cluster-name bookinfo --capacity-providers FARGATE
 
 Create an IAM role for the task with the following trust policy.
 
-```bash{promptUser: "alice"}
+```bash
 cat << EOF > task-role-trust-policy.json
 {
   "Version": "2012-10-17",
@@ -61,7 +61,7 @@ Configure this role with the following policy to allow
 This is not required for the task to join the mesh, but is used later in the
 guide to verify traffic from the task to Kubernetes services.
 
-```bash{promptUser: "alice"}
+```bash
 cat << EOF > ecs-exec-policy.json
 {
   "Version": "2012-10-17",
@@ -93,7 +93,7 @@ it to use the AWS managed `AmazonECSTaskExecutionRolePolicy` policy. This
 policy gives the task permissions to access images in your Elastic Container
 Registry (ECR) and to write logs.
 
-```bash{promptUser: "alice"}
+```bash
 cat << EOF > task-exec-role-trust-policy.json
 {
   "Version": "2012-10-17",
@@ -125,7 +125,7 @@ removed and quotes escaped so that it can be encoded in the ECS task container
 definition. Replace `ONBOARDING_ENDPOINT_ADDRESS` with
 [the value that you have obtained earlier](../aws-ec2/enable-workload-onboarding#verify-the-workload-onboarding-endpoint).
 
-```bash{promptUser: "alice"}
+```bash
 ONBOARDING_CONFIG=$(jq --compact-output . <<'EOF' | sed 's/"/\\"/g'
 {
   "apiVersion": "config.agent.onboarding.tetrate.io/v1alpha1",
@@ -158,13 +158,13 @@ be encoded in the ECS task container definition. `example-ca.crt.pem` is the
 self-signed cert created earlier when
 [enabling workload onboarding](../aws-ec2/enable-workload-onboarding#prepare-the-certificates).
 
-```bash{promptUser: "alice"}
+```bash
 ONBOARDING_AGENT_ROOT_CERTS=$(awk '{printf "%s\\n", $0}' example-ca.crt.pem)
 ```
 
 Now create the ECS task definition with the following command:
 
-```bash{promptUser: "alice"}
+```bash
 AWS_REGION=$(aws configure get region)
 TASK_ROLE_ARN=$(aws iam get-role --role-name bookinfoECSTaskRole --query 'Role.Arn' --output text)
 TASK_EXECUTION_ROLE_ARN=$(aws iam get-role --role-name bookinfoECSTaskExecRole --query 'Role.Arn' --output text)
@@ -223,7 +223,7 @@ This configures the task to write logs using the
 to the `/ecs/bookinfo_ratings` log group. Create this group with the following
 command:
 
-```bash{promptUser: "alice"}
+```bash
 aws logs create-log-group --log-group-name "/ecs/bookinfo_ratings"
 ```
 
@@ -234,7 +234,7 @@ aws logs create-log-group --log-group-name "/ecs/bookinfo_ratings"
 Ensure that there is a NAT gateway in your VPC by running commands below,
 replacing `EKS_CLUSTER_NAME` with the name of your EKS cluster.
 
-```bash{promptUser: "alice"}
+```bash
 VPC_ID=$(aws eks describe-cluster --name <EKS_CLUSTER_NAME> --query 'cluster.resourcesVpcConfig.vpcId' --output text)
 
 aws ec2 describe-nat-gateways --filter Name=vpc-id,Values=${VPC_ID}
@@ -244,7 +244,7 @@ If the returned list is empty, create a public subnet and NAT gateway using
 the commands below, replacing `CIDR_BLOCK` with the desired CIDR block to use
 for the subnet, e.g. `10.0.3.0/24`.
 
-```bash{promptUser: "alice"}
+```bash
 INTERNET_GATEWAY_ID=$(aws ec2 describe-internet-gateways --filters Name=attachment.vpc-id,Values=${VPC_ID} --query 'InternetGateways[0].InternetGatewayId' --output text)
 
 aws ec2 create-subnet \
@@ -285,7 +285,7 @@ If you already have a private subnet configured with a NAT gateway that you
 want to use for deploying tasks, set its ID in the shell variable `SUBNET_ID`,
 i.e.
 
-```bash{promptUser: "alice"}
+```bash
 SUBNET_ID=<YOUR_SUBNET_ID>
 ```
 
@@ -293,7 +293,7 @@ Otherwise, create a subnet using the NAT gateway found or created above using
 the commands below, replacing `CIDR_BLOCK` with the desired CIDR block to use
 for the subnet, e.g. `10.0.4.0/24`.
 
-```bash{promptUser: "alice"}
+```bash
 NAT_GATEWAY_ID=$(aws ec2 describe-nat-gateways --filter Name=vpc-id,Values=${VPC_ID} --query 'NatGateways[0].NatGatewayId' --output text)
 
 aws ec2 create-subnet \
@@ -324,7 +324,7 @@ aws ec2 associate-route-table \
 A security group is needed with a rule allowing ingress traffic to port 9080
 for Istio to use. Create one using the commands below:
 
-```bash{promptUser: "alice"}
+```bash
 aws ec2 create-security-group \
   --group-name BookinfoECSSecurityGroup \
   --description "Security group for ECS onboarding quickstart bookinfo tasks" \
@@ -346,7 +346,7 @@ subnet and security group using the following command. If you created
 multiple task definition versions, update the version passed in the
 `--task-definition` flag.
 
-```bash{promptUser: "alice"}
+```bash
 aws ecs create-service \
   --cluster bookinfo \
   --service-name ratings \
@@ -366,13 +366,13 @@ mesh.
 Verify that the workload has been properly onboarded by executing the
 following command:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl get war -n bookinfo
 ```
 
 If the workload was properly onboarded, you should get an output similar to:
 
-```bash{promptUser: "alice"}
+```bash
 NAME                                                                                    AGENT CONNECTED   AGE
 ratings-aws-aws-123456789012-us-east-1a-ecs-bookinfo-3a151358f03a4e32bf8cd401c1c74653   True              1m
 ```
@@ -388,7 +388,7 @@ AWS ECS task.
 
 Then run the following commands:
 
-```bash{promptUser: "alice"}
+```bash
 for i in `seq 1 9`; do
     curl -s "http://localhost:9080/productpage?u=normal" | grep -c "glyphicon-star" | awk '{print $1" stars on the page"}'
 done
@@ -404,7 +404,7 @@ for the incoming HTTP requests proxied by the Istio sidecar.
 Execute the following command using the `ecs-cli` tool that can be
 [downloaded and installed here](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html):
 
-```bash{promptUser: "alice"}
+```bash
 # Get the task ID from the WorkloadAutoRegistration resource
 TASK_ID=$(kubectl get war -n bookinfo -o jsonpath="{.items[0].spec.identity.aws.ecs.taskId}")
 
@@ -421,7 +421,7 @@ You should see an output similar to:
 
 Start a shell in the task by running the following commands:
 
-```bash{promptUser: "alice"}
+```bash
 # Get the task ID from the WorkloadAutoRegistration resource
 TASK_ID=$(kubectl get war -n bookinfo -o jsonpath="{.items[0].spec.identity.aws.ecs.taskId}")
 
@@ -431,7 +431,7 @@ aws ecs execute-command --cluster bookinfo --task ${TASK_ID} --container onboard
 
 Then execute the following commands:
 
-```bash{promptUser: "alice"}
+```bash
 for i in `seq 1 5`; do
   curl -i \
     --resolve details.bookinfo:9080:127.0.0.2 \
@@ -446,7 +446,7 @@ to [the sidecar configuration you created earlier](./configure-workload-onboardi
 
 You should get an output similar to:
 
-```bash{promptUser: "alice"}
+```bash
 HTTP/1.1 200 OK
 content-type: application/json
 server: envoy

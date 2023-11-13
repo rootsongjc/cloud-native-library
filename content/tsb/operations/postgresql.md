@@ -16,7 +16,7 @@ Before you get started make sure:
 
 TSB requires PostgreSQL 11.1 or up. We will be using this 11.1 version for the example. You can create a backup of the database by running:
 
-```bash{promptUSer: "alice"}
+```bash
 pg_dump tsb > tsb_backup.sql
 ```
 :::note
@@ -40,7 +40,7 @@ DELETE FROM audit_log WHERE time <= ROUND(EXTRACT(epoch FROM now() - INTERVAL '2
 ## Restore a backup
 
 To restore a backup, it is recommended to scale down the `tsb` and `iam` deployments to 0, as these deployments will be doing queries to the database continuously:
-```bash{promptUSer: "alice"}
+```bash
 kubectl scale deployment tsb iam -n tsb --replicas 0
 ```
 
@@ -91,7 +91,7 @@ psql tsb < tsb_backup.sql
 
 Now all data from the backup is restored and you can scale up `tsb` and `iam` deployments to 1:
 
-```bash{promptUSer: "alice"}
+```bash
 kubectl scale deployment tsb iam -n tsb --replicas 1
 ```
 

@@ -13,13 +13,13 @@ If a new workload does not appear on the list of onboarded workloads, follow the
 
 On the host of the workload, e.g. on the VM, run:
 
-```bash{promptUser: "alice"}
+```bash
 systemctl status onboarding-agent
 ```
 
 You should get output similar to:
 
-```bash{promptUser: "alice"}
+```bash
 ● onboarding-agent.service - Workload Onboarding Agent
    Loaded: loaded (/usr/lib/systemd/system/onboarding-agent.service; enabled; vendor preset: disabled)
    Active: active (running) since Thu 2021-10-07 14:57:23 UTC; 1 minute ago  # (1)
@@ -42,7 +42,7 @@ Check that the task(s) have been created and that both the `onboarding-agent`
 container and application container are healthy. For example describe the ECS
 service and check for any errors by running:
 
-```bash{promptUser: "alice"}
+```bash
 aws ecs describe-services --cluster <ECS cluster name> --services <ECS service name>
 ```
 
@@ -58,7 +58,7 @@ For further ECS troubleshooting, see also the
 
 On the host of the workload, e.g. on the VM, run:
 
-```bash{promptUser: "alice"}
+```bash
 journalctl -u onboarding-agent -o cat
 ```
 
@@ -75,7 +75,7 @@ To access the logs using the `ecs-cli` tool that can be
 [downloaded and installed here](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html),
 run the following commands:
 
-```bash{promptUser: "alice"}
+```bash
 ecs-cli logs --cluster <ECS cluster name> --task-id <ECS task ID> --container-name onboarding-agent --follow
 ```
 

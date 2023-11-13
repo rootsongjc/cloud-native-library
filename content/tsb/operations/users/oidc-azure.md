@@ -99,7 +99,7 @@ The *Configuration URI* can be copied from the application endpoints:
 Create the secrets in a file named `secret.yaml` using the following command. Replace `TSB_Admin_Pass` and `Client_Secret` appropriately.
 
 
-```bash{promptUser: "alice"}
+```bash
 tctl install manifest management-plane-secrets --allow-defaults --tsb-admin-password <TSB_Admin_Pass>   \
     --oidc-client-secret=<Client_Secret> \
     --teamsync-azure-client-secret=<Client_Secret> > secret.yaml
@@ -107,7 +107,7 @@ tctl install manifest management-plane-secrets --allow-defaults --tsb-admin-pass
 
 Within the generated `secret.yaml` file, we only care about the values for `iam-oidc-client-secret` and `azure-credentials`. Edit the `secret.yaml` file and remove all other secrets, then apply the YAML file using `kubectl`. It is important to remove all other secrets, as you do not want to override them for this procedure.
 
-```bash{promptUser: "alice"}
+```bash
 kubectl apply -f secret.yaml
 ```
 
@@ -115,7 +115,7 @@ kubectl apply -f secret.yaml
 
 Once the secrets have been created, configure the identityProvider section of the `ManagementPlane` CR by using the following command to start editing the CR:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl edit managementplane managementplane -n tsb
 ```
 
@@ -179,7 +179,7 @@ spec:
 
 Login with tctl using the current profile:
 
-```bash{promptUSer: "alice"}
+```bash
 tctl login --use-device-code
 ```
 
@@ -215,7 +215,7 @@ Follow AzureAD documentation for [requesting a service principal token](https://
 
 For example, using `curl`, you can issue the following command. Please consult the official documentation for details.
 
-```bash{promptUser: "alice"}
+```bash
 curl -X POST  \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -d 'grant_type=client_credentials&client_id=<clientID>&resource=<clientID>&client_secret=<clientSecret>' \
@@ -225,7 +225,7 @@ curl -X POST  \
 
 Acquire a temporary TSB token using a token exchange:
 
-```bash{promptUser: "alice"}
+```bash
 tctl login --use-token-exchange --access-token <azure service principal token>
 ```
 
@@ -239,7 +239,7 @@ If everything is working, you should see a message telling you that you have suc
 
 Once OIDC is integrated in the cluster, end users are able to configure tctl to work with OIDC by using the login command with the --use-device-code parameter. The command will ask for the Organization and Tenant, and provide a code that can be used to authenticate on the provided URL. Once that code is validated, tctl will be ready to use.
 
-```bash{promptUser: "alice"}
+```bash
 tctl login --use-device-code
 
 Organization: tetrate

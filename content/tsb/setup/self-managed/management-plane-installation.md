@@ -192,7 +192,7 @@ tctl config clusters set default --bridge-address $(kubectl get svc -n tsb envoy
 
 现在，你可以使用`tctl`登录，并提供组织名称和管理员帐户凭据。租户字段是可选的，可以在稍后配置，当添加租户到平台时。
 
-```bash{outputLines: 2-5}
+```bash
 tctl login
 Organization: tetrate
 Tenant:

@@ -77,7 +77,7 @@ spec:
 ```
 
 Apply the definition on TSB :
-```bash{promptUser: "alice"}
+```bash
 tctl apply -f wasm-extension.yaml
 ```
 

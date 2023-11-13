@@ -200,7 +200,7 @@ three fields that you'll use in your Ingress Gateway configuration: `iss`,
 You can also get a user JWT token using OAuth's Resource Owner Password Flow.
 This flow is enabled by default when you create a Keycloak Client.
 
-```bash{promptUser: Alice}{outputLines: 2-8}
+```bash
 curl --request POST \
     --url https://keycloak.example.com/auth/realms/tetrate/protocol/openid-connect/token \
     --header 'Content-Type: application/x-www-form-urlencoded' \
@@ -223,7 +223,7 @@ Create the following [`httpbin.yaml`](../../assets/howto/httpbin.yaml)
 
 Deploy `httpbin` using the kubectl commands to your onboarded clusters
 
-```bash{promptUser: Alice}
+```bash
 kubectl create namespace httpbin
 kubectl label namespace httpbin istio-injection=enabled --overwrite=true
 kubectl apply -n httpbin -f httpbin.yaml
@@ -231,7 +231,7 @@ kubectl apply -n httpbin -f httpbin.yaml
 
 Confirm all services and pods are running
 
-```bash{promptUser: Alice}
+```bash
 kubectl get pods -n httpbin
 ```
 
@@ -243,21 +243,21 @@ Create an Ingress Gateway [`ingress.yaml`](../../assets/howto/ingress.yaml)
 
 Apply your changes
 
-```bash{promptUser: Alice}
+```bash
 kubectl apply -n httpbin -f ingress.yaml
 ```
 
 Confirm that all services and pods are running. Make sure that you wait until 
 the Ingress Gateway has its external IP assigned.
 
-```bash{promptUser: Alice}
+```bash
 kubectl get pods -n httpbin
 kubectl get svc -n httpbin
 ```
 
 Get the Ingress Gateway IP
 
-```bash{promptUser: Alice}
+```bash
 export GATEWAY_HTTPBIN_IP=$(kubectl -n httpbin get service tsb-gateway-httpbin -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 ```
 
@@ -283,13 +283,13 @@ Create a [`workspace.yaml`](../../assets/howto/workspace.yaml)
 
 Apply your changes
 
-```bash{promptUser: Alice}
+```bash
 tctl apply -f workspace.yaml
 ```
 
 Make sure that the workspace is created
 
-```bash{promptUser:Alice}
+```bash
 tctl get workspaces httpbin-ws
 ```
 
@@ -314,13 +314,13 @@ is already set for HTTPS connections.
 
 Apply with `tctl`
 
-```bash{promptUser: Alice}
+```bash
 tctl apply -f gateway-no-auth.yaml
 ```
 
 Verify that you have a gateway created in the httpbin namespace
 
-```bash{promptUser: Alice}
+```bash
 kubectl get gateway -n httpbin httpbin-gw-ingress -o yaml
 ```
 
@@ -366,7 +366,7 @@ spec:
 
 Try to access the httpbin by sending it a request
 
-```bash{promptUser: Alice}{outputLines: 3}
+```bash
 export GATEWAY_HTTPBIN_IP=$(kubectl -n httpbin get service tsb-gateway-httpbin -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 curl -k -v "https://httpbin.tetrate.com/get" \
     --resolve "httpbin.tetrate.com:443:${GATEWAY_HTTPBIN_IP}" 
@@ -390,13 +390,13 @@ everything and another for the *normal* role which only can access `GET /status`
 Now, apply the changes. Since you have the same name as the previous
 `gateway-no-auth.yaml`, it will update your previous gateway.
 
-```bash{promptUser: Alice}
+```bash
 tctl apply -f gateway-with-auth.yaml
 ```
 
 If you try to access `httpbin` without a JWT token you will get a `403` error
 
-```bash{promptUser: Alice}{outputLines: 2-4}
+```bash
 curl -k -o /dev/null -s \
     -w "%{http_code}\n" "https://httpbin.tetrate.com/get" \
     --resolve "httpbin.tetrate.com:443:${GATEWAY_HTTPBIN_IP}"
@@ -412,7 +412,7 @@ app or `curl` as explained before, and use the token to make HTTP requests with
 
 Try to access `GET /get` with Jack's token *(our admin user)*
 
-```bash{promptUser: Alice}{outputLines: 2-5}
+```bash
 curl -k -o /dev/null -s \
     -w "%{http_code}\n" "https://httpbin.tetrate.com/get" \
     --resolve "httpbin.tetrate.com:443:${GATEWAY_HTTPBIN_IP}" \
@@ -425,7 +425,7 @@ Try to access `GET /get` with Sally's token *(our normal user)*. The request
 should fail because any user with a *normal* role only is allowed to access
 `GET /status/*`
 
-```bash{promptUser: Alice}{outputLines: 2-5}
+```bash
 curl -k -o /dev/null -s \
     -w "%{http_code}\n" "https://httpbin.tetrate.com/get" \
     --resolve "httpbin.tetrate.com:443:${GATEWAY_HTTPBIN_IP}" \
@@ -436,7 +436,7 @@ curl -k -o /dev/null -s \
 Try to access `GET /status/200` with Sally's token. The request should succeed 
 because any user with a *normal* role is allowed to access `GET /status/*`
 
-```bash{promptUser: Alice}{outputLines: 2-5}
+```bash
 curl -k -o /dev/null -s \
     -w "%{http_code}\n" "https://httpbin.tetrate.com/status/200" \
     --resolve "httpbin.tetrate.com:443:${GATEWAY_HTTPBIN_IP}" \

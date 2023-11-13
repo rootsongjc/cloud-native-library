@@ -19,13 +19,13 @@ Unless otherwise stated, the `sleep` service is assumed to be installed in the `
 
 Run the following command to create the namespace if not already present:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl create namespace sleep
 ```
 
 The `sleep` pod in this namespace must have an Istio sidecar proxy running in it. To automatically enable the injection of this sidecar for all pods, execute the following:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl label namespace sleep istio-injection=enabled --overwrite=true
 ```
 
@@ -37,7 +37,7 @@ Download the [`sleep.yaml`](../../assets/reference/sleep.yaml) manifest found in
 
 Run the following command to deploy the `sleep` service in the `sleep` namespace:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl apply -n sleep -f sleep.yaml
 ```
 
@@ -70,6 +70,6 @@ spec:
 
 Apply the manifest using `tctl`:
 
-```bash{promptUser "alice"}
+```bash
 tctl apply -f sleep-workspace.yaml
 ```

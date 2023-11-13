@@ -70,13 +70,13 @@ If you are updating an existing Control Plane, you can use `kubectl get controlp
 
 Save the manifest into a file, e.g. `control-plane-with-rate-limiting.yaml`, and then apply it using `kubectl`:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl apply -f control-plane-with-rate-limiting.yaml
 ```
 
 To check if the rate limit server is properly running in the cluster, execute the following command:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl get pods -n istio-system | grep ratelimit
 ratelimit-server-864654b5b5-d77bq                       1/1     Running   2          2d1h
 ```

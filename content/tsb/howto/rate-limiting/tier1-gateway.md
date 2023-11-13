@@ -73,7 +73,7 @@ spec:
 
 Configure the Tier-1 gateway using tctl:
 
-```bash{promptUser: "alice"}
+```bash
 tctl apply -f rate-limiting-tier1-config.yaml
 ```
 
@@ -85,13 +85,13 @@ In the following example, since you do not control `httpbin.tetrate.com`, you wi
 
 Obtain the IP address of the Tier-1 Gateway that you previously created using the following command.
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -n tier1 get service tier1-gateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
 
 Then execute the following command to send HTTP requests to the `httpbin` service through the Tier-1 Gateway. Replace the `gateway-ip` with the value you obtained in the previous step. You also need to pass the CA cert, which you should have created in the step to deploy the `httpbin` service. 
  
-```bash{promptUser: "alice"}
+```bash
 curl -I "https://httpbin.tetrate.com/get" \
   --resolve "httpbin.tetrate.com:443:<gateway-ip>" \
   --cacert httpbin.crt \

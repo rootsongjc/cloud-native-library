@@ -27,7 +27,7 @@ or peered networks, and not give your VMs public IPs.
 SSH into the AWS EC2 instance you have created, and install the
 `ratings` application. Execute the following commands:
 
-```bash{promptUser: "alice"}
+```bash
 # Install the latest version of trusted CA certificates
 sudo apt-get update -y
 sudo apt-get install -y ca-certificates
@@ -59,7 +59,7 @@ sudo systemctl start bookinfo-ratings
 Execute the following command to verify that the `ratings` application
 can now serve local requests:
 
-```bash{promptUser: "alice"}
+```bash
 curl -fsS http://localhost:9080/ratings/1
 ```
 
@@ -77,13 +77,13 @@ Before proceeding further, you must configure the EC2 instance to trust your cus
 
 First, update the `apt` package list:
 
-```bash{promptUser: "alice"}
+```bash
 sudo apt-get update -y
 ```
 
 Then install the `ca-certificates` package:
 
-```bash{promptUser: "alice"}
+```bash
 sudo apt-get install -y ca-certificates
 ```
 
@@ -102,7 +102,7 @@ editors or tools, you could use the combination of `cat` and `dd` as follows:
 After you have placed the custom CA in the correct location, execute the following
 command:
 
-```bash{promptUser: "alice"}
+```bash
 sudo update-ca-certificates
 ```
 
@@ -112,7 +112,7 @@ This will reload the list of trusted CAs, and it will include your custom CA.
 
 Install the Istio sidecar by executing the following commands. Replace `ONBOARDING_ENDPOINT_ADDRESS` with [the value that you have obtained earlier](./enable-workload-onboarding#verify-the-workload-onboarding-endpoint).
 
-```bash{promptUser: "alice"}
+```bash
 # Download DEB package
 curl -fLO \
   --connect-to "onboarding-endpoint.example:443:${ONBOARDING_ENDPOINT_ADDRESS}:443" \
@@ -137,7 +137,7 @@ rm istio-sidecar.deb istio-sidecar.deb.sha256
 
 Install the Workload Onboarding Agent by executing the following commands. Replace `ONBOARDING_ENDPOINT_ADDRESS` with [the value that you have obtained earlier](./enable-workload-onboarding#verify-the-workload-onboarding-endpoint).
 
-```bash{promptUser: "alice"}
+```bash
 # Download DEB package
 curl -fLO \
   --connect-to "onboarding-endpoint.example:443:${ONBOARDING_ENDPOINT_ADDRESS}:443" \

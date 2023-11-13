@@ -77,7 +77,7 @@ In the following example, since you do not control `httpbin.tetrate.com`, you wi
 
 Obtain the IP address of the Tier-1 Gateway that you previously created using the following command.
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -n httpbin get service httpbin-ingress-gateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
 

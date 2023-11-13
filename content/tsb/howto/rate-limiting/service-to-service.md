@@ -54,7 +54,7 @@ spec:
 
 Apply the manifest using `tctl`:
 
-```bash{promptUser: "alice"}
+```bash
 tctl apply -f service-to-service-rate-limiting-traffic-setting.yaml
 ```
 
@@ -71,13 +71,13 @@ You can test the rate limiting by sending HTTP requests from the `sleep` service
 To send a request from sleep service, you need to identify the pod within your sleep service.
 Execute the following command to find out the pod name:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl get pod -n sleep -l app=sleep -o jsonpath={.items..metadata.name}
 ```
 
 Then send a request from this pod to the `httpbin` service, which should be reachable at `http://httpbin.httpbin:8000`. Make sure to replace the value for `sleep-pod` with an appropriate value:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl exec <sleep-pod> -n sleep -c sleep -- \
   curl http://httpbin.httpbin:8000/get \
     -s \
@@ -89,7 +89,7 @@ Repeat executing the above command more than 4 times. After 4 requests, the resp
 
 Since the rate limiting rule was based on the request path, accessing another path on the `httpbin`, you should see a 200 response again:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl exec <sleep-pod> -n sleep -c sleep -- \
   curl http://httpbin.httpbin:8000/headers \
     -s \

@@ -90,7 +90,7 @@ spec:
 
 Apply using `tctl`:
 
-```bash{promptUser: "alice"}
+```bash
 tctl apply -f httpbin-api.yaml
 ```
 
@@ -100,13 +100,13 @@ Since you do not control `httpbin.tetrate.com`, you will have to trick `curl` in
 
 Obtain the IP address of the Ingress Gateway that you previously created using the following command.
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -n httpbin get service httpbin-gateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
 
 Execute the following command to send HTTP requests to the `httpbin` service through the Tier-1 Gateway. Replace the `gateway-ip` with the value you obtained in the previous step. You also need to pass the CA cert, which you should have created in the step to deploy the `httpbin` service.
 
-```bash{promptUser: "alice"}
+```bash
 curl -I "https://httpbin.tetrate.com/get" \
   --resolve "httpbin.tetrate.com:443:<gateway-ip>" \
   --cacert httpbin.crt
@@ -124,7 +124,7 @@ In this example you will create a policy that checks for basic authentication in
 
 Create the `opa` namespace, where the OPA and its configuration will be deployed to:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl create namespace opa
 ```
 
@@ -134,7 +134,7 @@ Create a file name [`openapi-policy.rego`](../../assets/howto/openapi-policy.reg
 
 Then create a `ConfigMap` using the file you created:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -n opa create configmap opa-policy \
   --from-file=openapi-policy.rego
 ```
@@ -162,7 +162,7 @@ Finally, open the `httpbin-api.yaml` file that you created in a previous section
 
 And apply the changes again:
 
-```bash{promptUser: "alice"}
+```bash
 tctl apply -f httpbin-api.yaml
 ```
 
@@ -170,7 +170,7 @@ tctl apply -f httpbin-api.yaml
 
 To test, execute the following command, replacing the values for username, password, and gateway-ip accordingly.
 
-```bash{promptUser: "alice"}
+```bash
 curl -u <username>:<password> \
   "https://httpbin.tetrate.com/get" \
   --resolve "httpbin.tetrate.com:443:<gateway-ip>" \
@@ -196,7 +196,7 @@ curl -u <username>:<password> \
 
 Create the `ext-ratelimit` namespace, where the rate limit server and its configuration will be deployed to:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl create namespace ext-ratelimit
 ```
 
@@ -206,7 +206,7 @@ Create a file name [`ext-ratelimit-config.yaml`](../../assets/howto/ext-ratelimi
 
 Then create a `ConfigMap` using the file you created:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -n ext-ratelimit create configmap ext-ratelimit \
   --from-file=config.yaml=ext-ratelimit-config.yaml
 ```
@@ -240,7 +240,7 @@ Next, update your OpenAPI spec by adding the following `x-tsb-ratelimiting` anno
 
 To test, execute the following command, replacing the values for username, password, and gateway-ip accordingly.
 
-```bash{promptUser: "alice"}
+```bash
 curl -u <username>:<password> \
   "https://httpbin.tetrate.com/get" \
   --resolve "httpbin.tetrate.com:443:<gateway-ip>" \

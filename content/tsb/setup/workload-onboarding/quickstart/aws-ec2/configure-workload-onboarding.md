@@ -9,7 +9,7 @@ and onboard it into the service mesh.
 
 Execute the following command to create a `WorkloadGroup`:
 
-```bash{promptUser: "alice"}
+```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: networking.istio.io/v1alpha3
 kind: WorkloadGroup
@@ -41,7 +41,7 @@ The service account `bookinfo-ratings` was created during the [deployment of the
 
 Execute the following command to create a new sidecar configuration:
 
-```bash{promptUser: "alice"}
+```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: networking.istio.io/v1beta1
 kind: Sidecar
@@ -91,7 +91,7 @@ If you do not know your AWS Account ID, see the [AWS Account Docs](https://docs.
 If you already have your [`aws` CLI](https://aws.amazon.com/cli/) setup, you can
 execute the following command:
 
-```bash{promptUser: "alice"}
+```bash
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ```
 
@@ -100,7 +100,7 @@ AWS Account ID to join any `WorkloadGroup` in the `bookinfo` namespace
 by executing the following command. Replace `AWS_ACCOUNT_ID` with the
 appropriate value.
 
-```bash{promptUser: "alice"}
+```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: authorization.onboarding.tetrate.io/v1alpha1
 kind: OnboardingPolicy

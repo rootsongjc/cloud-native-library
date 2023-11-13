@@ -250,7 +250,7 @@ spec:
 
 将其保存为 [`ratings-workloadentry.yaml`](../../assets/setup/ratings-workloadentry.yaml)。你可以将此文件添加到源代码控制中，或者使用 `kubectl` 将其直接应用于你的集群：
 
-```bash{userPrompt: Alice}
+```bash
 kubectl apply -f ratings-workloadentry.yaml
 ```
 
@@ -281,7 +281,7 @@ spec:
 
 将其保存为 [`ratings-sidecar.yaml`](../../assets/setup/ratings-sidecar.yaml)。你可以将此文件添加到源代码控制中，或者使用 `kubectl` 将其直接应用于你的集群：
 
-```bash{userPrompt: Alice}
+```bash
 kubectl apply -f ratings-sidecar.yaml
 ```
 

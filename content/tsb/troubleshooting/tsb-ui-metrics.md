@@ -45,7 +45,7 @@ To inspect OAP, use the following steps:
 Check if the `OAP` Pod in the `tsb` Namespace is up and running by confirming
 whether there are any errors in the pod's log:
 
-```bash{promptUser:alice}
+```bash
 kubectl -n tsb logs -l app=oap
 ```
 
@@ -58,7 +58,7 @@ and querying some metrics using the following steps:
 
 Start a port-forward to OAP in a shell:
 
-```bash{promptUser:alice}
+```bash
 kubectl -n istio-system port-forward deployment/oap-deployment 1234
 ```
 
@@ -71,7 +71,7 @@ Forwarding from [::1]:1234 -> 1234
 
 In a different shell, curl the metrics with the command below:
 
-```bash{promptUser: Alice}
+```bash
 curl -s http://localhost:1234/ | grep "envoy_als_in_count"
 ```
 
@@ -99,7 +99,7 @@ metrics (i.e. the number of current connections) is two.
 The below example uses the `productpage` service of the `bookinfo` application:
 
 
-```bash{promptUser:alice}{outputLines:1,3-6,8}
+```bash
 # start the port-forward in a shell
 kubectl -n bookinfo port-forward deployment/productpage-v1 15000
 Forwarding from 127.0.0.1:15000 -> 15000
@@ -113,7 +113,7 @@ envoy_accesslog_service::10.31.243.206:11800::cx_active::2
 If the counters aren't what you expect, add `debug` logging level to OAP by
 editing the OAP's `config.yml` with the following command:
 
-```bash{promptUser: Alice}
+```bash
 kubectl -n istio-system edit cm oap-config
 ```
 
@@ -133,7 +133,7 @@ So that it becomes:
 
 Then, restart OAP for the configuration change to take effect:
 
-```bash{promptUser:alice}
+```bash
 kubectl -n istio-system delete pod -l app=oap
 ```
 
@@ -149,7 +149,7 @@ the correct connection string.<br/>
 
 In the example, we set a port-forward to the ES pod inside the `tsb` namespace.
 
-```bash{promptUser:alice}{outputLines:1,3-4,6-9,10-22}
+```bash
 # port forward to ES server
 kubectl -n tsb port-forward statefulset/elasticsearch 9200
 
@@ -177,7 +177,7 @@ curl -s  'http://localhost:9200/_cluster/health?pretty=true'
 The `status` line should be green or yellow. If it's red, then the issue is
 with the ES cluster. You should check the indices' status using the command:
 
-```bash{promptUser:alice}{outputLines:1,3-8}
+```bash
 # Indices status for the 26 March 2020
 curl -H'Content-Type: application/json' -s -XGET 'http://localhost:9200/_cat/shards/*20200326
 ```

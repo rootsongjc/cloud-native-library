@@ -26,7 +26,7 @@ components using Prometheus.
 
 To see the output of this endpoint, it can be queried as follows:
 
-```bash{promptUser:alice}
+```bash
 kubectl port-forward -n <managementplane-namespace> svc/otel-collector 9090:9090 &
 curl localhost:9090/metrics
 ```
@@ -53,7 +53,7 @@ recommend scraping each available collector locally.
 
 To see the output of this endpoint, use the following:
 
-```bash{promptUser:alice}
+```bash
 kubectl port-forward -n <controlplane-namespace> svc/otel-collector 9090:9090 &
 curl localhost:9090/metrics
 ```

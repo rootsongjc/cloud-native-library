@@ -61,7 +61,7 @@ In this example, you'll create a tenant in an existing organization.
 You do this by sending the corresponding POST requests to the TSB rest API and
 using Basic Authentication:
 
-```bash{userPrompt: Alice}{outputLines: 2-9, 10-11}
+```bash
 $ curl -u username:password \
     https://tsbhost:8443/v2/organizations/myorg/tenants \
     -X POST -d@- <<EOF
@@ -98,7 +98,7 @@ In this example you'll:
 ✓ Locally modify the returned JSON.<br />
 ✓ Send back the modified JSON document in a PUT request.
 
-```bash{promptUser: Alice}{outputLines: 2}
+```bash
 curl -u username:password \
     https://tsbhost:8443/v2/organizations/myorg/tenants/mytenant \
     -X GET | jq .
@@ -118,7 +118,7 @@ Output:
 Modify the JSON document and send it back. It is important to keep the etag
 field:
 
-```bash{promptUser: Alice}{outputLines: 2-9,10}
+```bash
 curl -u username:password \
     https://tsbhost:8443/v2/organizations/myorg/tenants/mytenant \
     -X PUT -d@- <<EOF
@@ -143,7 +143,7 @@ Resources are deleted by sending the corresponding DELETE requests to the
 resource's URL. If a request is sent to a parent resource, then all child
 resources will be deleted as well.
 
-```bash{promptUser: Alice}{outputLines: 2-3}
+```bash
 curl -u username:password \
     https://tsbhost:8443/v2/organizations/myorg/tenants/mytenant \
     -X DELETE

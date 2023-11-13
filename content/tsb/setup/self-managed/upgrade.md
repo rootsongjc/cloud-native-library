@@ -86,7 +86,7 @@ kubectl apply -f managementplaneoperator.yaml
 
 应用清单后，你将在 `tsb` 命名空间中看到新的 Operator 运行：
 
-```bash{outputLines:2-3}
+```bash
 kubectl get pod -n tsb
 名称                                            准备就绪   状态    重启   年龄
 tsb-operator-management-plane-d4c86f5c8-b2zb5   1/1     运行中   0          8s

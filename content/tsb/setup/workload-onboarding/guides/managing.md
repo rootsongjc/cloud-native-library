@@ -38,7 +38,7 @@ for the `war` resource. `war` is an alias for `WorkloadAutoRegistration`.
 The following command will list the workloads registered
 across all Kubernetes namespaces:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl get war -A 
 ```
 
@@ -115,7 +115,7 @@ Istio sidecar of the onboarded workload.
 
 Run:
 
-```bash{promptUser: "alice"}
+```bash
 istioctl proxy-status
 ```
 
@@ -194,7 +194,7 @@ In summary, you should delete the `WorkloadAutoRegistration` resource
 after you make updates to a `WorkloadGroup`. Run the following command
 after making changes to a `WorkloadGroup`:
 
-```{promptUser: "alice"}
+```bash
 kubectl delete war <war-name> 
 ```
 

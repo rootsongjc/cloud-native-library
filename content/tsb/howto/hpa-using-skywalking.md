@@ -19,7 +19,7 @@ The adapter should have been installed when you installed the TSB demo profile.
 To verify the adapter has been deployed successfully, check the that the
 corresponding pod has started correctly.
 
-```bash{promptUser: "alice"}
+```bash
 kubectl get po -n istio-system
 
 ... <snip> ...

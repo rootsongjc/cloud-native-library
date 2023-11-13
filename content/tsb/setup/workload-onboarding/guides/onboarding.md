@@ -37,7 +37,7 @@ and that it uses a TLS certificate issued for the appropriate DNS name. The cert
 
 To start the `Workload Onboarding Agent`, run:
 
-```bash{promptUser: "alice"}
+```bash
 sudo systemctl enable onboarding-agent
 
 sudo systemctl start onboarding-agent

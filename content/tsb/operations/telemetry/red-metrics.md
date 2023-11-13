@@ -14,7 +14,7 @@ sidecar-originated RED application metrics via the OAP service.
 Each control plane cluster exposes a Prometheus-scraping endpoint to query with
 the following command:
 
-```bash{promptUser:alice}
+```bash
 kubectl port-forward -n <controlplane-namespace> svc/oap 1234:1234 &
 curl localhost:1234/metrics
 ```
@@ -23,7 +23,7 @@ Exported RED metrics include:
 
 ### Request status codes
 
-```bash{promptUser:alice}
+```bash
 # HELP tsb_oap_service_status_code The number of status code
 # TYPE tsb_oap_service_status_code counter
 tsb_oap_service_status_code{status="<STATUS|ALL>",svc="SERVICE_NAME",} COUNT
@@ -31,7 +31,7 @@ tsb_oap_service_status_code{status="<STATUS|ALL>",svc="SERVICE_NAME",} COUNT
 
 ### Request latency
 
-```bash{promptUser:alice}
+```bash
 # HELP tsb_oap_service_latency_sum The sum of latency
 # TYPE tsb_oap_service_latency_sum counter
 tsb_oap_service_latency_sum{svc="SERVICE_NAME",} SUM

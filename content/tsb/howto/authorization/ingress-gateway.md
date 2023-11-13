@@ -62,7 +62,7 @@ spec:
 
 Apply the configuration using `tctl apply`:
 
-```bash{promptUser: "alice"}
+```bash
 tctl apply -f httpbin-ingress.yaml
 ```
 
@@ -74,7 +74,7 @@ In the following example, since you do not control httpbin.tetrate.com, you will
 
 Obtain the IP address of the Ingress Gateway that you previously created using the following command.
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -n httpbin get service httpbin-ingress-gateway \
   -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
@@ -85,7 +85,7 @@ Remember that the example OPA policy contains two users `alice` and `bob` that c
 
 The following command should display `200`. Similarly, changing the username to `bob` should also display `200`
 
-```bash{promptUser: "alice"}
+```bash
 curl -u alice:password "https://httpbin.tetrate.com/get" \
   --resolve "httpbin.tetrate.com:443:<gateway-ip>" \
   --cacert certs/httpbin-ca.crt \
@@ -96,7 +96,7 @@ curl -u alice:password "https://httpbin.tetrate.com/get" \
 
 The following command provides the wrong password to user `alice`. This should display `403`.
 
-```bash{promptUser: "alice"}
+```bash
 curl -u alice:wrongpassword "https://httpbin.tetrate.com/get" \
   --resolve "httpbin.tetrate.com:443:<gateway-ip>" \
   --cacert certs/httpbin-ca.crt \
@@ -107,7 +107,7 @@ curl -u alice:wrongpassword "https://httpbin.tetrate.com/get" \
 
 Finally, if you provide any other user than `alice` or `bob`, it should display `403`
 
-```bash{promptUser: "alice"}
+```bash
 curl -u charlie:password "https://httpbin.tetrate.com/get" \
   --resolve "httpbin.tetrate.com:443:<gateway-ip>" \
   --cacert certs/httpbin-ca.crt \

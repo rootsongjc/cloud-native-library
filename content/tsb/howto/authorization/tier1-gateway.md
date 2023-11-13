@@ -22,7 +22,7 @@ Follow [the instructions in this document](../../reference/samples/httpbin) to c
 
 For this example you will be deploying OPA as its own standalone service. Create a namespace for the OPA service, if you have not already done so:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl create namespace opa
 ```
 
@@ -71,7 +71,7 @@ You can test the external authorization by following the instructions in the ["C
 
 To obtain the Tier-1 Gateway address, execute the following command:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl -n tier1 get service tier1-gateway \
   -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```

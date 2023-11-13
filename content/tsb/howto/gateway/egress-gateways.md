@@ -25,7 +25,7 @@ In this example you will use two `sleep` services, each living in separate names
 
 Create the namespaces `sleep-one` and `sleep-two`:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl create namespace sleep-one
 kubectl create namespace sleep-two
 ```
@@ -72,7 +72,7 @@ spec:
 
 Apply with `tctl`:
 
-```bash{promptUser: "alice"}
+```bash
 tctl -f sleep-workspace.yaml
 ```
 
@@ -84,7 +84,7 @@ Egress gateways are typically managed by a separate team than the one developing
 
 In this example we create a separate namespace `egress` to manage the Egress Gateway. Execute the following command to create a new namespace:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl create namespace egress
 ```
 
@@ -106,7 +106,7 @@ spec:
 
 Apply with kubectl:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl apply -f egress-deploy.yaml
 ```
 
@@ -146,7 +146,7 @@ spec:
 
 Apply with tctl
 
-```bash{promptUser: "alice"}
+```bash
 tctl apply -f egress-workspace.yaml
 ```
 
@@ -185,7 +185,7 @@ spec:
 
 Apply with tctl
 
-```bash{promptUser: "alice"}
+```bash
 tctl apply -f egress-config.yaml
 ```
 
@@ -213,7 +213,7 @@ spec:
 
 Apply this with tctl:
 
-```bash{promptUser: "alice"}
+```bash
 tctl apply -f sleep-traffic-setting-egress.yaml
 ```
 
@@ -223,14 +223,14 @@ To test whether Egress Gateway is working correctly, you will be sending request
 
 For this you will need to figure out the Pod names for `sleep-one` and `sleep-two`. Execute the following commands to lookup the Pod names:
 
-```bash{promptUser: "alice"}
+```bash
 export SLEEP_ONE_POD=$(kubectl get pod -n sleep-one -l app=sleep -o jsonpath='{.items[*].metadata.name}')
 export SLEEP_TWO_POD=$(kubectl get pod -n sleep-two -l app=sleep -o jsonpath='{.items[*].metadata.name}')
 ```
 
 Execute the following commands against `sleep-one`. Since you have configured the Egress Gateway such that `sleep-one` is allowed to access all external services, the following commands should all display "200":
 
-```bash{promptUser: "alice"}
+```bash
 kubectl exec ${SLEEP_ONE_POD} -n sleep-one -c sleep -- \
   curl http://twitter.com \
     -s \

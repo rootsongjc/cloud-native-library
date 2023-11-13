@@ -7,7 +7,7 @@ title: Configure the VM on-premise
 SSH into the VM on-premise and install the
 `ratings` application. Execute the following commands:
 
-```bash{promptUser: "alice"}
+```bash
 # Install the latest version of trusted CA certificates
 sudo apt-get update -y
 sudo apt-get install -y ca-certificates
@@ -39,7 +39,7 @@ sudo systemctl start bookinfo-ratings
 Execute the following command to verify that the `ratings` application
 can now serve local requests:
 
-```bash{promptUser: "alice"}
+```bash
 curl -fsS http://localhost:9080/ratings/1
 ```
 
@@ -60,13 +60,13 @@ Before proceeding further, you must configure the VM on-premise to trust your cu
 
 First, update the `apt` package list:
 
-```bash{promptUser: "alice"}
+```bash
 sudo apt-get update -y
 ```
 
 Then install the `ca-certificates` package:
 
-```bash{promptUser: "alice"}
+```bash
 sudo apt-get install -y ca-certificates
 ```
 
@@ -85,7 +85,7 @@ editors or tools, you could use the combination of `cat` and `dd` as follows:
 After you have placed the custom CA in the correct location, execute the following
 command:
 
-```bash{promptUser: "alice"}
+```bash
 sudo update-ca-certificates
 ```
 
@@ -97,7 +97,7 @@ Install the Istio sidecar by executing the following commands.
 Replace `ONBOARDING_ENDPOINT_ADDRESS` with
 [the value that you have obtained earlier](../aws-ec2/enable-workload-onboarding#verify-the-workload-onboarding-endpoint).
 
-```bash{promptUser: "alice"}
+```bash
 # Download DEB package
 curl -fLO \
   --connect-to "onboarding-endpoint.example:443:${ONBOARDING_ENDPOINT_ADDRESS}:443" \
@@ -124,7 +124,7 @@ Install the Workload Onboarding Agent by executing the following commands.
 Replace `ONBOARDING_ENDPOINT_ADDRESS` with
 [the value that you have obtained earlier](../aws-ec2/enable-workload-onboarding#verify-the-workload-onboarding-endpoint).
 
-```bash{promptUser: "alice"}
+```bash
 # Download DEB package
 curl -fLO \
   --connect-to "onboarding-endpoint.example:443:${ONBOARDING_ENDPOINT_ADDRESS}:443" \
@@ -152,7 +152,7 @@ to provide your on-premise workload with a [JWT Token] credential.
 
 Execute the following commands to install `Sample JWT Credential Plugin`:
 
-```bash{promptUser: "alice"}
+```bash
 curl -fL "https://dl.cloudsmith.io/public/tetrate/onboarding-examples/raw/files/onboarding-agent-sample-jwt-credential-plugin_0.0.1_$(uname -s)_$(uname -m).tar.gz" \
  | tar -xz onboarding-agent-sample-jwt-credential-plugin
 sudo mv onboarding-agent-sample-jwt-credential-plugin /usr/local/bin/
@@ -167,14 +167,14 @@ Use your favorite tool to do this. If you have not installed any
 editors or tools, you could use the combination of `cat` and `dd` as follows:
 
 1. Execute
-   ```bash{promptUser: "alice"}
+```bash
    sudo mkdir -p /var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/
    cat <<EOF | sudo dd of=/var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/jwt-issuer.jwk
    ```
 1. Copy the contents of `sample-jwt-issuer.jwk` and paste it in the terminal that you executed the previous step
 1. Type `EOF` and press `Enter` to finish the first command
 1. Execute
-   ```bash{promptUser: "alice"}
+```bash
    sudo chmod 400 /var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/jwt-issuer.jwk
    sudo chown onboarding-agent: -R /var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/
    ```
@@ -184,7 +184,7 @@ editors or tools, you could use the combination of `cat` and `dd` as follows:
 Execute the following command to save [Agent Configuration](../../../../refs/onboarding/config/agent/v1alpha1/agent_configuration)
 into the file `/etc/onboarding-agent/agent.config.yaml`:
 
-```bash{promptUser: "alice"}
+```bash
 cat << EOF | sudo tee /etc/onboarding-agent/agent.config.yaml
 apiVersion: config.agent.onboarding.tetrate.io/v1alpha1
 kind: AgentConfiguration

@@ -44,7 +44,7 @@ in separate networks, this is necessary.
 Once you have placed the above configuration file in the correct
 location, execute the following commands to start the Workload Onboarding Agent:
 
-```bash{promptUser: "alice"}
+```bash
 # Enable
 sudo systemctl enable onboarding-agent
 
@@ -54,13 +54,13 @@ sudo systemctl start onboarding-agent
 
 Verify that `Istio Sidecar` is up by executing the following command:
 
-```bash{promptUser: "alice"}
+```bash
 curl -f -i http://localhost:15000/ready
 ```
 
 You should get output similar to the following:
 
-```bash{promptUser: "alice"}
+```bash
 HTTP/1.1 200 OK
 content-type: text/plain; charset=UTF-8
 server: envoy
@@ -74,13 +74,13 @@ From your local machine, verify that the workload has been properly onboarded.
 
 Execute the following command:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl get war -n bookinfo 
 ```
 
 If the workload was properly onboarded, you should get an output similar to:
 
-```bash{promptUser: "alice"}
+```bash
 NAMESPACE   NAME                                                              AGENT CONNECTED   AGE
 bookinfo    ratings-aws-aws-123456789012-us-east-2b-ec2-i-1234567890abcdef0   True              1m
 ```
@@ -96,7 +96,7 @@ On your local machine, [set up port forwarding](./bookinfo) if you have not alre
 
 Then run the following commands:
 
-```bash{promptUser: "alice"}
+```bash
 for i in `seq 1 9`; do
   curl -fsS "http://localhost:9080/productpage?u=normal" | grep "glyphicon-star" | wc -l | awk '{print $1" stars on the page"}'
 done
@@ -110,7 +110,7 @@ for the incoming HTTP requests proxied by the Istio sidecar.
 
 Execute the following command:
 
-```bash{promptUser: "alice"}
+```bash
 journalctl -u onboarding-agent -o cat
 ```
 
@@ -124,7 +124,7 @@ You should see an output similar to:
 
 SSH into the AWS EC2 instance and execute the following commands:
 
-```bash{promptUser: "alice"}
+```bash
 for i in `seq 1 5`; do
   curl -i \
     --resolve details.bookinfo:9080:127.0.0.2 \
@@ -139,7 +139,7 @@ to [the sidecar configuration you created earlier](./configure-workload-onboardi
 
 You should get an output similar to:
 
-```bash{promptUser: "alice"}
+```bash
 HTTP/1.1 200 OK
 content-type: application/json
 server: envoy

@@ -36,14 +36,14 @@ it as [`ws-groups.yaml`](../../assets/howto/ws-groups.yaml).
 
 Apply with tctl:
 
-```bash{promptUser: Alice}
+```bash
 tctl apply -f ws-groups.yaml
 ```
 
 To deploy your application, start by creating the namespace and enable the Istio
 sidecar injection.
 
-```bash{promptUser: Alice}
+```bash
 kubectl create namespace helloworld
 kubectl label namespace helloworld istio-injection=enabled
 ```
@@ -56,7 +56,7 @@ Then deploy your application.
 
 Store the file as [`helloworld.yaml`](../../assets/howto/helloworld.yaml) and apply with `kubectl`:
 
-```bash{promptUser: Alice}
+```bash
 kubectl apply -f helloworld.yaml
 ```
 
@@ -71,7 +71,7 @@ solely to version `v1` .
 
 Store the file as `serviceroute.yaml` and apply with `tctl`:
 
-```bash{promptUser: Alice}
+```bash
 tctl apply -f serviceroute.yaml
 ```
 
@@ -83,7 +83,7 @@ In this example, you're going to expose the application using simple TLS at the
 gateway. You'll need to provide it with a TLS certificate stored in a Kubernetes
 secret.
 
-```bash{promptUser: Alice}{outputLines: 2-3}
+```bash
 kubectl create secret tls -n helloworld helloworld-certs \
     --cert /path/to/some/helloworld-cert.pem \
     --key /path/to/some/helloworld-key.pem
@@ -97,7 +97,7 @@ Now you can deploy your ingress gateway.
 
 Store the file as [`hello-ingress.yaml`](../../assets/howto/hello-ingress.yaml) and apply with `kubectl`:
 
-```bash{promptUser: Alice}
+```bash
 kubectl apply -f hello-ingress.yaml
 ```
 
@@ -111,7 +111,7 @@ to do is configure the gateway so that it routes traffic to your application.
 
 Store the file as [`helloworld-gateway.yaml`](../../assets/howto/hello-gateway.yaml) and apply with `tctl`:
 
-```bash{promptUser: Alice}
+```bash
 tctl apply -f helloworld-gateway.yaml
 ```
 
@@ -130,7 +130,7 @@ of the application.
 
 Store the file as [`helloworld-v2.yaml`](../../assets/howto/helloworld-v2.yaml) and apply with `kubectl`:
 
-```bash{promptUser: Alice}
+```bash
 kubectl apply -f helloworld-v2.yaml
 ```
 
@@ -145,7 +145,7 @@ stable version `v1` and 20% to version `v2`.
 
 Store the file as [`serviceroute-20.yaml`](../../assets/howto/serviceroute-20.yaml) and apply with `tctl`:
 
-```bash{promptUser: Alice}
+```bash
 tctl apply -f serviceroute-20.yaml
 ```
 

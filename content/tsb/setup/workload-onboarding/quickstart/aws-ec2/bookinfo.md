@@ -14,14 +14,14 @@ into your Kubernetes cluster.
 
 Create the namespace `bookinfo`, and add the proper labels:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl create namespace bookinfo
 kubectl label namespace bookinfo istio-injection=enabled
 ```
 
 Deploy the bookinfo application:
 
-```bash{promptUser: "alice"}
+```bash
 cat <<EOF | kubectl apply -n bookinfo -f -
 apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication
@@ -42,7 +42,7 @@ environment, you will need to set up port forwarding.
 
 Run the following command in a separate terminal session:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl port-forward -n bookinfo service/productpage 9080
 ```
 
@@ -52,7 +52,7 @@ in a browser. If you refresh the page multiple times, 2 out of 3 times you shoul
 
 Alternatively, to verify from the command line, run:
 
-```bash{promptUser: "alice"}
+```bash
 for i in `seq 1 9`; do
   curl -fsS "http://localhost:9080/productpage?u=normal" | grep "glyphicon-star" | wc -l | awk '{print $1" stars on the page"}'
 done
@@ -60,7 +60,7 @@ done
 
 2 out of 3 times you should get a message `10 stars on the page`:
 
-```bash{promptUser: "alice"}
+```bash
 10 stars on the page
 0 stars on the page
 10 stars on the page
@@ -75,7 +75,7 @@ bookinfo sample.
 
 Run the following commands and scale down the `ratings` application down to 0 replicas:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl scale deployment ratings-v1 -n bookinfo --replicas=0
 
 kubectl wait --for=condition=Available -n bookinfo deployment/ratings-v1

@@ -129,7 +129,7 @@ different container registry, sync the images to it by
    your cluster, you can find the correct image by first extracting the image
    using `kubectl`:
 
-   ```bash{promptUser: "alice"}
+```bash
    kubectl get deploy -n istio-system onboarding-plane -o jsonpath="{.spec.template.spec.containers[0].image}"
    ```
 
@@ -244,7 +244,7 @@ different container registry, sync the images to it by
 
 An example command for creating a task definition is as follows:
 
-```bash{promptUser: "alice"}
+```bash
 # Compact and escape quotes in the onboarding config for encoding in the JSON container definition
 ONBOARDING_CONFIG=$(jq --compact-output . <<'EOF' | sed 's/"/\\"/g'
 {
@@ -345,7 +345,7 @@ spec:
 
 If there are no other overlays, this can be applied using the following command:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl patch -n istio-system controlplane/controlplane --type json --patch '
 - op: add
   path: "/spec/components/istio/kubeSpec/overlays"
@@ -365,7 +365,7 @@ address update to be of the form
 `internal-abcxyz.us-east-1.elb.amazonaws.com`. You can query this address
 using the following command:
 
-```bash{promptUser: "alice"}
+```bash
 kubectl get svc vmgateway \
   -n istio-system \
   -ojsonpath="{.status.loadBalancer.ingress[0]['hostname', 'ip']}"
