@@ -35,7 +35,7 @@ type: book
 
 在设置以下资源之前，请检查这是否属于您组织的集群管理员的责任。
 
-- **Horizontal Pod Autoscaler (HPA)** ：这些资源是在 CPU 使用率或其他[自定义度量](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/instrumentation/custom-metrics-api.md)标准“秒杀”时自动化扩展应用程序的好方法。*[查看示例](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)*以了解如何设置 HPA。
+- **Horizontal Pod Autoscaler (HPA)** ：这些资源是在 CPU 使用率或其他自定义度量标准“秒杀”时自动化扩展应用程序的好方法。*[查看示例](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)*以了解如何设置 HPA。
 - **联合集群对象**：如果使用 *federation* 在多个 Kubernetes 集群上运行应用程序，则需要部署标准 Kubernetes API 对象的联合版本。
 
 ## 扩展 Kubernetes API

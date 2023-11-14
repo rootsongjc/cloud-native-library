@@ -94,7 +94,7 @@ $ curl $APISERVER/api --header "Authorization: Bearer $TOKEN" --insecure
 
 以上示例使用`--insecure` 标志。这使得它容易受到 MITM 攻击。当 kubectl 访问集群时，它使用存储的根证书和客户端证书来访问服务器。 （这些安装在`~/.kube`目录中）。由于集群证书通常是自签名的，因此可能需要特殊配置才能让您的 http 客户端使用根证书。
 
-对于某些群集，apiserver 可能不需要身份验证；可以选择在本地主机上服务，或者使用防火墙保护。对此还没有一个标准。[配置对 API 的访问](https://kubernetes.io/docs/admin/accessing-the-api) 描述了群集管理员如何配置此操作。这种方法可能与未来的高可用性支持相冲突。
+对于某些群集，apiserver 可能不需要身份验证；可以选择在本地主机上服务，或者使用防火墙保护。对此还没有一个标准。配置对 API 的访问 描述了群集管理员如何配置此操作。这种方法可能与未来的高可用性支持相冲突。
 
 ## 编程访问 API
 
@@ -123,7 +123,7 @@ Python 客户端可以使用与 kubectl 命令行工具相同的 [kubeconfig 文
 
 在 Pod 中访问 API 时，定位和认证到 API server 的方式有所不同。在 Pod 中找到 apiserver 地址的推荐方法是使用 kubernetes DNS 名称，将它解析为服务 IP，后者又将被路由到 apiserver。
 
-向 apiserver 认证的推荐方法是使用 [service account](https://kubernetes.io/docs/user-guide/service-accounts) 凭据。通过 kube-system，pod 与 service account 相关联，并且将该 service account 的凭据（token）放入该 pod 中每个容器的文件系统树中，位于 `/var/run/secrets/kubernetes.io/serviceaccount/token`。
+向 apiserver 认证的推荐方法是使用 service account 凭据。通过 kube-system，pod 与 service account 相关联，并且将该 service account 的凭据（token）放入该 pod 中每个容器的文件系统树中，位于 `/var/run/secrets/kubernetes.io/serviceaccount/token`。
 
 如果可用，证书包将位于每个容器的文件系统树的 `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt` 位置，并用于验证 apiserver 的服务证书。
 
@@ -141,7 +141,7 @@ Python 客户端可以使用与 kubectl 命令行工具相同的 [kubeconfig 文
 
 ## 访问集群中运行的 service
 
-上一节是关于连接到 kubernetes API server。这一节是关于连接到 kubernetes 集群中运行的 service。在 Kubernetes 中，[node](https://kubernetes.io/docs/admin/node)、 [pod](https://kubernetes.io/docs/user-guide/pods) 和 [services](https://kubernetes.io/docs/user-guide/services) 都有它们自己的 IP。很多情况下，集群中 node 的 IP、Pod 的 IP、service 的 IP 都是不可路由的，因此在集群外面的机器就无法访问到它们，例如从您自己的笔记本电脑。
+上一节是关于连接到 kubernetes API server。这一节是关于连接到 kubernetes 集群中运行的 service。在 Kubernetes 中，node、pod 和 services 都有它们自己的 IP。很多情况下，集群中 node 的 IP、Pod 的 IP、service 的 IP 都是不可路由的，因此在集群外面的机器就无法访问到它们，例如从您自己的笔记本电脑。
 
 ### 连接的方式
 

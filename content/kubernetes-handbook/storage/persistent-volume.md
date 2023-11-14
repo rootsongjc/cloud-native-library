@@ -209,7 +209,7 @@ spec:
 
 ### 容量
 
-通常，PV 将具有特定的存储容量。这是使用 PV 的容量属性设置的。查看 Kubernetes [资源模型](https://git.k8s.io/community/contributors/design-proposals/scheduling/resources.md) 以了解 `capacity` 预期。
+通常，PV 将具有特定的存储容量。这是使用 PV 的容量属性设置的。查看 Kubernetes 资源模型 以了解 `capacity` 预期。
 
 目前，存储大小是可以设置或请求的唯一资源。未来的属性可能包括 IOPS、吞吐量等。
 
@@ -348,7 +348,7 @@ spec:
 
 ### 资源
 
-像 pod 一样，声明可以请求特定数量的资源。在这种情况下，请求是用于存储的。相同的[资源模型](https://git.k8s.io/community/contributors/design-proposals/scheduling/resources.md)适用于卷和声明。
+像 pod 一样，声明可以请求特定数量的资源。在这种情况下，请求是用于存储的。相同的资源模型适用于卷和声明。
 
 ### 选择器
 

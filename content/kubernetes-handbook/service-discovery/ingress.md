@@ -71,13 +71,13 @@ Ingress 是授权入站连接到达集群服务的规则集合。
 
 **配置说明**
 
-**1-4 行**：跟 Kubernetes 的其他配置一样，ingress 的配置也需要 `apiVersion`，`kind` 和 `metadata` 字段。配置文件的详细说明请查看 [部署应用](https://kubernetes.io/docs/user-guide/deploying-applications)，[配置容器](https://kubernetes.io/docs/user-guide/configuring-containers) 和使用资源。
+**1-4 行**：跟 Kubernetes 的其他配置一样，ingress 的配置也需要 `apiVersion`，`kind` 和 `metadata` 字段。配置文件的详细说明请查看 部署应用，配置容器 和使用资源。
 
 **5-7 行**: Ingress spec 中包含配置一个 loadbalancer 或 proxy server 的所有信息。最重要的是，它包含了一个匹配所有入站请求的规则列表。目前 ingress 只支持 http 规则。
 
 **8-9 行**：每条 http 规则包含以下信息：一个 `host` 配置项（比如 for.bar.com，在这个例子中默认是 *），`path` 列表（比如：/testpath），每个 path 都关联一个 `backend`(比如 test:80)。在 loadbalancer 将流量转发到 backend 之前，所有的入站请求都要先匹配 host 和 path。
 
-**10-12 行**：正如 [services doc](https://kubernetes.io/docs/user-guide/services) 中描述的那样，backend 是一个 `service:port` 的组合。Ingress 的流量被转发到它所匹配的 backend。
+**10-12 行**：正如 services doc 中描述的那样，backend 是一个 `service:port` 的组合。Ingress 的流量被转发到它所匹配的 backend。
 
 **全局参数**：为了简单起见，Ingress 示例中没有全局参数，请参阅资源完整定义的 [API 参考](https://releases.k8s.io/master/staging/src/k8s.io/api/extensions/v1beta1/types.go)。在所有请求都不能跟 spec 中的 path 匹配的情况下，请求被发送到 Ingress controller 的默认后端，可以指定全局缺省 backend。
 
@@ -234,7 +234,7 @@ spec:
 
 ### TLS
 
-你可以通过指定包含 TLS 私钥和证书的 [secret](https://kubernetes.io/docs/user-guide/secrets) 来加密 Ingress。目前，Ingress 仅支持单个 TLS 端口 443，并假定 TLS termination。如果 Ingress 中的 TLS 配置部分指定了不同的主机，则它们将根据通过 SNI TLS 扩展指定的主机名（假如 Ingress controller 支持 SNI）在多个相同端口上进行复用。TLS secret 中必须包含名为 `tls.crt` 和 `tls.key` 的密钥，这里面包含了用于 TLS 的证书和私钥，例如：
+你可以通过指定包含 TLS 私钥和证书的 secret 来加密 Ingress。目前，Ingress 仅支持单个 TLS 端口 443，并假定 TLS termination。如果 Ingress 中的 TLS 配置部分指定了不同的主机，则它们将根据通过 SNI TLS 扩展指定的主机名（假如 Ingress controller 支持 SNI）在多个相同端口上进行复用。TLS secret 中必须包含名为 `tls.crt` 和 `tls.key` 的密钥，这里面包含了用于 TLS 的证书和私钥，例如：
 
 ```yaml
 apiVersion: v1

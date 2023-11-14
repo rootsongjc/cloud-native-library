@@ -6,11 +6,6 @@ authors: ["Tetrate"]
 summary: "我们将介绍在 Kubernetes 中实现双向 TLS（mTLS）的三大最佳实践。"
 tags: ["Kubernetes", "mTLS","安全"]
 categories: ["安全"]
-links:
-  - icon: globe
-    icon_pack: fa
-    name: 原文
-    url: https://tetrate.io/blog/top-3-mtls-best-practices-for-zero-trust-kubernetes-security/
 ---
 
 [Kubernetes](https://kubernetes.io/) 是编排现代云原生工作负载的事实标准。但是，它不提供开箱即用的安全通信。这意味着每个需要实施传输中加密以对其 Kubernetes 部署[采用零信任安全态势的](https://tetr8.io/3FCXsDn)人都需要自己解决这个问题。

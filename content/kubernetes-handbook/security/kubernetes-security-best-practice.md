@@ -37,7 +37,7 @@ type: book
 ## 参考
 
 - [Kubernetes Security - Best Practice Guide - github.com](https://github.com/freach/kubernetes-security-best-practice)
-- [Kubernetes v1.7 security in practice - acotten.com](https://acotten.com/post/kube17-security)
+- Kubernetes v1.7 security in practice - acotten.com
 - [Isolate containers with a user namespace - docs.docker.com](https://docs.docker.com/engine/security/userns-remap/)
 - [Docker Security – It’s a Layered Approach - logz.io](https://logz.io/blog/docker-security/)
 - [Kubernetes 1.8: Security, Workloads and Feature Depth - blog.kubernetes.io](https://blog.kubernetes.io/2017/09/kubernetes-18-security-workloads-and.html)

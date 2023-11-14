@@ -144,6 +144,6 @@ productpage-hpa-external-metrics   Deployment/productpage-v1         2252/80   1
 
 
 
-Please read the [SWCK metrics adapter document](https://github.com/apache/skywalking-swck/blob/0.3.0/docs/custom-metrics-adapter) for more details.
+Please read the SWCK metrics adapter document for more details.
 
 

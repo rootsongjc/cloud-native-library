@@ -48,8 +48,8 @@ Kubernetes 目前支持的准入控制器有：
 - **PodTolerationRestriction**：此准入控制器首先验证容器的容忍度与其命名空间的容忍度之间是否存在冲突，并在存在冲突时拒绝该容器请求。
 - **Priority**：此控制器使用`priorityClassName`字段并填充优先级的整数值。如果未找到优先级，则拒绝 Pod。
 - **ResourceQuota**：此准入控制器将观察传入请求并确保它不违反命名空间的`ResourceQuota`对象中列举的任何约束。
-- **SecurityContextDeny**：此准入控制器将拒绝任何试图设置某些升级的[SecurityContext](https://kubernetes.io/docs/user-guide/security-context)字段的 pod。
-- **ServiceAccount**：此准入控制器实现[serviceAccounts 的](https://kubernetes.io/docs/user-guide/service-accounts)自动化。
+- **SecurityContextDeny**：此准入控制器将拒绝任何试图设置某些升级的 SecurityContext 字段的 pod。
+- **ServiceAccount**：此准入控制器实现 serviceAccounts 的自动化。
 - **用中的存储对象保护**：该`StorageObjectInUseProtection`插件将`kubernetes.io/pvc-protection`或`kubernetes.io/pv-protection`终结器添加到新创建的持久卷声明（PVC）或持久卷（PV）。在用户删除 PVC 或 PV 的情况下，PVC 或 PV 不会被移除，直到 PVC 或 PV 保护控制器从 PVC 或 PV 中移除终结器。有关更多详细信息，请参阅使用中的[存储对象保护](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#storage-object-in-use-protection)。
 - **ValidatingAdmissionWebhook（1.8 版本中为 alpha；1.9 版本中为 beta）**：该准入控制器调用与请求匹配的任何验证 webhook。匹配的 webhooks 是并行调用的；如果其中任何一个拒绝请求，则请求失败。
 

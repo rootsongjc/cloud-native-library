@@ -59,7 +59,7 @@ spire-server entry create \
 | ---------- | ------------------------------------------------------------ |
 | Kubernetes | [GitHub](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_k8s_sat.md) |
 | AWS        | [GitHub](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_aws_iid.md) |
-| Azure      | [GitHub](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_noderesolver_azure_msi.md) |
+| Azure      | GitHub |
 
 ### 2. 定义工作负载的 SPIFFE ID
 

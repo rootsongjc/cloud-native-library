@@ -195,7 +195,7 @@ metadata:
 - 该字段 `uniqueItems` 不能设置为 true。
 - 该字段 `additionalProperties` 不能设置为 false。
 
-您可以使用 [kube-apiserver](https://kubernetes.io/docs/admin/kube-apiserver)`CustomResourceValidation` 上的功能门（feature gate）禁用此功能：
+您可以使用 kube-apiserver`CustomResourceValidation` 上的功能门（feature gate）禁用此功能：
 
 ```
 --feature-gates=CustomResourceValidation=false
@@ -401,7 +401,7 @@ crontab "my-new-cron-object" created
 
 自定义资源支持 `/status` 和 `/scale` 子资源。
 
-您可以使用 [kube-apiserver](https://kubernetes.io/docs/admin/kube-apiserver) `CustomResourceSubresources` 上的功能门（feature gate）禁用此功能：
+您可以使用 kube-apiserver `CustomResourceSubresources` 上的功能门（feature gate）禁用此功能：
 
 ```bash
 --feature-gates=CustomResourceSubresources=false

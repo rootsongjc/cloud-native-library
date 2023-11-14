@@ -102,7 +102,7 @@ type: book
 
 ## 使用 Service 配置文件
 
-作为使用 `kubectl expose` 的替代方法，您可以使用 [service 配置文件](https://kubernetes.io/docs/user-guide/services/operations) 来创建 Service。
+作为使用 `kubectl expose` 的替代方法，您可以使用 service 配置文件 来创建 Service。
 
 要删除 Service，输入以下命令：
 

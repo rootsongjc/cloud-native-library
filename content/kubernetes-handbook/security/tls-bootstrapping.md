@@ -59,7 +59,7 @@ Kube-controller-manager 标志为：
 
 ### 审批控制器
 
-在 kubernetes 1.7 版本中，实验性的“组自动批准”控制器被弃用，新的 `csrapproving` 控制器将作为 [kube-controller-manager](https://kubernetes.io/docs/admin/kube-controller-manager) 的一部分，被默认启用。
+在 kubernetes 1.7 版本中，实验性的“组自动批准”控制器被弃用，新的 `csrapproving` 控制器将作为 kube-controller-manager 的一部分，被默认启用。
 
 控制器使用 [`SubjectAccessReview` API](https://kubernetes.io/docs/admin/authorization/#checking-api-access) 来确定给定用户是否已被授权允许请求 CSR，然后根据授权结果进行批准。为了防止与其他批准者冲突，内置审批者没有明确地拒绝 CSR，只是忽略未经授权的请求。
 

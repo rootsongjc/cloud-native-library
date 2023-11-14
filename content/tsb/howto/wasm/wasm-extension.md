@@ -15,7 +15,7 @@ When a new version of the extension is available, changing the content of the WA
 
 ![UI](../../assets/howto/wasm/wasm-ui.png)
 
-These extensions are packaged as [OCI images](https://github.com/opencontainers/image-spec/blob/main/spec), containing the WASM file, and deployed in a container images registry from where Istio will pull and extract the contents.
+These extensions are packaged as OCI images, containing the WASM file, and deployed in a container images registry from where Istio will pull and extract the contents.
 The benefit of using OCI images in order to deliver the WASM extensions is that the security is already implemented and standardized with the same approach as with the rest of workloads images.
 
 Extensions can be allowed to be used globally or restricted in a set of Tenants, and this will affect where the extension can be attached.

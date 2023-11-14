@@ -225,4 +225,4 @@ kubectl validatingwebhookconfiguration delete k8s-workload-registrar-webhook
 
 ## 参考
 
-- [SPIRE Kubernetes Workload Registar - github.com](https://github.com/spiffe/spire/blob/main/support/k8s/k8s-workload-registrar/README.md)
+- SPIRE Kubernetes Workload Registar - github.com

@@ -155,7 +155,7 @@ EC2 节点认证和解析允许 SPIRE 服务器自动识别和验证在 AWS EC2 
 4. 验证完成后，SPIRE Agent 被视为经过验证的，并被分配其自己的 SPIFFE ID。
 5. 最后，如果工作负载与注册条目匹配，SPIRE 为节点上的工作负载发放 SVID。注册条目可以包含节点证明者或解析器提供的选择器，或者将 SPIRE Agent 的 SPIFFE ID 作为父级。
 
-有关配置 AWS EC2 节点证明者或解析器插件的更多信息，请参阅 SPIRE 服务器的相应 SPIRE 文档，其中包括 [SPIRE 服务器节点证明者](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_aws_iid.md) 和 [SPIRE 服务器节点解析器](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_noderesolver_aws_iid.md)，以及代理上的 [SPIRE Agent 节点证明者](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_aws_iid.md)。
+有关配置 AWS EC2 节点证明者或解析器插件的更多信息，请参阅 SPIRE 服务器的相应 SPIRE 文档，其中包括 [SPIRE 服务器节点证明者](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_aws_iid.md) 和 SPIRE 服务器节点解析器，以及代理上的 [SPIRE Agent 节点证明者](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_aws_iid.md)。
 
 #### Azure 虚拟机
 
@@ -171,7 +171,7 @@ Azure MSI 节点认证和解析允许 SPIRE 服务器自动识别和验证在 Az
 
 如果在代理配置文件中配置自定义资源 ID，则必须在 `server.conf` 配置文件的 `NodeAttestor` 部分中为每个租户指定自定义资源 ID。
 
-有关配置 Azure MSI 节点验证器或解析器插件的更多信息，请参阅对应的 SPIRE 文档，包括 Azure MSI [SPIRE Server 节点验证器](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_azure_msi.md)，[SPIRE Server 节点解析器](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_noderesolver_azure_msi.md)，以及代理上的 [SPIRE 代理节点验证器](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_azure_msi.md)。
+有关配置 Azure MSI 节点验证器或解析器插件的更多信息，请参阅对应的 SPIRE 文档，包括 Azure MSI [SPIRE Server 节点验证器](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_server_nodeattestor_azure_msi.md)，SPIRE Server 节点解析器，以及代理上的 [SPIRE 代理节点验证器](https://github.com/spiffe/spire/blob/v1.8.2/doc/plugin_agent_nodeattestor_azure_msi.md)。
 
 ## 配置工作负载验证
 

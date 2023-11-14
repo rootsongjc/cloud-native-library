@@ -23,7 +23,7 @@ Kubernetes 自动创建包含访问 API 凭据的 secret，并自动修改您的
 
 如果需要，可以禁用或覆盖自动创建和使用 API 凭据。但是，如果您需要的只是安全地访问 apiserver，我们推荐这样的工作流程。
 
-参阅 [Service Account](https://kubernetes.io/docs/user-guide/service-accounts) 文档获取关于 Service Account 如何工作的更多信息。
+参阅 Service Account 文档获取关于 Service Account 如何工作的更多信息。
 
 ### 创建您自己的 Secret
 

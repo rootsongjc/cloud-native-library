@@ -7,7 +7,7 @@ description: Configuration for assigning access roles to users under a tenant.
 
 <!-- WARNING: This page is generated. Please take a look at extensions/plugin-service-bridge-api-docs/src/files/doc/page.ejs -->
 
-DEPRECATED: use [Access Bindings](https://tetrate.io/docs/reference/config/rbac/v2/access-bindings.html) instead.
+DEPRECATED: use Access Bindings instead.
 
 `TenantAccessBindings` is an assignment of roles to a set of users or
 teams to access resources under a Tenant.  The user or team

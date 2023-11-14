@@ -46,7 +46,7 @@ $ kubectl apply -f ../envoy-x509/metallb-config.yaml
 
 ## Auth helper 镜像
 
-使用[Envoy-jwt-auth-helper](https://github.com/spiffe/spire-tutorials/blob/main/envoy-jwt-auth-helper)实现了一个外部授权过滤器，提供了一个脚本来方便地使用 `kind` 或 `minikube` 构建和导入。
+使用 Envoy-jwt-auth-helper 实现了一个外部授权过滤器，提供了一个脚本来方便地使用 `kind` 或 `minikube` 构建和导入。
 
 ```bash
 $ bash ./scripts/build-helper.sh kind
@@ -56,7 +56,7 @@ $ bash ./scripts/build-helper.sh kind
 
 在继续之前，请查看以下内容：
 
-- 你需要访问通过[SPIRE Envoy-X.509 教程](https://github.com/spiffe/spire-tutorials/blob/main/envoy-x509/README.md)*配置的 Kubernetes 环境。你也可以使用下面描述的 `pre-set-env.sh` 脚本创建 Kubernetes 环境。
+- 你需要访问通过 SPIRE Envoy-X.509 教程*配置的 Kubernetes 环境。你也可以使用下面描述的 `pre-set-env.sh` 脚本创建 Kubernetes 环境。
 - 本教程所需的 YAML 文件可以在 https://github.com/spiffe/spire-tutorials 的 `k8s/envoy-jwt` 目录中找到。如果你尚未克隆*SPIRE Envoy-X.509 教程*的存储库，请立即克隆它。
 
 如果 Kubernetes 的*SPIRE Envoy-X.509 教程*环境不可用，你可以使用以下脚本创建它，并将其作为本教程的起点。从 `k8s/envoy-jwt` 目录中运行以下命令：

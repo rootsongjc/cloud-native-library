@@ -5,7 +5,7 @@ date: '2022-05-21T00:00:00+08:00'
 type: book
 ---
 
-Kubernetes [`Pod`](https://kubernetes.io/docs/user-guide/pods) 是有生命周期的，它们可以被创建，也可以被销毁，然而一旦被销毁生命就永远结束。通过 [`ReplicationController`](https://kubernetes.io/docs/user-guide/replication-controller) 能够动态地创建和销毁 `Pod`。每个 `Pod` 都会获取它自己的 IP 地址，即使这些 IP 地址不总是稳定可依赖的。这会导致一个问题：在 Kubernetes 集群中，如果一组 `Pod`（称为 backend）为其它 `Pod` （称为 frontend）提供服务，那么 frontend Pod 该如何发现和连接哪些 backend Pod 呢？
+Kubernetes `Pod` 是有生命周期的，它们可以被创建，也可以被销毁，然而一旦被销毁生命就永远结束。通过 `ReplicationController` 能够动态地创建和销毁 `Pod`。每个 `Pod` 都会获取它自己的 IP 地址，即使这些 IP 地址不总是稳定可依赖的。这会导致一个问题：在 Kubernetes 集群中，如果一组 `Pod`（称为 backend）为其它 `Pod` （称为 frontend）提供服务，那么 frontend Pod 该如何发现和连接哪些 backend Pod 呢？
 
 ## 关于 `Service`
 
@@ -47,7 +47,7 @@ Kubernetes `Service` 支持 `TCP` 和 `UDP` 协议，默认为 `TCP` 协议。
 Service 抽象了该如何访问 Kubernetes `Pod`，但也能够抽象其它类型的 backend，例如：
 
 * 希望在生产环境中使用外部的数据库集群，但测试环境使用自己的数据库。
-* 希望服务指向另一个 [`Namespace`](https://kubernetes.io/docs/user-guide/namespaces) 中或其它集群中的服务。
+* 希望服务指向另一个 `Namespace` 中或其它集群中的服务。
 * 正在将工作负载转移到 Kubernetes 集群，和运行在 Kubernetes 集群之外的 backend。
 
 在任何这些场景中，都能够定义没有 selector 的 `Service` ：

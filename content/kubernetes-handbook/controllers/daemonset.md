@@ -33,11 +33,11 @@ DaemonSet 也需要一个 `.spec`配置段。
 `.spec` 唯一必需的字段是 `.spec.template`。
 
 `.spec.template` 是一个 [Pod 模板](https://kubernetes.io/docs/user-guide/replication-controller/#pod-template)。
-它与 [Pod](https://kubernetes.io/docs/user-guide/pods) 具有相同的 schema，除了它是嵌套的，而且不具有 `apiVersion` 或 `kind` 字段。
+它与 Pod 具有相同的 schema，除了它是嵌套的，而且不具有 `apiVersion` 或 `kind` 字段。
 
 Pod 除了必须字段外，在 DaemonSet 中的 Pod 模板必须指定合理的标签（查看 [pod selector](#pod-selector)）。
 
-在 DaemonSet 中的 Pod 模板必需具有一个值为 `Always` 的 [`RestartPolicy`](https://kubernetes.io/docs/user-guide/pod-states)，或者未指定它的值，默认是 `Always`。
+在 DaemonSet 中的 Pod 模板必需具有一个值为 `Always` 的 `RestartPolicy`，或者未指定它的值，默认是 `Always`。
 
 ### Pod Selector
 
@@ -111,6 +111,6 @@ Daemon Pod 关心 [Taint 和 Toleration](https://kubernetes.io/docs/concepts/con
 
 ### Replication Controller
 
-DaemonSet 与 [Replication Controller](https://kubernetes.io/docs/user-guide/replication-controller) 非常类似，它们都能创建 Pod，这些 Pod 都具有不期望被终止的进程（例如，Web 服务器、存储服务器）。
+DaemonSet 与 Replication Controller 非常类似，它们都能创建 Pod，这些 Pod 都具有不期望被终止的进程（例如，Web 服务器、存储服务器）。
 为无状态的 Service 使用 Replication Controller，像 frontend，实现对副本的数量进行扩缩容、平滑升级，比之于精确控制 Pod 运行在某个主机上要重要得多。需要 Pod 副本总是运行在全部或特定主机上，并需要先于其他 Pod 启动，当这被认为非常重要时，应该使用 Daemon Controller。
 

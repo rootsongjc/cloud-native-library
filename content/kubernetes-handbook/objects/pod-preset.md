@@ -17,7 +17,7 @@ Preset 就是预设，有时候想要让一批容器在启动的时候就注入�
 
 使用 Pod Preset 使得 pod 模板的作者可以不必为每个 Pod 明确提供所有信息。这样一来，pod 模板的作者就不需要知道关于该服务的所有细节。
 
-关于该背景的更多信息，请参阅 [PodPreset 的设计方案](https://git.k8s.io/community/contributors/design-proposals/service-catalog/pod-preset.md)。
+关于该背景的更多信息，请参阅 PodPreset 的设计方案。
 
 ## 如何工作
 

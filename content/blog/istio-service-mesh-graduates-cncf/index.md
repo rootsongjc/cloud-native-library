@@ -72,7 +72,7 @@ Istio 和 Tetrate 之间的紧密合作以及 Tetrate 工程师的贡献在 Isti
 - 2019 年：[Istio 1.1 发布，宣布已经准备好用于企业级应用](https://istio.io/latest/news/releases/1.1.x/announcing-1.1/)；Tetrate 扩大 Istio 生态系统，为采用 Istio 的企业提供支持、咨询和培训服务。
 - 2020 年。Tetrate 为 Istio 贡献了 VM 工作负载和多集群支持。
 - 2021 年。Tetrate 领导了 Istio 生态系统的扩展，推出了 Istio 的[第一个也是唯一的认证考试](https://academy.tetrate.io/courses/certified-istio-administrator)认证 Istio 管理员 - 以及第一个自助式 Istio 课程，Istio Fundamentals[在 Tetrate Academy 上免费提供](https://academy.tetrate.io/courses/istio-fundamentals)。这门课程是[Linux 基金会官方的 Istio 入门课程](https://training.linuxfoundation.org/training/introduction-to-istio-lfs144x/)的基础，迄今已有超过 5,000 人报名。
-- 2021 年。 Tetrate 还发布了Tetrate Istio Distro，[安装、管理和升级 Istio 的最简单方法](https://istio.tetratelabs.io/)，以及[其突破性应用程序安全和连接平台的 1.0 版本](https://tetrate.io/tetrate-service-bridge-general-availability/)，Tetrate Service Bridge。
+- 2021 年。Tetrate 还发布了 Tetrate Istio Distro，[安装、管理和升级 Istio 的最简单方法](https://istio.tetratelabs.io/)，以及[其突破性应用程序安全和连接平台的 1.0 版本](https://tetrate.io/tetrate-service-bridge-general-availability/)，Tetrate Service Bridge。
 - 2022 年。Tetrate Istio Distro 成为[第一个适用于 FedRAMP 环境的 FIPS 合规、100% 上游 Istio 发行版](https://tetrate.io/how-tetrate-istio-distro-became-the-first-fips-compliant-istio-distribution/)。
 - 2022 年。[Istio 加入 CNCF](https://www.cncf.io/blog/2022/09/28/istio-sails-into-the-cloud-native-computing-foundation/)作为孵化器项目。
 - 2023 年。Tetrate 宣布[Tetrate Service Express 简化 Istio 在 Amazon EKS 上的部署](https://tetrate.io/tetrate-service-express/)，使生产中的 Istio 部署更快。

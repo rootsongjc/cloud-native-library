@@ -7,7 +7,7 @@ weight: 4
 
 [Open Policy Agent](https://www.openpolicyagent.org/)（OPA）是一个开源通用策略引擎，其提供的授权（AuthZ）是对 SPIRE 提供的认证（AuthN）的很好补充。
 
-本教程将在 [SPIRE Envoy-X.509 教程](https://github.com/spiffe/spire-tutorials/blob/main/envoy-x509/README.md) 的基础上添加 [Open Policy Agent](https://www.openpolicyagent.org/)（OPA）以演示如何将 SPIRE、Envoy 和 OPA 结合使用，实现 X.509 SVID 认证和请求授权。本教程将演示如何在现有教程的基础上实现使用 OPA 进行请求授权。
+本教程将在 SPIRE Envoy-X.509 教程 的基础上添加 [Open Policy Agent](https://www.openpolicyagent.org/)（OPA）以演示如何将 SPIRE、Envoy 和 OPA 结合使用，实现 X.509 SVID 认证和请求授权。本教程将演示如何在现有教程的基础上实现使用 OPA 进行请求授权。
 
 为了便于说明，让我们通过将 OPA 代理实例作为后端服务的新侧车来扩展 Envoy X.509 教程中创建的场景。借助 Envoy 的外部授权过滤器功能，结合 OPA 作为授权服务，可以实现对传入后端服务的每个请求执行安全策略。
 
@@ -25,7 +25,7 @@ weight: 4
 
 在继续之前，请查看以下内容：
 
-- 当通过 [SPIRE Envoy-X.509 教程](https://github.com/spiffe/spire-tutorials/blob/main/envoy-x509/README.md) 进行配置时，你将需要访问 Kubernetes 环境。可选择使用 `pre-set-env.sh` 脚本创建 Kubernetes 环境。
+- 当通过 SPIRE Envoy-X.509 教程 进行配置时，你将需要访问 Kubernetes 环境。可选择使用 `pre-set-env.sh` 脚本创建 Kubernetes 环境。
 - 本教程所需的 YAML 文件可以在 https://github.com/spiffe/spire-tutorials 的 `k8s/envoy-opa` 目录中找到。如果尚未克隆 spire-tutorials 存储库，请立即执行。
 
 如果 Kubernetes 中的 *配置 Envoy 进行 X.509 SVID 认证* 教程环境不可用，你可以使用以下脚本创建该环境，并将其用作本教程的起点。从 `k8s/envoy-opa` 目录运行以下 Bash 脚本：

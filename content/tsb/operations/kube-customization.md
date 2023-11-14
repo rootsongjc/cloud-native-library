@@ -343,4 +343,4 @@ spec:
 ```
 
 ## References
-[TSB reference Doc](https://docs.tetrate.io/service-bridge/en-us/refs/install/kubernetes/k8s)
+TSB reference Doc

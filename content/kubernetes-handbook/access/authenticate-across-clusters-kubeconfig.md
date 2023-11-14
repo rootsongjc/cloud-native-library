@@ -114,7 +114,7 @@ contexts:
   name: federal-context
 ```
 
-`context` 定义了一个命名的 [`cluster`](https://kubernetes.io/docs/tasks/access-application-cluster/authenticate-across-clusters-kubeconfig#cluster)、[`user`](https://kubernetes.io/docs/tasks/access-application-cluster/authenticate-across-clusters-kubeconfig#user)、[`namespace`](https://kubernetes.io/docs/user-guide/namespaces) 元组，用于使用提供的认证信息和命名空间将请求发送到指定的集群。三个都是可选的；仅使用 `cluster`、`user`、`namespace` 之一指定上下文，或指定 none。未指定的值或在加载的 kubeconfig 中没有相应条目的命名值（例如，如果为上述 kubeconfig 文件指定了 `pink-user` 的上下文）将被替换为默认值。有关覆盖/合并行为，请参阅下面的 [加载和合并规则](https://kubernetes.io/docs/tasks/access-application-cluster/authenticate-across-clusters-kubeconfig#loading-and-merging)。
+`context` 定义了一个命名的 [`cluster`](https://kubernetes.io/docs/tasks/access-application-cluster/authenticate-across-clusters-kubeconfig#cluster)、[`user`](https://kubernetes.io/docs/tasks/access-application-cluster/authenticate-across-clusters-kubeconfig#user)、`namespace` 元组，用于使用提供的认证信息和命名空间将请求发送到指定的集群。三个都是可选的；仅使用 `cluster`、`user`、`namespace` 之一指定上下文，或指定 none。未指定的值或在加载的 kubeconfig 中没有相应条目的命名值（例如，如果为上述 kubeconfig 文件指定了 `pink-user` 的上下文）将被替换为默认值。有关覆盖/合并行为，请参阅下面的 [加载和合并规则](https://kubernetes.io/docs/tasks/access-application-cluster/authenticate-across-clusters-kubeconfig#loading-and-merging)。
 
 您可以使用 `kubectl config set-context` 添加或修改上下文条目。
 

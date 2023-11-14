@@ -7,7 +7,7 @@ weight: 5
 
 [开放策略代理](https://www.openpolicyagent.org/)（OPA）是一个开源的、通用的策略引擎。OPA 提供的授权（AuthZ）可以很好地补充 SPIRE 提供的认证（AuthN）。
 
-本教程基于[SPIRE Envoy-JWT 教程](https://github.com/spiffe/spire-tutorials/blob/main/envoy-jwt/README.md)，演示如何结合 SPIRE、Envoy 和 OPA 进行 JWT SVID 认证和请求授权。实现 OPA 请求授权所需的更改在本教程中以增量形式展示，因此你应先运行或至少阅读 SPIRE Envoy-JWT 教程。
+本教程基于 SPIRE Envoy-JWT 教程，演示如何结合 SPIRE、Envoy 和 OPA 进行 JWT SVID 认证和请求授权。实现 OPA 请求授权所需的更改在本教程中以增量形式展示，因此你应先运行或至少阅读 SPIRE Envoy-JWT 教程。
 
 ![架构图](../../images/SPIRE-Envoy_JWT_OPA_diagram.png)
 
@@ -48,7 +48,7 @@ $ kubectl apply -f ../envoy-x509/metallb-config.yaml
 
 ## 授权助手镜像
 
-使用[Envoy-jwt-auth-helper](https://github.com/spiffe/spire-tutorials/blob/main/envoy-jwt-auth-helper)实现了一个外部授权过滤器，提供了一个脚本来简化使用`kind`或`minikube`的构建和导入
+使用 Envoy-jwt-auth-helper 实现了一个外部授权过滤器，提供了一个脚本来简化使用`kind`或`minikube`的构建和导入
 
 ```bash
 $ bash ./scripts/build-helper.sh kind
@@ -58,7 +58,7 @@ $ bash ./scripts/build-helper.sh kind
 
 在开始之前，回顾以下内容：
 
-- 你需要访问在完成 [SPIRE Envoy-JWT 教程](https://github.com/spiffe/spire-tutorials/blob/main/envoy-jwt/README.md)时配置的 Kubernetes 环境。或者，你可以使用下面描述的`pre-set-env.sh`脚本创建 Kubernetes 环境。
+- 你需要访问在完成 SPIRE Envoy-JWT 教程时配置的 Kubernetes 环境。或者，你可以使用下面描述的`pre-set-env.sh`脚本创建 Kubernetes 环境。
 - 此教程所需的 YAML 文件可以在  <https://github.com/spiffe/spire-tutorials> 的 `k8s/envoy-jwt-opa` 目录中找到。如果你还没有克隆 spire-tutorials 存储库，请立即这样做。
 
 如果 Kubernetes *配置 Envoy 以执行 JWT SVID 身份验证*教程环境不可用，你可以使用以下脚本创建它，并将它用作本教程的起点。从`k8s/envoy-jwt-opa`目录中，运行以下 Bash 脚本：

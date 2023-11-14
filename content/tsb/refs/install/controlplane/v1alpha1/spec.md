@@ -2546,7 +2546,7 @@ where:
 * $POLICY_ARN is the ARN of the policy to attach to the Service Account - the policy should allow the Service Account
   to manage Route53 resources.
 
-More details can be found in the [Publishing a Service docs](https://docs-preview.tetrate.io/service-express/Tech-Preview/getting-started/publish-service)
+More details can be found in the Publishing a Service docs
 
 After creating the Service Account you can enable the Route53 integration controller using the following configuration:
 

@@ -9,7 +9,7 @@ type: book
 
 容器磁盘上的文件的生命周期是短暂的，这就使得在容器中运行重要应用时会出现一些问题。首先，当容器崩溃时，kubelet 会重启它，但是容器中的文件将丢失——容器以干净的状态（镜像最初的状态）重新启动。其次，在 `Pod` 中同时运行多个容器时，这些容器之间通常需要共享文件。Kubernetes 中的 `Volume` 抽象就很好的解决了这些问题。
 
-建议先熟悉 [pod](https://kubernetes.io/docs/user-guide/pods)。
+建议先熟悉 pod。
 
 ## 背景
 
@@ -102,7 +102,7 @@ spec:
 
 ### azureDisk
 
-`AzureDisk` 用于将 Microsoft Azure [Data Disk](https://azure.microsoft.com/zh-cn/documentation/articles/virtual-machines-linux-about-disks-vhds) 挂载到 Pod 中。
+`AzureDisk` 用于将 Microsoft Azure Data Disk 挂载到 Pod 中。
 
 ### azureFile
 
@@ -116,7 +116,7 @@ spec:
 
 ### csi
 
-CSI 代表[容器存储接口](https://github.com/container-storage-interface/spec/blob/master/spec.md)，CSI 试图建立一个行业标准接口的规范，借助 CSI 容器编排系统（CO）可以将任意存储系统暴露给自己的容器工作负载。有关详细信息，请查看[设计方案](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/storage/container-storage-interface.md)。
+CSI 代表[容器存储接口](https://github.com/container-storage-interface/spec/blob/master/spec.md)，CSI 试图建立一个行业标准接口的规范，借助 CSI 容器编排系统（CO）可以将任意存储系统暴露给自己的容器工作负载。有关详细信息，请查看设计方案。
 
 `csi` 卷类型是一种 in-tree 的 CSI 卷插件，用于 Pod 与在同一节点上运行的外部 CSI 卷驱动程序交互。部署 CSI 兼容卷驱动后，用户可以使用 `csi` 作为卷类型来挂载驱动提供的存储。
 
@@ -684,7 +684,7 @@ spec:
 
 `emptyDir` 卷的存储介质（磁盘、SSD 等）由保存在 kubelet 根目录的文件系统的介质（通常是 `/var/lib/kubelet`）决定。 `emptyDir` 或 `hostPath` 卷可占用多少空间并没有限制，容器之间或 Pod 之间也没有隔离。
 
-在将来，我们预计 `emptyDir` 和 `hostPath` 卷将能够使用 [resource](https://kubernetes.io/docs/user-guide/compute-resources) 规范请求一定的空间，并选择要使用的介质，适用于具有多种媒体类型的集群。
+在将来，我们预计 `emptyDir` 和 `hostPath` 卷将能够使用 resource 规范请求一定的空间，并选择要使用的介质，适用于具有多种媒体类型的集群。
 
 ## Out-of-Tree 卷插件
 
