@@ -1,24 +1,20 @@
 ---
-title: Setting Up Workload Onboarding
-description: How to Setup Workload Onboarding
+title: 设置工作负载上线
+description: 如何设置工作负载上线。
+weight: 2
 ---
 
-This document describes how to set up your environment so that your VMs are ready to be
-[onboarded using the Workload Onboarding Agent](./onboarding).
+## 步骤
 
-The setup for Workload Onboarding consists of the following steps:
+1. 启用工作负载上线
+2. 创建 WorkloadGroup
+3. 允许工作负载加入 WorkloadGroup
+4. 创建 Sidecar 配置
+5. 在 VM 上安装工作负载上线代理
 
-1. Enable Workload Onboarding
-1. Create the WorkloadGroup
-1. Allow the workloads to join WorkloadGroup
-1. Create the Sidecar configuration
-1. Install the Workload Onboarding Agent on a VM
+## 启用工作负载上线
 
-## Enable Workload Onboarding
-
-To enable Workload Onboarding in a given Kubernetes Cluster, you need to edit
-TSB [ControlPlane](../../../refs/install/controlplane/v1alpha1/spec) resource or Helm
-configuration as follows:
+要在给定的 Kubernetes 集群中启用工作负载上线，你需要编辑 TSB [ControlPlane](../../../refs/install/controlplane/v1alpha1/spec) 资源或 Helm 配置，如下所示：
 
 ```yaml
 spec:
@@ -35,54 +31,42 @@ spec:
       localRepository: {}                                 # (5) OPTIONAL
 ```
 
-And then:
+然后：
 
-1. To enable Workload Onboarding in a given Kubernetes Cluster, you need to edit
-   the `spec.meshExpansion.onboarding` section and provide the values for all mandatory
-   fields
-1. You must provide a DNS name for the Workload Onboarding Endpoint, e.g.
-   `onboarding-endpoint.your-company.corp`
-1. You must provide the name of the Kubernetes Secret that holds the TLS certificate
-   for the Workload Onboarding Endpoint
-1. You can choose a custom expiration time for the onboarding tokens, which defaults to
-   `1 hour`
-1. You can choose to deploy a local copy of the repository with DEB/RPM
-   packages of the Workload Onboarding Agent and Istio sidecar
+1. 要在给定的 Kubernetes 集群中启用工作负载上线，你需要编辑 `spec.meshExpansion.onboarding` 部分，并为所有强制性字段提供值
+2. 你必须为 Workload Onboarding Endpoint 提供一个 DNS 名称，例如 `onboarding-endpoint.your-company.corp`
+3. 你必须提供保存 Workload Onboarding Endpoint 的 TLS 证书的 Kubernetes Secret 的名称
+4. 你可以选择自定义上线令牌的过期时间，默认为 `1 小时`
+5. 你可以选择部署 Workload Onboarding Agent 和 Istio sidecar 的 DEB/RPM 软件包的本地副本
 
 ## Workload Onboarding Endpoint
 
-The Workload Onboarding Endpoint is the component that the individual Workload
-Onboarding Agent(s) connect to join the mesh.
+Workload Onboarding Endpoint 是各个 Workload Onboarding Agent 连接加入网格的组件。
 
-In production scenarios, the Workload Onboarding Endpoint must be highly
-available, have a stable address, and enforce TLS on incoming connections.
+在生产场景中，Workload Onboarding Endpoint 必须具有高可用性、稳定的地址，并对传入连接进行 TLS 强制执行。
 
-For that reason, the DNS name and TLS certificate are mandatory parameters for
-enabling Workload Onboarding.
+因此，DNS 名称和 TLS 证书是启用 Workload Onboarding 的强制性参数。
 
-### DNS name
+### DNS 名称
 
-You can choose any DNS name for the Workload Onboarding Endpoint.
+你可以为 Workload Onboarding Endpoint 选择任何 DNS 名称。
 
-That name must be associated with the address of the Kubernetes Service `vmgateway`
-from the `istio-system` namespace.
+该名称必须与 `istio-system` 命名空间中的 Kubernetes 服务 `vmgateway` 的地址关联。
 
-In production scenarios, you can achieve that by using [`external-dns`](https://github.com/kubernetes-sigs/external-dns).
+在生产场景中，你可以使用 [`external-dns`](https://github.com/kubernetes-sigs/external-dns) 来实现这一点。
 
-### TLS certificate
+### TLS 证书
 
-To provide a certificate for the Workload Onboarding Endpoint, you need to
-create a Kubernetes secret of type TLS in the `istio-system` namespace.
+为 Workload Onboarding Endpoint 提供证书，你需要在 `istio-system` 命名空间中创建一个 TLS 类型的 Kubernetes Secret。
 
-You have several options:
+你有几个选项：
 
-* Either create a Kubernetes secret from an X509 cert and a private key
-  procured out-of-band
-* Or you can use [cert-manager](https://cert-manager.io/docs/) to automate provisioning of the TLS cert
+* 从 X509 证书和私钥创建 Kubernetes Secret（手动获取）
+* 或者你可以使用 [cert-manager](https://cert-manager.io/docs/) 自动提供 TLS 证书
 
-#### TLS certificate procured out-of-band
+#### 从外部获取的 TLS 证书
 
-To provide a TLS certificate procured out-of-band, use:
+为 Workload Onboarding Endpoint 提供从外部获取的 TLS 证书，请使用以下命令：
 
 ```shell
 kubectl create secret tls <onboarding-endpoint-tls-cert> \
@@ -91,14 +75,13 @@ kubectl create secret tls <onboarding-endpoint-tls-cert> \
   --key=<path/to/key/file>
 ```
 
-#### TLS certificate procured by `cert-manager`
+#### 由 `cert-manager` 提供的 TLS 证书
 
-To automate the provisioning of the TLS certificate, you can use [cert-manager](https://cert-manager.io/docs/).
+要自动提供 TLS 证书，你可以使用 [cert-manager](https://cert-manager.io/docs/)。
 
-For example, you can procure a free TLS certificate signed by a
-trusted CA, such as [Let's Encrypt](https://letsencrypt.org/).
+例如，你可以获取由受信任的 CA 签名的免费 TLS 证书，如 [Let's Encrypt](https://letsencrypt.org/)。
 
-In this case, your configuration will look similar to:
+在这种情况下，你的配置将如下所示：
 
 ```yaml
 apiVersion: cert-manager.io/v1
@@ -119,68 +102,55 @@ spec:
     kind: ClusterIssuer
 ```
 
-Refer to the [cert-manager](https://cert-manager.io/docs/) documentation for further details.
+有关更多详细信息，请参阅 [cert-manager](https://cert-manager.io/docs/) 文档。
 
-## Workload Onboarding Tokens
+## Workload Onboarding 令牌
 
-The Workload Onboarding Token represents a temporary grant to onboard a workload
-into the service mesh.
+Workload Onboarding 令牌代表将工作负载引入服务网格的临时授权。
 
-The Workload Onboarding Endpoint issues the Workload Onboarding Token
-after verifying the platform-specific credentials presented by the
-Workload Onboarding Agent, e.g. credentials of the VM the workload is running
-on.
+在验证由 Workload Onboarding Agent 提交的平
 
-The Workload Onboarding Token is used as a session token in subsequent requests
-from the Workload Onboarding Agent to the Workload Onboarding Endpoint
-to improve the efficiency of authentication and authorization.
+台特定凭据后（例如工作负载所在的 VM 的凭据），Workload Onboarding Endpoint 会发放 Workload Onboarding 令牌。
 
-By default, the Workload Onboarding Token is valid for `1 hour`.
+Workload Onboarding 令牌用作 Workload Onboarding Agent 向 Workload Onboarding Endpoint 发送的后续请求的会话令牌，以提高身份验证和授权的效率。
 
-Users might choose a custom expiration time for the Workload Onboarding Token
-for several reasons, e.g.:
+默认情况下，Workload Onboarding 令牌的有效期为 `1 小时`。
 
-* shorten the expiration time to meet stricter security policies
-  established within their organization
-* extend expiration time to lower the load caused by frequent
-  token renewals
+用户可能会选择为 Workload Onboarding 令牌选择自定义过期时间，出于多种原因，例如：
 
-## Local Repository
+* 缩短过期时间以满足组织内部制定的更严格的安全策略
+* 延长过期时间以降低频繁令牌续订导致的负载
 
-For convenience, the DEB/RPM packages of the Workload Onboarding Agent and
-Istio sidecar can be hosted locally within their network.
+## 本地仓库
 
-Once users enable a local repository, they will be able to download the DEB/RPM packages
-from an HTTP server at `https://<onboarding-endpoint-dns-name>`.
+为了方便起见，可以在其网络内托管 Workload Onboarding Agent 和 Istio sidecar 的 DEB/RPM 软件包的本地副本。
 
-The local repository allows downloading the following artifacts:
+一旦启用本地仓库，用户将能够从 `https://<onboarding-endpoint-dns-name>` 的 HTTP 服务器下载 DEB/RPM 软件包。
 
-| URI                                              | Description                                    |
-|--------------------------------------------------|------------------------------------------------|
-| `/install/deb/amd64/onboarding-agent.deb`        | DEB package of the Workload Onboarding Agent |
-| `/install/deb/amd64/onboarding-agent.deb.sha256` | SHA-256 checksum of the DEB package             |
-| `/install/deb/amd64/istio-sidecar.deb`           | DEB package of the Istio sidecar             |
-| `/install/deb/amd64/istio-sidecar.deb.sha256`    | SHA-256 checksum of the DEB package             |
-| `/install/rpm/amd64/onboarding-agent.rpm`        | RPM package of the Workload Onboarding Agent |
-| `/install/rpm/amd64/onboarding-agent.rpm.sha256` | SHA-256 checksum of the RPM package             |
-| `/install/rpm/amd64/istio-sidecar.rpm`           | RPM package of the Istio sidecar             |
-| `/install/rpm/amd64/istio-sidecar.rpm.sha256`    | SHA-256 checksum of the RPM package             |
+本地仓库允许下载以下工件：
 
-## Create the WorkloadGroup
+| URI                                              | 描述                                    |
+| ------------------------------------------------ | --------------------------------------- |
+| `/install/deb/amd64/onboarding-agent.deb`        | Workload Onboarding Agent 的 DEB 软件包 |
+| `/install/deb/amd64/onboarding-agent.deb.sha256` | DEB 软件包的 SHA-256 校验和             |
+| `/install/deb/amd64/istio-sidecar.deb`           | Istio sidecar 的 DEB 软件包             |
+| `/install/deb/amd64/istio-sidecar.deb.sha256`    | DEB 软件包的 SHA-256 校验和             |
+| `/install/rpm/amd64/onboarding-agent.rpm`        | Workload Onboarding Agent 的 RPM 软件包 |
+| `/install/rpm/amd64/onboarding-agent.rpm.sha256` | RPM 软件包的 SHA-256 校验和             |
+| `/install/rpm/amd64/istio-sidecar.rpm`           | Istio sidecar 的 RPM 软件包             |
+| `/install/rpm/amd64/istio-sidecar.rpm.sha256`    | RPM 软件包的 SHA-256 校验和             |
 
-When a workload running outside of a Kubernetes cluster is onboarded into the mesh,
-it is considered to join a certain [WorkloadGroup](https://istio.io/latest/docs/reference/config/networking/workload-group/).
+## 创建 WorkloadGroup
 
-The Istio WorkloadGroup resource holds the configuration shared by all the workloads
-that join it.
+当将运行在 Kubernetes 集群之外的工作负载引入到网格时，它被视为加入某个 [WorkloadGroup](https://istio.io/latest/docs/reference/config/networking/workload-group/)。
 
-In a way, an Istio WorkloadGroup resource is to individual workloads what
-a Kubernetes Deployment resource is to individual Pods.
+Istio WorkloadGroup 资源保存所有加入它的工作负载共享的配置。
 
-To be able to onboard individual workloads into a given Kubernetes cluster, you must
-first create a respective Istio WorkloadGroup in it.
+从某种意义上说，Istio WorkloadGroup 资源对于单个工作负载就像 Kubernetes Deployment 资源对于单个 Pod 一样。
 
-E.g.,
+为了能够将单个工作负载引入给定的 Kubernetes 集群，你必须首先在其中创建相应的 Istio WorkloadGroup。
+
+例如，
 
 ```yaml
 apiVersion: networking.istio.io/v1alpha3
@@ -199,45 +169,31 @@ spec:
     network:        virtual-machines  # (3)
 ```
 
-where
+其中
 
-1. All the workloads joining that group inherit the configuration specified in
-  `spec.template`
-1. Inside the mesh, the onboarded workloads will have the identity of the
-   Kubernetes service account specified in `spec.template.serviceAccount`.
-   If `spec.template.serviceAccount` is not set, the service account `"default"`
-   is assumed (this account is guaranteed to exist in every Kubernetes namespace).
-1. If the workloads in that group have no direct connectivity to Kubernetes `Pods`
-   you must set the `spec.template.network` field to a non-empty value.
+1. 所有加入该组的工作负载都继承 `spec.template` 中指定的配置
+2. 在网格内，加入网格的工作负载将具有 `spec.template.serviceAccount` 中指定的 Kubernetes 服务帐户的标识。如果未设置 `spec.template.serviceAccount`，则假定为 `"default"`（此帐户在每个 Kubernetes 命名空间中都保证存在）。
+3. 如果该组中的工作负载与 Kubernetes `Pods` 没有直接的连接性，必须将 `spec.template.network` 字段设置为非空值。
 
-## Allow workloads to join a WorkloadGroup
+## 允许工作负载加入 WorkloadGroup
 
-The workloads running outside of a Kubernetes cluster are not allowed to join the mesh
-unless it is explicitly authorized.
+在 Kubernetes 集群之外运行的工作负载除非经过明确授权，否则不能加入到 mesh 中。
 
-For the purposes of onboarding, a workload is considered to have the identity of
-the host it is running on. For example, if a workload is running on an AWS EC2
-instance, it is considered to have the identity of that AWS EC2 instance.
+为了进行登记，工作负载被视为运行在其上的主机的身份。例如，如果一个工作负载运行在 AWS EC2 实例上，它被认为具有该 AWS EC2 实例的身份。
 
-To allow a workload to onboard into a given cluster, a user must create an
-[onboarding policy](../../../refs/onboarding/config/authorization/v1alpha1/policy)
-in that cluster.
+为了允许工作负载加入特定的集群，用户必须在该集群中创建一个[登记策略](../../../refs/onboarding/config/authorization/v1alpha1/policy)。
 
-An OnboardingPolicy is a Kubernetes resource that authorizes workloads with certain
-identities to join certain WorkloadGroup(s). An OnboardingPolicy must be
-created in the same namespace as the WorkloadGroup(s) it applies to.
+一个 OnboardingPolicy 是 Kubernetes 资源，授权具有特定身份的工作负载加入特定的 WorkloadGroup(s)。OnboardingPolicy 必须在适用于它的 WorkloadGroup(s) 相同的命名空间中创建。
 
-### Examples
+### 示例
 
-The example below allows the workloads running on any AWS EC2 instance
-associated with the given AWS account to join any of the
-available WorkloadGroups in the given Kubernetes namespace:
+下面的示例允许运行在任何与给定 AWS 帐户关联的 AWS EC2 实例上的工作负载加入给定 Kubernetes 命名空间中的任何可用 WorkloadGroup：
 
 ```yaml
 apiVersion: authorization.onboarding.tetrate.io/v1alpha1
 kind: OnboardingPolicy
 metadata:
-  name: allow-any-aws-ec2-instance-from-given-accounts
+  name: 允许任何 AWS EC2 实例加入给定帐户
   namespace: bookinfo
 spec:
   allow:
@@ -246,28 +202,22 @@ spec:
         accounts:
         - '123456789012'
         - '234567890123'
-        ec2: {} # any AWS EC2 instance from the above account(s)
+        ec2: {} # 上述帐户中的任何 AWS EC2 实例
     onboardTo:
-    - workloadGroupSelector: {} # any WorkloadGroup from that namespace
+    - workloadGroupSelector: {} # 该命名空间中的任何 WorkloadGroup
 ```
 
-For security reasons, the AWS accounts must always be listed explicitly.
-You will not be able to specify that workloads associated with any
-account to freely join the mesh since that's never a good practice.
+出于安全原因，AWS 帐户必须始终明确列出。由于这从不是一个良好的实践，你将无法指定与任何帐户关联的工作负载自由加入 mesh。
 
-While the previous example may have been a rather "permissive" policy,
-a more restrictive onboarding policy might only allow onboarding workloads
-from AWS EC2 instances in a particular AWS region and/or zone, with a
-particular AWS IAM Role, etc. It might also only allow workloads to
-join a specific subset of WorkloadGroups.
+尽管前面的示例可能是一个相当“宽松”的策略，但更严格的登记策略可能只允许从特定 AWS 区域和/或区域中的 AWS EC2 实例加入，带有特定 AWS IAM 角色等。它还可能只允许工作负载加入特定的 WorkloadGroups 子集。
 
-The following shows an example of a more restrictive policy:
+以下是一个更严格策略的示例：
 
 ```yaml
 apiVersion: authorization.onboarding.tetrate.io/v1alpha1
 kind: OnboardingPolicy
 metadata:
-  name: allow-narrow-subset-of-aws-ec2-instances
+  name: 允许 AWS EC2 实例的狭窄子集加入
   namespace: bookinfo
 spec:
   allow:
@@ -283,18 +233,14 @@ spec:
         - us-east-2b
         ec2:
           iamRoleNames:
-          - ratings-role        # any AWS EC2 instance from the above partitions/accounts/regions/zones
-                                # that is associated with one of IAM Roles on that list
+          - ratings-role        # 上述分区/帐户/区域/区域中与列表中 IAM 角色之一关联的任何 AWS EC2 实例
     onboardTo:
     - workloadGroupSelector:
         matchLabels:
           app: ratings          # (1)
 ```
 
-The above policy authorizes workloads that have the label `app=ratings` (1)
-to join those WorkloadGroup(s). For example, the following group would
-match the policy, but if you omit or specify different values in the
-`label` field, it would not match.
+上述策略授权具有标签 `app=ratings` (1) 的工作负载加入这些 WorkloadGroup(s)。例如，以下组将匹配该策略，但如果在 `label` 字段中省略或指定不同的值，则不会匹配。
 
 ```yaml
 apiVersion: networking.istio.io/v1alpha3
@@ -308,64 +254,44 @@ spec:
   ...
 ```
 
-## Create the Sidecar configuration
+## 创建 Sidecar 配置
 
-Workload Onboarding does not currently support the use of `Iptables` for traffic redirection.
-Therefore you will need to configure an Istio Sidecar resource, and
-reconfigure the application and/or the host environment as necessary.
+目前，工作负载登记不支持使用 `Iptables` 进行流量重定向。因此，您需要配置 Istio Sidecar 资源，并根据需要重新配置应用程序和/或主机环境。
 
-### Workload Configuration (Ingress)
+### 工作负载配置（入口）
 
-Make sure your workload (i.e., user application) listens on `127.0.0.1`
-instead of `0.0.0.0`.
+确保您的工作负载（即用户应用程序）侦听 `127.0.0.1`，而不是 `0.0.0.0`。
 
-For example, if your application listens on `0.0.0.0:8080`, change its
-configuration so that it listens on `127.0.0.1:8080` instead.
+例如，如果您的应用程序侦听 `0.0.0.0:8080`，请更改其配置，使其侦听 `127.0.0.1:8080`。
 
-This has two effects: first, both the Istio proxy and the workload will
-be able to listen on the same port — and thus, the proxy will be able to
-listen on `<host IP>:8080`. And second, other nodes in the mesh will not
-be able to connect directly to your application. They would be forced
-to go through the proxy, which will proxy the traffic to `127.0.0.1:8080`.
+这有两个效果：首先，Istio 代理和工作负载将能够在相同的端口上侦听 — 因此，代理将能够在 `<host IP>:8080` 上侦听。其次，网格中的其他节点将无法直接连接到您的应用程序。它们将被强制经过代理，代理将流量代理到 `127.0.0.1:8080`。
 
-### Workload Configuration (Egress)
+### 工作负载配置（出口）
 
-Configure your application to refer to dependent services by their DNS names.
-Otherwise, the application will not be able to take full advantage of the mesh.
+配置您的应用程序以引用依赖服务的 DNS 名称。否则，应用程序将无法充分利用网格。
 
-Specifically, the application should refer to other Kubernetes services by
-their cluster-local DNS names, such as `details.bookinfo`, `details.bookinfo.svc`,
-or `details.bookinfo.svc.cluster.local`.
+具体而言，应用程序应该引用其他 Kubernetes 服务的集群本地 DNS 名称，例如 `details.bookinfo`、`details.bookinfo.svc` 或 `details.bookinfo.svc.cluster.local`。
 
-Other mesh-external services should be referred to using their DNS names (e.g. `example.org`)
+其他网格外部的服务应该使用它们的 DNS 名称引用（例如 `example.org`）
 
-You will also need to alias the DNS names of your dependent services to
-the IP addresses of the egress listeners that you will be using by editing
-the `/etc/hosts` file in your VM.
+您还需要通过编辑 VM 中的 `/etc/hosts` 文件，将您的依赖服务的 DNS 名称别名为将要使用的 egress listener 的 IP 地址。
 
-Assuming that you are referring to `details.bookinfo.svc` and `example.org` in
-your application, edit the `/etc/hosts` file to contain the following lines, replacing
-the `egress listener IP address` with appropriate values:
+假设您在应用程序中引用 `details.bookinfo.svc` 和 `example.org`，请编辑 `/etc/hosts` 文件，包含以下行，将 `egress listener IP 地址` 替换为适当的值：
 
 ```
-<egress listner IP address>	details.bookinfo.svc
-<egress listner IP address>	example.org
+<egress listner IP 地址>	details.bookinfo.svc
+<egress listner IP 地址>	example.org
 ```
 
-As a result, when your application attempts to make a request to
-`ratings.bookinfo.svc:8080` or `example.org:8080`, your application would
-be connecting to the egress listener, which will proxy the requests to
-their respective destinations.
+因此，当您的应用程序尝试发出对 `ratings.bookinfo.svc:8080` 或 `example.org:8080` 的请求时，您的应用程序将连接到 egress listener，该监听器将代理请求到它们各自的目的地。
 
 :::note
-Alternatively, you might consider specifying the Istio proxy in the
-`http_proxy` environment variable.
+或者，您可以考虑在 `http_proxy` 环境变量中指定 Istio 代理。
 :::
 
-### Sidecar Resource Configuration
+### Sidecar 资源配置
 
-You will need to create an Istio Sidecar resource on your Kubernetes
-cluster. The YAML definition will look like the following:
+您需要在 Kubernetes 集群上创建一个 Istio Sidecar 资源。YAML 定义如下：
 
 ```yaml
 apiVersion: networking.istio.io/v1beta1
@@ -394,38 +320,26 @@ spec:
     - ./*
 ```
 
-Section (1) defines the WorkloadGroups that this sidecar applies to.
-In this example, this configuration applies to workloads whose labels match
-`app: ratings`. This example also specifies that we only apply this to
-those with the `class: vm` label, which is intended to be used to
-distinguish workloads deployed on VMs and those deployed on Kubernetes pods.
+第 (1) 节定义了此 sidecar 适用于的 WorkloadGroups。在此示例中，此配置适用于标签匹配为 `app: ratings` 的工作负载。此示例还指定我们仅将此应用于具有 `class: vm` 标签的工作负载，该标签旨在用于区分部署在 VM 上的工作负载和部署在 Kubernetes pod 上的工作负载。
 
-Section (2) defines the Ingress listener. This configuration specifies that
-the Istio proxy will be listening on `<host IP>:8080`, and will forward
-the traffic received on `<host IP>:8080` to `127.0.0.1:8080`, which should be
-where your application will be listening.
+第 (2) 节定义了 Ingress 监听器。此配置指定 Istio 代理将在 `<host IP>:8080` 上侦听，并将接收到的流量转发到 `127.0.0.1:8080`，这应该是您的应用程序将侦听的地方。
 
-Section (3) defines the Egress listener. This configuration specifies that
-the Egress listener will be listening on `127.0.0.2:8080`. It also specifies
-that the Egress listener will proxy outgoing requests to any service that
-matches the `hosts` list and has port `8080`.
+第 (3) 节定义了 Egress 监听器。此配置指定 Egress 监听器将在 `127.0.0.2:8080` 上侦听。它还指定 Egress 监听器将代理对匹配 `hosts` 列表且具有端口 `8080` 的任何服务的出站请求。
 
-## Install Workload Onboarding Agent on a VM
+## 在 VM 上安装 Workload Onboarding Agent
 
-You will need to install the following components on the VM that you want to onboard:
+您需要在要进行登记的 VM 上安装以下组件：
 
-1. the Workload Onboarding Agent
-1. an Istio Sidecar
+1. Workload Onboarding Agent
+1. Istio Sidecar
 
-Use either the DEB or RPM package, depending on your preference. 
-You can download these packages from your local repository at
-`https://<onboarding-endpoint-dns-name>` (for more details, refer to "Enabling Workload Onboarding").
+根据您的偏好使用 DEB 或 RPM 包。您可以从本地存储库的以下地址下载这些包 `https://<onboarding-endpoint-dns-name>`（有关更多详细信息，请参阅“启用 Workload Onboarding”）。
 
-If you use an ARM-based VM, change `amd64` to `arm64` in the following examples.
+如果使用基于 ARM 的 VM，请在以下示例中将 `amd64` 更改为 `arm64`。
 
-### Installing the Workload Onboarding Agent DEB Package
+### 安装 Workload Onboarding Agent DEB 包
 
-Run the following commands. Replace the `onboarding-endpoint-dns-name` with the appropriate value.
+运行以下命令。将 `onboarding-endpoint-dns-name` 替换为适当的值。
 
 ```bash
 curl -fLO "https://<onboarding-endpoint-dns-name>/install/deb/amd64/onboarding-agent.deb"
@@ -439,9 +353,9 @@ sudo apt-get install -y ./onboarding-agent.deb
 rm onboarding-agent.deb onboarding-agent.deb.sha256
 ```
 
-### Installing the Workload Onboarding Agent RPM Package
+### 安装 Workload Onboarding Agent RPM 包
 
-Run the following commands. Replace the `onboarding-endpoint-dns-name` with the appropriate value.
+运行以下命令。将 `onboarding-endpoint-dns-name` 替换为适当的值。
 
 ```bash
 curl -fLO "https://<onboarding-endpoint-dns-name>/install/rpm/amd64/onboarding-agent.rpm"
@@ -455,9 +369,9 @@ sudo yum install -y ./onboarding-agent.rpm
 rm onboarding-agent.rpm onboarding-agent.rpm.sha256
 ```
 
-### Installing the Istio Sidecar DEB package
+### 安装 Istio Sidecar DEB 包
 
-Run the following commands. Replace the `onboarding-endpoint-dns-name` with the appropriate value.
+运行以下命令。将 `onboarding-endpoint-dns-name` 替换为适当的值。
 
 ```bash
 curl -fLO "https://<onboarding-endpoint-dns-name>/install/deb/amd64/istio-sidecar.deb"
@@ -471,9 +385,9 @@ sudo apt-get install -y ./istio-sidecar.deb
 rm istio-sidecar.deb istio-sidecar.deb.sha256
 ```
 
-### Installing the Istio Sidecar RPM Package
+### 安装 Istio Sidecar RPM 包
 
-Run the following commands. Replace the `onboarding-endpoint-dns-name` with the appropriate value.
+运行以下命令。将 `onboarding-endpoint-dns-name` 替换为适当的值。
 
 ```bash
 curl -fLO "https://<onboarding-endpoint-dns-name>/install/rpm/amd64/istio-sidecar.rpm"
@@ -487,18 +401,16 @@ sudo yum install -y ./istio-sidecar.rpm
 rm istio-sidecar.rpm istio-sidecar.rpm.sha256
 ```
 
-### Installing the Istio Sidecar for Revisioned Istio
+### 为 Revisioned Istio 安装 Istio Sidecar
 
-If you enable [Istio Isolation Boundary](../../isolation-boundaries), you need to use
-revisioned package download path to download the DEB or RPM packages. 
-Replace `<istio-revision>` with the Istio revision name you want to use.
+如果启用了 [Istio 隔离边界](../../isolation-boundaries)，您需要使用带有 Istio 修订版名称的包下载路径来下载 DEB 或 RPM 包。将 `<istio-revision>` 替换为您想要使用的 Istio 修订版名称。
 
-Revisioned link for DEB package. 
+DEB 包的修订版链接。
 ```
 https://<onboarding-endpoint-dns-name>/install/istio-sidecar/<istio-revision>/deb/amd64/istio-sidecar.deb
 ```
 
-Revisioned link for RPM package.  
+RPM 包的修订版链接。
 ```
 https://<onboarding-endpoint-dns-name>/install/istio-sidecar/<istio-revision>/rpm/amd64/istio-sidecar.rpm
 ```

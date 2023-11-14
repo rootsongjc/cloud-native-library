@@ -1,48 +1,32 @@
 ---
-title: Onboarding AWS ECS workloads
-description: How to onboard AWS Elastic Container Service (ECS) workloads
+title: 载入 AWS ECS 工作负载
+weight: 7
 ---
 
-This document describes the steps to onboard AWS Elastic Container Service
-(ECS) tasks to TSB using the Workload Onboarding feature.
+该文档描述了如何使用工作负载载入功能将 AWS Elastic Container Service (ECS) 任务载入到 TSB。
 
-Before you proceed, make sure that you have completed the steps described in
-[Setting Up Workload Onboarding document](./setup). You may skip the steps
-around configuring the local repository and installing packages if you do not
-plan to onboard VMs, as the process for ECS tasks is slightly different.
+在继续之前，请确保你已完成 [设置工作负载载入文档](./setup) 中描述的步骤。如果你不计划载入虚拟机，可以跳过配置本地仓库和安装软件包的步骤，因为 ECS 任务的流程略有不同。
 
-## Context
+## 背景
 
-Every workload that gets onboarded into the mesh by Workload Onboarding must
-have a verifiable identity. For AWS ECS tasks, the
-[task IAM role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html)
-is used to identify which task is trying to join the mesh.
+通过工作负载载入将工作负载引入 mesh 的每个工作负载都必须具有可验证的身份。对于 AWS ECS 任务，使用 [任务 IAM 角色](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html) 来标识尝试加入 mesh 的任务。
 
-The Onboarding Agent container runs as a sidecar next to the workload container
-in the AWS ECS task. On start up, Onboarding Agent interacts with the AWS ECS
-environment to procure a credential associated with the IAM role of the task
-and uses it to authenticate with the Workload Onboarding Plane.
+Onboarding Agent 容器作为 AWS ECS 任务中的边车与工作负载容器一起运行。在启动时，Onboarding Agent 与 AWS ECS 环境交互，获取与任务的 IAM 角色关联的凭据，并使用这些凭据与 Workload Onboarding Plane 进行身份验证。
 
-## Overview
+## 概述
 
-The setup for Workload Onboarding of AWS ECS workloads consists of the
-following extra steps compared with VM workloads:
+与虚拟机工作负载相比，AWS ECS 工作负载的工作负载载入设置包括以下额外步骤：
 
-1. Allow AWS ECS tasks to join WorkloadGroup
-2. Configure the AWS ECS task definition to have an IAM role and to run the
-   Workload Onboarding Agent as a sidecar
+1. 允许 AWS ECS 任务加入 WorkloadGroup
+2. 配置 AWS ECS 任务定义，包括 IAM 角色和运行 Workload Onboarding Agent 作为边车
 
-## Allow AWS ECS tasks to join WorkloadGroup
+## 允许 AWS ECS 任务加入 WorkloadGroup
 
-To allow on-premise workloads to join certain WorkloadGroups, create an
-[OnboardingPolicy](../../../refs/onboarding/config/authorization/v1alpha1/policy)
-with the `ecs` field set.
+要允许本地工作负载加入特定的 WorkloadGroup，请创建一个 [OnboardingPolicy](../../../refs/onboarding/config/authorization/v1alpha1/policy)，并设置 `ecs` 字段。
 
-### Examples
+### 示例
 
-The example below allows any workloads running as AWS ECS tasks
-associated with the given AWS account, and can join any of the
-available WorkloadGroups in the given Kubernetes namespace:
+以下示例允许与给定 AWS 帐户关联的任何以 AWS ECS 任务形式运行的工作负载，可以加入给定 Kubernetes 命名空间中的任何可用 WorkloadGroup：
 
 ```yaml
 apiVersion: authorization.onboarding.tetrate.io/v1alpha1
@@ -57,18 +41,14 @@ spec:
         accounts:
         - '123456789012'
         - '234567890123'
-        ecs: {}                 # any AWS ECS tasks from the above account(s)
+        ecs: {}                 # 以上述帐户的任何 AWS ECS 任务
     onboardTo:
-    - workloadGroupSelector: {} # any WorkloadGroup from that namespace
+    - workloadGroupSelector: {} # 该命名空间中的任何 WorkloadGroup
 ```
 
-While the previous example may have been a rather "permissive" policy, a more
-restrictive onboarding policy might only allow onboarding workloads running as
-AWS ECS tasks in a particular AWS region and/or zone, in a particular AWS
-ECS cluster, with a particular AWS IAM Role, etc. It might also only allow
-workloads to join a specific subset of WorkloadGroups.
+虽然前面的示例可能是一个相对“宽松”的策略，但更严格的载入策略可能只允许以特定 AWS 区域和/或区域、特定 AWS ECS 集群、特定 AWS IAM 角色等运行的 AWS ECS 任务。它还可能只允许工作负载加入特定的 WorkloadGroup 子集。
 
-The following shows an example of a more restrictive policy:
+以下是更为严格策略的示例：
 
 ```yaml
 apiVersion: authorization.onboarding.tetrate.io/v1alpha1
@@ -92,66 +72,49 @@ spec:
           clusters:
           - <ECS cluster name>
           iamRoleNames:
-          - <IAM role name>     # any AWS ECS task from the above partitions/accounts/regions/zones
-                                # in the specified cluster(s) that is associated with one of IAM
-                                # Roles on that list
+          - <IAM role name>     # 上述分区/帐户/区域/区域中特定 ECS 集群中与 IAM 角色列表中的一个关联的任何 AWS ECS 任务
     onboardTo:
     - workloadGroupSelector:
         matchLabels:
           app: ratings
 ```
 
-## Creating the Task Definition
+## 创建任务定义
 
-1. Configure a
-[task IAM role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html).
-This is the identity that the task will use for joining the mesh.
-2. Set the Network mode to `awsvpc`. Other network modes are not supported.
-3. Configure a
-[task execution IAM role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html).
-If the image registry is an Elastic Container Registry (ECR) this role should
-have permissions to pull images from it.
+1. 配置 [任务 IAM 角色](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html)。这是任务将用于加入 mesh 的身份。
+2. 将网络模式设置为 `awsvpc`。不支持其他网络模式。
+3. 配置 [任务执行 IAM 角色](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html)。如果镜像仓库是 Elastic Container Registry (ECR)，则此角色应具有从中拉取图像的权限。
 
-### Configuring the Workload Onboarding Agent sidecar
+### 配置 Workload Onboarding Agent Sidecar
 
-Add the Workload Onboarding Agent container to your Task Definition
-alongside your application container with the following steps.
+按照以下步骤将 Workload Onboarding Agent 容器添加到任务定义中，与应用程序容器一起。
 
-The container image will have been added to the container registry used when
-installing Tetrate Service Bridge into your Kubernetes cluster(s). To use a
-different container registry, sync the images to it by
-[following these instructions](../../requirements-and-download#sync-tetrate-service-bridge-images).
+该容器映像将添加到安装 Tetrate Service Bridge 到你的 Kubernetes 集群时使用的容器仓库中。要使用不同的容器仓库，请通过 [按照这些说明同步 Tetrate Service Bridge 镜像](../../../requirements-and-download#sync-tetrate-service-bridge-images)。
 
-1. Container name: `onboarding-agent`
-2. Image: `<your docker registry>/onboarding-agent:<tag>`
+1. 容器名称：`onboarding-agent`
+2. 映像：`<your docker registry>/onboarding-agent:<tag>`
 
-   This should match the image registry and tag used by the other TSB images in
-   your cluster, you can find the correct image by first extracting the image
-   using `kubectl`:
+   这应该与集群中其他 TSB 映像使用的映像仓库和标签匹配，你可以通过首先使用 `kubectl` 提取映像来找到正确的映像：
 
 ```bash
    kubectl get deploy -n istio-system onboarding-plane -o jsonpath="{.spec.template.spec.containers[0].image}"
-   ```
+```
 
-   This will return an image such as:
+   这将返回一个映像，例如：
    ```
    123456789012.dkr.ecr.us-east-1.amazonaws.com/registry/onboarding-plane-server:1.5.0
    ```
 
-   The corresponding Workload Onboarding Agent image will be:
+   相应的 Workload Onboarding Agent 映像将是：
    ```
    123456789012.dkr.ecr.us-east-1.amazonaws.com/registry/onboarding-agent:1.5.0
    ```
-3. The user must be set to the root user by using a UID of `0`.
-4. Provide the
-   [onboarding configuration](../../../refs/onboarding/config/agent/v1alpha1/onboarding_configuration).
+3. 用户必须设置为 root 用户，使用 UID 为 `0`。
+4. 提供 [载入配置](../../../../refs/onboarding/config/agent/v1alpha1/onboarding_configuration)。
 
-   Set an environment variable `ONBOARDING_CONFIG` with the following contents.
-   Replace `onboarding-endpoint-dns-name` with the Workload Onboarding Endpoint
-   to connect to, as well as `workload-group-namespace` and `workload-group-name`
-   with the namespace and name of the Istio
-   [WorkloadGroup](https://istio.io/latest/docs/reference/config/networking/workload-group/)
-   to join to.
+   使用以下内容设置一个名为 `ONBOARDING_CONFIG` 的环境变量。将其中的 `onboarding-endpoint-d
+
+ns-name` 替换为要连接的 Workload Onboarding Endpoint，`workload-group-namespace` 和 `workload-group-name` 替换为 Istio [WorkloadGroup](https://istio.io/latest/docs/reference/config/networking/workload-group/) 的命名空间和名称。
 
    ```yaml
    apiVersion: config.agent.onboarding.tetrate.io/v1alpha1
@@ -163,16 +126,9 @@ different container registry, sync the images to it by
      name: <workload-group-name>
    ```
 
-   The Workload Onboarding Endpoint is assumed to be available at
-   `https://<onboarding-endpoint-dns-name>:15443`, and that it uses a TLS
-   certificate issued for the appropriate DNS name. For more configuration
-   options, please refer to
-   [onboarding configuration](../../../refs/onboarding/config/agent/v1alpha1/onboarding_configuration)
-   documentation.
+   假定 Workload Onboarding Endpoint 可以在 `https://<onboarding-endpoint-dns-name>:15443` 上访问，并且使用为适当的 DNS 名称颁发的 TLS 证书。有关更多配置选项，请参考 [载入配置](../../../../refs/onboarding/config/agent/v1alpha1/onboarding_configuration) 文档。
 
-   It may be easier to specify the configuration as JSON instead of YAML so
-   that it does not need to include line breaks. In that case the above
-   configuration will take the form:
+   为了不包含换行符，可能更容易将配置指定为 JSON 而不是 YAML。在这种情况下，上述配置将采用以下形式：
 
    ```json
    {
@@ -187,34 +143,20 @@ different container registry, sync the images to it by
      }
    }
    ```
-5. If the certificate authority (CA) used to sign the Workload Onboarding
-   Endpoint TLS certificate is self-signed, i.e. is not issued by a public
-   root CA such as Let's Encrypt or Digicert, the public root certificate must
-   be provided.
+5. 如果用于签署 Workload Onboarding Endpoint TLS 证书的证书颁发机构 (CA) 是自签名的，即未由公共根 CA（如 Let's Encrypt 或 Digicert）颁发，则必须提供公共根证书。
 
-   Set an environment variable `ONBOARDING_AGENT_ROOT_CERTS` with the content
-   of the root certificate authority PEM file. This should be of the form:
+   使用根证书颁发机构 PEM 文件的内容设置一个名为 `ONBOARDING_AGENT_ROOT_CERTS` 的环境变量。这应该是以下形式：
 
    ```
    -----BEGIN CERTIFICATE-----
    MIIC...
    -----END CERTIFICATE-----
-      ```
+   ```
 
-   Note that this environment variable cannot be configured via the AWS
-   console as it replaces the newlines. Instead, it should be configured by the
-   AWS CLI tool or an infrastructure as code tool such as Terraform or
-   CloudFormation.
-6. Provide the
-   [agent configuration](../../../refs/onboarding/config/agent/v1alpha1/agent_configuration)
-   if required. This step is optional as the default values will work in most
-   cases.
+   请注意，此环境变量不能通过 AWS 控制台配置，因为它会替换换行符。相反，应使用 AWS CLI 工具或基础架构即代码工具（例如 Terraform 或 CloudFormation）进行配置。
+6. 如果需要，提供 [代理配置](../../../../refs/onboarding/config/agent/v1alpha1/agent_configuration)。在大多数情况下，默认值将起作用，此步骤是可选的。
 
-   This step is required if TSB is installed with
-   [Istio Isolation Boundaries](../../../setup/isolation-boundaries)
-   enabled, and the workload should connect to a non-default revision. As an
-   example, to configure a workload to connect to the `canary` revision, set
-   an environment variable `AGENT_CONFIG` with the following content:
+   如果使用 [Istio 隔离边界](../../../../setup/isolation-boundaries) 安装 TSB，并且工作负载应连接到非默认修订版本，则需要此步骤。例如，要配置工作负载连接到 `canary` 修订版，设置一个名为 `AGENT_CONFIG` 的环境变量，其内容如下：
 
    ```yaml
    apiVersion: config.agent.onboarding.tetrate.io/v1alpha1
@@ -224,9 +166,7 @@ different container registry, sync the images to it by
        revision: canary
    ```
 
-   It may be easier to specify the configuration as JSON instead of YAML so
-   that it does not need to include line breaks. In that case the above
-   configuration will take the form:
+   为了不包含换行符，可能更容易将配置指定为 JSON 而不是 YAML。在这种情况下，上述配置将采用以下形式：
 
    ```json
    {
@@ -239,13 +179,12 @@ different container registry, sync the images to it by
      }
    }
    ```
+### 示例任务定义
 
-### Example task definition
-
-An example command for creating a task definition is as follows:
+创建任务定义的示例命令如下：
 
 ```bash
-# Compact and escape quotes in the onboarding config for encoding in the JSON container definition
+# 在 JSON 容器定义中压缩并转义 onboarding 配置中的引号
 ONBOARDING_CONFIG=$(jq --compact-output . <<'EOF' | sed 's/"/\\"/g'
 {
   "apiVersion": "config.agent.onboarding.tetrate.io/v1alpha1",
@@ -266,7 +205,7 @@ ONBOARDING_CONFIG=$(jq --compact-output . <<'EOF' | sed 's/"/\\"/g'
 EOF
 )
 
-# Replace line breaks in the root cert PEM with \n for encoding in the JSON container definition
+# 在 JSON 容器定义中替换根证书 PEM 中的换行符，以进行编码
 ONBOARDING_AGENT_ROOT_CERTS=$(awk '{printf "%s\\n", $0}' root-ca-cert.pem)
 
 aws ecs register-task-definition \
@@ -316,17 +255,11 @@ aws ecs register-task-definition \
 ]'
 ```
 
-## Using an internal load balancer
+## 使用内部负载均衡器
 
-In the default configuration, the Workload Onboarding Plane in your EKS
-cluster uses an internet-facing load balancer. This means that traffic from
-the Onboarding Agent and Istio will not stay within your VPC.
+在默认配置中，你的 EKS 集群中的工作负载载入平面使用的是面向互联网的负载均衡器。这意味着来自载入代理和 Istio 的流量不会保留在你的 VPC 内。
 
-If all your onboarded workloads are within the same VPC or peered VPCs, it is
-recommended to use an internal load balancer by setting the
-[`service.beta.kubernetes.io/aws-load-balancer-scheme` annotation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.2/guide/service/annotations/#lb-scheme).
-This means that all traffic will stay internal to your VPC(s). You can do this
-by adding an overlay in the `ControlPlane` CR or Helm values of the form:
+如果所有已载入的工作负载都在同一个 VPC 或对等 VPC 中，建议通过设置 [`service.beta.kubernetes.io/aws-load-balancer-scheme` 注解](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.2/guide/service/annotations/#lb-scheme)来使用内部负载均衡器。这意味着所有流量都将保留在你的 VPC 内。你可以通过在 `ControlPlane` CR 或 Helm values 中添加以下形式的叠加来实现：
 
 ```yaml
 spec:
@@ -343,7 +276,7 @@ spec:
               service.beta.kubernetes.io/aws-load-balancer-scheme: "internal"
 ```
 
-If there are no other overlays, this can be applied using the following command:
+如果没有其他叠加，可以使用以下命令应用此更改：
 
 ```bash
 kubectl patch -n istio-system controlplane/controlplane --type json --patch '
@@ -360,10 +293,7 @@ kubectl patch -n istio-system controlplane/controlplane --type json --patch '
 '
 ```
 
-After making this change, you should see the Workload Onboarding Endpoint
-address update to be of the form
-`internal-abcxyz.us-east-1.elb.amazonaws.com`. You can query this address
-using the following command:
+进行此更改后，你应该看到工作负载载入终端地址更新为类似于 `internal-abcxyz.us-east-1.elb.amazonaws.com` 的形式。你可以使用以下命令查询此地址：
 
 ```bash
 kubectl get svc vmgateway \
@@ -371,7 +301,4 @@ kubectl get svc vmgateway \
   -ojsonpath="{.status.loadBalancer.ingress[0]['hostname', 'ip']}"
 ```
 
-Once the internal load balancer address has been assigned, ensure the
-`onboardingEndpoint` field in your
-[onboarding configuration](../../../refs/onboarding/config/agent/v1alpha1/onboarding_configuration)
-uses the new value.
+在分配了内部负载均衡器地址后，请确保你的[载入配置](../../../../refs/onboarding/config/agent/v1alpha1/onboarding-configuration)中的 `onboardingEndpoint` 字段使用新值。

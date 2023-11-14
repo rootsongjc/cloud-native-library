@@ -1,45 +1,36 @@
 ---
-title: Onboarding on-premise workloads
-description: How to onboard on-premise workloads
+title: 在本地载入工作负载
+description: 如何在本地载入工作负载。
+weight: 6
 ---
 
-This document describes the steps to onboard on-premise workloads to TSB using
-the Workload Onboarding feature.
+本文档描述了使用工作负载载入功能将本地工作负载载入 TSB 的步骤。
 
-Before you proceed, make sure that you have completed the steps described in
-[Setting Up Workload Onboarding document](./setup).
+在继续之前，请确保你已完成[设置工作负载载入文档](../setup)中描述的步骤。
 
-## Context
+## 背景
 
-Every workload that gets onboarded into the mesh by the Workload Onboarding
-must have a verifiable identity.
+通过工作负载载入加入网格的每个工作负载都必须具有可验证的身份。
 
-VMs in the cloud have a verifiable identity out-of-the-box. Such identity is
-provided by the respective cloud platform.
+云中的 VM 具有开箱即用的可验证身份。此类身份由各云平台提供。
 
-On-premise environments, however, are a black box. Whether or not your
-on-premise workloads have a verifiable identity depends solely on your own
-technology stack.
+然而，在本地环境中，是一个黑盒。你的本地工作负载是否具有可验证的身份完全取决于你自己的技术堆栈。
 
-Therefore, to be able to onboard on-premise workloads, you need to ensure
-they have a verifiable identity in the form of a
-[JWT Token](https://openid.net/specs/openid-connect-core-1_0.html#IDToken).
+因此，要能够载入本地工作负载，你需要确保它们具有[JWT 令牌](https://openid.net/specs/openid-connect-core-1_0.html#IDToken)形式的可验证身份。
 
-## Overview
+## 概述
 
-The setup for Workload Onboarding of on-premise workloads consists of the
-following extra steps:
+本地工作负载的工作负载载入设置包括以下额外步骤：
 
-1. Configure trusted JWT Issuers
-1. Allow on-premise workloads to join WorkloadGroup
-1. Configure Workload Onboarding Agent to use your custom Credential Plugin
-1. Onboard on-premise workload
+1. 配置受信任的 JWT 发行者
+1. 允许本地工作负载加入 WorkloadGroup
+1. 配置工作负载载入代理以使用你的自定义凭证插件
+1. 载入本地工作负载
 
-## Configure trusted JWT Issuers
+## 配置受信任的 JWT 发行者
 
-To configure a list of JWT Issuers that are trusted to assert identity of the
-on-premise workloads, edit TSB
-[`ControlPlane`](../../../refs/install/controlplane/v1alpha1/spec) CR or Helm values as follows:
+要配置一组受信任的 JWT 发行者，用于断言本地工作负载的身份，请按以下方式编辑 TSB
+[`ControlPlane`](../../../../refs/install/controlplane/v1alpha1/spec) CR 或 Helm values：
 
 ```yaml
 spec:
@@ -47,41 +38,38 @@ spec:
   meshExpansion:
     onboarding:
       ...
-      # extra configuration specific to on-premise workloads
+      # 专用于本地工作负载的额外配置
       workloads:
         authentication:
           jwt:
             issuers:
-            - issuer: <jwt-issuer-id>                        # (1) REQUIRED
-              shortName: <short-name>                        # (2) REQUIRED
-              jwksUri: <jwks-uri>                            # (3) OPTIONAL
+            - issuer: <jwt-issuer-id>                        # (1) 必填
+              shortName: <short-name>                        # (2) 必填
+              jwksUri: <jwks-uri>                            # (3) 可选
               jwks: |
                 # {
                 #   "keys": [
                 #     ...
                 #   ]
                 # }
-                <inlined-jwks-document>                      # (4) OPTIONAL
+                <inlined-jwks-document>                      # (4) 可选
               tokenFields:
                 attributes:
-                  jsonPath: <jwt-attributes-field-jsonpath>  # (5) OPTIONAL
+                  jsonPath: <jwt-attributes-field-jsonpath>  # (5) 可选
 ```
 
-where
+其中
 
-1. You must specify a JWT `Issuer ID` to trust to, e.g. `https://mycompany.corp`
-1. You must specify a short name to associate with that Issuer, e.g. `my-corp`
-1. You can specify a URI to fetch JWKS document with signing keys from, e.g.
+1. 必须指定要信任的 JWT `发行者ID`，例如 `https://mycompany.corp`
+1. 必须指定要与该发行者关联的简称，例如 `my-corp`
+1. 可以指定从中获取签名密钥的 JWKS 文档的 URI，例如
    `https://mycompany.corp/jwks.json`
-1. You can specify a JWKS document with signing keys in place
-1. You can specify which field inside of the JWT token holds a map of attributes
-   associated with the workload, e.g. `.custom_attrubutes`
+1. 可以指定一个 JWKS 文档，其中包含签名密钥
+1. 可以指定 JWT 令牌内部保存有关工作负载的属性映射的字段，例如 `.custom_attributes`
 
-## Allow on-premise workloads to join WorkloadGroup
+## 允许本地工作负载加入 WorkloadGroup
 
-To allow on-premise workloads to join certain WorkloadGroups, create an
-[OnboardingPolicy](../../../refs/onboarding/config/authorization/v1alpha1/policy)
-with the following configuration:
+要允许本地工作负载加入某些 WorkloadGroup，请创建以下配置的[OnboardingPolicy](../../../../refs/onboarding/config/authorization/v1alpha1/policy)：
 
 ```yaml
 apiVersion: authorization.onboarding.tetrate.io/v1alpha1
@@ -93,38 +81,32 @@ spec:
   allow:
   - workloads:
     - jwt:
-        issuer: <jwt-issuer-id>                          # (1) REQUIRED
+        issuer: <jwt-issuer-id>                          # (1) 必填
         subjects:
-        - <subject>                                      # (2) OPTIONAL
+        - <subject>                                      # (2) 可选
         attributes:
-        - name: <attribute-name>                         # (3) OPTIONAL
+        - name: <attribute-name>                         # (3) 可选
           values:
           - <attribute-value>
     onboardTo:
-    - workloadGroupSelector: {} # any WorkloadGroup from that namespace
+    - workloadGroupSelector: {} # 该命名空间中的任何 WorkloadGroup
 ```
 
-where
+其中
 
-1. You must specify a JWT `Issuer ID` this rule applies to, e.g.
+1. 必须指定此规则适用的 JWT `发行者ID`，例如
    `https://mycompany.corp`
-1. You can specify an explicit list of JWT subjects this rule applies to, e.g.
-   `us-east-datacenter1-vm007`
-1. You can specify what workload attributes a JWT must have for this rule to apply,
-   e.g. `region=us-east`
+1. 可以指定此规则适用于的 JWT 主体的显式列表，例如 `us-east-datacenter1-vm007`
+1. 可以指定 JWT 必须具有的工作负载属性，以使此规则适用，例如 `region=us-east`
 
-## Configure Workload Onboarding Agent to use your custom Credential Plugin
+## 配置工作负载载入代理以使用你的自定义凭证插件
 
-To be able to onboard on-premise workloads, you need to use a Credential Plugin
-that generates a [JWT Token](https://openid.net/specs/openid-connect-core-1_0.html#IDToken)
-credential for a given workload.
+为了能够载入本地工作负载，你需要使用一个生成给定工作负载的[JWT 令牌](https://openid.net/specs/openid-connect-core-1_0.html#IDToken)凭证的凭证插件。
 
-First, install your custom Credential Plugin on that VM, e.g. at
-`/usr/local/bin/onboarding-agent-<your-plugin-name>-plugin`.
+首先，在 VM 上安装你的自定义凭证插件，例如在`/usr/local/bin/onboarding-agent-<your-plugin-name>-plugin`。
 
-Then, [configure Workload Onboarding Agent](../../../refs/onboarding/config/agent/v1alpha1/agent_configuration)
-to use that plugin.
-For that, edit `/etc/onboarding-agent/onboarding.config.yaml` as follows:
+然后，[配置工作负载载入代理](../../../../refs/onboarding/config/agent/v1alpha1/agent_configuration)以使用该插件。
+为此，请按照以下方式编辑 `/etc/onboarding-agent/onboarding.config.yaml`：
 
 ```yaml
 apiVersion: config.agent.onboarding.tetrate.io/v1alpha1
@@ -133,25 +115,24 @@ host:
   custom:
     credential:
     - plugin:
-        name: <your-plugin-name>                                         # (1) REQUIRED
-        path: /usr/local/bin/onboarding-agent-<your-plugin-name>-plugin  # (2) OPTIONAL
+        name: <your-plugin-name>                                         # (1) 必填
+        path: /usr/local/bin/onboarding-agent-<your-plugin-name>-plugin  # (2) 可选
         args:
-        - <your-plugin-arg>                                              # (3) OPTIONAL
+        - <your-plugin-arg>                                              # (3) 可选
         env:
-        - name: <YOUR_PLUGIN_CONFIG>                                     # (4) OPTIONAL
+        - name: <YOUR_PLUGIN_CONFIG>                                     # (4) 可选
           value: "<your-plugin-config-value>"
 ```
 
-where
+其中
 
-1. You must specify a name of your Credential Plugin, e.g. `my-jwt-credential`
-1. You can specify a path to the plugin binary, e.g. `/usr/local/bin/onboarding-agent-my-jwt-credential-plugin`
-1. You can specify additional command-line arguments that Workload Onboarding Agent
-   must pass when executing your plugin binary, e.g. `--my-arg=my-value`
-1. You can specify additional environment variables that Workload Onboarding Agent
-   must set when executing your plugin binary, e.g. `MY_CONFIG="some value"`
+1. 必须指定你的凭证插件的名称，例如 `my-jwt-credential`
+1. 可以指定插件二进制文件的路径，例如 `/usr/local/bin/onboarding-agent-my-jwt-credential-plugin`
+1. 可以指定工作负载载入代理在执行插件二进制文件时必须传递的其他命令行参数，例如 `--
 
-## Onboard on-premise workload
+my-arg=my-value`
+1. 可以指定工作负载载入代理在执行插件二进制文件时必须设置的其他环境变量，例如 `MY_CONFIG="some value"`
 
-To onboard an on-premise workload, [follow the same steps](./onboarding)
-as in the case of a VM in the cloud.
+## 载入本地工作负载
+
+要载入本地工作负载，[按照与云中 VM 相同的步骤](../onboarding)进行操作。

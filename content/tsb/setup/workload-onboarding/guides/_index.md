@@ -1,32 +1,22 @@
 ---
-slug: .
-title: Workload Onboarding
-description: Automatate Onboarding Workloads Deployed Outside of Kubernetes
+title: 工作负载上线
+description: 自动化在 Kubernetes 之外部署的工作负载的上线。
+weight: 1
 ---
 
-Workload Onboarding is a TSB feature that automates onboarding 
-workloads deployed outside of Kubernetes into the service mesh.
+工作负载上线是 TSB 的一个功能，它自动化了在服务网格中将在 Kubernetes 之外部署的工作负载上线的过程。
 
-For example, you can use it to onboard workloads deployed on VMs (or
-perhaps VMs from auto-scaling groups) that are not part of your
-Kubernetes clusters.
+例如，您可以使用它来将部署在虚拟机上（或者可能是自动缩放组中的虚拟机）的工作负载上线，这些工作负载并不属于您的 Kubernetes 集群的一部分。
 
-:::note
-The Workload Onboarding feature is currently an alpha feature.
+{{<callout note 注意>}}
+工作负载上线功能目前是一个 alpha 版本。
 
-It is quite possible that it does not support all possible deployment
-scenarios. Most notably, it does not yet support the use of `Iptables` for
-traffic redirection. You should configure your Istio sidecar and your application
-as necessary.
+有可能它尚不支持所有可能的部署场景。尤其值得注意的是，它尚不支持使用 `Iptables` 进行流量重定向。您应该根据需要配置 Istio Sidecar 和您的应用程序。
 
-At the moment, this feature supports onboarding workloads from the following environments:
+目前，此功能支持从以下环境上线工作负载：
 
-* workloads deployed on `AWS EC2` instances
-* workloads deployed on `AWS Auto-Scaling Groups`
-* workloads deployed as `AWS ECS` tasks
-* workloads deployed on-premise
-:::
-
-import DocCardList from '@theme/DocCardList';
-
-<DocCardList />
+* 部署在 `AWS EC2` 实例上的工作负载
+* 部署在 `AWS Auto-Scaling Groups` 上的工作负载
+* 作为 `AWS ECS` 任务部署的工作负载
+* 部署在本地环境的工作负载
+{{</callout>}}

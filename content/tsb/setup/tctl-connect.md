@@ -1,23 +1,23 @@
 ---
-title: Connect to TSB with tctl
-description: Configuring `tctl` to connect to TSB
+title: 使用 tctl 连接到 TSB
+description: 配置 `tctl` 以连接到 TSB。
 weight: 7
 ---
 
-In this page you'll learn to connect to TSB with the `tctl` CLI and some basics of using the CLI. 
+在这个页面中，你将学习如何使用 `tctl` CLI 连接到 TSB 以及使用 CLI 的一些基础知识。
 
-Before you start: <br />
-✓ [Install the TSB management plane](../setup/self_managed/management-plane-installation) (self-managed Only) <br />
-✓ [Download](../setup/requirements-and-download#download) Tetrate Service Bridge CLI (`tctl`)<br />
-✓ Get your TSB's `organization` name - you can find this logging in to the TSB UI or configured at installation time in the TSB `ManagementPlane` CR<br />
+在开始之前：
+- [安装 TSB 管理平面](../../setup/self-managed/management-plane-installation) (仅自管理)
+- [下载](../../setup/requirements-and-download#download) Tetrate Service Bridge CLI (`tctl`)
+- 获取你的 TSB 的 `organization` 名称 - 你可以在 TSB UI 中找到，或在 TSB `ManagementPlane` CR 的安装时配置
 
-TSB provides a UI, but most examples in this site - and most scripting and automation - will use the `tctl` CLI. This document will cover how to get logged in so you can use the CLI, as well as steps to update your credentials.
+TSB 提供了一个用户界面，但本站点中的大多数示例 - 以及大多数脚本和自动化 - 将使用 `tctl` CLI。本文档将涵盖如何登录，以便你可以使用 CLI，并提供更新凭据的步骤。
 
-## Overview
+## 概述
 
-There are three ways to configure `tctl`: using `tctl login`, downloading the a credential bundle from the UI, or to manually configure it. Each method is described in detail in the rest of this document.
+有三种配置 `tctl` 的方法：使用 `tctl login`、从 UI 下载凭据包，或手动配置它。本文档的其余部分详细描述了每种方法。
 
-1. The preferred method is connecting to TSB with `tctl login`, using the `default` profile:
+1. 首选的方法是使用 `tctl login` 连接到 TSB，使用 `default` 配置文件：
 
 ```bash
 tctl config clusters set default --bridge-address $TSB_ADDRESS
@@ -27,65 +27,69 @@ Tenant:
 Username: admin
 Password: *****
 Login Successful!
-# We're ready to go:
+# 现在可以开始使用:
 tctl get tenants
 NAME          DISPLAY NAME    DESCRIPTION
 tetrate       Tetrate         Default tenant
 ```
 
-2. A second easy way to connect with `tctl` is to download the bundle from the TSB UI and `tctl config import` it:
+2. 使用 `tctl` 连接的第二种简单方法是从 TSB UI 下载 bundle 并使用 `tctl config import` 导入：
 
 ```bash
 tctl config profiles import ~/Downloads/tctl-<your username>.config.yaml
 tctl config profiles set-current <your username>-tsb
-# We're ready to go:
+# 现在可以开始使用:
 tctl get tenants
 NAME          DISPLAY NAME    DESCRIPTION
 tetrate       Tetrate         Default tenant
 ```
 
-3. And finally you can create your own `user`, `cluster`, and `profile` (with slightly different flags for LDAP vs OIDC) to log in:
+3. 最后，你可以创建自己的 `user`、`cluster` 和 `profile`（对于 LDAP 与 OIDC 使用稍有不同的标志）来登录：
 
 ```bash
 tctl config clusters set tsb-how-to-cluster --bridge-address $TSB_ADDRESS
-# For OIDC
+# 对于 OIDC
 tctl config users set tsb-how-to-user --org $TCTL_LOGIN_ORG --token $TSB_BEARER_TOKEN --refresh-token $TSB_REFRESH_TOKEN
-# Or for LDAP
+# 或者对于 LDAP
 # tctl config users set tsb-how-to-user --org $TCTL_LOGIN_ORG --username $TCTL_LOGIN_USERNAME --password $TCTL_LOGIN_PASSWORD
 tctl config profiles set tsb-how-to --cluster tsb-how-to-cluster --username tsb-how-to-user
 tctl config profiles set-current tsb-how-to
-# We're ready to go:
+# 现在可以开始使用:
 tctl get tenants
 NAME          DISPLAY NAME    DESCRIPTION
 tetrate       Tetrate         Default tenant
 ```
 
-If you logged in with a username and password, you should `tctl login` to exchange your password for a set of OIDC tokens. After this you can use `tctl` at will. For example to discover `tenants` in TSB, simply execute `tctl get tenants`.
+如果你使用用户名和密码登录，应该执行 `tctl login` 来交换密码以获取 OIDC 令牌。之后，你可以随时使用 `tctl`。例如，要在 TSB 中查找 `tenants`，只需执行 `tctl get tenants`。
 
-## Log in with `tctl login`
+## 使用 `tctl login` 登录
 
-The easiest way to get connected to TSB is to use the `tctl login` command, which will handle exchanging credentials for OIDC tokens for you, and ensure no plaintext passwords are persisted to disk.
+连接到 TSB 的最简单方法是使用 `tctl login` 命令，该命令将处理为你交换凭据以获取 OIDC 令牌，并确保不将明文密码持久保存到磁盘上。
 
-To do this, first we need to configure `tctl` with the address of our TSB instance. It's easiest to use the `default` profile for this - if you don't want to use the `default` profile, skip ahead to the [Configure `tctl` Manually section](#configure-tctl-manually).
+要实现这一点，首先我们需要配置 `tctl` 使用 TSB 实例的地址。使用 `default` 配置文件最容易 - 如果你不想使用 `default` 配置文件，请跳到 [手动配置 `tctl`](#手动配置-tctl) 部分。
 
-### Get TSB's Address
-If your kubeconfig is pointed at the management plane cluster, you can get the address from the Kubernetes service:
+### 获取 TSB 的地址
+
+如果你的 kubeconfig 指向管理平面集群，你可以从 Kubernetes 服务中获取地址：
 
 ```bash
 export TSB_ADDRESS=$(kubectl get svc -n tsb envoy --output jsonpath='{.status.loadBalancer.ingress[0].ip}'):8443
 ```
 
-Many organizations will expose TSB's UI (and therefore API) via DNS; you should use that instead of the raw IP address.
+许多组织将通过 DNS 公开 TSB 的 UI（因此也是 API）；你应该使用它而不是原始 IP 地址。
 
-### Configure the default profile
+### 配置 `default` 配置文件
 
-With TSB's address in hand, we'll configure `tctl` to connect to it:
+有了 TSB 的地址，我们将配置 `tctl` 连接到它：
+
 ```bash
 tctl config clusters set default --bridge-address $TSB_ADDRESS
 ```
 
-### Log in with OIDC
-To log in with OIDC, we can use the OIDC device code flow, which is built into `tctl`:
+### 使用 OIDC 登录
+
+要使用 OIDC 凭证登录 TSB，可以使用 OIDC 设备代码流，该流已集成到 `tctl` 中：
+
 ```bash
 tctl login --use-device-code
 ```
@@ -99,12 +103,14 @@ Open browser page https://www.google.com/device and enter the code
 Login Successful!
 ```
 
-:::note OIDC in the browser
-This will open up your browser for you to complete the OIDC login flow and generate tokens.
-:::
+{{<callout note 在浏览器中进行 OIDC>}}
+这将为你打开浏览器，以完成 OIDC 登录流程并生成令牌。
+{{</callout>}}
 
-### Log in with Username and Password 
-Log in, providing your username and password:
+### 使用用户名和密码登录
+
+登录时提供用户名和密码：
+
 ```bash
 tctl login
 ```
@@ -117,60 +123,64 @@ Password: *****
 Login Successful!
 ```
 
-## Download `tctl` Config from TSB
+## 从 TSB 下载 `tctl` 配置
 
-`tctl` works with a config file to connect to a TSB instance, similar to kubeconfig for connecting to a Kubernetes API server. The easiest way to get connected with `tctl` is to download that config file from the TSB UI, following the instructions in the webpage. To get to those credentials, log in to the TSB UI in your browser, then in the top right corner click on your user name and under select `Actions` > `Show token information` > `Download tctl Config`. This will download a file named `tctl-<your username>.config.yaml`. You can then import this into `tctl`, saving it permanently:
+`tctl` 使用一个配置文件与 TSB 实例连接，类似于使用 kubeconfig 连接到 Kubernetes API 服务器。通过从 TSB UI 下载该配置文件，你可以使用 `tctl` 轻松连接。要访问这些凭据，请在浏览器中登录到 TSB UI，然后在右上角单击你的用户名，选择 `操作` > `显示令牌信息` > `下载 tctl 配置`。这将下载一个名为 `tctl-<your username>.config.yaml` 的文件。然后，你可以将其导入到 `tctl` 中，以永久保存：
 
 ```bash
 tctl config profiles import /path/to/tctl-<your username>.config.yaml
 tctl config profiles set-current <your username>-tsb
 ```
 
-:::note
-`tctl` stores configuration in your file system's default configuration directory ([as determined by Golang](https://pkg.go.dev/os#UserConfigDir)). This would be `$HOME/.config/tetrate/tctl/tctl_config` on Linux, `$HOME/Library/Application\ Support/tetrate/tctl/tctl_config` on Darwin, or `%AppData%/tetrate/tctl/tctl_config` on Windows. This is where your password or tokens would persist. When you import a config file, `tctl` adds the credentials from that file to the existing credentials in its configuration directory. 
-:::
+{{<callout note 提示>}}
+`tctl` 将配置存储在你文件系统默认的配置目录中（由 Golang 确定）。在 Linux 上，这将是 `$HOME/.config/tetrate/tctl/tctl_config`，在 Darwin 上是 `$HOME/Library/Application\ Support/tetrate/tctl/tctl_config`，在 Windows 上是 `%AppData%/tetrate/tctl/tctl_config`。这是保存密码或令牌的位置。当导入配置文件时，`tctl` 将将该文件中的凭据添加到其配置目录中的现有凭据中。
+{{</callout>}}
 
-## Configure `tctl` Manually
+## 手动配置 `tctl`
 
-:::note TSB Organization Name
-In the examples below, it is assumed that you have saved your organization name saved in the environment variable `$TCTL_LOGIN_ORG`. If you just completed the demo installation, the demo organization name is `tetrate`. You can execute the following to save the value in the environment variable: `export TCTL_LOGIN_ORG=tetrate`.
-:::
+{{<callout note "TSB 组织名称">}}
+在下面的示例中，假定你已将组织名称保存在环境变量 `$TCTL_LOGIN_ORG` 中。如果你刚刚完成演示安装，演示组织名称是 `tetrate`。你可以执行以下操作将该值保存在环境变量中：`export TCTL_LOGIN_ORG=tetrate`。
+{{</callout>}}
 
-To log in with `tctl`, you must first configure a *cluster* (`tctl config clusters`), then a *user* (`tctl config users`), then combine the two into a *profile*, which you  will be able to use to persist your settings, just like a kubeconfig profile (`tctl config profiles set-current ...`). With that *profile*, you can use the `tctl login` command to configure the credentials and persist to disk any tokens we need to continue to connect to TSB.
+要使用 `tctl` 登录，首先必须配置 *cluster* (`tctl config clusters`)，然后是 *user* (`tctl config users`)，然后将两者结合到 *profile* 中，你将能够使用它来连接到 TSB 实例，就像使用 kubeconfig profile 一样 (`tctl config profiles set-current ...`)。有了这个 *profile*，你就可以使用 `tctl login` 命令配置凭据，并将这些凭据持久保存到磁盘上，以便将来连接到 TSB。
 
-### Pick a name for your profile
-`tctl` has a *default* profile just like `kubectl` which you can use for the commands below, or you can pick your own. For this how-to, create a profile named *`tsb-how-to`* (but any name works, including *default*).
+### 为你的 profile 选择一个名称
 
-### Configure the `tctl` Cluster
-Both the UI and TSB's APIs are exposed on the same address and port. To configure `tctl`, you will need that address to get started.
+`tctl` 有一个 *default* profile，就像 `kubectl` 一样，你可以在下面的命令中使用它，或者你可以选择自己的 profile 名称。在此演示中，创建一个名为 *`tsb-how-to`* 的 profile（但任何名称都可以，包括 *default*）。
 
-#### Get TSB's Address
-If your kubeconfig is pointed at the management plane cluster, you can get the address from the Kubernetes service:
+### 配置 `tctl` Cluster
+
+UI 和 TSB 的 API 都在相同的地址和端口上暴露。为了配置 `tctl`，你将需要该地址以开始。
+
+#### 获取 TSB 的地址
+
+如果你的 kubeconfig 指向管理平面集群，你可以从 Kubernetes 服务中获取地址：
 
 ```bash
 export TSB_ADDRESS=$(kubectl get svc -n tsb envoy --output jsonpath='{.status.loadBalancer.ingress[0].ip}'):8443
 ```
 
-Many organizations will expose TSB's UI (and therefore API) via DNS; you should use that instead of the raw IP address.
+许多组织将通过 DNS 公开 TSB 的 UI（因此也是 API）；你应该使用它而不是原始 IP 地址。
 
-#### Create a `tctl` Cluster
-Once you have obtained the address (`$TSB_ADDRESS`) you can create a *cluster* in `tctl`'s config. Name the cluster `tsb-how-to-cluster`:
+#### 创建 `tctl` Cluster
+
+一旦获得了地址（`$TSB_ADDRESS`），你可以在 `tctl` 的配置中创建一个 *cluster*。将集群命名为 `tsb-how-to-cluster`：
 
 ```bash
 tctl config clusters set tsb-how-to-cluster --bridge-address $TSB_ADDRESS
 ```
 
-:::note `tctl` Object Names
-You could use the same name for the cluster as for the profile itself (e.g. `tctl config clusters set tsb-how-to --bridge-address $TSB_ADDRESS`). This example uses a different name to make it easier to follow along.
-:::
+{{<callout note "tctl  对象名称">}}
+你可以使用与 profile 相同的名称作为 cluster 的名称（例如 `tctl config clusters set tsb-how-to --bridge-address $TSB_ADDRESS`）。此示例使用不同的名称，以便更容易跟踪。
+{{</callout>}}
 
-### Set `tctl`'s User
+### 设置 `tctl` User
 
-First you need to know the username you are logging in with. This will depend on exactly how TSB is installed: if you're using OIDC, this will be your corporate email; if you're using LDAP it'll be your usual LDAP login username; finally you can log in with TSB's default administrative account, if it's not disabled in your installation.
+首先，你需要知道要使用的用户名。这将取决于 TSB 的安装方式：如果使用 OIDC，则将是你的企业电子邮件；如果使用 LDAP，则将是你通常的 LDAP 登录用户名；最后，你可以使用 TSB 的默认管理帐户登录，如果在安装中未禁用它。
 
-#### Login for OIDC Users
+#### OIDC 用户登录
 
-To log in to TSB with OIDC credentials, log in to the TSB UI in your browser, then in the top right corner click on your user name and under select `Actions` > `Show token information`. From that page, copy down the Bearer Token and Refresh Token, exporting them as `TSB_BEARER_TOKEN` and `TSB_REFRESH_TOKEN`:
+要使用 OIDC 凭证登录 TSB，请在浏览器中登录到 TSB UI，然后在右上角单击你的用户名，选择 `操作` > `显示令牌信息`。从该页面中，复制下 Bearer Token 和 Refresh Token，并将其导出为 `TSB_BEARER_TOKEN` 和 `TSB_REFRESH_TOKEN`：
 
 ```bash
 export TSB_BEARER_TOKEN=HHVMW2.qhf9jBL1fMCazBe1umanDr5sNEuFcKtClAUxeWA...redacted
@@ -183,8 +193,9 @@ tctl config users set tsb-how-to-user \
   --refresh-token $TSB_REFRESH_TOKEN
 ```
 
-#### Login for LDAP (username + password) Users
-For LDAP logins, you need a username and password; you can configure these and environment variables, or pass them in via the CLI:
+#### LDAP（用户名 + 密码）用户登录
+
+对于 LDAP 登录，你需要用户名和密码；你可以通过环境变量配置这些变量，或通过 CLI 传递它们：
 
 ```bash
 export TCTL_LOGIN_USERNAME=demo-user@tetrate.io
@@ -197,17 +208,17 @@ tctl config users set tsb-how-to-user \
   --password $TCTL_LOGIN_PASSWORD
 ```
 
-:::warning Username + Password Logins Write Password to disk
-When you configure a user with a username and password, that password is written to disk. To ensure that credential is not saved to disk, you need to `tctl login` after setting up your cluster, user, and profile.
-:::
+{{<callout warning "用户名 + 密码登录写密码到磁盘">}}
+当你配置一个带有用户名和密码的用户时，该密码会写入磁盘。为确保凭据不保存到磁盘，你需要在设置完集群、用户和 profile 后执行 `tctl login`。
+{{</callout>}}
 
-#### Login for the Admin User
+#### 作为 Admin 用户登录
 
-You can log in as the default administrative user with the same username and password scheme as an LDAP account:
+你可以使用与 LDAP 帐户相同的用户名和密码方案登录默认的管理员用户：
 
 ```bash
-export TCTL_LOGIN_USERNAME=admin # this is hard-coded
-export TCTL_LOGIN_PASSWORD=<your password> # you created this during management plane install
+export TCTL_LOGIN_USERNAME=admin # 这是硬编码的
+export TCTL_LOGIN_PASSWORD=<your password> # 你在管理平面安装期间创建的
 ```
 ```bash
 tctl config users set tsb-how-to-user \
@@ -216,33 +227,87 @@ tctl config users set tsb-how-to-user \
   --password $TCTL_LOGIN_PASSWORD
 ```
 
-:::warning
-It is recommend that you disable the admin user in all deployments of TSB. The primary use case for the admin user is for a platform owner to log in and configure their IdP so the rest of the organization can log in with OIDC or LDAP.
+{{<callout warning 注意>}}
+当你为用户配置用户名和密码时，该密码将被写入磁盘。为了确保凭证没有保存到磁盘，你需要在设置集群、用户和配置文件之后执行 ctl 登录。
 
-Finally, because this is a username and password login, you need to `tctl login` to exchange the password for a token for future access and to ensure the password is not saved to disk.
-:::
+{{</callout>}}
 
-### Create your `tctl` Profile
+#### OIDC 用户登录
 
-A *profile* ties a *cluster* and a *user* together so that they can be used to connect to a TSB instance. Connect the *cluster* and *user* you just created together into a *profile*:
+要使用 OIDC 凭证登录 TSB，请在浏览器中登录 TSB UI，然后在右上角点击你的用户名，在下拉菜单中选择 `Actions` > `Show token information`。从该页面复制 Bearer Token 和 Refresh Token，并将它们导出为 `TSB_BEARER_TOKEN` 和 `TSB_REFRESH_TOKEN`：
+
+```bash
+export TSB_BEARER_TOKEN=HHVMW2.qhf9jBL1fMCazBe1umanDr5sNEuFcKtClAUxeWA...redacted
+export TSB_REFRESH_TOKEN=AJWXL6VmGUmvYfn43601RG.Bw+xr0IVQ43swidqAt1tHf...redacted
+```
+```bash
+tctl config users set tsb-how-to-user \
+  --org $TCTL_LOGIN_ORG \
+  --token $TSB_BEARER_TOKEN \
+  --refresh-token $TSB_REFRESH_TOKEN
+```
+
+#### LDAP（用户名 + 密码）用户登录
+
+对于 LDAP 登录，你需要一个用户名和密码；你可以在环境变量中配置这些信息，或通过 CLI 传递：
+
+```bash
+export TCTL_LOGIN_USERNAME=demo-user@tetrate.io
+export TCTL_LOGIN_PASSWORD=<your password>
+```
+```bash
+tctl config users set tsb-how-to-user \
+  --org $TCTL_LOGIN_ORG \
+  --username $TCTL_LOGIN_USERNAME \
+  --password $TCTL_LOGIN_PASSWORD
+```
+
+{{<callout warning "用户名 + 密码登录将密码写入磁盘">}}
+当配置用户名和密码的用户时，密码会被写入磁盘。为了确保凭据不会保存到磁盘，你需要在设置好集群、用户和配置文件后运行 `tctl login`。
+{{</callout>}}
+
+#### 管理员用户登录
+
+你可以使用与 LDAP 帐户相同的用户名和密码方案登录默认的管理员用户：
+
+```bash
+export TCTL_LOGIN_USERNAME=admin # 这是硬编码的
+export TCTL_LOGIN_PASSWORD=<your password> # 在管理平面安装期间创建的
+```
+```bash
+tctl config users set tsb-how-to-user \
+  --org $TCTL_LOGIN_ORG \
+  --username $TCTL_LOGIN_USERNAME \
+  --password $TCTL_LOGIN_PASSWORD
+```
+
+{{<callout warning 注意>}}
+建议在所有 TSB 部署中禁用管理员用户。管理员用户的主要用途是让平台所有者登录并配置其 IdP，以便组织中的其他人员可以使用 OIDC 或 LDAP 登录。
+
+最后，由于这是用户名和密码登录，你需要运行 `tctl login` 以交换密码以获取将来的访问令牌，并确保密码不会保存到磁盘。
+{{</callout>}}
+
+### 创建你的 `tctl` 配置文件
+
+*配置文件* 将 *集群* 和 *用户* 绑定在一起，以便它们可以用于连接到 TSB 实例。将刚刚创建的 *集群* 和 *用户* 连接在一起，形成一个 *配置文件*：
 
 ```bash
 tctl config profiles set tsb-how-to --cluster tsb-how-to-cluster --username tsb-how-to-user
 ```
 
-### Use the new Profile
+### 使用新配置文件
 
-Configure `tctl` to use the profile you just created to connect to TSB:
+配置 `tctl` 使用你刚刚创建的配置文件连接到 TSB：
 
 ```bash
 tctl config profiles set-current tsb-how-to
 ```
 
-At this point, you're good to go: `tctl` has TSB's location and your credentials - you can use it to interact with TSB!
+在这一点上，你已经准备好了：`tctl` 已经知道 TSB 的位置和你的凭证 - 你可以使用它与 TSB 交互！
 
-### Verify the Config
+### 验证配置
 
-As a sanity check, after finishing the following steps you can list your `tctl` profiles, and you should see something like:
+作为一个健全性检查，在完成以下步骤后，你可以列出你的 `tctl` 配置文件，你应该看到类似以下的内容：
 
 ```bash
 tctl config profiles list
@@ -253,27 +318,27 @@ CURRENT   NAME         CLUSTER             ACCOUNT
 *         tsb-how-to   tsb-how-to-cluster  tsb-how-to-user
 ```
 
-### Using `tctl` to find your Tenant
+### 使用 `tctl` 查找你的租户
 
-The final bit of setup you can do to make your life easier with `tctl` is to fill in your `tenant`, if you have not already done so.  Use `tctl` to ask TSB which tenants exist. For most users, there will be exactly one result returned - which is the tenant you want to be using. For users with multiple tenants, you'll need to talk with your platform team to determine which is the correct to use for you.
+你可以通过 `tctl` 询问 TSB 哪些租户存在，以使你在 `tenant` 中更轻松地设置。对于大多数用户，将返回一个结果 - 这是你想要使用的租户。对于具有多个租户的用户，你需要与你的平台团队交流，确定哪个对你来说是正确的。
 
 ```bash
 tctl get tenants
 ```
 ```bash
 NAME          DISPLAY NAME    DESCRIPTION
-tetrate       Tetrate         Default tenant
+tetrate       Tetrate         默认租户
 ```
 
-With your tenant in hand, you can save it to your user:
+有了你的租户，你可以将其保存到你的用户中：
 
 ```bash
 tctl config users set tsb-how-to-user --tenant <your tenant>
 ```
 
-### Log in with `tctl`
+### 使用 `tctl` 登录
 
-When you log in with username and password, both are persisted to disk. This is not desirable, as your password is stored in plaintext. To remove the password from `tctl`'s config file, you can use [`tctl login`](../reference/cli/reference/login), which will exchange your credentials for a set of OAuth tokens and write those to disk instead.
+当使用用户名和密码登录时，两者都会被保存到磁盘。这是不可取的，因为你的密码以明文形式存储。为了从 `tctl` 的配置文件中删除密码，你可以使用 [`tctl login`](../../reference/cli/reference/login)，它将交换你的凭据以获取一组 OAuth 令牌，并将这些令牌写入磁盘。
 
 ```bash
 tctl login

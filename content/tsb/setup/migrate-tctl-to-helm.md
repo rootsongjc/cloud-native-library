@@ -1,26 +1,25 @@
 ---
-title: Migration from tctl to Helm
+title: 从 tctl 迁移到 Helm
 weight: 14
 ---
 
-This document will cover how to migrate a live installation of TSB using tctl and migrate to helm. The document assumes that [Helm is already installed](https://helm.sh/docs/intro/install/ ) in the system.
+这份文档将覆盖如何迁移使用 tctl 的 TSB 的实时安装，并迁移到 Helm。文档假设 [Helm 已经安装](https://helm.sh/docs/intro/install/) 在系统中。
 
-Before you get started, make sure you:<br />
-✓ Familiarize yourself with [TSB concepts](../concepts/toc) <br />
-✓ Install the TSB environment. You can use [TSB demo](self_managed/demo-installation) for quick install<br />
-✓ Completed [TSB usage quickstart](../quickstart).<br />
+在开始之前，请确保你：
 
-## Preparation of the helm charts
+- 熟悉 [TSB 概念](../../concepts/)
+- 安装了 TSB 环境。你可以使用 [TSB 演示](../self-managed/demo-installation) 进行快速安装。
+- 完成了 [TSB 使用快速入门](../../quickstart)。
 
-Before hand you must be familiar with Helm. Follow the [prerequisites](helm/helm) in our guide with installing TSB with Helm.  
+## 准备 Helm Chart
 
+在进行之前，你必须熟悉 Helm。请按照我们的指南中的 [先决条件](../helm/helm) 安装 TSB 与 Helm。  
 
-## Migrate Management Plane
+## 迁移管理平面
 
-Migrating the current installation requires only labeling and annotating the resources of the plane installation. All other components will be upgraded and managed by the tsb-operator.
-Here is list of commands to annotate every resource that will be managed by Helm.
+迁移当前的安装只需要标记和注释平面安装的资源。所有其他组件将由 tsb-operator 升级和管理。以下是标记每个将由 Helm 管理的资源的命令列表。
 
-````
+```shell
 kubectl -n tsb label deployment tsb-operator-management-plane "app.kubernetes.io/managed-by=Helm"
 kubectl -n tsb annotate deployment tsb-operator-management-plane "meta.helm.sh/release-name=mp" "meta.helm.sh/release-namespace=tsb"
 
@@ -49,22 +48,20 @@ kubectl annotate clusterrolebinding tsb-operator-management-plane-tsb "meta.helm
 
 kubectl -n tsb label managementplane managementplane "app.kubernetes.io/managed-by=Helm"
 kubectl -n tsb annotate managementplane managementplane "meta.helm.sh/release-name=mp" "meta.helm.sh/release-namespace=tsb"
+```
 
-````
-
-:::note Attention
-release-name and release-namespace should match the release name and namespace used in the helm install command.
+:::注意
+release-name 和 release-namespace 应该与 Helm 安装命令中使用的发行名称和命名空间匹配。
 :::
 
-After all the resources are labeled correctly then proceed with the installation of the release:
+在所有资源都正确标记后，然后继续安装发布：
 
-````
-###Example
+```shell
+### 示例
 helm upgrade mp tetrate-tsb-helm/managementplane --install --namespace tsb -f upgrade-mpt1/helm/values-mp.yaml --set image.registry=${HUB} --set image.tag=${TSB_VERSION} --set spec.hub=${HUB} 
 
-###Output:
+### 输出：
 Release "mp" does not exist. Installing it now.
-
 
 NAME: mp
 LAST DEPLOYED: Thu May 25 11:03:18 2023
@@ -99,13 +96,13 @@ tctl config clusters set helm --bridge-address <IP>:8443
 tctl config users set helm --username admin --password "NotAPassword" --org "tetrate"
 tctl config profiles set helm --cluster helm --username helm
 tctl config profiles set-current helm 
-````
+```
 
-## Migrate Control Plane
+## 迁移控制平面
 
-The procedure is the same, only a few resources and secrets are changed
+该过程相同，只有一些资源和机密发生了变化。
 
-````
+```shell
 kubectl -n istio-system label deployment tsb-operator-control-plane "app.kubernetes.io/managed-by=Helm"
 kubectl -n istio-system annotate deployment tsb-operator-control-plane "meta.helm.sh/release-name=cp" "meta.helm.sh/release-namespace=istio-system"
 
@@ -113,13 +110,15 @@ kubectl -n istio-system annotate service tsb-operator-control-plane "meta.helm.s
 
 kubectl -n istio-system annotate sa tsb-operator-control-plane "meta.helm.sh/release-name=cp" "meta.helm.sh/release-namespace=istio-system"
 
-kubectl -n istio-system label secret elastic-credentials "app.kubernetes.io/managed-by=Helm"
+kubectl -n istio-system annotate secret elastic-credentials "app.kubernetes.io/managed-by=Helm"
 kubectl -n istio-system annotate secret elastic-credentials "meta.helm.sh/release-name=cp" "meta.helm.sh/release-namespace=istio-system"
 
 kubectl -n istio-system label secret cluster-service-account "app.kubernetes.io/managed-by=Helm"
 kubectl -n istio-system annotate secret cluster-service-account "meta.helm.sh/release-name=cp" "meta.helm.sh/release-namespace=istio-system"
 
-kubectl -n istio-system label secret mp-certs "app.kubernetes.io/managed-by=Helm"
+kubectl -n istio-system
+
+ label secret mp-certs "app.kubernetes.io/managed-by=Helm"
 kubectl -n istio-system annotate secret mp-certs "meta.helm.sh/release-name=cp" "meta.helm.sh/release-namespace=istio-system"
 
 kubectl -n istio-system label secret xcp-central-ca-bundle "app.kubernetes.io/managed-by=Helm"
@@ -131,16 +130,15 @@ kubectl annotate clusterrolebinding tsb-operator-control-plane-istio-system "met
 
 kubectl -n istio-system label controlplane  controlplane "app.kubernetes.io/managed-by=Helm"
 kubectl -n istio-system annotate controlplane controlplane "meta.helm.sh/release-name=cp" "meta.helm.sh/release-namespace=istio-system"
+```
 
-````
+验证并检查 release-name 和 release-namespace 是否指向发布安装中使用的值：
 
-Verify and check that release-name and release-namespace points to the one in the release installation:
-
-````
-###Example
+```shell
+### 示例
 helm upgrade cp tetrate-tsb-helm/controlplane --install --namespace istio-system -f upgrade-mpt1/helm/values-cp.yaml  --set image.registry=${HUB} --set image.tag=${TSB_VERSION} --set spec.hub=${HUB} --set spec.managementPlane.host=${TSB_HOST} --set-file secrets.clusterServiceAccount.JWK=/tmp/upgrade-mpt1.jwk
 
-###Output
+### 输出
 Release "cp" does not exist. Installing it now.
 NAME: cp
 LAST DEPLOYED: Thu May 25 11:21:18 2023
@@ -152,14 +150,13 @@ NOTES:
 Thank you for installing the TSB Control Plane 1.5.11.
 Chart: controlplane
 Version: 1.5.11
+```
 
-````
+## 迁移数据平面
 
-## Migrate Data Plane
+这是最后一个平面，需要注释的资源较少：
 
-This is the last plane, and have fewer resources to annotate:
-
-````
+```shell
 kubectl -n istio-gateway label deployment tsb-operator-data-plane "app.kubernetes.io/managed-by=Helm"
 kubectl -n istio-gateway annotate deployment tsb-operator-data-plane "meta.helm.sh/release-name=dp" "meta.helm.sh/release-namespace=istio-gateway"
 
@@ -170,18 +167,16 @@ kubectl -n istio-gateway annotate sa tsb-operator-data-plane "meta.helm.sh/relea
 kubectl annotate clusterrole tsb-operator-data-plane-istio-gateway "meta.helm.sh/release-name=dp" "meta.helm.sh/release-namespace=istio-gateway"
 
 kubectl annotate clusterrolebinding tsb-operator-data-plane-istio-gateway "meta.helm.sh/release-name=dp" "meta.helm.sh/release-namespace=istio-gateway"
+```
 
-````
+继续安装发布：
 
-Proceed to install the release:
-
-````
-###Example
+```shell
+### 示例
 helm upgrade dp tetrate-tsb-helm/dataplane --install --namespace istio-gateway --create-namespace --set image.registry=${HUB} --set image.tag=${TSB_VERSION}
 
-###Output
+### 输出
 Release "dp" does not exist. Installing it now.
-
 NAME: dp
 LAST DEPLOYED: Thu May 25 11:29:11 2023
 NAMESPACE: istio-gateway
@@ -192,5 +187,4 @@ NOTES:
 Thank you for installing the TSB Data Plane 1.5.11.
 Chart: dataplane
 Version: 1.5.11
-
-````
+```

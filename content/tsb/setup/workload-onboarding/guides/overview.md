@@ -1,51 +1,49 @@
 ---
-title: Overview
-description: Overview of Workload Onboarding
+title: 概览
+description: 工作负载上线概述。
+weight: 1
 ---
 
-When you deploy a workload on Kubernetes, the following happens transparently:
+当你在 Kubernetes 上部署工作负载时，以下操作会在背后自动进行：
 
-1. An Istio sidecar is deployed next to your workload.
-1. That sidecar is configured with the workload location and other required metadata.
+1. 一个 Istio Sidecar 会部署在你的工作负载旁边。
+2. 该 Sidecar 会配置工作负载的位置和其他所需元数据。
 
-However, when you deploy a workload outside of Kubernetes onto a standalone VM,
-you have to take care of that by yourself.
+然而，当你将工作负载部署在独立的虚拟机之外时，
+你必须自己处理这些事情。
 
-The Workload Onboarding feature solves this problem for you out of the box.
-Using this feature, all you need to do to onboard a workload deployed on a VM
-into the mesh is:
+工作负载上线功能为你解决了这个问题。
+使用此功能，你只需执行以下步骤，即可将部署在虚拟机上的工作负载引入到网格中：
 
-1. Installing an Istio sidecar on the target VM (via DEB/RPM package).
-1. Install a Workload Onboarding Agent on the target VM (also via DEB/RPM package).
-1. Provide a minimal, declarative configuration describing where to onboard the
-   workload, e.g.
+1. 在目标虚拟机上安装 Istio Sidecar（通过 DEB/RPM 软件包）。
+2. 在目标虚拟机上安装 Workload Onboarding Agent（同样通过 DEB/RPM 软件包）。
+3. 提供一个最小的、声明性的配置，描述在哪里引入工作负载，例如：
 
 ```yaml
 apiVersion: config.agent.onboarding.tetrate.io/v1alpha1
 kind: OnboardingConfiguration
-onboardingEndpoint:                            # connect to
+onboardingEndpoint:                            # 连接至
   host: onboarding-endpoint.your-company.corp
-workloadGroup:                                 # join to
+workloadGroup:                                 # 加入至
   namespace: bookinfo
   name: ratings
 ```
 
-## Components and Workflow
+## 组件和工作流程
 
-The Workload Onboarding consists of the following components:
+工作负载上线包括以下组件：
 
-| Component                    | Description | 
-|------------------------------|-------------|
-| Workload Onboarding Operator | the component that is installed into your Kubernetes cluster as part of the TSB Control Plane |
-| Workload Onboarding Agent    | the component you need to install next to your VM workload |
-| Workload Onboarding Endpoint | the component which the Workload Onboarding Agent will connect to register the workload in the mesh and obtain boot configuration for the Istio sidecar |
+| 组件                         | 描述                                                         |
+| ---------------------------- | ------------------------------------------------------------ |
+| Workload Onboarding Operator | 安装到您的 Kubernetes 集群中作为 TSB 控制平面的一部分        |
+| Workload Onboarding Agent    | 需要安装到您的虚拟机工作负载旁边的组件                       |
+| Workload Onboarding Endpoint | Workload Onboarding Agent 将连接注册工作负载并获取 Istio Sidecar 的引导配置的组件 |
 
-The following diagram has an overview of the full onboarding flow:
+以下图表概述了完整的上线流程：
 
-![](../../../assets/setup/workload_onboarding/workload-onboarding-overview.jpg)
+![](../../../../assets/setup/workload_onboarding/workload-onboarding-overview.jpg)
 
-The `Workload Onboarding Agent` executes the onboarding flow according to the declarative
-configuration provided by the user.
+`Workload Onboarding Agent` 根据用户提供的声明性配置执行上线流程。
 
 ```yaml
 apiVersion: config.agent.onboarding.tetrate.io/v1alpha1
@@ -57,20 +55,13 @@ workloadGroup:                                # (2)
   name: ratings
 ```
 
-Given the above configuration, the following takes place:
+根据上述配置，以下操作将发生：
 
-1. The Workload Onboarding Agent will connect to the Workload Onboarding Endpoint
-    at `https://onboarding-endpoint.your-company.corp:15443` **(1)**
-1. The Workload Onboarding Endpoint will authenticate the connecting Agent from the
-    cloud-specific credentials of the VM
-1. The Workload Onboarding Endpoint will decide whether a workload with
-   such an identity, i.e. the identity of the VM, is authorized to join the mesh in the
-   given `WorkloadGroup` (2) in particular
-1. The Workload Onboarding Endpoint will register a new WorkloadEntry at the Istio
-   Control Plane to represent the workload
-1. The Workload Onboarding Endpoint will generate the boot configuration required to start
-   Istio Proxy according to the respective `WorkloadGroup` resource **(2)**
-1. The Workload Onboarding Agent will save the returned boot configuration to disk and
-   start the Istio sidecar
-1. The Istio sidecar will connect to the Istio Control Plane and receive its
-   runtime configuration
+1. Workload Onboarding Agent 将连接到 Workload Onboarding Endpoint
+   在 `https://onboarding-endpoint.your-company.corp:15443` **(1)**
+2. Workload Onboarding Endpoint 将使用 VM 的云特定凭据对连接的 Agent 进行身份验证
+3. Workload Onboarding Endpoint 将决定是否允许具有此标识（即 VM 的标识）的工作负载加入特定的 `WorkloadGroup`（2）
+4. Workload Onboarding Endpoint 将在 Istio 控制平面上注册一个新的 WorkloadEntry 以表示工作负载
+5. Workload Onboarding Endpoint 将生成启动 Istio Proxy 所需的引导配置，根据相应的 `WorkloadGroup` 资源 **(2)**
+6. Workload Onboarding Agent 将保存返回的引导配置到磁盘，并启动 Istio Sidecar
+7. Istio Sidecar 将连接到 Istio 控制平面并接收其运行时配置

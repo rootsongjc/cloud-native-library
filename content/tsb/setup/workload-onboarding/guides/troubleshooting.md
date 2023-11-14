@@ -1,23 +1,23 @@
 ---
-title: Troubleshooting Guide
-description: How to debug common problems related to Workload Onboarding
+title: 故障排除指南
+weight: 5
 ---
 
-## Workload fails to join the mesh
+## 工作负载无法加入 mesh
 
-If a new workload does not appear on the list of onboarded workloads, follow these steps.
+如果新的工作负载未出现在已登记的工作负载列表中，请按照以下步骤操作。
 
-### Check status of the `Workload Onboarding Agent`
+### 检查 `Workload Onboarding Agent` 的状态
 
-#### Virtual Machine (VM) workloads
+#### 虚拟机 (VM) 工作负载
 
-On the host of the workload, e.g. on the VM, run:
+在工作负载的主机上，例如在 VM 上运行：
 
 ```bash
 systemctl status onboarding-agent
 ```
 
-You should get output similar to:
+你应该会得到类似于以下的输出：
 
 ```bash
 ● onboarding-agent.service - Workload Onboarding Agent
@@ -29,78 +29,67 @@ You should get output similar to:
            ├─3520 onboarding-agent --agent-config /etc/onboarding-agent/agent.config.yaml --onboarding-config /etc/onboarding-agent/onboarding.config.yaml
 ```
 
-If status of the `onboarding-agent.service` unit is not `Active` (1),
-double-check whether you followed onboarding instructions closely.
+如果 `onboarding-agent.service` 单元的状态不是 `Active`（1），请再次检查是否按照工作负载登记说明进行操作。
 
-E.g., go back to:
-* [Onboarding workload from a VM](./onboarding#onboarding-a-vm)
-* [Onboarding workload from an auto-scaling group of VMs](./onboarding#onboarding-workloads-from-auto-scaling-group-of-vms)
+例如，返回到：
+* [从 VM 登记工作负载](../onboarding)
+* [从 VM 自动扩展组登记工作负载](../onboarding)
 
-#### AWS ECS workloads
+#### AWS ECS 工作负载
 
-Check that the task(s) have been created and that both the `onboarding-agent`
-container and application container are healthy. For example describe the ECS
-service and check for any errors by running:
+检查任务是否已创建，并且 `onboarding-agent` 容器和应用程序容器都处于健康状态。例如，通过运行以下命令描述 ECS 服务并检查是否有任何错误：
 
 ```bash
 aws ecs describe-services --cluster <ECS cluster name> --services <ECS service name>
 ```
 
-If there are any problems, double-check that you followed the
-[onboard AWS ECS workloads](ecs-workloads) instructions closely.
+如果存在任何问题，请仔细检查是否按照 [登记 AWS ECS 工作负载](../ecs-workloads) 说明进行操作。
 
-For further ECS troubleshooting, see also the
-[AWS troubleshooting guide](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/troubleshooting.html).
+有关进一步的 ECS 故障排除，请参阅 [AWS 故障排除指南](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/troubleshooting.html)。
 
-### Check logs of the `Workload Onboarding Agent`
+### 检查 `Workload Onboarding Agent` 的日志
 
-#### Virtual Machine (VM) workloads
+#### 虚拟机 (VM) 工作负载
 
-On the host of the workload, e.g. on the VM, run:
+在工作负载的主机上，例如在 VM 上运行：
 
 ```bash
 journalctl -u onboarding-agent -o cat
 ```
 
-#### AWS ECS workloads
+#### AWS ECS 工作负载
 
-Logs can be viewed in both the AWS Console and via the `ecs-cli` command line
-tool if you have enabled the
-[`awslogs` log driver](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html).
+如果启用了 [`awslogs` 日志驱动程序](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html)，则可以在 AWS Console 和 `ecs-cli` 命令行工具中查看日志。
 
-To access the logs in the AWS Console navigate to the ECS task, open the Logs
-tab and select the `onboarding-agent` container.
+要在 AWS Console 中访问日志，导航到 ECS 任务，打开 Logs 选项卡，并选择 `onboarding-agent` 容器。
 
-To access the logs using the `ecs-cli` tool that can be
-[downloaded and installed here](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html),
-run the following commands:
+要使用可在[此处下载和安装](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html)的 `ecs-cli` 工具访问日志，请运行以下命令：
 
 ```bash
 ecs-cli logs --cluster <ECS cluster name> --task-id <ECS task ID> --container-name onboarding-agent --follow
 ```
 
-#### No connectivity to the `Workload Onboarding Endpoint`
+#### 无法连接到 `Workload Onboarding Endpoint`
 
-If you see repeatedly lines similar to:
+如果你看到类似于以下行的重复行：
 
 ```text
 info    agent   obtaining discovery information from the Workload Onboarding Plane ...
 error   agent   RPC failed: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp: lookup <onboarding-endpoint-dns-name> on 172.31.0.2:53: no such host"
 ```
 
-then your workload has no connectivity to the `Workload Onboarding Endpoint`.
+那么你的工作负载无法连接到 `Workload Onboarding Endpoint`。
 
-Make sure
-* [`OnboardingConfiguration`](../../../refs/onboarding/config/agent/v1alpha1/onboarding_configuration) (file `/etc/onboarding-agent/onboarding.config.yaml`)
-  contains correct DNS name of the `Workload Onboarding Endpoint`
-* DNS name is resolvable
+确保：
+* [`OnboardingConfiguration`](../../../../refs/onboarding/config/agent/v1alpha1/onboarding_configuration)（文件 `/etc/onboarding-agent/onboarding.config.yaml`）包含正确的 `Workload Onboarding Endpoint` 的 DNS 名称
+* DNS 名称可解析
 
-You might need to go back to:
-* [Enable Workload Onboarding](./setup#enable-workload-onboarding)
+你可能需要返回到：
+* [启用 Workload 登记](../setup)
 
-#### Workload is not authorized to join the mesh
+#### 工作负载未被授权加入 mesh
 
-If you see repeatedly lines similar to:
+如果你看到类似于以下行的重复行：
 
 ```text
 info    agent   using platform-specific credential procured by "aws-ec2-credential" plugin to request authorization for onboarding ...
@@ -109,11 +98,11 @@ error   agent   failed to obtain authorization for onboarding using platform-spe
 error   agent   failed to obtain authorization to onboard using platform-specific credential procured by any of the plugins
 ```
 
-(notice `failed to obtain authorization for onboarding ... Not authorized by OnboardingPolicy`)
+（请注意 `failed to obtain authorization for onboarding ... Not authorized by OnboardingPolicy`）
 
-then your workload is not authorized to join the mesh.
+那么你的工作负载未被授权加入 mesh。
 
-Double-check whether you've created the correct [`OnboardingPolicy`](../../../refs/onboarding/config/authorization/v1alpha1/policy) resource.
+请仔细检查是否已创建正确的 [`OnboardingPolicy`](../../../../refs/onboarding/config/authorization/v1alpha1/policy) 资源。
 
-You might need to go back to:
-* [Allow workloads to join WorkloadGroup](./setup#allow-workloads-to-join-workloadgroup)
+你可能需要返回到：
+* [允许工作负载加入 WorkloadGroup](../setup)
