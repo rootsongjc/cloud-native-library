@@ -1,0 +1,1640 @@
+<!DOCTYPE html><html lang="zh" >
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  
+  
+  
+    <meta name="generator" content="Wowchemy 5.5.0 for Hugo" />
+  
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+
+  
+  
+  
+    
+      
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    
+  
+
+  
+    <meta name="google-site-verification" content="google69a5cccb61297807" />
+    <meta name="baidu-site-verification" content="cqmZHEleVh" />
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="宋净超" />
+
+  
+  
+  
+    
+  
+  <meta name="description" content="本文讨论了在 Kubernetes Pod 中排序容器的需求，介绍了开源工具 Kubexit 实现容器的有序启动和终止，提高工作流灵活性。" />
+
+  
+  <link rel="alternate" hreflang="zh" href="https://lib.jimmysong.io/blog/ordering-containers-within-pod/" />
+
+  
+  
+  
+    <meta name="theme-color" content="#0a55a7" />
+  
+
+  
+  
+
+  
+
+  <link rel="stylesheet" href="/css/vendor-bundle.min.c7b8d9abd591ba2253ea42747e3ac3f5.css" media="print" onload="this.media='all'">
+
+  
+  
+  
+    
+    
+
+    
+    
+    
+    
+      
+      
+    
+    
+    
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/github.min.css" crossorigin="anonymous" title="hl-light" media="print" onload="this.media='all'">
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" media="print" onload="this.media='all'" disabled>
+        
+      
+    
+
+    
+    
+    
+
+    
+
+    
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+      
+      
+
+      
+      
+
+      
+    
+  
+
+  
+  
+  
+  
+  
+  <link rel="stylesheet" href="/css/wowchemy.b26eb9b802629dccab300faa82cc98c7.css" />
+
+  
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MP490FS739"></script>
+
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', "G-MP490FS739");
+</script>
+
+
+  
+
+
+  
+
+
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2a4b7f65b1839466beaa48d633aa60c1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+  
+  
+  
+
+  
+
+  
+    <link rel="manifest" href="/manifest.webmanifest" />
+  
+
+  <link rel="icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_32x32_fill_lanczos_center_3.png" />
+  <link rel="apple-touch-icon" type="image/png" href="/media/icon_hu0f7d075e895d6f5f1f5fdbc1e33dc138_10087_180x180_fill_lanczos_center_3.png" />
+
+  <link rel="canonical" href="https://lib.jimmysong.io/blog/ordering-containers-within-pod/" />
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary_large_image" />
+  
+    <meta property="twitter:site" content="@jimmysongio" />
+    <meta property="twitter:creator" content="@jimmysongio" />
+  
+  <meta property="og:site_name" content="云原生资料库" />
+  <meta property="og:url" content="https://lib.jimmysong.io/blog/ordering-containers-within-pod/" />
+  <meta property="og:title" content="解密 Kubernetes Pod 中容器的有序部署：Kubexit 工具的妙用 | 云原生资料库" />
+  <meta property="og:description" content="本文讨论了在 Kubernetes Pod 中排序容器的需求，介绍了开源工具 Kubexit 实现容器的有序启动和终止，提高工作流灵活性。" /><meta property="og:image" content="https://lib.jimmysong.io/media/sharing.png" />
+    <meta property="twitter:image" content="https://lib.jimmysong.io/media/sharing.png" /><meta property="og:locale" content="zh" />
+  
+    
+      <meta
+        property="article:published_time"
+        content="2023-11-13T17:00:00&#43;08:00"
+      />
+    
+    <meta property="article:modified_time" content="2023-11-14T15:41:10&#43;08:00">
+  
+
+  
+
+
+    
+
+
+
+
+
+
+  
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://lib.jimmysong.io/blog/ordering-containers-within-pod/"
+  },
+  "headline": "解密 Kubernetes Pod 中容器的有序部署：Kubexit 工具的妙用",
+  
+  "datePublished": "2023-11-13T17:00:00+08:00",
+  "dateModified": "2023-11-14T15:41:10+08:00",
+  
+  "author": {
+    "@type": "Person",
+    "name": "Aditya Barik"
+  },
+  
+  "publisher": {
+    "@type": "Organization",
+    "name": "云原生社区",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://lib.jimmysong.io/media/logo.svg"
+    }
+  },
+  "description": "本文讨论了在 Kubernetes Pod 中排序容器的需求，介绍了开源工具 Kubexit 实现容器的有序启动和终止，提高工作流灵活性。"
+}
+</script>
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  <title>解密 Kubernetes Pod 中容器的有序部署：Kubexit 工具的妙用 | 云原生资料库</title>
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="e164e4e95607567eaee41946d6ba6d4a" >
+  <button onclick="topFunction()" id="backTopBtn" title="Go to top"><i class="fa-solid fa-circle-up" aria-hidden="true"></i></button>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script src="/js/wowchemy-init.min.62d6f8dfe8493f1c68557dde65bec362.js"></script>
+
+  
+
+
+<aside class="search-modal" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6 search-title">
+          <p>搜索</p>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#" aria-label="关闭"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="搜索..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control"
+        aria-label="搜索...">
+        
+      </div>
+
+      
+      
+
+      
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+      <div id="search-common-queries">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+
+  <div class="page-header">
+    
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<header class="header--fixed">
+  <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+    <div class="container-xl">
+
+      
+      <div class="d-none d-lg-inline-flex">
+        <a class="navbar-brand" href="/"><img src="/media/logo.svg" alt="云原生资料库"
+            
+            ></a>
+      </div>
+      
+
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar-content" aria-controls="navbar-content" aria-expanded="false" aria-label="切换导航">
+      <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+      
+      <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+        <a class="navbar-brand" href="/"><img src="/media/logo.svg" alt="云原生资料库"
+          
+          ></a>
+      </div>
+      
+
+      
+      
+      <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+        
+        <ul class="navbar-nav d-md-inline-flex">
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#books"><span>图书</span></a>
+          </li>
+
+          
+          
+
+          
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"><span>教程</span><span class="caret"></span>
+            </a>
+            <div class="dropdown-menu">
+              
+                <a class="dropdown-item" href="/kubernetes-handbook"><span>Kubernetes 基础教程</span></a>
+              
+                <a class="dropdown-item" href="https://academy.tetrate.io/courses/istio-fundamentals-zh"><span>Istio 基础教程</span></a>
+              
+                <a class="dropdown-item" href="https://academy.tetrate.io/courses/envoy-fundamentals-zh"><span>Envoy 基础教程</span></a>
+              
+            </div>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io/blog/" target="_blank" rel="noopener"><span>原创</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link  active" href="/blog"><span>译文</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#feed"><span>更新</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#tags"><span>标签</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+              
+              
+              
+                
+              
+              
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="/#about"><span>关于</span></a>
+          </li>
+
+          
+          
+
+          
+
+          
+          
+          
+            
+              
+            
+          
+
+          
+
+          
+          
+          
+          
+
+          
+            
+              
+              
+            
+            
+          
+
+          <li class="nav-item">
+            <a class="nav-link " href="https://jimmysong.io" target="_blank" rel="noopener"><span>Jimmy Song</span></a>
+          </li>
+
+          
+          
+
+        
+
+          
+        </ul>
+      </div>
+
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        
+        
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://jimmysong.io/contact/" data-toggle="tooltip" data-placement="bottom" title="联系" target="_blank" rel="noopener" aria-label="联系">
+                <i class="fab fa-weixin" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+            
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="https://twitter.com/jimmysongio" data-toggle="tooltip" data-placement="bottom" title="关注" target="_blank" rel="noopener" aria-label="关注">
+                <i class="fab fa-twitter" aria-hidden="true"></i>
+              </a>
+            </li>
+          
+        
+
+        
+        <li class="nav-item">
+            <a class="nav-link" href="https://jimmysong.io" target="_blank" rel="noopener" data-toggle="tooltip" data-placement="bottom" title="主站" aria-label="主站"><i class="fas fa-home" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item">
+            <a class="nav-link js-search" href="#" data-toggle="tooltip" data-placement="bottom" title="搜索" aria-label="搜索"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        <li class="nav-item d-none d-lg-inline-flex">
+            <a class="nav-link" href="https://github.com/rootsongjc/cloud-native-library/" target="_blank" rel="noopener" data-toggle="tooltip" data-placement="bottom" title="查看源码" aria-label="查看源码" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+        
+        
+        <li class="nav-item">
+          <a href="#" class="nav-link set-theme">
+            <i class="fa fa-sun" aria-hidden="true" id="theme-icon"></i>
+          </a>
+        </li>
+        
+
+        
+        
+
+      </ul>
+
+    </div>
+  </nav>
+</header>
+
+
+  </div>
+
+  <div class="page-body">
+    
+    
+    
+
+    <div class="container-xl">
+    <div class="post-container">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  
+  
+<div class="article-container pt-3">
+  <h1>解密 Kubernetes Pod 中容器的有序部署：Kubexit 工具的妙用</h1>
+
+  
+
+  
+    
+
+
+<div class="article-metadata">
+
+  <div>
+  
+  
+  
+  
+    <i class="fa-solid fa-feather"></i>
+    
+
+  <span >
+      <a href="/author/aditya-barik/">Aditya Barik</a></span>
+    
+    <span class="middot-divider"></span>
+    
+  
+  
+  
+  
+  
+  
+  <span class="article-categories">
+    <i class="fas fa-folder mr-1"></i><a href="/category/kubernetes/" class="text-capitalize">Kubernetes</a></span>
+  
+  </div>
+
+  
+  <span class="article-date">
+    
+    
+      
+          
+          发布于
+      
+    
+    2023-11-13
+  </span>
+  
+
+  
+
+  
+  <span class="middot-divider"></span>
+  字数 1490
+  <span class="middot-divider"></span>
+  <span class="article-reading-time">
+      阅读时长 7 分钟
+  </span>
+  
+
+  
+  
+  
+  
+
+</div>
+
+    
+
+
+
+
+<div class="btn-links mb-2">
+  
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  <a class="btn btn-outline-primary btn-page-header" href="https://medium.com/@aditya.barik32/ordering-of-container-within-pod-a423d2e5ba52" target="_blank" rel="noopener">
+    <i class="fa fa-globe mr-1"></i>原文</a>
+
+
+</div>
+
+
+  
+</div>
+
+
+    </div>
+    <div class="border-bottom mb-2"></div>
+    <div class="row flex-xl-nowrap">
+        <div class="col-3 d-none d-xl-block docs-toc">
+            <!-- toc -->
+            
+<div class="">
+    <ul class="nav toc-top">
+        <li>
+            <a href="#" id="back_to_top" class="docs-toc-title">目录</a>
+        </li>
+    </ul>
+  <nav id="TableOfContents">
+  <ul>
+    <li><a href="#为什么要在-pod-中对容器进行排序">为什么要在 Pod 中对容器进行排序？</a></li>
+    <li><a href="#什么是-kubexit">什么是 Kubexit？</a></li>
+    <li><a href="#如何将-kubexit-与-deployment-集成">如何将 Kubexit 与 Deployment 集成？</a></li>
+    <li><a href="#kubexit-的工作原理">Kubexit 的工作原理</a></li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+</div>
+
+            <!-- /toc -->
+            
+            <div class="subscribe-module col-12 mt-1">
+    <img src="/img/wechat.webp" alt="image" title="Jimmy Song的微信公众号"/>
+    <p class="text-center pt-1">扫码联系站长</p>
+    
+    
+     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4029167986768912"
+     crossorigin="anonymous"></script>
+     <ins class="adsbygoogle"
+       style="display:block"
+       data-ad-client="ca-pub-4029167986768912"
+       data-ad-slot="6856371908"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
+    <script>
+       (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+    
+    
+</div>
+
+            
+        </div>
+        <main class="article-body col-9 container docs-content" role="main">
+            <article class="article">
+                <div class="article-style">
+                    
+                    <details class="toc-inpage d-print-none d-show-block mb-0">
+  <summary class="font-weight-bold">点击查看目录</summary>
+  <nav id="TableOfContents">
+  <ul>
+    <li><a href="#为什么要在-pod-中对容器进行排序">为什么要在 Pod 中对容器进行排序？</a></li>
+    <li><a href="#什么是-kubexit">什么是 Kubexit？</a></li>
+    <li><a href="#如何将-kubexit-与-deployment-集成">如何将 Kubexit 与 Deployment 集成？</a></li>
+    <li><a href="#kubexit-的工作原理">Kubexit 的工作原理</a></li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+</details>
+
+                    
+                    <p>本文译自：<a href="https://medium.com/@aditya.barik32/ordering-of-container-within-pod-a423d2e5ba52" target="_blank" rel="noopener">https://medium.com/@aditya.barik32/ordering-of-container-within-pod-a423d2e5ba52</a></p>
+<p>摘要：讨论了在 Kubernetes Pod 中排序容器的需求，介绍了开源工具 Kubexit 实现容器的有序启动和终止，提高工作流灵活性。</p>
+<hr>
+<h2 id="为什么要在-pod-中对容器进行排序">为什么要在 Pod 中对容器进行排序？</h2>
+<p>在某些情况下，Pod 的排序可能是一个使用案例，我们需要确保某些容器在启动应用程序代码之前已经正常运行。假设我们有一个 Java 应用程序，需要一个数据库（Mysql）、缓存（Aerospike/Redis）和 Kafka 来提供流量。与此同时，我们还需要这些依赖关系是特定于实例或与应用程序堆栈本地关联的。在这种情况下，在 v1.28 版本之前，Kubernetes 没有提供一个开箱即用的解决方案。对于版本小于 1.28 的集群，没有正式的解决方法。为了缓解这个问题，我们有另一种不太知名的开源解决方法，叫做 Kubexit。</p>
+<h2 id="什么是-kubexit">什么是 Kubexit？</h2>
+<p>Kubexit 是一个开源项目，旨在提供一种协调的方式来启动和终止 Pod 内的容器。</p>
+<p>无法在这里使用<em>InitContainer</em>，因为在 initContainers 中声明的容器需要在通常容器（在<em>Container</em>部分声明的容器）开始之前完成（容器状态应为完成）。例如，如果在<em>initContainer</em>部分声明一个 MySQL 容器，那么 Pod 将卡在 Pod 初始化状态，因为在<em>Container</em>部分声明的其他容器将永远等待 initContainers 完成。</p>
+<p>Kubexit 是一个二进制文件，我们需要在<em>deployment.yaml</em>的<em>initContainer</em>部分声明它，以用于内部容器排序。为了使 Kubexit 按预期工作，我们需要了解它是如何做到的。</p>
+<p>Kubexit 允许您声明两种类型的依赖关系：</p>
+<ol>
+<li><em>Birth Dependency</em>：这种依赖关系允许您声明容器的出生顺序。</li>
+<li><em>Death Dependency</em>：这种依赖关系允许您声明容器的死亡顺序。</li>
+</ol>
+<h2 id="如何将-kubexit-与-deployment-集成">如何将 Kubexit 与 Deployment 集成？</h2>
+<p>为了在 Pod 内使用 Kubexit，我们需要配置一些东西。</p>
+<ul>
+<li>在<em>initContainer</em>中声明 kubexit，以便它将二进制文件下载到 Pod 中。 <em>/kubexit</em>目录是我们在 Pod 内下载和存储二进制文件的地方。</li>
+</ul>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  >
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="" srcset="
+               /blog/ordering-containers-within-pod/1_hu0b7ee7e736351f414372960bf93f8f3b_46939_afd495edd294fa50f67d793d7a958320.webp 400w,
+               /blog/ordering-containers-within-pod/1_hu0b7ee7e736351f414372960bf93f8f3b_46939_f375147973d112b2e8382dc4b8c692c7.webp 760w,
+               /blog/ordering-containers-within-pod/1_hu0b7ee7e736351f414372960bf93f8f3b_46939_1200x1200_fit_q75_h2_lanczos.webp 1200w"
+               src="/blog/ordering-containers-within-pod/1_hu0b7ee7e736351f414372960bf93f8f3b_46939_afd495edd294fa50f67d793d7a958320.webp"
+               width="760"
+               height="278"
+               loading="lazy" data-zoomable /></div>
+  </div></figure>
+</p>
+<ul>
+<li>我们还需要覆盖所有需要排序的容器的镜像 Pod 的 entrypoint 和/或 args。在 entrypoint 或 args 之前附加关键字 kubexit。</li>
+</ul>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  >
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="" srcset="
+               /blog/ordering-containers-within-pod/2_hu860a620993e9c0d9329e19566d126e18_37152_24ea28f5c0197647f565f291f668adfc.webp 400w,
+               /blog/ordering-containers-within-pod/2_hu860a620993e9c0d9329e19566d126e18_37152_cab102c97d2f47febf12ce1f7dac5027.webp 760w,
+               /blog/ordering-containers-within-pod/2_hu860a620993e9c0d9329e19566d126e18_37152_1200x1200_fit_q75_h2_lanczos.webp 1200w"
+               src="/blog/ordering-containers-within-pod/2_hu860a620993e9c0d9329e19566d126e18_37152_24ea28f5c0197647f565f291f668adfc.webp"
+               width="760"
+               height="195"
+               loading="lazy" data-zoomable /></div>
+  </div></figure>
+</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  >
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="" srcset="
+               /blog/ordering-containers-within-pod/3_huce7d8fd14aa1292252a9be1a01583ab0_37674_e67b01bfce2b8d16e5535a3c1c9fde71.webp 400w,
+               /blog/ordering-containers-within-pod/3_huce7d8fd14aa1292252a9be1a01583ab0_37674_6baf9b6c08eca68fd91fd5a51674cb02.webp 760w,
+               /blog/ordering-containers-within-pod/3_huce7d8fd14aa1292252a9be1a01583ab0_37674_1200x1200_fit_q75_h2_lanczos.webp 1200w"
+               src="/blog/ordering-containers-within-pod/3_huce7d8fd14aa1292252a9be1a01583ab0_37674_e67b01bfce2b8d16e5535a3c1c9fde71.webp"
+               width="760"
+               height="317"
+               loading="lazy" data-zoomable /></div>
+  </div></figure>
+</p>
+<ul>
+<li>我们需要在所有需要排序的容器上创建并挂载一个共享卷。 <em>/graveyard</em>是需要在参与排序的所有容器之间共享的目录。</li>
+</ul>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  >
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="" srcset="
+               /blog/ordering-containers-within-pod/4_hu26814e828a480e82e806dda64a9da054_16885_49ff032f6a7371a1564c10f5a7766432.webp 400w,
+               /blog/ordering-containers-within-pod/4_hu26814e828a480e82e806dda64a9da054_16885_6ed6506b6ff17048b5773972f84767c6.webp 760w,
+               /blog/ordering-containers-within-pod/4_hu26814e828a480e82e806dda64a9da054_16885_1200x1200_fit_q75_h2_lanczos.webp 1200w"
+               src="/blog/ordering-containers-within-pod/4_hu26814e828a480e82e806dda64a9da054_16885_49ff032f6a7371a1564c10f5a7766432.webp"
+               width="760"
+               height="289"
+               loading="lazy" data-zoomable /></div>
+  </div></figure>
+</p>
+<ul>
+<li>还要定义其他配置，例如：
+<ul>
+<li><em>KUBEXIT_NAME</em>：Kubexit 的容器名称。</li>
+<li><em>KUBEXIT_BIRTH_DEPS</em>：在当前容器启动之前需要正常运行的容器的名称（这可以是逗号分隔的列表）。在此声明的名称是在容器的<em>KUBEXIT_NAME</em>中声明的名称。</li>
+</ul>
+</li>
+</ul>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  >
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img alt="" srcset="
+               /blog/ordering-containers-within-pod/5_hu2dcaa48d8c79f8395bb77fbb267c52d2_48348_917b18c222704c9f87431859e96155db.webp 400w,
+               /blog/ordering-containers-within-pod/5_hu2dcaa48d8c79f8395bb77fbb267c52d2_48348_f00e250383c8e20648088cbb875f6d9b.webp 760w,
+               /blog/ordering-containers-within-pod/5_hu2dcaa48d8c79f8395bb77fbb267c52d2_48348_1200x1200_fit_q75_h2_lanczos.webp 1200w"
+               src="/blog/ordering-containers-within-pod/5_hu2dcaa48d8c79f8395bb77fbb267c52d2_48348_917b18c222704c9f87431859e96155db.webp"
+               width="760"
+               height="346"
+               loading="lazy" data-zoomable /></div>
+  </div></figure>
+</p>
+<h2 id="kubexit-的工作原理">Kubexit 的工作原理</h2>
+<p>Kubexit 需要一个 ServiceAccount 和 Role 来监视 Pod 容器和共享卷。它监视 Pod 内的共享卷，使其能够确定容器的状态并通知其他容器是否存在依赖关系。为了实现这一点，必须在所有需要彼此协调的容器中挂载共享卷。此配置允许 Kubexit 使用就绪探针监视容器状态。它通过将*/kubexit/kubexit（*二进制文件的路径）附加到容器的 entrypoint/args 中来完成这一点。当在启动时执行 entrypoint 时，Kubexit 开始通过就绪探针监视容器。一旦就绪探针确认容器已启动，Kubexit 通过在共享卷中放置一个墓碑（例如，在给定示例中的/graveyard 中）来标记相关容器的诞生。同样，当一个容器不存在时，Kubexit 添加一个墓碑以指示容器的消亡。其他容器然后可以监视共享卷，检查它们的依赖关系是否已启动，从而启动它们的启动过程。</p>
+<p>注意：Kubernetes 已经为这样的用例提供了支持，在 v1.28 中我们可以将<em>initContainer</em>保持为<em>SideCarContainers</em>(<a href="https://kubernetes.io/blog/2023/08/25/native-sidecar-containers/" target="_blank" rel="noopener">链接</a>)。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://github.com/karlkfi/kubexit" target="_blank" rel="noopener">Kubexit GitHub 仓库</a></li>
+<li><a href="https://kubernetes.io/blog/2023/08/25/native-sidecar-containers" target="_blank" rel="noopener">Kubernetes 官方博客文章</a></li>
+</ul>
+
+                </div>
+                
+
+<div class="article-tags">
+  
+  <a class="badge badge-light" href="/tag/kubernetes/">Kubernetes</a>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+
+
+
+
+  
+
+
+
+
+
+<div class="article-widget">
+  
+<div class="container-xl row post-nav">
+  
+  
+  
+  <a class="col-6 post-nav-item btn btn-lg mb-md-1" href="/blog/decoding-workload-specification/" rel="next">
+    <div class="meta-nav">下一页</div>
+    <p>如何用工作负载规范打造高效的平台工程服务</p></a>
+  
+  
+  
+  <a class="col-6 post-nav-item btn btn-lg mb-md-1"  href="/blog/kubecon-na-5-interesting-keynotes/" rel="prev">
+    <div class="meta-nav">上一页</div>
+    <p>KubeCon North America 2023:5 个有趣的主题演讲摘要</p></a>
+  
+</div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+  
+
+<p class="edit-page">
+  <a href="https://github.com/rootsongjc/cloud-native-library//edit/master/content/blog/ordering-containers-within-pod/index.md">
+    <i class="fas fa-pen pr-2"></i>编辑本页
+  </a>
+</p>
+
+
+
+
+  
+  
+  <div class="article-widget content-widget-hr">
+    <p class="related-title">相关推荐</p>
+    <ul>
+      
+      <li><a href="/blog/understanding-kubernetes-new-sidecar-container-feature/">Kubernetes 将推出新 sidecar container 特性</a></li>
+      
+      <li><a href="/blog/understanding-kubernetes-network-policies/">Kubernetes 网络策略入门：概念、示例和最佳实践</a></li>
+      
+      <li><a href="/kubernetes-handbook/devops/kustomize/">使用 Kustomize 配置 Kubernetes 应用</a></li>
+      
+      <li><a href="/kubernetes-handbook/devops/ci-cd/">持续集成与交付（CI/CD）</a></li>
+      
+      <li><a href="/blog/multi-tenancy-in-kubernetes/">如何在 Kubernetes 中实现多租户隔离：命名空间、RBAC 和网络策略的应用</a></li>
+      
+    </ul>
+  </div>
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+  <section id="comments" class="mb-3 pt-0">
+    <script>
+  let themeNumber = localStorage.getItem('wcTheme');
+  var giscusTheme = "light";
+  if (themeNumber == 1){
+    giscusTheme = "dark";
+  }
+  console.log(giscusTheme)
+  let giscusAttributes = {
+    "src": "https://giscus.app/client.js",
+    "data-theme": giscusTheme,
+    "data-repo":"rootsongjc/cloud-native-library",
+    "data-repo-id":"MDEwOlJlcG9zaXRvcnkyMTQ2MjY2NDg=",
+    "data-category":"Announcements",
+    "data-category-id":"DIC_kwDODMrxWM4CPL7J",
+    "data-mapping":"pathname",
+    "data-reactions-enabled":"1",
+    "data-emit-metadata":"0",
+    "data-input-position":"top",
+    "data-theme":giscusTheme,
+    "data-lang":"zh-CN",
+    "data-loading":"lazy",
+    "crossorigin":"anonymous",
+    "origins":"https://jimmysong.io",
+    "originsRegex":"http://localhost:[0-9]+",
+    "async": "",
+  };
+
+  let giscusScript = document.createElement("script");
+  Object.entries(giscusAttributes).forEach(([key, value]) => giscusScript.setAttribute(key, value));
+  document.querySelector('#comments').appendChild(giscusScript);
+</script>
+
+  </section>
+  
+
+
+
+            </article>
+        </main>
+    </div>
+</div>
+  </div>
+
+  <div class="page-footer">
+    
+    
+    <div class="container">
+      <footer class="site-footer">
+
+  
+
+
+
+  
+
+  
+  <div class="copyright py-4 bg-footer">
+      <div class="row justify-content-center">
+        <div class="text-center footer-color">
+          <p class="mb-0">© 2017-2023 jimmysong.io all rights reserved</p>
+        </div>
+    </div>
+  </div>
+
+</footer>
+
+    </div>
+    
+  </div>
+
+  
+
+
+<script src="/js/vendor-bundle.min.46271ef31da3f018e9cd1b59300aa265.js"></script>
+
+
+
+
+  
+
+  
+  
+
+  
+
+  
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.1/highlight.min.js" integrity="sha512-Ypjm0o7jOxAd4hpdoppSEN0TQOC19UtPAqD+4s5AlXmUvbmmS/YMxYqAqarQYyxTnB6/rqip9qcxlNB/3U9Wdg==" crossorigin="anonymous"></script>
+    
+    
+  
+
+
+
+
+
+
+
+
+
+
+  
+  <script id="search-hit-fuse-template" type="text/x-template">
+    <div class="search-hit" id="summary-{{key}}">
+      <div class="search-hit-content">
+        <div class="search-hit-name">
+          <div class="article-metadata search-hit-type">{{relpermalink}}</div>
+          <a href="{{relpermalink}}">{{title}}</a>
+          <p class="search-hit-description">{{snippet}}</p>
+        </div>
+      </div>
+    </div>
+  </script>
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha512-o38bmzBGX+hD3JHWUFCDA09btWaqrNmoJ3RXLlrysA7PP01Kgs4UlE4MhelE1v5dJR3+cxlR4qQlotsW7jKsnw==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha512-mhbv5DqBMgrWL+32MmsDOt/OAvqr/cHimk6B8y/bx/xS88MVkYGPiVv2ixKVrkywF2qHplNRUvFsAHUdxZ3Krg==" crossorigin="anonymous"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+
+
+
+
+
+
+
+<script id="page-data" type="application/json">{"use_headroom":false}</script>
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+<script src="/zh/js/wowchemy.min.24983018b0e5661cd5fe1822254286ea.js"></script>
+
+
+
+
+
+
+
+  
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">引用</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> 复制
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> 下载
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script src="/js/wowchemy-publication.68f8d7090562ca65fc6d3cb3f8f2d2cb.js" type="module"></script>
+<script>
+
+var mybutton = document.getElementById("backTopBtn");
+
+
+window.onscroll = function() {scrollFunction()};
+
+function scrollFunction() {
+  if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+    mybutton.style.display = "block";
+  } else {
+    mybutton.style.display = "none";
+  }
+}
+
+
+function topFunction() {
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
+}
+</script>
+
+
+
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.2.2/anchor.min.js" integrity="sha512-I7w3ZdSFzw5j3jU3ZkNikBNeIrl3i+hEuEdwNmqUJvwNcaBUNcijnP2gd9DtGlgVYDplfjGoD8vTNsID+lCjqg==" crossorigin="anonymous"></script>
+<script>
+  anchors.add();
+</script>
+
+
+
+<script>
+
+
+
+(function() {
+  'use strict';
+
+  if(!document.queryCommandSupported('copy')) {
+    return;
+  }
+
+  function flashCopyMessage(el, msg) {
+    el.className = "highlight-copy-btn";
+    el.textContent = msg;
+    setTimeout(function() {
+      el.textContent = "";
+      el.className = "highlight-copy-btn fa fa-copy";
+    }, 1000);
+  }
+
+  function selectText(node) {
+    var selection = window.getSelection();
+    var range = document.createRange();
+    range.selectNodeContents(node);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    return selection;
+  }
+
+  function addCopyButton(containerEl) {
+    var copyBtn = document.createElement("button");
+    copyBtn.className = "highlight-copy-btn fa fa-copy";
+    copyBtn.textContent = "";
+
+    var codeEl = containerEl.firstElementChild;
+    copyBtn.addEventListener('click', function() {
+      try {
+        var selection = selectText(codeEl);
+        document.execCommand('copy');
+        selection.removeAllRanges();
+        
+        flashCopyMessage(copyBtn, '已复制')
+        
+      } catch(e) {
+        console && console.log(e);
+        flashCopyMessage(copyBtn, 'Failed :\'(')
+      }
+    });
+
+    containerEl.appendChild(copyBtn);
+  }
+
+  
+  var highlightBlocks = document.getElementsByClassName('highlight');
+  Array.prototype.forEach.call(highlightBlocks, addCopyButton);
+})();
+</script>
+
+
+
+<script>
+
+function Collapse(e){
+  var node = document.getElementById(e);
+  if (node.className.indexOf('fa-angle-down') > -1){
+    node.setAttribute("class", "fa-solid fa-angle-right");
+    }else{
+    node.setAttribute("class", "fa-solid fa-angle-down");
+    }
+}
+</script>
+
+
+</body>
+</html>

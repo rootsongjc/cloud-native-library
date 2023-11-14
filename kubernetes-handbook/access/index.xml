@@ -82,7 +82,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;}&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;以上示例使用&lt;code&gt;--insecure&lt;/code&gt; 标志。这使得它容易受到 MITM 攻击。当 kubectl 访问集群时，它使用存储的根证书和客户端证书来访问服务器。 （这些安装在&lt;code&gt;~/.kube&lt;/code&gt;目录中）。由于集群证书通常是自签名的，因此可能需要特殊配置才能让您的 http 客户端使用根证书。&lt;/p&gt;
-&lt;p&gt;对于某些群集，apiserver 可能不需要身份验证；可以选择在本地主机上服务，或者使用防火墙保护。对此还没有一个标准。&lt;a href=&#34;https://kubernetes.io/docs/admin/accessing-the-api&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;配置对 API 的访问&lt;/a&gt; 描述了群集管理员如何配置此操作。这种方法可能与未来的高可用性支持相冲突。&lt;/p&gt;
+&lt;p&gt;对于某些群集，apiserver 可能不需要身份验证；可以选择在本地主机上服务，或者使用防火墙保护。对此还没有一个标准。配置对 API 的访问 描述了群集管理员如何配置此操作。这种方法可能与未来的高可用性支持相冲突。&lt;/p&gt;
 &lt;h2 id=&#34;编程访问-api&#34;&gt;编程访问 API&lt;/h2&gt;
 &lt;p&gt;Kubernetes 支持 &lt;a href=&#34;https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster.md#go-client&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Go&lt;/a&gt; 和 &lt;a href=&#34;https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster.md#python-client&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Python&lt;/a&gt; 客户端库。&lt;/p&gt;
 &lt;h3 id=&#34;go-客户端&#34;&gt;Go 客户端&lt;/h3&gt;
@@ -99,7 +99,7 @@
 &lt;p&gt;还有更多的客户端库可以用来访问 API。有关其他库的验证方式，请参阅文档。&lt;/p&gt;
 &lt;h2 id=&#34;在-pod-中访问-api&#34;&gt;在 Pod 中访问 API&lt;/h2&gt;
 &lt;p&gt;在 Pod 中访问 API 时，定位和认证到 API server 的方式有所不同。在 Pod 中找到 apiserver 地址的推荐方法是使用 kubernetes DNS 名称，将它解析为服务 IP，后者又将被路由到 apiserver。&lt;/p&gt;
-&lt;p&gt;向 apiserver 认证的推荐方法是使用 &lt;a href=&#34;https://kubernetes.io/docs/user-guide/service-accounts&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;service account&lt;/a&gt; 凭据。通过 kube-system，pod 与 service account 相关联，并且将该 service account 的凭据（token）放入该 pod 中每个容器的文件系统树中，位于 &lt;code&gt;/var/run/secrets/kubernetes.io/serviceaccount/token&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;向 apiserver 认证的推荐方法是使用 service account 凭据。通过 kube-system，pod 与 service account 相关联，并且将该 service account 的凭据（token）放入该 pod 中每个容器的文件系统树中，位于 &lt;code&gt;/var/run/secrets/kubernetes.io/serviceaccount/token&lt;/code&gt;。&lt;/p&gt;
 &lt;p&gt;如果可用，证书包将位于每个容器的文件系统树的 &lt;code&gt;/var/run/secrets/kubernetes.io/serviceaccount/ca.crt&lt;/code&gt; 位置，并用于验证 apiserver 的服务证书。&lt;/p&gt;
 &lt;p&gt;最后，用于 namespace API 操作的默认 namespace 放在每个容器中的 &lt;code&gt;/var/run/secrets/kubernetes.io/serviceaccount/namespace&lt;/code&gt; 中。&lt;/p&gt;
 &lt;p&gt;在 pod 中，连接到 API 的推荐方法是：&lt;/p&gt;
@@ -114,7 +114,7 @@
 &lt;/ul&gt;
 &lt;p&gt;在以上的几种情况下，都需要使用 pod 的凭据与 apiserver 进行安全通信。&lt;/p&gt;
 &lt;h2 id=&#34;访问集群中运行的-service&#34;&gt;访问集群中运行的 service&lt;/h2&gt;
-&lt;p&gt;上一节是关于连接到 kubernetes API server。这一节是关于连接到 kubernetes 集群中运行的 service。在 Kubernetes 中，&lt;a href=&#34;https://kubernetes.io/docs/admin/node&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;node&lt;/a&gt;、 &lt;a href=&#34;https://kubernetes.io/docs/user-guide/pods&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;pod&lt;/a&gt; 和 &lt;a href=&#34;https://kubernetes.io/docs/user-guide/services&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;services&lt;/a&gt; 都有它们自己的 IP。很多情况下，集群中 node 的 IP、Pod 的 IP、service 的 IP 都是不可路由的，因此在集群外面的机器就无法访问到它们，例如从您自己的笔记本电脑。&lt;/p&gt;
+&lt;p&gt;上一节是关于连接到 kubernetes API server。这一节是关于连接到 kubernetes 集群中运行的 service。在 Kubernetes 中，node、pod 和 services 都有它们自己的 IP。很多情况下，集群中 node 的 IP、Pod 的 IP、service 的 IP 都是不可路由的，因此在集群外面的机器就无法访问到它们，例如从您自己的笔记本电脑。&lt;/p&gt;
 &lt;h3 id=&#34;连接的方式&#34;&gt;连接的方式&lt;/h3&gt;
 &lt;p&gt;您可以选择以下几种方式从集群外部连接到 node、pod 和 service：&lt;/p&gt;
 &lt;ul&gt;
@@ -322,7 +322,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;chisel-ns&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;user&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;green-user&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;federal-context&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;context&lt;/code&gt; 定义了一个命名的 &lt;a href=&#34;https://kubernetes.io/docs/tasks/access-application-cluster/authenticate-across-clusters-kubeconfig#cluster&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;cluster&lt;/code&gt;&lt;/a&gt;、&lt;a href=&#34;https://kubernetes.io/docs/tasks/access-application-cluster/authenticate-across-clusters-kubeconfig#user&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;user&lt;/code&gt;&lt;/a&gt;、&lt;a href=&#34;https://kubernetes.io/docs/user-guide/namespaces&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;namespace&lt;/code&gt;&lt;/a&gt; 元组，用于使用提供的认证信息和命名空间将请求发送到指定的集群。三个都是可选的；仅使用 &lt;code&gt;cluster&lt;/code&gt;、&lt;code&gt;user&lt;/code&gt;、&lt;code&gt;namespace&lt;/code&gt; 之一指定上下文，或指定 none。未指定的值或在加载的 kubeconfig 中没有相应条目的命名值（例如，如果为上述 kubeconfig 文件指定了 &lt;code&gt;pink-user&lt;/code&gt; 的上下文）将被替换为默认值。有关覆盖/合并行为，请参阅下面的 &lt;a href=&#34;https://kubernetes.io/docs/tasks/access-application-cluster/authenticate-across-clusters-kubeconfig#loading-and-merging&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;加载和合并规则&lt;/a&gt;。&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;context&lt;/code&gt; 定义了一个命名的 &lt;a href=&#34;https://kubernetes.io/docs/tasks/access-application-cluster/authenticate-across-clusters-kubeconfig#cluster&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;cluster&lt;/code&gt;&lt;/a&gt;、&lt;a href=&#34;https://kubernetes.io/docs/tasks/access-application-cluster/authenticate-across-clusters-kubeconfig#user&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;user&lt;/code&gt;&lt;/a&gt;、&lt;code&gt;namespace&lt;/code&gt; 元组，用于使用提供的认证信息和命名空间将请求发送到指定的集群。三个都是可选的；仅使用 &lt;code&gt;cluster&lt;/code&gt;、&lt;code&gt;user&lt;/code&gt;、&lt;code&gt;namespace&lt;/code&gt; 之一指定上下文，或指定 none。未指定的值或在加载的 kubeconfig 中没有相应条目的命名值（例如，如果为上述 kubeconfig 文件指定了 &lt;code&gt;pink-user&lt;/code&gt; 的上下文）将被替换为默认值。有关覆盖/合并行为，请参阅下面的 &lt;a href=&#34;https://kubernetes.io/docs/tasks/access-application-cluster/authenticate-across-clusters-kubeconfig#loading-and-merging&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;加载和合并规则&lt;/a&gt;。&lt;/p&gt;
 &lt;p&gt;您可以使用 &lt;code&gt;kubectl config set-context&lt;/code&gt; 添加或修改上下文条目。&lt;/p&gt;
 &lt;h4 id=&#34;current-context&#34;&gt;current-context&lt;/h4&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;current-context&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;federal-context&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -591,7 +591,7 @@
 &lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
 &lt;/ol&gt;
 &lt;h2 id=&#34;使用-service-配置文件&#34;&gt;使用 Service 配置文件&lt;/h2&gt;
-&lt;p&gt;作为使用 &lt;code&gt;kubectl expose&lt;/code&gt; 的替代方法，您可以使用 &lt;a href=&#34;https://kubernetes.io/docs/user-guide/services/operations&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;service 配置文件&lt;/a&gt; 来创建 Service。&lt;/p&gt;
+&lt;p&gt;作为使用 &lt;code&gt;kubectl expose&lt;/code&gt; 的替代方法，您可以使用 service 配置文件 来创建 Service。&lt;/p&gt;
 &lt;p&gt;要删除 Service，输入以下命令：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete services example-service
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;删除 Deployment、ReplicaSet 和正运行在 Pod 中的 Hello World 应用程序，输入以下命令：&lt;/p&gt;

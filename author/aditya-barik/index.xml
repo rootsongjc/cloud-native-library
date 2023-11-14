@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Aditya Barik | 云原生资料库</title>
+    <link>https://lib.jimmysong.io/author/aditya-barik/</link>
+      <atom:link href="https://lib.jimmysong.io/author/aditya-barik/index.xml" rel="self" type="application/rss+xml" />
+    <description>Aditya Barik</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Mon, 13 Nov 2023 17:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://lib.jimmysong.io/media/sharing.png</url>
+      <title>Aditya Barik</title>
+      <link>https://lib.jimmysong.io/author/aditya-barik/</link>
+    </image>
+    
+    <item>
+      <title>解密 Kubernetes Pod 中容器的有序部署：Kubexit 工具的妙用</title>
+      <link>https://lib.jimmysong.io/blog/ordering-containers-within-pod/</link>
+      <pubDate>Mon, 13 Nov 2023 17:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/blog/ordering-containers-within-pod/</guid>
+      <description>&lt;p&gt;本文译自：&lt;a href=&#34;https://medium.com/@aditya.barik32/ordering-of-container-within-pod-a423d2e5ba52&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;https://medium.com/@aditya.barik32/ordering-of-container-within-pod-a423d2e5ba52&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;摘要：讨论了在 Kubernetes Pod 中排序容器的需求，介绍了开源工具 Kubexit 实现容器的有序启动和终止，提高工作流灵活性。&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2 id=&#34;为什么要在-pod-中对容器进行排序&#34;&gt;为什么要在 Pod 中对容器进行排序？&lt;/h2&gt;
+&lt;p&gt;在某些情况下，Pod 的排序可能是一个使用案例，我们需要确保某些容器在启动应用程序代码之前已经正常运行。假设我们有一个 Java 应用程序，需要一个数据库（Mysql）、缓存（Aerospike/Redis）和 Kafka 来提供流量。与此同时，我们还需要这些依赖关系是特定于实例或与应用程序堆栈本地关联的。在这种情况下，在 v1.28 版本之前，Kubernetes 没有提供一个开箱即用的解决方案。对于版本小于 1.28 的集群，没有正式的解决方法。为了缓解这个问题，我们有另一种不太知名的开源解决方法，叫做 Kubexit。&lt;/p&gt;
+&lt;h2 id=&#34;什么是-kubexit&#34;&gt;什么是 Kubexit？&lt;/h2&gt;
+&lt;p&gt;Kubexit 是一个开源项目，旨在提供一种协调的方式来启动和终止 Pod 内的容器。&lt;/p&gt;
+&lt;p&gt;无法在这里使用&lt;em&gt;InitContainer&lt;/em&gt;，因为在 initContainers 中声明的容器需要在通常容器（在&lt;em&gt;Container&lt;/em&gt;部分声明的容器）开始之前完成（容器状态应为完成）。例如，如果在&lt;em&gt;initContainer&lt;/em&gt;部分声明一个 MySQL 容器，那么 Pod 将卡在 Pod 初始化状态，因为在&lt;em&gt;Container&lt;/em&gt;部分声明的其他容器将永远等待 initContainers 完成。&lt;/p&gt;
+&lt;p&gt;Kubexit 是一个二进制文件，我们需要在&lt;em&gt;deployment.yaml&lt;/em&gt;的&lt;em&gt;initContainer&lt;/em&gt;部分声明它，以用于内部容器排序。为了使 Kubexit 按预期工作，我们需要了解它是如何做到的。&lt;/p&gt;
+&lt;p&gt;Kubexit 允许您声明两种类型的依赖关系：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;em&gt;Birth Dependency&lt;/em&gt;：这种依赖关系允许您声明容器的出生顺序。&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Death Dependency&lt;/em&gt;：这种依赖关系允许您声明容器的死亡顺序。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;如何将-kubexit-与-deployment-集成&#34;&gt;如何将 Kubexit 与 Deployment 集成？&lt;/h2&gt;
+&lt;p&gt;为了在 Pod 内使用 Kubexit，我们需要配置一些东西。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;在&lt;em&gt;initContainer&lt;/em&gt;中声明 kubexit，以便它将二进制文件下载到 Pod 中。 &lt;em&gt;/kubexit&lt;/em&gt;目录是我们在 Pod 内下载和存储二进制文件的地方。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/ordering-containers-within-pod/1_hu0b7ee7e736351f414372960bf93f8f3b_46939_afd495edd294fa50f67d793d7a958320.webp 400w,
+               /blog/ordering-containers-within-pod/1_hu0b7ee7e736351f414372960bf93f8f3b_46939_f375147973d112b2e8382dc4b8c692c7.webp 760w,
+               /blog/ordering-containers-within-pod/1_hu0b7ee7e736351f414372960bf93f8f3b_46939_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/ordering-containers-within-pod/1_hu0b7ee7e736351f414372960bf93f8f3b_46939_afd495edd294fa50f67d793d7a958320.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;278&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;我们还需要覆盖所有需要排序的容器的镜像 Pod 的 entrypoint 和/或 args。在 entrypoint 或 args 之前附加关键字 kubexit。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/ordering-containers-within-pod/2_hu860a620993e9c0d9329e19566d126e18_37152_24ea28f5c0197647f565f291f668adfc.webp 400w,
+               /blog/ordering-containers-within-pod/2_hu860a620993e9c0d9329e19566d126e18_37152_cab102c97d2f47febf12ce1f7dac5027.webp 760w,
+               /blog/ordering-containers-within-pod/2_hu860a620993e9c0d9329e19566d126e18_37152_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/ordering-containers-within-pod/2_hu860a620993e9c0d9329e19566d126e18_37152_24ea28f5c0197647f565f291f668adfc.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;195&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/ordering-containers-within-pod/3_huce7d8fd14aa1292252a9be1a01583ab0_37674_e67b01bfce2b8d16e5535a3c1c9fde71.webp 400w,
+               /blog/ordering-containers-within-pod/3_huce7d8fd14aa1292252a9be1a01583ab0_37674_6baf9b6c08eca68fd91fd5a51674cb02.webp 760w,
+               /blog/ordering-containers-within-pod/3_huce7d8fd14aa1292252a9be1a01583ab0_37674_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/ordering-containers-within-pod/3_huce7d8fd14aa1292252a9be1a01583ab0_37674_e67b01bfce2b8d16e5535a3c1c9fde71.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;317&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;我们需要在所有需要排序的容器上创建并挂载一个共享卷。 &lt;em&gt;/graveyard&lt;/em&gt;是需要在参与排序的所有容器之间共享的目录。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/ordering-containers-within-pod/4_hu26814e828a480e82e806dda64a9da054_16885_49ff032f6a7371a1564c10f5a7766432.webp 400w,
+               /blog/ordering-containers-within-pod/4_hu26814e828a480e82e806dda64a9da054_16885_6ed6506b6ff17048b5773972f84767c6.webp 760w,
+               /blog/ordering-containers-within-pod/4_hu26814e828a480e82e806dda64a9da054_16885_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/ordering-containers-within-pod/4_hu26814e828a480e82e806dda64a9da054_16885_49ff032f6a7371a1564c10f5a7766432.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;289&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;还要定义其他配置，例如：
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;KUBEXIT_NAME&lt;/em&gt;：Kubexit 的容器名称。&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;KUBEXIT_BIRTH_DEPS&lt;/em&gt;：在当前容器启动之前需要正常运行的容器的名称（这可以是逗号分隔的列表）。在此声明的名称是在容器的&lt;em&gt;KUBEXIT_NAME&lt;/em&gt;中声明的名称。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img alt=&#34;&#34; srcset=&#34;
+               /blog/ordering-containers-within-pod/5_hu2dcaa48d8c79f8395bb77fbb267c52d2_48348_917b18c222704c9f87431859e96155db.webp 400w,
+               /blog/ordering-containers-within-pod/5_hu2dcaa48d8c79f8395bb77fbb267c52d2_48348_f00e250383c8e20648088cbb875f6d9b.webp 760w,
+               /blog/ordering-containers-within-pod/5_hu2dcaa48d8c79f8395bb77fbb267c52d2_48348_1200x1200_fit_q75_h2_lanczos.webp 1200w&#34;
+               src=&#34;https://lib.jimmysong.io/blog/ordering-containers-within-pod/5_hu2dcaa48d8c79f8395bb77fbb267c52d2_48348_917b18c222704c9f87431859e96155db.webp&#34;
+               width=&#34;760&#34;
+               height=&#34;346&#34;
+               loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h2 id=&#34;kubexit-的工作原理&#34;&gt;Kubexit 的工作原理&lt;/h2&gt;
+&lt;p&gt;Kubexit 需要一个 ServiceAccount 和 Role 来监视 Pod 容器和共享卷。它监视 Pod 内的共享卷，使其能够确定容器的状态并通知其他容器是否存在依赖关系。为了实现这一点，必须在所有需要彼此协调的容器中挂载共享卷。此配置允许 Kubexit 使用就绪探针监视容器状态。它通过将*/kubexit/kubexit（*二进制文件的路径）附加到容器的 entrypoint/args 中来完成这一点。当在启动时执行 entrypoint 时，Kubexit 开始通过就绪探针监视容器。一旦就绪探针确认容器已启动，Kubexit 通过在共享卷中放置一个墓碑（例如，在给定示例中的/graveyard 中）来标记相关容器的诞生。同样，当一个容器不存在时，Kubexit 添加一个墓碑以指示容器的消亡。其他容器然后可以监视共享卷，检查它们的依赖关系是否已启动，从而启动它们的启动过程。&lt;/p&gt;
+&lt;p&gt;注意：Kubernetes 已经为这样的用例提供了支持，在 v1.28 中我们可以将&lt;em&gt;initContainer&lt;/em&gt;保持为&lt;em&gt;SideCarContainers&lt;/em&gt;(&lt;a href=&#34;https://kubernetes.io/blog/2023/08/25/native-sidecar-containers/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;链接&lt;/a&gt;)。&lt;/p&gt;
+&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/karlkfi/kubexit&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kubexit GitHub 仓库&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://kubernetes.io/blog/2023/08/25/native-sidecar-containers&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Kubernetes 官方博客文章&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
