@@ -1,53 +1,49 @@
 ---
-title: Rate Limiting Traffic
-description: How to apply rate limiting on your network.
+title: 限制流量速率
+description: 如何在你的网络上应用流量限制。
 weight: 4
 ---
 
-Rate limiting allows you to restrict the traffic through TSB to a predetermined limit based on traffic attributes such as source IP address and HTTP Headers.
+流量限制允许你根据诸如源 IP 地址和 HTTP 头部等流量属性，将通过 TSB 的流量限制在预定限额内。
 
-You may want to consider rate limiting if you are concerned with any of the following:
-* To prevent malicious activity such as DDoS attacks.
-* To prevent your applications and its resources (such as a database) from getting overloaded.
-* To implement some form of business logic such as creating different API limits for different set of users.
+如果你担心以下任何一点，你可能需要考虑流量限制：
+* 防止恶意活动，如 DDoS 攻击。
+* 防止你的应用程序及其资源（如数据库）过载。
+* 实现某种业务逻辑，如为不同用户组设置不同的 API 限制。
 
-TSB supports two modes for Rate limiting: internal and external.
+TSB 支持两种流量限制模式：内部和外部。
 
-## Internal Rate Limiting
+## 内部流量限制
 
-This mode implements global rate limiting within a cluster or across multiple clusters.
-In this mode, you can use the [API](../../refs/tsb/gateway/v2/ingress_gateway#ratelimitsettings) to configure limits based on various traffic attributes.
+此模式在一个集群内或跨多个集群实现全局流量限制。
+在此模式中，你可以使用 [API](../../refs/tsb/gateway/v2/ingress-gateway#ratelimitsettings) 根据各种流量属性配置限制。
 
 ![](../../assets/howto/rate_limiting_internal.png)
 
-Behind the scenes, TSB's Global Control Plane deploys a rate limit server in each cluster which acts as a global service that receives metadata from multiple Envoy proxies and makes a rate limiting decision based on the configuration.
+在幕后，TSB 的全局控制平面在每个集群部署一个速率限制服务器，该服务器作为一个全局服务，从多个 Envoy 代理接收元数据，并根据配置作出流量限制决策。
 
-This mode requires the user to setup a Redis server, which acts as a storage backend to persist rate limit metadata counts. 
+此模式要求用户设置一个 Redis 服务器，用作存储后端，以持久化速率限制元数据计数。
 
-We recommend using this mode if you want to leverage the rate limiting feature without implementing your own rate limiting service.
+如果你希望利用流量限制功能而无需实现自己的流量限制服务，我们建议使用此模式。
 
-For details on how to enable internal rate limiting, [please read this document](./../rate_limiting/internal_rate_limiting)
+有关如何启用内部流量限制的详细信息，请阅读[此文档](./../rate-limiting/internal-rate-limiting)。
 
-## External Rate Limiting
+## 外部流量限制
 
-In this mode, a rate limit server that implements the [Envoy Rate Limit Service interface](https://www.envoyproxy.io/docs/envoy/latest/api-v3/traffic/ratelimit/v3/rls.proto) and configure the [API](../../refs/tsb/gateway/v2/ingress_gateway#externalratelimitservicesettings) to send rate limit metadata to your server based on the specified criteria.
+在此模式中，你将部署一个实现 [Envoy 速率限制服务接口](https://www.envoyproxy.io/docs/envoy/latest/api-v3/traffic/ratelimit/v3/rls.proto) 的速率限制服务器，并配置 [API](../../refs/tsb/gateway/v2/ingress-gateway#externalratelimitservicesettings) 根据指定的标准将速率限制元数据发送到你的服务器。
 
 ![](../../assets/howto/rate_limiting_external.png)
 
-The rate limit decision made by the external rate limit server is enforced in the Envoy proxy within TSB.
+外部速率限制服务器做出的决策将在 TSB 内的 Envoy 代理中强制执行。
 
-We recommend using this mode if you want to implement your own rate limiting service or you want to separate the rate limiting decision logic from TSB into its own Service.
+如果你希望实现自己的流量限制服务，或者希望将流量限制决策逻辑从 TSB 分离出来成为其自己的服务，我们建议使用此模式。
 
-## Rate Limiting Contexts
+## 流量限制上下文
 
-Rate limiting can be configured in different contexts. While you are able to customize its behavior as you wish in any of these contexts, some types of rate limitings are better handled at a particular context.
+流量限制可以在不同的上下文中配置。虽然你可以根据自己的意愿在任何这些上下文中自定义其行为，但某些类型的流量限制在特定上下文中处理效果更佳。
 
-|                                                                          |  |
-|--------------------------------------------------------------------------|--|
-| [Tier1Gateway](./../rate_limiting/tier1_gateway) ([YAML](../../refs/tsb/gateway/v2/tier1_gateway#tier1externalserver)) | Restrict malicious traffic based on source IP addresses |
-| [IngressGateway / Tier2 Gateway / Application Gateway](./../rate_limiting/ingress_gateway) ([YAML](../../refs/tsb/gateway/v2/ingress_gateway)) |  Implement rate limiting based on business logic, or safeguard your application from being overloaded |
-| [TrafficSettings](./../rate_limiting/service_to_service) ([YAML](../../refs/tsb/traffic/v2/traffic_setting#trafficsetting)) | Apply rate limiting to all proxies in the namespaces associated with the TrafficSettings. Useful to safeguard the application from being overloaded |
-
-import DocCardList from '@theme/DocCardList';
-
-<DocCardList />
+|                                                              |                                                              |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| [Tier1Gateway](./../rate-limiting/tier1-gateway) ([YAML](../../refs/tsb/gateway/v2/tier1-gateway#tier1externalserver)) | 根据源 IP 地址限制恶意流量                                   |
+| [IngressGateway / Tier2 Gateway / Application Gateway](./../rate-limiting/ingress-gateway) ([YAML](../../refs/tsb/gateway/v2/ingress-gateway)) | 基于业务逻辑实现流量限制，或保护你的应用程序免于过载         |
+| [TrafficSettings](./../rate-limiting/service-to-service) ([YAML](../../refs/tsb/traffic/v2/traffic-setting#trafficsetting)) | 对与 TrafficSettings 关联的命名空间中的所有代理应用流量限制。用于保护应用程序免于过载 |
