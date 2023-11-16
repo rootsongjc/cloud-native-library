@@ -21,7 +21,7 @@
 &lt;p&gt;此部分仅讨论&lt;a href=&#34;../../rate-limiting&#34;&gt;内部模式&lt;/a&gt;的安装过程，不涉及&lt;a href=&#34;../../rate-limiting&#34;&gt;外部服务器&lt;/a&gt;的安装。&lt;/p&gt;
 &lt;h2 id=&#34;配置&#34;&gt;配置&lt;/h2&gt;
 &lt;p&gt;可以通过在 &lt;a href=&#34;../../../refs/install/controlplane/v1alpha1/spec#controlplanecomponentset&#34;&gt;ControlPlane Operator API&lt;/a&gt; 或 &lt;a href=&#34;../../../setup/helm/controlplane#installation&#34;&gt;Helm 值&lt;/a&gt; 中明确指定 &lt;code&gt;rateLimitServer&lt;/code&gt; 组件的配置并将其应用于相关的控制平面集群来启用速率限制服务器。&lt;code&gt;rateLimitServer&lt;/code&gt; 需要一个 Redis 后端来跟踪速率限制属性计数，并且其详细信息需要包含在配置中。&lt;/p&gt;
-&lt;p&gt;你的 Control Plane Operator配置可能如下所示：&lt;/p&gt;
+&lt;p&gt;你的 Control Plane Operator 配置可能如下所示：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;components&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -141,25 +141,31 @@
     </item>
     
     <item>
-      <title>Service to service rate limiting</title>
+      <title>服务之间的速率限制</title>
       <link>https://lib.jimmysong.io/tsb/howto/rate-limiting/service-to-service/</link>
       <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/tsb/howto/rate-limiting/service-to-service/</guid>
-      <description>&lt;p&gt;TSB is capable of applying rate limits for both gateways and sidecars. In this document, we will enable rate limiting for sidecars to control quota for service to service traffic.&lt;/p&gt;
-&lt;p&gt;Before you get started, make sure you: &lt;br /&gt;
-✓ Familiarize yourself with &lt;a href=&#34;../../concepts/toc&#34;&gt;TSB concepts&lt;/a&gt; &lt;br /&gt;
-✓ Install the TSB environment. You can use &lt;a href=&#34;../../setup/self_managed/demo-installation&#34;&gt;TSB demo&lt;/a&gt; for quick install&lt;br /&gt;
-✓ Completed &lt;a href=&#34;../../quickstart&#34;&gt;TSB usage quickstart&lt;/a&gt;. This document assumes you already created Tenant and are familiar with Workspace and Config Groups. Also you need to configure tctl to your TSB environment.&lt;br/&gt;&lt;/p&gt;
-&lt;h2 id=&#34;enable-rate-limiting-server&#34;&gt;Enable Rate Limiting Server&lt;/h2&gt;
-&lt;p&gt;Read and follow the instructions on &lt;a href=&#34;./internal_rate_limiting&#34;&gt;Enabling the Rate Limiting Server document&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;:::note Demo Installation
-If you are using the &lt;a href=&#34;../../setup/self_managed/demo-installation&#34;&gt;TSB demo&lt;/a&gt; installation, you already have rate limit service running and ready to use, and can skip this section.
-:::note&lt;/p&gt;
-&lt;p&gt;If you intend to use the same rate limiting server in a multi-cluster setup, all clusters must point to the same &lt;a href=&#34;../../refs/install/controlplane/v1alpha1/spec#ratelimitserver&#34;&gt;Redis backend and domain&lt;/a&gt;&lt;/p&gt;
-&lt;h2 id=&#34;deploy-httpbin-service&#34;&gt;Deploy &lt;code&gt;httpbin&lt;/code&gt; Service&lt;/h2&gt;
-&lt;p&gt;Follow &lt;a href=&#34;../../reference/samples/httpbin&#34;&gt;the instructions in this document&lt;/a&gt; to create the &lt;code&gt;httpbin&lt;/code&gt; service. You can skip the sections &amp;ldquo;Expose the &lt;code&gt;httpbin&lt;/code&gt; Service&amp;rdquo;, &amp;ldquo;Create Certificates&amp;rdquo;, and &amp;ldquo;Onboard &lt;code&gt;httpbin&lt;/code&gt; Application&amp;rdquo;.&lt;/p&gt;
-&lt;h2 id=&#34;create-trafficsetting&#34;&gt;Create TrafficSetting&lt;/h2&gt;
-&lt;p&gt;Create a TrafficSetting object in a file named &lt;code&gt;service-to-service-rate-limiting-traffic-setting.yaml&lt;/code&gt;. In this example the rate limit is set to maximum of 4 requests per minute per path. Replace the &lt;code&gt;organization&lt;/code&gt; and &lt;code&gt;tenant&lt;/code&gt; with appropriate values&lt;/p&gt;
+      <description>&lt;p&gt;TSB 能够为网关和 sidecar 都应用速率限制。在本文档中，我们将启用 sidecar 的速率限制，以控制服务之间的流量配额。&lt;/p&gt;
+&lt;p&gt;在开始之前，请确保你已经完成以下步骤：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;熟悉 &lt;a href=&#34;../../../concepts/&#34;&gt;TSB 概念&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;安装 TSB 环境。你可以使用 &lt;a href=&#34;../../../setup/self-managed/demo-installation&#34;&gt;TSB 演示&lt;/a&gt; 进行快速安装&lt;/li&gt;
+&lt;li&gt;完成了 &lt;a href=&#34;../../../quickstart&#34;&gt;TSB 使用快速入门&lt;/a&gt;。本文档假定你已经创建了租户，熟悉工作区和配置组，并配置了 tctl 到你的 TSB 环境。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;启用速率限制服务器&#34;&gt;启用速率限制服务器&lt;/h2&gt;
+&lt;p&gt;请阅读并按照 &lt;a href=&#34;../internal-rate-limiting&#34;&gt;启用速率限制服务器文档&lt;/a&gt; 中的说明操作。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;演示安装&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    如果你使用 &lt;a href=&#34;../../../setup/self-managed/demo-installation&#34;&gt;TSB 演示&lt;/a&gt; 安装，你已经有一个正在运行并且可以使用的速率限制服务，可以跳过这一部分。
+&lt;/div&gt;
+
+&lt;p&gt;如果你打算在多集群设置中使用相同的速率限制服务器，所有集群都必须指向相同的 &lt;a href=&#34;../../../refs/install/controlplane/v1alpha1/spec#ratelimitserver&#34;&gt;Redis 后端和域&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;部署-httpbin-服务&#34;&gt;部署 &lt;code&gt;httpbin&lt;/code&gt; 服务&lt;/h2&gt;
+&lt;p&gt;请按照 &lt;a href=&#34;../../../reference/samples/httpbin&#34;&gt;本文档中的说明&lt;/a&gt; 创建 &lt;code&gt;httpbin&lt;/code&gt; 服务。你可以跳过 &amp;ldquo;暴露 &lt;code&gt;httpbin&lt;/code&gt; 服务&amp;rdquo;、&amp;ldquo;创建证书&amp;rdquo; 和 &amp;ldquo;载入 &lt;code&gt;httpbin&lt;/code&gt; 应用程序&amp;rdquo; 部分。&lt;/p&gt;
+&lt;h2 id=&#34;创建-trafficsetting&#34;&gt;创建 TrafficSetting&lt;/h2&gt;
+&lt;p&gt;创建一个 TrafficSetting 对象，保存在名为 &lt;code&gt;service-to-service-rate-limiting-traffic-setting.yaml&lt;/code&gt; 的文件中。在此示例中，速率限制设置为每个路径每分钟最多 4 次请求。将 &lt;code&gt;organization&lt;/code&gt; 和 &lt;code&gt;tenant&lt;/code&gt; 替换为适当的值。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;traffic.tsb.tetrate.io/v2&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;TrafficSetting&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -180,30 +186,30 @@ If you are using the &lt;a href=&#34;../../setup/self_managed/demo-installation&
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;limit&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;requestsPerUnit&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;4&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;unit&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;MINUTE&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Apply the manifest using &lt;code&gt;tctl&lt;/code&gt;:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;使用 &lt;code&gt;tctl&lt;/code&gt; 应用此清单：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl apply -f service-to-service-rate-limiting-traffic-setting.yaml
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;deploy-sleep-service&#34;&gt;Deploy &lt;code&gt;sleep&lt;/code&gt; Service&lt;/h2&gt;
-&lt;p&gt;Since you will be configuring service-to-service rate limiting, another service to act as a client to your &lt;code&gt;httpbin&lt;/code&gt; service is necessary.&lt;/p&gt;
-&lt;p&gt;Follow &lt;a href=&#34;../../reference/samples/sleep_service&#34;&gt;the instructions in this document&lt;/a&gt; to create the &lt;code&gt;sleep&lt;/code&gt; service. You can skip the section on &amp;ldquo;Create a &lt;code&gt;sleep&lt;/code&gt; Workspace&amp;rdquo;.&lt;/p&gt;
-&lt;h2 id=&#34;testing&#34;&gt;Testing&lt;/h2&gt;
-&lt;p&gt;You can test the rate limiting by sending HTTP requests from the &lt;code&gt;sleep&lt;/code&gt; service to &lt;code&gt;httpbin&lt;/code&gt; service, and observe the rate limiting take effect after a certain number of requests.&lt;/p&gt;
-&lt;p&gt;To send a request from sleep service, you need to identify the pod within your sleep service.
-Execute the following command to find out the pod name:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;部署-sleep-服务&#34;&gt;部署 &lt;code&gt;sleep&lt;/code&gt; 服务&lt;/h2&gt;
+&lt;p&gt;由于你将配置服务之间的速率限制，因此需要另一个服务作为 &lt;code&gt;httpbin&lt;/code&gt; 服务的客户端。&lt;/p&gt;
+&lt;p&gt;请按照 &lt;a href=&#34;../../../reference/samples/sleep-service&#34;&gt;本文档中的说明&lt;/a&gt; 创建 &lt;code&gt;sleep&lt;/code&gt; 服务。你可以跳过 &amp;ldquo;创建 &lt;code&gt;sleep&lt;/code&gt; 工作区&amp;rdquo; 部分。&lt;/p&gt;
+&lt;h2 id=&#34;测试&#34;&gt;测试&lt;/h2&gt;
+&lt;p&gt;你可以通过从 &lt;code&gt;sleep&lt;/code&gt; 服务发送 HTTP 请求到 &lt;code&gt;httpbin&lt;/code&gt; 服务来测试速率限制，并观察在一定数量的请求后速率限制生效。&lt;/p&gt;
+&lt;p&gt;要从 sleep 服务发送请求，你需要确定 sleep 服务内的 Pod。
+执行以下命令以查找 Pod 名称：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl get pod -n sleep -l &lt;span class=&#34;nv&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;sleep -o &lt;span class=&#34;nv&#34;&gt;jsonpath&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;={&lt;/span&gt;.items..metadata.name&lt;span class=&#34;o&#34;&gt;}&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Then send a request from this pod to the &lt;code&gt;httpbin&lt;/code&gt; service, which should be reachable at &lt;code&gt;http://httpbin.httpbin:8000&lt;/code&gt;. Make sure to replace the value for &lt;code&gt;sleep-pod&lt;/code&gt; with an appropriate value:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;然后从此 Pod 发送请求到 &lt;code&gt;httpbin&lt;/code&gt; 服务，该服务应该可以在 &lt;code&gt;http://httpbin.httpbin:8000&lt;/code&gt; 上访问。确保将 &lt;code&gt;&amp;lt;sleep-pod&amp;gt;&lt;/code&gt; 的值替换为适当的值：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl &lt;span class=&#34;nb&#34;&gt;exec&lt;/span&gt; &amp;lt;sleep-pod&amp;gt; -n sleep -c sleep -- &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  curl http://httpbin.httpbin:8000/get &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -s &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -o /dev/null &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -w &lt;span class=&#34;s2&#34;&gt;&amp;#34;%{http_code}\n&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Repeat executing the above command more than 4 times. After 4 requests, the response code that you see should change from 200 to 429.&lt;/p&gt;
-&lt;p&gt;Since the rate limiting rule was based on the request path, accessing another path on the &lt;code&gt;httpbin&lt;/code&gt;, you should see a 200 response again:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;重复执行上述命令超过 4 次。在 4 次请求之后，你应该会看到响应代码从 200 变为 429。&lt;/p&gt;
+&lt;p&gt;由于速率限制规则基于请求路径，访问 &lt;code&gt;httpbin&lt;/code&gt; 上的另一个路径，你应该会再次看到 200 响应：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl &lt;span class=&#34;nb&#34;&gt;exec&lt;/span&gt; &amp;lt;sleep-pod&amp;gt; -n sleep -c sleep -- &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  curl http://httpbin.httpbin:8000/headers &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -s &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -o /dev/null &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    -w &lt;span class=&#34;s2&#34;&gt;&amp;#34;%{http_code}\n&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Similar to the previous example, repeating the above command more than 4 times should result in the rate limiting activating, and you should start getting a 429 instead of 200.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;类似于前面的示例，重复执行上述命令超过 4 次应该会导致速率限制生效，你应该开始看到 429 而不是 200。&lt;/p&gt;
 </description>
     </item>
     
