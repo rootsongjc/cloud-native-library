@@ -1,33 +1,32 @@
 ---
-title: Service to service rate limiting
-description: An example of rate limiting in TrafficSetting context
+title: 服务之间的速率限制
 weight: 3
 ---
 
-TSB is capable of applying rate limits for both gateways and sidecars. In this document, we will enable rate limiting for sidecars to control quota for service to service traffic.
+TSB 能够为网关和 sidecar 都应用速率限制。在本文档中，我们将启用 sidecar 的速率限制，以控制服务之间的流量配额。
 
-Before you get started, make sure you: <br />
-✓ Familiarize yourself with [TSB concepts](../../concepts/toc) <br />
-✓ Install the TSB environment. You can use [TSB demo](../../setup/self_managed/demo-installation) for quick install<br />
-✓ Completed [TSB usage quickstart](../../quickstart). This document assumes you already created Tenant and are familiar with Workspace and Config Groups. Also you need to configure tctl to your TSB environment.<br/>
+在开始之前，请确保你已经完成以下步骤：
+- 熟悉 [TSB 概念](../../../concepts/) 
+- 安装 TSB 环境。你可以使用 [TSB 演示](../../../setup/self-managed/demo-installation) 进行快速安装
+- 完成了 [TSB 使用快速入门](../../../quickstart)。本文档假定你已经创建了租户，熟悉工作区和配置组，并配置了 tctl 到你的 TSB 环境。
 
-## Enable Rate Limiting Server
+## 启用速率限制服务器
 
-Read and follow the instructions on [Enabling the Rate Limiting Server document](./internal_rate_limiting).
+请阅读并按照 [启用速率限制服务器文档](../internal-rate-limiting) 中的说明操作。
 
-:::note Demo Installation
-If you are using the [TSB demo](../../setup/self_managed/demo-installation) installation, you already have rate limit service running and ready to use, and can skip this section.
-:::note
+{{<callout note 演示安装>}}
+如果你使用 [TSB 演示](../../../setup/self-managed/demo-installation) 安装，你已经有一个正在运行并且可以使用的速率限制服务，可以跳过这一部分。
+{{</callout>}}
 
-If you intend to use the same rate limiting server in a multi-cluster setup, all clusters must point to the same [Redis backend and domain](../../refs/install/controlplane/v1alpha1/spec#ratelimitserver )
+如果你打算在多集群设置中使用相同的速率限制服务器，所有集群都必须指向相同的 [Redis 后端和域](../../../refs/install/controlplane/v1alpha1/spec#ratelimitserver)。
 
-## Deploy `httpbin` Service
+## 部署 `httpbin` 服务
 
-Follow [the instructions in this document](../../reference/samples/httpbin) to create the `httpbin` service. You can skip the sections "Expose the `httpbin` Service", "Create Certificates", and "Onboard `httpbin` Application".
+请按照 [本文档中的说明](../../../reference/samples/httpbin) 创建 `httpbin` 服务。你可以跳过 "暴露 `httpbin` 服务"、"创建证书" 和 "载入 `httpbin` 应用程序" 部分。
 
-## Create TrafficSetting
+## 创建 TrafficSetting
 
-Create a TrafficSetting object in a file named `service-to-service-rate-limiting-traffic-setting.yaml`. In this example the rate limit is set to maximum of 4 requests per minute per path. Replace the `organization` and `tenant` with appropriate values
+创建一个 TrafficSetting 对象，保存在名为 `service-to-service-rate-limiting-traffic-setting.yaml` 的文件中。在此示例中，速率限制设置为每个路径每分钟最多 4 次请求。将 `organization` 和 `tenant` 替换为适当的值。
 
 ```yaml
 apiVersion: traffic.tsb.tetrate.io/v2
@@ -52,30 +51,30 @@ spec:
           unit: MINUTE
 ```
 
-Apply the manifest using `tctl`:
+使用 `tctl` 应用此清单：
 
 ```bash
 tctl apply -f service-to-service-rate-limiting-traffic-setting.yaml
 ```
 
-## Deploy `sleep` Service
+## 部署 `sleep` 服务
 
-Since you will be configuring service-to-service rate limiting, another service to act as a client to your `httpbin` service is necessary.
+由于你将配置服务之间的速率限制，因此需要另一个服务作为 `httpbin` 服务的客户端。
 
-Follow [the instructions in this document](../../reference/samples/sleep_service) to create the `sleep` service. You can skip the section on "Create a `sleep` Workspace".
+请按照 [本文档中的说明](../../../reference/samples/sleep-service) 创建 `sleep` 服务。你可以跳过 "创建 `sleep` 工作区" 部分。
 
-## Testing
+## 测试
 
-You can test the rate limiting by sending HTTP requests from the `sleep` service to `httpbin` service, and observe the rate limiting take effect after a certain number of requests.
+你可以通过从 `sleep` 服务发送 HTTP 请求到 `httpbin` 服务来测试速率限制，并观察在一定数量的请求后速率限制生效。
 
-To send a request from sleep service, you need to identify the pod within your sleep service.
-Execute the following command to find out the pod name:
+要从 sleep 服务发送请求，你需要确定 sleep 服务内的 Pod。
+执行以下命令以查找 Pod 名称：
 
 ```bash
 kubectl get pod -n sleep -l app=sleep -o jsonpath={.items..metadata.name}
 ```
 
-Then send a request from this pod to the `httpbin` service, which should be reachable at `http://httpbin.httpbin:8000`. Make sure to replace the value for `sleep-pod` with an appropriate value:
+然后从此 Pod 发送请求到 `httpbin` 服务，该服务应该可以在 `http://httpbin.httpbin:8000` 上访问。确保将 `<sleep-pod>` 的值替换为适当的值：
 
 ```bash
 kubectl exec <sleep-pod> -n sleep -c sleep -- \
@@ -85,9 +84,9 @@ kubectl exec <sleep-pod> -n sleep -c sleep -- \
     -w "%{http_code}\n"
 ```
 
-Repeat executing the above command more than 4 times. After 4 requests, the response code that you see should change from 200 to 429.
+重复执行上述命令超过 4 次。在 4 次请求之后，你应该会看到响应代码从 200 变为 429。
 
-Since the rate limiting rule was based on the request path, accessing another path on the `httpbin`, you should see a 200 response again:
+由于速率限制规则基于请求路径，访问 `httpbin` 上的另一个路径，你应该会再次看到 200 响应：
 
 ```bash
 kubectl exec <sleep-pod> -n sleep -c sleep -- \
@@ -97,4 +96,4 @@ kubectl exec <sleep-pod> -n sleep -c sleep -- \
     -w "%{http_code}\n"
 ```
 
-Similar to the previous example, repeating the above command more than 4 times should result in the rate limiting activating, and you should start getting a 429 instead of 200.
+类似于前面的示例，重复执行上述命令超过 4 次应该会导致速率限制生效，你应该开始看到 429 而不是 200。
