@@ -3,7 +3,8 @@ title: "微软零成本收购 OpenAI？——OpenAI 的错位与微软的收益"
 date: 2023-11-21T14:40:00+08:00
 draft: false
 authors: ["Ben Thompson"]
-summary: "我们认为，服务网格最适合作为现有安全模型的一部分，通过在传统安全控制之上添加更细粒度的安全策略来实现。"
+summary: "
+这篇文章分析了 OpenAI 的使命与商业模式之间的不一致，以及 Microsoft 如何从中受益。文章认为，OpenAI 的 GPT-3 模型是一种强大的通用人工智能，但是它的许可协议限制了它的应用范围。Microsoft 作为 OpenAI 的合作伙伴和投资者，拥有 GPT-3 的独家许可权，可以将其用于自己的产品和服务，从而获得竞争优势。"
 tags: ["OpenAI","AI","Microsoft"]
 categories: ["AI"]
 links:
@@ -22,6 +23,9 @@ Ben Thompson 因其深刻的洞察力和独特的分析方法而闻名，他的�
 ---
 
 下文译自：<https://stratechery.com/2023/openais-misalignment-and-microsofts-gain/>
+
+摘要：
+这篇文章分析了 OpenAI 的使命与商业模式之间的不一致，以及 Microsoft 如何从中受益。文章认为，OpenAI 的 GPT-3 模型是一种强大的通用人工智能，但是它的许可协议限制了它的应用范围。Microsoft 作为 OpenAI 的合作伙伴和投资者，拥有 GPT-3 的独家许可权，可以将其用于自己的产品和服务，从而获得竞争优势。
 
 正如您所预期的那样，我已经在脑海中和页面上撰写了几个版本的这篇文章，因为[我职业生涯中最不同寻常的周末](https://twitter.com/benthompson/status/1726514608234746003)已经开始。简要总结如下：
 
