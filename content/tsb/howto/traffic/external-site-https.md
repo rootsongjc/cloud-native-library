@@ -1,37 +1,37 @@
 ---
-title: Send traffic to an External Host using HTTPS
+title: 将流量发送到使用 HTTPS 的外部主机
 weight: 4
 ---
 
-This article will cover how to send traffic to an external host using HTTPS retries and timeouts.
+本文将介绍如何使用 HTTPS 重试和超时将流量发送到外部主机。
 
-Before you get started, make sure you:<br />
-✓ Familiarize yourself with [TSB concepts](../../concepts/toc) <br />
-✓ Install the TSB environment. You can use [TSB demo](../../setup/self_managed/demo-installation) for quick install<br />
-✓ Completed [TSB usage quickstart](../../quickstart).
+在开始之前，请确保你已经：
 
+- 熟悉[TSB 概念](../../../concepts/)
+- 安装了 TSB 环境。你可以使用[TSB 演示](../../../setup/self-managed/demo-installation)进行快速安装
+- 完成了[TSB 使用快速入门](../../../quickstart)。
 
-## Understanding the problem
+## 理解问题
 
-Considering an external application added to the mesh with a [ServiceEntry](https://istio.io/latest/docs/reference/config/networking/service-entry/). The application listens on HTTPS so the traffic you will be sending is expected to use simple TLS.
+考虑一个通过[ServiceEntry](https://istio.io/latest/docs/reference/config/networking/service-entry/)添加到网格中的外部应用程序。该应用程序监听 HTTPS，因此你将发送的流量预期使用简单的 TLS。
 
-The application client within the mesh will initiate an HTTP request and it will be converted to HTTPS at the sidecar to the external application host, e.g. `www.tetrate.io`. This is achieved due to outbound traffic policy defined in the DestinationRule.
+网格内的应用程序客户端将发起 HTTP 请求，并在侧车到外部应用程序主机的过程中将其转换为 HTTPS，例如`www.tetrate.io`。这是由于在 DestinationRule 中定义的出站流量策略实现的。
 
-Here is what you need to set to achieve the communication between the client and the external host:
+以下是你需要设置的内容，以实现客户端与外部主机之间的通信：
 
-:::note Direct mode
-This only works using TSB direct mode config.
-:::
+{{<callout note 直接模式>}}
+这仅在使用 TSB 直接模式配置时有效。
+{{</callout>}}
 
-First, create a namespace for your istio objects:
+首先，为你的 Istio 对象创建一个命名空间：
 
 ```
 kubectl create ns tetrate
 ```
 
-Create a file `tetrate.yaml` with the following ServiceEntry, VirtualService and DestinationRule.
+创建一个名为`tetrate.yaml`的文件，其中包含以下 ServiceEntry、VirtualService 和 DestinationRule。
 
-````
+```yaml
 kind: ServiceEntry
 apiVersion: networking.istio.io/v1alpha3
 metadata:
@@ -97,32 +97,30 @@ spec:
     tls:
       mode: SIMPLE
       sni: tetrate.io
-````
+```
 
-Apply with kubectl:
+使用 kubectl 应用：
 
 ```
 kubectl apply -f tetrate.yaml
 ```
 
-It is important to pay attention on how the external host is added to the service registry.
-On the yaml above, you can see that the single ServiceEntry has port 80 as the matching port but your external application listens on HTTPS which most of the time will be 443 (you may change this if your application listens on 8443 or other port).
+重要的是要注意如何将外部主机添加到服务注册表。在上面的 YAML 中，你可以看到单个 ServiceEntry 具有端口 80 作为匹配端口，但你的外部应用程序监听 HTTPS，大多数情况下将是 443（如果你的应用程序监听 8443 或其他端口，你可以更改此端口）。
 
-In other words, the traffic is sent to the same port that matched, i.e. port 80, which is not right for the outgoing HTTPS connection. In order to forward to upstream 443 port, you would need to make the endpoints stanza in the ServiceEntry look like this:
+换句话说，流量被发送到匹配的相同端口，即端口 80，这对于出站 HTTPS 连接是不正确的。为了转发到上游的 443 端口，你需要使 ServiceEntry 中的 endpoints 部分如下所示：
 
-```
+```yaml
 endpoints:
    - address: www.tetrate.io
      ports:
        http: 443
 ```
 
+## 测试
 
-## Testing
+用于测试的客户端可以执行来自具有注入了侧车的客户端的请求，此处将使用[netshoot](https://github.com/nicolaka/netshoot)或[sleep](../../../reference/samples/sleep-service) pod。
 
-For testing you can perform a request from a client with a sidecar injected, in this case a [netshoot](https://github.com/nicolaka/netshoot) or [sleep](../../reference/samples/sleep_service) pod will be useful.
-
-First, send a request using HTTPS:
+首先，发送一个使用 HTTPS 的请求：
 
 ```
 curl -I https://www.tetrate.io
@@ -138,6 +136,8 @@ link: <https://www.tetrate.io/wp-json/>; rel="https://api.w.org/", <https://www.
 content-security-policy: upgrade-insecure-requests;
 x-frame-options: SAMEORIGIN
 strict-transport-security: max-age=31536000;includeSubDomains;
+
+
 x-xss-protection: 1; mode=block
 x-content-type-options: nosniff
 referrer-policy: no-referrer
@@ -153,9 +153,9 @@ accept-ranges: bytes
 strict-transport-security: max-age=31536000
 ```
 
-You can see how the first curl command succeeds, as it goes through the pass-through proxy (TCP proxy). That means no rule is applied from DestinationRule or VirtualService.
+你可以看到第一个 curl 命令成功了，因为它通过了直通代理（TCP 代理）。这意味着没有从 DestinationRule 或 VirtualService 应用规则。
 
-Now, perform a request instead sending and HTTPS this will be a plain HTTP. Remember the sidecar will initiate and HTTPS request as we instructed in the DestinationRule.
+现在，执行一个请求，而不是发送 HTTPS，这将是一个普通的 HTTP 请求。请记住，侧车将按照我们在 DestinationRule 中指示的方式发起 HTTPS 请求。
 
 ```
 curl -I http://www.tetrate.io
@@ -169,17 +169,17 @@ date: Tue, 13 Sep 2022 16:24:32 GMT
 server: envoy
 ```
 
-This will return an obvious response since you have an aggressive timeout defined in the virtual service which it gets applied hence is working as expected.
+由于在虚拟服务中定义了一个激进的超时，这将返回一个明显的响应，因此它按预期工作。
 
-## Cleaning
+## 清理
 
-Destroy all the resources with the same yaml file as following:
+使用相同的 yaml 文件销毁所有资源：
 
 ```
 kubectl delete -f tetrate.yaml
 ```
 
-Finally delete the namespace.
+最后，删除命名空间。
 
 ```
 kubectl delete ns tetrate

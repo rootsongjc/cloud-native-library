@@ -1,33 +1,33 @@
 ---
-title: External Authz with TLS verification
-description: Securing traffic between TSB and external authorization service.
+title: 使用 TLS 验证的外部授权
 weight: 3
+description: 安全地在 TSB 和外部授权服务之间保护流量。
 ---
 
-TSB supports specifying [TLS or mTLS](../../refs/tsb/auth/v2/auth#clienttlssettings) parameters for securing communication to external auth servers. This document will show you how to configure TLS validation for an external authorization server by adding a CA certificate to the authorization configuration. 
+TSB 支持指定用于保护与外部授权服务器通信的[TLS 或 mTLS](../../../refs/tsb/auth/v2/auth#clienttlssettings)参数。本文将向您展示如何通过将 CA 证书添加到授权配置来为外部授权服务器配置 TLS 验证。
 
-Before you get started, make sure you: <br />
-✓ Familiarize yourself with [TSB concepts](../../concepts/toc) <br />
-✓ Install the TSB environment. You can use [TSB demo](../../setup/self_managed/demo-installation) for quick install<br />
-✓ Completed [TSB usage quickstart](../../quickstart). This document assumes you already created Tenant and are familiar with Workspace and Config Groups. Also you need to configure tctl to your TSB environment.<br/>
+在开始之前，请确保您：
+- 熟悉[TSB 概念](../../../concepts/)
+- 安装了 TSB 环境。您可以使用[TSB 演示](../../../setup/self-managed/demo-installation)进行快速安装
+- 完成了[TSB 用法快速入门](../../../quickstart)。本文假设您已经创建了租户并熟悉工作空间和配置组。还需要将 tctl 配置到您的 TSB 环境中。
 
-The examples in this document will build on top of ["Configuring External Authorization in Ingress Gateways"](./ingress_gateway). Make sure to have completed that document before proceeding, and note that you will be working on the namespace `httpbin`
+本文中的示例将建立在["在 Ingress Gateways 中配置外部授权"](../ingress-gateway)之上。在继续之前，请确保已完成该文档，并注意您将在命名空间 `httpbin` 上工作。
 
-## Create TLS certificate
+## 创建 TLS 证书
 
-To enable TLS for Ingress Gateway to authorization service traffic, you must have a TLS certificate. This document assumes you already have TLS certificates which usually include server certificate and private key along with the CA as root certificate that will be used by the client. This document use following files
+为了使 Ingress Gateway 到授权服务的流量启用 TLS，您必须拥有 TLS 证书。本文假设您已经有 TLS 证书，通常包括服务器证书和私钥，以及用于客户端的根证书作为 CA。本文使用以下文件：
 
-1. `authz.crt` as  server certificate
-2. `authz.key` as certificate private key
-3. `authz-ca.crt` as CA certificate
+1. `authz.crt` 作为服务器证书
+2. `authz.key` 作为证书私钥
+3. `authz-ca.crt` 作为 CA 证书
 
-If you decide to use other file names, please replace them accordingly throughout the examples below.
+如果您决定使用其他文件名，请在下面的示例中相应地替换它们。
 
-:::note self signed certificate
-For the purpose of example, you can create self signed certificates using this [scripts](../../quickstart/ingress_gateway#certificate-for-gateway).
-:::note
+{{<callout note 自签名证书>}}
+出于示例目的，您可以使用此[脚本](../../../quickstart/ingress-gateway#certificate-for-gateway)创建自签名证书。
+{{</callout>}}
 
-Once you have the files, create Kubernetes secret using server certificate and private key.
+拥有文件后，使用服务器证书和私钥创建 Kubernetes secret。
 
 ```bash
 kubectl create secret tls -n httpbin opa-certs \
@@ -35,23 +35,22 @@ kubectl create secret tls -n httpbin opa-certs \
   --key=authz.key
 ```
 
-You will also need the CA certificate in to validate the TLS connection.
-Create a `ConfigMap` named `authz-ca` that will contain the CA certificate:
+您还需要 CA 证书来验证 TLS 连接。
+创建一个名为 `authz-ca` 的 `ConfigMap`，其中包含 CA 证书：
 
 ```bash
 kubectl create configmap -n httpbin authz-ca \
   --from-file=authz-ca.crt
 ```
 
-## Deploy Authorization Service with TLS certificate
+## 使用 TLS 证书部署授权服务
 
-Follow the instructions in ["Installing Open Policy Agent in TSB"](../../reference/samples/opa#terminating-tls) to setup an instance OPA with a sidecar proxy that terminates TLS. 
+按照["在 TSB 中安装 Open Policy Agent"](../../../reference/samples/opa#terminating-tls)中的说明设置带有终止 TLS 的侧车代理的 OPA 实例。
 
+## 修改 Ingress Gateway
 
-## Modify Ingress Gateway
-
-You will need to add CA certificate to the Ingress Gateway to validate the TLS connection.
-Create a file named `httpbing-ingress-gateway.yaml` with the following contents. This manifest adds overlays to read the `ConfigMap` named `authz-ca` that contains the CA certificates to the Ingress Gateway deployment.
+您需要向 Ingress Gateway 添加 CA 证书以验证 TLS 连接。
+创建一个名为 `httpbing-ingress-gateway.yaml` 的文件，其中包含以下内容。此清单添加了覆盖以读取包含 CA 证书的 `authz-ca` 的 `ConfigMap` 到 Ingress Gateway 部署。
 
 ```yaml
 apiVersion: install.tetrate.io/v1alpha1
@@ -80,18 +79,18 @@ spec:
           readOnly: true
 ```
 
-Apply with kubectl:
+使用 kubectl 应用：
 
 ```bash
 kubectl apply -f httpbin-ingress-gateway.yaml
 ```
 
-Then update the Ingress Gateway configuration to enable TLS validation:
+然后更新 Ingress Gateway 配置以启用 TLS 验证：
 
 ```yaml
 apiVersion: gateway.tsb.tetrate.io/v2
 kind: IngressGateway
-Metadata:
+metadata:
  organization: tetrate
  name: httpbin-ingress-gateway
  group: httpbin
@@ -123,14 +122,12 @@ spec:
          uri: grpcs://opa.opa.svc.cluster.local:18443
 ```
 
-Apply with tctl
+使用 tctl 应用：
 
 ```bash
 tctl apply -f ext-authz-ingress-gateway-tls.yaml
 ```
 
-## Testing
+## 测试
 
-You can use the same testing steps as shown in ["Configuring External Authorization in Ingress Gateways"](./ingress_gateway#testing)
-
-
+您可以使用与["在 Ingress Gateways 中配置外部授权"](../ingress-gateway#testing)中显示的相同测试步骤。

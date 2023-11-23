@@ -1,35 +1,32 @@
 ---
-title: TSB configuration
-description: Shows how to create WASM extensions and assign them into the hierarchy
+title: TSB 配置
+description: 展示了如何在 TSB 中创建 WASM 扩展并将它们分配到层次结构中的组件。
 weight: 2
 ---
 
-This document will describe how the WASM extensions are defined in TSB and how are they assigned to the components on the hierarchy.
+本文将描述 WASM 扩展在 TSB 中是如何定义的，以及它们如何分配给层次结构中的组件。
 
-## WASM in TSB
+## TSB 中的 WASM
 
-In order to control the extensions allowed in the mesh, avoid security leakages and ease the process of extension upgrades, TSB has a [WASM extension](../../refs/tsb/extension/v2/wasm_extension) catalog,
-where an administrator will register all the extensions that will be available to be used in the different components.
-This catalog will contain the description, image and execution properties for each extension.
-When a new version of the extension is available, changing the content of the WASM extension catalog record will propagate the update to all the assignments for that extension.
+为了控制网格中允许的扩展，避免安全泄漏并简化扩展升级过程，TSB 拥有一个[WASM 扩展](../../../refs/tsb/extension/v2/wasm-extension)目录，
+管理员将在其中注册所有可用于不同组件中使用的扩展。
+此目录将包含每个扩展的描述、镜像和执行属性。
+当扩展的新版本可用时，更改 WASM 扩展目录记录的内容将将更新传播到该扩展的所有分配。
 
-![UI](../../assets/howto/wasm/wasm-ui.png)
+![UI](../../../assets/howto/wasm/wasm-ui.png)
 
-These extensions are packaged as OCI images, containing the WASM file, and deployed in a container images registry from where Istio will pull and extract the contents.
-The benefit of using OCI images in order to deliver the WASM extensions is that the security is already implemented and standardized with the same approach as with the rest of workloads images.
+这些扩展被打包为 OCI 镜像，包含 WASM 文件，并部署在容器镜像仓库中，Istio 将从中拉取并提取内容。
+使用 OCI 镜像交付 WASM 扩展的好处在于，安全性已经实现并标准化，与其他工作负载镜像一样。
 
-Extensions can be allowed to be used globally or restricted in a set of Tenants, and this will affect where the extension can be attached.
+扩展可以允许全局使用，也可以在一组租户中受到限制，这将影响扩展可以附加的位置。
 
-After having the extensions created in the catalog they become enabled and available to be used in the attachments for the TSB components in the same organization hierarchy. And their properties will become the configuration for the attachments.
-Components that can be configured with WASM extensions are : [Organization](../../refs/tsb/v2/organization), [Tenant](../../refs/tsb/v2/tenant), [Workspace](../../refs/tsb/v2/workspace), [SecurityGroup](../../refs/tsb/security/v2/security_group), [IngressGateway](../../refs/tsb/gateway/v2/ingress_gateway), [EgressGateway](../../refs/tsb/gateway/v2/egress_gateway) and [Tier1Gateway](../../refs/tsb/gateway/v2/tier1_gateway).
+在扩展在目录中创建后，它们将启用并可用于与同一组织层次结构中的 TSB 组件的附件中使用。它们的属性将成为附件的配置。
+可以配置 WASM 扩展的组件包括：[组织](../../../refs/tsb/v2/organization)、[租户](../../../refs/tsb/v2/tenant)、[工作区](../../../refs/tsb/v2/workspace)、[安全组](../../../refs/tsb/security/v2/security-group)、[入口网关](../../../refs/tsb/gateway/v2/ingress-gateway)、[出口网关](../../../refs/tsb/gateway/v2/egress-gateway)和[第一层网关](../../../refs/tsb/gateway/v2/tier1-gateway)。
 
+## 在 TSB 资源中使用 WASM 扩展
 
-## Using WASM extensions in the TSB resources
-
-WASM extensions can be specified in the [`defaultSecuritySettings`](../../refs/tsb/security/v2/security_setting) property of [OrganizationSetting](../../refs/tsb/v2/organization_setting), [TenantSetting](../../refs/tsb/v2/tenant_setting), [WorkspaceSetting](../../refs/tsb/v2/workspace_setting) , and in the spec of [SecuritySettings](../../refs/tsb/security/v2/security_setting), and
-it will affect all the workloads belonging to those resources in the hierarchy.
-Also, these attachments can be specified in the IngressGateway, EgressGateway and Tier1Gateway [`extension`](../../refs/tsb/types/v2/types#wasmextensionattachment) property, and only the workloads
-linked to these gateways will be affected by the WASM extension. TSB will use workload selectors to specify the workloads.
+WASM 扩展可以在[组织设置](../../../refs/tsb/v2/organization-setting)、[租户设置](../../../refs/tsb/v2/tenant-setting)、[工作区设置](../../../refs/tsb/v2/workspace-setting)的`defaultSecuritySettings`属性中指定，并将影响层次结构中属于这些资源的所有工作负载。
+此外，这些附件可以在 IngressGateway、EgressGateway 和 Tier1Gateway 的[`extension`](../../../refs/tsb/types/v2/types#wasmextensionattachment)属性中指定，只有与这些网关链接的工作负载才会受到 WASM 扩展的影响。TSB 将使用工作负载选择器来指定工作负载。
 
 ```yaml
   extension:
@@ -39,8 +36,8 @@ linked to these gateways will be affected by the WASM extension. TSB will use wo
         value: igw-tsb
 ```
 
-Another way of using WASM extensions in TSB is using the Istio direct mode, creating an [IstioInternalGroup](../../refs/tsb/istiointernal/v2/istio_internal_group#group) and a [WasmPlugin](https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/) with references to that group.
-For example:
+在 TSB 中使用 WASM 扩展的另一种方式是使用 Istio 直接模式，创建一个[IstioInternalGroup](../../../refs/tsb/istiointernal/v2/istio-internal-group#group)和一个[WasmPlugin](https://istio.io/latest/docs/reference/config/proxy-extensions/wasm-plugin/)，并引用该组。
+例如：
 
 ```yaml
 apiVersion: istiointernal.tsb.tetrate.io/v2
@@ -56,7 +53,7 @@ spec:
       - "*/httpbin"
 ```
 
-And then creating directly the Istio WasmPlugin:
+然后直接创建 Istio WasmPlugin：
 
 ```yaml
 apiVersion: extensions.istio.io/v1alpha1

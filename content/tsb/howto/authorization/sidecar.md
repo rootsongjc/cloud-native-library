@@ -1,94 +1,83 @@
 ---
-title: Service to service authorization using external authorization
-description: Shows how to use OPA to authorize service to service traffic
+title: 使用外部授权进行服务到服务的授权
 weight: 1
+description: 演示如何使用 OPA 授权服务到服务的流量。
 ---
 
-[Tetrate Service Bridge (TSB)](../../concepts/terminology##tetrate-service-bridge-tsb) provides authorization capabilities to authorize every HTTP request coming to a service from another service ("service-to-service" requests).
+[Tetrate Service Bridge (TSB)](../../../concepts/terminology##tetrate-service-bridge-tsb) 提供了授权功能，用于授权来自另一个服务的每个 HTTP 请求（"服务到服务"请求）。
 
-TSB supports *local* authorization by using JWT claims and *external* authorization which uses a service running externally to determine if a request should be allowed or denied. External authorization can be used on both gateways and workloads (through their sidecars).
+TSB 支持*本地*授权，使用 JWT 声明，以及*外部*授权，后者使用在外部运行的服务来确定是否应允许或拒绝请求。外部授权可以用于网关和工作负载（通过它们的 Sidecar）。
 
-You may decide to use an external authorization system if you have a separate in-house system or if you want to integrate with a third party authorization solution such as [Open Policy Agent (OPA)](https://www.openpolicyagent.org/) or [PlainID](https://www.plainid.com/).
+如果您有一个独立的内部系统，或者希望与第三方授权解决方案（如 [Open Policy Agent (OPA)](https://www.openpolicyagent.org/) 或 [PlainID](https://www.plainid.com/)）集成，您可以决定使用外部授权系统。
 
-This document describes how to configure service-to-service authorization using OPA as an example. OPA is an open source, general-purpose policy engine that provides a high-level declarative language that lets you specify policy as code. 
+本文描述了如何使用 OPA 作为示例配置服务到服务的授权。OPA 是一个开源的通用策略引擎，提供高级声明性语言，让您可以将策略规定为代码。
 
-:::note OPA support
-Tetrate does not offer support for OPA. Please look elsewhere if you need support for your use case. 
-:::
+{{<callout note "OPA 支持">}}
+Tetrate 不提供对 OPA 的支持。如果您需要针对您的用例支持，请查找其他支持。
+{{</callout>}}
 
-Before you get started, make sure you: <br />
-✓ Familiarize yourself with [TSB concepts](../../concepts/toc) <br />
-✓ Install the TSB environment. You can use [TSB demo](../../setup/self_managed/demo-installation) for quick install <br />
-✓ Completed TSB usage quickstart. This document assumes you already created a Tenant and are familiar with [Workspaces](../../concepts/terminology#workspace) and Config Groups. Also you need to configure `tctl` to your TSB environment.
+在开始之前，请确保您已经完成以下步骤：
 
-## Overview
+- 熟悉 [TSB 概念](../../../concepts/)
+- 安装 TSB 环境。您可以使用 [TSB 演示](../../../setup/self-managed/demo-installation) 进行快速安装
+- 完成了 TSB 使用快速入门。本文假设您已经创建了一个租户，并熟悉 [工作空间](../../../concepts/terminology#workspace) 和配置组。还需要将 `tctl` 配置到您的 TSB 环境。
 
-The following diagram shows the request and response flow when using an external authorization system to authorize service-to-service requests. 
+## 概述
 
-![](../../assets/howto/service-to-service-authorization.png)
+以下图表显示了在使用外部授权系统授权服务到服务请求时的请求和响应流程。
 
-The desired result is to be able to send requests from the "Sleep workload" to "`httpbin` with OPA workload", and have these requests go through proper authorization checks by OPA. If a request from the "Sleep workload" is deemed to be unauthorized, a `403` Forbidden should be returned.
+![](../../../assets/howto/service-to-service-authorization.png)
 
-Note that while in this example you deploy OPA as sidecar within a pod, it is also possible to deploy OPA in a separate pod. If you do deploy OPA in a separate pod, you will need to investigate yourself what value you use when you specify the URL of the external system later.
+期望的结果是能够从"Sleep 工作负载"向"`httpbin` with OPA 工作负载"发送请求，并通过 OPA 执行适当的授权检查。如果从"Sleep 工作负载"发出的请求被视为未经授权，则应返回`403` Forbidden。
 
-## Setting up the services
+请注意，尽管在此示例中，您将 OPA 部署为 Pod 内的 Sidecar，但也可以将 OPA 部署为单独的 Pod。如果将 OPA 部署为单独的 Pod，您将需要自行调查在稍后指定外部系统的 URL 时使用的值。
 
-### Setting up the `httpbin` service
+## 设置服务
 
-You will first setup the "server side", which is the "httpbin with OPA workload" component in the diagram.
+### 设置 `httpbin` 服务
 
-#### OPA policy
+首先设置"服务器端"，即图表中的"`httpbin` with OPA 工作负载"组件。
 
-Before starting a service, you need to create the Kubernetes Secret which will contain OPA policy.
+#### OPA 策略
 
-Below is an example of OPA policy that you will use to authorize requests. It will allow requests when:
-* JWT token is present
-* JWT token is not expired
-* URL path that you want to access is specified in the JWT token
+在启动服务之前，您需要创建包含 OPA 策略的 Kubernetes Secret。
 
-Create a file named [s2s-policy.rego](../../assets/howto/s2s-policy.rego) with the following content:
+以下是您将用于授权请求的 OPA 策略示例。当以下条件满足时，它将允许请求：
 
-<CodeBlock>
-  {policyRego}
-</CodeBlock>
-```
+* 存在 JWT 令牌
+* JWT 令牌未过期
+* 您要访问的 URL 路径在 JWT 令牌中指定
 
-Then store the policy in Kubernetes as a Secret.
+创建一个名为 [s2s-policy.rego](../../../assets/howto/s2s-policy.rego) 的文件，其内容如下：
+
+然后将策略存储在 Kubernetes 中作为 Secret。
 
 ```
 kubectl create namespace httpbin
 kubectl create secret generic opa-policy -n httpbin --from-file s2s-policy.rego
 ```
 
-#### Create httpbin deployment with OPA and Envoy sidecars
+#### 创建带有 OPA 和 Envoy Sidecar 的 httpbin 部署
 
-Once you have the policy, deploy the `httpbin` service that references the policy.
-Create a file named [`s2s-httpbin-with-opa.yaml`](../../assets/howto/s2s-httpbin-with-opa.yaml) with the following content:
+一旦您有了策略，就可以部署引用该策略的 `httpbin` 服务。
+创建一个名为 [`s2s-httpbin-with-opa.yaml`](../../../assets/howto/s2s-httpbin-with-opa.yaml) 的文件，其内容如下：
 
-<CodeBlock className="language-yaml">
-  {httpbinWithOpaYAML}
-</CodeBlock>
-
-Then apply it with kubectl:
+然后使用 kubectl 应用它：
 
 ```
 kubectl label namespace httpbin istio-injection=enabled --overwrite=true
 kubectl apply -n httpbin -f s2s-httpbin-with-opa.yaml
 ```
 
-### Setting up the `sleep` service
+### 设置 `sleep` 服务
 
-Since you will be configuring service-to-service authorization, you need a service to act as a client to your `httpbin` service.
+由于您将配置服务到服务授权，因此需要一个服务作为`httpbin`服务的客户端。
 
-In this example you will deploy a service that does nothing but sleep, which maps to the "sleep workload" in the previous diagram. You will use `kubectl exec` later to issue HTTP requests to the `httpbin` service.
+在本示例中，您将部署一个什么都不做的服务，该服务映射到上图中的"sleep 工作负载"。稍后您将使用 `kubectl exec` 发出 HTTP 请求到 `httpbin` 服务。
 
-Create a file called [`s2s-sleep.yaml`](../../assets/howto/s2s-sleep.yaml) with the following content:
+创建一个名为 [`s2s-sleep.yaml`](../../../assets/howto/s2s-sleep.yaml) 的文件，其内容如下：
 
-<CodeBlock className="language-yaml">
-  {sleepYAML}
-</CodeBlock>
-
-Deploy this sleep service with kubectl:
+使用 kubectl 部署此 sleep 服务：
 
 ```
 kubectl create namespace sleep
@@ -96,79 +85,73 @@ kubectl label namespace httpbin istio-injection=enabled --overwrite=true
 kubectl apply -n sleep -f s2s-sleep.yaml
 ```
 
-## Testing
+## 测试
 
-### Test with external authorization disabled
+### 禁用外部授权进行测试
 
-So far you have deployed the services but have not enabled external authorization. Thus requests from the `sleep` service to the `httpbin` service are not checked for authorization.
+到目前为止，您已经部署了服务，但尚未启用外部授权。因此，来自
 
-This can be seen by checking if sending HTTP requests from the `sleep` service results in a `200` OK.
+`sleep`服务到`httpbin`服务的请求不会检查授权。
 
-To send a request from sleep service, identify the pod within your `sleep` service:
+这可以通过检查是否从`sleep`服务发送的 HTTP 请求导致`200` OK 来看到。
+
+要从 sleep 服务发送请求，请在`sleep`服务中确定要发送请求的 Pod：
 
 ```
 export SLEEP_POD=$(kubectl get pod -n sleep -l app=sleep -o jsonpath={.items..metadata.name})
 ```
 
-Then send a request from this pod to the `httpbin` service, which should be reachable at `http://httpbin-with-opa.httpbin:8000`:
+然后从此 Pod 发送请求到`httpbin`服务，应该可以在 `http://httpbin-with-opa.httpbin:8000` 处到达：
 
-```
+```bash
 kubectl exec ${SLEEP_POD} -n sleep -c sleep  -- curl http://httpbin-with-opa.httpbin:8000/headers -s -o /dev/null -w "%{http_code}\n"
 ```
 
-With external authorization disabled, the above command should display `200`.
+禁用外部授权时，上述命令应显示`200`。
 
-### Test with external authorization enabled
+### 启用外部授权进行测试
 
-To see how the external authorization works, you will have to create a workspace and security group.
+要查看外部授权的工作原理，您需要创建一个工作空间和安全组。
 
-#### Create the workspace
+#### 创建工作空间
 
-Create a file called [`s2s-workspace.yaml`](../../assets/howto/s2s-workspace.yaml) with the following content.
+创建一个名为 [`s2s-workspace.yaml`](../../../assets/howto/s2s-workspace.yaml) 的文件，其内容如下。
 
-Please note that in the following example we assume that you have deployed your `httpbin` service in the `demo` cluster that you have created using the TSB demo install. If you are using another cluster, change the cluster name in the example accordingly.
+请注意，在以下示例中，我们假设您已经使用 TSB 演示安装创建了名为`demo`的集群，并在其中部署了您的`httpbin`服务。如果您使用其他集群，请相应更改示例中的集群名称。
 
-<CodeBlock className="language-yaml">
-  {workspaceYAML}
-</CodeBlock>
-
-Then apply it using tctl:
+然后使用 tctl 应用它：
 
 ```
 tctl apply -f s2s-workspace.yaml
 ```
 
-#### Create the SecuritySettings
+#### 创建 SecuritySettings
 
-Once you have a workspace, you need to create a SecuritySettings for that workspace to enable external authorization.
+一旦有了工作空间，您需要为该工作空间创建 SecuritySettings 以启用外部授权。
 
-Create a file called [`s2s-security-settings.yaml`](../../assets/howto/s2s-workspace.yaml) with the following content.
+创建一个名为 [`s2s-security-settings.yaml`](../../../assets/howto/s2s-workspace.yaml) 的文件，其内容如下。
 
-Please note that the `uri` points to a local address (`grpc://127.0.0.1:9191`) because in this example the OPA service is deployed in the same pod as a sidecar. If you have deployed OPA in a separate pod, you will need to change the value for `uri` accordingly.
+请注意，`uri` 指向本地地址 (`grpc://127.0.0.1:9191`)，因为在此示例中，OPA 服务部署在同一 Pod 中作为 Sidecar。如果您将 OPA 部署在单独的 Pod 中，您需要相应地更改 `uri` 的值。
 
-<CodeBlock className="language-yaml">
-  {securitySettingsYAML}
-</CodeBlock>
-
-Then apply it using tctl:
+然后使用 tctl 应用它：
 
 ```
 tctl apply -f s2s-security-settings.yaml
 ```
 
-### Testing the authorization
+### 测试授权
 
-Send a request to `httpbin` service again.
+再次向 `httpbin` 服务发送请求。
 
-With the SecuritySettings applied, plain requests from the `sleep` service to `httpbin` service should fail with `403` Forbidden. 
+使用已应用的 SecuritySettings，来自`sleep`服务到`httpbin`服务的普通请求应该失败，并显示`403` Forbidden。
 
 ```
 kubectl exec ${SLEEP_POD} -n sleep -c sleep  -- curl http://httpbin-with-opa.httpbin:8000/headers -s -o /dev/null -w "%{http_code}\n"
 ```
 
-The above command should display `403`.
+上述命令应显示`403`。
 
-In order to authorize the requests, you need to add a JWT in the requests. For this example, the raw JWT that we would like to attach to the requests looks like the following:
+为了授权请求，您需要在请求中添加 JWT。对于此示例，我们希望附加到请求的原始 JWT 如下所示：
 
 ```
 {
@@ -178,21 +161,21 @@ In order to authorize the requests, you need to add a JWT in the requests. For t
 }
 ```
 
-The path claim has value `L2hlYWRlcnM=`, which is the base64 encoded form of the string `/headers`.
+路径声明的值为 `L2hlYWRlcnM=`，这是字符串 `/headers` 的 Base64 编码形式。
 
-JWTs need to be passed via the `Authorization` header, which requires the entire JWT to be base64 encoded as show below. Save this into an environment variable:
+JWT 需要通过 `Authorization` 标头传递，这需要整个 JWT 作为 Base64 编码，如下所示。将其保存到环境变量中：
 
 ```
 export JWT_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXRoIjoiTDJobFlXUmxjbk09IiwibmJmIjoxNTAwMDAwMDAwLCJleHAiOjE5MDAwMDAwMDB9.9yl8LcZdq-5UpNLm0Hn0nnoBHXXAnK4e8RSl9vn6l98"
 ```
 
-Finally, send a request with the above JWT token to the `httpbin` service, making sure that the request is pointing to the path `/headers`, which matches the claim in the JWT. This time around you should get a `200` OK.
+最后，使用上述 JWT 令牌向 `httpbin` 服务发送请求，确保请求指向与 JWT 中的声明匹配的路径 `/headers`。这次您应该收到 `200` OK。
 
 ```
 kubectl exec ${SLEEP_POD} -n sleep -c sleep  -- curl http://httpbin-with-opa.httpbin:8000/headers -H "Authorization: Bearer $JWT_TOKEN" -s -o /dev/null -w "%{http_code}\n"
 ```
 
-To check that requests to other paths are not authorized, try sending the following request, which is pointing to the path `/get`. The following command should result in a `403` Forbidden.
+要检查其他路径的请求是否未经授权，请尝试发送以下请求，该请求指向路径 `/get`。以下命令应显示 `403` Forbidden。
 
 ```
 kubectl exec ${SLEEP_POD} -n sleep -c sleep  -- curl http://httpbin-with-opa.httpbin:8000/get -H "Authorization: Bearer $JWT_TOKEN" -s -o /dev/null -w "%{http_code}\n"

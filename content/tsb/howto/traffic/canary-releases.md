@@ -1,87 +1,59 @@
 ---
-title: Canary Releases
+title: 金丝雀发布
 weight: 6
-description: Guide on doing canary releases with TSB.
+description: 使用 TSB 进行金丝雀发布的指南。
 ---
 
-This how-to document will show you how to do a canary release of a new sample
-service. You'll learn how to deploy and onboard a service in TSB, and how to
-adjust its settings to follow the canary deployment process.
+本操作指南将向你展示如何对新的示例服务进行金丝雀发布。你将学习如何在 TSB 中部署和注册服务，以及如何调整其设置以遵循金丝雀部署过程。
 
-✓ You'll create a workspace and the groups you'll need to onboard the application<br />
-✓ Expose the application via an application ingress gateway<br />
-✓ Perform the canary release.
+- 你将创建一个工作区和你需要注册应用程序的组
+- 通过应用程序入口网关公开应用程序
+- 执行金丝雀发布。
 
-Before you get started make sure:
+在开始之前，请确保：
 
-✓ You have a TSB management plane up and running.<br />
-✓ You have tctl configured to communicate with the TSB management plane.<br />
-✓ The cluster where you are deploying the application to is running a TSB
-control plane and is correctly onboarded into the TSB management plane.
+- 你已经启动并运行了一个 TSB 管理平面。
+- 你已经配置了 tctl 以与 TSB 管理平面通信。
+- 你将要部署应用程序的集群正在运行一个 TSB 控制平面，并且已经正确注册到 TSB 管理平面。
 
-This guide uses a `hello world` application, if you're using this in production,
-please update the relevant fields with the correct information for your
-application.
+本指南使用一个`hello world`应用程序，如果你将其用于生产，请根据你的应用程序的正确信息更新相关字段。
 
-## Get Started
+## 开始
 
-The following YAML file has three objects - a Workspace for the application, a
-Gateway group so that you can configure the application ingress, and a Traffic
-group that will allow you to configure the canary release process. Store
-it as [`ws-groups.yaml`](../../assets/howto/ws-groups.yaml).
+以下 YAML 文件包含三个对象 - 用于应用程序的工作区、用于配置应用程序入口的网关组以及用于配置金丝雀发布过程的流量组。将其存储为[`ws-groups.yaml`](../../../assets/howto/ws-groups.yaml)。
 
-<CodeBlock className="language-yaml">
-  {wsGroupsYAML}
-</CodeBlock>
-
-Apply with tctl:
+使用 tctl 应用：
 
 ```bash
 tctl apply -f ws-groups.yaml
 ```
 
-To deploy your application, start by creating the namespace and enable the Istio
-sidecar injection.
+要部署你的应用程序，首先创建命名空间并启用 Istio sidecar 注入。
 
 ```bash
 kubectl create namespace helloworld
 kubectl label namespace helloworld istio-injection=enabled
 ```
 
-Then deploy your application.
+然后部署你的应用程序。
 
-<CodeBlock className="language-yaml">
-  {helloWorldYAML}
-</CodeBlock>
-
-Store the file as [`helloworld.yaml`](../../assets/howto/helloworld.yaml) and apply with `kubectl`:
+将文件存储为[`helloworld.yaml`](../../../assets/howto/helloworld.yaml)，并使用`kubectl`应用：
 
 ```bash
 kubectl apply -f helloworld.yaml
 ```
 
-Before you go further, you should ensure that no traffic is accidentally
-directed to any new version of the application. Then, create a `ServiceRoute` in
-the traffic group you created earlier, so that all `helloworld` traffic  is sent
-solely to version `v1` .
+在继续之前，你应确保没有流量被意外地定向到应用程序的任何新版本。然后，在你之前创建的流量组中创建一个`ServiceRoute`，以便所有`helloworld`流量仅发送到版本`v1`。
 
-<CodeBlock className="language-yaml">
-  {serviceRouteYAML}
-</CodeBlock>
-
-Store the file as `serviceroute.yaml` and apply with `tctl`:
+将文件存储为`serviceroute.yaml`，并使用`tctl`应用：
 
 ```bash
 tctl apply -f serviceroute.yaml
 ```
 
-Great! Now you need to make your application accessible to the world. You need
-to deploy an ingress gateway for your application and configure it to route the
-incoming traffic to our application service.
+太棒了！现在你需要让你的应用程序对外可访问。你需要为你的应用程序部署一个入口网关，并配置它将传入的流量路由到我们的应用程序服务。
 
-In this example, you're going to expose the application using simple TLS at the
-gateway. You'll need to provide it with a TLS certificate stored in a Kubernetes
-secret.
+在这个示例中，你将使用网关的简单 TLS 公开应用程序。你需要为它提供存储在 Kubernetes 秘密中的 TLS 证书。
 
 ```bash
 kubectl create secret tls -n helloworld helloworld-certs \
@@ -89,69 +61,42 @@ kubectl create secret tls -n helloworld helloworld-certs \
     --key /path/to/some/helloworld-key.pem
 ```
 
-Now you can deploy your ingress gateway.
+现在你可以部署你的入口网关。
 
-<CodeBlock className="language-yaml">
-  {helloIngressYAML}
-</CodeBlock>
-
-Store the file as [`hello-ingress.yaml`](../../assets/howto/hello-ingress.yaml) and apply with `kubectl`:
+将文件存储为[`hello-ingress.yaml`](../../../assets/howto/hello-ingress.yaml)，并使用`kubectl`应用：
 
 ```bash
 kubectl apply -f hello-ingress.yaml
 ```
 
-The TSB data plane operator in the cluster will pick up this configuration and
-deploy the gateway's resources in your application namespace. All that is left
-to do is configure the gateway so that it routes traffic to your application.
+集群中的 TSB 数据平面操作员将获取此配置并在你的应用程序命名空间中部署网关的资源。现在所剩的就是配置网关，以便将流量路由到你的应用程序。
 
-<CodeBlock className="language-yaml">
-  {helloGatewayYAML}
-</CodeBlock>
-
-Store the file as [`helloworld-gateway.yaml`](../../assets/howto/hello-gateway.yaml) and apply with `tctl`:
+将文件存储为[`helloworld-gateway.yaml`](../../../assets/howto/hello-gateway.yaml)，并使用`tctl`应用：
 
 ```bash
 tctl apply -f helloworld-gateway.yaml
 ```
 
-At this point, you can check that your application is reachable by sending an HTTPS request for `helloworld.tetrate.com` to the gateway service IP.
+此时，你可以通过向网关服务 IP 发送`helloworld.tetrate.com`的 HTTPS 请求来验证你的应用程序是否可访问。
 
 ```bash
 curl -k -s --connect-to helloworld.tetrate.com:443:$GATEWAY_IP "https://helloworld.tetrate.com/"
 ```
 
-Now that your application is running and serving requests, deploy a new version
-of the application.
+现在，你的应用程序正在运行并提供服务请求，部署新版本的应用程序。
 
-<CodeBlock className="language-yaml">
-  {helloWorldV2YAML}
-</CodeBlock>
-
-Store the file as [`helloworld-v2.yaml`](../../assets/howto/helloworld-v2.yaml) and apply with `kubectl`:
+将文件存储为[`helloworld-v2.yaml`](../../../assets/howto/helloworld-v2.yaml)，并使用`kubectl`应用：
 
 ```bash
 kubectl apply -f helloworld-v2.yaml
 ```
 
-Since you've created a service route that targets all traffic to version `v1`.
-Version `v2` won't be getting any requests at this point. Start your canary
-release by modifying the service route to send 80% of the traffic to our known
-stable version `v1` and 20% to version `v2`.
+由于你创建了一个针对所有流量发送到版本`v1`的服务路由。在此时，版本`v2`将不会收到任何请求。通过修改服务路由，以将 80% 的流量发送到我们已知的稳定版本`v1`，并将 20% 的流量发送到版本`v2`，开始进行金丝雀发布。
 
-<CodeBlock className="language-yaml">
-  {serviceRoute20YAML}
-</CodeBlock>
-
-Store the file as [`serviceroute-20.yaml`](../../assets/howto/serviceroute-20.yaml) and apply with `tctl`:
+将文件存储为[`serviceroute-20.yaml`](../../../assets/howto/serviceroute-20.yaml)，并使用`tctl`应用：
 
 ```bash
 tctl apply -f serviceroute-20.yaml
 ```
 
-If you keep refreshing your application using your web browser, you'll see a
-majority of the requests reaching the old `v1` version. The other requests will
-show the output of the new `v2` version. To complete the canary release you will
-need to repeat this last step until all traffic is sent to the new and improved
-version `v2`, (or undo and send all traffic back to version `v1` if you found
-some issue with the new version). Simple!
+如果你不断使用 Web 浏览器刷新你的应用程序，你会看到大多数请求到达旧的`v1`版本。其他请求将显示新`v2`版本的输出。要完成金丝雀发布，你需要重复此最后一步，直到所有流量都发送到新版本并得到改进（或者如果你发现新版本有问题，可以撤销并将所有流量发送回版本`v1`）。简单！

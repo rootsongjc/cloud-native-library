@@ -1,32 +1,26 @@
 ---
-title: Migrating VM Monoliths to your cluster
-description: How-to migrate a portion of a VM workload to a cluster, and split traffic between VM and cluster.
+title: 将虚拟机上的单体应用迁移到你的集群
 weight: 2
 ---
 
-In this how-to you'll learn how to migrate a portion of a VM "monolith" workload
-to a cluster and split traffic between your VM and cluster.
+本文将教你如何将虚拟机上的部分"单体"工作负载迁移到集群，并在虚拟机和集群之间分流流量。
 
-In this example, the server running on the VM will be treated as a "monolithic"
-application. The same steps can be followed if the VM was calling out to other
-VMs. You'd just have to make sure the VMs being called out to were resolvable
-and or reachable from your cluster.
+在这个示例中，在虚拟机上运行的服务器将被视为"单体"应用程序。如果虚拟机正在调用其他虚拟机，可以按照相同的步骤进行操作。只需确保可以从你的集群解析并访问被调用的虚拟机。
 
-Before you start: <br />
-✓ [Install the TSB management plane](../../setup/self_managed/management-plane-installation) <br />
-✓ Onboarded a [cluster](../../setup/self_managed/onboarding-clusters)<br />
-✓ [Install the data plane operator](../../concepts/operators/data_plane) <br />
-✓ Provision a VM to run in a TSB workload *(this guide assumes Ubuntu 20.04)*.
+在开始之前：
+- [安装 TSB 管理平面](../../../setup/self-managed/management-plane-installation)
+- 载入了一个[集群](../../../setup/self-managed/onboarding-clusters)
+- [安装数据面操作员](../../../concepts/operators/data-plane)
+- 配置一个虚拟机以运行在 TSB 工作负载中（本指南假定使用 Ubuntu 20.04）。
 
-
-The first step, is to install Docker
+第一步是安装 Docker。
 
 ```bash
 sudo apt-get update
 sudo apt-get -y install docker.io
 ```
 
-Then, run the httpbin server and test that it works.
+然后，运行 httpbin 服务器并测试其是否正常工作。
 
 ```bash
 sudo docker run -d \
@@ -42,8 +36,9 @@ curl localhost/headers
     }
 }
 ```
-Next onboard the VM into your cluster following the [VM onboarding docs](../../setup/workload_onboarding/onboarding-vms). 
-Create the following service account in your cluster for use by your VM.
+
+接下来，将虚拟机载入到你的集群中，按照[VM 载入文档](../../../setup/workload-onboarding/onboarding-vms)的指示进行操作。
+在你的集群中为你的虚拟机创建以下服务账户。
 
 ```bash
 kubectl create namespace httpbin
@@ -59,8 +54,7 @@ metadata:
 EOF
 ```
 
-Adjust the WorkloadEntry you installed as part of the VM onboarding for your
-workload. Here is an example for httpbin.
+调整你在虚拟机上载入的 WorkloadEntry，以适应你的工作负载。以下是 httpbin 的示例。
 
 ```yaml
 apiVersion: networking.istio.io/v1beta1
@@ -84,8 +78,7 @@ spec:
   network: <vm-network-name>
 ```
 
-Modify the Sidecar resource, and make sure that you have any necessary firewall
-rules set up to allow traffic to your VM.
+修改 Sidecar 资源，并确保已设置任何必要的防火墙规则，以允许流量流向你的虚拟机。
 
 ```yaml
 apiVersion: networking.istio.io/v1beta1
@@ -110,8 +103,7 @@ spec:
       class: vm
 ```
 
-In your cluster, add the following to configure traffic flow from your cluster
-to the VM.
+在你的集群中，添加以下内容以配置从你的集群到虚拟机的流量流向。
 
 ```bash
 cat <<EOF | kubectl apply -f-
@@ -132,14 +124,11 @@ spec:
 EOF
 ```
 
-Apply the ingress gateway config using tctl to configure a gateway to accept
-traffic and forward it to the VM. 
+使用 tctl 应用入口网关配置，配置一个网关来接受流量并将其转发到虚拟机。
 
-:::note 
-When used in production, this configuration should be updated to match your
-setup where necessary. For example, if you have a workspace or gateway group
-you can use.
-:::
+{{<callout note 注意>}}
+在生产中使用时，应根据需要更新此配置以匹配你的设置。例如，如果你有一个工作空间或网关组，可以使用。
+{{</callout>}}
 
 ```yaml
 apiVersion: api.tsb.tetrate.io/v2
@@ -172,7 +161,7 @@ metadata:
   workspace: foo-ws
   tenant: <tenant>
 spec:
-  workloadSelector: # adjust this to match the gateway you are configuring
+  workloadSelector: # 根据你正在配置的网关进行调整
     namespace: httpbin
     labels:
         app: httpbin-gateway
@@ -187,20 +176,13 @@ spec:
               port: 80
 ```
 
-At this point, you should be able to send traffic to your gateway for host
-`httpbin.tetrate.io`, and it should be forwarded to your VM. 
+在这一点上，你应该能够将流量发送到你的网关，主机为`httpbin.tetrate.io`，并且它应该被转发到你的虚拟机。
 
-You can verify this with curl by manually setting the host header and accessing
-the IP of your gateway e.g. `curl -v -H "Host: httpbin.tetrate.io" 34.122.114.216/headers` 
-where `34.122.114.216` is the address of your gateway.
+你可以通过手动设置主机标头并访问你的网关的 IP（例如`curl -v -H "Host: httpbin.tetrate.io" 34.122.114.216/headers`，其中`34.122.114.216`是你的网关的地址）来验证这一点。
 
-You could now direct whatever points to your VM (DNS or L4 LB, for example) to
-point to your cluster gateway. Traffic will flow to your cluster, and then to
-your VM.
+现在，你可以将指向你的虚拟机的任何内容（DNS 或 L4 LB 等）指向你的集群网关。流量将流向你的集群，然后流向你的虚拟机。
 
-Now, add the httpbin workload running on your VM to your cluster and send a
-portion of traffic to the cluster version. Start by applying the following
-config with tctl (adjusting the config where necessary).
+现在，将在虚拟机上运行的 httpbin 工作负载添加到你的集群，并将流量的一部分发送到集群版本。首先，使用 tctl 应用以下配置（根据需要进行调整）。
 
 ```yaml
 apiVersion: traffic.tsb.tetrate.io/v2
@@ -231,9 +213,7 @@ spec:
     weight: 100
 ```
 
-This will send 100% of traffic to the VM because you set this up before
-deploying your app to your cluster. To start traffic splitting, run the
-following command in your cluster.
+这将会将 100% 的流量发送到虚拟机，因为你在将应用程序部署到集群之前设置了这个。要开始流量分流，请在你的集群中运行以下命令。
 
 ```bash
 cat <<EOF | kubectl apply -f-
@@ -267,10 +247,9 @@ spec:
 EOF
 ```
 
-Verify that the app is running in your cluster. 
+验证应用程序是否在你的集群中运行。
 
-Now edit the TSB ServiceRoute config to include the newly deployed v2 version in
-the cluster and apply it with `tctl` *(adjusting where necessary)*.
+现在编辑 TSB ServiceRoute 配置，包括在集群中部署的新 v2 版本，并使用`tctl`应用它（根据需要进行调整）。
 
 ```yaml
 apiVersion: traffic.tsb.tetrate.io/v2
@@ -293,14 +272,8 @@ spec:
     weight: 20
 ```
 
-Now send a few requests to your application through your gateway.
+现在，向你的应用程序发送一些请求通过你的网关。
 
-You can verify through logs, or the TSB UI that traffic is being split between
-your VM and cluster applications.
+你可以通过日志或 TSB UI 来验证流量在你的虚拟机和集群应用程序之间分流。
 
-Once you're satisfied that the newer version is performing as expected, you can
-slowly increase the  traffic percentages until all traffic is being sent to your
-cluster and shifted away from the VM.
-
-
-
+一旦你满意新版本的性能，你可以逐渐增加流量百分比，直到所有流量都被发送到你的集群，而不再流向虚拟机。

@@ -1,38 +1,31 @@
 ---
-title: Configuring External Authorization in Ingress Gateways
-description: How to Configure Ingress Gateways to Authorize Requests From Public Facing Network
+title: 在 Ingress Gateways 中配置外部授权
 weight: 2
+description: 如何使用 Open Policy Agent（OPA）示例配置 Ingress Gateway 外部授权。
 ---
 
-This document will describe how to configure Ingress Gateway external authorization using [Open Policy Agent](https://www.openpolicyagent.org/) (OPA) as an example. 
+在本文中，将使用 httpbin 作为工作负载。传入 Ingress GW 的请求将由 OPA 检查。如果请求被视为未经授权，那么将以 403（Forbidden）响应拒绝请求。
 
-Before you get started, make sure you: <br />
-✓ Familiarize yourself with [TSB concepts](../../concepts/toc) <br />
-✓ Install the TSB environment. You can use [TSB demo](../../setup/self_managed/demo-installation) for quick install <br />
-✓ Completed TSB usage [quickstart](../../quickstart). This document assumes you already created Tenant and are familiar with Workspace and Config Groups. Also you need to configure tctl to your TSB environment.
+以下图像显示了在使用外部授权系统时的请求和响应流程，您将部署 OPA 作为独立服务。
 
-In this example, httpbin will be used as the workload. Requests that come to Ingress GW will be checked by OPA. If the request is deemed unauthorized, then the request will be denied with a 403 (Forbidden) response.
+![](../../../assets/howto/authorization/ingress_gateway_flow.png)
 
-Following image shows the requests and response flow when using an external authorization system,you will deploy OPA as an individual service. 
+## 部署 `httpbin` 服务
 
-[![](../../assets/howto/authorization/ingress_gateway_flow.png)](../../assets/howto/authorization/ingress_gateway_flow.png)
+按照[此文档中的所有说明](../../../reference/samples/httpbin)创建`httpbin`服务。
 
-## Deploy `httpbin` Service
+## 部署 OPA 服务
 
-Follow [all of the instructions in this document](../../reference/samples/httpbin) to create the `httpbin` service.
+参考"[安装 Open Policy Agent](../../../reference/samples/opa)"文档，创建[具有基本身份验证的策略](../../../reference/samples/opa#example-policy-with-basic-authentication)并[部署 OPA 作为独立服务](../../../reference/samples/opa#basic-deployment)。
 
-## Deploy OPA Service
+## 配置 Ingress Gateway
 
-Refer to the "[Installing Open Policy Agent](../../reference/samples/opa)" document and create [a policy for a basic authentication](../../reference/samples/opa#example-policy-with-basic-authentication) and [deploy OPA as a standalone service](../../reference/samples/opa#basic-deployment)
+您需要为`httpbin`再次配置 Ingress Gateway 以使用 OPA。创建名为 `httpbin-ingress.yaml` 的文件，其中包含以下内容：
 
-## Configure Ingress Gateway
-
-You will need to configure your Ingress Gateway again for `httpbin` to use OPA. Create a file called `httpbin-ingress.yaml` with the following contents:
-
-```
+```yaml
 apiVersion: gateway.tsb.tetrate.io/v2
 kind: IngressGateway
-Metadata:
+metadata:
  organization: tetrate
  name: httpbin-ingress-gateway
  group: httpbin
@@ -60,30 +53,30 @@ spec:
          uri: grpc://opa.opa.svc.cluster.local:9191
 ```
 
-Apply the configuration using `tctl apply`:
+使用 `tctl apply` 命令应用配置：
 
 ```bash
 tctl apply -f httpbin-ingress.yaml
 ```
 
-## Testing
+## 测试
 
-You can test the external authorization by sending HTTP requests from an external machine or your local environment to the `httpbin` Ingress Gateway.
+您可以通过从外部机器或本地环境向`httpbin` Ingress Gateway 发送 HTTP 请求来测试外部授权。
 
-In the following example, since you do not control httpbin.tetrate.com, you will have to trick curl into thinking that httpbin.tetrate.com resolves to the IP address of the Ingress Gateway.
+在以下示例中，由于您无法控制 httpbin.tetrate.com，您必须欺骗 curl 以使其认为 httpbin.tetrate.com 解析为 Ingress Gateway 的 IP 地址。
 
-Obtain the IP address of the Ingress Gateway that you previously created using the following command.
+使用以下命令获取之前创建的 Ingress Gateway 的 IP 地址。
 
 ```bash
 kubectl -n httpbin get service httpbin-ingress-gateway \
   -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
 
-Then execute the following command to send HTTP requests to the httpbin service through the Ingress Gateway. Replace the `gateway-ip` with the value you obtained in the previous step.
+然后执行以下命令，通过 Ingress Gateway 发送 HTTP 请求到 httpbin 服务。将 `<gateway-ip>` 替换为您在前一步中获取的值。
 
-Remember that the example OPA policy contains two users `alice` and `bob` that can be authorized using basic authentication.
+请记住，示例 OPA 策略包含两个用户 `alice` 和 `bob`，可以使用基本身份验证进行授权。
 
-The following command should display `200`. Similarly, changing the username to `bob` should also display `200`
+以下命令应显示 `200`。同样，将用户名更改为 `bob` 也应显示 `200`。
 
 ```bash
 curl -u alice:password "https://httpbin.tetrate.com/get" \
@@ -94,7 +87,7 @@ curl -u alice:password "https://httpbin.tetrate.com/get" \
   -w "%{http_code}\n"
 ```
 
-The following command provides the wrong password to user `alice`. This should display `403`.
+以下命令向用户 `alice` 提供错误的密码。这应该显示 `403`。
 
 ```bash
 curl -u alice:wrongpassword "https://httpbin.tetrate.com/get" \
@@ -105,7 +98,7 @@ curl -u alice:wrongpassword "https://httpbin.tetrate.com/get" \
   -w "%{http_code}\n"
 ```
 
-Finally, if you provide any other user than `alice` or `bob`, it should display `403`
+最后，如果提供的用户不是 `alice` 或 `bob`，则应显示 `403`。
 
 ```bash
 curl -u charlie:password "https://httpbin.tetrate.com/get" \

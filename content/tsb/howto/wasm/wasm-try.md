@@ -1,64 +1,60 @@
 ---
-title: Example
-description: Shows an example of commands and scripts to create WASM extensions and assign them into the hierarchy
+title: Wasm 扩展示例
+description: 展示了创建 WASM 扩展并将其分配到层次结构的命令和脚本示例。
 weight: 3
 ---
 
-## Let's try
+## 让我们开始
 
-Before you get started, make sure you: <br />
-✓ Familiarize yourself with [TSB concepts](../../concepts/toc) <br />
-✓ Install the TSB environment. You can use [TSB demo](../../setup/self_managed/demo-installation) for quick install <br />
-✓ Completed TSB usage [quickstart](../../quickstart). This document assumes you already created Tenant and are familiar with Workspace and Config Groups. Also you need to configure tctl to your TSB environment.
+在开始之前，请确保你已经做到了以下几点：
+- 熟悉 [TSB 概念](../../../concepts/)
+- 安装了 TSB 环境。你可以使用 [TSB 演示](../../../setup/self-managed/demo-installation)进行快速安装。
+- 完成了 TSB 的[快速入门](../../../quickstart)。本文假定你已经创建了租户并熟悉工作区和配置组，并且需要将 tctl 配置到你的 TSB 环境。
 
-In this example, `httpbin` will be used as the workload. Requests that come to Ingress GW will add a header to the HTTP response as part of the wasm extension execution.
+在这个示例中，将使用`httpbin`作为工作负载。通过 wasm 扩展执行，发送到 Ingress GW 的请求将在 HTTP 响应中添加一个头部。
 
-### Deploy `httpbin` Service
+### 部署`httpbin`服务
 
-Follow [all of the instructions in this document](../../reference/samples/httpbin) to create the `httpbin` service.
+请按照[此文档中的所有说明](../../../reference/samples/httpbin)创建`httpbin`服务。
 
-The next commands will assume you have an Organization=`tetrate`, Tenant=`tetrate`, Workspace=`httpbin`, GatewayGroup=`httpbin-gateway`
+接下来的命令将假定你已经有一个组织=`tetrate`，租户=`tetrate`，工作区=`httpbin`，网关组=`httpbin-gateway`
 
-### Build and deploy the WASM extension
+### 构建和部署 WASM 扩展
 
-Let's use an already existing WASM extension [code](https://github.com/tetratelabs/proxy-wasm-go-sdk/tree/main/examples/http_headers) that will add headers in the HTTP response.
-In order to build the WASM extension download the repository and follow [these](https://github.com/tetratelabs/proxy-wasm-go-sdk) instructions:
+让我们使用一个已经存在的 WASM 扩展[代码](https://github.com/tetratelabs/proxy-wasm-go-sdk/tree/main/examples/http_headers)，该扩展将在 HTTP 响应中添加头部。
+为了构建 WASM 扩展，下载存储库并按照[这些](https://github.com/tetratelabs/proxy-wasm-go-sdk)说明进行操作：
 
 ```bash
 make build.example name=http_headers
-````
+```
 
-Then it is needed to package it as an OCI image:
+然后需要将其打包为 OCI 镜像：
 
 ```bash
 docker build . -t docker.io/<your repo>/demo-wasm:0.1 -f examples/wasm-image.Dockerfile --build-arg WASM_BINARY_PATH=examples/http_headers/main.wasm
 ```
 
-After that, push the image to your registry with the proper command:
+之后，使用适当的命令将镜像推送到你的镜像仓库：
 
 ```bash
 docker push docker.io/<your repo>/demo-wasm:0.1
 ```
 
-### Create the WasmExtension
+### 创建 Wasm 扩展
 
-First step is to fill the WASM extensions catalog, adding the extensions available for the resources in TSB.
+第一步是填写 WASM 扩展目录，添加可用于 TSB 资源的扩展。
 
-It's mandatory to specify the OCI image that contains the extension (it needs to have the prefix `oci://`).
+必须指定包含扩展的 OCI 镜像（需要使用前缀`oci://`）。
 
-There are other optional fields like the `source` field pointing to where the source code of the extension is available,
-the `priority` field that will define the order of execution among the WASM extensions, and the `allowedIn`to restrict this
-WASM extension to be assigned only to resources under a specific Tenant.
+还有其他可选字段，如指向扩展源代码的`source`字段，`priority`字段将定义 WASM 扩展的执行顺序，`allowedIn`用于限制此 WASM 扩展仅分配给特定租户的资源。
 
-Finally, the field `config` will set the default optional configuration for the WASM extension. Every WASM extension can define
-the specific taxonomy of this JSON format configuration. In every attachment of the WASM extension to a TSB resource, the config field can be
-redefined in order to set different values than the default ones.
+最后，字段`config`将设置 WASM 扩展的默认可选配置。每个 WASM 扩展都可以定义此 JSON 格式配置的特定分类。在将 WASM 扩展附加到 TSB 资源时，可以重新定义 config 字段，以设置与默认值不同的值。
 
-To create the extension the `UI` , `tctl` command line, or `kubernetes` resource ( in case [GitOps](../gitops/gitops) is enabled ) can be used.
+要创建扩展，可以使用`UI`、`tctl`命令行或`kubernetes`资源（如果启用了[GitOps](../../gitops/gitops)）。
 
-#### Using `tctl`
+#### 使用`tctl`
 
-Create a yaml file named `wasm-extension.yaml` to contain the definition of the WasmExtension :
+创建一个名为`wasm-extension.yaml`的 yaml 文件，其中包含 WasmExtension 的定义：
 
 ```yaml
 apiVersion: extension.tsb.tetrate.io/v2
@@ -76,27 +72,26 @@ spec:
     value: tsb-header
 ```
 
-Apply the definition on TSB :
+在 TSB 上应用定义：
 ```bash
 tctl apply -f wasm-extension.yaml
 ```
 
-#### Using the UI
+#### 使用 UI
 
-Click to `Wasm Extensions` menu to open WasmExtension catalog and then click `Create` button on top right side. Fill the extension fields then click `Create` at the bottom. Note that config must be in JSON format.
+单击“Wasm 扩展”菜单以打开 WasmExtension 目录，然后单击右上角的“创建”按钮。填写扩展字段，然后单击底部的“创建”按钮。注意，配置必须采用 JSON 格式。
 
-![WasmExtension catalog UI](../../assets/howto/wasm/wasm-ui-create.png)
+![WasmExtension 目录 UI](../../../assets/howto/wasm/wasm-ui-create.png)
 
-There can be as many extensions as needed, each of them with a different name, and they can be assigned to multiple resources.
+可以有多个扩展，每个扩展都有不同的名称，并且可以分配给多个资源。
 
-Next step is to assign this WASM extension to a resource in order to affect those workloads needed. In our case the IngressGateway is the resource
-selected to have the extension, in order to execute the WASM extension for each request received by the gateway.
+下一步是将此 WASM 扩展分配给资源，以便影响所需的工作负载。在我们的示例中，选择 IngressGateway 作为资源，以便在网关接收到的每个请求上执行 WASM 扩展。
 
-### Create the attachment on the IngressGateway
+### 在 IngressGateway 上创建附件
 
-#### Using `tctl`
+#### 使用`tctl`
 
-Create a file named `ingress-gateway.yaml` containing the definition of the [IngressGateway](../../refs/tsb/gateway/v2/ingress_gateway) that will include the [WASM attachment](../../refs/tsb/types/v2/types#wasmextensionattachment) :
+创建一个名为`ingress-gateway.yaml`的文件，其中包含将包含[WASM 附件](../../../refs/tsb/types/v2/types#wasmextensionattachment)的[IngressGateway](../../../refs/tsb/gateway/v2/ingress-gateway)的定义：
 
 ```yaml
 apiVersion: gateway.tsb.tetrate.io/v2
@@ -127,29 +122,31 @@ spec:
         value: igw-tsb
 ```
 
-Apply it on TSB :
+在 TSB 上应用它：
 ```
 tctl apply -f ingress-gateway.yaml
 ```
 
-#### Using the UI
+#### 使用 UI
 
-:::note Permission for WasmExtension
-You will need to grant teams or users roles that has `READ` `WasmExtension` permissions so they can use TSB UI to attach Wasm extension.
-:::
+{{<callout note "WasmExtension 的权限">}}
+你需要授予团队或用户具有`READ` `WasmExtension`权限的角色，以便他们可以使用 TSB UI 来附加 Wasm 扩展。
+{{</callout>}}
 
-You can use UI to attach WASM extension to IngressGateway. Go to IngressGateway config UI and then click `add new WASM Extension`. Select extension that you want to use and specify the config. Note that config must be in JSON format.
+你可以使用 UI 将 WASM 扩展附加到 IngressGateway。转到 IngressGateway 配置 UI，然后单击“添加新的 WASM 扩展”。选择要使用的扩展
 
-![Attach Extension in Ingress Gateway](../../assets/howto/wasm/wasm-ui-attach.png)
+并指定配置。注意，配置必须采用 JSON 格式。
 
-### Testing it
+![在 Ingress Gateway 中附加扩展](../../../assets/howto/wasm/wasm-ui-attach.png)
+
+### 测试
 
 ```bash
 export GATEWAY_IP=$(kubectl -n httpbin get service httpbin-ingress-gateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 curl http://httpbin.tetrate.io:443 -kv --connect-to httpbin.tetrate.io:443:$GATEWAY_IP:443
 ```
 
-And you should see a similar output like this one
+你应该会看到类似于以下输出：
 
 ```
 * Connecting to hostname: 35.230.60.29
@@ -178,35 +175,11 @@ And you should see a similar output like this one
 { [9593 bytes data]
 100  9593  100  9593    0     0  22866      0 --:--:-- --:--:-- --:--:-- 23171
 * Connection #0 to host 35.230.60.29 left intact
-
 ```
 
-Where you can see the `x-wasm-header` has been added to the response according to the config provided to the WASM extension. This has been done by the execution of the WASM extension
-just in the connection to the Gateway workload.
+在响应中，你可以看到`x-wasm-header`已根据 WASM 扩展的配置添加。这是通过执行 WASM 扩展的连接到网关工作负载来完成的。
 
-## How does it end in Istio / Envoy ?
+## 它在 Istio / Envoy 中是如何结束的？
 
-These WASM assignments will affect the workloads handled by the TSB components, and ultimately transformed into [Istio WasmPlugins](https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/) that are handled by Istio and converted into Envoy filters configurations in the envoy proxy,
-that will be executed in a certain order depending on the phase of the plugin and its priority.
-Once the configuration reaches the Envoy proxy, WASM extensions will be part of the filter chain and their position will depend on the Phase they will have, and the Priority will determine the position among the other WASM extensions in the same Phase.
-
-One way to see the list of the `HTTP` filters for a given workload Envoy proxy configuration
-
-```bash
-istioctl proxy-config listeners {pod name} -o json -n {namespace} | jq ".[0].filterChains[0].filters[0].typedConfig.httpFilters[].name"
-```
-
-This could be the result, considering the extensions are in the AUTHN Phase, that means they will be executed at the beginning of the Authn filters.
-```
-"httpbin.wasm-add-header0"
-"envoy.filters.http.jwt_authn"
-"istio_authn"
-"envoy.filters.http.rbac"
-"istio.metadata_exchange"
-"envoy.filters.http.cors"
-"envoy.filters.http.fault"
-"istio.stats"
-"envoy.filters.http.ext_authz"
-"envoy.filters.http.ratelimit"
-"envoy.filters.http.router"
-```
+这些 WASM 分配将影响由 TSB 组件处理的工作负载，并最终转化为[Istio WasmPlugins](https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/)，这些插件由 Istio 处理并转化为 Envoy 过滤器配置在 envoy 代理中执行，其执行顺序取决于插件的阶段和优先级。
+一旦配置到达 Envoy 代理，WASM 扩展将成为过滤器链的一部分，它们的位置将取决于它们的阶段，而优先级将确定它们在同一阶段中与其他 WASM 扩展的位置。

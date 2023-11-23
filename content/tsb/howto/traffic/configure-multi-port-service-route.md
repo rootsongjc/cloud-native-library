@@ -1,33 +1,28 @@
 ---
-title: Configure ServiceRoute for (multi-port, multi-protocol) services
-description: Guide to configure HTTP and non-HTTP (multi-port, multi-protocol) routes to services.
+title: 配置（多端口、多协议）服务的 ServiceRoute
+description: 配置多端口服务通过单个`ServiceRoute`配置的路由的指南。
 weight: 5
 ---
 
-This how-to document will show you how to configure routes to services exposing multiple
-ports through a single `ServiceRoute` config.
+本操作指南将向你展示如何配置路由到通过单个`ServiceRoute`配置公开多个端口的服务。
 
-## Scenario
+## 场景
 
-Consider a backend service named `tcp-echo` which exposes two ports, `9000` and `9001` over TCP. The service
-has two versions `v1` and `v2` and traffic splitting needs to be achieved between these two versions for both 
-ports. In order to achieve this, a `ServiceRoute` with port level settings needs to be configured.
+考虑一个名为`tcp-echo`的后端服务，它通过 TCP 公开了两个端口，`9000`和`9001`。该服务有两个版本`v1`和`v2`，需要在这两个版本之间实现对这两个端口的流量分配。为了实现这一目标，需要配置具有端口级设置的`ServiceRoute`。
 
-## Deploy the `tcp-echo` Service
+## 部署`tcp-echo`服务
 
-Deploy the `tcp-echo` application from the Istio's samples directory into the `echo` namespace by
-installing [these manifests](https://github.com/istio/istio/blob/master/samples/tcp-echo/tcp-echo-services.yaml).
+从 Istio 的示例目录中安装`tcp-echo`应用程序到`echo`命名空间中，安装[这些清单](https://github.com/istio/istio/blob/master/samples/tcp-echo/tcp-echo-services.yaml)。
 
-## TSB configuration
+## TSB 配置
 
-### Deploy a Workspace and Traffic Group
+### 部署工作区和流量组
 
-Apply the following configuration to create a Workspace and a Traffic Group.
+应用以下配置来创建一个工作区和一个流量组。
 
-:::note
-The examples assume that you have already created an organization named `tetrateio`
-and a tenant named `tetrate`.
-:::
+{{<callout note 提示>}}
+这些示例假设你已经创建了一个名为 `tetrateio` 的组织和一个名为 `tetrate` 的租户。
+{{</callout>}}
 
 ```yaml
 apiVersion: api.tsb.tetrate.io/v2
@@ -55,9 +50,9 @@ spec:
    - "*/echo"
 ```
 
-### Deploy the `ServiceRoute`
+### 部署`ServiceRoute`
 
-Apply the following configuration to create the `ServiceRoute` that configures both ports.
+应用以下配置来创建配置两个端口的`ServiceRoute`。
 
 ```yaml
 apiVersion: traffic.tsb.tetrate.io/v2
@@ -86,12 +81,12 @@ spec:
       weight: 20
 ```
 
-## Testing
+## 测试
 
-To verify that the routes have been set successfully, try curling several times to the `echo` pod. The request will
-be forwarded to the `v1` pod most of the times because of the `80:20` weight ratio set between `v1:v2`.
+为了验证路由已成功设置，多次尝试向`echo` pod 发送 curl 请求。由于`v1:v2`之间的权重比设置为`80:20`，大多数情况下请求将转发到`v1` pod。
 
-For testing TCP traffic, use `nc` instead.
+对于测试 TCP 流量，请使用`nc`。
+
 ```bash
 kubectl -n echo exec -it <pod-name> -c <container-name> -- curl -sv tcp-echo.svc.cluster.local:9000
 kubectl -n echo exec -it <pod-name> -c <container-name> -- sh -c "echo hello | nc -v tcp-echo.svc.cluster.local:9001"

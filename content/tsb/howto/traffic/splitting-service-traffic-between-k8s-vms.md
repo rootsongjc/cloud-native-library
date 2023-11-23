@@ -1,24 +1,23 @@
 ---
-title: Splitting Service Traffic between K8S and VMs
-menu-title: Split Traffic between K8S & VMs
-description: Set-up traffic routing between a service running both on a VM, and a Kubernetes cluster.
+title: "在 Kubernetes 和虚拟机之间切分流量"
 weight: 1
 ---
 
-In this how-to you'll learn how to setup traffic routing between a service
-running both on a VM, and a Kubernetes cluster. 
+本文将教你如何设置在虚拟机和 Kubernetes 集群上运行的服务之间的流量路由。
 
-In this guide, you'll <br />
-✓ Install the Istio demo `bookinfo` application in a cluster <br />
-✓ Install the `ratings` service from the `bookinfo` application on a VM. <br />
-✓ Split traffic 80/20 between the VM, and the cluster instances of the ratings application
+在本指南中，你将：
 
-Before you get started, make sure that you: <br />
-✓ [Install TSB management plane](../../setup/self_managed/management-plane-installation) <br />
-✓ Onboarded a [cluster](../../setup/self_managed/onboarding-clusters)<br />
-✓ [Install data plane operator](../../concepts/operators/data_plane)
+- 在集群中安装 Istio 演示`bookinfo`应用程序
+- 在虚拟机上安装`bookinfo`应用程序的`ratings`服务
+- 将流量在虚拟机和集群中的`ratings`应用程序之间进行80/20的分流
 
-First, start by installing bookinfo in your cluster. 
+在开始之前，请确保你已经：
+
+- [安装了 TSB 管理平面](../../../setup/self-managed/management-plane-installation)
+- 对一个[集群进行了载入](../../../setup/self-managed/onboarding-clusters)
+- [安装了数据面 Operator](../../../concepts/operators/data-plane)
+
+首先，从在你的集群中安装 bookinfo 开始。
 
 ```bash
 kubectl create ns bookinfo
@@ -27,8 +26,7 @@ kubectl apply -f \
     -n bookinfo
 ```
 
-Follow the [VM onboarding docs](../../setup/workload_onboarding/onboarding-vms). 
-During onboarding, run the Istio demo `ratings` app as your workload. 
+遵循[VM 载入文档](../../../setup/workload-onboarding/onboarding-vms)。在载入过程中，将 Istio 演示的`ratings`应用程序作为你的工作负载运行。
 
 ```bash
 sudo docker run -d \
@@ -37,7 +35,7 @@ sudo docker run -d \
     docker.io/istio/examples-bookinfo-ratings-v1.1:1.16.2
 ```
 
-Create a workload entry for ratings,
+为`ratings`创建一个工作负载入口，
 
 ```yaml
 apiVersion: networking.istio.io/v1beta1
@@ -55,13 +53,13 @@ spec:
  address: <address>
  labels:
    class: vm
-   app: ratings   # mandatory label for observability through TSB
-   version: v3    # mandatory label for observability through TSB
+   app: ratings   # 用于通过 TSB 进行可观测性的必需标签
+   version: v3    # 用于通过 TSB 进行可观测性的必需标签
  serviceAccount: bookinfo-ratings
  network: <vm-network-name>
- ```
+```
 
-and apply a sidecar.
+并应用一个 Sidecar。
 
 ```yaml
 apiVersion: networking.istio.io/v1beta1
@@ -86,21 +84,13 @@ spec:
       class: vm
 ```
 
-Once you've onboarded the VM, your mesh will distribute traffic between the
-`ratings` app in the cluster and the VM, because the `ratings` service selects
-any workload with the `app: ratings` label, and both our cluster `Deployment`
-and `WorkloadEntry` have this label. You can verify that traffic is flowing 
-through both apps using logs or in the UI topology dashboard.
+一旦你载入了虚拟机，你的 Mesh 将在集群中的`ratings`应用程序和虚拟机之间分发流量，因为`ratings`服务选择任何带有`app: ratings`标签的工作负载，而我们的集群`Deployment`和`WorkloadEntry`都有这个标签。你可以通过日志或 UI 拓扑仪表板来验证流量正流经这两个应用程序。
 
-Now lets fine tune the traffic so that 80% of it goes to the in cluster app, and
-20% goes to the VM. `tctl apply -f` a file containing the following
-configuration (filling in `<tenant>` and `<cluster>` based on your install).
+现在，让我们微调流量，使 80% 的流量流向集群中的应用程序，而 20% 流向虚拟机。使用包含以下配置的文件运行`tctl apply -f`（根据你的安装填写`<tenant>`和`<cluster>`）。
 
-:::note
-You may already have a workspace set up (e.g. for ingress traffic). If that is
-the case, you can omit this workspace and adjust the rest of the config
-accordingly.
-:::
+{{<callout note 注意>}}
+你可能已经设置了一个工作空间（例如用于入口流量）。如果是这样，你可以省略此工作空间并相应地调整其余配置。
+{{</callout>}}
 
 ```yaml
 apiVersion: api.tsb.tetrate.io/v2
@@ -145,6 +135,4 @@ spec:
     weight: 20
 ```
 
-After sending some traffic through the app, we can look at the services
-dashboard or logs again to see that the traffic is being split 80/20 between
-ratings `v1` and `v3`.
+在发送一些流量通过应用程序后，我们可以再次查看服务仪表板或日志，以查看流量在`v1`和`v3`之间以80/20的比例分配。
