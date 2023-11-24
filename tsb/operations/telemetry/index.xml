@@ -1,0 +1,658 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>遥测和审计 | 云原生资料库</title>
+    <link>https://lib.jimmysong.io/tsb/operations/telemetry/</link>
+      <atom:link href="https://lib.jimmysong.io/tsb/operations/telemetry/index.xml" rel="self" type="application/rss+xml" />
+    <description>遥测和审计</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>zh</language><lastBuildDate>Wed, 09 Aug 2023 12:00:00 +0800</lastBuildDate>
+    <image>
+      <url>https://lib.jimmysong.io/media/sharing.png</url>
+      <title>遥测和审计</title>
+      <link>https://lib.jimmysong.io/tsb/operations/telemetry/</link>
+    </image>
+    
+    <item>
+      <title>遥测架构</title>
+      <link>https://lib.jimmysong.io/tsb/operations/telemetry/telemetry-architecture/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/operations/telemetry/telemetry-architecture/</guid>
+      <description>&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;注意&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    本页面详细介绍了如何收集 Tetrate Service Bridge 运营所需的遥测数据，而不是由 Tetrate Service Bridge 管理的应用程序。
+&lt;/div&gt;
+
+&lt;p&gt;Tetrate Service Bridge 使用 &lt;a href=&#34;https://github.com/open-telemetry/opentelemetry-collector&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Open Telemetry Collector&lt;/a&gt; 来简化指标收集。标准部署包括管理平面中的一个 Collector，以及每个已接入的控制平面旁边都有一个 Collector。使用 Collector 使 Tetrate Service Bridge 能够通过只需操作员抓取一个组件而不是所有组件，从而简化每个集群的遥测数据收集。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../../assets/collector_architecture.svg&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h2 id=&#34;管理平面&#34;&gt;管理平面&lt;/h2&gt;
+&lt;p&gt;在管理平面中有一个名为 &lt;code&gt;collector&lt;/code&gt; 的组件。它是一个聚合器，通过 Prometheus 公开了一个用于抓取所有管理平面组件的端点。&lt;/p&gt;
+&lt;p&gt;要查看此端点的输出，可以使用以下方式查询：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl port-forward -n &amp;lt;managementplane-namespace&amp;gt; svc/otel-collector 9090:9090 &lt;span class=&#34;p&#34;&gt;&amp;amp;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl localhost:9090/metrics
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;示例输出：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;...
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;# 来自管理平面中 API 服务器的指标。
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;persistence_transaction_duration_count{component=&amp;#34;tsb&amp;#34;,plane=&amp;#34;management&amp;#34;} 4605
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;控制平面&#34;&gt;控制平面&lt;/h2&gt;
+&lt;p&gt;在每个控制平面中，还有一个 &lt;code&gt;collector&lt;/code&gt;，它公开了其控制平面中组件的指标端点。你可以以与管理平面 Collector 相同的方式使用 Prometheus 抓取此 Collector。&lt;/p&gt;
+&lt;div class=&#34;alert-warning-title&#34;&gt;
+    &lt;p&gt;Open Telemetry Collector&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-warning&#34;&gt;
+    尽管 Open Telemetry 收集器可以将指标转发到其他收集器，但 TSB 不依赖于生产安装中转发的指标。相反，我们建议在每个可用的 Collector 上本地抓取指标。
+&lt;/div&gt;
+
+&lt;p&gt;要查看此端点的输出，请使用以下命令：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl port-forward -n &amp;lt;controlplane-namespace&amp;gt; svc/otel-collector 9090:9090 &lt;span class=&#34;p&#34;&gt;&amp;amp;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl localhost:9090/metrics
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    
+    <item>
+      <title>Sidecar RED 指标</title>
+      <link>https://lib.jimmysong.io/tsb/operations/telemetry/red-metrics/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/operations/telemetry/red-metrics/</guid>
+      <description>&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;注意&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    默认情况下，控制平面中的 OAP 不会公开 RED 指标。
+要公开 RED 遥测数据，请在启动 OAP 时设置环境变量 &lt;code&gt;SW_EXPORTER_ENABLE_OC=true&lt;/code&gt;。
+&lt;/div&gt;
+
+&lt;p&gt;TSB 提供一个与 Prometheus 兼容的单一端点，通过 OAP 服务公开来自 sidecar 的 RED 应用程序指标。每个控制平面集群都公开一个供 Prometheus 抓取的端点，可以使用以下命令查询：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl port-forward -n &amp;lt;controlplane-namespace&amp;gt; svc/oap 1234:1234 &lt;span class=&#34;p&#34;&gt;&amp;amp;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl localhost:1234/metrics
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;导出的 RED 指标包括：&lt;/p&gt;
+&lt;h3 id=&#34;请求状态码&#34;&gt;请求状态码&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# HELP tsb_oap_service_status_code 状态码的数量&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# TYPE tsb_oap_service_status_code 计数器&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tsb_oap_service_status_code&lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;status&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;lt;STATUS|ALL&amp;gt;&amp;#34;&lt;/span&gt;,svc&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;SERVICE_NAME&amp;#34;&lt;/span&gt;,&lt;span class=&#34;o&#34;&gt;}&lt;/span&gt; COUNT
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;请求延迟&#34;&gt;请求延迟&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# HELP tsb_oap_service_latency_sum 延迟的总和&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# TYPE tsb_oap_service_latency_sum 计数器&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tsb_oap_service_latency_sum&lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;svc&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;SERVICE_NAME&amp;#34;&lt;/span&gt;,&lt;span class=&#34;o&#34;&gt;}&lt;/span&gt; SUM
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# HELP tsb_oap_service_latency_count 请求的数量&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# TYPE tsb_oap_service_latency_count 计数器&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tsb_oap_service_latency_count&lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;svc&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;SERVICE_NAME&amp;#34;&lt;/span&gt;,&lt;span class=&#34;o&#34;&gt;}&lt;/span&gt; COUNT
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    
+    <item>
+      <title>关键指标</title>
+      <link>https://lib.jimmysong.io/tsb/operations/telemetry/key-metrics/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/operations/telemetry/key-metrics/</guid>
+      <description>&lt;p&gt;Tetrate Service Bridge 收集了大量的指标。此页面是由 Tetrate 内部运行的仪表板生成的，将根据 Tetrate 的操作经验和用户部署中学到的最佳实践定期更新。每个标题代表一个不同的仪表板，每个子标题是该仪表板上的一个面板。因此，你可能会看到多次出现相同的指标。&lt;/p&gt;
+&lt;p&gt;本文档中描述的指标构建了一系列 Grafana 仪表板，可以从&lt;a href=&#34;../../../assets/operations/tsb-dashboards.zip&#34;&gt;此处&lt;/a&gt;下载，以便将它们导入到你的 Grafana 设置中。&lt;/p&gt;
+&lt;p&gt;指标过多，不在此文中列出，详细指标请见 &lt;a href=&#34;https://docs.tetrate.io/service-bridge/operations/telemetry/key-metrics&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate Service Bridge 文档&lt;/a&gt;。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>警报指南</title>
+      <link>https://lib.jimmysong.io/tsb/operations/telemetry/alerting-guidelines/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/operations/telemetry/alerting-guidelines/</guid>
+      <description>&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;注意&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    Tetrate Service Bridge 收集了大量的指标，而你设置的指标和阈值限制将因环境而异。本文档概述了通用的警报指南，而不是提供详尽的警报配置和阈值列表，因为这些将因不同环境和不同工作负载配置而异。
+&lt;/div&gt;
+
+&lt;h2 id=&#34;tsb-运维状态&#34;&gt;TSB 运维状态&lt;/h2&gt;
+&lt;h3 id=&#34;tsb-可用性&#34;&gt;TSB 可用性&lt;/h3&gt;
+&lt;p&gt;TSB API 的成功请求率。这是一个非常容易被用户看到的信号，应该作为这样对待。&lt;/p&gt;
+&lt;p&gt;根据在你的环境中捕获的历史度量数据作为基线来确定 &lt;code&gt;THRESHOLD&lt;/code&gt; 值。首次迭代的合理值可能为 &lt;code&gt;0.99&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;示例 PromQL 表达式：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;sum(
+  rate(
+    grpc_server_handled_total{
+      component=&amp;#34;tsb&amp;#34;,
+      grpc_code=&amp;#34;OK&amp;#34;,
+      grpc_type=&amp;#34;unary&amp;#34;,
+      grpc_method!=&amp;#34;SendAuditLog&amp;#34;
+    }[1m]
+  )
+) BY (grpc_method) / sum(
+  rate(
+    grpc_server_handled_total{
+      component=&amp;#34;tsb&amp;#34;,
+      grpc_type=&amp;#34;unary&amp;#34;,
+      grpc_method!=&amp;#34;SendAuditLog&amp;#34;
+    }[1m]
+  )
+) BY (grpc_method) &amp;lt; THRESHOLD
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;tsb-请求延迟&#34;&gt;TSB 请求延迟&lt;/h3&gt;
+&lt;p&gt;由于度量数据基数高，TSB gRPC API 请求延迟度量意图不会被发出。&lt;/p&gt;
+&lt;h3 id=&#34;tsb-请求流量&#34;&gt;TSB 请求流量&lt;/h3&gt;
+&lt;p&gt;对 TSB API 的请求速率。监控值主要来自于检测异常值和意外行为，例如意外高或低的请求速率。要建立合理的阈值，有历史度量数据的记录是至关重要的，以便衡量基线。&lt;/p&gt;
+&lt;p&gt;示例 PromQL 表达式：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;sum(
+  rate(
+    grpc_server_handled_total{
+      component=&amp;#34;tsb&amp;#34;,
+      grpc_type=&amp;#34;unary&amp;#34;,
+      grpc_method!=&amp;#34;SendAuditLog&amp;#34;}[1m]
+  )
+) BY (grpc_method) &amp;lt; THRESHOLD
+# 或 &amp;gt; THRESHOLD
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;tsb-缺失指标&#34;&gt;TSB 缺失指标&lt;/h3&gt;
+&lt;p&gt;TSB 即使没有持续的外部负载也会与其持久性后端通信。请求的缺失可靠地指示了 TSB 指标收集存在问题，并应视为高优先级事件，因为缺少指标意味着无法查看 TSB 的状态。&lt;/p&gt;
+&lt;p&gt;示例 PromQL 表达式：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;sum(rate(persistence_operation[10m])) == 0
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;持久性后端可用性&#34;&gt;持久性后端可用性&lt;/h3&gt;
+&lt;p&gt;来自 TSB 的持久性后端可用性，没有内部 Postgres 操作的洞察。&lt;/p&gt;
+&lt;p&gt;TSB 将其所有状态存储在持久性后端中，因此其运营状态（可用性、延迟、吞吐量等）与持久性后端的状态密切相关。TSB 记录了可能用作警报信号的持久性后端操作的度量标准。&lt;/p&gt;
+&lt;p&gt;重要的是要注意，持久性后端操作的任何降级都必然会导致 TSB 整体降级，无论是可用性、延迟还是吞吐量。这意味着警报持久性后端状态可能是多余的，当需要关注需要注意的 Postgres 问题时，值班人员将收到两个页面而不是一个。然而，这样的信号仍然具有显著的价值，可以提供重要的上下文，以减少解决问题和解决根本原因/升级所需的时间。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;注意&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    &amp;ldquo;未找到资源&amp;rdquo; 错误的处理：少量的 &amp;ldquo;未找到&amp;rdquo; 响应是正常的，因为为了优化，TSB 通常使用 &lt;code&gt;Get&lt;/code&gt; 查询而不是 &lt;code&gt;Exists&lt;/code&gt; 查询来确定资源是否存在。然而，大量 &amp;ldquo;未找到&amp;rdquo;（类似 404 的）响应很可能表示持久性后端设置存在问题。
+&lt;/div&gt;
+
+&lt;p&gt;示例 PromQL 表达式：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;查询：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;1 - (
+  sum(
+    rate(
+      persistence_operation{
+        error!=&amp;#34;&amp;#34;, error!=&amp;#34;resource not found&amp;#34;
+      }[1m]
+    )
+) / sum(
+    rate(persistence_operation[1m])
+  ) OR on() vector(0)
+) &amp;lt; THRESHOLD
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;过多的 &amp;ldquo;未找到资源&amp;rdquo; 查询：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;( 
+  sum(
+    rate(persistence_operation{error=&amp;#34;resource not found&amp;#34;}[1m])
+  ) OR on() vector(0) / sum(
+    rate(persistence_operation[1m])
+  )
+) &amp;gt; THRESHOLD # 例如 0.50
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;事务：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;sum(
+  rate(persistence_transaction{error=&amp;#34;&amp;#34;}[1m])
+) / sum(
+  rate(persistence_transaction[1m])
+) &amp;lt; THRESHOLD
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;持久性后端延迟&#34;&gt;持久性后端延迟&lt;/h3&gt;
+&lt;p&gt;持久性后端操作的延迟，由持久性后端客户端（TSB）记录。这个延迟实际上转化为用户看到的延迟，因此是一个重要的信号。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;THRESHOLD&lt;/code&gt; 值应该从历史度量数据中建立，作为基线使用。首次迭代的合理值可能是 &lt;code&gt;300ms&lt;/code&gt; 的第 99 百分位延迟。&lt;/p&gt;
+&lt;p&gt;示例 PromQL 表达式：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;查询：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;histogram_quantile(
+  0.99,
+  sum(rate(persistence_operation_duration_bucket[1m])) by (le, method)
+) &amp;gt; THRESHOLD
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;事务：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;histogram_quantile(
+  0.99,
+  sum(rate(persistence_transaction_duration_bucket[1m])) by (le)
+) &amp;gt; THRESHOLD
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;xcp-运维状态&#34;&gt;XCP 运维状态&lt;/h2&gt;
+&lt;h3 id=&#34;最后一次管理平面同步&#34;&gt;最后一次管理平面同步&lt;/h3&gt;
+&lt;p&gt;XCP Edge 最后一次与管理平面（XCP 中央）同步的最长时间间隔，对于每个已注册的集群。这表示从管理平面接收的配置在给定集群中的陈旧程度。首次迭代的合理阈值为 &lt;code&gt;30&lt;/code&gt;（秒）。&lt;/p&gt;
+&lt;p&gt;示例 PromQL 表达式：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;time() - min(
+  xcp_central_last_config_propagation_event_timestamp_ms{edge!=&amp;#34;&amp;#34;} / 1000
+) by (edge, status) &amp;gt; THRESHOLD
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;xcp-edge-饱和度&#34;&gt;XCP Edge 饱和度&lt;/h3&gt;
+&lt;p&gt;TSB 控制平面组件主要受限于 CPU。因此，CPU 利用率作为重要信号应该进行警报。在选择警报 &lt;code&gt;THRESHOLD&lt;/code&gt; 时，请记住不仅云提供商 tend to tend to 超额提供 CPU，而且即使在 &amp;lt;~80% CPU 利用率下，超线程也可能对 Linux 调度器效率产生负面影响，导致延迟/错误增加。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>分布式跟踪集成</title>
+      <link>https://lib.jimmysong.io/tsb/operations/telemetry/distributed-tracing/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/operations/telemetry/distributed-tracing/</guid>
+      <description>&lt;div class=&#34;alert-warning-title&#34;&gt;
+    &lt;p&gt;需要基本的分布式跟踪知识&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-warning&#34;&gt;
+    本文假设读者具有基本的分布式跟踪概念和名词的知识。如果对分布式跟踪不熟悉，建议在阅读本文和调整 TSB 的分布式跟踪配置之前，首先了解分布式跟踪。关于分布式跟踪概念的很好的介绍，请阅读 Nic Munroe 的&lt;a href=&#34;https://medium.com/nikeengineering/hit-the-ground-running-with-distributed-tracing-core-concepts-ff5ad47c7058&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;优秀博客&lt;/a&gt;。
+&lt;/div&gt;
+
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;所需的服务行为&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    分布式跟踪不会自动工作，因为重要的是你的部署服务传播跟踪上下文。如果不在服务中启用上下文传播，你将遇到跟踪中断问题，并且在跟踪中看到大大降低的价值。我们建议至少支持传播 B3 和 W3C 跟踪上下文头，以及&lt;code&gt;x-request-id&lt;/code&gt;以进行请求关联。另请参阅 Istio 文档中的&lt;a href=&#34;https://istio.io/v1.17/docs/tasks/observability/distributed-tracing/overview/#trace-context-propagation&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;跟踪上下文传播解释&lt;/a&gt;。除了上下文传播，将&lt;code&gt;x-request-id&lt;/code&gt;（以及分布式跟踪的&lt;code&gt;trace id&lt;/code&gt;，如果有的话）包含在服务的所有请求绑定日志行中是一个很好的主意。这样可以在请求跟踪和服务日志之间实现几乎无需努力的关联，并加速故障排除。
+&lt;/div&gt;
+
+&lt;p&gt;默认情况下，TSB 提供了一个基于&lt;a href=&#34;https://skywalking.apache.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;SkyWalking&lt;/a&gt;的分布式跟踪后端，与&lt;a href=&#34;https://zipkin.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Zipkin&lt;/a&gt;兼容。在 TSB 控制下的所有&lt;a href=&#34;https://www.envoyproxy.io/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy&lt;/a&gt;入口网关和 sidecar 都具有其内部 Zipkin 跟踪仪器，用于将跨度数据直接发送到 TSB 的 SkyWalking 收集器。还可以通过 TSB 的&lt;a href=&#34;../../../../refs/install/controlplane/v1alpha1/spec&#34;&gt;ControlPlane 资源对象&lt;/a&gt;配置固定的全局采样率。&lt;/p&gt;
+&lt;p&gt;如果需要更灵活地设置更精细的采样率、使用不同的跟踪仪器或将跨度数据发送到不同的后端，本文将为你提供所需的上下文信息以进行必要的更改。&lt;/p&gt;
+&lt;h2 id=&#34;istio-telemetry-api&#34;&gt;Istio Telemetry API&lt;/h2&gt;
+&lt;p&gt;Istio Telemetry API 通过使用作用域限定的&lt;code&gt;Telemetry&lt;/code&gt;对象在运行时提供了调整可观察性信号的精细和灵活的方法。在 Istio Telemetry API 之前，需要调整 TSB 控制平面和数据平面运算符配置对象来配置具有固定采样率的单个分布式跟踪器。&lt;/p&gt;
+&lt;p&gt;通过 TSB 控制平面运算符配置对象启用 Istio Telemetry API 的跟踪&lt;a href=&#34;https://istio.io/v1.17/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;扩展提供程序&lt;/a&gt;后，可以使用 Istio Telemetry 对象为不同的命名空间设置具有不同采样率的特定跟踪器。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;Telemetry API 功能状态&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    虽然 Telemetry API 自 Istio 1.12 以来一直存在，但它仍被标记为 alpha 状态。这主要是因为具有许多跟踪、度量和日志的潜在边缘配置的能力。我们已经测试和验证了针对 Zipkin、OpenCensus 和 OpenTelemetry 跟踪提供程序的集群级别跟踪配置在功能上是有效的，但不保证超出这一范围的配置用例的成功使用。Istio 不会在没有使用 Telemetry API 的情况下提供原生 OpenTelemetry 支持。
+&lt;/div&gt;
+
+&lt;p&gt;有关 Istio Telemetry API 的更多信息，请参阅&lt;a href=&#34;https://istio.io/v1.17/docs/tasks/observability/telemetry/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Istio Telemetry API&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;w3c-跟踪上下文传播&#34;&gt;W3C 跟踪上下文传播&lt;/h2&gt;
+&lt;p&gt;默认情况下，通过 Envoy 的本地 Zipkin 跟踪仪器，TSB 使用了众所周知的&lt;code&gt;B3&lt;/code&gt;跟踪上下文传播方法。&lt;code&gt;B3&lt;/code&gt;是一种针对各种分布式跟踪生态系统都非常好支持的传播方法，因为它一直是许多早期采用分布式跟踪的站点所有者的事实标准（例如 Netflix）。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;为什么叫 B3？&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    Zipkin 生态系统起源于 Twitter，那里的大多数服务都有鸟的名称。Zipkin 的后端内部项目名称是 Big Brother Bird。当 Zipkin 生态系统开源时，&lt;code&gt;B3&lt;/code&gt;跟踪上下文头保持不变。
+&lt;/div&gt;
+
+&lt;p&gt;在 2019 年的一个分布式跟踪研讨会上，由 Zipkin 开源社区主持，邀请了来自不同组织的几位工程师汇聚在一起，以找出一种新的上下文传播方法，使跟踪系统能够互操作，即使其中一些系统具有不同的（可选）元数据要求（特别是来自 Microsoft、AWS 和 DynaTrace 的项目）。这个想法是在一个&lt;/p&gt;
+&lt;p&gt;标题为&lt;code&gt;traceparent&lt;/code&gt;的标题中具有所有系统都理解的公共基本上下文，另一个标题（&lt;code&gt;tracestate&lt;/code&gt;）可以包含来自不同跟踪供应商的多个元数据块。如果理解特定的元数据块，它可以进行交互。跟踪器可以添加自己的元数据，但需要传播其他跟踪供应商的元数据，直到标题值的最大大小。然后以 FIFO 方式清除元数据块。&lt;/p&gt;
+&lt;p&gt;为了更有力地支持新提出的解决方案，该工作被提交给了 W3C，因此这个传播格式被称为&lt;code&gt;W3C跟踪上下文&lt;/code&gt;。当 OpenTelemetry 通过 CNCF 指定合并 Google 的 OpenCensus 项目（当时使用&lt;code&gt;B3&lt;/code&gt;进行传播）和供应商联盟支持的 OpenTracing（对于跟踪上下文传播根本没有任何保证，每个供应商都使用自己的传播方法）而出现时，决定将默认从&lt;code&gt;B3&lt;/code&gt;切换到&lt;code&gt;W3C跟踪上下文&lt;/code&gt;。然而，大多数 OpenTelemetry 仪器在进行小的配置更改后仍支持&lt;code&gt;B3&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;从&lt;code&gt;B3&lt;/code&gt;上下文传播切换到 TSB 环境中的&lt;code&gt;W3C跟踪上下文&lt;/code&gt;可以通过更改活动的 Envoy 跟踪实现。对于 TSB 1.6 集群，唯一的选择是&lt;code&gt;OpenCensus&lt;/code&gt;。建议不要继续使用此跟踪器，因为 OpenCensus 已被弃用并不再维护。未来版本的 Envoy Proxy 和 OpenTelemetry 收集器也很有可能删除该跟踪器。当升级到 TSB 1.7 及更高版本时，建议切换到&lt;code&gt;OpenTelemetry&lt;/code&gt;跟踪器。&lt;/p&gt;
+&lt;h2 id=&#34;用于跟踪的-opentelemetry-collector&#34;&gt;用于跟踪的 OpenTelemetry Collector&lt;/h2&gt;
+&lt;p&gt;OpenTelemetry Collector 是跨度数据管理的“瑞士军刀”。它可以接收来自不同跟踪仪器的不同格式的跨度数据，并将这些数据导出到多个后端，可能使用不同的跨度数据格式。在本文中，我们将展示如何使用 OpenTelemetry Collector 接收来自传入 Zipkin、OpenCensus 和 OpenTelemetry 跟踪仪器的跨度数据，以导出到与 OpenTelemetry 兼容的后端以及 TSB 的嵌入式跟踪后端。&lt;/p&gt;
+&lt;h2 id=&#34;启用-tsb-中的跟踪的-telemetry-api&#34;&gt;启用 TSB 中的跟踪的 Telemetry API&lt;/h2&gt;
+&lt;p&gt;要根据本文所述的跟踪配置更改 TSB 的跟踪配置，首先需要在 TSB 中启用 Istio Telemetry API 的跟踪扩展提供程序。为此，你需要调整环境中每个群集的 TSB &lt;a href=&#34;../../../refs/install/controlplane/v1alpha1/spec&#34;&gt;ControlPlane&lt;/a&gt;资源对象。&lt;/p&gt;
+&lt;p&gt;TSB 运算符使用其&lt;code&gt;ControlPlane&lt;/code&gt;资源对象来管理其 Istio 依赖的配置和部署。当应用 TSB ControlPlane 对象时，TSB 运算符将创建一个&lt;a href=&#34;https://istio.io/v1.17/docs/reference/config/istio.operator.v1alpha1/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;IstioOperator&lt;/a&gt;资源对象。然后使用此生成的&lt;code&gt;IstioOperator&lt;/code&gt;资源对象通过 TSB&lt;code&gt;ControlPlane&lt;/code&gt;对象使用&lt;code&gt;overlay&lt;/code&gt;来进行（重新）配置 Istio 部署。要启用跟踪，需要通过 TSB&lt;code&gt;ControlPlane&lt;/code&gt;对象为&lt;code&gt;IstioOperator&lt;/code&gt;对象添加一个补丁。&lt;/p&gt;
+&lt;h3 id=&#34;tsb-controlplane-资源对象覆盖&#34;&gt;TSB ControlPlane 资源对象覆盖&lt;/h3&gt;
+&lt;p&gt;为了确保不覆盖在&lt;code&gt;ControlPlane&lt;/code&gt;对象中找到的重要自定义配置，首先需要下载当前状态。需要为要调整的每个群集重复以下步骤。&lt;/p&gt;
+&lt;p&gt;通过运行以下命令获取 ControlPlane 资源对象：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl get -n istio-system controlplane controlplane &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  -o yaml &amp;gt; controlplane.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;集群名称&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    记下在&lt;code&gt;managementPlane&lt;/code&gt;部分中找到的&lt;code&gt;clusterName&lt;/code&gt;的值。在配置 Istio&lt;code&gt;Telemetry&lt;/code&gt;对象时将需要此值。
+&lt;/div&gt;
+
+&lt;p&gt;通过添加用于&lt;code&gt;IstioOperator&lt;/code&gt;对象的补丁来编辑 ControlPlane 对象，如下所示：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;install.tetrate.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ControlPlane&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;components&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;istio&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kubeSpec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 开始覆盖&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;overlays&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;install.istio.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;            &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;IstioOperator&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;            &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;tsb-istiocontrolplane&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;            &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;patches&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;              &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;spec.meshConfig.extensionProviders&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 在此处列出多个跟踪配置！&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 它们可以是不同的跟踪器，也可以是相同跟踪仪器的不同配置&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;tracing-config-name&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                  &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;extensionProvider&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;service&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;ip_or_host&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;port_number&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;              &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 可选的默认扩展提供程序补丁；不是必需的&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;              &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 警告：这将注入跟踪头，即使对于特定命名空间禁用了跟踪也是如此。确保这是所需的副作用。&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;              &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;spec.meshConfig.defaultProviders.tracing&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tracing&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                  &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 即使这是一个列表，也只支持一个默认跟踪器！&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                   &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;&amp;lt;tracing-config-name&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 结束覆盖&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;deployment&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;要安装已调整的 ControlPlane 资源对象：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -f controlplane.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;以下是翻译：&lt;/p&gt;
+&lt;p&gt;补丁的必需部分是为&lt;a href=&#34;https://istio.io/v1.17/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;spec.meshConfig.extensionProviders&lt;/a&gt;配置类型提供一个或多个跟踪配置。设置一个补丁用于&lt;code&gt;spec.meshConfig.defaultProviders.tracing&lt;/code&gt;的配置会产生副作用，即使你的 Telemetry API 配置没有为传入请求明确设置跟踪配置，所有请求流量都将使用默认跟踪配置仪器的跟踪头进行增强。我们的建议是不要将默认配置作为补丁设置，而是依赖于你的 Telemetry API 资源对象，除非你在日志中使用跟踪 ID 进行请求关联，即使分布式跟踪被禁用也是如此。&lt;/p&gt;
+&lt;p&gt;以下是一个灵活的设置配置的示例，其中包含多个跟踪配置，允许同时使用 &lt;code&gt;B3&lt;/code&gt; 和 &lt;code&gt;W3C trace-context&lt;/code&gt; 跟踪器，并具有将数据发送到 TSB、外部 Jaeger 跟踪后端或两者的能力。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;多个跟踪后端&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    请注意，可以多次添加相同的跟踪器类型，但每个跟踪器类型可以具有不同的端点配置。这对于指定一个用于故障排除目的的跟踪后端或为应用团队提供自己的设置非常方便。
+&lt;/div&gt;
+
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;Jaeger 后端的原生 Zipkin 和 OpenTelemetry 支持&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    可以通过以下命令行参数 &lt;code&gt;--collector.zipkin.host-port=:9411&lt;/code&gt; 激活 Jaeger 的 Zipkin 支持。在下面的示例中，这是必需的，因为它启用了 &amp;ldquo;jaeger-b3&amp;rdquo; 跟踪配置，以直接将数据发送到 Jaeger，而无需在中间使用 OpenTelemetry 收集器。&lt;br /&gt;
+Jaeger 版本 v1.35 及更高版本具有对 OpenTelemetry 的 OTLP 传输的原生支持，较早版本需要在其中使用 OpenTelemetry 收集器。在下面的示例中，假定支持 OTLP，因为它启用了 &amp;ldquo;jaeger-w3c&amp;rdquo; 跟踪配置，以直接将数据发送到 Jaeger，而无需在中间使用 OpenTelemetry 收集器。
+&lt;/div&gt;
+
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;patches&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;spec.meshConfig.extensionProviders&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;tsb-b3&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 发送到 TSB 后端的 Zipkin 跟踪器&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;zipkin&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;service&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;zipkin.istio-system.svc.cluster.local&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;9411&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;jaeger-b3&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 发送到 Jaeger 后端的 Zipkin 跟踪器&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;zipkin&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;service&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;jaeger-collector.default.svc.cluster.local&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;9411&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;jaeger-w3c&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 发送到 Jaeger 后端的 OTel 跟踪器&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;opentelemetry&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;service&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;jaeger-collector.default.svc.cluster.local&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;4317&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;both-b3&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 发送到 OTel 收集器的 Zipkin 跟踪器&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;zipkin&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;service&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;otel-collector.default.svc.cluster.local&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;9411&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;both-w3c&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 发送到 OTel 收集器的 OTel 跟踪器&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;opentelemetry&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;service&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;otel-collector.default.svc.cluster.local&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;4317&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;检查 TSB 运算符日志&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    由于在处理覆盖和编辑的资源对象时很容易出错，通常情况下，如果 yaml 语法正确，资源对象通常不会被拒绝，因此建议在应用资源对象时尾随 TSB 运算符的日志以检查是否成功处理覆盖。如果看到应用错误，很可能是在补丁中犯了拼写错误或应用了不正确的缩进。
+&lt;/div&gt;
+
+&lt;p&gt;要尾随 TSB 运算符日志以检查覆盖是否成功处理，请运行以下命令：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl logs -n istio-system -l &lt;span class=&#34;nv&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;tsb-operator -f
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;设置用于跟踪的-opentelemetry-收集器&#34;&gt;设置用于跟踪的 OpenTelemetry 收集器&lt;/h3&gt;
+&lt;p&gt;在上面的扩展提供程序配置示例中，假定将跨度数据发送到 OpenTelemetry 收集器会导致此收集器将数据发送到 OTLP 兼容的 Jaeger 后端，以及 TSB 的期望 Zipkin 数据的 SkyWalking 收集器。默认的 OpenTelemetry 收集器支持 OTLP 和 Zipkin 接收器和导出器。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;供应商特定的 OpenTelemetry 发行版&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    如果使用供应商特定的 OpenTelemetry 收集器（例如 Splunk OpenTelemetry 分发），则通常会广泛支持接收器，但对导出器的支持非常有限（通常只有 OTLP 和本机供应商导出器）。在这些情况下，你需要创建自己的 OpenTelemetry 分发，以支持供应商的导出器以及 Zipkin 导出器，如果需要将跨度数据反馈到 TSB。如果可用 OTLP 导出，则可以使用串联的 OpenTelemetry 收集器解决方案，尽管效率较低。
+&lt;/div&gt;
+
+&lt;p&gt;如果要设置一个 OpenTelemetry 收集器以支持此处呈现的用例，helm chart values 对象可能如下所示：&lt;/p&gt;
+&lt;div class=&#34;alert-warning-title&#34;&gt;
+    &lt;p&gt;演示配置&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-warning&#34;&gt;
+    这不是生产就绪的 OpenTelemetry 配置。
+&lt;/div&gt;
+
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;mode&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;deployment&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;fullnameOverride&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;otel-collector&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 这将设置为 otel 服务名称，默认情况下非常详细&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;replicaCount&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;config&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;extensions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;health_check&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;{}&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;processors&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;batch&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;{}&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;receivers&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;otlp&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;protocols&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;grpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;endpoint&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;${env:MY_POD_IP}:4317&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;http&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;endpoint&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;${env:MY_POD_IP}:4318&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;zipkin&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;endpoint&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;${env:MY_POD_IP}:9411&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;exporters&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;zipkin/tsb&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;endpoint&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;http://zipkin.istio-system.svc:9411/api/v2/spans&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;otlp/jaeger&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;endpoint&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;jaeger-collector.default.svc:4317&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tls&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;insecure&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;service&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;extensions&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;health_check&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;pipelines&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;traces&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;receivers&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;otlp&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;zipkin&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;processors&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;batch&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;exporters&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;zipkin/tsb&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;otlp/jaeger&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;通过 helm 安装 OpenTelemetry 收集器，命令如下：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;helm install otel-trace open-telemetry/opentelemetry-collector &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --values otel-collector-values.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;设置-jaeger-后端&#34;&gt;设置 Jaeger 后端&lt;/h3&gt;
+&lt;p&gt;在这个示例中，我们假设有一个 Jaeger 后端可用。以下是使用 Jaeger 运算符部署 Jaeger 的演示配置。&lt;/p&gt;
+&lt;p&gt;安装 Jaeger 运算符：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create namespace observability
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create -n observability -f &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    https://github.com/jaegertracing/jaeger-operator/releases/download/v1.49.0/jaeger-operator.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&#34;alert-warning-title&#34;&gt;
+    &lt;p&gt;演示配置&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-warning&#34;&gt;
+    这不是生产就绪的 Jaeger 配置。
+&lt;/div&gt;
+
+&lt;p&gt;成功安装 Jaeger 运算符后，你可以创建所需的 Jaeger 部署配置。在此示例中，我们将使用内存存储的演示全合一映像，并启用 Jaeger 的 Zipkin 收集器。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;jaegertracing.io/v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Jaeger&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;jaeger&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;default&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;strategy&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;allInOne&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;allInOne&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;options&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;collector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;zipkin&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;host-port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;:9411&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;应用 Jaeger 对象以配置和部署 Jaeger All-in-one 解决方案：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -f jaeger.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;应用对象后，你应该在默认命名空间中看到 jaeger 实例正在部署：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl get pods -l app.kubernetes.io/instance&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;jaeger
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;默认情况下，Jaeger 运算符会为你创建一个用于访问 UI 的入口路由。你可以通过执行以下命令检索地址信息：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl get ingress
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&#34;alert-warning-title&#34;&gt;
+    &lt;p&gt;未受保护的 UI 访问&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-warning&#34;&gt;
+    Jaeger 的默认入口创建行为相当不安全。如果对此行为感到不舒服，请调整 Jaeger 配置。有关 Jaeger 配置的更多信息，请参阅&lt;a href=&#34;https://www.jaegertracing.io/docs/1.49/operator&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Jaeger 运算符文档&lt;/a&gt;。
+&lt;/div&gt;
+
+&lt;h2 id=&#34;使用-telemetry-api&#34;&gt;使用 Telemetry API&lt;/h2&gt;
+&lt;p&gt;通过启用扩展提供程序，我们已经将传统的 Zipkin 仪器静音。TSB 不会跟踪未通过 Istio Telemetry API 指定所需行为的请求。&lt;/p&gt;
+&lt;div class=&#34;alert-warning-title&#34;&gt;
+    &lt;p&gt;仅允许一个全局遥测对象&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-warning&#34;&gt;
+    Istio Telemetry API 规范规定，只能为根命名空间 &lt;code&gt;istio-system&lt;/code&gt; 应用一个全局范围的 Telemetry 对象。某些版本的 TSB v1.7.x 在安装/升级过程中会自动创建一个名为 &lt;code&gt;xcp-mesh-default&lt;/code&gt; 的全局 Telemetry 对象，用于处理所使用的 Istio 部署的改进全局度量配置。在 TSB v1.8 及更高版本中，不再创建或使用此全局 Telemetry 对象。如果在此对象中添加了自己的全局 Telemetry 配置，则可以继续使用它。还允许删除此对象并创建一个具有你选择的对象名称和内容的新对象。
+&lt;/div&gt;
+
+&lt;p&gt;要启用使用先前注册的 &amp;ldquo;both-b3&amp;rdquo; 跟踪配置的全网默认设置，你可以创建一个新的全局 Telemetry 对象，如下所示。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;telemetry.istio.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Telemetry&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;mesh-default&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istio-system&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tracing&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;providers&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;both-b3&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 在此处使用扩展提供程序跟踪配置之一&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;customTags&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;cluster&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;literal&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;app-cluster-1&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 在此处使用 TSB clusterName！&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tracer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 最好添加一个跟踪器标签，以突出显示使用的配置&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;literal&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;both-b3&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;randomSamplingPercentage&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;100.0&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 在此处使用所需的采样率&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -f mesh-default.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;通过切换跟踪提供程序配置名称，你可以在 B3 和 W3C 上下文传播之间切换，以及直接发送到 TSB、直接发送到 Jaeger，或用于同时馈送 TSB 和 Jaeger 的 OpenTelemetry 收集器。&lt;/p&gt;
+&lt;p&gt;有关更多信息和示例，请参阅&lt;a href=&#34;https://istio.io/v1.17/docs/tasks/observability/telemetry/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Istio Telemetry API 文档&lt;/a&gt;。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>New Relic 集成</title>
+      <link>https://lib.jimmysong.io/tsb/operations/telemetry/new-relic/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/operations/telemetry/new-relic/</guid>
+      <description>&lt;p&gt;New Relic 的流行软件分析平台使企业能够监视其应用程序、服务器和数据库的健康和性能。它从各种来源收集和分析数据，包括应用程序日志、服务器指标和用户交互，以提供详细的洞察和指标。&lt;/p&gt;
+&lt;p&gt;Tetrate 的丰富的可观测性数据可以与 New Relic 平台无缝集成。本文介绍了如何在 New Relic 中使 Istio 和 Tetrate Service Bridge 的遥测数据可用。有关与应用程序负载相关的指标，请参阅&lt;a href=&#34;https://newrelic.com/blog/how-to-relic/monitoring-istio-service-mesh&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;New Relic 文章&lt;/a&gt;，该文章描述了 Istio 数据平面指标的检索。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;注意&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    下面的步骤经过验证，但一些客户可能需要额外的定制来满足其自定义的 New Relic 设置。
+&lt;/div&gt;
+
+&lt;h2 id=&#34;数据流&#34;&gt;数据流&lt;/h2&gt;
+&lt;p&gt;下面的图表显示了 Tetrate Service Bridge 导出到 New Relic 的指标工作流程处理。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-tetrate-service-bridge-到-new-relic-的工作流程图&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../images/tsb-to-newrelic.png&#34; alt=&#34;Tetrate Service Bridge 到 New Relic 的工作流程图&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      Tetrate Service Bridge 到 New Relic 的工作流程图
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;每个 Tetrate Service Bridge 控制平面都使用&lt;a href=&#34;https://opentelemetry.io/docs/collector/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;OpenTelemetry Collector&lt;/a&gt;来收集一组高级指标，并将它们聚合在全局 TSB 管理平面中，以及与管理平面中的活动相关的其他指标数据。一旦聚合完成，OpenTelemetry Collector 可以用于直接导出数据到 New Relic。&lt;/p&gt;
+&lt;h3 id=&#34;配置-tetrate-service-bridge-以适用于-new-relic&#34;&gt;配置 Tetrate Service Bridge 以适用于 New Relic&lt;/h3&gt;
+&lt;p&gt;上述所述的 Tetrate 的遥测数据收集和聚合是一个开箱即用的 TSB 配置，不需要任何更改。按照以下步骤将 Tetrate 的数据与 New Relic 集成。&lt;/p&gt;
+&lt;h4 id=&#34;new-relic-集成&#34;&gt;New Relic 集成&lt;/h4&gt;
+&lt;p&gt;使用以下步骤配置 TSB 管理平面中的 OpenTelemetry Collector，以通过 OTLP 导出器将数据写入 New Relic 端点。&lt;/p&gt;
+&lt;p&gt;基本步骤如下，具体说明如下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;步骤 1：&lt;/strong&gt; 创建一个从 TSB 管理平面复制的 OpenTelemetry &lt;code&gt;configMap&lt;/code&gt;，并将其修改为启用 OTLP 导出器。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;步骤 2：&lt;/strong&gt; 配置在 Tetrate Service Bridge 管理平面中运行的 OpenTelemetry Collector，以使用上一步创建的 &lt;code&gt;configMap&lt;/code&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;有关更多信息，请参阅&lt;a href=&#34;https://aws-otel.github.io/docs/components/otlp-exporter#new-relic&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;OTLP 导出器项目页面&lt;/a&gt;和&lt;a href=&#34;https://docs.newrelic.com/docs/kubernetes-pixie/kubernetes-integration/advanced-configuration/link-otel-applications-kubernetes/#otlp-exporter&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;New Relic 文档&lt;/a&gt;。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;可选的 New Relic Kubernetes 集成&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    New Relic 文档建议在 Kubernetes 集群内部部署 New Relic 集成。这一步骤不需要将 Tetrate Service Bridge 指标传递到 New Relic 平台。
+&lt;/div&gt;
+
+&lt;h5 id=&#34;步骤-1创建-opentelemetry-configmap&#34;&gt;步骤 1：创建 OpenTelemetry &lt;code&gt;configMap&lt;/code&gt;&lt;/h5&gt;
+&lt;p&gt;下载并保存&lt;a href=&#34;../../../assets/operations/otel-cm-tsb.yaml&#34;&gt;&lt;code&gt;此配置映射 yaml 文件，命名为 otel-cm-tsb.yaml&lt;/code&gt;&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;编辑文件，将 &lt;code&gt;&amp;lt;api key&amp;gt;&lt;/code&gt; 字段替换为 New Relic 提供的密钥（如下图所示，请识别 &lt;code&gt;INGEST - LICENSE&lt;/code&gt; 密钥）：&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-new-relic-ui-中的-ingest---license-密钥&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../images/new-relic-key.png&#34; alt=&#34;New Relic UI 中的 INGEST - LICENSE 密钥&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      New Relic UI 中的 INGEST - LICENSE 密钥
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;使用以下命令将配置应用到你的 Kubernetes 集群：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -f otel-cm-tsb.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h5 id=&#34;步骤-2配置-tetrate-service-bridge-opentelemetry-collector&#34;&gt;步骤 2：配置 Tetrate Service Bridge OpenTelemetry Collector&lt;/h5&gt;
+&lt;p&gt;为了指向前一步骤创建的 &lt;code&gt;configMap&lt;/code&gt;，需要使用以下命令对 TSB 管理平面自定义资源配置进行修补。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;Kubernetes 上下文&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    确保你当前的 Kubernetes 上下文设置为运行 Tetrate Service Bridge 管理平面的集群。
+&lt;/div&gt;
+
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;TSB 管理平面命名空间&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    请注意，默认情况下，&lt;code&gt;tsb&lt;/code&gt; 是管理平面的命名空间。如果你的 TSB 管理平面部署在不同的命名空间中，请相应地修改上述命令。
+&lt;/div&gt;
+
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl patch managementplane managementplane -n tsb &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    --patch &lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;spec&amp;#34;:{&amp;#34;components&amp;#34;:{&amp;#34;collector&amp;#34;:{&amp;#34;kubeSpec&amp;#34;:{&amp;#34;overlays&amp;#34;:[{&amp;#34;apiVersion&amp;#34;: &amp;#34;apps/v1&amp;#34;,&amp;#34;kind&amp;#34;: &amp;#34;Deployment&amp;#34;,&amp;#34;name&amp;#34;: &amp;#34;otel-collector&amp;#34;,&amp;#34;patches&amp;#34;:[{&amp;#34;path&amp;#34;:&amp;#34;spec.template.spec.volumes[0].configMap.name&amp;#34;,&amp;#34;value&amp;#34;:&amp;#34;otel-collector-modified&amp;#34;}]}]}}}}}&amp;#39;&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    --type merge
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;验证-new-relic-集成&#34;&gt;验证 New Relic 集成&lt;/h3&gt;
+&lt;p&gt;Tetrate 维护了一组预构建的仪表板，可供使用作为起点；用户还可以使用自定义 New Relic 查询构建自己的仪表板集。&lt;/p&gt;
+&lt;p&gt;以下查询将确认 New Relic 集成是否正常工作：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;SELECT rate(sum(envoy_cluster_internal_upstream_rq), 1 SECONDS) FROM Metric WHERE ((envoy_response_code RLIKE &amp;#39;2.*|3.*|401&amp;#39;) AND (component = &amp;#39;front-envoy&amp;#39;)) SINCE 60 MINUTES AGO UNTIL NOW FACET envoy_cluster_name LIMIT 100 TIMESERIES 60000 SLIDE BY 30000
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-new-relic-中的-tsb-指标&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../images/new-relic-validate.png&#34; alt=&#34;New Relic 中的 TSB 指标&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      New Relic 中的 TSB 指标
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;总结&#34;&gt;总结&lt;/h3&gt;
+&lt;p&gt;本页面描述了将 Tetrate Service Bridge 指标与 New Relic 平台集成所需的步骤。如果需要进一步的信息或帮助，请联系 Tetrate 支持。&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
