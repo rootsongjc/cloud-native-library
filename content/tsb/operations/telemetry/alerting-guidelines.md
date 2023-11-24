@@ -1,29 +1,22 @@
 ---
-title: Alerting Guidelines
-description: Generic guidelines for setting up Tetrate Service Bridge monitoring alerts.
+title: 警报指南
+description: 设置 Tetrate Service Bridge 监控警报的通用指南。
+weight: 4
 ---
 
-:::note
-Tetrate Service Bridge collects a large number of metrics and the relationship
-between those, and the threshold limits that you set will differ from
-environment to environment. This document outlines the generic alerting
-guidelines rather than providing an exhaustive list of alert configurations and
-thresholds, since these will differ between different environments with
-different workload configurations.
-:::
+{{<callout note 注意>}}
+Tetrate Service Bridge 收集了大量的指标，而你设置的指标和阈值限制将因环境而异。本文档概述了通用的警报指南，而不是提供详尽的警报配置和阈值列表，因为这些将因不同环境和不同工作负载配置而异。
+{{</callout>}}
 
-## TSB Operational Status
+## TSB 运维状态
 
-### TSB Availability
+### TSB 可用性
 
-The rate of successful requests to TSB API. This is an extremely user-visible
-signal and should be treated as such.
+TSB API 的成功请求率。这是一个非常容易被用户看到的信号，应该作为这样对待。
 
-Establish the `THRESHOLD` value from historical metric data captured within your
-environment used as a baseline. A reasonable value for a first iteration would
-be `0.99`.
+根据在你的环境中捕获的历史度量数据作为基线来确定 `THRESHOLD` 值。首次迭代的合理值可能为 `0.99`。
 
-Example PromQL expression:
+示例 PromQL 表达式：
 
 ```
 sum(
@@ -46,19 +39,15 @@ sum(
 ) BY (grpc_method) < THRESHOLD
 ```
 
-### TSB Request Latency
+### TSB 请求延迟
 
-TSB gRPC API request latency metrics are intentionally not emitted due to high
-metric cardinality.
+由于度量数据基数高，TSB gRPC API 请求延迟度量意图不会被发出。
 
-### TSB Request Traffic
+### TSB 请求流量
 
-The raw rate of requests to TSB API. The monitoring value comes principally from
-detecting outliers and unexpected behaviour, e.g. an unexpectedly high or low
-request rate. To establish reasonable thresholds, it is vital to have a history
-of metrics data to gauge the baseline.
+对 TSB API 的请求速率。监控值主要来自于检测异常值和意外行为，例如意外高或低的请求速率。要建立合理的阈值，有历史度量数据的记录是至关重要的，以便衡量基线。
 
-Example PromQL expression:
+示例 PromQL 表达式：
 
 ```
 sum(
@@ -69,51 +58,34 @@ sum(
       grpc_method!="SendAuditLog"}[1m]
   )
 ) BY (grpc_method) < THRESHOLD
-# or > THRESHOLD
+# 或 > THRESHOLD
 ```
 
-### TSB Absent Metrics
+### TSB 缺失指标
 
-TSB talks to its persistent backend even without constant external load. An
-absence of requests reliably indicates an issue with TSB metrics collection, and
-should be treated as a high-priority incident as the lack of metrics means the
-loss of visibility into TSB's status.
+TSB 即使没有持续的外部负载也会与其持久性后端通信。请求的缺失可靠地指示了 TSB 指标收集存在问题，并应视为高优先级事件，因为缺少指标意味着无法查看 TSB 的状态。
 
-Example PromQL expression:
+示例 PromQL 表达式：
 
 ```
 sum(rate(persistence_operation[10m])) == 0
 ```
 
-### Persistent Backend Availability
+### 持久性后端可用性
 
-Persistent backend availability from TSB with no insight into the internal
-Postgres operations.
+来自 TSB 的持久性后端可用性，没有内部 Postgres 操作的洞察。
 
-TSB stores all of its state in the persistent backend and as such, its
-operational status (availability, latency, throughput etc.) is tightly coupled
-with the status of the persistent backend. TSB records the metrics for
-persistent backend operations that may be used as a signal to alert on.
+TSB 将其所有状态存储在持久性后端中，因此其运营状态（可用性、延迟、吞吐量等）与持久性后端的状态密切相关。TSB 记录了可能用作警报信号的持久性后端操作的度量标准。
 
-It is important to note that any degradation in persistent backend operations
-will inevitably lead to overall TSB degradation, be it availability, latency or
-throughput. This means that alerting on persistent backend status may be
-redundant and the oncall person will receive two pages instead of one whenever
-there is a problem with Postgres that requires attention. However, such a signal
-still has significant value in providing important context to decrease the time
-to triage the issue and address the root cause/escalate.
+重要的是要注意，持久性后端操作的任何降级都必然会导致 TSB 整体降级，无论是可用性、延迟还是吞吐量。这意味着警报持久性后端状态可能是多余的，当需要关注需要注意的 Postgres 问题时，值班人员将收到两个页面而不是一个。然而，这样的信号仍然具有显著的价值，可以提供重要的上下文，以减少解决问题和解决根本原因/升级所需的时间。
 
-:::note
-Treatment of "resource not found" errors: small number of "not found" responses
-are normal because TSB, for the purposes of optimisation, often uses `Get`
-queries instead of `Exists` in order to determine the resource existence.
-However, a large rate of "not found" (404-like) responses likely indicates an
-issue with the persistent backend setup.
-:::
+{{<callout note 注意>}}
+"未找到资源" 错误的处理：少量的 "未找到" 响应是正常的，因为为了优化，TSB 通常使用 `Get` 查询而不是 `Exists` 查询来确定资源是否存在。然而，大量 "未找到"（类似 404 的）响应很可能表示持久性后端设置存在问题。
+{{</callout>}}
 
-Example PromQL expressions:
+示例 PromQL 表达式：
 
-- Queries:
+- 查询：
 
 ```
 1 - (
@@ -129,7 +101,7 @@ Example PromQL expressions:
 ) < THRESHOLD
 ```
 
-- Too many "resource not found" queries:
+- 过多的 "未找到资源" 查询：
 
 ```
 ( 
@@ -138,10 +110,10 @@ Example PromQL expressions:
   ) OR on() vector(0) / sum(
     rate(persistence_operation[1m])
   )
-) > THRESHOLD # e.g. 0.50
+) > THRESHOLD # 例如 0.50
 ```
 
-- Transactions:
+- 事务：
 
 ```
 sum(
@@ -151,19 +123,15 @@ sum(
 ) < THRESHOLD
 ```
 
-### Persistent Backend Latency
+### 持久性后端延迟
 
-The latency of persistent backend operations as recorded by the persistent
-backend client (TSB). This latency effectively translates to user-seen latency
-and as such is a vital signal.
+持久性后端操作的延迟，由持久性后端客户端（TSB）记录。这个延迟实际上转化为用户看到的延迟，因此是一个重要的信号。
 
-The `THRESHOLD` value should be established from a historical metrics data used
-as a baseline. A sensible value for a first iteration would be `300ms` 99th
-percentile latency.
+`THRESHOLD` 值应该从历史度量数据中建立，作为基线使用。首次迭代的合理值可能是 `300ms` 的第 99 百分位延迟。
 
-Example PromQL expressions:
+示例 PromQL 表达式：
 
-- Queries
+- 查询：
 
 ```
 histogram_quantile(
@@ -172,7 +140,7 @@ histogram_quantile(
 ) > THRESHOLD
 ```
 
-- Transactions:
+- 事务：
 
 ```
 histogram_quantile(
@@ -181,16 +149,13 @@ histogram_quantile(
 ) > THRESHOLD
 ```
 
-## XCP Operational Status
+## XCP 运维状态
 
-### Last Management Plane Sync
+### 最后一次管理平面同步
 
-The max time elapsed since XCP Edge last synced with the management plane (XCP central)
-for each registered cluster. This indicates how stale the configuration received from the
-management plane is in a given cluster. A reasonable first iteration threshold
-here is `30` (seconds).
+XCP Edge 最后一次与管理平面（XCP 中央）同步的最长时间间隔，对于每个已注册的集群。这表示从管理平面接收的配置在给定集群中的陈旧程度。首次迭代的合理阈值为 `30`（秒）。
 
-Example PromQL expression:
+示例 PromQL 表达式：
 
 ```
 time() - min(
@@ -198,118 +163,6 @@ time() - min(
 ) by (edge, status) > THRESHOLD
 ```
 
-### XCP Edge Saturation
+### XCP Edge 饱和度
 
-TSB Control Plane components are mostly CPU-constrained. Thus, the CPU
-utilisation serves as an important signal and should be alerted on. Keep in mind
-when choosing the alert THRESHOLDs that not only cloud providers tend to
-overprovision CPU, but even hyperthreading may have negative effects on Linux
-scheduler efficiency and lead to increased latencies/errors even at <~80% CPU
-utilisation.
-
-## Istio Operational Status
-
-NB: this is not an exhaustive list of valuable signals that Istio Data Plane
-provides. For more in-depth information please refer to:
-
-- https://istio.io/latest/docs/examples/microservices-istio/logs-istio/
-- https://istio.io/latest/docs/ops/best-practices/observability/
-- https://istio.io/latest/docs/concepts/observability/
-
-This document describes the absolute bare minimum alerting setup for Istio
-service mesh.
-
-### Proxy Convergence Time
-
-Delay in seconds between config change and a proxy receiving all required
-configuration. This is another part of configuration propagation latency.
-
-Example PromQL expression:
-
-```
-histogram_quantile(
-  0.99,
-  sum(
-    rate(
-      pilot_proxy_convergence_time_bucket{
-        cluster_name="$cluster"
-      }[1m]
-    )
-  ) by (le)
-) > THRESHOLD
-```
-
-### Istiod Error Rate
-
-The error rate of various Istiod operations. To establish correct thresholds, it
-is important to have the history of metrics data to gauge the baseline.
-
-Example PromQL queries:
-
-- Write Timeouts:
-
-```
-sum(
-  rate(pilot_xds_write_timeout{cluster_name="$cluster"}[1m])
-) > THRESHOLD
-```
-
-- Internal Errors:
-
-```
-sum(
-  rate(pilot_total_xds_internal_errors{cluster_name="$cluster"}[1m])
-) > THRESHOLD
-```
-
-- Config Rejections:
-
-```
-sum(
-  rate(pilot_total_xds_rejects{cluster_name="$cluster"}[1m])
-) > THRESHOLD
-```
-
-- Write Timeouts:
-
-```
-sum(
-  rate(pilot_xds_write_timeout{cluster_name="$cluster"}[1m])
-) > THRESHOLD
-```
-
-### Configuration Validation
-
-The success rate of Istio configuration validation requests. Elevated errors
-indicate that the Istio configuration generated by XCP Edge
-is not valid and this should be urgently addressed.
-
-Example PromQL expression:
-
-```
-sum(
-  rate(galley_validation_passed{cluster_name="$cluster"}[1m])
-) / (
-  sum(
-    rate(galley_validation_passed{cluster_name="$cluster"}[1m])
-  ) + sum(
-    rate(galley_validation_failed{cluster_name="$cluster"}[1m])
-  )
-) < THRESHOLD
-```
-
-## Capacity Planning and Resource Saturation
-
-### TSB, XCP Central/Edge, OAP/Zipkin Saturation
-
-TSB components are mostly CPU-constrained in addition to being constrained by
-OAP/Zipkin memory utilisation depending on the amount of telemetry/traces they
-collect. Thus, the CPU utilisation serves as an important signal and should be
-alerted on. Even though it is not a direct symptom of an issue affecting users,
-saturation provides a valuable signal that the system is
-underprovisioned/oversaturated before it results in user impact.
-
-Keep in mind when choosing the alert `THRESHOLDs` that not only cloud providers
-tend to overprovision CPU, but even hyperthreading may have negative effects on
-Linux scheduler efficiency and lead to increased latencies/errors even at <~80%
-CPU utilisation.
+TSB 控制平面组件主要受限于 CPU。因此，CPU 利用率作为重要信号应该进行警报。在选择警报 `THRESHOLD` 时，请记住不仅云提供商 tend to tend to 超额提供 CPU，而且即使在 <~80% CPU 利用率下，超线程也可能对 Linux 调度器效率产生负面影响，导致延迟/错误增加。

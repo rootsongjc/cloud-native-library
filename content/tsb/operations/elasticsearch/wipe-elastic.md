@@ -1,37 +1,35 @@
 ---
-title: Elasticsearch wipe procedure
-menu-title: Wipe Procedure
-description: Follow the procedure described to clean up Elasticsearch data.
+title: Elasticsearch 清理流程
+description: 按照描述的步骤清理 Elasticsearch 数据。
+weight: 2
 ---
 
-In some situations, due to data model changes in Elasticsearch indexes, it is
-required that you wipe existing indexes and templates so the new version of OAP can function properly.
+在某些情况下，由于 Elasticsearch 索引中的数据模型更改，需要清除现有的索引和模板，以便新版本的 OAP 可以正常运行。
 
-The procedure below describes how to wipe such data from Elasticsearch and
-ensure that the OAP component will start up correctly.
+下面的步骤描述了如何从 Elasticsearch 中清除此类数据并确保 OAP 组件将正确启动。
 
-:::warning Scale down replicas
-Make sure to follow steps 1 and 2 before proceeding
-:::
+{{<callout warning "减少副本数">}}
+确保在继续之前按照步骤 1 和步骤 2 进行操作
+{{</callout>}}
 
-**1. Scale down to 0 replicas the `oap-deployment` deployment in the control plane namespace.**
+**1. 将控制平面命名空间中的 `oap-deployment` 部署的副本数减少为 0。**
 
-:::warning
-This needs to be done in all CP clusters onboarded in TSB.
-:::
+{{<callout warning 注意>}}
+这需要在 TSB 中登记的所有 CP 集群中执行。
+{{</callout>}}
 
 ```bash
 kubectl -n ${CONTROL_NAMESPACE} scale deployment oap-deployment
 --replicas=0
 ```
 
-**2. Scale down to 0 replicas the `oap` deployment in the management namespace.**
+**2. 将管理命名空间中的 `oap` 部署的副本数减少为 0。**
 
 ```bash
 kubectl -n ${MANAGEMENT_NAMESPACE} scale deployment oap --replicas=0
 ```
 
-**3. Execute the following commands to delete templates and indexes in Elasticsearch.**
+**3. 执行以下命令以删除 Elasticsearch 中的模板和索引。**
 
 ```bash
 es_host=localhost
@@ -48,39 +46,32 @@ for idx in $(curl -u "$es_user:$es_pass" https://$es_host:$es_port/_cat/indices 
 done
 ```
 
-:::note Selecting dates
-If you want to delete a particular date of indices instead of everything, you can just add a grep to the command above, having something like ```...curl -u "$es_user:$es_pass" https://$es_host:$es_port/_cat/indices | grep "20221006"| ...``` With this example, you will delete all indices created on the 6th of October 2022.
-:::
+{{<callout note "选择日期">}}
+如果您只想删除特定日期的索引，而不是删除所有内容，您只需将上面的命令添加到 grep 中，例如 ```...curl -u "$es_user:$es_pass" https://$es_host:$es_port/_cat/indices | grep "20221006"| ...``` 以此示例，您将删除在 2022 年 10 月 6 日创建的所有索引。
+{{</callout>}}
 
-:::note Elasticsearch options
-The commands above assume a plain HTTP Elasticsearch instance with no auth.
-Next to setting `<es_host>` and `<es_port>` appropriately, you will need to add
-basic auth if required by supplying `-u <es_user>:<es_pass>` to the `curl`
-commands above, or set the scheme to `https` if needed.
-:::
+{{<callout note "Elasticsearch 选项">}}
+上面的命令假定纯 HTTP Elasticsearch 实例没有身份验证。除了适当设置 `<es_host>` 和 `<es_port>` 外，如果需要，您还需要通过向上面的 `curl` 命令提供 `-u <es_user>:<es_pass>` 来添加基本认证，或者如果需要，将模式设置为 `https`。
+{{</callout>}}
 
 
-**4. Scale up the `oap` deployment in the management namespace.**
+**4. 增加管理命名空间中的 `oap` 部署的副本数。**
 
 ```bash
 kubectl -n ${MANAGEMENT_NAMESPACE} scale deployment oap --replicas=1
 ```
 
-**Keep an eye on the logs of the new OAP pod in the management plane namespace, if there are no errors and the pod is running fine, you can continue with the next steps.**
+**密切关注管理平面命名空间中新的 OAP 容器的日志，如果没有错误并且容器正常运行，可以继续执行下一步。**
 
-:::warning OAP availability
-Ensure OAP starts correctly in the management plane before continuing
-with this procedure. The management plane pods for this component create the
-needed index templates and indices required by the system, so you need to ensure
-OAP is up and running before moving on to scale up the control plane
-components.
-:::
+{{<callout warning "OAP 可用性">}}
+确保管理平面中的 OAP 在继续执行此过程之前能够正确启动。该组件的管理平面 pod 会创建系统所需的索引模板和索引，因此在继续扩展控制平面组件之前，您需要确保 OAP 正常运行。
+{{</callout>}}
 
-**5. Scale up the `oap-deployment` deployment in the control plane namespace.**
+**5. 增加控制平面命名空间中的 `oap-deployment` 部署的副本数。**
 
-:::warning
-This needs to be done in all CP clusters onboarded in TSB.
-:::
+{{<callout warning>}}
+这需要在 TSB 中登记的所有 CP 集群中执行。
+{{</callout>}}
 
 ```bash
 kubectl -n ${CONTROL_NAMESPACE} scale deployment oap-deployment \

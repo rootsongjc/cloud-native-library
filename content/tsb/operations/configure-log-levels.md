@@ -1,14 +1,15 @@
 ---
 title: Configure Log Levels
 description: Configure Log Levels for TSB components
+weight: 7
 ---
 
 This document describes how to adjust log levels for the different components in TSB, including platform components, Envoy sidecars and ingress gateways at runtime, as well as the procedure to view the logs.
 
 Before you get started make sure:
 
-✓ You have installed and configured TSB properly.<br />
-✓ You have installed and configured `kubectl` to access the application cluster.
+- You have installed and configured TSB properly.
+- You have installed and configured `kubectl` to access the application cluster.
 
 For the example commands we assume that you have some applications deployed in a `helloworld` namespace.
 

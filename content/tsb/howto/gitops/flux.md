@@ -1,31 +1,26 @@
 ---
-title: Configuring Flux CD for GitOps
-description: How to configure Flux CD to deploy TSB resources defined in git repositories.
+title: "配置 Flux CD 进行 GitOps"
+description: "如何配置 Flux CD 与 Helm 和 GitHub 集成，以将 TSB 应用程序部署到目标集群。"
 weight: 2
 ---
 
-This document explains how you can configure [Flux CD](https://fluxcd.io/) with
-Helm and GitHub integration to deploy a TSB application to a target cluster.
+本文档解释了如何配置 [Flux CD](https://fluxcd.io/) 与 Helm 和 GitHub 集成，以将 TSB 应用程序部署到目标集群。
 
-:::note
-This document assumes that:
-- [Flux](https://fluxcd.io/docs/installation/) version 2 CLI is installed.
-- [Helm](https://helm.sh/docs/intro/install) CLI is installed.
-- TSB is up and running, and GitOps [has been
-  enabled](../../operations/features/configure_gitops) for the target cluster.
-:::
+{{<callout note 注意>}}
+本文档假设以下情况：
 
-## Cluster setup
+- 已安装 [Flux](https://fluxcd.io/docs/installation/) 版本 2 的 CLI。
+- 已安装 [Helm](https://helm.sh/docs/intro/install) 的 CLI。
+- TSB 正在运行，并且已为目标集群启用了 GitOps [配置](../../../operations/features/configure-gitops)。
+{{</callout>}}
 
-First, install Flux on the target cluster with a [GitHub
-integration](https://fluxcd.io/docs/cmd/flux_bootstrap_github/). To do that,
-use the following command under the target cluster kubernetes context.
+## 集群设置
 
-:::note
-You will need a GitHub [Personal Access
-Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
-(PAT) to input in the following command.
-:::
+首先，在目标集群上使用 [GitHub 集成](https://fluxcd.io/docs/cmd/flux_bootstrap_github/) 安装 Flux。要执行此操作，请在目标集群 Kubernetes 上下文下使用以下命令。
+
+{{<callout note 注意>}}
+你将需要一个 GitHub [个人访问令牌](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)（PAT）输入以下命令。
+{{</callout>}}
 
 ```bash
 $ flux bootstrap github \
@@ -34,20 +29,17 @@ $ flux bootstrap github \
   --path=./clusters/cluster-01
 ```
 
-:::note
-Add `--personal --private` flags if you use your personal GitHub account for testing purposes.
-:::
+{{<callout note 注意>}}
+如果你使用个人 GitHub 帐户进行测试，可以添加 `--personal --private` 标志。
+{{</callout>}}
 
-This sets up Flux with the needed configurations for a cluster called
-`cluster-01` in a GitHub repository named `git-ops` under the
-`clusters/cluster-01/` directory.
+这将为名为 `cluster-01` 的集群在名为 `git-ops` 的 GitHub 存储库的 `clusters/cluster-01/` 目录下设置 Flux 所需的配置。
 
-:::note
-Run `flux logs -A --follow` command in a different shell for
-debugging purposes.
-:::
+{{<callout note 注意>}}
+为了调试目的，在不同的 shell 中运行 `flux logs -A --follow` 命令。
+{{</callout>}}
 
-You can run this command to do a generic status check:
+你可以运行此命令进行一般状态检查：
 
 ```bash
 $ flux check
@@ -65,63 +57,47 @@ $ flux check
 ✔ all checks passed
 ```
 
-Under the hood, Flux uses a
-[`Kustomization`](https://fluxcd.io/docs/components/kustomize/kustomization/)
-with a
-[`GitRepository`](https://fluxcd.io/docs/components/source/gitrepositories/)
-source to store its own resources.
+在内部，Flux 使用 [`Kustomization`](https://fluxcd.io/docs/components/kustomize/kustomization/) 与 [`GitRepository`](https://fluxcd.io/docs/components/source/gitrepositories/) 源来存储自己的资源。
 
-You can query its status:
+你可以查询其状态：
 
 ```bash
 $ flux get all
-NAME                     	REVISION    	SUSPENDED	READY	MESSAGE
-gitrepository/flux-system	main/36dff73	False    	True 	stored artifact for revision 'main/36dff739b5ae411a7b4a64010d42937bd3ae4d25'
+名称                	修订版本     	暂停   	已准备好  	消息
+gitrepository/flux-system	main/36dff73	False    	True    	已存储的修订版本 'main/36dff739b5ae411a7b4a64010d42937bd3ae4d25'
 
-NAME                     	REVISION    	SUSPENDED	READY	MESSAGE
-kustomization/flux-system	main/36dff73	False    	True 	Applied revision: main/36dff73
+名称                	修订版本     	暂停   	已准备好  	消息
+kustomization/flux-system	main/36dff73	False    	True    	应用的修订版本：main/36dff73
 ```
 
-Meanwhile, you will see something like this in the logs:
+同时，在日志中你将看到类似以下的信息：
 
 ```sh
-2022-04-24T20:42:06.921Z info Kustomization/flux-system.flux-system - server-side apply completed
+2022-04-24T20:42:06.921Z info Kustomization/flux-system.flux-system - 服务器端应用完成
 2022-04-24T22:51:30.431Z info GitRepository/flux-system.flux-system - artifact up-to-date with remote revision: 'main/36dff739b5ae411a7b4a64010d42937bd3ae4d25'
 ```
 
-Since Flux is up and running now, the next step is to push new configurations
-to the `git-ops` repository for the `cluster-01` cluster. You can clone the
-repository and `cd` into `clusters/cluster-01` for the next steps.
+由于 Flux 现在正在运行，下一步是将新配置推送到 `git-ops` 存储库，以用于 `cluster-01` 集群。你可以克隆存储库并 `cd` 到 `clusters/cluster-01` 以执行下一步。
 
-## Application setup
+## 应用程序设置
 
-There are [several ways](https://fluxcd.io/docs/guides/repository-structure/)
-to structure your GitOps repositories. In this example, and for simplicity
-reasons, the same repository is used for both cluster and application configurations.
+有[几种方法](https://fluxcd.io/docs/guides/repository-structure/)可以组织你的 GitOps 存储库。在此示例中，出于简单起见，同一个存储库用于集群和应用程序配置。
 
-The goal for this section is to deploy the Helm chart of a
-[Bookinfo](https://istio.io/latest/docs/examples/bookinfo/) application and its
-TSB resources. 
+本节的目标是部署[Bookinfo](https://istio.io/latest/docs/examples/bookinfo/)应用程序的 Helm 图表及其 TSB 资源。
 
-First, create the `bookinfo` namespace with sidecar injection:
+首先，创建带有 Sidecar 注入的 `bookinfo` 命名空间：
 ```bash
 kubectl create namespace bookinfo
 kubectl label namespace bookinfo istio-injection=enabled
 ```
 
-Then, create a
-[`HelmRelease`](https://fluxcd.io/docs/guides/helmreleases/) Flux resource with a
-[`GitRepository`](https://fluxcd.io/docs/components/source/gitrepositories/) 
-source for Bookinfo.
+然后，在 `clusters/cluster-01/bookinfo.yaml` 中创建 [`HelmRelease`](https://fluxcd.io/docs/guides/helmreleases/) Flux 资源，该资源使用 [`GitRepository`](https://fluxcd.io/docs/components/source/gitrepositories/) 来定义 Bookinfo。
 
-:::note
-The alternative to `GitRepository` is a
-[`HelmRepository`](https://fluxcd.io/docs/components/source/helmrepositories/),
-which is not covered in this document.
-:::
+{{<callout note 注意>}}
+`GitRepository` 的替代方法是 [`HelmRepository`](https://fluxcd.io/docs/components/source/helmrepositories/)，本文档未涵盖此项内容。
+{{</callout>}}
 
-If the `bookinfo` TSB helm chart definition is stored in the `apps/bookinfo`
-directory, create the `HelmRelease` resource in `clusters/cluster-01/bookinfo.yaml`.
+如果 `bookinfo` TSB helm 图表定义存储在 `apps/bookinfo` 目录中，则在 `clusters/cluster-01/bookinfo.yaml` 中创建 `HelmRelease` 资源。
 
 ```yaml
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
@@ -142,35 +118,34 @@ spec:
   targetNamespace: bookinfo
 ```
 
-Note that:
-- The `HelmRelease` will be created in the `flux-system` namespace, while the resources
-defined by the Helm chart of the `apps/bookinfo` chart of the release will be deployed
-in the `bookinfo` target namespace.
-- Since `spec.chart.spec.version` is not specified, Flux will use _latest_ chart version.
-- `GitRepository.name` is `flux-system` since that's the name Flux uses internally for bootstrapping.
+注意：
+- `HelmRelease` 将在 `flux-system` 命名空间中创建，而 release 的 Helm 图表定义的资源将在 `bookinfo` 目标命名空间中部署。
+- 由于未指定 `spec.chart.spec.version`，Flux 将使用图表的 _latest_ 版本。
+- `GitRepository.name` 为 `flux-system`，因为 Flux 在内部使用此名称进行
 
-Next, add and push the file into git and watch the flux logs. You will see something like this:
+引导。
+
+接下来，将文件添加并推送到 git，并监视 flux 日志。你将看到类似以下的信息：
 
 ```sh
-2022-04-25T08:02:37.233Z info HelmRelease/bookinfo.flux-system - reconcilation finished in 49.382555ms, next run in 1m0s
-2022-04-25T08:02:37.980Z info HelmChart/flux-system-bookinfo.flux-system - Discarding event, no alerts found for the involved object
-2022-04-25T08:02:45.784Z error HelmChart/flux-system-bookinfo.flux-system - reconciliation stalled invalid chart reference: stat /tmp/helmchart-flux-system-flux-system-bookinfo-4167124062/source/apps/bookinfo: no such file or directory
+2022-04-25T08:02:37.233Z info HelmRelease/bookinfo.flux-system - 协调完成，耗时 49.382555ms，下一次运行在 1m0s 内
+2022-04-25T08:02:37.980Z info HelmChart/flux-system-bookinfo.flux-system - 丢弃事件，未找到涉及对象的警报
+2022-04-25T08:02:45.784Z error HelmChart/flux-system-bookinfo.flux-system - 协调停滞，无效的图表引用：stat /tmp/helmchart-flux-system-flux-system-bookinfo-4167124062/source/apps/bookinfo: 文件或目录不存在
 ```
 
-This is because the helm chart has not been pushed to the `apps/bookinfo` directory yet.
+这是因为 helm 图表尚未推送到 `apps/bookinfo` 目录中。
 
-Note that instead of parsing the flux logs, you can also query the resources
-with `kubectl`:
+请注意，你可以使用 `kubectl` 查询资源来代替解析 flux 日志：
 - `kubectl get helmreleases -A`
 - `kubectl get helmcharts -A`
 
-Next, create the helm chart. Create the `apps/` directory, enter it and run:
+接下来，创建 helm 图表。创建 `apps/` 目录，进入该目录并运行：
 
 ```bash
 $ helm create bookinfo
 ```
 
-This creates the following file tree:
+这将创建以下文件树：
 
 ```bash
 $ tree
@@ -192,15 +167,16 @@ $ tree
 
 4 directories, 10 files
 ```
-Then, `cd` into `bookinfo/`.
 
-For simplicity reasons, remove the following not-needed content:
+然后，进入 `bookinfo/`。
+
+为了简化起见，删除不需要的内容：
 
 ```bash
 $ rm -rf values.yaml charts templates/NOTES.txt templates/*.yaml templates/tests/
 ```
 
-Next, edit the `Chart.yaml`. A minimal content looks like this:
+接下来，编辑 `Chart.yaml`。最小内容如下：
 
 ```yaml
 apiVersion: v2
@@ -209,45 +185,33 @@ description: TSB bookinfo Helm Chart.
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
-``` 
+```
 
-Next, add the Bookinfo definitions to the `templates/` directory,
-gathering them from Istio's repository:
+接下来，在 `templates/` 目录中添加 Bookinfo 定义，从 Istio 的存储库中获取它们：
 
 ```bash
 curl https://raw.githubusercontent.com/istio/istio/master/samples/bookinfo/platform/kube/bookinfo.yaml -o bookinfo.yaml
 ```
 
-Once we have the bookinfo deployment, we'll add the TSB configuration resources in a
-`templates/tsb.yaml` file. When creating the TSB configurations, a best practice is to
-put all them inside a `List` resource. This will enforce a strict order when applying
-them into the cluster, and you will be able to guarantee that the resources that are at
-higher levels of the TSB resource hierarchy are applied first, and you won't hit issues
-due to [Helm resource ordering limitations](https://github.com/helm/helm/issues/8439).
+一旦我们有了 bookinfo 部署，我们将在 `templates/tsb.yaml` 文件中添加 TSB 配置资源。创建 TSB 配置时，最佳实践是将它们全部放在 `List` 资源内。这将强制在将它们应用到集群时遵循严格的顺序，你将能够保证高层级 TSB 资源首先应用，不会因 [Helm 资源排序限制](https://github.com/helm/helm/issues/8439) 而遇到问题。
 
-:::note
-For this example, an ingress gateway it's used for the application that will be
-configured by the first resource configuration below. You can read more about
-this
-[here](https://docs.tetrate.io/service-bridge/1.4.x/en-us/refs/install/dataplane/v1alpha1/spec).
-
-Also make sure you change _your-org_ and _your-tenant_ for actual values.
-:::
+{{<callout note 注意>}}
+在此示例中，应用程序使用入口网关，该网关将由下面的第一个资源配置进行配置。你可以在 [此处](https://docs.tetrate.io/service-bridge/1.4.x/en-us/refs/install/dataplane/v1alpha1/spec) 详细了解。
+此外，请确保将 _your-org_ 和 _your-tenant_ 更改为实际值。
+{{</callout>}}
 
 ```yaml
 apiVersion: v1
 kind: List
 items:
-# Create an ingress gateway deployment that will be the entry point to
-# the bookinfo application
+# 创建一个作为 bookinfo 应用程序入口点的入口网关部署
 - apiVersion: install.tetrate.io/v1alpha1
   kind: IngressGateway
   metadata:
     namespace: bookinfo
     name: tsb-gateway-bookinfo
   spec: {}
-# Create the workspace and gateway group that capture the namespaces where
-# the bookinfo application will run
+# 创建工作空间和网关组，捕获 bookinfo 应用程序将运行的命名空间
 - apiVersion: tsb.tetrate.io/v2
   kind: Workspace
   metadata:
@@ -272,7 +236,7 @@ items:
       names:
         - "*/*"
     configMode: BRIDGED
-# Expose the productpage service in the application ingress
+# 在应用程序入口中公开 productpage 服务
 - apiVersion: gateway.tsb.tetrate.io/v2
   kind: IngressGateway
   metadata:
@@ -299,18 +263,17 @@ items:
 ---
 ```
 
-Before pushing, test that the chart is well constructed:
+在推送之前，测试图表是否构建良好：
 
 ```bash
 $ helm install bookinfo --dry-run .
 ```
 
-It should print the rendered resources as YAML.
+它应该会将渲染的资源打印为 YAML。
 
-Now it's time to push them and check the flux logs.
+现在是时候推送它们并检查 flux 日志了。
 
-If GitOps is properly configured in the cluster, pushing this chart will create
-the corresponding Kubernetes and TSB resources:
+如果在集群中正确配置了 GitOps，则推送此图表将创建相应的 Kubernetes 和 TSB 资源：
 
 ```bash
 kubectl get pods -n bookinfo
@@ -333,29 +296,27 @@ NAME        STATUS      LAST EVENT    MESSAGE
 bookinfo    ACCEPTED
 ```
 
-This means everything is up and running. The the bookinfo service can be
-accessed on the configured hostname through the ingress gateway. 
+这意味着一切都已经正常运行。你可以通过配置的主机名通过入口网关访问 bookinfo 服务。
 
-If DNS is not configured in the cluster, or do you want to test it from your
-local environment, you can run a `curl` against the productpage service via its
-ingress gateway public IP like this.
+如果集群中没有配置 DNS，或者你想要从本地环境测试它，可以通过其入口网关公共 IP 对 productpage 服务运行 `curl`，如下所示。
 
 ```bash
 $ export IP=$(kubectl -n bookinfo get service tsb-gateway-bookinfo -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 $ curl -H "Host: bookinfo.example.com" http://$IP/productpage
 ```
 
-### Troubleshooting
+### 故障排除
 
-Remember to bump the chart version when publishing new changes to the Chart.
+请记住，在发布 Chart 的新更改时要提高 Chart 版本。
 
-If there are no changes and you want to force flux to re-run, do:
+如果没有更改，但你想强制 flux 重新运行，可以执行以下操作：
 
 ```bash
 $ flux reconcile helmrelease bookinfo
 ```
 
-You can also check for issues in the Flux Kubernetes resources:
+你还可以检查 Flux Kubernetes 资源中的问题：
+
 ```bash
 $ flux get helmreleases -A
 NAMESPACE  	NAME    	REVISION	SUSPENDED	READY	MESSAGE
@@ -365,9 +326,7 @@ kubectl get helmreleases -A -o yaml
 ...
 ```
 
-If you see a `upgrade retries exhausted` message, there is a [bug
-regression](https://github.com/fluxcd/helm-controller/issues/454). The workaround is
-to suspend and resume the `HelmRelease`:
+如果看到 `upgrade retries exhausted` 消息，那么有一个 [bug 回归](https://github.com/fluxcd/helm-controller/issues/454)。解决方法是暂停并恢复 `HelmRelease`：
 
 ```bash
 $ flux suspend helmrelease bookinfo

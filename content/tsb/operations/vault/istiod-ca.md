@@ -1,6 +1,7 @@
 ---
 title: Istio CA
 description: 如何将 Vault Agent 注入器与 Istiod CA 证书结合使用。
+weight: 3
 ---
 
 在开始之前，你必须拥有：

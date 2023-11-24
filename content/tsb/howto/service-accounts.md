@@ -1,14 +1,14 @@
 ---
-title: Leveraging TSB service accounts
-description: The given article will focus on how TSB service accounts can be created and consumed by the external automation software leveraging `tctl` utility as a handler.
+title: 利用 TSB 服务账号
+description: 本文将重点介绍如何创建和使用 TSB 服务账号，以及如何利用 `tctl` 实用工具作为处理程序。
 weight: 9
 ---
 
-TSB service accounts can be leveraged internally within the platform to manage the cluster onboarding [tctl install cluster-service-account](../setup/self_managed/onboarding-clusters#secrets) and [GitOps](../howto/gitops) functionality, as well as externally for the 3rd-party systems to perform the configuration of various TSB features leveraging TSB API interface. The given article will focus on how TSB service accounts can be created and consumed by the external automation software leveraging `tctl` utility as a handler.
+TSB 服务账号可以在平台内部用于管理集群入网 [tctl install cluster-service-account](../../setup/self-managed/onboarding-clusters#secrets) 和 [GitOps](../../howto/gitops) 功能，也可以在外部用于第三方系统执行各种 TSB 功能的配置，利用 TSB API 接口。本文将重点介绍如何创建和使用 TSB 服务账号，以及如何利用 `tctl` 实用工具作为处理程序。
 
-## Working with TSB service accounts using `tctl` utility
+## 使用 `tctl` 实用工具处理 TSB 服务账号
 
-Most of the interactions you need for service accounts are already available in the [tctl experimental service-account](../reference/cli/reference/experimental#tctl-experimental-service-account) command:
+对于服务账号，你所需的大多数交互已经在 [tctl experimental service-account](../../reference/cli/reference/experimental#tctl-experimental-service-account) 命令中可用：
 
 ```bash
 $ tctl x sa -h
@@ -29,7 +29,7 @@ Available Commands:
   token       Generate a new token that can be used to authenticate to TSB
 ```
 
-Create a TSB service account using `tctl experimental service-account create`. Private keys are returned when service accounts are created, but TSB will not store them. It is up to the client to store them securely. To learn more, please refer to [YAML API Reference Guide](../refs/tsb/v2/team#serviceaccount):
+使用 `tctl experimental service-account create` 创建一个 TSB 服务账号。当创建服务账号时，会返回私钥，但 TSB 不会存储它们。客户端需要自行安全存储。要了解更多信息，请参阅 [YAML API 参考指南](../../refs/tsb/v2/team#serviceaccount)：
 
 ```bash
 $ tctl experimental service-account create pipeline-sa1 > pipeline-sa1-jwk-private-key.jwk
@@ -44,22 +44,24 @@ $ cat pipeline-sa1-jwk-private-key.jwk
   "kty": "RSA",
   "n": "s5ENuvPJ9C2gMsnqFUXosXYY4k8AcnCjfUFQgUJc1FBpM15EnrgwkArZNsgHscH7ngnqIvwIf7SvM10CSkKj7dWZ6oabmdY-IFaeKIZ96EoFicNpRgkhJQREunLNtwHjvZZ_j86Vbnt4YGn6Y09y42HlEAT2NjUBiZI9C_gUmWl7smW-gZBGa4U6PsAOpi0H6Ct5dKpYJUO0qj1JLqC739nG2Exr4QEQGkFo-UaBBTTq1miHXfs1ptytYqfd64xTg0PIX0-9CfjtKrXS3hWEAWHHcChl9eHp89RU7a3bjWHbVJJVjYwcht6kFR_GX6oScGGnM4vQSR2ifh034vSA3w",
   "p": "y4ynCbHHJW984_nC4UKCSF3kFjqAWG4E7K4_qJ7b5sXN7aQsWgBi6Jt6c9Paf4X3HUPDs9rbQ8ab4PJNP4r3JNc90wpvSR0b_w3E_bOtfQhbLbG5T17eO2laEpJCYWK71EVuZ2ykvuf6rkgTi4T27c9KdgJHMKQGNH7TwQFJKUU",
-  "q": "4dZZugK6vTlt_i2ySEuvRTAErLAVK7UWIuLQN9eeO8viX_vgoNe1L1rEN1Lb-OjdV4j5hyGMqkJ3kbCm0awDmxaR4nXVZ-GKC_mvilpfuyoYK4rm9iod_ZSuLytqr9LPnvtalaYeToNT9U7KqbzVsFY0nKTF6_ujRfqD8g282dM",
+  "q": "4dZZugK6vTlt_i2ySEuvRTAErLAVK7UWIuLQN9ee
+
+O8viX_vgoNe1L1rEN1Lb-OjdV4j5hyGMqkJ3kbCm0awDmxaR4nXVZ-GKC_mvilpfuyoYK4rm9iod_ZSuLytqr9LPnvtalaYeToNT9U7KqbzVsFY0nKTF6_ujRfqD8g282dM",
   "qi": "anAZOAEZNUHf9HjqVeZiMExSZf7_OhHDceyKQ3KKI7CZSHaSj-aRtXqfAzArwpi3jDkiVQK79pt5zYKg0K47Z-X2PJ_W1tqqzAQX3Fqkdvs1c3L3Fy3w_C59N_B_QiA5e-y9J5qM1Qk12jnhlCn0DnlolwadfrkciUIS4ZdHMcs"
 }
 ```
 
-When JWK private key is acquired through the TSB service account creation step, generate an access token for the session authentication using `tctl experimental service-account token --key-path` with the defined duration:
+当通过 TSB 服务账号创建步骤获取 JWK 私钥时，使用 `tctl experimental service-account token --key-path` 生成会话身份验证的访问令牌，并指定其持续时间：
 
 ```bash
 $ tctl experimental service-account token pipeline-sa1 --key-path pipeline-sa1-jwk-private-key.jwk --expiration 1h30m0s
-eyJhbGciOiJSUzI1NiIsImtpZCI6Inp1QWl3UEZRdTJlSTNHQUdkZGFTMVVIRzA4QTAxQkE0WFN0RjJDNDV1aUEiLCJ0eXAiOiJKV1QifQ.eyJleHAiOjE2NTcwNTIyNTksImlhdCI6MTY1NzA1MDQ1OSwic3ViIjoibXktc2EjenVBaXdQRlF1MmVJM0dBR2RkYVMxVUhHMDhBMDFCQTRYU3RGMkM0NXVpQSIsInRzYi50ZXRyYXRlLmlvL3VzZSI6InRjdGwifQ.PRN5noVwB5RT0kFL75XjBe8pO3l90QvqpeUrR-Cw_Wt3-I4jTEWOVZXwkg6BJp0sL3cdq4wBPOCjQ8FXKrd527bIujh8f0E0Cj0obhbbSGUmAFwJO2UrvovjfXr1Ra35KHsFY6HCnTjKRxFVZ_czdYAc4s3YbOYRhiz74v1O6U9nX5jgTLl_vg9dxDUxiYYeUn1gR9_Jf0APkM48JSiZa4Bz0Ly6oGKm_GkUY003xPl4PSMFhR-4i1rYrcFH2YYP_6uUieToTrCSNchPk8S6Mh3rnkMiKTazrUnAuO5Anc3C6UlbDw9-ax18dvyKKi47wdRcjeDNPxjCSX27Qe-ryA
+eyJhbGciOiJSUzI1NiIsImtpZCI6Inp1QWl3UEZRdTJlSTNHQUdkZGFTMVVIRzA4QTAxQkE0WFN0FjDdpUEiLCJ0eXAiOiJKV1QifQ.eyJleHAiOjE2NTcwNTIyNTksImlhdCI6MTY1NzA1MDQ1OSwic3ViIjoibXktc2EjenVBaXdQRlF1MmVJM0dBR2RkYVM1VUhHMDhBMDFCQTRYU3RGMkM0NXVpQSIsInRzYi50ZXRyYXRlLmlvL3VzZSI6InRjdGwifQ.PRN5noVwB5RT0kFL75XjBe8pO3l90QvqpeUrR-Cw_Wt3-I4jTEWOVZXwkg6BJp0sL3cdq4wBPOCjQ8FXKrd527bIujh8f0E0Cj0obhbbSGUmAFwJO2UrvovjfXr1Ra35KHsFY6HCnTjKRxFVZ_czdYAc4s3YbOYRhiz74v1O6U9nX5jgTLl_vg9dxDUxiYYeUn1gR9_Jf0APkM48JSiZa4Bz0Ly6oGKm_GkUY003xPl4PSMFhR-4i1rYrcFH2YYP_6uUieToTrCSNchPk8S6Mh3rnkMiKTazrUnAuO5Anc3C6UlbDw9-ax18dvyKKi47wdRcjeDNPxjCSX27Qe-ryA
 ```
 
-And configure that token in the desired [tctl user profile](../setup/tctl_connect#set-tctls-user). You can also do it all in once:
+然后将该令牌配置到所需的 [tctl 用户配置文件](../../setup/tctl-connect#set-tctls-user) 中。你也可以一次完成所有操作：
 
 ```
 tctl config users set pipeline-sa1 --token $(tctl x sa token pipeline-sa1 --key-path pipeline-sa1-jwk-private-key.jwk --expiration 1h30m0s)
 ```
 
-For more details how to leverage `tctl` to connect to TSB, please consult [Connect to TSB with tctl](../setup/tctl_connect#set-tctls-user) 
+有关如何使用 `tctl` 连接到 TSB 的详细信息，请参阅 [使用 tctl 连接到 TSB](../../setup/tctl-connect#set-tctls-user)。

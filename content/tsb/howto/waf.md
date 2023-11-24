@@ -1,67 +1,65 @@
 ---
-title: Using WAF Capabilities
-description: Shows how to configure and enable WAF capabilities
+title: 使用 WAF 功能
+description: 展示如何配置和启用 WAF 功能
 weight: 7
 ---
 
-:::warning Technical Preview
-Tetrate WAF is a technical preview of a future capability of TSB. It is not recommended for production usage at this stage.
-:::
+{{<callout warning 技术预览>}}
+Tetrate WAF 是 TSB 未来功能的技术预览。目前不建议在生产环境中使用。
+{{</callout>}}
 
-This document will describe how Web Application Firewall (WAF) capabilities can be enabled and configured in TSB.
+本文将描述如何在 TSB 中启用和配置 Web 应用程序防火墙（WAF）功能。
 
-## Overview
-A Web Application Firewall (WAF) inspects inbound and outbound HTTP traffic. It matches the traffic against a range of signatures in order to detect attack attempts, malformed traffic, and exfiltration of sensitive data. Suspicious traffic can be blocked, alerts can be raised, and traffic can be logged for later analysis.
+## 概述
+Web 应用程序防火墙（WAF）检查入站和出站的 HTTP 流量。它会将流量与一系列签名进行匹配，以检测攻击尝试、格式不正确的流量和敏感数据的泄漏。可疑的流量可以被阻止，警报可以被触发，并且流量可以被记录以供后续分析。
 
-Traditional WAF solutions operate at the edge of a network, inspecting ingress and egress traffic to and from the Internet. They operate on the assumption that a bad actor is external to your internal infrastructure.
+传统的 WAF 解决方案在网络的边缘运行，检查从互联网进出的流量。它们基于这样的假设：恶意行为者是外部的，不在你的内部基础设施中。
 
-Tetrate WAF runs within an application, protecting individual services in a very granular way. With Tetrate WAF, you can enhance your [zero trust](../concepts/security) posture by protecting from internal and external attackers alike.
+Tetrate WAF 在应用程序内部运行，以非常精细的方式保护个别服务。通过 Tetrate WAF，你可以增强你的[零信任](../../concepts/security)姿态，保护内部和外部攻击者。
 
-Benefits from enabling this feature include:
-- Detection and blocking of attack traffic and data exfiltration using the industry-standard [OWASP Core Rule Set](https://coreruleset.org/) (CRS) detection rules. At the time of writing, Tetrate WAF uses CRS [v4.0.0-rc1](https://github.com/coreruleset/coreruleset/releases/tag/v4.0.0-rc1).
-- Fine-tuning of protection with tailored custom rules.
-- The ability to quickly mitigate attacks against known CVEs or 0days.
-- Flexible deployment based on your infrastructure and known vulnerable workloads.
+启用此功能的好处包括：
+- 使用行业标准的 [OWASP 核心规则集](https://coreruleset.org/)（CRS）检测规则来检测攻击流量和数据泄漏的检测和阻止。在撰写本文时，Tetrate WAF 使用 CRS [v4.0.0-rc1](https://github.com/coreruleset/coreruleset/releases/tag/v4.0.0-rc1)。
+- 使用定制的自定义规则进行保护的微调。
+- 快速应对已知 CVE 或 0day 攻击的能力。
+- 基于你的基础设施和已知的易受攻击工作负载的灵活部署。
 
-## WAF in TSB
-Components that can be configured with WAF capabilities: [Organization](../refs/tsb/v2/organization), [Tenant](../refs/tsb/v2/tenant), [Workspace](../refs/tsb/v2/workspace), [SecurityGroup](../refs/tsb/security/v2/security_group), [IngressGateway](../refs/tsb/gateway/v2/ingress_gateway), [EgressGateway](../refs/tsb/gateway/v2/egress_gateway), and [Tier1Gateway](../refs/tsb/gateway/v2/tier1_gateway).
-WAF feature can be specified in the [`defaultSecuritySettings`](../refs/tsb/security/v2/security_setting) property of [OrganizationSetting](../refs/tsb/v2/organization_setting), [TenantSetting](../refs/tsb/v2/tenant_setting), [WorkspaceSetting](../refs/tsb/v2/workspace_setting), and in the `spec` of [SecuritySettings](../refs/tsb/security/v2/security_setting).
+## TSB 中的 WAF
+可以配置 WAF 功能的组件包括：[组织](../../refs/tsb/v2/organization)、[租户](../../refs/tsb/v2/tenant)、[工作区](../../refs/tsb/v2/workspace)、[安全组](../../refs/tsb/security/v2/security_group)、[入口网关](../../refs/tsb/gateway/v2/ingress_gateway)、[出口网关](../../refs/tsb/gateway/v2/egress_gateway) 和 [Tier1 网关](../../refs/tsb/gateway/v2/tier1_gateway)。WAF 功能可以在 [组织设置](../../refs/tsb/v2/organization_setting)、[租户设置](../../refs/tsb/v2/tenant_setting)、[工作区设置](../../refs/tsb/v2/workspace_setting) 的 [`defaultSecuritySettings`](../../refs/tsb/security/v2/security_setting) 属性中指定，以及在 [SecuritySettings](../../refs/tsb/security/v2/security_setting) 的 `spec` 中指定。
 
 ```yaml
   waf:
     rules:
-      - Include @recommended-conf       # Basic WAF setup
-      - Include @crs-setup-conf         # Core Rule Set setup
-      - Include @owasp_crs/*.conf       # Load the Core Rule Set rules
+      - Include @recommended-conf       # 基本 WAF 设置
+      - Include @crs-setup-conf         # 核心规则集设置
+      - Include @owasp_crs/*.conf       # 加载核心规则集规则
 ```
 
-As shown in the snippet above, WAF rules are based on the [Seclang language](https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual-%28v3.x%29#Configuration_Directives). Including the following aliases you can easily enable common configurations and rules:
-- `@recommended-conf`: Basic WAF setup. The complete file for further details can be found [here](https://github.com/tetrateio/coraza-proxy-wasm/blob/main/wasmplugin/rules/coraza.conf-recommended.conf). This configuration includes:
-    - WAF engine mode: `DetectionOnly`. Traffic is inspected and logs are generated. No disruptive actions are performed. It is the suggested way to evaluate and fine-tune the WAF minimizing unexpected behaviors.
-    - Request body access: `On`. Allows inspection of request bodies, including POST parameters.
-    - Response body access: `On`. Allows inspection of response bodies.
-- `@crs-setup-conf`: Basic CRS configuration. It assumes that engine WAF settings have already been loaded (e.g. via `@recommended-conf`). The complete file for further details can be found [here](https://github.com/tetrateio/coraza-proxy-wasm/blob/main/wasmplugin/rules/crs-setup.conf.example). This configuration includes:
-    - Mode of Operation: `Anomaly Scoring Mode`
-    - Paranoia level: `PL1` (least number of false positives).
-- `@owasp_crs`: alias of the main CRS folder containing the rules files. Folder organization and filename convention stick with the official CRS repository. Details can be found [here](https://github.com/coreruleset/coreruleset/tree/v4.0.0-rc1/rules).
+如上所示，WAF 规则基于 [Seclang 语言](https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual-%28v3.x%29#Configuration_Directives)。包括以下别名，你可以轻松启用常见的配置和规则：
+- `@recommended-conf`：基本 WAF 设置。有关更多详细信息，可以在[此处](https://github.com/tetrateio/coraza-proxy-wasm/blob/main/wasmplugin/rules/coraza.conf-recommended.conf)找到完整文件。此配置包括：
+    - WAF 引擎模式：`DetectionOnly`。检查流量并生成日志。不执行破坏性操作。这是评估和微调 WAF 的建议方式，以最小化意外行为。
+    - 请求正文访问：`On`。允许检查请求正文，包括 POST 参数。
+    - 响应正文访问：`On`。允许检查响应正文。
+- `@crs-setup-conf`：基本 CRS 配置。它假定引擎 WAF 设置已经加载（例如通过 `@recommended-conf`）。有关更多详细信息，可以在[此处](https://github.com/tetrateio/coraza-proxy-wasm/blob/main/wasmplugin/rules/crs-setup.conf.example)找到完整文件。此配置包括：
+    - 操作模式：`异常得分模式`
+    - 偏执级别：`PL1`（最低虚警数）。
+- `@owasp_crs`：包含规则文件的主 CRS 文件夹的别名。文件夹组织和文件名约定与官方 CRS 存储库保持一致。有关详细信息，可以在[此处](https://github.com/coreruleset/coreruleset/tree/v4.0.0-rc1/rules)找到。
+## 示例
+在开始之前，请确保你已经：
+✓ 熟悉 [TSB 概念](../../concepts/toc)。
+✓ 安装 TSB 环境。你可以使用 [TSB 演示](../../setup/self_managed/demo-installation) 进行快速安装。
+✓ 完成 TSB [快速入门](../../quickstart)。本文假定你已经创建了一个租户，并熟悉工作区和配置组。此外，你需要将 tctl 配置到
 
-## Example
-Before you get started, make sure you: <br />
-✓ Familiarize yourself with [TSB concepts](../concepts/toc). <br />
-✓ Install the TSB environment. You can use [TSB demo](../setup/self_managed/demo-installation) for quick install. <br />
-✓ Completed TSB [quickstart](../quickstart). This document assumes you already created a Tenant and are familiar with Workspace and Config Groups. Also, you need to configure tctl to your TSB environment.
+你的 TSB 环境。
 
-In this example, `httpbin` will be used as the workload. Requests that come to Ingress GW will be filtered by the WAF and denied if malicious attacks are detected. 
+在本示例中，将使用 `httpbin` 作为工作负载。发送到 Ingress GW 的请求将经过 WAF 过滤，如果检测到恶意攻击，将被拒绝。
 
-### Deploy `httpbin` Service
+### 部署 `httpbin` 服务
+请按照[此文档中的所有说明](../../reference/samples/httpbin)创建 `httpbin` 服务。
 
-Follow [all of the instructions in this document](../reference/samples/httpbin) to create the `httpbin` service.
+接下来的命令将假定你有一个组织=`tetrate`、租户=`tetrate`、工作区=`httpbin`、网关组=`httpbin-gateway`。
 
-Next commands will assume you have an Organization=`tetrate`, Tenant=`tetrate`, Workspace=`httpbin`, GatewayGroup=`httpbin-gateway`.
-
-### Enable the WAF
-
-Create a file named `waf-ingress-gateway.yaml` containing the definition of the [IngressGateway](../refs/tsb/gateway/v2/ingress_gateway):
+### 启用 WAF
+创建一个名为 `waf-ingress-gateway.yaml` 的文件，其中包含 [IngressGateway](../../refs/tsb/gateway/v2/ingress_gateway) 的定义：
 
 ```yaml
 apiVersion: gateway.tsb.tetrate.io/v2
@@ -87,30 +85,30 @@ spec:
               host: "httpbin/httpbin.httpbin.svc.cluster.local"
   waf:
     rules:
-      - Include @recommended-conf  # Basic WAF setup
-      - SecRuleEngine On           # Override rule engine mode in @recommended-conf enabling WAF intervention
-      - Include @crs-setup-conf    # Initialize the CRS
-      - Include @owasp_crs/*.conf  # Load the CRS rules
+      - Include @recommended-conf  # 基本 WAF 设置
+      - SecRuleEngine On           # 覆盖 @recommended-conf 中的规则引擎模式，启用 WAF 干预
+      - Include @crs-setup-conf    # 初始化 CRS
+      - Include @owasp_crs/*.conf  # 加载 CRS 规则
 ```
-:::note
-Keep in mind that rules' order matters: rules are checked in the order they are listed under `rules`. It is expected to have main WAF settings, followed by CRS setup, followed by CRS rules. 
-:::
+{{<callout note 注意>}}
+规则的顺序很重要：规则按照它们在 `rules` 下列出的顺序进行检查。通常，主要的 WAF 设置首先出现，然后是 CRS 设置，然后是 CRS 规则。
+{{</callout>}}
 
-Apply it on TSB:
+在 TSB 上应用它：
 ```
 tctl apply -f waf-ingress-gateway.yaml
 ```
 
-## Test it
-You should now be able to send requests to the Ingress Gateway.
+## 测试
+现在，你应该能够发送请求到 Ingress Gateway。
 ```
 export GATEWAY_IP=$(kubectl -n httpbin get service httpbin-ingress-gateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 ```
-Sending a true negative request:
+发送一个真正的负面请求：
 ```
 curl 'http://httpbin.tetrate.io:443?arg=argument_1' -kI --connect-to httpbin.tetrate.io:443:$GATEWAY_IP:443
 ```
-You should see a `200 OK` response code similar to this:
+你应该会收到类似于以下内容的 `200 OK` 响应代码：
 ```
 HTTP/1.1 200 OK
 server: istio-envoy
@@ -121,23 +119,23 @@ access-control-allow-origin: *
 access-control-allow-credentials: true
 x-envoy-upstream-service-time: 4
 ```
-While sending a true positive request (potential malicious Cross-Site Scripting attempt):
+而对于真正的正面请求（潜在的恶意跨站脚本攻击）：
 ```
 curl 'http://httpbin.tetrate.io:443?arg=<script>alert('0')</script>' -kI --connect-to httpbin.tetrate.io:443:$GATEWAY_IP:443
 ```
-You should see the request denied with a `403 Forbidden` error. It proves that the WAF detected the malicious pattern and interrupted the connection:
+你应该会看到请求被拒绝，并显示 `403 Forbidden` 错误。这证明 WAF 检测到了恶意模式并中断了连接：
 ```
 HTTP/1.1 403 Forbidden
 date: Wed, 30 Nov 2022 15:33:30 GMT
 server: istio-envoy
 transfer-encoding: chunked
 ```
-You may take a look at the Envoy logs, in which also the WAF logs reside, for further details about the detection:
+你可以查看 Envoy 日志，其中也包含 WAF 日志，以获取有关检测的更多详细信息：
 ```
 export GATEWAY_POD=$(kubectl get pods -n httpbin -o jsonpath="{.items[1].metadata.name}")
 kubectl logs -n httpbin $GATEWAY_POD | tail -n 10 | grep "Coraza:"
 ```
-You will see an output log similar to the following one:
+你将看到类似以下内容的输出日志：
 ```
 2022-11-30T15:33:30.032506Z	critical	envoy wasm	wasm log httpbin.ingress-gw-tetrate-internal-waf-main0 ingress-gw-tetrate-internal-waf-main0: [client ""] Coraza: Warning. XSS Attack Detected via libinjection [file "@owasp_crs/REQUEST-941-APPLICATION-ATTACK-XSS.conf"] [line "0"] [id "941100"] [rev ""] [msg "XSS Attack Detected via libinjection"] [data "Matched Data: XSS data found within ARGS:arg: <script>alert(0)</script>"] [severity "critical"] [ver "OWASP_CRS/4.0.0-rc1"] [maturity "0"] [accuracy "0"] [tag "application-multi"] [tag "language-multi"] [tag "platform-multi"] [tag "attack-xss"] [tag "paranoia-level/1"] [tag "OWASP_CRS"] [tag "capec/1000/152/242"] [hostname ""] [uri "/?arg=<script>alert(0)</script>"] [unique_id "nacXlZaiGUmkOTfLTaz"]
 
@@ -147,4 +145,5 @@ You will see an output log similar to the following one:
 
 2022-11-30T15:33:30.036527Z	critical	envoy wasm	wasm log httpbin.ingress-gw-tetrate-internal-waf-main0 ingress-gw-tetrate-internal-waf-main0: [client ""] Coraza: Warning. Inbound Anomaly Score Exceeded (Total Score: 15) [file "@owasp_crs/REQUEST-949-BLOCKING-EVALUATION.conf"] [line "0"] [id "949110"] [rev ""] [msg "Inbound Anomaly Score Exceeded (Total Score: 15)"] [data ""] [severity "emergency"] [ver "OWASP_CRS/4.0.0-rc1"] [maturity "0"] [accuracy "0"] [tag "anomaly-evaluation"] [hostname ""] [uri "/?arg=<script>alert(0)</script>"] [unique_id "nacXlZaiGUmkOTfLTaz"]
 ```
-Each log line shows details about a rule that has been triggered specifying the category of the attack and the relative matched data. 
+
+每条日志行显示一条被触发的规则的详细信息，指定攻击的类别和对应的匹配数据。

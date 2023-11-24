@@ -1,62 +1,55 @@
 ---
-title: Elasticsearch Credentials
-description: How to combine Vault Agent Injector with Elasticsearch.
+title: Elasticsearch 凭据
+description: 如何将 Vault Agent Injector 与 Elasticsearch 结合使用。
+weight: 2
 ---
 
-Before you get started, you must have:<br />
-✓ Vault 1.3.1 or newer<br />
-✓ Vault Injector 0.3.0 or newer<br />
-✓ Elasticsearch 6.x or 7.x with basic license or up
+在开始之前，你必须具备以下条件：
+- Vault 1.3.1 或更新版本
+- Vault Injector 0.3.0 或更新版本
+- Elasticsearch 6.x 或 7.x，带有基本许可证或更高版本
 
-## Setup Vault
+## 设置 Vault
 
-Install Vault (it does not need to be installed in the Kubernetes cluster, but
-should be reachable from inside the Kubernetes cluster). The Vault Injector
-(agent-injector) must be installed into the cluster and configured to inject
-sidecars. This is automatically done by the Helm chart `v0.5.0+` which installs
-Vault `0.12+` and Vault-Injector`0.3.0+`. The example below assumes that Vault
-is installed in the `tsb` namespace.
+安装 Vault（不需要在 Kubernetes 集群中安装，但应该能够从 Kubernetes 集群内部访问）。必须将 Vault Injector（agent-injector）安装到集群中，并配置以注入 sidecar。Helm Chart `v0.5.0+` 会自动完成此操作，它安装了 Vault `0.12+` 和 Vault-Injector `0.3.0+`。下面的示例假设 Vault 安装在 `tsb` 命名空间中。
 
-For more details, check the
-[Vault documentation](https://www.vaultproject.io/docs/platform/k8s/injector/installation).
+有关详细信息，请查看 [Vault 文档](https://www.vaultproject.io/docs/platform/k8s/injector/installation)。
 
 ```bash
 helm install --name=vault --set='server.dev.enabled=true' ./vault-helm
 ```
 
-## Startup Elasticsearch with Security Enabled
+## 启动启用安全性的 Elasticsearch
 
-If you manage your own instance of Elasticsearch, you will need to enable
-security and set the super-user password.
+如果你管理自己的 Elasticsearch 实例，你需要启用安全性并设置超级用户密码。
 
-## Create a Role for Vault
+## 为 Vault 创建角色
 
-First, using the super-user, create a role that will allow Vault the minimum
-privileges by performing a POST to Elasticsearch.
+首先，使用超级用户身份，创建一个角色，该角色将允许 Vault 通过向 Elasticsearch 发送 POST 请求获得最低权限。
 
 ```bash
 curl -k \
     -X POST \
     -H "Content-Type: application/json" \
     -d '{"cluster": ["manage_security"]}' \
-    https://<super-user-username>:<super-user-password>@<elastic-ip>:<elastic-port>/_xpack/security/role/vault
+    https://<超级用户用户名>:<超级用户密码>@<elastic-ip>:<elastic-port>/_xpack/security/role/vault
 ```
 
-Next, create a user for Vault associated with that role.
+接下来，为 Vault 创建与该角色关联的用户。
 
 ```bash
 curl -k \
     -X POST \
     -H "Content-Type: application/json" \
     -d @data.json \
-    https://<super-user-username>:<super-user-password>@<elastic-ip>:<elastic-port>/_xpack/security/user/vault
+    https://<超级用户用户名>:<超级用户密码>@<elastic-ip>:<elastic-port>/_xpack/security/user/vault
 ```
 
-The content of `data.json` in this example is:
+在此示例中，`data.json` 的内容如下：
 
 ```json
 {
-    "password": "<vault-elastic-password>",
+    "password": "<vault-elastic 密码>",
     "roles": ["vault"],
     "full_name": "Hashicorp Vault",
     "metadata": {
@@ -66,39 +59,36 @@ The content of `data.json` in this example is:
 }
 ```
 
-Now, an Elasticsearch user is configured and ready to be used by Vault.
+现在，已配置好 Elasticsearch 用户，可以被 Vault 使用。
 
-## Set up the Database secret engine for Elasticsearch
+## 为 Elasticsearch 设置数据库秘密引擎
 
-Enable the database secrets engine in Vault.
+在 Vault 中启用数据库秘密引擎。
 
 ```bash
 vault secrets enable database
 ```
 
-Expected output:
+预期输出：
 ```text
 Success! Enabled the database secrets engine at: database/
 ```
 
-By default, the secrets engine is enabled at the path with the same name of the
-engine. To enable the secrets engine at a different path, use the `-path`
-argument.
+默认情况下，秘密引擎在与引擎同名的路径上启用。要在不同路径上启用秘密引擎，请使用 `-path` 参数。
 
-Configure Vault with the plugin and connection information. You will need to
-provide the certificate, key and CA bundle (Root CA and Intermediates):
+使用插件和连接信息配置 Vault。你需要提供证书、密钥和 CA 捆绑（根 CA 和中间 CA）：
 
 ```bash
 vault write database/config/tsb-elastic \
     plugin_name="elasticsearch-database-plugin" \
     allowed_roles="tsb-elastic-role" \
     username=vault \
-    password=<vault-elastic-password> \
+    password=<vault-elastic密码> \
     url=https://<elastic-ip>:<elastic-port> \
     ca_cert=es-bundle.ca
 ```
 
-Configure a role that maps a name in Vault to a role definition in Elasticsearch.
+配置一个将 Vault 中的名称映射到 Elasticsearch 中的角色定义的角色。
 
 ```bash
 vault write database/roles/tsb-elastic-role \
@@ -110,8 +100,7 @@ vault write database/roles/tsb-elastic-role \
 Success! Data written to: database/roles/internally-defined-role
 ```
 
-For validation of the configuration, generate a new credential by reading from
-the `/creds` endpoint with the name of the role:
+为验证配置，通过使用角色名称从 `/creds` 终端点生成新凭据：
 
 ```bash
 vault read database/creds/tsb-elastic-role
@@ -124,11 +113,10 @@ password           A1a-SkZ9KgF7BJGn2FRH
 username           v-root-tsb-elastic-rol-2eRGSeD09gTNzYHf7a2G-1610542455
 ```
 
-You can check the Elasticsearch cluster to verify the newly created credential
-is present:
+你可以检查 Elasticsearch 集群，以验证新创建的凭据是否存在：
 
 ```bash
-curl -u "vault:<vault-elastic-password>" -ks -XGET https://<super-user-username>:<super-user-password>@<elastic-ip>:<elastic-port>/_xpack/security/user/v-root-tsb-elastic-rol-2eRGSeD09gTNzYHf7a2G-1610542455|jq '.'
+curl -u "vault:<vault-elastic密码>" -ks -XGET https://<超级用户用户名>:<超级用户密码>@<elastic-ip>:<elastic-port>/_xpack/security/user/v-root-tsb-elastic-rol-2eRGSeD09gTNzYHf7a2G-1610542455|jq '.'
 
 {
     "v-root-tsb-elastic-rol-2eRGSeD09gTNzYHf7a2G-1610542455": {
@@ -144,10 +132,9 @@ curl -u "vault:<vault-elastic-password>" -ks -XGET https://<super-user-username>
 }
 ```
 
-## Set up Kubernetes secret engine
+## 设置 Kubernetes 秘密引擎
 
-Configure a policy named "database", This is a very non-restrictive policy, and
-in a production setting, we should lock this down more.
+配置一个名为 "database" 的策略，这是一个非常不受限制的策略，在生产环境中，我们应该更加安全。
 
 ```bash
 vault policy write es-auth - <<EOF
@@ -158,12 +145,9 @@ EOF
 Success! Uploaded policy: es-auth
 ```
 
-Configure Vault to enable access to the Kubernetes API. This example assumes
-that you are running commands in the Vault pod using `kubectl exec`. If you are
-not, you will need to find the right JWT Token, Kubernetes API URL (that Vault
-will use to connect to Kubernetes) and the CA certificate of the `vaultserver`
-service account as described in
-[Vault documentation](https://learn.hashicorp.com/tutorials/vault/kubernetes-external-vault?in=vault/kubernetes#define-a-kubernetes-service-account):
+配置 Vault 以启用对 Kubernetes API 的访问。此示例假设你正在 Vault pod 中使用 `kubectl exec` 运行命令。如果不是这样，你需要找到正确的 JWT 令牌、Kubernetes API URL（Vault 将用于连接到 Kubernetes 的 URL）
+
+以及 `vaultserver` 服务帐户的 CA 证书，如 [Vault 文档](https://learn.hashicorp.com/tutorials/vault/kubernetes-external-vault?in=vault/kubernetes#define-a-kubernetes-service-account) 中所述。
 
 ```bash
 vault auth enable kubernetes
@@ -173,8 +157,7 @@ vault write auth/kubernetes/config \
     kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 ```
 
-Attach our database policy to the service accounts that will use it, namely OAP
-service accounts for both management plane and control plane namespaces:
+将我们的数据库策略附加到将使用它的服务帐户上，即管理平面和控制平面命名空间的 OAP 服务帐户：
 
 ```bash
 vault write auth/kubernetes/role/es \
@@ -184,13 +167,11 @@ vault write auth/kubernetes/role/es \
     ttl=1h
 ```
 
-## Inject Secrets into the Pod
+## 注入凭据到 Pod
 
-### Management plane
+### 管理平面
 
-To use Vault Agent Injector in combination with Elasticsearch, add the following
-deployment pod annotations and environment variables to the `ManagementPlane`
-custom resource.
+要在管理平面中与 Elasticsearch 一起使用 Vault Agent Injector，请向 `ManagementPlane` 自定义资源添加以下部署 pod 注释和环境变量。
 
 ```yaml
 spec:
@@ -214,11 +195,9 @@ spec:
             vault.hashicorp.com/role: "es"
 ```
 
-### Control plane
+### 控制平面
 
-The control plane also needs credentials for connecting to Elasticsearch. You
-will need to add the pod annotations for Vault injector into the OAP component
-in the control plane too. Below is a YAML snippet with the needed changes.
+控制平面也需要连接到 Elasticsearch 的凭据。你需要将 Vault 注入器的 pod 注释添加到控制平面中的 OAP 组件中。以下是带有所需更改的 YAML 片段。
 
 ```yaml
 spec:
@@ -242,13 +221,10 @@ spec:
             vault.hashicorp.com/role: es
 ```
 
-:::warning
-After applying the annotations for Vault integration, you should
-remove the `elastic-credentials` secret from both management and control plane
-namespace.
-:::
+{{<callout warning 注意>}}
+在应用了 Vault 集成的注释后，你应该从管理平面和控制平面命名空间中删除 `elastic-credentials` 密钥。
+{{</callout>}}
 
-## Debugging
+## 调试
 
-You can add more debug info from Vault-Injector by adding the annotation:
-`vault.hashicorp.com/log-level: trace`
+你可以通过添加注释 `vault.hashicorp.com/log-level: trace` 来从 Vault-Injector 中添加更多调试信息。

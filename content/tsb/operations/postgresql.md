@@ -1,6 +1,7 @@
 ---
 title: Backup and restore PostgreSQL
-description: Backup and restore PostgreSQL
+description: Backup and restore PostgreSQL.
+weight: 9
 ---
 
 This document describes how to create a backup, and restore using a backup, when using PostgreSQL as TSB's  datastore.
@@ -8,9 +9,9 @@ It is recommended to create a backup of your TSB datastore every 24 hours, so in
 
 Before you get started make sure:
 
-✓ You have [installed and configured TSB.](../setup/self_managed/management-plane-installation)<br />
-✓ You have installed and configured `kubectl` to access the management cluster.<br />
-✓ You have full access to the PostgreSQL system where TSB is storing the data.
+- You have [installed and configured TSB.](../setup/self_managed/management-plane-installation)
+- You have installed and configured `kubectl` to access the management cluster.
+- You have full access to the PostgreSQL system where TSB is storing the data.
 
 ## Create a backup of TSB configuration
 

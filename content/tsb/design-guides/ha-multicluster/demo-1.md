@@ -2,12 +2,6 @@
 title: Demonstration Environment
 ---
 
-import Steps from "@theme/Steps";
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
-
 # Building the Demonstration Environment
 
 _A simple worked example, with two workload clusters and one edge gateway cluster_

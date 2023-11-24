@@ -1,15 +1,14 @@
 ---
-title: Elasticsearch privileges
-menu-title: Privileges
-description: Overview of required privileges in Elasticsearch.
+title: Elasticsearch 权限
+weight: 1
+description: Elasticsearch 所需权限的概述。
 ---
 
-If your Elasticsearch access is restricted by roles, you will need to make sure
-the right roles exist for TSB components.
+如果您的 Elasticsearch 访问受角色限制，您需要确保为 TSB 组件存在正确的角色。
 
 ## OAP
 
-For OAP, the necessary role permissions are described in the JSON below.
+对于 OAP，必要的角色权限在下面的 JSON 中描述如下。
 
 ```json
 {
@@ -30,6 +29,4 @@ For OAP, the necessary role permissions are described in the JSON below.
 }
 ```
 
-You can use cURL, `Kibana` console or any other tool to post this to the
-Elasticsearch server to create the role, then you can assign the role to the
-user OAP will be using.
+您可以使用 cURL、`Kibana` 控制台或任何其他工具将此信息发布到 Elasticsearch 服务器以创建角色，然后您可以将该角色分配给将使用的 OAP 用户。

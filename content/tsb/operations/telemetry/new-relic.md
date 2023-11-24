@@ -1,90 +1,69 @@
 ---
-title: New Relic integration
-description: Analyzing Service Mesh metrics in New Relic
+title: New Relic 集成
+description: 在 New Relic 中分析服务网格指标。
+weight: 6
 ---
 
-New Relic's popular software analytics platform enables businesses to monitor the health 
-and performance of their applications, servers and databases. It collects and analyzes data 
-from various sources, including application logs, server metrics and user interactions to 
-provide detailed insights and metrics.
+New Relic 的流行软件分析平台使企业能够监视其应用程序、服务器和数据库的健康和性能。它从各种来源收集和分析数据，包括应用程序日志、服务器指标和用户交互，以提供详细的洞察和指标。
 
-Tetrate's rich observability data integrates seamlessly with the New Relic platform. This 
-article shows how to make telemetry data from Istio and Tetrate Service Bridge available in 
-New Relic. For the metrics related to the application load - please follow 
-the [New Relic article](https://newrelic.com/blog/how-to-relic/monitoring-istio-service-mesh) 
-that describes Istio Data plane metrics retrieval. 
+Tetrate 的丰富的可观测性数据可以与 New Relic 平台无缝集成。本文介绍了如何在 New Relic 中使 Istio 和 Tetrate Service Bridge 的遥测数据可用。有关与应用程序负载相关的指标，请参阅[New Relic 文章](https://newrelic.com/blog/how-to-relic/monitoring-istio-service-mesh)，该文章描述了 Istio 数据平面指标的检索。
 
-:::note 
-The steps below are validated, however some customers might 
-have custom New Relic setup that requires additional customization.
-:::
-## Data-flow
+{{<callout note 注意>}}
+下面的步骤经过验证，但一些客户可能需要额外的定制来满足其自定义的 New Relic 设置。
+{{</callout>}}
 
-The diagram below shows the metrics workflow processing that Tetrate Service Bridge exports 
-to New Relic.
+## 数据流
 
-![Tetrate Service Bridge to New Relic workflow diagram](./images/tsb-to-newrelic.png) 
+下面的图表显示了 Tetrate Service Bridge 导出到 New Relic 的指标工作流程处理。
 
-Every Tetrate Service Bridge control plane uses the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) to collect 
-an advanced set of metrics and aggregate them in the global TSB management plane, along 
-with additional metrics data associated with activity in the management plane. Once 
-aggregated, the OpenTelemetry Collector can be used to export data directly to New Relic.
+![Tetrate Service Bridge 到 New Relic 的工作流程图](../images/tsb-to-newrelic.png)
 
-### Configuring Tetrate Service Bridge for New Relic
+每个 Tetrate Service Bridge 控制平面都使用[OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)来收集一组高级指标，并将它们聚合在全局 TSB 管理平面中，以及与管理平面中的活动相关的其他指标数据。一旦聚合完成，OpenTelemetry Collector 可以用于直接导出数据到 New Relic。
 
-Tetrate's telemetry data collection and aggregation described above is an out-of-the-box 
-TSB configuration and doesn't require any changes. Follow the steps below to integrate 
-Tetrate's data with New Relic.
+### 配置 Tetrate Service Bridge 以适用于 New Relic
 
-#### New Relic integration
+上述所述的 Tetrate 的遥测数据收集和聚合是一个开箱即用的 TSB 配置，不需要任何更改。按照以下步骤将 Tetrate 的数据与 New Relic 集成。
 
-Use the following steps to configure the OpenTelemetry Collector in TSB management plane 
-to write data to the New Relic endpoint via the OTLP exporter. 
+#### New Relic 集成
 
-The basic steps are as follows with detailed instructions below:
+使用以下步骤配置 TSB 管理平面中的 OpenTelemetry Collector，以通过 OTLP 导出器将数据写入 New Relic 端点。
 
-- __Step 1:__ Create a copy of OpenTelemetry `configMap` from the TSB management plane 
-and modify it to enable the OTLP exporter.
-- __Step 2:__ Configure the OpenTelemetry Collector that runs in the Tetrate Service 
-Bridge management plane to use the `configMap` created in the previous step.
+基本步骤如下，具体说明如下：
 
-See the [OTLP exporter project page](https://aws-otel.github.io/docs/components/otlp-exporter#new-relic) 
-and the [New Relic documentation](https://docs.newrelic.com/docs/kubernetes-pixie/kubernetes-integration/advanced-configuration/link-otel-applications-kubernetes/#otlp-exporter) for more information. 
+- **步骤 1：** 创建一个从 TSB 管理平面复制的 OpenTelemetry `configMap`，并将其修改为启用 OTLP 导出器。
+- **步骤 2：** 配置在 Tetrate Service Bridge 管理平面中运行的 OpenTelemetry Collector，以使用上一步创建的 `configMap`。
 
-:::note Optional New Relic Kubernetes Integration
-The New Relic documentation suggests the deployment of a New Relic integration inside 
-of your Kubernetes cluster. This step is not required to deliver Tetrate Service Bridge 
-metrics to the New Relic platform.
-:::
+有关更多信息，请参阅[OTLP 导出器项目页面](https://aws-otel.github.io/docs/components/otlp-exporter#new-relic)和[New Relic 文档](https://docs.newrelic.com/docs/kubernetes-pixie/kubernetes-integration/advanced-configuration/link-otel-applications-kubernetes/#otlp-exporter)。
 
-##### Step 1: Create an OpenTelemetry `configmap​`
+{{<callout note "可选的 New Relic Kubernetes 集成">}}
+New Relic 文档建议在 Kubernetes 集群内部部署 New Relic 集成。这一步骤不需要将 Tetrate Service Bridge 指标传递到 New Relic 平台。
+{{</callout>}}
 
-Download and save [`this configMap yaml file as otel-cm-tsb.yaml`](../../assets/operations/otel-cm-tsb.yaml).
+##### 步骤 1：创建 OpenTelemetry `configMap`
 
-Edit the file to replace the `<api key>` field with one provided by New Relic. (per the screenshot below - identify `INGEST - LICENSE` key):
+下载并保存[`此配置映射 yaml 文件，命名为 otel-cm-tsb.yaml`](../../../assets/operations/otel-cm-tsb.yaml)。
 
-![INGEST - LICENSE key in New Relic UI](./images/new-relic-key.png)
+编辑文件，将 `<api key>` 字段替换为 New Relic 提供的密钥（如下图所示，请识别 `INGEST - LICENSE` 密钥）：
 
-Apply the config to your Kubernetes cluster using the following command:
+![New Relic UI 中的 INGEST - LICENSE 密钥](../images/new-relic-key.png)
+
+使用以下命令将配置应用到你的 Kubernetes 集群：
 
 ```bash
 kubectl apply -f otel-cm-tsb.yaml
 ```
 
-##### Step 2: Configure the Tetrate Service Bridge OpenTelemetry Collector
+##### 步骤 2：配置 Tetrate Service Bridge OpenTelemetry Collector
 
-To point to the `configMap` created in the previous step, the TSB management plane 
-custom resource configuration needs to be patched with the following command. 
+为了指向前一步骤创建的 `configMap`，需要使用以下命令对 TSB 管理平面自定义资源配置进行修补。
 
-:::note Kubernetes context
-Make sure your current Kubernetes context is set to the cluster running the Tetrate 
-Service Bridge management plane.
-:::
+{{<callout note "Kubernetes 上下文">}}
+确保你当前的 Kubernetes 上下文设置为运行 Tetrate Service Bridge 管理平面的集群。
+{{</callout>}}
 
-:::note TSB Management Plane namespace
-Please note that `tsb` is the default namespace for the management plane. Modify 
-the command above accordingly if your TSB management plane is deployed in a different namespace.
-:::
+{{<callout note "TSB 管理平面命名空间">}}
+请注意，默认情况下，`tsb` 是管理平面的命名空间。如果你的 TSB 管理平面部署在不同的命名空间中，请相应地修改上述命令。
+{{</callout>}}
 
 ```bash
 kubectl patch managementplane managementplane -n tsb \
@@ -92,19 +71,18 @@ kubectl patch managementplane managementplane -n tsb \
     --type merge
 ```
 
-### Validate the New Relic Integration
+### 验证 New Relic 集成
 
-Tetrate maintains a library of prebuilt dashboards available to use as a starting point; 
-users may also build their own set of dashboards with custom New Relic queries. 
+Tetrate 维护了一组预构建的仪表板，可供使用作为起点；用户还可以使用自定义 New Relic 查询构建自己的仪表板集。
 
-The following query will confirm that the New Relic integration is working:
+以下查询将确认 New Relic 集成是否正常工作：
 
 ```
 SELECT rate(sum(envoy_cluster_internal_upstream_rq), 1 SECONDS) FROM Metric WHERE ((envoy_response_code RLIKE '2.*|3.*|401') AND (component = 'front-envoy')) SINCE 60 MINUTES AGO UNTIL NOW FACET envoy_cluster_name LIMIT 100 TIMESERIES 60000 SLIDE BY 30000
 ```
 
-![TSB Metrics in New Relic](./images/new-relic-validate.png) 
+![New Relic 中的 TSB 指标](../images/new-relic-validate.png)
 
-### Summary
+### 总结
 
-This page describes the steps required to integrate Tetrate Service Bridge metrics with the New Relic platform. Please contact Tetrate support if you need further information or assistance.
+本页面描述了将 Tetrate Service Bridge 指标与 New Relic 平台集成所需的步骤。如果需要进一步的信息或帮助，请联系 Tetrate 支持。

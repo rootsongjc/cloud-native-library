@@ -1,6 +1,7 @@
 ---
 title: Lower Istio Resource Consumption
-Description: How to lower resources consumption for istiod and gateways
+Description: How to lower resources consumption for istiod and gateways.
+weight: 11
 ---
 
 This document describes how to lower the amount of CPU and memory used by the control plane and all the gateways in the mesh by using TSB 

@@ -1,6 +1,7 @@
 ---
 title: Customizing TSB Kubernetes Components
 Description: Explanation on how to configure TSB components in Kubernetes, including overlays.
+weight: 12
 ---
 
 This document describes how to customize the Kubernetes deployments for TSB components, including using overlays to perform advanced configuration of resources that are deployed by the Tetrate Service Bridge (TSB) operators, using examples.

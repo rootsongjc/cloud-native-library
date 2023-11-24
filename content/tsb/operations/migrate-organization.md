@@ -1,9 +1,8 @@
 ---
 title: Move Data To A New Organization
-description: Moving all the configurations, users, and groups from an organization to a newly created one
+description: Moving all the configurations, users, and groups from an organization to a newly created one.
+weight: 10
 ---
-
-<!-- NOTE: for TSB 1.2 and up -->
 
 This document describes how to move all configurations, users, and groups from an
 [organization](../concepts/terminology/#organization) to a newly created one.
@@ -215,7 +214,7 @@ tctl login
 Once you have verified everything is working appropriately, you can proceed to delete the old workspaces, tenants, and
 organization.
 
-:::caution User validation against old organization
+{{<callout note "User validation against old organization">}}
 In case you have an external LDAP configured to work with TSB, and users are still being validated against the old
 organization, you will need to manually fix data stored in Postgres. If you have followed the steps in the exact
 sequence as provided in this document, this should however not occur.
@@ -228,4 +227,4 @@ delete from node where name like '%<your_old_org>%';
 ```
 
 This will delete the required table, and also delete other related data from other tables via foreign keys.
-:::
+{{</callout>}}

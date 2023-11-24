@@ -1,6 +1,7 @@
 ---
 title: Configure multiple IAM token validation keys
-description: Configure multiple IAM token validation keys
+description: Configure multiple IAM token validation keys.
+weight: 8
 ---
 
 This document describes how to configure the Management Plane IAM service to have multiple keys to validate
