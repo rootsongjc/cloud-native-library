@@ -1,46 +1,44 @@
 ---
-title: App Ingress
-weight: 11
+title: 应用程序入口
+weight: 14
 ---
 
-![](../../assets/howto/app-ingress.png)
+应用程序入口是一个 L7 入口，允许应用程序开发人员直接利用可用的 Envoy 功能。
+与 TSB 中其他类型的 Ingress 不同，配置它不需要管理员权限，
+并以一种使应用程序开发人员更容易定义意图的方式公开 Envoy 代理的功能。
 
-An App Ingress is an L7 ingress that allows application developers to directly harness the power of Envoy that is available.
-Unlike the other types of Ingress that are available in TSB, configuring it does not require admin privileges,
-and exposes the features of Envoy proxy in such a way that it's easier for application developers to define intent.
+应用程序入口是 Istio 的一个简化版本，使用 Istiod 作为控制平面组件和 Istio IngressGateway（即 Envoy 代理）作为数据平面组件。应用程序入口在由应用程序拥有的命名空间中为每个应用程序部署，并只能使用来自其部署的命名空间的 Istio 配置。
 
-The App Ingress is a stripped down version of Istio using Istiod as the control plane component and Istio IngressGateway (i.e. Envoy proxy) as the data plane component. The App Ingress is deployed per application in the namespace owned by the application, and can only consume Istio configurations from the namespace where it is deployed in.
+应用程序入口还具有一个 OpenAPI 翻译器附加组件，允许用户使用 OpenAPI 规范配置入口。
 
-The App Ingress also has an OpenAPI translator add-on that allows the user to configure the ingress using an OpenAPI specification.
+此功能需要 tctl 版本 1.4.5 或更高版本。
 
-This feature requires `tctl` version 1.4.5 or newer.
+## 使用 Istio 进行配置
 
-## Configuration Using Istio
+在此示例中，你将在一个命名空间中安装 `httpbin`，并在相同命名空间中创建一个应用程序入口，以路由访问 `httpbin` 工作负载。
 
-In this example you will install `httpbin` in a namespace, and create an App Ingress in the same namespace to route access to the `httpbin` workload through.
-
-Create a namespace named `httpbin-appingress`.
+创建名为 `httpbin-appingress` 的命名空间。
 
 ```bash
 kubectl create namespace httpbin-appingress
 ```
 
-You will be installing the workload and the App Ingress in the same namespace.
+你将在同一个命名空间中安装工作负载和应用程序入口。
 
-In this example the workload will be the `httpbin` service. [Install `httpbin` by following these instructions](../../reference/samples/httpbin#deploy-the-httpbin-pod-and-service). 
+在此示例中，工作负载将是 `httpbin` 服务。[按照这些说明安装 `httpbin`](../../../reference/samples/httpbin#deploy-the-httpbin-pod-and-service)。
 
-Install the App Ingress using the following command.
+使用以下命令安装应用程序入口。
 
 ```bash
 tctl experimental app-ingress kubernetes generate -n httpbin-appingress | \
   kubectl apply -f -
 ```
 
-:::note
-You might see the error `unable to recognize "STDIN": no matches for kind "IstioOperator" in version "install.istio.io/v1alpha1"`. If you encounter this error, please re-run the above command.  This happens when the `IstioOperator` CRD has not been deployed yet, and usually it will go away if you retry
-:::
+{{<callout note 注意>}}
+你可能会看到错误消息 `unable to recognize "STDIN": no matches for kind "IstioOperator" in version "install.istio.io/v1alpha1"`。如果遇到此错误，请重新运行上面的命令。这是因为尚未部署 `IstioOperator` CRD，通常在重试后会消失。
+{{</callout>}}
 
-Verify that the `httpbin`, `istio-ingressgateway`, and `istiod` pods are running properly in namespace `httpbin-appingress`:
+验证命名空间 `httpbin-appingress` 中的 `httpbin`、`istio-ingressgateway` 和 `istiod` pod 是否正常运行：
 
 ```bash
 kubectl get pod -n httpbin-appingress
@@ -52,11 +50,11 @@ istio-operator-1-11-3-f88d885b5-8wb9k   1/1     Running   0          8m42s
 istiod-1-11-3-597999c56f-5f2xr          1/1     Running   0          8m19s
 ```
 
-You will need to access the `httpbin` service via the host name `httpbin-appingress.example.com`. To do this,
-deploy an Istio Gateway and Virtual Service in the `httpbin-appingress` namespace to route HTTP traffic that intended for 
-`httpbin-appingress.example.com` to the `httpbin` pod.
+你需要通过主机名 `httpbin-appingress.example.com` 访问 `httpbin` 服务。为此，
+在 `httpbin-appingress` 命名空间中部署一个 Istio Gateway 和 Virtual Service，以路由 HTTP 流量到
+`httpbin` pod。
 
-Create a file named `httpbin-appingress-virtualservice.yaml` with the following contents:
+创建一个名为 `httpbin-appingress-virtualservice.yaml` 的文件，内容如下：
 
 ```yaml
 apiVersion: networking.istio.io/v1alpha3
@@ -65,7 +63,7 @@ metadata:
   name: httpbin-gateway
 spec:
   selector:
-    istio: ingressgateway # use Istio default gateway implementation
+    istio: ingressgateway # 使用 Istio 默认网关实现
   servers:
   - port:
       number: 80
@@ -96,22 +94,24 @@ spec:
         host: httpbin
 ```
 
-Apply this using `kubectl`:
+使用 `kubectl` 应用这些配置：
 
 ```bash
-kubectl -n httpbin-appingress -f httpbin-appingress-virtualservice.yaml
+kubectl -n
+
+ httpbin-appingress -f httpbin-appingress-virtualservice.yaml
 ```
 
-Since you have not setup DNS for `httpbin-appingress.example.com`, you will need to setup your environment or change the way you issue HTTP requests to access the service that you have created. In this example you will use `kubectl port-forward` to establish port forwarding.
+由于尚未为 `httpbin-appingress.example.com` 设置 DNS，你需要设置你的环境或更改发出 HTTP 请求的方式，以访问你创建的服务。在此示例中，你将使用 `kubectl port-forward` 来建立端口转发。
 
-In a different terminal, set up port-forwarding to the `istio-ingressgateway` service in the `httpbin-appingress` namespace using local port 4040:
+在不同的终端中，使用本地端口 4040 设置到 `httpbin-appingress` 命名空间中的 `istio-ingressgateway` 服务的端口转发：
 
 ```bash
 kubectl -n httpbin-appingress port-forward svc/istio-ingressgateway 4040:80 
 ```
 
-You should now be able to reach the `httpbin` application in the `httpbin-appingress` namespace through the `istio-ingressgateway` service
-using the following command:
+现在，你应该能够通过 `istio-ingressgateway` 服务访问 `httpbin` 应用程序，该服务在 `httpbin-appingress` 命名空间中运行，
+使用以下命令：
 
 ```bash
 curl -s -I \
@@ -119,26 +119,26 @@ curl -s -I \
   http://localhost:4040/status/200
 ```
 
-## Using the OpenAPI Translator
+## 使用 OpenAPI 翻译器
 
-If your application provides an OpenAPI specification (3.0.0 or higher), you can use it to generate the routing rules to your application. The OpenAPI Translator add-on takes the application's OpenAPI specification and translates it to Istio configuration and applies it to the App Ingress.
+如果你的应用程序提供 OpenAPI 规范（3.0.0 或更高版本），你可以使用它来生成路由规则到你的应用程序。OpenAPI 翻译器插件将应用程序的 OpenAPI 规范，并将其翻译为 Istio 配置，并将其应用于应用程序入口。
 
-In this example you will use the `bookinfo` sample application and use its OpenAPI specification.
+在此示例中，你将使用 `bookinfo` 示例应用程序，并使用其 OpenAPI 规范。
 
-Create a new namespace `bookinfo-openapi`:
+创建一个新的命名空间 `bookinfo-openapi`：
 
 ```bash
 kubectl create namespace bookinfo-openapi
 ```
 
-Deploy the `bookinfo` sample into the `bookinfo-openapi` namespace:
+将 `bookinfo` 示例部署到 `bookinfo-openapi` 命名空间中：
 
 ```bash
 kubectl apply -n bookinfo-openapi \
    -f https://raw.githubusercontent.com/istio/istio/master/samples/bookinfo/platform/kube/bookinfo.yaml 
 ```
 
-Once you verify that the application has been properly deployed, deploy the App Ingress in the `bookinfo-openapi` namespace. You will need to specify the "backend" service (application) that the OpenAPI specification is describing as well.
+一旦验证应用程序已正确部署，就在 `bookinfo-openapi` 命名空间中部署应用程序入口。你需要指定 OpenAPI 规范描述的 "backend" 服务（应用程序）。
 
 ```bash
 tctl experimental app-ingress kubernetes generate \
@@ -148,18 +148,18 @@ tctl experimental app-ingress kubernetes generate \
   | kubectl apply -f - 
 ```
 
-The previous command creates an App Ingress that expects an OpenAPI specification in the `ConfigMap` named `openapi-translator`. Since you have not yet provided a specification the App Ingress cannot be configured properly. 
+上面的命令创建一个应用程序入口，该入口期望在名为 `openapi-translator` 的 `ConfigMap` 中提供 OpenAPI 规范。由于你尚未提供规范，因此无法正确配置应用程序入口。
 
-You will have to obtain an OpenAPI spec for `bookinfo`, but [the sample that is provided with Istio only comes in OpenAPI 2.0 format](https://raw.githubusercontent.com/istio/istio/master/samples/bookinfo/swagger.yaml). A version of the `bookinfo` OpenAPI specification that has been converted to OpenAPI 3.0.0 is available through [this link](../../assets/howto/bookinfo-openapi.yaml). Download the file as `bookinfo-openapi.yaml`.
+你需要获取 `bookinfo` 的 OpenAPI 规范，但 [Istio 提供的示例仅以 OpenAPI 2.0 格式提供](https://raw.githubusercontent.com/istio/istio/master/samples/bookinfo/swagger.yaml)。已将 `bookinfo` OpenAPI 规范转换为 OpenAPI 3.0.0 的版本可通过 [此链接](../../../assets/howto/bookinfo-openapi.yaml) 获取。将文件下载为 `bookinfo-openapi.yaml`。
 
-Create the `ConfigMap` using this file using the following command:
+使用以下命令使用此文件创建 `ConfigMap`：
 
 ```bash
 kubectl -n bookinfo-openapi create configmap openapi-translator \
   --from-file=bookinfo-openapi.yaml
 ```
 
-When the configuration is picked up by the OpenAPI Translator, Istio resources such as `Gateway` and `VirtualService` will be available in the namespace. You verify this by issuing `kubectl get gateway` and `kubectl get virtualservice` commands:
+当 OpenAPI 翻译器捕获配置时，将在命名空间中提供 Istio 资源，可以通过执行 `kubectl get gateway` 和 `kubectl get virtualservice` 命令来验证这一点：
 
 ```bash
 kubectl -n bookinfo-openapi get gateway
@@ -175,13 +175,13 @@ NAME                                                     GATEWAYS               
 istio-ingressgateway-f6fb54b17b9120eb-www-bookinfo-com   ["bookinfo-openapi/istio-ingressgateway-f6fb54b17b9120eb"]   ["www.bookinfo.com"]   5m13s
 ```
 
-It is also possible to leverage more TSB features such as rate limiting, authentication, and authorization [by adding annotations](../../refs/tsb/application/v2/openapi_extensions) to your OpenAPI specification.
+还可以通过添加注解来利用更多 TSB 功能，如速率限制、身份验证和授权，[通过添加注释](../../../refs/tsb/application/v2/openapi-extensions) 到你的 OpenAPI 规范中。
 
-## Extending App Ingress using the IstioOperator 
+## 使用 IstioOperator 扩展应用程序入口
 
-It is possible to further configure the Istio components within App Ingress using the [Istio Operator](https://istio.io/latest/docs/reference/config/istio.operator.v1alpha1/).
+可以使用 [Istio Operator](https://istio.io/latest/docs/reference/config/istio.operator.v1alpha1/) 进一步配置应用程序入口中的 Istio 组件。
 
-For example, if you want to plug in custom CA certificates (such a config is particularly useful in Kubernetes versions higher than 1.22 where the kubernetes `pilotCertProvider` is deprecated), create a file named `configure-plug-in-certs.yaml`:
+例如，如果要在应用程序入口中配置自定义 CA 证书（在 Kubernetes 版本高于 1.22 的情况下特别有用，因为 Kubernetes 的 `pilotCertProvider` 已弃用），创建一个名为 `configure-plug-in-certs.yaml` 的文件：
 
 ```yaml
 apiVersion: install.istio.io/v1alpha1
@@ -195,21 +195,20 @@ spec:
       pilotCertProvider: istiod
 ```
 
-Create the `cacerts` secret that contain the certificate and keys. For more information click [here](https://istio.io/latest/docs/tasks/security/cert-management/plugin-ca-cert/).
-You can test this out by using the sample certs provided in the Istio release bundle.
-Run this command to download the Istio release bundle.
+创建包含证书和密钥的 `cacerts` 密钥。有关更多信息，请单击[此处](https://istio.io/latest/docs/tasks/security/cert-management/plugin-ca-cert/)。
+你可以通过使用 Istio 发行包提供的示例证书运行以下命令来进行测试。
 
 ```bash
 curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.11.3 sh -
 ```
 
-Run this commend to create the `cacerts` secret.
+运行以下命令创建 `cacerts` 密钥。
 
 ```bash
 kubectl create secret generic cacerts -n bookinfo-appingress --from-file=ca-cert.pem=istio-1.11.3/samples/certs/ca-cert.pem --from-file=ca-key.pem=istio-1.11.3/samples/certs/ca-key.pem --from-file=root-cert.pem=istio-1.11.3/samples/certs/root-cert.pem --from-file=cert-chain.pem=istio-1.11.3/samples/certs/cert-chain.pem
 ```
 
-Then supply this file when you generate the manifest for App Ingress by specifying the `-f` (`--filename`) flag:
+然后，通过指定 `-f`（`--filename`）标志来提供此文件，以生成应用程序入口的清单：
 
 ```bash
 tctl experimental app-ingress kubernetes generate \
@@ -218,23 +217,23 @@ tctl experimental app-ingress kubernetes generate \
   | kubectl apply -f -
 ```
 
-:::note
-If running multiple App Ingresses in a single cluster and you are using custom `cacerts`, make sure to use the same `cacerts` secret in each namespace where App Ingress is running.
-:::
+{{<callout note 注意>}}
+如果在单个集群中运行多个 App Ingress 并且使用自定义 `cacerts`，请确保在运行 App Ingress 的每个命名空间中使用相同的 `cacerts` 密钥。
+{{</callout>}}
 
-## App Ingress in Docker
+## 在 Docker 中运行 App Ingress
 
-If you have restrictions deploying to your main Kubernetes environment, it is possible to deploy App Ingress to Docker via `docker-compose`. This might be a requirement if you want to run your App Ingress in an environment other than Kubernetes, or you might want to test your application and/or OpenAPI specification locally.
+如果你在主要的 Kubernetes 环境中有部署限制，可以通过 `docker-compose` 将 App Ingress 部署到 Docker 中。如果你想在 Kubernetes 之外的环境中运行 App Ingress，或者想在本地测试应用程序和/或 OpenAPI 规范，这可能是一个要求。
 
-In this example you will start a service in docker, where traffic will be received via App Ingress created using docker-compose, and configured using the OpenAPI document of the service
+在本示例中，你将在 Docker 中启动一个服务，流量将通过使用 `docker-compose` 创建的 App Ingress 接收，并使用服务的 OpenAPI 文档进行配置。
 
-Make sure to have [docker](https://docs.docker.com/engine/install/) and [docker-compose](https://docs.docker.com/compose/install/) installed before proceeding.
+在继续之前，请确保已安装 [docker](https://docs.docker.com/engine/install/) 和 [docker-compose](https://docs.docker.com/compose/install/)。
 
-### Generating the docker-compose file
+### 生成 docker-compose 文件
 
-Create a directory named `appingress-compose`. Later instructions will rely on this directory being present.
+创建一个名为 `appingress-compose` 的目录。后续的说明将依赖于存在该目录。
 
-Generate and save the generated docker-compose file in the `appingress-compose` directory that defines all the App Ingress containers using the following command. Notice that `--openapi-translator` option is enabled, and that the backend service `http://httpbin.tetrate.com` is specified through `--openapi-backend-service`.
+使用以下命令生成并保存生成的 docker-compose 文件，该文件定义了所有使用以下命令创建的 App Ingress 容器。注意启用了 `--openapi-translator` 选项，并且通过 `--openapi-backend-service` 指定了后端服务 `http://httpbin.tetrate.com`。
 
 ```bash
 tctl x app-ingress docker-compose generate \
@@ -243,15 +242,15 @@ tctl x app-ingress docker-compose generate \
   --openapi-backend-service http://httpbin.tetrate.com \
 ```
 
-### Running docker-compose
-Lets run the containers using `docker-compose`
+### 运行 docker-compose
+使用 `docker-compose` 运行容器：
 
 ```bash
 $ cd appingress-compose
 $ docker-compose up -d
 ```
 
-You should see the App Ingress containers starting,  as well as a new docker network named `appingress-compose_app-ingress` being created.
+你应该看到 App Ingress 容器启动，以及一个名为 `appingress-compose_app-ingress` 的新 Docker 网络被创建。
 
 ```bash
 $ docker ps --filter="name=appingress"
@@ -270,28 +269,29 @@ d5b159e5b631   appingress-compose_app-ingress   bridge    local
 c955a05b02d1   none                             null      local
 ```
 
-### Run an Application Container
-Start a container with the same name mentioned in the `--openapi-backend-service` argument, which should be `httpbin.tetrate.com` in this case. The current implementation requires that the name matches the backend service name. You also need to deploy it in the same `appingress-compose_app-ingress` network which was recently created by `docker-compose`
+### 运行应用程序容器
+启动一个容器，其名称与 `--openapi-backend-service` 参数中提到的名称相同，本例中应为 `httpbin.tetrate.com`。当前的实现要求名称与后端服务名称匹配。你还需要将其部署在最近由 `docker-compose` 创建的 `appingress-compose_app-ingress` 网络中：
 
 ```bash
 docker run --net appingress-compose_app-ingress --name httpbin.tetrate.com -d kennethreitz/httpbin
 ```
 
-### Install the OpenAPI specification
+### 安装 OpenAPI 规范
 
-Download the file [`httpbin-openapi.json`](../../assets/howto/httpbin-openapi.json_) and save it under the `.app-ingress/config-sources` directory as `.app-ingress/config-sources/httpbin-openapi.json`. The App Ingress will consume and translate it into Istio resources.
+下载文件 [`httpbin-openapi.json`](../../../assets/howto/httpbin-openapi.json_) 并将其保存到 `.app-ingress/config-sources` 目录下，命名为 `.app-ingress/config-sources/httpbin-openapi.json`。App Ingress 将消耗并将其翻译成 Istio 资源。
 
-You should instantaneously see the generated Istio resource being created as a YAML file:
+你应该立即看到生成的 Istio 资源作为一个 YAML 文件被创建：
 
 ```bash
 $ ls .app-ingress/config-sources/app-ingress.yaml
 .app-ingress/config-sources/app-ingress.yaml
 ```
-You can include additional Istio resources such as Destination Rules, Envoy filters in this directory `.app-ingress/config-sources/` to implement your use case.
 
-### Testing
+你可以在此目录 `.app-ingress/config-sources/` 中包含其他 Istio 资源，例如目标规则、Envoy 过滤器，以实现你的用例。
 
-If everything is working, you should be able to access the application running in Docker.
+### 测试
+
+如果一切正常，你应该能够访问在 Docker 中运行的应用程序。
 
 ```bash
 $ curl -vvv -H "Host: httpbin.tetrate.com" http://localhost:8080/get
@@ -328,6 +328,10 @@ $ curl -vvv -H "Host: httpbin.tetrate.com" http://localhost:8080/get
   "origin": "172.18.0.1", 
   "url": "http://httpbin.tetrate.com/get"
 }
-* Connection #0 to host localhost left intact
+* Connection #0 to
+
+ host localhost left intact
 * Closing connection 0
 ```
+
+请注意，这是一个示例，你需要根据你的实际应用程序和环境进行适当的配置。

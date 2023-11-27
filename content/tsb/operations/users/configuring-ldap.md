@@ -1,17 +1,18 @@
 ---
-title: LDAP as the Identity Provider
+title: 将 LDAP 配置为身份提供者
+weight: 2
 ---
 
-This document describes how to configure the LDAP integration for Tetrate Service Bridge (TSB). LDAP integration in TSB allows you to use LDAP as an Identity Provider for user login to TSB,  as well as synchronizing users and groups from LDAP to TSB automatically.
+本文描述了如何配置 Tetrate Service Bridge（TSB）的 LDAP 集成。在 TSB 中，LDAP 集成允许你将 LDAP 用作用户登录 TSB 的身份提供者，并自动将用户和组从 LDAP 同步到 TSB。
 
-This document assumes that you already have working knowledge of configuring an LDAP service, as well as how to authenticate using it. 
- 
-## Configuration
- 
-LDAP can be configured through `ManagementPlane` CR or Helm values. Following is an example of custom resource YAML that uses LDAP as TSB Identity Provider. You will need to edit the `ManagementPlane` CR or the Helm values and configure the relevant sections. Please refer to [`LDAPSettings`](../../refs/install/managementplane/v1alpha1/spec#ldapsettings) for more details.
- 
-The following sections will explain more about what each part of the YAML file means.
- 
+本文假定你已经具备配置 LDAP 服务以及如何使用它进行身份验证的工作知识。
+
+## 配置
+
+LDAP 可以通过`ManagementPlane` CR 或 Helm 值进行配置。以下是一个使用 LDAP 作为 TSB 身份提供者的自定义资源 YAML 的示例。你需要编辑`ManagementPlane` CR 或 Helm 值，并配置相关部分。请参阅[`LDAPSettings`](../../../refs/install/managementplane/v1alpha1/spec#ldapsettings)了解更多详细信息。
+
+以下各节将更详细地解释 YAML 文件的每个部分的含义。
+
 ```yaml
 spec:
   hub: <registry-location>
@@ -31,89 +32,90 @@ spec:
         groupsFilter: "(objectClass=groupOfUniqueNames)"
         membershipAttribute: uniqueMember
 ```
- 
-## Identity Provider Configuration
- 
-There are two ways of using LDAP as an Identity provider:
- 
-- Using Direct Bind Authentication
-- Using a Search based Authentication
- 
-Using the Direct Bind Authentication is preferred as performance is better, but it requires user Distinguished Names ("DN"s) to be uniform across the entire LDAP tree. If this is not the case, a more flexible Search Based Authentication can be configured to authenticate users based on pre-configured queries.
- 
-These approaches are not mutually exclusive. If both are configured, the Direct Bind Authentication will be attempted first and if users cannot be authenticated, TSB will fallback to using the Search based Authentication.
- 
-### Direct Bind Authentication
- 
-Authentication in LDAP is done by performing a bind operation against a DN. The DN is expected to be a user record that has a password configured. The bind operation tries to match the given DN and password with an existing record. Authentication succeeds if the binding operation succeeds.
- 
-`DN`s, however, are commonly in the form like `uid=nacx,ou=People,dc=tetrate,dc=io`. This format is not convenient for regular logins, as users shouldn't be asked to type the full DN in a login form. Direct Bind Authentication allows you to configure a pattern to match the login user against, and use that as the DN.
- 
-The following example configures a Direct Bind Authentication pattern:
- 
+
+## 身份提供者配置
+
+使用 LDAP 作为身份提供者有两种方法：
+
+- 使用直接绑定身份验证
+- 使用基于搜索的身份验证
+
+使用直接绑定身份验证是首选的，因为性能更好，但它要求整个 LDAP 树中的用户 Distinguished Names（"DN"s）是统一的。如果情况不是这样，可以配置更灵活的基于搜索的身份验证，以根据预先配置的查询对用户进行身份验证。
+
+这些方法不是互斥的。如果都配置了，将首先尝试直接绑定身份验证，如果无法验证用户，TSB 将回退到使用基于搜索的身份验证。
+
+### 直接绑定身份验证
+
+在 LDAP 中，身份验证是通过执行与 DN 的绑定操作来完成的。DN 预期是一个已配置密码的用户记录。绑定操作尝试将给定的 DN 和密码与现有记录匹配。如果绑定操作成功，则身份验证成功。
+
+然而，`DN`s 通常以以下形式出现，例如`uid=nacx,ou=People,dc=tetrate,dc=io`。这种格式对于常规登录来说不太方便，因为不应该要求用户在登录表单中键入完整的 DN。直接绑定身份验证允许你配置一个用于匹配登录用户的模式，并将其用作 DN。
+
+以下示例配置了直接绑定身份验证模式：
+
 ```yaml
 iam:
   matchdn: 'uid=%s,ou=People,dc=tetrate,dc=io'
 ```
- 
-In this example, upon log in, the `%s` in the pattern will be replaced by the provided login user, and the resulting DN will be used for the bind authentication.
- 
- 
-### Search based authentication
- 
-As previously explained, Direct Bind Authentication works fine if all users that exist can be matched against the same DN pattern. In some cases, however, users might be created in different parts of the LDAP tree (for example, each user could be created inside a group for a specific department within the organization) making it impossible to have one single pattern to match them all.
- 
-In this case, you can perform a search on the LDAP tree looking for a record that matches the given username, then attempt a bind authentication with the DN of the record.
- 
-In order to perform the search, a connection must be established to the LDAP server. This may require credentials if the server is not configured with anonymous access. Please refer to the "[Credential and Certificate](#credential-and-certificate)" section for more details. 
- 
-The following example shows how to configure the Search based authentication:
- 
+
+在此示例中，登录时，模式中的`%s`将被提供的登录用户替换，生成的 DN 将用于绑定身份验证。
+
+### 基于搜索的身份验证
+
+如前所述，如果所有现有用户都可以与相同的 DN 模式匹配，直接绑定身份验证效果很好。然而，在某些情况下，用户可能会创建在 LDAP 树的不同部分（例如，每个用户可以在组织内特定部门的组内创建），这样就不可能有一个单一的模式来匹配所有用户。
+
+在这种情况下，你可以在 LDAP 树上执行搜索，查找与给定用户名匹配的记录，然后尝试使用记录的 DN 进行绑定身份验证。
+
+为了执行搜索，必须建立到 LDAP 服务器的连接。如果服务器未配置为匿名访问，可能需要凭据。有关更多详细信息，请参阅“凭据和证书”部分。
+
+以下示例显示了如何配置基于搜索的身份验证：
+
 ```yaml
 search:
   baseDN: dc=tetrate,dc=io
 iam:
   matchfilter: '(&(objectClass=person)(uid=%s))'
 ```
- 
-In this example a search is configured to lookup the tree starting at `dc=tetrate,dc=io` (`iam.matchFilter` uses the query defined in `search.baseDN`). And will attempt to match all records that are of type `person` and with the `uid` attribute equal to the given username. Similar to Direct Bind Authentication, the Search pattern expects a `%s` placeholder that will be replaced by the given username.
- 
- 
-### Combining direct and search authentication methods
- 
-It is possible to combine both authentication methods, to configure a more flexible authentication configuration. When both methods are configured, Direct Bind Authentication will have precedence, as it does not require a traversal of the LDAP tree, and is therefore more efficient.
- 
-An example that uses both authentication strategies might look like the following
- 
+
+在此示例中，配置了一个搜索，以查找从`dc=tetrate,dc=io`开始的树（`iam.matchFilter`使用在`search.baseDN`中定义的查询）。将尝试匹配所有类型为`person`并且具有`uid`属性等于给定用户名的记录。与直接绑定身份验证类似，搜索模式期望有一个`%s`占位符，该占位符将由给定的用户名替换。
+
+### 结合直接和搜索身份验证方法
+
+可以结合两种身份验证方法，以配置更灵活的身份验证配置。当同时配置了这两种方法时，直接绑定身份验证将具有优先权，因为它不需要遍历 LDAP 树，因此更有效率。
+
+同时使用两种身份验证策略的示例可能如下所示：
+
 ```yaml
 iam:
   matchdn: 'uid=%s,ou=People,dc=tetrate,dc=io'
   matchfilter: '(&(objectClass=person)(uid=%s))'
 ```
- 
-### Using Microsoft Active Directory
- 
-Microsoft Active Directory implements the LDAP bind authentication in a different way. Instead of using a full DN for the LDAP bind operation, it uses the user (which should be in the form: `user@domain`).
- 
-Since this is the username that is likely to be configured in a login form, direct authentication could be simply configured as follows:
- 
+
+### 使用 Microsoft Active Directory
+
+Microsoft Active Directory 以不同的方式实现了 LDAP 绑定身份验证。它不使用 LDAP 绑定操作的完整 DN，而是使用用户（应该是形式为：`user@domain`）。
+
+由于这是在登录表单中可能配置的用户名，因此直接身份验证可以简单地配置如下：
+
 ```yaml
 iam:
   matchdn: '%s'
 ```
- 
-Search Based Authentication in Active Directory can be configured with the following filter, that matches the standard way of identifying user accounts in AD, in case Direct authentication does not cover all the authentication needs:
- 
+
+如果直接身份验证无法满足所有身份验证需求，可以使用以下筛选器配置 Active Directory 中的基于搜索的身份验证，该筛选器匹配标准的 AD 用户帐户标识方式：
+
 ```yaml
 iam:
-  matchfilter: '(&(objectClass=user)(samAccountName=%s))'
+  matchfilter: '(&(objectClass=user)(samAccountName
+
+=%s))'
 ```
 
-## Credential and Certificate
-Some operations require running privileged queries against the LDAP server, such as fetching the entire group and user list, or authenticating users using a search. In those cases, if credentials are needed they must be configured in a Kubernetes Secret. 
- 
-You can use `tctl install manifest management-plane-secrets` to create required credentials and certificates to connect to your LDAP server. 
- 
+## 凭据和证书
+
+某些操作需要对 LDAP 服务器运行特权查询，例如获取整个组和用户列表，或使用搜索对用户进行身份验证。在这些情况下，如果需要凭据，则必须在 Kubernetes Secret 中进行配置。
+
+你可以使用 `tctl install manifest management-plane-secrets` 命令创建所需的凭据和证书，以连接到 LDAP 服务器。
+
 ```bash
 tctl install manifest management-plane-secrets \
     …
@@ -124,9 +126,9 @@ tctl install manifest management-plane-secrets \
     --tsb-server-certificate "$(cat foo.cert)" \
     --tsb-server-key "$(cat foo.key)" > managementplane-secrets.yaml
 ```
- 
-If you cannot use the above command and need to do this manually, create `ldap-credentials` secret as follows
- 
+
+如果无法使用上述命令并需要手动执行此操作，请按以下方式创建 `ldap-credentials` 密钥：
+
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -137,30 +139,26 @@ data:
   binddn: 'base64-encoded full DN of the user to use to authenticate'
   bindpassword: 'base64-encoded password'
 ```
- 
-Also create a `custom-host-ca` secret if your LDAP is configured to present a self-signed certificate.
- 
+
+还需要创建 `custom-host-ca` 密钥，如果你的 LDAP 配置为使用自签名证书。
+
 ```bash
 kubectl create secret generic custom-host-ca \
     --from-file=ca-certificates.crt=<path to custom CA file> \
     --namespace tsb
 ```
- 
- 
-## User and group synchronization
- 
-User and group synchronization is done by running the sync queries in the LDAP configuration above. The following example shows two example queries that can be used to get users and groups from a standard LDAP server.
- 
-The `membershipattribute` is used to match users with the groups they belong to. For every found group, this attribute will be read to extract the information of the members of the group.
- 
-Note that the queries are highly dependent on the LDAP tree structure and everyone will have to change them to match it.
- 
+
+## 用户和组同步
+
+用户和组的同步是通过运行上述 LDAP 配置中的同步查询来完成的。以下示例显示了可用于从标准 LDAP 服务器获取用户和组的两个示例查询。
+
+`membershipattribute` 用于将用户与他们所属的组进行匹配。对于每个找到的组，将读取此属性以提取组的成员信息。
+
+请注意，这些查询高度依赖于 LDAP 树结构，每个人都必须更改它们以进行匹配。
+
 ```yaml
 sync:
   usersfilter: '(objectClass=person)'
   groupsfilter: '(objectClass=groupOfUniqueNames)'
   membershipattribute: uniqueMember
 ```
- 
-
-

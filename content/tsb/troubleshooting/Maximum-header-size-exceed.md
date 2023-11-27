@@ -1,35 +1,34 @@
 ---
-title: Maximum Header Size Exceed
+title: 请求头大小超限
+weight: 6
 ---
 
-This article will cover how TSB and istio-proxy handle headers when forwarding from Istio ingress gateways or sidecars to applications.
+本文将介绍在从 Istio 入口网关或边车转发到应用程序时，TSB 和 Istio 代理如何处理标头。
 
-Before you get started, make sure you:<br />
-✓ Familiarize yourself with [TSB concepts](../concepts/toc) <br />
-✓ Install the TSB environment. You can use [TSB demo](../setup/self_managed/demo-installation) for quick install<br />
-✓ Completed [TSB usage quickstart](../quickstart).<br />
-✓ Install sample application [httpbin](../reference/samples/httpbin).
+在开始之前，请确保你已经：
+- 熟悉[TSB 概念](../../concepts/)
+- 安装了 TSB 环境。你可以使用[TSB 演示](../../setup/self-managed/demo-installation)进行快速安装
+- 完成了[TSB 使用快速入门](../quickstart)。
+- 安装了示例应用程序[httpbin](../../reference/samples/httpbin)。
 
+## Envoy（istio-proxy）中的请求标头大小
 
-## Request header size in Envoy (istio-proxy)
+[Envoy](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto)或 istio-proxy 可以处理相当大的标头。传入连接的默认最大请求标头大小为 60 KiB。
 
-[Envoy](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto) or istio-proxy can handle headers that are considerably larger. The default maximum request headers size for incoming connections is 60 KiB
+在这种情况下，对于大多数应用程序来说，这不会成为问题，并且传入连接的请求标头将通过 istio-proxy 代理。但是，根据每个 Web 服务器的标头大小配置，你的应用程序可能会有限制。
 
-In this case, it will not be an issue for the majority of applications, and the request headers that incoming connections will be proxied through istio-proxy. However, your application might have restrictions based on the configuration of the header size for each web server.
+例如：
+在[Spring Boot 2](https://www.baeldung.com/spring-boot-max-http-header-size)和[Gunicorn](https://docs.gunicorn.org/en/stable/settings.html#limit-request-field-size)中，默认的最大标头大小为 8 KiB。如果需要，你可以覆盖默认设置。
 
-For example:
-In [Spring Boot 2](https://www.baeldung.com/spring-boot-max-http-header-size) and [Gunicorn](https://docs.gunicorn.org/en/stable/settings.html#limit-request-field-size) the default max header size is 8 KiB. You can override the default if needed.
+## 调试请求标头大小
 
+对于此实验，你需要在集群中部署[httpbin](../../reference/samples/httpbin)示例应用程序。你将执行两个请求，一个请求的标头大小低于最大值，另一个请求的标头大小超出应用程序容器的限制。
 
-## Debug request headers size
+### 低于最大值的标头
 
-For this experiment, you will need the [httpbin](../reference/samples/httpbin) sample application deployed in your cluster. You will perform two requests, one with a header size below the maximum and another one that exceeds the limit by the app container.
+你的标头可以是任何内容，只需确保低于 8 KiB，你可以将其导出为变量并执行请求：
 
-### Header below the maximum
-
-Your header can be anything just make sure is below 8 KiB you can export it as a variable and perform the request:
-
-````
+```bash
 curl -k  https://httpbin.example.io/response-headers -X POST -H "X-MyHeader: $SMALL" -sI
 HTTP/2 200 
 server: istio-envoy
@@ -39,13 +38,13 @@ content-length: 68
 access-control-allow-origin: *
 access-control-allow-credentials: true
 x-envoy-upstream-service-time: 5
+```
 
-````
-### Header above the maximum
+### 超出最大值的标头
 
-Now perform the request with a header that can exceed the maximum of 8 KiB
+现在，使用可以超出 8 KiB 的标头执行请求：
 
-````
+```bash
 curl -k  https://httpbin.example.io/response-headers -X POST -H "X-MyHeader: $LONG" -sI
 HTTP/2 400 
 content-type: text/html
@@ -53,21 +52,20 @@ content-length: 189
 x-envoy-upstream-service-time: 6
 date: Wed, 19 Oct 2022 20:17:37 GMT
 server: istio-envoy
+```
 
-````
+如果请求标头超过最大标头大小，你将收到一个 HTTP 400 错误，表示坏请求。
 
-If the request header exceed the maximum header size, you will receive a bad request following a 400 HTTP code.
+## 修改 istio-proxy 中的标头大小
 
-## Modify header size in istio-proxy
+正如你在上面学到的，你可以在各种 Web 服务器中限制标头大小。你可以在 istio-proxy 中进行相同的修改。
 
-As you learned above, you can limit the header size in a variety of web servers. You can do the same modifications in istio-proxy.
+默认的标头大小应该足够，或者你可能希望减小默认大小。
+### 在 istio-proxy 中减小默认标头大小
 
-The default header size should be just enough, or you may want to decrease the default size. 
-### Decreasing the default size of the header in istio-proxy
+为了减小默认请求标头的大小，你需要创建一个[Envoyfilter](https://istio.io/latest/docs/reference/config/networking/envoy-filter/)，允许你修改 istio-proxy 的配置。
 
-In order to decrease the size of the default request header you will need to create an [Envoyfilter](https://istio.io/latest/docs/reference/config/networking/envoy-filter/) that allows you to modify the istio-proxy configuration.
-
-````
+```yaml
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
@@ -88,14 +86,13 @@ spec:
         typed_config:
           "@type": "type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager"
           max_request_headers_kb: 10
+```
 
-````
+将此应用于你的集群后，请再次尝试请求，一个标头较小，另一个标头较大。
 
-Once this is applied in your cluster, try again the request with an small header and a larger one.
+### 在 istio-proxy 中低于最大值的标头
 
-### Header below the maximum in istio-proxy
-
-````
+```bash
 curl -k  https://httpbin.example.io/response-headers -X POST -H "X-MyHeader: $SMALL" -sI
 HTTP/2 200 
 server: istio-envoy
@@ -105,29 +102,29 @@ content-length: 68
 access-control-allow-origin: *
 access-control-allow-credentials: true
 x-envoy-upstream-service-time: 5
+```
 
-````
+由于标头低于 10 KiB 的最大值，你可以看到请求成功。
 
-You can see the request was successfully as the header was below the maximum of 10 KiB.
+### 在 istio-proxy 中超出最大值的标头
 
-### Header above the maximum in istio-proxy
-
-````
+```bash
 curl -k  https://httpbin.example.io/response-headers -X POST -H "X-MyHeader: $LONG" -sI
+```
 
-````
-You can remove the -s flag from curl and see the output.
+你可以从 curl 中删除-s 标志并查看输出。
 
-````
+```bash
 curl -k  https://httpbin.example.io/response-headers -X POST -H "X-MyHeader: $LONG" -I
 curl: (92) HTTP/2 stream 0 was not closed cleanly: INTERNAL_ERROR (err 2)
-````
+```
 
-The request did not return anything but an error. You can see what happened in the logs.
+请求没有返回任何内容，只有一个错误。你可以在日志中查看发生了什么。
 
-````
+```bash
 kubectl logs $GWPOD -n tier1
 
-[2022-10-19T20:39:58.081Z] "- - HTTP/2" 0 - http2.too_many_headers - "-" 0 0 0 - "-" "-" "-" "-" "-" - - 10.211.129.34:8443 10.240.0.38:63077 httpbin.example.io -
+[2022-10-19T20:39:58.081Z] "- - HTTP/2" 0 - http2.too_many_headers - "-" 0 0 0 - "-" "-" "-" "-" "-" - - 10.211.129.34:
 
-````
+8443 10.240.0.38:63077 httpbin.example.io -
+```

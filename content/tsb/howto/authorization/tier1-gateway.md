@@ -6,11 +6,11 @@ description: 如何使用 Open Policy Agent (OPA) 来授权来自公共网络的
 
 TSB 提供了授权功能，用于授权来自公共网络的请求。本文将描述如何使用 Open Policy Agent (OPA) 配置 Tier-1 网关授权。
 
-在开始之前，请确保您：
+在开始之前，请确保你：
 - 熟悉[TSB 概念](../../../concepts/)。
 - 已完成了 Tier-1 网关路由到 Tier-2 网关，并在 TSB 中已配置了[httpbin](../../../reference/samples/httpbin)。
 - 创建了一个租户，并了解工作空间和配置组。
-- 针对您的 TSB 环境配置了 `tctl`。
+- 针对你的 TSB 环境配置了 `tctl`。
 
 以下图示展示了在Tier-1网关中使用OPA的请求/响应流程。来到Tier-1网关的请求将由OPA检查。如果请求被视为未经授权，则请求将被拒绝并返回403（禁止）响应，否则它们将被发送到Tier-2网关。
 
@@ -20,7 +20,7 @@ TSB 提供了授权功能，用于授权来自公共网络的请求。本文将�
 
 ## 配置 OPA
 
-在此示例中，您将部署 OPA 作为其自己独立的服务。如果尚未这样做，请为 OPA 服务创建一个命名空间：
+在此示例中，你将部署 OPA 作为其自己独立的服务。如果尚未这样做，请为 OPA 服务创建一个命名空间：
 
 ```bash
 kubectl create namespace opa
@@ -32,7 +32,7 @@ kubectl create namespace opa
 kubectl apply -f opa.yaml
 ```
 
-然后更新您的 Tier-1 网关配置以使用 OpenAPI 规范，将以下部分添加到 Tier-1 网关，并使用 tctl 应用它们：
+然后更新你的 Tier-1 网关配置以使用 OpenAPI 规范，将以下部分添加到 Tier-1 网关，并使用 tctl 应用它们：
 
 ```
 apiVersion: gateway.tsb.tetrate.io/v2
@@ -66,7 +66,7 @@ spec:
 
 ## 测试
 
-您可以按照["在 Ingress Gateways 中配置外部授权"](../ingress-gateway#testing)中的说明进行外部授权测试，但需要获取 Tier-1 网关地址而不是 Ingress 网关地址。
+你可以按照["在 Ingress Gateways 中配置外部授权"](../ingress-gateway#testing)中的说明进行外部授权测试，但需要获取 Tier-1 网关地址而不是 Ingress 网关地址。
 
 要获取 Tier-1 网关地址，请执行以下命令：
 

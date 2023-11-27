@@ -1,173 +1,176 @@
 ---
-title: Service Mesh and GitOps
+title: 服务网格与 GitOps
+weight: 2
 ---
 
-GitOps is a practice that uses Git repositories as a source of truth for application/system state. Changes to the state are performed through Pull Request (PR) and approval workflow and will be automatically applied to the system by a CD process. This is illustrated in the following image.
+GitOps 是一种实践，它使用 Git 存储库作为应用程序/系统状态的真实来源。对状态的更改通过拉取请求（PR）和批准工作流程执行，并将由持续交付（CD）流程自动应用于系统。以下图像对此进行了说明。
 
-![](../assets/knowledge_base/gitops-overview.png)
+![](../../assets/knowledge_base/gitops-overview.png)
 
-There are three core practices in GitOps:
+GitOps 有三个核心实践：
 
-### Infrastructure-as-Code
+### 基础设施即代码
 
-This describes the practice of keeping all infrastructure and application configurations stored as code in Git.
+这描述了将所有基础设施和应用程序配置存储为 Git 中的代码的实践。
 
-### Using Pull Requests for Changes
+### 使用拉取请求进行更改
 
-Changes are proposed on a branch, and a PR is made to merge the changes into the main branch. Using PRs allows for collaboration between operations engineers for peer review along with the development teams, security teams, and other stakeholders.
+更改是在分支上提出的，然后创建 PR 将更改合并到主分支中。使用 PR 允许运维工程师与开发团队、安全团队和其他利益相关者进行协作进行对等审查。
 
-### CI (Continuous Integration) and CD (Continuous Deployment) Automation
+### CI（持续集成）和 CD（持续部署）自动化
 
-In an ideal scenario, no manual changes are made to a GitOps-managed environment. Instead, CI and CD serve as a type of reconciliation loop. Each time a change is made, the automation tool compares the state of the environment to the source of truth defined in the Git repository. 
+在理想情况下，不会对 GitOps 管理的环境进行手动更改。相反，CI 和 CD 充当一种协调循环。每次进行更改时，自动化工具会将环境的状态与 Git 存储库中定义的真实来源进行比较。
 
-## GitOps Benefits
+## GitOps 好处
 
-There are several benefits that you can get by using GitOps practice
+通过使用 GitOps 实践，你可以获得以下几个好处：
 
-1. **Revisions with history**
+1. **带有历史记录的版本**
 
-    Since every change is stored in Git, it is easy to discover what changes have been made. In most cases, the change can be traced back to a specific incident or change request.
+   由于每个更改都存储在 Git 中，因此很容易发现进行了哪些更改。在大多数情况下，更改可以追溯到特定的事件或更改请求。
 
-2. **Ownership**
+2. **所有权**
 
-    Since the changes can be looked up in the Git history, it is possible to find out who owns the relevant files (in this case mostly the manifest/YAML files). This also means that owners of the resulting contains can be deduced and used during operation.
+   由于更改可以在 Git 历史记录中查找，因此可以找出谁拥有相关文件（在本例中主要是清单/YAML 文件）。这也意味着可以推断出生成内容的所有者，并在运维过程中使用。
 
-3. **Immutability**
+3. **不变性**
 
-    Any build or deployment is reproducible and immutable. 
+   任何构建或部署都是可重复的和不可变的。
 
-4. **Deterministic**
+4. **确定性**
 
-    Even if there are manual changes to the containers/clusters, the operator responsible for applying the configuration is watching and will fix it based on the information stored in Git.
+   即使容器/集群存在手动更改，负责应用配置的运营商也在观察并将根据存储在 Git 中的信息进行修复。
 
-## Separating Build (CI) and Deployment (CD)
+{{<callout note 注意>}}
+请记住，要生成机密后，重新启动 `tsb-operator-control-plane` Pod，并一旦生成后，重新启动控制平面 Pod。
+{{</callout>}}
 
-While you can have a single pipeline for both application code and configuration, you might want to separate both for following reasons:
+### 构建（CI）与部署（CD）的分离
 
-1. **Separation of Concerns**
+虽然你可以为应用程序代码和配置使用单一流水线，但出于以下原因，你可能希望将它们分开：
 
-    Application **developers** commit code and create releases, which can be done in the CI. Application **operators** deploy artifacts to the clusters, which can be done in the CD
+1. **责任分离**
 
-2. **Multiple Deployments**
+   应用程序的 **开发人员** 提交代码并创建发布，这可以在 CI 中完成。应用程序的 **运维人员** 将构件部署到集群中，这可以在 CD 中完成。
 
-    Single application code can be deployed to many environments from the CD, without having to go through the CI over and over.
+2. **多次部署**
 
-3. **Repeated Deployments**
+   可以使用 CD 将单一应用程序代码部署到多个环境中，无需一次又一次地进行 CI。
 
-    Recreating a deployment should not require a new build. Artifacts can be managed in CD without having to go through the CI over and over.
+3. **重复部署**
 
-![](../assets/knowledge_base/gitops-ci-cd.png)
+   重新创建部署不应该需要新的构建。可以在 CD 中管理构件，而无需一次又一次地进行 CI。
 
-You can connect CI with CD by using a reconciliation loop that will check for new artifact releases and create PR to the application configuration repository to update the application image tag.
+![](../../assets/knowledge_base/gitops-ci-cd.png)
 
-## Push and Pull
+可以通过使用协调循环将 CI 与 CD 连接起来，该协调循环将检查新的构件版本并创建 PR 到应用程序配置存储库以更新应用程序图像标签。
 
-There are two approaches for GitOps: **Push** and **Pull**. 
+## 推送与拉取
 
-In the **push** approach, once a commit has been made on a git repository or a CI pipeline was executed successfully,
-an external system (mostly CD pipelines) is triggered to deploy the artifacts to the cluster. In this approach, the pipeline system requires the relevant permissions to access to the cluster. 
+GitOps 有两种方法：**推送** 和 **拉取**。
 
-Example of push solutions include: [Github actions](https://github.com/features/actions), [Azure Pipelines](https://azure.microsoft.com/en-us/services/devops/pipelines/), [GitlabCI](https://docs.gitlab.com/ee/ci/) and [CircleCI](https://circleci.com/).
+在 **推送** 方法中，一旦在 Git 存储库上提交了更改或成功执行了 CI 流水线，外部系统（通常是 CD 流水线）将触发部署构件到集群。在这种方法中，流水线系统需要访问集群的相关权限。
 
-![](../assets/knowledge_base/gitops-push.png)
+推送解决方案的示例包括：[Github Actions](https://github.com/features/actions)、[Azure Pipelines](https://azure.microsoft.com/en-us/services/devops/pipelines/)、[GitlabCI](https://docs.gitlab.com/ee/ci/) 和 [CircleCI](https://circleci.com/)。
 
-In the **pull** approach, an agent inside the destination cluster regularly scans the associated git repositories. If a change is detected, the cluster state will be updated from inside the cluster. As seen in the following image, the CD components are moved to side the clusters. 
+![](../../assets/knowledge_base/gitops-push.png)
 
-Examples of pull solutions include: [Argo CD](https://circleci.com/) and [Flux](https://fluxcd.io/).
+在 **拉取** 方法中，目标集群内部的代理定期扫描相关的 Git 存储库。如果检测到更改，将从集群内部更新集群状态。如下图所示，CD 组件移至集群旁边。
 
-![](../assets/knowledge_base/gitops-pull.png)
+拉取解决方案的示例包括：[Argo CD](https://circleci.com/) 和 [Flux](https://fluxcd.io/)。
 
-There are pros and cons for both approaches. Please check these articles if you are interested in reading more:
+![](../../assets/knowledge_base/gitops-pull.png)
 
-* [Push vs. Pull in GitOps: Is There Really a Difference?](https://thenewstack.io/push-vs-pull-in-gitops-is-there-really-a-difference/)
-* [GitOps — Comparison Pull and Push](https://faun.pub/gitops-comparison-pull-and-push-88fcbaadfe45)
+这两种方法都有各自的优点和缺点。如果你有兴趣进一步阅读，请查看以下文章：
 
-There will never be a single solution that will fit all possible use cases, as each scenario varies greatly. As always, weighing the needs of your team or organization with the pros and cons of each approach will help you decide on which approach to use (or even use both of them!).
+* [GitOps 中的推送与拉取：真的有区别吗？](https://thenewstack.io/push-vs-pull-in-gitops-is-there-really-a-difference/)
+* [GitOps —— 比较拉取和推送](https://faun.pub/gitops-comparison-pull-and-push-88fcbaadfe45)
 
-## Cluster Provisioning Pipeline
+不会有一种单一的解决方案适用于所有可能的用例，因为每种情况都有很大的变化。因此，始终根据每种方法的利弊权衡你的团队或组织的需求，有助于你决定使用哪种方法（甚至同时使用两种方法）。
 
-With Kubernetes, you also need to plan on how to provision a cluster using the GitOps pipeline.
+## 集群部署流水线
 
-This involves creating clusters, installing common infrastructure components into clusters: logging, monitoring, secrets, certificates, access controls, service mesh components like Tetrate Service Bridge (TSB) and others.
+在使用 GitOps 流水线规划如何提供集群时，你还需要考虑以下几个因素：
 
-![](../assets/knowledge_base/gitops-cluster-pipeline.png)
+这包括创建集群、在集群中安装常见的基础设施组件：日志记录、监控、秘密、证书、访问控制、服务网格组件（如 Tetrate Service Bridge，TSB）等。
 
-## The Challenge of GitOps
+![](../../assets/knowledge_base/gitops-cluster-pipeline.png)
 
-Like any technology, the path to successful adoption is about managing expectations and being fully aware of a technology's strengths and weaknesses. It is important to understand them to accurately determine which solution is right for your culture, environment, and/or process, if at all.
+## GitOps 的挑战
 
-The following is a list of some of challenges with adopting GitOps:
+像任何技术一样，成功采用的关键在于管理期望并充分了解技术的优势和劣势。了解它们是准确确定哪种解决方案适合你的文化、环境和/或流程的重要因素，如果适用的话。
 
-**GitOps breaks down with auto-scaling and dynamic resources.** Since GitOps expects state to be stored in Git, dynamic aspects such as auto-scaling can cause problems when attempting to sync the state. Tools like ArgoCD have [custom diffs](https://argo-cd.readthedocs.io/en/stable/user-guide/diffing/) to handle this. 
+以下是采用 GitOps 面临的一些挑战：
 
-**GitOps does not address promotion of releases between environments.** Configurations for each environment will probably be stored in different Git branches. Templating solutions such as [Helm](https://helm.sh/) and [Kustomize](https://kustomize.io/) are usually used to provide a base template that can be then customized on each environment.
+**GitOps 无法处理自动缩放和动态资源。** 由于 GitOps 期望状态存储在 Git 中，因此动态方面，如自动缩放，可能会在尝试同步状态时引发问题。工具如 ArgoCD 具有[自定义差异](https://argo-cd.readthedocs.io/en/stable/user-guide/diffing/)来处理此类问题。
 
-**Auditing is problematic despite having all information in Git.** While Git has the change history, it is hard to answer certain questions without additional tools to analyze data in multiple Git repositories. For example, What percentage of deployments to environment X were successful and what had to be rolled back? How many features exist in environment X but are not in environment Y yet?
+**GitOps 不解决在不同环境之间推广版本的问题。** 每个环境的配置可能存储在不同的 Git 分支中。通常使用模板化解决方案，例如 [Helm](https://helm.sh/) 和 [Kustomize](https://kustomize.io/)，以提供一个可以在每个环境上进行定制的基本模板。
 
-**Large scale deployment with large number of clusters and services will pose a challenge.** Operations that affect a large number of resources such as adding a new company-wide label on all deployment may be problematic, as you may be dealing with multiple services whose configurations are stored in multiple different Git repositories.
+**尽管所有信息都在 Git 中，但审计仍然具有问题。** 尽管 Git 具有更改历史记录，但要回答某些问题而不使用附加工具来分析多个 Git 存储库中的数据很困难。例如，环境 X 的部署中有多少成功，需要回滚多少？环境 X 中存在多少功能，但尚未在环境 Y 中存在？
 
-**Lack of standard practice.** A good example where there still isn't a single accepted practice on how configuration should be managed is secrets. If secrets are stored in Git, they need to be encrypted, and thus will have to have their own workflow to process them during a deployment. If they are not stored in Git, then you no longer will be able to store your cluster's state in Git. In practice organizations tend to use external secret management tools such as Vault
+**大规模部署，具有大量集群和服务，将面临挑战。** 影响大量资源的操作，例如在所有部署上添加新的全公司标签，可能会有问题，因为你可能要处理多个服务，其配置存储在多个不同的 Git 存储库中。
 
-**Lack of visibility and runtime validation.** Git does not provide visibility into what has happened during runtime. For example, if a single update causes other dependent services, there's no easy way to find it out.
+**缺乏标准实践。** 一个很好的例子是仍然没有关于如何管理配置的单一接受的实践，例如秘密。如果秘密存储在 Git 中，它们需要加密，因此在部署期间需要有自己的工作流程来处理它们。如果它们不存储在 Git 中，那么你将无法在 Git 中存储集群的状态。实际上，组织往往使用外部秘密管理工具，如 Vault。
 
-## GitOps for Service Mesh
+**缺乏可见性和运行时验证。** Git 在运行时不提供关于发生了什么的可见性。例如，如果单个更新导致其他依赖服务出现问题，那么很难找出问题。
 
-A service mesh decouples operations from development by addressing networking, security, and observability issues across applications with an independent networking layer, or a "mesh" that controls communications between services. The mesh is formed by connected sidecars that act as proxy to services participating in the mesh. Service mesh provides capabilities to control and secure application networking without any changes to the application itself. 
+## GitOps 用于服务网格
 
-Service mesh introduces control plane components to manage proxies and distribute runtime configurations to proxies. You will need to deploy and manage mesh control planes lifecycle in your GitOps pipeline. This could be added to the existing pipeline that you already have to provision a cluster or on a different pipeline.
+服务网格通过独立的网络层或“网格”来控制服务之间的通信，从而将运维与开发分开，解决了应用程序的网络、安全和可观察性问题。该网格由充当代理的连接边车形成，这些边车控制参与网格的服务之间的通信。服务网格提供了在不更改应用程序本身的情况下控制和保护应用程序网络的功能。
 
-Since service mesh runs outside of your application, you will have another configuration that you need to add to your GitOps pipeline in addition to application deployment configuration. With [Istio](https://istio.io/), this would be Istio resources, e.g. [`Gateway`](https://istio.io/latest/docs/reference/config/networking/gateway/), [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/), [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/) and others.
+服务网格引入了控制平面组件以管理代理并将运行时配置分发给代理。你需要在 GitOps 流水线中部署和管理网格控制平面的生命周期。这可以添加到你已经用于提供集群的现有流水线中，或者可以使用不同的流水线。
 
-![](../assets/knowledge_base/gitops-service-mesh.png)
+由于服务网格运行在应用程序之外，因此除了应用程序部署配置之外，你还需要在 GitOps 流水线中添加另一种配置。对于 [Istio](https://istio.io/)，这将是 Istio 资源，例如 [`Gateway`](https://istio.io/latest/docs/reference/config/networking/gateway/)、[`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/)、[`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/) 等。
 
-## GitOps for TSB
+![](../../assets/knowledge_base/gitops-service-mesh.png)
 
-TSB adds a Management Plane (MP) on top of a multi-cluster control plane and provides a unified way to connect and secure services across an entire mesh-managed environment. You will need to keep note of several factors when you incorporate TSB in your GitOps pipeline.
+## TSB 的 GitOps
 
-### TSB API Structure
+TSB 在多集群控制平面之上添加了一个管理平面（MP），并提供了一种统一的方式来连接和保护整个网格管理的环境中的服务。在将 TSB 纳入你的 GitOps 流水线时，你需要注意几个因素。
 
-TSB has two API's: installation and configuration. Installation API is usually used in provisioning both Management Plane and Control Plane clusters. Installation API are Kubernetes YAML files and can be added to cluster provisioning pipeline.
+### TSB API 结构
 
-To configure application mesh behavior with TSB, you can do it in two ways:
+TSB 有两个 API：安装和配置。安装 API 通常用于配置管理平面和控制平面集群。安装 API 是 Kubernetes YAML 文件，可以添加到集群配置流水线中。
 
-#### TSB-based
+要使用 TSB 配置来配置应用程序网格行为，你可以以两种方式进行：
 
-You will need to use TSB API or use TSB CLI (`tctl`) to apply TSB configurations. TSB configurations must be applied to the TSB Management Plane, and not directly into clusters. MP will distribute configurations to the Kubernetes clusters based on the specified `namespaceSelector`.
+#### 基于 TSB
 
-![](../assets/knowledge_base/gitops-tsb.png)
+你需要使用 TSB API 或使用 TSB CLI (`tctl`) 来应用 TSB 配置。TSB 配置必须应用于 TSB 管理平面，而不是直接应用于集群。管理平面将根据指定的 `namespaceSelector` 将配置分发到 Kubernetes 集群。
 
-And since TSB requires application networking configuration to be applied to the TSB management plane, you will need to add `tctl` to your CD pipeline.
+![](../../assets/knowledge_base/gitops-tsb.png)
 
-#### Kubernetes-based
+由于 TSB 需要将应用程序网络配置应用于 TSB 管理平面，因此你需要将 `tctl` 添加到你的 CD 流水线中。
 
-It requires the application clusters to have [GitOps enabled](../operations/features/configure_gitops).
+#### 基于 Kubernetes
 
-Once that's done, you can add the TSB Kubernetes YAML files to the provisioning pipeline of each cluster.
+这需要应用程序集群启用 [GitOps 功能](../../operations/features/configure-gitops)。
 
-You can read more about [how to do it in the GitOps howtos](../howto/gitops).
+一旦完成，你可以将 TSB Kubernetes YAML 文件添加到每个集群的配置流水线中。
 
-### Rollback Options
+你可以在 [GitOps howtos](../../howto/gitops) 中详细了解如何操作。
 
-Different systems and applications follow different rollback methodologies based on their dependencies.
+### 回滚选项
 
-For TSB, and all onboarded clusters, the source of configurations is stored within TSB.
-And because TSB configuration formats are (to a degree) tied to the specific version of TSB used, it is important to make sure the deployed TSB version, the configurations in TSB, and the configurations stored in Git are kept in sync. This is especially true when you attempt perform a rollback.
+不同的系统和应用程序根据其依赖关系采用不同的回滚方法。
 
-You will need to investigate what specific considerations you will need to take into account depending on your rollback scenario, which is outside of the scope of this document as they vary greatly from environment to environment. Examples may include rolling back TSB Configurations for an application or a set of applications in tandem with the Git config changes, rollback related to a particular Control Plane version or rollback of TSB Management plane, etc.
+对于 TSB 和所有接入的集群，配置的来源存储在 TSB 内部。
+由于 TSB 配置格式在一定程度上与所使用的 TSB 版本相关联，因此确保已部署的 TSB 版本、TSB 中的配置以及存储在 Git 中的配置保持同步非常重要，特别是在尝试执行回滚时。
 
-### Disaster Recovery Setup
+你需要根据回滚情况的具体情况进行调查，这超出了本文档的范围，因为它们在不同环境中有很大的变化。示例可能包括在与 Git 配置更改一起回滚应用程序或一组应用程序的 TSB 配置，与特定控制平面版本相关的回滚或回滚 TSB 管理平面等。
 
-Enterprises could have a mirrored environment set up for Disaster Recovery (DR) including a TSB DR. Kubernetes manifests and TSB configurations are applied to the DR clusters in sync with Primary clusters.
+### 灾难恢复设置
 
-Another scenario is to have a single TSB manage both Primary and DR user clusters. In this case a duplicate set of configurations identical to the primary except for the resource names, cluster and namespace names can be created and applied to TSB.
+企业可以设置镜像环境用于灾难恢复（DR），包括 TSB DR。Kubernetes 清单和 TSB 配置与主要集群同步应用于 DR 集群。
 
-## Journey into GitOps
+另一种情况是使用单个 TSB 管理主要和 DR 用户集群。在这种情况下，可以创建并应用与主要集群相同的配置的重复集，除了资源名称、集群和命名空间名称不同。
 
-For journeys into GitOps, organizations can start evaluating existing solutions and validate each solution against organization objectives while keeping in mind what the limitations and challenges with current GitOps solutions are.
+## 踏上 GitOps 之路
 
-Templating will play an important role in abstracting and scaling GitOps for large clusters and services. You will need to experiment and look at what feels right for your organization. 
+对于踏上 GitOps 之路的组织，可以开始评估现有解决方案，并根据组织目标验证每个解决方案，同时牢记当前 GitOps 解决方案的局限性和挑战。
 
-As with any changes that you want to introduce to your organization, start small with single application team and build success stories that can motivate others to start adopting GitOps. GitOps adoption will require the stakeholders' buy-in. They need to see that GitOps will help them solve their problems and make their work easier and effective.
+模板化将在抽象和扩展用于大型集群和服务的 GitOps 中发挥重要作用。你需要进行实验，并查看哪种方法对你的组织最合适。
 
-GitOps is a relatively new practice and it's still maturing. As this technology grows, open-source communities and vendors will work to solve some of its limitations. If you are interested in exploring this topic further, you can check GitOps Working Group from CNCF.
+与任何要引入到组织中的变化一样，从一个单一应用程序团队开始，建立成功案例，激励其他人开始采用 GitOps。GitOps 的采用需要相关利益相关者的支持。他们需要看到 GitOps 将帮助他们解决问题，使他们的工作更轻松和有效。
 
+GitOps 是一种相对较新的实践，仍在不断发展。随着这项技术的发展，开源社区和供应商将努力解决一些限制。如果你对进一步探讨这个主题感兴趣，可以查看 CNCF 的 GitOps Working Group。

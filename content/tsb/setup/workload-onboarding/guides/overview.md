@@ -35,8 +35,8 @@ workloadGroup:                                 # 加入至
 
 | 组件                         | 描述                                                         |
 | ---------------------------- | ------------------------------------------------------------ |
-| Workload Onboarding Operator | 安装到您的 Kubernetes 集群中作为 TSB 控制平面的一部分        |
-| Workload Onboarding Agent    | 需要安装到您的虚拟机工作负载旁边的组件                       |
+| Workload Onboarding Operator | 安装到你的 Kubernetes 集群中作为 TSB 控制平面的一部分        |
+| Workload Onboarding Agent    | 需要安装到你的虚拟机工作负载旁边的组件                       |
 | Workload Onboarding Endpoint | Workload Onboarding Agent 将连接注册工作负载并获取 Istio Sidecar 的引导配置的组件 |
 
 以下图表概述了完整的上线流程：

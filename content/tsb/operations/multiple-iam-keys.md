@@ -1,26 +1,23 @@
 ---
-title: Configure multiple IAM token validation keys
-description: Configure multiple IAM token validation keys.
+title: 配置多个 IAM 令牌验证密钥
+description: 配置多个 IAM 令牌验证密钥。
 weight: 8
 ---
 
-This document describes how to configure the Management Plane IAM service to have multiple keys to validate
-JWT tokens. This can be useful when rotating the IAM signing key while still allowing access for tokens issued with the old
-key that has not yet expired.
+本文描述如何配置管理平面 IAM 服务以具有多个密钥来验证 JWT 令牌。当轮换 IAM 签名密钥但仍允许访问使用旧密钥签发且尚未过期的令牌时，这将非常有用。
 
-The following example illustrates the process of migrating the main IAM signing key from using the key from the `tsb-certs`
-certificate to use a custom signing key.
+以下示例演示了从`tsb-certs`证书使用主 IAM 签名密钥迁移至使用自定义签名密钥的过程。
 
-## Fetching the current signing key
+## 获取当前签名密钥
 
-First of all you need to retrieve the configuration for the token issuer with:
+首先，你需要使用以下命令检索带有令牌签发者配置的配置：
 
 ```bash
 kubectl -n tsb get managementplane managementplane
 ```
 
-And find the [token issuer](../refs/install/managementplane/v1alpha1/spec#tetrateio-api-install-managementplane-v1alpha1-jwtsettings) configuration.
-In this example, the following issuer is configured:
+并找到[token 签发者](../../refs/install/managementplane/v1alpha1/spec#tetrateio-api-install-managementplane-v1alpha1-jwtsettings)配置。
+在此示例中，配置如下所示：
 
 ```yaml
 tokenIssuer:
@@ -34,17 +31,16 @@ tokenIssuer:
     tokenPruneInterval: 3600s
 ```
 
-This indicates that the current signing key is the one in the `tls.key` entry in the `tsb-certs` secret. We can retrieve it and save it for later as follows:
+这表示当前的签名密钥是`tsb-certs`秘密中的`tls.key`条目。我们可以检索它并保存以备将来使用：
 
 ```bash
 kubectl get secret -n tsb tsb-certs -o jsonpath='{.data.tls\.key}' | base64 -d >/tmp/old-key.pem
 ```
 
-## Generating a new secret for the signing keys
+## 生成新的签名密钥的新密钥
 
-The next thing is to generate a new secret with the new IAM signing key. This can be done in many ways, but in this example you'll create a new RSA key.
-Please refer to the [supported key algorithms list](../refs/install/managementplane/v1alpha1/spec#tetrateio-api-install-managementplane-v1alpha1-jwtsettings-issuer-algorithm)
-for further details about the supported keys.
+接下来要做的是生成一个新的秘密，其中包含新的 IAM 签名密钥。这可以通过多种方式完成，但在此示例中，你将创建一个新的 RSA 密钥。
+有关支持的密钥的详细信息，请参阅[支持的密钥算法列表](../../refs/install/managementplane/v1alpha1/spec#tetrateio-api-install-managementplane-v1alpha1-jwtsettings-issuer-algorithm)。
 
 ```bash
 $ cat /opt/iam-key.pem
@@ -70,7 +66,9 @@ e/T+50mvt3KWdvvgiG3CUpCs5sagccKJGTJYp9JvAoGBALbl6IDIXjpZQ0gQEhOo
 xv6ygyN0QPYdI7LgWcX100d42WeZ76k40XBvMK03Gn9y7prr63i/l25PM2ZmOotU
 zgwUriTWGPcZkzcVbI84taXfStL+LSPGbukFbSIHkZaRlVk5k9LxiXYvxuJ5p+nM
 vmeLzQz3O+5OGk9k+CtBIaSpAoGBALZBIIvdjL8wT3Cv/OyjA2my4QRUt2M5806l
-YXnZArxyDUJDI7SP4z8yDvFkQ9sqHr2bN6GNPs03ZWa5nKYisAPAlmh24OSUFPFv
+YXnZArxyDUJDI7SP4z8yDvFkQ9sqHr2bN6GNPs03ZW
+
+a5nKYisAPAlmh24OSUFPFv
 ZNDUgHgn1PIDpyhB95PLALiu9e+es5b1ZEBJQf4AMyZTS1Tn7Dc3t6UhI3CKBEze
 VUzdUQ7rAoGBAJ9y76IWic7PIBbstNOq0ejsq3iMEoH/fn84lYwMDEzRLV3Y+HvQ
 mu69O2h7ud88ozXJntC0VTv2nU1cKpiMHq3jZ0vxNmJomd7wKxwunKAZj8GJczhm
@@ -78,7 +76,7 @@ mu69O2h7ud88ozXJntC0VTv2nU1cKpiMHq3jZ0vxNmJomd7wKxwunKAZj8GJczhm
 -----END RSA PRIVATE KEY-----
 ```
 
-Then you will generate a new secret that contains the new key and the OLD key as well:
+然后，你将生成一个包含新密钥和旧密钥的新秘密：
 
 ```bash
 kubectl -n tsb create secret generic iam-signing-keys \
@@ -86,7 +84,7 @@ kubectl -n tsb create secret generic iam-signing-keys \
     --from-file=old.key=/tmp/old-key.pem
 ```
 
-This would create a secret like the following one, containing the old and the new key:
+这将创建一个包含旧密钥和新密钥的秘密，如下所示：
 
 ```bash
 kubectl -n tsb get secret iam-signing-keys -o yaml
@@ -102,12 +100,11 @@ metadata:
   resourceVersion: "3378979"
   uid: 54cea82b-4505-49bb-a12e-fe6f5fbee1de
 type: Opaque
- ```
+```
 
-## Updating the Management Plane to use the new keys
+## 更新管理平面以使用新密钥
 
-Once the secret with all the IAM signing keys has been created, all that is needed is to update the `tokenIssuer` in the `ManagementPlane` CR or Helm values 
-accordingly. In our example, it would be as follows:
+一旦创建了包含所有 IAM 签名密钥的秘密，只需要相应地更新`ManagementPlane` CR 或 Helm 值中的`tokenIssuer`即可。在我们的示例中，如下所示：
 
 ```yaml
 tokenIssuer:
@@ -125,18 +122,13 @@ tokenIssuer:
     tokenPruneInterval: 3600s
 ```
 
-The changes needed are:
+需要进行的更改包括：
 
-* Update the `signingKeysSecret` to use the newly created secret containing the two keys.
-* Declare two issuers, one for each key in the new secret. The **first issuer** in the list is the one that will be used to sign new JWT tokens,
-  so make sure you put the new key first if you want it to be used to sign the new JWT tokens. The rest of the issuer's keys will be only used
-  for token verification.
+* 更新`signingKeysSecret`以使用包含两个密钥的新创建的秘密。
+* 声明两个签发者，一个用于新密钥中的每个密钥。列表中的**第一个签发者**将用于签署新的 JWT 令牌，因此如果要使用新密钥签署新的 JWT 令牌，请确保首先放置新密钥。其余签发者的密钥仅用于令牌验证。
 
-:::note
-It is important that you choose **a different issuer** (it can be any string) for the new key and that you keep the old issuer for the old
-key. Otherwise token verification will not work.
-:::
+{{<callout note 注意>}}
+重要的是，你选择**不同的签发者**（可以是任何字符串）用于新密钥，同时保留旧密钥的旧签发者。否则，令牌验证将无法正常工作。
+{{</callout>}}
 
-Once the token issuer information has been updated in the `ManagementPlane`, new tokens will be issued with the new key, and old tokens will
-still be accepted. Once all tokens have been migrated and the old key is not needed anymore, the old issuer can be removed from the issuers list
-and the old key can be removed from the secret as well.
+一旦在`ManagementPlane`中更新了令牌签发者信息，将使用新密钥签发新令牌，而旧令牌仍将被接受。一旦所有令牌都已迁移且不再需要旧密钥，就可以从签发者列表中删除旧签发者，还可以从秘密中删除旧密钥。

@@ -1,24 +1,25 @@
 ---
-title: User Synchronization
+title: 用户同步
+weight: 4
 ---
 
-TSB has a teamsync component that will periodically connect to your Identity Provider (IdP) and sync user and team information into TSB.
+TSB 拥有一个 teamsync 组件，它会定期连接到你的身份提供者（IdP），并将用户和团队信息同步到 TSB 中。
 
-Currently teamsync supports [LDAP](https://en.wikipedia.org/wiki/Lightweight_Directory_Access_Protocol) and [Azure AD](https://azure.microsoft.com/services/active-directory/), and will do The Right Thing for you automatically. However, if you are using another IdP, you will need to manually perform these tasks. This document will describe how to perform them.
+目前，teamsync 支持[LDAP](https://en.wikipedia.org/wiki/Lightweight_Directory_Access_Protocol)和[Azure AD](https://azure.microsoft.com/services/active-directory/)，并会自动为你执行正确的操作。但是，如果你使用其他 IdP，你将需要手动执行这些任务。本文将描述如何执行这些任务。
 
-Before you start, make sure that you have:
+在开始之前，请确保你已经：
 
-✓ [Installed TSB Management Plane](../../setup/self_managed/management-plane-installation) <br />
-✓ [Login to TSB with tctl](../../setup/tctl_connect) with administrator account<br />
-✓ Get your TSB's organization name - Make sure to use organization name configured at installation time in the TSB `ManagementPlane` CR.
+- [安装了 TSB 管理平面](../../../setup/self-managed/management-plane-installation)
+- 使用管理员帐户[登录到 TSB](../../../setup/tctl-connect)。
+- 获取你的 TSB 的组织名称 - 确保使用在 TSB `ManagementPlane` CR 中配置的安装时的组织名称。
 
-## Create Organization
+## 创建组织
 
-Teamsync not only syncs your users and teams, but it also creates an organization when run for the first time after TSB management plane components are installed.
+Teamsync 不仅同步你的用户和团队，还会在首次运行 TSB 管理平面组件安装后创建一个组织。
 
-Therefore if you are using an IdP that is not supported by teamsync, you will also need to perform this step manually.
+因此，如果你使用的 IdP 不受 teamsync 支持，你还需要手动执行此步骤。
 
-To create an organization, create following `organization.yaml` and then apply with tctl
+要创建一个组织，请创建以下`organization.yaml`文件，然后使用 tctl 应用它
 
 ```yaml
 apiVersion: api.tsb.tetrate.io/v2
@@ -29,23 +30,23 @@ metadata:
 
 ```bash
 tctl apply -f organization.yaml
-````
+```
 
-## Synchronizing Users and Teams Manually
+## 手动同步用户和团队
 
-Synchronization entails fetching users and teams information from IdP and transforming them into a structure that TSB sync API payload then send sync request to TSB API Server. Once they are synchronized, you can assign roles to the users and teams to give them access to TSB resources.
+同步涉及从 IdP 获取用户和团队信息，然后将它们转换为 TSB 同步 API 负载的结构，然后将同步请求发送到 TSB API 服务器。一旦它们被同步，你可以为用户和团队分配角色，以赋予它们访问 TSB 资源的权限。
 
-![](../../assets/operations/teamsync.png)
+![](../../../assets/operations/teamsync.png)
 
-### Fetch Users and Teams from IdP
+### 从 IdP 获取用户和团队
 
-Details of this step will vary depending on your IdP. You should check your IdP documentation on how to get users and teams. For example, If you are using Okta you may be able to use [List users](https://developer.okta.com/docs/reference/api/users/) and [List groups](https://developer.okta.com/docs/reference/api/groups/) API. Similarly if you are using Keycloak, you may be able to use [List users](https://www.keycloak.org/docs-api/15.0/rest-api/index.html#_users_resource) and [List groups](https://www.keycloak.org/docs-api/15.0/rest-api/index.html#_groups_resource) API.
+此步骤的详细信息将取决于你的 IdP。你应该查阅你的 IdP 文档，了解如何获取用户和团队。例如，如果你使用 Okta，你可以使用[List users](https://developer.okta.com/docs/reference/api/users/)和[List groups](https://developer.okta.com/docs/reference/api/groups/) API。类似地，如果你使用 Keycloak，你可以使用[List users](https://www.keycloak.org/docs-api/15.0/rest-api/index.html#_users_resource)和[List groups](https://www.keycloak.org/docs-api/15.0/rest-api/index.html#_groups_resource) API。
 
-### Transform Data into TSB sync API payload
+### 将数据转换为 TSB 同步 API 负载
 
-Once you obtain the list of users and teams from your IdP, you need to transform them into TSB sync API payload format. The exact details on how to perform this transformation depends on the payload format of your IdP API.
+一旦你从 IdP 获取用户和团队列表，你需要将它们转换为 TSB 同步 API 负载格式。如何执行此转换的确切细节取决于你的 IdP API 的负载格式。
 
-Following is an example of sync API payload. Refer to <a href="../../rest#tag/Organizations/operation/Organizations_SyncOrganization">Sync Organization API</a> for more details.
+以下是同步 API 负载的示例。有关更多详细信息，请参阅<a href="../../rest#tag/Organizations/operation/Organizations_SyncOrganization">同步组织 API</a>。
 
 ```json
 {
@@ -55,28 +56,28 @@ Following is an example of sync API payload. Refer to <a href="../../rest#tag/Or
             "id": "user_1_id",
             "email": "user_1@email.com",
             "loginName": "user1",
-            "displayName": "User 1"
+            "displayName": "用户 1"
         },
         {
             "id": "user_2_id",
             "email": "user_2@email.com",
             "loginName": "user2",
-            "displayName": "User 2"
+            "displayName": "用户 2"
         },
     ],
     "teams": [
         {
             "id": "team_1_id",
-            "description": "Team 1 description",
-            "displayName": "Team 1",
+            "description": "团队 1 描述",
+            "displayName": "团队 1",
             "memberUserIds": [
                 "user_1_id"
             ]
         },
          {
             "id": "team_2_id",
-            "description": "Team 2 description",
-            "displayName": "Team 2",
+            "description": "团队 2 描述",
+            "displayName": "团队 2",
             "memberUserIds": [
                 "user_2_id"
             ]
@@ -85,11 +86,11 @@ Following is an example of sync API payload. Refer to <a href="../../rest#tag/Or
 }
 ```
 
-### Send Sync API Request
+### 发送同步 API 请求
 
-After you have transformed the IdP payload into TSB sync API payload, you can send requests to the TSB API server to  synchronize the data .
+在将 IdP 负载转换为 TSB 同步 API 负载后，你可以向 TSB API 服务器发送请求以同步数据。
 
-The following example uses `curl` to send a request to the TSB API server running on `<tsb-host>:8443`, using the TSB admin user credentials. The TSB sync API payload is assumed to be stored in the file `/path/to/data.json`
+以下示例使用`curl`向运行在`<tsb-host>:8443`上的 TSB API 服务器发送请求，使用 TSB 管理员用户凭据。假定 TSB 同步 API 负载存储在文件`/path/to/data.json`中
 
 ```bash
 curl --request POST \
@@ -99,6 +100,16 @@ curl --request POST \
   --data-binary '@/path/to/data.json'
 ```
 
-### Automating the Process
+### 自动化流程
 
-Now that you know how teamsync works, you can create a service that runs periodically (e.g. as `cron` job) using your favorite programming language to automate the synchronization process.
+现在你知道 teamsync 如何工作，你可以创建一个定期运行的服务（例如作为`cron`作业），使用你喜欢的编程语言来自动化同步过程。
+
+
+这是关于 TSB 中用户同步的文档。TSB 有一个 teamsync 组件，用于定期连接到你的身份提供者（IdP），将用户和团队信息同步到 TSB 中。目前，teamsync 支持 LDAP 和 Azure AD，但如果你使用其他 IdP，需要手动执行同步任务。
+
+在开始之前，确保你已经完成了以下步骤：
+- 安装了 TSB 管理平面
+- 使用管理员帐户登录到 TSB
+- 获取了 TSB 的组织名称，这应该是在安装 TSB 时配置的组织名称。
+
+首先，文档介绍了如何手动创建一个组织，因为 teamsync 在首次运行时会自动创建组织。然后，它详细描述了如何手动从 IdP 获取用户和团队信息，将其转换为 TSB 同步 API 负载格式，然后将其同步到 TSB。最后，文档提到可以自动化这个过程，例如使用定期运行的服务来自动同步用户和团队信息。

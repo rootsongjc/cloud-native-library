@@ -1,47 +1,47 @@
 ---
-title: Controlling Access to External Services
-description: Using Egress Gateways to Configure Access to External Services
-weight: 7
+title: 控制对外部服务的访问
+description: "使用 Egress Gateway 配置对外部服务的访问。"
+weight: 10
 ---
 
-Egress Gateways act as a gateway for traffic *exiting* the mesh. Users are able to define services that are allowed to send traffic to external services through the gateway
+Egress Gateway 充当流出网格的流量网关。用户可以定义允许通过网关向外部服务发送流量的服务。
 
-Currently only HTTPS can be sent externally. However, the original outbound requests should use HTTP. These outbound HTTP requests are converted to HTTPS requests and sent to the external services. For example, a request to `http://tetrate.io` from the service that goes through an Egress Gateway is converted to a request to `https://tetrate.io`, and is proxied on behalf of the originating service. Currently requests that are ultimately need to be HTTP are not supported. For example, you will not be able to use Egress Gateways if your final destination is `http://tetrate.io`
+目前只能发送外部的 HTTPS 流量。但是，原始的出站请求应使用 HTTP。这些出站 HTTP 请求会转换为 HTTPS 请求并发送到外部服务。例如，从通过 Egress Gateway 经过的服务发送到 `http://tetrate.io` 的请求会被转换为对 `https://tetrate.io` 的请求，并代表原始服务进行代理。目前不支持最终需要是 HTTP 的请求。例如，如果你的最终目的地是 `http://tetrate.io`，则无法使用 Egress Gateway。
 
-This document will describe how to configure Egress Gateways to allow services to only send outbound requests to specific services.  The following diagram shows the request and response flow when using an Egress Gateway:
+本文将描述如何配置 Egress Gateway，允许服务只能向特定服务发送出站请求。以下图示显示了在使用 Egress Gateway 时的请求和响应流程：
 
-[![](../../assets/howto/egress-gateway-flow.png)](../../assets/howto/egress-gateway-flow.png)
+![Egress Gateway 流程](../../../assets/howto/egress-gateway-flow.png)
 
-Before you get started, make sure you:<br />
-✓ Familiarize yourself with [TSB concepts](../../concepts/toc) <br />
-✓ Install the TSB environment. You can use [TSB demo](../../setup/self_managed/demo-installation) for quick install<br />
-✓ Completed [TSB usage quickstart](../../quickstart). This document assumes you already created Tenant and are familiar with Workspace and Config Groups. Also you need to configure tctl to your TSB environment.
+在开始之前，请确保你已经：
+- 熟悉 [TSB 概念](../../../concepts/)
+- 安装了 TSB 环境。你可以使用 [TSB 演示](../../../setup/self-managed/demo-installation) 进行快速安装。
+- 完成了 [TSB 快速入门](../../../quickstart)。本文假定你已经创建了租户，并熟悉 Workspace 和 Config Group。还需要将 tctl 配置到你的 TSB 环境中。
 
-Please note that in the following example you will deploy Egress Gateway in the demo cluster that you have created using the TSB demo install. If you are using another cluster, change the cluster name in the example accordingly.
+请注意，在以下示例中，你将在使用 TSB 演示安装创建的演示集群中部署 Egress Gateway。如果你使用其他集群，请相应更改示例中的集群名称。
 
-## Deploy Sleep Services
+## 部署 Sleep 服务
 
-In this example you will use two `sleep` services, each living in separate namespaces.
+在本示例中，你将使用两个 `sleep` 服务，它们各自位于不同的命名空间中。
 
-Create the namespaces `sleep-one` and `sleep-two`:
+创建命名空间 `sleep-one` 和 `sleep-two`：
 
 ```bash
 kubectl create namespace sleep-one
 kubectl create namespace sleep-two
 ```
 
-Then follow the instructions in the ["Installing `sleep` Workload in TSB"](../../reference/samples/sleep_service#create-a-sleep-workspace) document to install sleep service two sleep services in the `demo` cluster. Install the service `sleep-one` in namespace `sleep-one`, and the service `sleep-two` in namespace `sleep-two`, respectively
+然后按照["在 TSB 中安装 `sleep` Workload"](../../../reference/samples/sleep-service#create-a-sleep-workspace)文档中的说明，在 `demo` 集群中安装两个 `sleep` 服务。将服务 `sleep-one` 安装在命名空间 `sleep-one` 中，将服务 `sleep-two` 安装在命名空间 `sleep-two` 中。
 
-You do **NOT** need to create a Workspace, as you will do this later in this example.
+你**无需**创建 Workspace，因为你将在本示例中稍后创建。
 
-## Create Workspace and Traffic Group for Sleep Services
+## 为 Sleep 服务创建 Workspace 和 Traffic Group
 
-You will need a Traffic Group to associate with the Egress Gateway that you will be creating later. Since a Traffic Group belongs to a Workspace, you will need to create a Workspace as well.
+你将需要一个 Traffic Group 来与稍后创建的 Egress Gateway 关联。由于 Traffic Group 属于 Workspace，你还需要创建一个 Workspace。
 
-Create a file name `sleep-workspace.yaml` with the following contents. Replace the values for `cluster`, `organization`, and `tenant` accordingly. For demo installations, you can use the value `demo` for the `cluster`, and `tetrate` for both `organization` and `tenant`.
+创建一个名为 `sleep-workspace.yaml` 的文件，其内容如下。根据需要替换 `cluster`、`organization` 和 `tenant` 的值。在演示安装中，你可以为 `cluster` 使用值 `demo`，对于 `organization` 和 `tenant`，都可以使用值 `tetrate`。
 
 ```yaml
-apiversion: api.tsb.tetrate.io/v2
+apiVersion: api.tsb.tetrate.io/v2
 kind: Workspace
 metadata:
   organization: <organization>
@@ -52,7 +52,7 @@ spec:
   namespaceSelector:
     names:
       - "<cluster>/sleep-one"
-      - "<clluser>/sleep-two"
+      - "<cluster>/sleep-two"
 ---
 apiVersion: traffic.tsb.tetrate.io/v2
 kind: Group
@@ -70,27 +70,27 @@ spec:
   configMode: BRIDGED
 ```
 
-Apply with `tctl`:
+使用以下命令应用：
 
 ```bash
 tctl -f sleep-workspace.yaml
 ```
 
-## Deploy Egress Gateway
+## 部署 Egress Gateway
 
-### Create the Egress Gateway Namespace
+### 创建 Egress Gateway 命名空间
 
-Egress gateways are typically managed by a separate team than the one developing the app (in this case, the `sleep` services) to avoid the ownerships being mixed up.
+通常，Egress Gateway 由与开发应用程序不同的团队管理（在本例中是 `sleep` 服务），以避免混淆所有权。
 
-In this example we create a separate namespace `egress` to manage the Egress Gateway. Execute the following command to create a new namespace:
+在本示例中，我们创建一个名为 `egress` 的单独命名空间来管理 Egress Gateway。执行以下命令创建新命名空间：
 
 ```bash
 kubectl create namespace egress
 ```
 
-### Deploy the Egress Gateway
+### 部署 Egress Gateway
 
-Create a file called `egress-deploy.yaml` with the following contents:
+创建一个名为 `egress-deploy.yaml` 的文件，其内容如下：
 
 ```yaml
 apiVersion: install.tetrate.io/v1alpha1
@@ -104,20 +104,20 @@ spec:
       type: NodePort  
 ```
 
-Apply with kubectl:
+使用 kubectl 应用：
 
 ```bash
 kubectl apply -f egress-deploy.yaml
 ```
 
-### Create a Workspace and a Gateway Group for Egress Gateway
+### 为 Egress Gateway 创建 Workspace 和 Gateway Group
 
-You will also need to create a Workspace and a Gateway Group for the Egress Gateway that you just created.
+你还需要为刚刚创建的 Egress Gateway 创建一个 Workspace 和 Gateway Group。
 
-Create a file named `egress-workspace.yaml` with the following contents. Replace the values for `cluster`, `organization`, and `tenant` accordingly. For demo installations, you can use the value `demo` for the `cluster`, and `tetrate` for both `organization` and `tenant`.
+创建一个名为 `egress-workspace.yaml` 的文件，其内容如下。根据需要替换 `cluster`、`organization` 和 `tenant` 的值。在演示安装中，你可以为 `cluster` 使用值 `demo`，对于 `organization` 和 `tenant`，都可以使用值 `tetrate`。
 
 ```yaml
-apiversion: api.tsb.tetrate.io/v2
+apiVersion: api.tsb.tetrate.io/v2
 kind: Workspace
 metadata:
   organization: <organization>
@@ -144,19 +144,21 @@ spec:
   configMode: BRIDGED
 ```
 
-Apply with tctl
+使用 tctl 应用：
 
 ```bash
 tctl apply -f egress-workspace.yaml
 ```
 
-## Configure Egress Gateway
+## 配置 Egress Gateway
 
-In this example, you will be applying different configurations to the two `sleep` services.
+在本示例中，你将对两个 `sleep` 服务应用不同的配置。
 
-`sleep-one` will be configured so that it can access all external URLs, but `sleep-two` will only be allowed to access a single destination (in this sample, "edition.cnn.com").
+`sleep-one` 将被配置为可以访问所有外部 URL，但 `sleep-two` 只允许访问单
 
-Create a file named `egress-config.yaml` with the following contents. Replace the values for `organization` and `tenant` accordingly. For demo installations, you can use the value `tetrate` for both `organization` and `tenant`.
+一目标（在此示例中为 "edition.cnn.com"）。
+
+创建一个名为 `egress-config.yaml` 的文件，其内容如下。根据需要替换 `organization` 和 `tenant` 的值。在演示安装中，你可以为 `organization` 和 `tenant` 使用值 `tetrate`。
 
 ```yaml
 apiVersion: gateway.tsb.tetrate.io/v2
@@ -183,19 +185,19 @@ spec:
       to: ["edition.cnn.com"]
 ```
 
-Apply with tctl
+使用 tctl 应用：
 
 ```bash
 tctl apply -f egress-config.yaml
 ```
 
-## Create TrafficSettings to use Egress Gateway
+## 创建 TrafficSettings 以使用 Egress Gateway
 
-Finally, create traffic settings to tie the Traffic Group that the services are associated to with the Egress Gateway.
+最后，创建 TrafficSettings，将服务关联到 Traffic Group，并与刚刚创建的 Egress Gateway 关联。
 
-Create a file named `sleep-traffic-setting-egress.yaml` with the following contents. Replace the values for `organization` and `tenant` accordingly. For demo installations, you can use the value `tetrate` for both `organization` and `tenant`.
+创建一个名为 `sleep-traffic-setting-egress.yaml` 的文件，其内容如下。根据需要替换 `organization` 和 `tenant` 的值。在演示安装中，你可以为 `organization` 和 `tenant` 使用值 `tetrate`。
 
-The `host` value is in `<namespace>/<fqdn>` format. The `fqdn` value is derived from the `namespace` and `metadata.name` values specified in the previous step:
+`host` 值的格式为 `<namespace>/<fqdn>`。`fqdn` 值是从前面步骤中指定的 `namespace` 和 `metadata.name` 值派生的：
 
 ```yaml
 apiVersion: traffic.tsb.tetrate.io/v2
@@ -211,24 +213,24 @@ spec:
     host: egress/cluster-egress.egress.svc.cluster.local
 ```
 
-Apply this with tctl:
+使用 tctl 应用：
 
 ```bash
 tctl apply -f sleep-traffic-setting-egress.yaml
 ```
 
-## Testing
+## 测试
 
-To test whether Egress Gateway is working correctly, you will be sending requests from the `sleep` services to external services.
+要测试 Egress Gateway 是否正常工作，你将从 `sleep` 服务发送请求到外部服务。
 
-For this you will need to figure out the Pod names for `sleep-one` and `sleep-two`. Execute the following commands to lookup the Pod names:
+为此，你需要找出 `sleep-one` 和 `sleep-two` 的 Pod 名称。执行以下命令查找 Pod 名称：
 
 ```bash
 export SLEEP_ONE_POD=$(kubectl get pod -n sleep-one -l app=sleep -o jsonpath='{.items[*].metadata.name}')
 export SLEEP_TWO_POD=$(kubectl get pod -n sleep-two -l app=sleep -o jsonpath='{.items[*].metadata.name}')
 ```
 
-Execute the following commands against `sleep-one`. Since you have configured the Egress Gateway such that `sleep-one` is allowed to access all external services, the following commands should all display "200":
+对 `sleep-one` 执行以下命令。由于你已经配置了 Egress Gateway，使得 `sleep-one` 允许访问所有外部服务，因此以下命令应该都显示 "200"：
 
 ```bash
 kubectl exec ${SLEEP_ONE_POD} -n sleep-one -c sleep -- \
@@ -260,6 +262,4 @@ kubectl exec ${SLEEP_ONE_POD} -n sleep-one -c sleep -- \
     -w "%{http_code}\n"
 ```
 
-Do the same for service `sleep-two` by replacing `SLEEP_ONE_POD` to `SLEEP_TWO_POD`, and `sleep-one` to `sleep-two`, respectively.
-
-This time, only requests to edition.cnn.com should display "200". All other requests should display "403".
+对 `sleep-two` 执行相同操作，将 `SLEEP_ONE_POD` 替换为 `SLEEP_TWO_POD`，将 `sleep-one` 替换为 `sleep-two`。这次，只有对 edition.cnn.com 的请求应该显示 "200"，所有其他请求应该显示 "403"。

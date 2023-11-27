@@ -1,69 +1,63 @@
 ---
-title: "Extended Demo Environment"
+title: 扩展演示环境
+weight: 3
 ---
 
+添加第二个 Edge Gateway 以提供 Edge 高可用性。
 
-# Extending the Demonstration Environment
+我们将扩展在[演示环境](../demo-1)说明中描述的演示环境。我们将在第二个区域中添加一个额外的 Edge 集群，并部署一个 Edge Gateway：
 
-_Add a second Edge Gateway for Edge High Availability_
+- 在 **region-2** 上登记一个额外的 Edge 集群
+- 扩展 Tetrate 配置以涵盖 **edge-ws**，并创建第二个 **edge-gwgroup-2** 组
+- 创建一个 **edge** 命名空间并在该命名空间中部署一个 **Edge Gateway**
+- 部署一个为该 **Edge Gateway** 暴露服务的 **Gateway** 资源
 
-We'll extend the demonstration environment described in the [Demonstration Environment](demo-1) instructions.  We'll add one more Edge cluster in the second region, and deploy an Edge Gateway:
+![Edge 和工作负载负载均衡](../images/edge-workload-2.png)
 
- * Onboard an additional Edge Cluster in **region-2**
- * Extend the Tetrate configuration for the **edge-ws** and create a second **edge-gwgroup-2** group
- * Create an **edge** namespace and deploy an **Edge Gateway** into that namespace
- * Deploy a Gateway resource for that **Edge Gateway**
+#### 开始之前
 
-| [![Edge and Workload Load Balancing](images/edge-workload-2.png "Edge and Workload Load Balancing")](images/edge-workload-2.png) _Edge and Workload Load Balancing_ |
-|  :--:  |
+在配置中有许多组件，因此在继续之前，标识并命名每个组件将非常有帮助：
 
+|                     | **cluster-1**      | **cluster-2**      | **cluster-edge** | **cluster-edge-2** |
+| ------------------- | ------------------ | ------------------ | ---------------- | ------------------ |
+| AWS 区域：          | eu-west-1          | eu-west-2          | eu-west-1        | eu-west-2          |
+| 命名空间：          | bookinfo           | bookinfo           | edge             | edge               |
+| 工作空间：          | bookinfo-ws        | bookinfo-ws        | edge-ws          | edge-ws            |
+| 网络：              | app-network        | app-network        | edge-network     | edge-network       |
+| 网关组：            | bookinfo-gwgroup-1 | bookinfo-gwgroup-2 | edge-gwgroup     | edge-gwgroup-2     |
+| 入口网关：          | ingressgw-1        | ingressgw-2        | edgegw           | edgegw-2           |
+| 网关资源：          | bookinfo-ingress-1 | bookinfo-ingress-2 | bookinfo-edge    | bookinfo-edge-2    |
+| Kubectl 上下文别名：| `k1`               | `k2`               | `k3`             | `k4`               |
 
-#### Before you Begin
+### 先决条件
 
-There are a number of moving parts in the configuration, so it's helpful to identify and name each part before proceeding:
+这些说明从[创建演示环境](../demo-1)中描述的部署中继续。
 
+### 扩展演示环境
 
-|                        | **cluster-1** | **cluster-2** | **cluster-edge** | **cluster-edge-2** |
-| ---------------------- | ------------- | ------------- | ---------------- | -------------------|
-| AWS Region:            | eu-west-1     | eu-west-2     | eu-west-1        | eu-west-2          |
-| Namespace:             | bookinfo      | bookinfo      | edge             | edge               |
-| Workspace:             | bookinfo-ws   | bookinfo-ws   | edge-ws          | edge-ws            |
-| Networks:              | app-network   | app-network   | edge-network     | edge-network       |
-| Gateway Group:         | bookinfo-gwgroup-1 | bookinfo-gwgroup-2 | edge-gwgroup | edge-gwgroup-2 |
-| Ingress Gateway:       | ingressgw-1   | ingressgw-2   | edgegw           | edgegw-2           |
-| Gateway resource:      | bookinfo-ingress-1 | bookinfo-ingress-2 | bookinfo-edge | bookinfo-edge-2 |
-| Kubectl context alias: | `k1`          | `k2`          | `k3`             | `k4`               |
+#### 添加第二个 Edge Gateway
 
+我们将执行以下步骤：
 
-### Prerequisites
-
-These instructions pick up from the deployment described in [Creating the Demonstration Environment](demo-1).
-
-## Extend the Demo Environment
-
-### Add the second Edge Gateway
-
-We will:
-
- 1. Onboard an additional Edge cluster
- 1. Extend the Tetrate Configuration (**Workspace**, new **Gateway Group**, **Cluster Settings**)
- 1. Configure the cluster to add the **edge** namespace and the **Tier1Gateway**
- 1. Deploy the **Gateway** resource to expose the service
+1. 登记一个额外的 Edge 集群
+2. 扩展 Tetrate 配置（**工作空间**、新的**网关组**、**集群设置**）
+3. 配置集群以添加 **edge** 命名空间和 **Tier1Gateway**
+4. 部署 **Gateway** 资源以公开服务
 
 <details>
-<summary>How we do it...</summary>
+<summary>操作步骤...</summary>
 
-#### Onboard the additional Edge cluster
+#### 登记额外的 Edge 集群
 
-Follow the instructions for Tetrate Service Express or Tetrate Service Bridge to onboard the new **cluster-edge-2** cluster.  Make sure to install any required dependencies, such as the AWS Load Balancer Controller or the Tetrate Route 53 Controller.
+按照 Tetrate Service Express 或 Tetrate Service Bridge 的说明，登记新的 **cluster-edge-2** 集群。确保安装任何所需的依赖项，例如 AWS 负载均衡控制器或 Tetrate Route 53 控制器。
 
-#### Extend the Tetrate configuration
+#### 扩展 Tetrate 配置
 
-We will:
+我们将执行以下操作：
 
- * Extend the **edge-ws** Workspace to include the new cluster and namespace (to be created)
- * Add a **Gateway Group** for the new cluster
- * Edit the Cluster settings, setting the **tier1Cluster** and **network** values
+- 扩展 **edge-ws** 工作空间，以包括新的集群和命名空间（稍后创建）
+- 添加一个新的 **网关组** 用于新的集群
+- 编辑集群设置，设置 **tier1Cluster** 和 **network** 值
 
 ```bash
 cat <<EOF > edge-ws.yaml
@@ -100,11 +94,11 @@ EOF
 tctl apply -f edge-gwgroup-2.yaml
 ```
 
-Use the UI to edit the **edge-cluster-2** cluster, setting "Is Tier 1?" to **true** and assigning the **Edge-Network** network.
+使用界面编辑 **edge-cluster-2** 集群，将 "Is Tier 1?" 设置为 **true** 并分配 **Edge-Network** 网络。
 
-#### Configure the Cluster
+#### 配置集群
 
-Create the **edge** namespace and deploy the Edge Gateway. Remember to set the kubectl context or use your context alias to point to **cluster-edge-2**.
+创建 **edge** 命名空间并部署 Edge Gateway。记得设置 kubectl 上下文或使用上下文别名来指向 **cluster-edge-2**。
 
 ```bash
 kubectl create namespace edge
@@ -125,7 +119,7 @@ EOF
 kubectl apply -f edgegw-2.yaml
 ```
 
-#### Deploy the Gateway resource
+#### 部署 Gateway 资源
 
 ```bash
 cat <<EOF > bookinfo-edge-2.yaml
@@ -157,44 +151,40 @@ tctl apply -f bookinfo-edge-2.yaml
 
 </details>
 
+一旦配置完成，你的集群摘要应如下所示：
 
-Once configuration is complete, your Cluster Summary should resemble the following:
+![集群摘要](../images/cluster-summary-2.png)
 
-| [![Cluster summary](images/cluster-summary-2.png "Cluster summary")](images/cluster-summary-2.png) _Cluster summary_ |
-|  :--:  |
+#### 验证服务是否正常运行
 
+{{<callout note "无需 DNS">}}
 
-#### Verify that the service is functioning correctly 
+我们在这些测试中不会使用 DNS，因为我们希望精确控制请求我们服务（**bookinfo.tse.tetratelabs.io**）将路由到哪个 Edge Gateway。
 
-:::info No DNS
+{{</callout>}}
 
-We won't use DNS for these tests, because we want to carefully control which Edge Gateway a request for our service (**bookinfo.tse.tetratelabs.io**) is routed to.
+请务必设置正确的 Kubernetes 上下文，获取每个 Edge Gateway 的地址：
 
-:::
-
-Taking care to set the correct Kubernetes context, obtain the address for each Edge Gateway:
-
-```bash title="Set kubectl context to cluster edge-cluster"
+```bash title="设置 kubectl 上下文为 cluster-edge-cluster"
 export GATEWAY_IP_1=$(kubectl -n edge get service edgegw -o jsonpath="{.status.loadBalancer.ingress[0]['hostname','ip']}")
 echo $GATEWAY_IP_1
 ```
 
-```bash title="Set kubectl context to cluster edge-cluster-2"
+```bash title="设置 kubectl 上下文为 cluster-edge-cluster-2"
 export GATEWAY_IP_2=$(kubectl -n edge get service edgegw-2 -o jsonpath="{.status.loadBalancer.ingress[0]['hostname','ip']}")
 echo $GATEWAY_IP_2
 ```
 
-Verify that you can access the **productpage.bookinfo** service via each Edge Gateway:
+验证你是否可以通过每个 Edge Gateway 访问 **productpage.bookinfo** 服务：
 
-```bash title="Test against edge-cluster"
+```bash title="针对 edge-cluster 进行测试"
 curl -s --connect-to bookinfo.tse.tetratelabs.io:80:$GATEWAY_IP_1 "http://bookinfo.tse.tetratelabs.io/productpage" 
 ```
 
-```bash title="Test against edge-cluster-2"
+```bash title="针对 edge-cluster-2 进行测试"
 curl -s --connect-to bookinfo.tse.tetratelabs.io:80:$GATEWAY_IP_2 "http://bookinfo.tse.tetratelabs.io/productpage" 
 ```
 
+## 下一步
 
-## Next Steps
-
-You're now ready to experiment with [edge cluster failover](edge-failover) behaviour.
+你现在可以尝试[Edge 集群故障转移](../edge-failover)行为。

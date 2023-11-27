@@ -1,45 +1,42 @@
 ---
-title: Cluster onboarding troubleshooting
-description: How to troubleshoot control plane onboarding issues
+title: 集群入职故障排除
+description: 如何排除控制平面入职问题。
+weight: 9
 ---
 
-This document explains most common issues when onboarding new control planes into TSB.
+本文档解释了将新的控制平面引入 TSB 时最常见的问题。
 
-## Connectivity
+## 连接性
 
-The deployment `tsb-operator-control-plane` needs to have connectivity with the management plane URL. Communication is performed to 
-the `front-envoy` component in the `tsb` namespace, which is served by the `envoy` service.
+部署 `tsb-operator-control-plane` 需要与管理平面 URL 具有连接性。通信是通过 `tsb` 命名空间中的 `front-envoy` 组件执行的，由 `envoy` 服务提供。
 
-Make sure that the control plane can reach it and it's not blocked by network policies, security groups or any firewall.
+请确保控制平面可以访问它，且没有被网络策略、安全组或任何防火墙阻止。
 
-## Troubleshooting
+## 故障排除
 
-Once you've applied the [necessary secrets](../setup/helm/controlplane#secrets-configuration), installed the control plane operator 
-and created the control plane CR, if there's some misconfiguration, some pods won't be able to start. Always check for `tsb-operator-control-plane` 
-logs, as it will give more information about what could be wrong.
+一旦你已经应用了[必要的机密](../../setup/helm/controlplane#secrets-configuration)，安装了控制平面操作员，并创建了控制平面 CR，如果存在一些配置错误，一些 Pod 可能无法启动。始终检查 `tsb-operator-control-plane` 的日志，因为它将提供有关可能出错的详细信息。
 
-### Service account issues
+### 服务帐号问题
 
-If the service account to generate the tokens is not created, you'll get the following error:
+如果未创建用于生成令牌的服务帐号，你将收到以下错误：
 
 ```bash
 error	controlplane	token rotation failed, retrying in 15m0s: secret istio-system/cluster-service-account not found: Secret "cluster-service-account" not found [scope="controlplane"]
 ```
 
-Or it can also happen that it is not correctly configured:
+或者也可能发生配置不正确的情况：
 
 ```bash
 error	controlplane	token rotation failed, retrying in 15m0s: cluster has been configured with incorrect service account secret. ControlPlane CR has cluster name "demo", but service account secret has "organizations/tetrate/clusters/not-demo" [scope="controlplane"]
 ```
 
-In this example, we've created a cluster object called `demo`, but in the CP we're generating the service account for a cluster called `not-demo`. 
-To fix this issue you'll need to add the cluster name and service account token to the `values.yaml` file to install the CP. First generate the token:
+在此示例中，我们创建了名为 `demo` 的集群对象，但在 CP 中，我们正在为名为 `not-demo` 的集群生成服务帐号。要解决此问题，你需要在 `values.yaml` 文件中添加集群名称和服务帐号令牌以安装 CP。首先生成令牌：
 
 ```bash
 tctl install cluster-service-account --cluster demo > /tmp/demo.jwk
 ```
 
-And then configure the `values.yaml` file with the cluster name and the JWK file:
+然后在 `values.yaml` 文件中配置集群名称和 JWK 文件：
 
 ```yaml
 secrets:
@@ -51,64 +48,58 @@ secrets:
       '{{ .Secrets.ClusterServiceAccount.JWK }}'
 ```
 
-The cluster name needs to match with the cluster name added in the control plane CR under `spec.managementPlane.clusterName`.
+集群名称必须与控制平面 CR 中的 `spec.managementPlane.clusterName` 中添加的集群名称匹配。
 
-:::note
-Remember to restart the `tsb-operator-control-plane` pod to generate the secrets, and once generated, restart the control plane pods.
-:::
+{{<callout note 注意>}}
+记得重新启动 `tsb-operator-control-plane` Pod 以生成机密，一旦生成，重新启动控制平面 Pod。
+{{</callout>}}
 
-### Control plane certificate issues
+### 控制平面证书问题
 
-If the certificate `tsb-certs` configured in the management plane don't contain the correct URI SAN which is configured in 
-the control plane CR under `spec.managementPlane.host`, or both `tsb-certs` in `tsb` namespace and `mp-cert` in `istio-system` 
-namespace doesn't contain the same URI SAN, or are not signed by the same root/intermediate CA you'll get the following error:
+如果在管理平面中配置的 `tsb-certs` 证书不包含与控制平面 CR 中的 `spec.managementPlane.host` 配置的正确 URI SAN，或者 `tsb` 命名空间中的 `tsb-certs` 和 `istio-system` 命名空间中的 `mp-cert` 都不包含相同的 URI SAN，或者它们没有由相同的根/中间 CA 签名，你将收到以下错误：
 
 ```bash
 error	controlplane	token rotation failed, retrying in 7.153870785s: generate tokens: rpc error: code = Unavailable desc = connection error: desc = "transport: authentication handshake failed: tls: failed to verify certificate: x509: certificate is valid for demo.tsb.tetrate.io, not tsb.tetrate.io" [scope="controlplane"]
 ```
 
-You can update the `mp-cert` by configuring the value `secrets.tsb.cacert` in your control plane `values.yaml` file, or update 
-the `tsb-certs` by configuring the values `secrets.tsb.cert` and `secrets.tsb.key` in the management plane `values.yaml` file.
+你可以通过在控制平面 `values.yaml` 文件中配置值 `secrets.tsb.cacert` 来更新 `mp-cert`，或者通过在管理平面 `values.yaml` 文件中配置值 `secrets.tsb.cert` 和 `secrets.tsb.key` 来更新 `tsb-certs`。
 
-If the certificate provided in `tsb-certs` is signed by a public CA such as Digicert or Let’s Encrypt you can let the default values 
-for the control plane CR, but if this certificate is signed by an internal CA or it's self signed you can get the following error:
+如果在 `tsb-certs` 中提供的证书由公共 CA（如 Digicert 或 Let’s Encrypt）签名，你可以让控制平面 CR 的默认值保持不变，但如果此证书由内部 CA 签名或者是自签名的，你可能会收到以下错误：
 
 ```bash
 error	controlplane	token rotation failed, retrying in 1.661766738s: generate tokens: rpc error: code = Unavailable desc = connection error: desc = "transport: authentication handshake failed: x509: certificate signed by unknown authority" [scope="controlplane"]
 ```
 
-If that's the case, you'll need to modify the control plane CR to set `spec.managementPlane.selfSigned` to `true`.
+如果是这种情况，你需要修改控制平面 CR 以将 `spec.managementPlane.selfSigned` 设置为 `true`。
 
-:::note
-Remember to restart the `tsb-operator-control-plane` pod to generate the secrets, and once generated, restart the control plane pods.
-:::
+{{<callout note 注意>}}
+记得重新启动 `tsb-operator-control-plane` Pod 以生成机密，一旦生成，重新启动控制平面 Pod。
+{{</callout>}}
 
-### XCP connection issues
+### XCP 连接问题
 
-If the newly onboarded cluster it's not reporting the cluster status or new configurations applied are not being created in the cluster, 
-check the `edge` pod logs in `istio-system` namespace, as even if the pod is running, it is possible that it's having some issues. For example:
+如果新引入的集群没有报告集群状态或新配置未在集群中创建，请检查 `istio-system` 命名空间中的 `edge` Pod 日志，即使 Pod 正在运行，也可能存在一些问题。例如：
 
 ```bash
 warn	stream	error getting stream. retrying in 21.72809085s: rpc error: code = Unavailable desc = connection error: desc = "transport: authentication handshake failed: tls: failed to verify certificate: x509: certificate is valid for xcp.tetrate.io, not tsb.tetrate.io"	name=configs-4d116fd6
 ```
 
-In this case the `xcp-central-cert` in `tsb` namespace is configured for `xcp.tetrate.io` but the host configured in the control plane 
-CR is `tsb.tetrate.io`. To update the certificate, you'll need to update the management plane `values.yaml` [accordingly to this](../setup/helm/managementplane#xcp-secrets-configuration).
+在这种情况下，`tsb` 命名空间中的 `xcp-central-cert` 配置为 `xcp.tetrate.io`，但在控制平面 CR 中配置的主机是 `tsb.tetrate.io`。要更新证书，你需要根据[这个](../../../setup/helm/managementplane#xcp-secrets-configuration)更新管理平面 `values.yaml`。
 
-If `edge` is unable to start you can describe to pod in order to get more information. Sometimes it couldn't start due to:
+如果 `edge` 无法启动，你可以描述 Pod 以获取更多信息。有时候无法启动是因为：
 
 ```bash
   Warning  FailedMount  7m15s (x7 over 7m47s)  kubelet            MountVolume.SetUp failed for volume "xcp-central-auth-jwt" : secret "xcp-edge-central-auth-token" not found
-  Warning  FailedMount  5m44s                  kubelet            Unable to attach or mount volumes: unmounted volumes=[xcp-central-auth-ca], unattached volumes=[config-map-volume xcp-central-auth-jwt xcp-central-auth-ca xcp-edge-webhook-ca kube-api-access-hxk8l webhook-certs]: timed out waiting for the condition
-  Warning  FailedMount  3m26s                  kubelet            Unable to attach or mount volumes: unmounted volumes=[xcp-central-auth-ca], unattached volumes=[xcp-edge-webhook-ca kube-api-access-hxk8l webhook-certs config-map-volume xcp-central-auth-jwt xcp-central-auth-ca]: timed out waiting for the condition
+  Warning  FailedMount  
+
+ 5m44s                  kubelet            Unable to attach or mount volumes: unmounted volumes=[xcp-central-auth-ca], unattached volumes=[config-map-volume xcp-central-auth-jwt xcp-central-auth-ca xcp-edge-webhook-ca kube-api-access-hxk8l webhook-certs]: timed out waiting for the condition
+  Warning  FailedMount   3m26s                  kubelet            Unable to attach or mount volumes: unmounted volumes=[xcp-central-auth-ca], unattached volumes=[xcp-edge-webhook-ca kube-api-access-hxk8l webhook-certs config-map-volume xcp-central-auth-jwt xcp-central-auth-ca]: timed out waiting for the condition
   Warning  FailedMount  95s (x11 over 7m47s)   kubelet            MountVolume.SetUp failed for volume "xcp-central-auth-ca" : secret "xcp-central-ca-bundle" not found
   Warning  FailedMount  69s                    kubelet            Unable to attach or mount volumes: unmounted volumes=[xcp-central-auth-ca], unattached volumes=[kube-api-access-hxk8l webhook-certs config-map-volume xcp-central-auth-jwt xcp-central-auth-ca xcp-edge-webhook-ca]: timed out waiting for the condition
 ```
 
-This error is because the secret `xcp-central-ca-bundle` in `istio-system` namespace don't exist. This secret must contain the same URI SAN and must 
-be signed by the same root/intermediate CA as `xcp-central-cert` in `tsb` namespace. In order to configure this secret, you'll need to update the value 
-`secrets.xcp.rootca` from your control plane `values.yaml` file.
+此错误是因为 `istio-system` 命名空间中的秘密 `xcp-central-ca-bundle` 不存在。此秘密必须包含相同的 URI SAN，并且必须由 `tsb` 命名空间中的 `xcp-central-cert` 签名，并且必须由相同的根/中间 CA 签名。要配置此秘密，你需要更新控制平面 `values.yaml` 文件中的值 `secrets.xcp.rootca`。
 
-:::note
-Remember to restart the `tsb-operator-control-plane` pod to generate the secrets, and once generated, restart the edge pod.
-:::
+{{<callout note 注意>}}
+记得重新启动 `tsb-operator-control-plane` Pod 以生成机密，一旦生成，重新启动 `edge` Pod。
+{{</callout>}}

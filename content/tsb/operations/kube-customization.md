@@ -1,52 +1,50 @@
 ---
-title: Customizing TSB Kubernetes Components
-Description: Explanation on how to configure TSB components in Kubernetes, including overlays.
+title: 定制 TSB Kubernetes 组件
+Description: 说明如何在 Kubernetes 中配置 TSB 组件，包括使用覆盖进行高级资源配置的示例。
 weight: 12
 ---
 
-This document describes how to customize the Kubernetes deployments for TSB components, including using overlays to perform advanced configuration of resources that are deployed by the Tetrate Service Bridge (TSB) operators, using examples.
+本文描述了如何自定义 Kubernetes 部署的 TSB 组件，包括使用覆盖来执行由 Tetrate Service Bridge (TSB) 操作员部署的资源的高级配置，使用示例说明。
 
-## Background
+## 背景
 
-TSB makes extensive use of the [Operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) pattern to deploy and configure the necessary parts in Kubernetes.
+TSB 广泛使用[操作员（Operator）](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)模式在 Kubernetes 中部署和配置所需的部分。
 
-Normally customization and fine tuning of the parameters are done through the operator, which is responsible for creating the necessary resources and controlling their lifecycles.
+通常，通过操作员来进行自定义和微调参数，操作员负责创建必要的资源并控制其生命周期。
 
-For example, when you create an IngressGateway CR, a TSB operator picks up this information  and deploys and/or updates the relevant resources, such as Kubernetes Service objects, by creating a manifest and applying them. The manifest will use certain parameters that you have provided, along with other default values that are computed by TSB.
+例如，当你创建一个 IngressGateway CR 时，TSB 操作员会获取此信息并部署和/或更新相关资源，如 Kubernetes Service 对象，通过创建清单并应用它们。清单将使用你提供的某些参数，以及由 TSB 计算的其他默认值。
 
-However, TSB does not necessarily expose all of the knobs to fine tune the Service objects. If TSB were to provide all hooks to configure the Service object, TSB would have to effectively replicate the entire Kubernetes API, which is realistically not feasible nor desirable.
+然而，TSB 并不一定会暴露用于微调 Service 对象的所有参数。如果 TSB 提供了所有用于配置 Service 对象的钩子，那么 TSB 将不得不实际上复制整个 Kubernetes API，这在现实中既不可行也不可取。
 
-This is where we use overlays, which allows you to override and apply custom configurations to resources that are being deployed. For more details on how overlays work, please read the [documentation for overlays in the reference](../refs/install/kubernetes/k8s).
+这就是我们使用覆盖的地方，它允许你覆盖并应用于正在部署的资源的自定义配置。有关覆盖工作原理的更多详细信息，请阅读[参考文档中关于覆盖的文档](../../refs/install/kubernetes/k8s)。
 
-:::warning
-Overlays are provide as an escape hatch mechanism for TSB features that are not ironed out, and should be used with caution. Configurations that may currently be available over overlays will most likely be removed/changed to be done through TSB operators in the future.
-:::
+{{<callout warning 注意>}}
+覆盖作为 TSB 功能的一种逃生机制提供，应谨慎使用。当前可能通过覆盖可用的配置很可能会在未来通过 TSB 操作员来执行。
+{{</callout>}}
 
-## Notes About the Examples
+## 示例说明
 
-In these examples that follow, the necessary configurations are applied using `kubectl edit` by directly editing the deployed manifest. If you own the original manifests you may opt to use `kubectl apply` as well, but you will have to provide the entire resource definition, not just the parts that you want to edit.
+在接下来的示例中，使用 `kubectl edit` 直接编辑部署的清单来应用必要的配置。如果你拥有原始清单，你也可以选择使用 `kubectl apply`，但你必须提供整个资源定义，而不仅仅是要编辑的部分。
 
-The sample manifests only show the minimum information required to be specified, along with information to specify the context (location) of where to make these changes.
+示例清单只显示了需要指定的最小信息，以及指定要进行这些更改的上下文（位置）的信息。
 
-:::note
-Depending on your specific Kubernetes environment, you may need to modify the content of the samples for them to function properly.
-:::
+{{<callout note 注意>}}
+根据你的特定 Kubernetes 环境，你可能需要修改示例的内容以使其正常运行。
+{{</callout>}}
 
-:::note Helm installation
-All of the examples provided in this document can also be applied to Helm installations by editing management plane or control plane Helm values.
+{{<callout note "Helm 安装">}}
+本文档中提供的所有示例也可以应用于 Helm 安装，通过编辑管理平面或控制平面 Helm 值来实现。
 
-For management plane, the `spec` field in [Helm values](../setup/helm/managementplane) is same with TSB [`ManagementPlane` CR](../refs/install/managementplane/v1alpha1/spec).
+对于管理平面，[Helm 值](../../setup/helm/managementplane) 中的 `spec` 字段与 TSB [`ManagementPlane` CR](../../refs/install/managementplane/v1alpha1/spec) 相同。
 
-For control plane, the `spec` field in [Helm values](../setup/helm/controlplane) is same with TSB [`ControlPlane` CR](../refs/install/controlplane/v1alpha1/spec).
-:::
+对于控制平面，[Helm 值](../../setup/helm/controlplane) 中的 `spec` 字段与 TSB [`ControlPlane` CR](../../refs/install/controlplane/v1alpha1/spec) 相同。
+{{</callout>}}
 
-:::note OpenShift
-If you use OpenShift, simply replace `kubectl` commands below with `oc`.
-:::
+{{<callout note OpenShift>}}
+如果你使用 OpenShift，请使用以下命令将下面的 `kubectl` 命令替换为 `oc`。
+{{</callout>}}
 
-
-Once you have studied these examples, you will most likely be working with far more complex overlays. One caveat that you should be aware of as you write complex overlays is that you can only have one overlay per object. For example, the following specification is syntactically valid, but only the last `patch` against `quux.corge.grault` will be applied:
-.
+一旦你研究了这些示例，你可能会使用更复杂的覆盖来进行工作。你应该知道的一个注意事项是，你只能为每个对象有一个覆盖。例如，以下规范在语法上是有效的，但只会应用于 `quux.corge.grault` 的最后一个 `patch`：
 
 ```yaml
 kubeSpec:
@@ -65,7 +63,7 @@ kubeSpec:
       value: hello
 ```
 
-This is because the manifest contains multiple entries under `overlays` that point to the same object (`my-object`), and in such cases only the last entry is actually applied. To apply patches to both `foo.bar.baz` and `quux.corge.grault`, you must consolidate all the `patch` specifications under a single object, as follows:
+这是因为清单在 `overlays` 下包含了指向同一个对象（`my-object`）的多个条目，在这种情况下只有最后一个条目实际应用。要对 `foo.bar.baz` 和 `quux.corge.grault` 进行修补，必须将所有 `patch` 规范合并到单个对象下，如下所示：
 
 ```yaml
 kubeSpec:
@@ -80,13 +78,13 @@ kubeSpec:
       value: hello
 ```
 
-## Example Usage for Overlays
+## 覆盖示例用法
 
-### Configure CNI with elevated privileges
+### 配置具有提升权限的 CNI
 
-Certain environments such as SELinux or OpenShift require special privileges to write files in the host system. To enable this, the `install-cni.securityContext.privileged` property must be set to `true` by editing the `ControlPlane` CR.
+某些环境，如 SELinux 或 OpenShift，需要特殊权限才能在主机系统中写入文件。要启用此功能，必须通过编辑 `ControlPlane` CR 来将 `install-cni.securityContext.privileged` 属性设置为 `true`。
 
-Edit the `ControlPlane` CR for the TSB control plane using `kubectl edit`, and use the following snippet as a sample on how to edit the manifest.
+使用 `kubectl edit` 编辑 TSB 控制平面的 `ControlPlane` CR，并使用以下代码片段作为如何编辑清单的示例。
 
 ```bash
 kubectl edit controlplane -n istio-system
@@ -114,14 +112,16 @@ spec:
                     privileged: true
 ```
 
-### Change XCP service type:
+### 更改 XCP 服务类型
 
-For certain environments, XCP edge can't use a LoadBalancer service type, or annotations need to be added. You can modify them by applying this overlay to the `ControlPlane` CR:
+对于某些环境，XCP 边缘无法使用 LoadBalancer 服务类型，或者需要添加注释。你可以通过将以下覆盖应用于 `ControlPlane` CR 来修改它们：
 
 ```yaml
 spec:
   components:
-    xcp:
+   
+
+ xcp:
       kubeSpec:
         overlays:
         - apiVersion: install.xcp.tetrate.io/v1alpha1
@@ -141,11 +141,11 @@ spec:
                 value: NodePort
 ```
 
-### Preserve endpoint IP address
+### 保留端点 IP 地址
 
-Kubernetes provides a way to preserve the IP address of the client connecting to an application, which can be used to route traffic to node-local or cluster-wide endpoints.
+Kubernetes 提供了一种保留连接到应用程序的客户端的 IP 地址的方法，可以用来将流量路由到节点本地或整个集群范围的端点。
 
-For this example we assume that you have deployed the following ingress gateway with service type of `LoadBalancer`:
+对于此示例，假设你已部署了以下 Ingress Gateway，并且其服务类型为 `LoadBalancer`：
 
 ```yaml
 apiVersion: install.tetrate.io/v1alpha1
@@ -159,7 +159,7 @@ spec:
       type: LoadBalancer
 ```
 
-Edit the IngressGateway CR for the application using `kubectl edit`, and use the following snippet as a sample on how to edit the manifest.
+使用 `kubectl edit` 编辑应用程序的 IngressGateway CR，并使用以下代码片段作为如何编辑清单的示例。
 
 ```bash
 kubectl edit tsb-gateway-bookinfo -n bookinfo
@@ -178,11 +178,11 @@ spec:
         value: Local
 ```
 
-### Add a host alias to `istiod`
+### 为 `istiod` 添加主机别名
 
-In some scenarios, `istiod` may need to communicate with services that have no DNS records. A typical example would be when there is a need to fetch a custom Istio CA from Vault or other secret managers. The `hostAlias` patch will directly map hostnames to ip addresses in a way similar to statically adding an entry to a VM host file.
+在某些情况下，`istiod` 可能需要与没有 DNS 记录的服务通信。典型的示例是当需要从 Vault 或其他密钥管理器中获取自定义 Istio CA 时。`hostAlias` 补丁将直接将主机名映射到 IP 地址，类似于在 VM 主机文件中静态添加条目。
 
-Edit the `ControlPlane` CR for the TSB control plane using `kubectl edit`, and use the following snippet as a sample on how to edit the manifest. Replace `<hostname-FQDN>` and `<ip address>` with the appropriate values.
+使用 `kubectl edit` 编辑 TSB 控制平面的 `ControlPlane` CR，并使用以下代码片段作为如何编辑清单的示例。将 `<hostname-FQDN>` 和 `<ip address>` 替换为适当的值。
 
 ```bash
 kubectl edit controlplane -n istio-system
@@ -211,11 +211,11 @@ spec:
                   ip: <ip address>
 ```
 
-### Configure sidecar resource limits
+### 配置 Sidecar 资源限制
 
-The Sidecar API resource does not allow you to specify resource usage limit or definitions for the sidecar, but this is possible by adding an overlay to the `ControlPlane` CR. In this example, we will overwrite resource limits under the `resources` field.
+Sidecar API 资源不允许你指定 sidecar 的资源使用限制或定义，但通过向 `ControlPlane` CR 添加覆盖是可能的。在此示例中，我们将在 `resources` 字段下覆盖资源限制。
 
-Edit the `ControlPlane` CR for the TSB control plane using `kubectl edit`, and use the following snippet as a sample on how to edit the manifest. Update the actual resource limit values as necessary.
+使用 `kubectl edit` 编辑 TSB 控制平面的 `ControlPlane` CR，并使用以下代码片段作为如何编辑清单的示例。根据需要更新实际的资源限制值。
 
 ```bash
 kubectl edit controlplane -n istio-system
@@ -242,11 +242,11 @@ spec:
                   memory: 128Mi
 ```
 
-#### Forwarding client information
+### 转发客户端信息
 
-Some applications require knowing the certificate information of the connecting client. TSB uses the `x-forwarded-client-cert` header to pass this information along to the backend servers. In order to enable this feature you need to configure the Envoy proxies for ControlPlane and IngressGateway(s) as such.
+某些应用程序需要了解连接到应用程序的客户端的证书信息。TSB 使用 `x-forwarded-client-cert` 标头将此信息传递给后端服务器。为启用此功能，你需要配置 ControlPlane 和 IngressGateway(s) 的 Envoy 代理。
 
-For the ControlPlane, edit the `ControlPlane` CR for the TSB control plane using `kubectl edit`, and use the following snippet as a sample on how to edit the manifest
+对于 ControlPlane，请使用 `kubectl edit` 编辑 TSB 控制平面的 `ControlPlane` CR，并使用以下代码片段作为如何编辑清单的示例。
 
 ```bash
 kubectl edit controlplane -n istio-system
@@ -267,7 +267,7 @@ spec:
               forwardClientCertDetails: APPEND_FORWARD
 ```
 
-For the IngressGateway, edit the IngressGateway CR for the application using `kubectl edit`, and use the following snippet as a sample on how to edit the manifest. Replace the `<ingress-name>` and `<namespace>` values as appropriate.
+对于 IngressGateway，请使用 `kubectl edit` 编辑应用程序的 IngressGateway CR，并使用以下代码片段作为如何编辑清单的示例。根据需要替换 `<ingress-name>` 和 `<namespace>` 值。
 
 ```bash
 kubectl edit <ingress-name> -n <namespace>
@@ -286,11 +286,11 @@ spec:
             forwardClientCertDetails: APPEND_FORWARD
 ```
 
-### Controlling user session inactivity time for TSB UI
+### 控制 TSB UI 的用户会话不活动时间
 
-By default the user session for TSB UI expires after 15 minutes of inactivity. You may override this value by setting the `SESSION_AGE_IN_MINUTES` environment variable through the overlay mechanism.
+默认情况下，TSB UI 的用户会话在不活动 15 分钟后过期。你可以通过通过覆盖机制设置 `SESSION_AGE_IN_MINUTES` 环境变量来覆盖此值。
 
-Suppose you would like to allow the user to be logged into the Web UI for 60 minutes. Edit the `ControlPlane` CR for the TSB control plane using `kubectl edit`, and use the following snippet as a sample on how to edit the manifest.
+假设你希望允许用户在 Web UI 中登录 60 分钟。使用 `kubectl edit` 编辑 TSB 控制平面的 `ControlPlane` CR，并使用以下代码片段作为如何编辑清单的示例。
 
 ```bash
 kubectl edit managementplane -n tsb
@@ -311,26 +311,13 @@ spec:
             value: "60"
 ```
 
-It is highly recommended that `SESSION_AGE_MINUTES` be set to the minimum for security best practices with regards to accessing the UI.
+强烈建议将 `SESSION_AGE_MINUTES` 设置为最小值，以符合访问 UI 的安全最佳实践。
 
-### Setting Environment Variables in TSB Components
+### 在 TSB 组件中设置环境变量
 
-Sometimes you need to go in and set arbitrary environment variables for TSB components - for example, one mitigation to the Log4j-related security vulnerabilities is to set the `LOG4J_FORMAT_MSG_NO_LOOKUPS` environment variable to `true` in Java binaries that include Log4j (versions 2.10 or above). To do this, you can use the `env` section of the Kubernetes component spec in the TSB operator configurations.
+有时候，你需要设置 TSB 组件的任意环境变量 - 例如，对于包含 Log4j（版本 2.10 或更高版本）的 Java 二进制文件，为了应对与 Log4j 相关的安全漏洞，可以将 `LOG4J_FORMAT_MSG_NO_LOOKUPS` 环境变量设置为 `true`。为此，你可以使用 TSB 操作员配置中 Kubernetes 组件规范的 `env` 部分。
 
-To set a value for the Management Plane (TSB) cluster, you'll update the `ManagementPlane` CR:
-
-```yaml
-spec:
-  components:
-    oap:
-      kubeSpec:
-        deployment:
-          env:
-          - name: LOG4J_FORMAT_MSG_NO_LOOKUPS
-            value: "true"
-```
-
-And to set a value for the Control Plane (application) clusters, you'll update the ControlPlane resource:
+要设置 Management Plane（TSB）集群的值，你需要更新 `ManagementPlane` CR：
 
 ```yaml
 spec:
@@ -343,5 +330,15 @@ spec:
             value: "true"
 ```
 
-## References
-TSB reference Doc
+并且要设置控制平面（应用程序）集群的值，你需要更新 ControlPlane 资源：
+
+```yaml
+spec:
+  components:
+    oap:
+      kubeSpec:
+        deployment:
+          env:
+          - name: LOG4J_FORMAT_MSG_NO_LOOKUPS
+            value: "true"
+```

@@ -1,31 +1,29 @@
 ---
-title: "Edge Gateway Failover"
+title: "边缘网关故障转移"
+weight: 4
 ---
 
-# Edge Load Balancing and Failover
+本指南使用了[扩展演示环境](../demo-2)中描述的演示环境，包括：
 
-This guide uses the demonstration environment described in the [Extended Demo Environment](demo-2), namely:
+ * 两个 Edge 集群，位于 **region-1** 和 **region-2**
+ * 两个工作负载集群，位于 **region-1** 和 **region-2**
+ * 在工作负载集群中运行的 **BookInfo** 应用程序
+ * 两个 Edge Gateway 负载均衡流量到工作负载集群
 
- * Two Edge Clusters, in **region-1** and **region-2**
- * Two Workload Clusters, in **region-1** and **region-2**
- * The **BookInfo** application running in the Workload Clusters
- * Two Edge Gateways load-balancing traffic to the Workload Clusters
+![Edge and Workload Load Balancing](../images/edge-workload-2.png)
 
-| [![Edge and Workload Load Balancing](images/edge-workload-2.png "Edge and Workload Load Balancing")](images/edge-workload-2.png) _Edge and Workload Load Balancing_ |
-|  :--:  |
+在本指南中，我们将探讨当工作负载和 Edge 集群发生故障以及如何检测这些故障时会发生什么。然后，平台操作员可以使用这些信息配置一种分发流量到 Edge 集群的方式，例如基于 DNS 的 GSLB 解决方案。目标是保持尽可能高的可用性，并在可能的情况下优化流量路由。
 
-In this guide, we'll look at what happens when Workload and Edge Clusters fail, and how this can be detected.  The Platform Operator can then use this information to configure a way to distribute traffic across the Edge Clusters, such as a DNS-based GSLB solution.  The goal is to maintain the highest-possible availability, and to optimize traffic routing where possible.
+## 生成和观察测试流量
 
-## Generate and Observe Test Traffic
-
-Test the Demonstration Environment as follows:
+请按以下方式测试演示环境：
 
 <details>
-<summary>Verify all Components</summary>
+<summary>验证所有组件</summary>
 
-### Verify all Components
+### 验证所有组件
 
-To test all flows (both Edge Gateways to both Workload Clusters), we will use Weighted Traffic Distribution.  Edit **bookinfo-edge** and **bookinfo-edge-2** as follows, and apply the changes using **tctl**:
+为了测试所有流程（Edge Gateway 到两个工作负载集群的流程），我们将使用加权流量分布。将 **bookinfo-edge** 和 **bookinfo-edge-2** 编辑如下，并使用 **tctl** 应用更改：
 
 ```yaml
     routing:
@@ -39,50 +37,50 @@ To test all flows (both Edge Gateways to both Workload Clusters), we will use We
                   weight: 50
 ```
 
-Taking care to set the correct Kubernetes context, obtain the address for each Edge Gateway:
+请注意设置正确的 Kubernetes 上下文，获取每个 Edge Gateway 的地址：
 
-```bash title="Set kubectl context to cluster edge-cluster"
+```bash title="设置 kubectl 上下文为 edge-cluster 集群"
 export GATEWAY_IP_1=$(kubectl -n edge get service edgegw -o jsonpath="{.status.loadBalancer.ingress[0]['hostname','ip']}")
 echo $GATEWAY_IP_1
 ```
 
-```bash title="Set kubectl context to cluster edge-cluster-2"
+```bash title="设置 kubectl 上下文为 edge-cluster-2 集群"
 export GATEWAY_IP_2=$(kubectl -n edge get service edgegw-2 -o jsonpath="{.status.loadBalancer.ingress[0]['hostname','ip']}")
 echo $GATEWAY_IP_2
 ```
 
-In two different terminal windows, send requests for the **productpage.bookinfo** service via each Edge Gateway.  Note the use of the `?e1` and `?e2` query strings to identify the source Edge Gateway:
+在两个不同的终端窗口中，通过每个 Edge Gateway 发送对 **productpage.bookinfo** 服务的请求。注意使用 `?e1` 和 `?e2` 查询字符串来识别源 Edge Gateway：
 
-```bash title="Test against edge-cluster"
+```bash title="针对 edge-cluster 进行测试"
 while sleep 1; do \
   curl -s --connect-to bookinfo.tse.tetratelabs.io:80:$GATEWAY_IP_1 \
     "http://bookinfo.tse.tetratelabs.io/productpage?e1" ; \
 done 
 ```
 
-```bash title="Test against edge-cluster-2"
+```bash title="针对 edge-cluster-2 进行测试"
 while sleep 1; do \
   curl -s --connect-to bookinfo.tse.tetratelabs.io:80:$GATEWAY_IP_2 \
     "http://bookinfo.tse.tetratelabs.io/productpage?e2" ; \
 done 
 ```
 
-If you use the techniques to watch the gateway logs, as described in the [cluster failover](cluster-failover) guide, you should observe the following:
+如果你使用了在 [集群故障转移](../cluster-failover) 指南中描述的查看网关日志的技术，你应该观察到以下情况：
 
- * Edge Gateway 1 (**edgegw**) receives requests `GET /productpage?e1`
- * Edge Gateway 2 (**edgegw-2**) receives requests `GET /productpage?e2`
- * Ingress Gateways 1 and 2 (**ingressgw-1** and **ingressgw-2**) receive requests `GET /productpage?e1` _and_ `GET /productpage?e2`
+ * Edge Gateway 1（**edgegw**）接收到请求 `GET /productpage?e1`
+ * Edge Gateway 2（**edgegw-2**）接收到请求 `GET /productpage?e2`
+ * Ingress Gateway 1 和 2（**ingressgw-1** 和 **ingressgw-2**）接收到请求 `GET /productpage?e1` _和_ `GET /productpage?e2`
 
-The Topology graph in the Tetrate UI will show flows from both Edge Gateways to both Workload Clusters.
+Tetrate UI 中的拓扑图将显示来自两个 Edge Gateway 到两个工作负载集群的流量。
 
 </details>
 
 <details>
-<summary>Test Workload Cluster failover</summary>
+<summary>测试工作负载集群故障转移</summary>
 
-### Test Workload Cluster failover
+### 测试工作负载集群故障转移
 
-Update the **bookinfo-edge** and **bookinfo-edge-2** configuration to use the [Auto Cluster List](cluster-failover#auto-cluster-list) configuration:
+将 **bookinfo-edge** 和 **bookinfo-edge-2** 配置更新为使用 [自动集群列表](../cluster-failover#auto-cluster-list) 配置：
 
 ```yaml
     routing:
@@ -91,139 +89,104 @@ Update the **bookinfo-edge** and **bookinfo-edge-2** configuration to use the [A
               clusterDestination: {}
 ```
 
-Recall that this configuration considers all working Workload Clusters, and prefers clusters in the same region if they are available.
+回想一下，这个配置会考虑所有工作正常的工作负载集群，并优先考虑如果它们可用的话，会优选位于同一地区的集群。
 
-Your benchmark will show that Workload Cluster 1 only receives requests from Edge Gateway 1 (and the same for "2"), and the Topology Graph will also reflect this data once it syncs.
+你的基准测试将显示，工作负载集群 1 仅从 Edge Gateway 1（对于 "2" 也是如此）接收请求，并且一旦数据同步，拓扑图也将反映这些数据。
 
-#### Provoke a Workload Cluster failure
+#### 引发工作负载集群故障
 
-Provoke a Workload Cluster failure on **cluster-1** by either deleting the **Gateway** resource or scaling the **Ingress Gateway** to 0 replicas, as described in the [workload cluster failover](cluster-failover#test-failure-handling) tests.
+可以通过删除 **cluster-1** 上的 **Gateway** 资源或将 **Ingress Gateway** 缩放到 0 个副本来引发 **cluster-1** 上的工作负载集群故障，如 [工作负载集群故障转移](../cluster-failover#test-failure-handling) 中所述。
 
-For example, to delete the **Gateway** resource on **cluster-1**, use `tctl delete -f bookinfo-ingress-1.yaml`.
+例如，要删除 **cluster-1** 上的 **Gateway** 资源，可以使用 `tctl delete -f bookinfo-ingress-1.yaml`。
 
-Observe that both Edge Gateways now send traffic to **cluster-2**.  Failover has been successful.
-
+注意观察，现在两个 Edge Gateway 都会将流量发送到 **cluster-2**。故障转移已成功。
 </details>
 
-## Edge Gateway Failover
+## Edge Gateway 故障转移
 
-The Edge Gateway pattern is a two-tier pattern, where the Edge Gateways provide a first tier of load-balancing in front of a tier of Ingress Gateways in Workload clusters.
+Edge Gateway 模式是一种两层模式，其中 Edge Gateway 在 Workload 集群的 Ingress Gateway 层之前提供第一层负载均衡。
 
-Failure of an Edge Gateway is relatively rare compared to a Workload cluster.  Edge Gateway components have a simple and stable configuration that is fully-managed by the Tetrate Management Plane, making operational errors extremely unlikely, and the load on an Edge Gateway is typically significantly lower than the load on an equivalent Workload cluster. 
+与工作负载集群相比，Edge Gateway 的故障相对较少。Edge Gateway 组件具有简单且稳定的配置，由 Tetrate 管理平台完全管理，因此操作错误极不可能发生，并且 Edge Gateway 上的负载通常明显低于等效的工作负载集群。
 
-You will want to implement a failover method that takes an Edge Gateway out-of-use in two scenarios:
+你需要实施一种故障转移方法，以处理两种情况下的 Edge Gateway 停用：
 
- * Total Failure of the Edge Gateway or entire region (scenario 2)
- * Total Failure of the local Workload Clusters in the same region as the Edge Gateway (scenario 3, optional)
+ * Edge Gateway 完全故障或整个区域失败（情景 2）
+ * 与 Edge Gateway 在同一区域的本地工作负载集群完全失败（情景 3，可选）
 
-The goal of a failover configuration is to maintain uptime and minimize inefficiencies in the event of these failure scenarios.  In the explanation below, we'll explain how these scenarios can be detected.  
+故障转移配置的目标是在这些故障情况下保持正常运行时间并最小化效率低下。在下面的解释中，我们将解释如何检测这些情况。
 
+{{<callout note "每个区域一个 Edge Gateway">}}
+为简单起见，这些情景考虑每个区域只有一个 Edge Gateway 的情况。可以扩展情景实施以涵盖在一个区域中有多个独立的 Edge Gateway 的情况。
+{{</callout>}}
 
-:::info One Edge Gateway per Region
+### 情景 0：正常的 Edge 和工作负载负载均衡
 
-For simplicity, these scenarios consider the situation where there is a single Edge Gateway in each Region.  The scenario implementations could be extended to cover the case where there are multiple, independent Edge Gateways in a region.
+在正常运行期间，Edge 集群配置的目标是获得以下行为：
 
-:::
+![情景 0：正常的 Edge 和工作负载负载均衡](../images/gslb-0.png)
 
-### Scenario 0: Normal Edge and Workload Load Balancing
+使用 GSLB 解决方案来分发流量，可能还包括额外的近距离或加权负载均衡。每个 Edge Gateway 将流量分发到其本地区域的工作负载集群。
 
-During normal operation, the goal of Edge Cluster configuration is to obtain the following behavior:
+### 情景 1：本地工作负载集群部分故障
 
-| [![Scenario 0: Normal Edge and Workload Load Balancing](images/gslb-0.png "Scenario 0: Normal Edge and Workload Load Balancing")](images/gslb-0.png) _Scenario 0: Normal Edge and Workload Load Balancing_ |
-|  :--:  |
+![情景 1：本地工作负载集群部分故障](../images/gslb-1.png)
 
-Traffic is distributed across Edge Gateways using a GSLB solution, perhaps with additional proximity or weighted load balancing.  Each Edge Gateway distributes traffic across the Workload Clusters in its local region.
+_某个区域的一些工作负载集群故障_
 
+每个 Edge Gateway 分发请求到所有正常工作的本地工作负载集群。GSLB 解决方案将继续将请求分发到所有 Edge Gateway。
 
-### Scenario 1: Partial Failure of some Local Workload Clusters
+客户端不受故障影响。
 
-<table>
-<tr>
-<td width="40%">
+不需要进行故障转移操作，因为所有 Edge Gateway 都可以继续提供受影响的服务。我们假设每个区域都有足够的容量，可能已经启用了自动扩展以弥补活动集群的损失。
 
-[![Scenario 1: Partial Failure of Local Workload Clusters](images/gslb-1.png "Scenario 1: Partial Failure of Local Workload Clusters")](images/gslb-1.png)
+### 情景 2：Edge Gateway 或整个区域完全故障
 
-</td><td width="60%">
+![情景 2：Edge Gateway 或整个区域完全故障](../images/gslb-2.png)
 
-_Some of the Workload Clusters in a region fail_
+_区域失败，要么是因为 Edge Gateway 故障，要么是因为整个基础设施失败_
 
-Each Edge Gateway distributes requests against all working local Workload Clusters. The GSLB solution continues distribute requests across all Edge Gateways.
+GSLB 解决方案不应将流量发送到受影响区域的 Edge Gateway。
 
-Clients are not affected by the failure.
+在基于 DNS 的 GSLB 中，任何已缓存到受影响区域的客户端都将遇到故障，直到刷新为止。
 
-</td>
-</tr>
-</table>
+受影响区域的 Edge Gateway 必须在 GSLB DNS 解决方案中停用。
 
-No failover action is required as all Edge Gateways can continue to serve the impacted service.  We assume there is sufficient capacity in each region, perhaps with autoscaling in place to compensate for the loss of an active cluster.
+GSLB 解决方案会向其目标 IP 地址发送“合成事务”（即“测试请求”），以确定是否可以从该 IP 地址访问服务，并使用此信息来确定客户端提交 DNS 请求时哪些 IP 地址是候选的。
 
-### Scenario 2: Total Failure of an Edge Gateway or entire Region
+可以使用简单的 TCP、TLS 或 HTTPS 健康检查来检测故障，连接应该失败（超时）。也可以通过 **情景 3** 中描述的 HTTP(S) 健康检查的超时来检测故障。
 
-<table>
-<tr>
-<td width="40%">
+### 情景 3：本地工作负载集群完全故障
 
-[![Scenario 2: Total Failure of an Edge Gateway or entire Region](images/gslb-2.png "Scenario 2: Total Failure of an Edge Gateway or entire Region")](images/gslb-2.png)
+![情景 3：本地工作负载集群完全故障](../images/gslb-3.png)
 
-</td><td width="60%">
+_一个区域中的所有工作负载集群都故障_
 
-_A region fails, either because its Edge Gateway fails or there is a total infrastructure failure_
+受影响区域的 Edge Gateway 分发请求到远程、正常工作的工作负载集群。此外，GSLB 解决方案不应将流量发送到受影响区域的 Edge Gateway。
 
-The GSLB solution must not send traffic to the Edge Gateway in the affected region.  
+在基于 DNS 的 GSLB 中，任何已缓存到受影响区域的客户端可能会因内部跨区域跳跃而遇到性能下降（延迟）。
 
-In the event of DNS-based GSLB, any clients who have cached entries to the affected region will incur a failure until they refresh.
-</td>
-</tr>
-</table>
+正如我们在[工作负载集群故障转移](../cluster-failover)解释中观察到的，受影响区域的 Edge Gateway 将继续运行，并将请求转发到远程集群。
 
-The Edge Gateways in the affected regions must be taken out of service in the GSLB DNS solution.
+尽管如此，受影响区域的 Edge Gateway 应该在 GSLB DNS 解决方案中停用。这可以减少区域内流量，从而产生延迟惩罚和可能的传输成本惩罚。
 
-GSLB solutions send 'synthetic transactions' (i.e. 'test requests') to their target IP addresses, to determine if the service is accessible from that IP address, and use this information to determine which IP addresses are candidates when a client submits a DNS request.
+### 每个服务的健康检查
 
-The failure can be detected using a simple TCP, TLS or HTTPS health check, for which the connections should fail (timeout).  The failure can also be detected by a timeout in the HTTP(S) health check described for **scenario 3**.
+我们希望为每个服务实施一个健康检查（HC），具有以下行为：
 
-### Scenario 3: Total Failure of Local Workload Clusters
+ * 对区域中的 Edge Gateway 发出的 HC 请求应路由到同一区域的正常工作工作负载集群
+ * 如果区域中的所有工作负载集群都失败，HC 请求应失败，即使客户端请求将被转发到远程区域并成功执行
 
-<table>
-<tr>
-<td width="40%">
-
-[![Scenario 3: Total Failure of Local Workload Clusters](images/gslb-3.png "Scenario 3: Total Failure of Local Workload Clusters")](images/gslb-3.png)
-
-</td><td>
-
-_All of the Workload Clusters in a region fail_
-
-The Edge Gateway in the affected region distributes requests against remote, working Workload Clusters. Additionally, the GSLB solution should not send traffic to the Edge Gateway in the affected region.  
-
-In the event of DNS-based GSLB, any clients who have cached entries to the affected region may incur degraded performance (latency) due to the internal cross-region hop.
-
-</td>
-</tr>
-</table>
-
-As we observed in the [Workload Cluster failover](cluster-failover) explanation, the Edge Gateway in the affected region will continue to function and will forward requests to a remote cluster.
-
-Nevertheless, the Edge Gateways in the affected regions should be taken out of service in the GSLB DNS solution. This reduces intra-region traffic, which incurs a latency penalty and possibly a transit-cost penalty.
-
-### Per-service Health Check
-
-We want to implement a health check (HC) for each service with the following behavior:
-
- * An HC request to an Edge Gateway in a region is routed to a working Workload Cluster in the same region
- * If all of the Workload Clusters in the region have failed, the HC request should fail, even though client requests will be forwarded to remote regions and will succeed
-
-This behavior is sufficient to detect the failures in both **scenario 2** and **scenario 3**.
+这种行为足以检测**情景 2**和**情景 3**中的故障。
 
 #### X-HealthCheck: true
 
-The Edge Gateway needs to be able to discriminate between a regular request, which is load-balanced across all clusters and an HC request which should only be load-balanced across local clusters.  We can do this by adding a specific header, such as `X-HealthCheck: true`, to the HC requests.  You'll need to configure the health checks in your GSLB solution to add this header.
+Edge Gateway 需要能够区分常规请求（在所有集群之间进行负载均衡的请求）和只能在本地集群之间进行负载均衡的 HC 请求。我们可以通过在 HC 请求中添加特定标头，例如 `X-HealthCheck: true`，来实现这一点。你需要在 GSLB 解决方案中配置健康检查以添加此标头。
 
-Then, all that remains is to configure the Edge Gateways to route `X-HealthCheck: true` requests to only the local clusters.
+然后，只需配置 Edge Gateway，使其将 `X-HealthCheck: true` 请求路由到本地集群。
 
-#### Use Rules in the Gateway resource
+#### 在 Gateway 资源中使用规则
 
-Update the **bookinfo-edge** **Gateway** resource with the following, additional rule:
+在 **bookinfo-edge** **Gateway** 资源中添加以下附加规则：
 
 ```yaml title="bookinfo-edge.yaml"
 apiVersion: gateway.tsb.tetrate.io/v2
@@ -259,9 +222,9 @@ spec:
               clusterDestination: {}
 ```
 
-### Testing the Health Check
+### 测试健康检查
 
-Submit a HC request against the Edge Gateway in **cluster-edge**.  Note the use of the query string `?HC` so that we can identify the HC request:
+针对 **cluster-edge** 上的 Edge Gateway 提交一个 HC 请求。注意使用查询字符串 `?HC` 以便我们可以识别 HC 请求：
 
 ```bash
 curl -s --connect-to bookinfo.tse.tetratelabs.io:80:$GATEWAY_IP_1 \
@@ -269,37 +232,31 @@ curl -s --connect-to bookinfo.tse.tetratelabs.io:80:$GATEWAY_IP_1 \
     "http://bookinfo.tse.tetratelabs.io/productpage?HC"
 ```
 
-In normal operation, the health check will succeed.
+在正常运行中，健康检查将成功。
 
-#### Simulate a Failure
+#### 模拟故障
 
-Simulate a failure by deleting the Gateway resource on the Workload Cluster **cluster-1**.  If you are running the tests described above, you'll observe that regular traffic is unaffected, and the Edge Gateway begins to forward these requests to Workload Cluster **cluster-2**.
+通过删除 **cluster-1** 上的 Gateway 资源来模拟故障。如果你正在运行上面描述的测试，你将观察到常规流量不受影响，并且 Edge Gateway 开始将这些请求转发到工作负载集群 **cluster-2**。
 
-Replay the HC request.  The HC request will fail, returning a `503` status code and the response body `no healthy upstreams`.
+重新播放 HC 请求。HC 请求将失败，返回 `503` 状态码和响应体 `no healthy upstreams`。
 
-### Conclusion
+### 结论
 
-You can use this per-service health check to trigger a failover (and recovery) for both **scenario 2** and **scenario 3**.
+你可以使用每个服务的健康检查来触发故障转移（和恢复），适用于**情景 2**和**情景 3**。
 
+## 我们取得了什么成就？
 
-## What have we achieved?
+我们观察到 Tetrate 平台在**Edge 集群**或**工作负载集群**出现故障或其托管服务出现故障的一系列情景中的故障检测和恢复行为。我们优化了故障转移行为，并开发了用于外部 GSLB 解决方案的健康检查，以最小化或消除对服务最终用户的任何影响。
 
-We have observed the failure detection and recovery behavior of the Tetrate platform in a range of scenarios where the **Edge Cluster** or **Workload Cluster** were to fail, or their hosted services were to fail.  We have optimized the failover behavior and developed health checks for external GSLB solutions so as to minimize or eliminate any impact on end users of the services.
+你需要为每个区域的 Edge Gateway 在 **Gateway** 资源中添加适当的规则实现，以将 HC 请求路由到本地区域的工作负载集群。
 
-You will need to add a suitable implementation of the rule to the **Gateway** resource for the Edge Gateways in each region, to route HC requests to the Workload clusters in the local region.
+你还可以通过以下方式减轻故障的一些影响：
 
-You can also mitigate some of the effects of failure by:
+ * 遵循 [Operations Tips](../operations) 文档中的最佳实践，解释如何以受控方式将资源停用
+ * 减小 TTL 并调整 GSLB 解决方案以最小化受影响客户的停机时间
+ * 参考 GSLB 提供商的最佳实践指南，以最小化在意外事件发生时的停机时间
+ * 请联系 Tetrate 支持，以获取有关微调 Gateway 配置以控制故障检测和故障转移的附加信息
 
- * Following the best-practices in the [Operations Tips](operations) documentation, explaining how to take resources out-of-service in a controlled manner
- * Reducing the TTL and otherwise tuning your GSLB solution to minimize downtime for affected clients
- * Referring to your GSLB provider's best practice guides to minimize downtime in the event of an unexpected incident
- * Refer to Tetrate Support for additional information on fine-tuning the Gateway configuration to control failure detection and failover
-
-
-:::note Common DNS Caching Behavior
-
-The impact of a cached DNS entry for a failed Edge Gateway can vary.  Simple clients that cache the entry until its TTL expires (typically 30 seconds) will encounter a failure.
-
-Modern clients, including all modern web browsers, have more sophisticated behaviors to respond to precisely this eventuality. Clients may automatically refresh their DNS caches if they fail to connect, and may retry other locations if the DNS server responds with a RR (round-robin) response.  Refer to your GSLB provider for their specific best-practice guides.
-
-:::
+{{<callout note "常见的 DNS 缓存行为">}}
+对于已失败的 Edge Gateway 的缓存 DNS 条目的影响可能会有所不同。简单的客户端会缓存该条目，直到其 TTL 过期（通常为 30 秒）。现代客户端，包括所有现代 Web 浏览器，在响应此情况时具有更复杂的行为。如果无法连接，客户端可能会自动刷新其 DNS 缓存，并且如果 DNS 服务器以 RR（轮询）响应，则可能会重试其他位置。请参考你的 GSLB 提供商的特定最佳实践指南。
+{{</callout>}}

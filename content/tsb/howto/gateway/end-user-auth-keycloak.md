@@ -1,170 +1,141 @@
 ---
-title: End User Authentication with Keycloak
-description: End user authn/authz at Ingress Gateway using Keycloak as Identity Provider.
-weight: 6
+title: 使用 Keycloak 进行终端用户身份验证
+description: 在 Ingress Gateway 中使用 Keycloak 作为身份提供者进行终端用户身份验证和授权。
+weight: 9
 ---
 
-In this how-to guide, you'll add user authentication and authorization at an 
-Ingress Gateway using Keycloak as the Identity Provider.
+在这个操作指南中，你将使用 Keycloak 作为身份提供者，在 Ingress Gateway 中添加用户身份验证和授权。
 
-Before you get started, make sure you've
+在开始之前，请确保你已经：
 
-✓ Installed the [TSB management plane](../../setup/self_managed/management-plane-installation)<br />
-✓ Onboarded a [cluster](../../setup/self_managed/onboarding-clusters)<br />
-✓ Installed [Keycloak](https://www.keycloak.org/) with HTTPS enabled
+- 安装了 [TSB 管理平面](../../../setup/self-managed/management-plane-installation)
+- 接入了一个 [集群](../../../setup/self-managed/onboarding-clusters)
+- 安装了启用了 HTTPS 的 [Keycloak](https://www.keycloak.org/)
 
-:::note 
-This example will use a demo of the [httpbin](https://httpbin.org/) application
-that's been tested on GKE. If you intend to follow these steps for production
-use, make sure you update the application information in the relevant fields
-with your information.
-:::
+{{<callout note 注意>}}
+本示例将使用经过 GKE 测试的 [httpbin](https://httpbin.org/) 应用程序的演示。如果你打算用于生产环境，请确保在相关字段中更新应用程序信息以适应你的情况。
+{{</callout>}}
 
-In this guide, you'll:
+在本指南中，你将：
 
-✓ Add authentication and authorization to an Ingress Gateway for a demo httpbin
-  application.<br />
-✓ Define two roles and two users: an *admin* user (called Jack) that can do
-  everything, and a *normal* user (Sally) that can only do `GET /status`.<br />
-✓ Configure your Ingress Gateway to allow all access to the *admin* role and
-  only `GET /status` to a *normal* role.<br />
-✓ Log in with each user and validate whether the *admin* user `Jack`, can access
-  everything and user `Sally` who has the *normal* role is only able to 
-  `GET /status`<br />
+- 为演示的 httpbin 应用程序的 Ingress Gateway 添加身份验证和授权。
+- 定义两个角色和两个用户：一个 *admin* 用户（称为 Jack），可以执行所有操作，以及一个 *normal* 用户（Sally），只能执行 `GET /status` 操作。
+- 配置你的 Ingress Gateway，允许 *admin* 角色的用户访问所有内容，只允许 *normal* 角色的用户访问 `GET /status`。
 
-## What is an OpenID provider?
+## 什么是 OpenID 提供者？
 
-An OpenID provider is an OAuth 2.0 authorization server which offers
-authentication as a service. It ensures the end-user is authenticated and
-provides [claims](https://openid.net/specs/draft-jones-json-web-token-07.html#anchor4)
-about the end-user, and the authentication event to the client application. In
-this example, you'll use Keycloak as the OpenID Provider. You can replicate
-similar steps with other OpenID providers such as Auth0 or Okta.
+OpenID 提供者是一个 OAuth 2.0 授权服务器，提供身份验证作为一项服务。它确保终端用户已经进行了身份验证，并提供了关于终端用户和身份验证事件的 [claims](https://openid.net/specs/draft-jones-json-web-token-07.html#anchor4) 给客户端应用程序。在本示例中，你将使用 Keycloak 作为 OpenID 提供者。你可以使用其他 OpenID 提供者（如 Auth0 或 Okta）采用类似的步骤。
 
-:::note
-In this how-to, we will use https://keycloak.example.com as our Keycloak URL.
-You should change this to your own Keycloak URL.
-:::
+{{<callout note 注意>}}
+在本操作指南中，我们将使用 https://keycloak.example.com 作为 Keycloak 的 URL。你应该将其更改为你自己的 Keycloak URL。
+{{</callout>}}
 
-## Configuring Keycloak as an OpenID provider
+## 配置 Keycloak 作为 OpenID 提供者
 
-Login to the Keycloak admin interface.
+登录到 Keycloak 管理界面。
 
-:::note
-If you already have the Realm, Roles and Users created, go straight to the
-Client section.
-:::
+{{<callout note 注意>}}
+如果你已经创建了 Realm、Roles 和 Users，请直接转到 Client 部分。
+{{</callout>}}
 
 ### Realm
 
-Start by creating Realm. If this is your first time logging in to Keycloak,
-you'll have a default master Realm. This is used to manage access to the
-Keycloak interface and should not be used to configure your open ID provider. So
-you'll need to create a new realm.
+首先创建 Realm。如果这是你第一次登录 Keycloak，你将拥有一个默认的主 Realm。该 Realm 用于管理对 Keycloak 界面的访问，不应该用于配置你的 OpenID 提供者。因此，你需要创建一个新的 Realm。
 
-1. Click the **Add Realm** button
-2. Set the Realm name -- in this example it's `tetrate`.
-3. Click **Create**
+1. 单击 **Add Realm** 按钮。
+2. 设置 Realm 名称，本示例中为 `tetrate`。
+3. 单击 **Create**。
 
 ### Role
 
-In the created Realm, add two new Roles: admin and normal.
+在创建的 Realm 中，添加两个新角色：admin 和 normal。
 
-1. Click **Roles** in the left side menu
-2. Select the **Add Role** button
-3. Set the name as **admin**
-4. Click Save
-5. Add another Role with name **normal** following the same steps as above
+1. 在左侧菜单中点击 **Roles**。
+2. 选择 **Add Role** 按钮。
+3. 将名称设置为 **admin**。
+4. 单击 **Save**。
+5. 再次按上述步骤添加一个名称为 **normal** 的角色。
 
 ### Users
 
-Add two users -- Jack and Sally -- and map them to their new roles:
+添加两个用户——Jack 和 Sally——并将它们映射到其新的角色：
 
-1. Click **Users** in the left side menu
-2. Select the **Add user** button
-3. Fill the details for `Jack`
-4. Click **Save**
-5. Select the **Credentials** tab
-6. Set a password for `Jack`
-7. Click **Role Mappings** tab
-8. Add the **admin** role
-9. Add another user with the name `Sally` and follow the steps above, adding a
-   `normal` role in the **Role Mappings** tab
+1. 在左侧菜单中点击 **Users**。
+2. 选择 **Add user** 按钮。
+3. 填写 `Jack` 的详细信息。
+4. 单击 **Save**。
+5. 选择 **Credentials** 选项卡。
+6. 为 `Jack` 设置密码。
+7. 单击 **Role Mappings** 选项卡。
+8. 添加 **admin** 角色。
+9. 添加另一个用户名为 `Sally` 的用户，然后按照上述步骤，在 **Role Mappings** 选项卡中添加一个 `normal` 角色。
 
 ### Client
 
-Clients are entities that can request Keycloak to authenticate a user. In this
-case, Keycloak will provide a Single Sign-On that a user will log in into,
-retrieve a JWT token, and use that token to authenticate to your Ingress Gateway
-managed by TSB.
+客户端是可以请求 Keycloak 对用户进行身份验证的实体。在这种情况下，Keycloak 将提供单点登录，用户将登录到该单点登录，获取一个 JWT 令牌，然后使用该令牌进行对 TSB 管理的 Ingress Gateway 的身份验证。
 
-Adding a new Client.
+添加一个新的客户端。
 
-1. Click **Clients** in the left side menu
-2. Select the Client **Create** button
-3. Client ID: `tetrateapp`
-4. Client Protocol: openid-connect
-5. Root URL: https://www.keycloak.org/app/, (https://www.keycloak.org/app/ is an
-   SPA testing application available on the Keycloak website).
-6. Click **Save**
+1. 在左侧菜单中点击 **Clients**。
+2. 选择客户端 **Create** 按钮。
+3. 客户端 ID: `tetrateapp`。
+4. 客户端 Protocol: openid-connect。
+5. 根 URL: <https://www.keycloak.org/app/> 是 Keycloak 网站上可用的一个 SPA 测试应用程序。
+6. 单击 **Save**。
 
-Then make some updates in the Client.
+接下来，在客户端中进行一些更新。
 
-First, increase the token lifespan to ensure that it doesn't expire too quickly,
-or during testing.
+首先，增加令牌寿命，以确保令牌不会在测试过程中过快过期。
 
-1. In the Settings tab, scroll down, select **Advanced Settings**
-2. Set the **Access Token Lifespan** to 2 hours
-3. Click **Save**
+1. 在设置选项卡中，滚动到底部，选择 **Advanced Settings**。
+2. 将 **Access Token Lifespan** 设置为 2 小时。
+3. 单击 **Save**。
 
-Then, you need to add two mappers so that Keycloak can generate a JWT with data
-that you use in the TSB Ingress Gateway.
+然后，你需要添加两个映射器，以便 Keycloak 可以生成一个带有你在 TSB Ingress Gateway 中使用的数据的 JWT。
 
-You'll need to add two types of mappers - an Audience and a Role mapper:
+你需要添加两种类型的映射器：一个 Audience 映射器和一个 Role 映射器：
 
-
-| Mappers | Purpose |
+| 映射器 | 目的 |
 | --- | --- |
-| Audience mapper | Adds a client id in the audience field in JWT token. This ensures that you can limit JWT to specific clients. |
-| Role mappers |Changes the role from nested struct to array in the JWT token. Currently, TSB cannot handle nested fields in JWT claims. This has been fixed in Istio 1.8 and will be added to TSB in future releases. |
+| Audience 映射器 | 将客户端 ID 添加到 JWT 令牌中的 audience 字段。这可以确保你可以将 JWT 令牌限制为特定客户端。 |
+| Role 映射器 | 将 JWT 令牌中的角色从嵌套结构更改为数组。当前，TSB 无法处理 JWT 申明中的嵌套字段。这在 Istio 1.8 中已修复，并将在未来版本中添加到 TSB 中。 |
 
-1. Select the **Mappers** tab
-2. Click the **Create** button and enter the following information:
-   - Name: Audience mapper
-   - Mapper Type: Audience
-   - Included Client Audience: `tetrateapp`
-3. Click **Save**
+1. 选择 **Mappers** 选项卡。
 
-1. Return to the **Mappers** tab
-2. Click on the **Create** button and enter the following information:
-   - Name: Role mapper
-   - Mapper Type: User Realm Role
-   - Token Claim Name: roles
-   - Claim JSON Type: String
-   Leave multi-valued, add to ID token, Add to access token, and Add user info to ‘on'
-3. Click **Save**
+2. 单击 **Create** 按钮，然后输入以下信息：
+   - 名称：Audience 映射器。
+   - 映射器类型：Audience。
+   - 包含客户端受众：`tetrateapp`。
+3. 单击 **Save**。
 
-### Test User Sign In
+1. 返回到 **Mappers** 选项卡。
+2. 单击 **Create** 按钮，然后输入以下信息：
+   - 名称：Role 映射器。
+   - 映射器类型：User Realm Role。
+   - 令牌声明名称：roles。
+   - 申明 JSON 类型：String。
+   不要修改 multi-valued，添加到 ID token，添加到访问令牌和添加用户信息到 'on'。
+3. 单击 **Save**。
 
-Now you have your client configured, sign in and inspect your JWT token
+### 测试用户登录
 
-1. Go to https://www.keycloak.org/app/ and enter the following information:
+现在，你已经配置了客户端，请使用 Keycloak 示例应用程序或之前解释的 `curl` 来获取并检查你的 JWT 令牌。
+
+1. 前往 https://www.keycloak.org/app/，并输入以下信息：
     - Keycloak URL: https://keycloak.example.com/auth
     - Realm: `tetrate`
     - Client: `tetrateapp`
-2. Click **Save**
+2. 单击 **Save**。
 
-To inspect the JWT token.
+要检查 JWT 令牌，请执行以下操作：
 
-1. Open the browser console
-2. Click on the **Network** tab
-3. Sign in with user Jack's credentials.
-4. Look up a request to the `token`. In the response, get the `access_token`.
-5. Paste your token into https://jwt.io/
+1. 打开浏览器控制台。
+2. 单击 **Network** 选项卡。
+3. 使用 Jack 的凭证登录。
+4. 查找一个请求 `token`。在响应中，获取 `access_token`。
+5. 将你的令牌粘贴到 https://jwt.io/。
 
-You'll see the following information from your JWT token. You only need to note
-three fields that you'll use in your Ingress Gateway configuration: `iss`,
-`aud`, and `roles`. 
+你将从 JWT 令牌中看到以下信息。你只需要注意三个字段，这些字段将在你的 Ingress Gateway 配置中使用：`iss`、`aud` 和 `roles`。
 
 ```json
 {
@@ -197,8 +168,7 @@ three fields that you'll use in your Ingress Gateway configuration: `iss`,
 }
 ```
 
-You can also get a user JWT token using OAuth's Resource Owner Password Flow.
-This flow is enabled by default when you create a Keycloak Client.
+你还可以使用 OAuth 的 Resource Owner Password Flow 获取用户 JWT 令牌。当你创建一个 Keycloak 客户端时，默认情况下会启用此流程。
 
 ```bash
 curl --request POST \
@@ -211,17 +181,13 @@ curl --request POST \
      --data 'scope=openid email profile'
 ```
 
-## Deploying the Httpbin application with Ingress Gateway
+## 使用 Ingress Gateway 部署 Httpbin 应用程序
 
-Deploy the `httpbin` application along with the Ingress Gateway.
+与 Ingress Gateway 一起部署 `httpbin` 应用程序。
 
-Create the following [`httpbin.yaml`](../../assets/howto/httpbin.yaml)
+创建以下 [`httpbin.yaml`](../../../assets/howto/httpbin.yaml)。
 
-<CodeBlock className="language-yaml">
-  {httpBinYAML}
-</CodeBlock>
-
-Deploy `httpbin` using the kubectl commands to your onboarded clusters
+使用 kubectl 命令将 `httpbin` 部署到你的接入集群中：
 
 ```bash
 kubectl create namespace httpbin
@@ -229,102 +195,83 @@ kubectl label namespace httpbin istio-injection=enabled --overwrite=true
 kubectl apply -n httpbin -f httpbin.yaml
 ```
 
-Confirm all services and pods are running
+确认所有服务和 Pod 都在运行：
 
 ```bash
 kubectl get pods -n httpbin
 ```
 
-Create an Ingress Gateway [`ingress.yaml`](../../assets/howto/ingress.yaml)
+创建 Ingress Gateway [`ingress.yaml`](../../../assets/howto/ingress.yaml)。
 
-<CodeBlock className="language-yaml">
-  {ingressYAML}
-</CodeBlock>
-
-Apply your changes
+应用更改：
 
 ```bash
 kubectl apply -n httpbin -f ingress.yaml
 ```
 
-Confirm that all services and pods are running. Make sure that you wait until 
-the Ingress Gateway has its external IP assigned.
+确保所有服务和 Pod 都在运行。请等待，直到 Ingress Gateway 分配了其外部 IP。
 
 ```bash
 kubectl get pods -n httpbin
 kubectl get svc -n httpbin
 ```
 
-Get the Ingress Gateway IP
+获取 Ingress Gateway 的 IP：
 
 ```bash
 export GATEWAY_HTTPBIN_IP=$(kubectl -n httpbin get service tsb-gateway-httpbin -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 ```
 
-## Configuring Workspaces and Ingress Gateway
+## 配置工作区和 Ingress Gateway
 
-Now that you have your application running, you need to create workspaces and
-configure your Ingress Gateway. You will need TSB running and tctl for this.
+现在，你的应用程序正在运行，你需要创建工作区并配置 Ingress Gateway。为此，你需要 TSB 运行和 tctl。
 
-:::note
-If you run TSB demo install, you will have a default tenant named `tetrate` and
-a default cluster named `demo` which we use in the following configuration
-yamls. If you are using this in production, please change it to your own tenant
-and cluster.
-:::
+{{<callout note 注意>}}
+如果你运行 TSB 演示安装，你将拥有一个名为 `tetrate` 的默认租户和一个名为 `demo` 的默认集群，我们在以下配置 YAML 中使用了它们。如果你在生产环境中使用，请将其更改为你自己的租户和集群。
+{{</callout>}}
 
-### Workspace
+### 工作区
 
-Create a [`workspace.yaml`](../../assets/howto/workspace.yaml)
+创建一个 [`workspace.yaml`](../../../assets/howto/workspace.yaml)。
 
-<CodeBlock className="language-yaml">
-  {workspaceYAML}
-</CodeBlock>
-
-Apply your changes
+应用更改：
 
 ```bash
 tctl apply -f workspace.yaml
 ```
 
-Make sure that the workspace is created
+确保工作区已创建：
 
 ```bash
 tctl get workspaces httpbin-ws
 ```
 
-Expected output:
+预期输出：
 
 ```text
   NAME
   httpbin-ws
 ```
 
-Next, create an Ingress Gateway to allow access to httpbin from outside the
-mesh. You'll start with an insecure Gateway that has no authentication.
+接下来，创建一个 Ingress Gateway，允许从网格外部访问 httpbin。你将从一个没有身份验证的不安全 Gateway 开始。
 
 ### IngressGateway
 
-Create the following [`gateway-no-auth.yaml`](../../assets/howto/gateway-no-auth.yaml). In this example, `httpbin-certs`
-is already set for HTTPS connections. 
+创建以下 [`gateway-no-auth.yaml`](../../../assets/howto/gateway-no-auth.yaml)。在此示例中，已经为 HTTPS 连接设置了 `httpbin-certs`。
 
-<CodeBlock className="language-yaml">
-  {gatewayNoAuthYAML}
-</CodeBlock>
-
-Apply with `tctl`
+使用 `tctl` 应用：
 
 ```bash
 tctl apply -f gateway-no-auth.yaml
 ```
 
-Verify that you have a gateway created in the httpbin namespace
+验证你在 httpbin 命名空间中创建了一个网关：
 
 ```bash
 kubectl get gateway -n httpbin httpbin-gw-ingress -o yaml
 ```
 
-Example output
+示例输出：
 
 ```yaml
 
@@ -364,7 +311,7 @@ spec:
       mode: ISTIO_MUTUAL
 ```
 
-Try to access the httpbin by sending it a request
+尝试通过发送请求来访问 httpbin：
 
 ```bash
 export GATEWAY_HTTPBIN_IP=$(kubectl -n httpbin get service tsb-gateway-httpbin -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
@@ -372,29 +319,21 @@ curl -k -v "https://httpbin.tetrate.com/get" \
     --resolve "httpbin.tetrate.com:443:${GATEWAY_HTTPBIN_IP}" 
 ```
 
-## Enabling Authentication and Authorization at Ingress
+## 在 Ingress 启用身份验证和授权
 
-Now, add the authentication and authorization to your Ingress Gateway by 
-creating the following [`gateway-with-auth.yaml`](../../assets/howto/gateway-with-auth.yaml)
+现在，通过创建以下 [`gateway-with-auth.yaml`](../../../assets/howto/gateway-with-auth.yaml) 将身份验证和授权添加到你的 Ingress Gateway。
 
-<CodeBlock className="language-yaml">
-  {gatewayWithAuthYAML}
-</CodeBlock>
+请注意，在身份验证块中，**audiences** 设置为 `tetrateapp`，这是之前在 JWT 令牌中设置的。
 
-Notice that in the authentication block -- the **audiences** are set to 
-`tetrateapp`, which was set previously in the JWT token.
+授权块设置了两个规则：一个是 *admin* 角色可以访问所有内容，另一个是 *normal* 角色只能访问 `GET /status`。
 
-The authorization block sets two rules: one for the *admin* role which can access
-everything and another for the *normal* role which only can access `GET /status`.
-
-Now, apply the changes. Since you have the same name as the previous
-`gateway-no-auth.yaml`, it will update your previous gateway.
+现在，应用这些更改。由于与之前的 `gateway-no-auth.yaml` 具有相同的名称，它将更新之前的网关。
 
 ```bash
 tctl apply -f gateway-with-auth.yaml
 ```
 
-If you try to access `httpbin` without a JWT token you will get a `403` error
+如果尝试在没有 JWT 令牌的情况下访问 `httpbin`，将会收到 `403` 错误。
 
 ```bash
 curl -k -o /dev/null -s \
@@ -403,14 +342,9 @@ curl -k -o /dev/null -s \
 403
 ```
 
-## Access httpbin with JWT Token
+使用 JWT 令牌尝试访问网关。使用 Keycloak 示例应用程序或之前解释的 `curl` 获取令牌，并将令牌用于使用 `curl` 进行 HTTP 请求，分别为 Jack 和 Sally 的用户。在以下 `curl` 命令中，将 `<jack_access_token>` 和 `<sally_access_token>` 替换为用户的 JWT 令牌。
 
-Try to access the Gateway with a JWT token. Get the token using Keycloak sample
-app or `curl` as explained before, and use the token to make HTTP requests with
-`curl` for both users Jack and Sally. Replace `<jack_access_token>` and
-`<sally_access_token>` in the `curl` command below to get the user's JWT token.
-
-Try to access `GET /get` with Jack's token *(our admin user)*
+尝试使用 Jack 的令牌访问 `GET /get`（我们的管理员用户）：
 
 ```bash
 curl -k -o /dev/null -s \
@@ -420,10 +354,7 @@ curl -k -o /dev/null -s \
 200
 ```
 
-
-Try to access `GET /get` with Sally's token *(our normal user)*. The request
-should fail because any user with a *normal* role only is allowed to access
-`GET /status/*`
+尝试使用 Sally 的令牌访问 `GET /get`（我们的普通用户）。由于只允许 *normal* 角色的用户访问 `GET /status/*`，因此请求将失败：
 
 ```bash
 curl -k -o /dev/null -s \
@@ -433,8 +364,7 @@ curl -k -o /dev/null -s \
 403
 ```
 
-Try to access `GET /status/200` with Sally's token. The request should succeed 
-because any user with a *normal* role is allowed to access `GET /status/*`
+尝试使用 Sally 的令牌访问 `GET /status/200`。请求应成功，因为 *normal* 角色的用户被允许访问 `GET /status/*`：
 
 ```bash
 curl -k -o /dev/null -s \
@@ -443,4 +373,3 @@ curl -k -o /dev/null -s \
     --header "Authorization: Bearer <sally_access_token>"
 200
 ```
-

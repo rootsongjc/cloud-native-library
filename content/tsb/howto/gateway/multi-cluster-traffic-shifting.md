@@ -1,210 +1,178 @@
 ---
-title: Multi cluster traffic shifting with Tier-1 Gateway
-description: Deploy Tier-1 gateway and use to shift traffic between multiple clusters
-weight: 5
+title: 使用 Tier-1 网关进行多集群流量切换
+description: 部署 Tier-1 网关并使用它在多个集群之间切换流量
+weight: 7
 ---
 
-This document describes how to use a [Tier-1 Gateway](../../concepts/terminology/#gateway) for multi cluster traffic shifting. You will create one cluster for a Tier-1 Gateway deployment and two clusters for running [bookinfo applications](../../quickstart/deploy_sample_app#deploying-a-demo-application). 
+本文档描述了如何使用 [Tier-1 网关](../../../concepts/terminology/#gateway) 进行多集群流量切换。你将创建一个用于 Tier-1 网关部署的集群，以及两个用于运行 [bookinfo 应用程序](../../../quickstart/deploy-sample-app#deploying-a-demo-application) 的集群。
 
-Each application cluster will have an [Ingress Gateway](../../concepts/terminology/#gateway) configured to route traffic to the bookinfo application. Finally, you will configure the Tier-1 Gateway to shift the traffic from an application running on one cluster to another application on running on another cluster.  
+每个应用程序集群都将配置一个 [入口网关](../../../concepts/terminology/#gateway)，用于将流量路由到 bookinfo 应用程序。最后，你将配置 Tier-1 网关，将流量从一个集群上运行的应用程序切换到另一个集群上运行的应用程序。
 
-Before you get started, make sure you: <br />
-✓ Familiarize yourself with [TSB concepts](../../concepts/toc) <br />
-✓ Familiarize yourself with [TSB management plane](../../concepts/terminology/#management-plane) and [cluster onboarding](../../setup/self_managed/onboarding-clusters). Following scenarios will assume that you have already installed a TSB management plane and you have `tctl` configured to the correct management plane.
+在开始之前，请确保你已经：
+- 熟悉了 [TSB 概念](../../../concepts/)
+- 熟悉了 [TSB 管理平面](../../../concepts/terminology/#management-plane) 和 [集群入网](../../../setup/self-managed/onboarding-clusters)。以下场景将假定你已经安装了 TSB 管理平面，并且已经将 `tctl` 配置为正确的管理平面。
 
-:::note Kubernetes Provider
-The following scenario has been tested on GKE Kubernetes clusters. However the steps described here should be generic enough to be used in other Kubernetes providers.
-:::
+{{<callout note "Kubernetes 供应商">}}
+以下场景在 GKE Kubernetes 集群上进行了测试。然而，这里描述的步骤应该足够通用，可以在其他 Kubernetes 供应商上使用。
+{{</callout>}}
 
-:::warning Certificates
-This scenario uses self-signed certificates for Istio CAs. The instructions here are for demo purposes only. For a production cluster setup, it is highly recommended to use a production-ready CA. 
-:::
+{{<callout warning 证书>}}
+本场景使用自签名证书来进行 Istio CA。这里的说明仅供演示目的。对于生产集群设置，强烈建议使用生产就绪的 CA。
+{{</callout>}}
 
-## Tier-1 Gateway
+## Tier-1 网关
 
-There are two kinds of Gateways that receive incoming traffic in TSB: Tier-1 Gateways and Ingress Gateways (also called Tier-2 gateways). A Tier-1 Gateway distributes traffic across one or more ingress gateways in other clusters over Istio mTLS. An Ingress Gateway distributes traffic to one or more workloads (business application services) running in the cluster where the gateways is deployed.
+在 TSB 中，有两种接收入站流量的网关类型：Tier-1 网关和 Ingress 网关（也称为 Tier-2 网关）。Tier-1 网关将流量分发到其他集群中一个或多个 Ingress 网关，使用 Istio mTLS 进行通信。Ingress 网关将流量路由到部署了网关的集群中运行的一个或多个工作负载（业务应用服务）。
 
-There are several caveats you should be aware of with regards to Tier-1 deployments:
+关于 Tier-1 部署，有一些需要注意的地方：
 
-First, by default, *clusters that have a Tier-1 gateway deployed may not have any other gateways or workloads*. You must use dedicated clusters for Tier-1. Starting from TSB 1.6, You can relax this requirement by allowing Tier1 gateway deployment in any of your workload clusters. See [Running Tier1 Gateway in App Cluster](../../operations/features/tier1-in-app-cluster). 
+首先，默认情况下，*部署了 Tier-1 网关的集群不能包含其他网关或工作负载*。你必须使用专用集群进行 Tier-1 部署。从 TSB 1.6 开始，你可以通过允许在任何工作负载集群中部署 Tier-1 网关来放宽此要求。参见 [在应用程序集群中运行 Tier1 网关](../../../operations/features/tier1-in-app-cluster)。
 
-*Istio that runs on Tier-1 and Application clusters must share the same root CA*. Refer to Istio docs on [Plug in CA Certificates](https://istio.io/latest/docs/tasks/security/cert-management/plugin-ca-cert/) on how to set root and intermediate CA on Istio for multiple clusters. The TSB Control Plane Operator will deploy Istio and Istio's CA will read certificates from secrets-mount files from steps described in Plug in CA Certificates.
+*在部署 Tier-1 和应用程序的集群上运行的 Istio 必须共享相同的根 CA*。有关如何为多个集群上的 Istio 设置根和中间 CA，请参阅 Istio 文档中的 [插入 CA 证书](https://istio.io/latest/docs/tasks/security/cert-management/plugin-ca-cert/)。TSB 控制平面操作员将部署 Istio，并且 Istio 的 CA 将从插入 CA 证书步骤中描述的 secrets-mount 文件中读取证书。
 
-*The application must be deployed in the same namespace on both clusters*. This is because you will use one Ingress Gateway configuration for both application clusters.
+*应用程序必须在两个集群中的相同命名空间中部署*。这是因为你将为两个应用程序集群使用相同的 Ingress 网关配置。
 
-## Preparing Clusters
+## 准备集群
 
-The following image shows the deployment architecture that you will use in this document. The management plane should already be deployed.
+下面的图像显示了你将在本文档中使用的部署架构。管理平面应该已经部署好了。
 
-![](../../assets/howto/tier1-tier2-diagram.svg)
+![](../../../assets/howto/tier1-tier2-diagram.svg)
 
-You will create a single Tier-1 Gateway cluster and two application clusters. Each application cluster has one Ingress Gateway and application workloads. 
+你将创建一个 Tier-1 网关集群和两个应用程序集群。每个应用程序集群都有一个 Ingress 网关和应用程序工作负载。
 
-In your cloud provider, create the above three clusters: one for the Tier-1 gateway, and two for the applications.
+在你的云提供商中，创建上述三个集群：一个用于 Tier-1 网关，两个用于应用程序。
 
-Then plug in the certificates and keys into each cluster as described in [Plug in CA Certificates](https://istio.io/latest/docs/tasks/security/cert-management/plugin-ca-cert/) documentation.
+然后，根据 [插入 CA 证书](https://istio.io/latest/docs/tasks/security/cert-management/plugin-ca-cert/) 文档的描述，在每个集群中插入证书和密钥。
 
-:::note Tier1 gateway in app cluster
-If you enable [Running Tier1 Gateway in App Cluster](../../operations/features/tier1-in-app-cluster), you can only have two clusters. You will need to adjust onboarding clusters yaml and namespace selector for `tier1` workspace and gateway group in next step. Network reachability might not be relevant if you opt to assign same network for your clusters.
-:::
+{{<callout note "应用程序集群中的 Tier1 网关">}}
+如果启用了 [在应用程序集群中运行 Tier1 网关](../../../operations/features/tier1-in-app-cluster)，你只能有两个集群。你需要调整后续步骤中的入网集群 YAML 和 `tier1` 工作区的命名空间选择器以适应这种情况。如果你选择将相同的网络分配给你的集群，网络可达性可能不相关。
 
-## Onboarding Tier-1 Gateway and Application Clusters
+{{</callout>}}
 
-Create a file called [traffic-shifting-clusters.yaml](../../assets/howto/traffic-shifting-clusters.yaml) with the following content. This will create the cluster resources for our use: The Tier-1 cluster is named `t1`, and the application clusters are named `c1` and `c2`. You will need to use these names when referring to them in TSB configuration objects later.
+## 入网 Tier-1 网关和应用程序集群
 
-<CodeBlock className="language-yaml">
-  {clustersYAML}
-</CodeBlock>
+创建一个名为 [traffic-shifting-clusters.yaml](../../../assets/howto/traffic-shifting-clusters.yaml) 的文件，其中包含以下内容。这将为我们的使用创建集群资源：Tier-1 集群命名为 `t1`，应用程序集群命名为 `c1` 和 `c2`。稍后在 TSB 配置对象中引用它们时，你将需要使用这些名称。
 
-Apply this using `tctl`:
+使用 `tctl` 应用这些内容：
 
 ```
 tctl apply -f traffic-shifting-clusters.yaml
 ```
 
-### Network Reachability
+### 网络可达性
 
-A cluster has a `network` field representing a network boundary like a VPC on AWS/GCP/Azure. All clusters within the same network are assumed to be reachable to each other for multi-cluster routing. If your clusters are on different networks, *you must configure them properly so that they are reachable from each other*. 
+一个集群具有一个 `network` 字段，表示像 AWS/GCP/Azure 上的 VPC 之类的网络边界。同一网络中的所有集群都被假定为可以互相访问，用于多集群路由。如果
 
-Please take note that in the cluster resources you have created, the Tier-1 cluster and application clusters have been assigned different networks: For the Tier-1 cluster the network is `tier1`, and for the two application clusters the network is `tier2`.
+你的集群位于不同的网络中，则必须适当配置它们，以使它们可以相互访问。
 
-You will use these network names to tell TSB that `tier1` and `tier2` are reachable. Create a file named [organization-settings.yaml](../../assets/howto/traffic-shifting-organization-settings.yaml) with the following contents.
+请注意，在你创建的集群资源中，Tier-1 集群和应用程序集群已分配了不同的网络：Tier-1 集群的网络是 `tier1`，而两个应用程序集群的网络是 `tier2`。
 
-<CodeBlock class="language-yaml">
-  {organizationSettingsYAML}
-</CodeBlock>
+你将使用这些网络名称来告诉 TSB `tier1` 和 `tier2` 是可达的。创建一个名为 [organization-settings.yaml](../../../assets/howto/traffic-shifting-organization-settings.yaml) 的文件，其中包含以下内容。
 
-Apply this using `tctl`:
+使用 `tctl` 应用这些内容：
 
 ```
 tctl apply -f organization-settings.yaml
 ```
 
-### Installing Control Plane components in Clusters.
+### 在集群中安装控制平面组件
 
-At this point the clusters have been registered to TSB, but it is not onboarded yet. To onboard the clusters, follow Onboarding cluster steps using [Helm](../../setup/helm/controlplane) or [tctl](../../setup/self_managed/onboarding-clusters)
+此时，集群已经注册到 TSB，但尚未入网。要入网这些集群，请按照使用 [Helm](../../../setup/helm/controlplane) 或 [tctl](../../../setup/self-managed/onboarding-clusters) 的方法进行集群入网步骤。
 
-When all clusters are onboarded properly, you should see the following information in the TSB UI. Note that clusters are reporting back the Istio and TSB agent versions.
+当所有集群都正确入网时，你应该在 TSB UI 中看到以下信息。请注意，集群正在报告 Istio 和 TSB 代理的版本。
 
-![](../../assets/howto/tsb-ui-tier1-two-applications.png)
+![](../../../assets/howto/tsb-ui-tier1-two-applications.png)
 
-## Deploy Applications and Ingress Gateway to Application Cluster
+## 部署应用程序和 Ingress 网关到应用程序集群
 
-For both application clusters, do the following
+对于两个应用程序集群，执行以下操作：
 
-1. Deploy the [bookinfo application](../../quickstart/deploy_sample_app#deploying-a-demo-application)
-2. Deploy an Ingress Gateway
+1. 部署 [bookinfo 应用程序](../../../quickstart/deploy-sample-app#deploying-a-demo-application)
+2. 部署 Ingress 网关
 
-To deploy the Ingress gateway, create a file called [`bookinfo-ingress-deploy.yaml`](../../assets/howto/traffic-shifting-bookinfo-ingress-deploy.yaml) with the following contents
+要部署 Ingress 网关，请创建一个名为 [`bookinfo-ingress-deploy.yaml`](../../../assets/howto/traffic-shifting-bookinfo-ingress-deploy.yaml) 的文件，其中包含以下内容：
 
-<CodeBlock class="language-yaml">
-  {bookinfoIngressDeployYAML}
-</CodeBlock>
-
-Apply this using `kubectl`:
+使用 `kubectl` 应用这些内容：
 
 ```
 kubectl apply -f bookinfo-ingress-deploy.yaml
 ```
 
-Make sure that you are pointing `kubectl` to the correct clusters when you apply the YAML file.
+确保在应用 YAML 文件时将 `kubectl` 指向正确的集群。
 
-:::note Deployment and configuration
-Note that we are using `kubectl` for the previous step when deploying application and ingress gateway. In TSB, deployment and configuration are separate concepts and handled differently. You deploy with `kubectl` directly to clusters and you configure with `tctl` through the TSB management plane.
-:::
+{{<callout note 部署和配置>}}
+请注意，在部署应用程序和 Ingress 网关时，我们使用 `kubectl`。在 TSB 中，部署和配置是不同的概念，分别以不同的方式处理。你直接使用 `kubectl` 部署到集群，并通过 TSB 管理平面使用 `tctl` 进行配置。
+{{</callout>}}
 
-:::note Gateway service type
-In this example, you use a LoadBalancer as a gateway service type. Depending on your Kubernetes environment (e.g. bare metal), you might need to use NodePort.
+{{<callout note 网关服务类型>}}
+在此示例中，我们使用负载均衡器作为网关服务类型。根据你的 Kubernetes 环境（例如，裸机），你可能需要使用 NodePort。
 
-Typically LoadBalancer types are available from cloud providers. On GKE, this will spin up a Network Load Balancer that will give you a single IP address that will forward all traffic to your service. When using Kubernetes on your own infrastructure and not installing a load balancer service like MetalLB or PureLB, you will need to use NodePort. NodePort, opens a specific port on all the Nodes (the VMs), and any traffic that is sent to this port is forwarded to the service. 
-:::
+通常，负载均衡器类型在云提供商中都是可用的。在 GKE 上，这将启动一个网络负载均衡器，该负载均衡器将为你提供一个单独的 IP 地址，将所有流量转发到你的服务。如果在自己的基础设施上使用 Kubernetes，而不安装像 MetalLB 或 PureLB 这样的负载均衡器服务，那么你将需要使用 NodePort。NodePort 在所有节点（虚拟机）上打开一个特定的端口，任何发送到此端口的流量都将转发到服务。
+{{</callout>}}
 
-## Tenant and Workspaces
+## 租户和工作区
 
-In this example you are going to associate the Tier-1 gateway to a [workspace](../../concepts/terminology/#workspace) and the two ingress gateways a another workspace. You should make sure that workspaces and a [tenant](../../concepts/terminology/#tenant) that the workspaces belong to are configured properly.
+在这个示例中，你将把 Tier-1 网关关联到一个 [工作区](../../../concepts/terminology/#workspace)，将两个 Ingress 网关关联到另一个工作区。你应该确保工作区和工作区所属的 [租户](../../../concepts/terminology/#tenant) 都已经正确配置。
 
-### Create a Tenant
+### 创建租户
 
-If you have already configured a tenant in TSB, you can skip this section.
- 
-Create a file called [`traffic-shifting-tenant.yaml`](../../assets/howto/traffic-shifting-tenant.yaml) with the following contents.
+如果你已经在 TSB 中配置了一个租户，可以跳过此部分。
 
+创建一个名为 [`traffic-shifting-tenant.yaml`](../../../assets/howto/traffic-shifting-tenant.yaml) 的文件，其中包含以下内容。
 
-<CodeBlock class="language-yaml">
-  {tenantYAML}
-</CodeBlock>
-
-Apply this using `tctl`.
+使用 `tctl` 应用这些内容：
 
 ```
 tctl apply -f traffic-shifting-tenant.yaml
 ```
 
-## Create Workspaces
+## 创建工作区
 
-Create workspaces to associate the gateways. Create a file named [`traffic-shifting-workspaces.yaml`](../../assets/howto/traffic-shifting-workspaces.yaml).
+创建工作区以关联网关。创建一个名为 [`traffic-shifting-workspaces.yaml`](../../../assets/howto/traffic-shifting-workspaces.yaml) 的文件。
 
-<CodeBlock class="language-yaml">
-  {workspacesYAML}
-</CodeBlock>
-
-Apply this using `tctl`:
+使用 `tctl` 应用这些内容：
 
 ```
 tctl apply -f traffic-shifting-workspaces.yaml
 ```
 
-If you want to use existing workspaces, you can update the workspace to include clusters and namespaces that you just created by updating the workspace namespace selector. 
+如果要使用现有的工作区，可以更新工作区以包括你刚刚创建的集群和命名空间，方法是更新工作区命名空间选择器。
 
-## Configure Ingress Gateway
+## 配置 Ingress 网关
 
-Next, you will configure the Ingress Gateway to receive traffic for bookinfo applications in both application clusters. 
+接下来，你将配置 Ingress 网关以接收两个应用程序集群中的 bookinfo 应用程序的流量。
 
-Before configuring the Ingress gateways, create a TLS certificate using [this script](../../quickstart/ingress_gateway#certificate-for-gateway). Make sure to create the secrets in the `bookinfo` namespace in both application clusters.
+在配置 Ingress 网关之前，请使用 [此脚本](../../../quickstart/ingress-gateway#certificate-for-gateway) 创建一个 TLS 证书。确保在两个应用程序集群的 `bookinfo` 命名空间中创建这些证书的 secrets。
 
-Create a file named [`traffic-shifting-bookinfo-ingress-config.yaml`](../../assets/howto/traffic-shifting-bookinfo-ingress-config.yaml).
-
-<CodeBlock class="language-yaml">
-  {bookinfoIngressConfigYAML}
-</CodeBlock>
-
-Apply this using `tctl`:
+创建一个名为 [`traffic-shifting-bookinfo-ingress-config.yaml`](../../../assets/howto/traffic-shifting-bookinfo-ingress-config.yaml) 的文件。
 
 ```
 tctl apply -f traffic-shifting-bookinfo-ingress-config.yaml
 ```
 
-The Ingress gateway configuration will automatically be pushed to both application clusters, as the configuration above specifies the clusters in the `namespaceSelector` section of the `Group` object.
+Ingress 网关配置将自动推送到两个应用程序集群，因为上面的配置在 `Group` 对象的 `namespaceSelector` 部分指定了集群。
 
-## Deploy and configure Tier-1 Gateway
+## 部署和配置 Tier-1 网关
 
-Create a file named [`traffic-shifting-tier1-deploy.yaml`](../../assets/howto/traffic-shifting-tier1-deploy.yaml) with the following contents.
+创建一个名为 [`traffic-shifting-tier1-deploy.yaml`](../../../assets/howto/traffic-shifting-tier1-deploy.yaml) 的文件，其中包含以下内容。
 
-<CodeBlock class="language-yaml">
-  {tier1DeployYAML}
-</CodeBlock>
-
-Deploy this using `kubectl`:
+使用 `kubectl` 部署这些内容：
 
 ```
 kubectl apply -f traffic-shifting-tier1-deploy.yaml
 ```
 
-Create a file named [`traffic-shifting-tier1-config.yaml`](../../assets/howto/traffic-shifting-tier1-config.yaml) with the following contents.
+创建一个名为 [`traffic-shifting-tier1-config.yaml`](../../../assets/howto/traffic-shifting-tier1-config.yaml) 的文件，其中包含以下内容。
 
-You will use the same bookinfo TLS certificate that you have created earlier for the Ingress gateway. In the following yaml you route all incoming traffic to the first application cluster, that you named c1 when you onboarded the clusters in the previous step.
+你将使用之前为 Ingress 网关创建的相同的 bookinfo TLS 证书。在以下的 YAML 中，你将所有传入的流量路由到第一个应用程序集群，这个集群在前面的步骤中命名为 `c1`。
 
-<CodeBlock class="language-yaml">
-  {tier1ConfigYAML}
-</CodeBlock>
-
-Configure the Tier-1 gateway using `tctl`:
+使用 `tctl` 配置 Tier-1 网关：
 
 ```
 tctl apply -f traffic-shifting-tier1-config.yaml
 ```
 
-At this point, you should be able to send requests to the Tier-1 Gateway. Get the Tier-1 public IP address using the Tier-1 cluster kubeconfig.
+此时，你应该能够向 Tier-1 网关发送请求。使用 Tier-1 集群的 kubeconfig 获取 Tier-1 公共 IP 地址。
 
 ```bash
 export GATEWAY_IP=$(kubectl -n tier1 get service tier1-gateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
@@ -212,21 +180,17 @@ export GATEWAY_IP=$(kubectl -n tier1 get service tier1-gateway -o jsonpath='{.st
 curl "https://bookinfo.tetrate.com/productpage" --resolve "bookinfo.tetrate.com:443:${GATEWAY_IP}" -v --cacert bookinfo-ca.crt
 ```
 
-## Traffic Shifting
+## 流量切换
 
-Now that you have a Tier-1 gateway installed and configured, you can configure traffic shifting using it. Traffic shifting is the act of gradually migrating traffic from one version to another version of applications or services.
+现在，你已经安装并配置了 Tier-1 网关，可以使用它来配置流量切换。流量切换是逐渐将流量从一个版本迁移到另一个版本的应用程序或服务的操作。
 
-In the previous configuration, all traffic from Tier-1 Gateway was routed to the Ingress Gateway in the bookinfo application that runs in the cluster `c1`. Suppose that you have a newer version of the bookinfo application and it runs in the other cluster `c2`.
+在之前的配置中，来自 Tier-1 网关的所有流量都被路由到运行在集群 `c1` 中的 bookinfo 应用程序的 Ingress 网关。假设你有一个更新版本的 bookinfo 应用程序，它运行在另一个集群 `c2` 中。
 
-In a scenario like this, it is usually desirable to configure it such that only a small percentage of the traffic is routed to the new cluster `c2`, so that you can test and observe if the application in the new cluster is working as expected. When you have verified that the there are no issues, the traffic percentage that is routed to `c2` can be increased incrementally until all traffic is routed to `c2`. At which point `c1` can safely be taken offline.
+在这种情况下，通常希望配置只将少量流量路由到新的集群 `c2`，以便你可以测试并观察新集群中的应用程序是否按预期工作。当你验证没有问题后，可以逐渐增加路由到 `c2` 的流量百分比，直到所有流量都路由到 `c2` 为止。然后，可以安全地停用 `c1`。
 
-To shift application traffic from cluster `c1` to cluster `c2`, create a file called [`traffic-shifting-tier1-config2.yaml`](../../assets/howto/traffic-shifting-tier1-config2.yaml) (or you may edit the previous configuration file) and apply with `tctl`.
+要将应用程序流量从集群 `c1` 切换到集群 `c2`，创建一个名为 [`traffic-shifting-tier1-config2.yaml`](../../../assets/howto/traffic-shifting-tier1-config2.yaml)（或者你可以编辑之前的配置文件），然后使用 `tctl` 应用。
 
-<CodeBlock class="language-yaml">
-  {tier1Config2YAML}
-</CodeBlock>
-
-Below is a diff between the configuration the original YAML and the new one. Note that the `Group` definition has been included again for completeness, but it can be omitted.
+下面是原始 YAML 和新 YAML 之间的差异。请注意，`Group` 定义已再次包含在其中，但可以省略。
 
 ```
 @@ -36,4 +36,6 @@
@@ -239,4 +203,4 @@ Below is a diff between the configuration the original YAML and the new one. Not
 +      weight: 10
 ```
 
-Using this configuration, the Tier-1 gateway will route 10% of traffic to the Ingress Gateway in cluster `c2`, and 90% to the cluster `c1`. You can then increase the traffic that is routed to `c2` incrementally until it reaches 100%.
+使用此配置，Tier-1 网关将路由 10% 的流量到集群 `c2` 中的 Ingress 网关，将 90% 的流量路由到集群 `c1`。然后，你可以逐渐增加路由到 `c2` 的流量，直到达到 100%。

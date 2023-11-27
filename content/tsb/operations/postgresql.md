@@ -1,27 +1,27 @@
 ---
-title: Backup and restore PostgreSQL
-description: Backup and restore PostgreSQL.
+title: 备份和恢复 PostgreSQL
+description: 备份和恢复 PostgreSQL。
 weight: 9
 ---
 
-This document describes how to create a backup, and restore using a backup, when using PostgreSQL as TSB's  datastore.
-It is recommended to create a backup of your TSB datastore every 24 hours, so in case it gets corrupted, you can easily recover all the information.
+本文描述了在将 PostgreSQL 用作 TSB 数据存储时如何创建备份以及如何使用备份进行恢复。
+建议每 24 小时创建一次 TSB 数据存储的备份，以便在发生损坏时可以轻松恢复所有信息。
 
-Before you get started make sure:
+在开始之前，请确保：
 
-- You have [installed and configured TSB.](../setup/self_managed/management-plane-installation)
-- You have installed and configured `kubectl` to access the management cluster.
-- You have full access to the PostgreSQL system where TSB is storing the data.
+- 你已经[安装和配置了 TSB](../../setup/self-managed/management-plane-installation)。
+- 你已经安装并配置了 `kubectl` 以访问管理集群。
+- 你对存储 TSB 数据的 PostgreSQL 系统具有完全访问权限。
 
-## Create a backup of TSB configuration
+## 创建 TSB 配置的备份
 
-TSB requires PostgreSQL 11.1 or up. We will be using this 11.1 version for the example. You can create a backup of the database by running:
+TSB 需要 PostgreSQL 11.1 或更高版本。我们将在示例中使用 11.1 版本。你可以通过运行以下命令创建数据库备份：
 
 ```bash
 pg_dump tsb > tsb_backup.sql
 ```
-:::note
-make sure that the backup file has complete information. At the end of the file there is the completion message such as 
+{{<callout note 注意>}}
+确保备份文件包含完整的信息。在文件的末尾，应该有如下的完成消息：
 
 ```pre
 --
@@ -29,28 +29,28 @@ make sure that the backup file has complete information. At the end of the file 
 --
 ```
 
-The size of the backup logs can be decreased by removing the audit logs (please make sure that you have a snapshot to comply with your organization compliance rules). 
-For audit logs truncation you can use the following command (please adjust the delta of logs to be kept - it's `2day` in the example below):
+备份日志的大小可以通过删除审计日志来减小（请确保你有一个快照以符合你组织的合规性规则）。要进行审计日志截断，你可以使用以下命令（请根据要保留的日志的时间间隔进行调整，以下示例中为`2day`）：
 
 ```bash
 DELETE FROM audit_log WHERE time <= ROUND(EXTRACT(epoch FROM now() - INTERVAL '2day'));
 ```
 
-:::
+{{</callout>}}
 
-## Restore a backup
+## 恢复备份
 
-To restore a backup, it is recommended to scale down the `tsb` and `iam` deployments to 0, as these deployments will be doing queries to the database continuously:
+要恢复备份，建议将 `tsb` 和 `iam` 部署的副本数缩减为 0，因为这些部署将不断对数据库进行查询：
+
 ```bash
 kubectl scale deployment tsb iam -n tsb --replicas 0
 ```
 
-:::note
-Scaling `tsb` deployment to 0 only interrupts the ability to change configuration in a running TSB installation while restoration is in progress, but does not interfere with the data plane / running services.
-:::
+{{<callout note 注意>}}
+将 `tsb` 部署的副本数缩减为 0 仅会在还原进行中时中断在运行中的 TSB 安装中更改配置的能力，但不会干扰数据平面/正在运行的服务。
+{{</callout>}}
 
-At this point, you have to login into your PostgreSQL system, and execute the following actions with a privileged user.
-Usually, the database will have few active connections. You can check them by running this query:
+此时，你需要登录到你的 PostgreSQL 系统，并以特权用户的身份执行以下操作。
+通常，数据库将具有少量活动连接。你可以通过运行以下查询来检查它们：
 
 ```sql
 SELECT *
@@ -58,7 +58,7 @@ FROM pg_stat_activity
 WHERE datname = 'tsb';
 ```
 
-The next step is to terminate these connections with this query:
+接下来的步骤是使用以下查询终止这些连接：
 
 ```sql
 SELECT	pg_terminate_backend (pid)
@@ -66,33 +66,32 @@ FROM	pg_stat_activity
 WHERE	pg_stat_activity.datname = 'tsb';
 ```
 
-And immediately remove `tsb` database:
+然后立即删除 `tsb` 数据库：
 
 ```sql
 DROP DATABASE tsb;
 ```
 
-At this point, all the TSB configurations will be removed. Now you will need to create `tsb` database again:
+此时，所有 TSB 配置都将被删除。现在，你需要重新创建 `tsb` 数据库：
 
 ```sql
 CREATE DATABASE tsb;
 ```
 
-And grant all permissions for this database to the user called `tsb`:
+并将该数据库的所有权限授予名为 `tsb` 的用户：
 
 ```sql
 GRANT ALL PRIVILEGES ON DATABASE tsb TO tsb;
 ```
 
-Once this is done, login with the user `tsb` and restore the dump created previously:
+完成后，使用用户 `tsb` 登录并恢复之前创建的转储：
 
 ```sql
 psql tsb < tsb_backup.sql
 ```
 
-Now all data from the backup is restored and you can scale up `tsb` and `iam` deployments to 1:
+现在，备份中的所有数据都已恢复，你可以将 `tsb` 和 `iam` 部署的副本数增加到 1：
 
 ```bash
 kubectl scale deployment tsb iam -n tsb --replicas 1
 ```
-

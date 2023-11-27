@@ -47,11 +47,11 @@ done
 ```
 
 {{<callout note "选择日期">}}
-如果您只想删除特定日期的索引，而不是删除所有内容，您只需将上面的命令添加到 grep 中，例如 ```...curl -u "$es_user:$es_pass" https://$es_host:$es_port/_cat/indices | grep "20221006"| ...``` 以此示例，您将删除在 2022 年 10 月 6 日创建的所有索引。
+如果你只想删除特定日期的索引，而不是删除所有内容，你只需将上面的命令添加到 grep 中，例如 ```...curl -u "$es_user:$es_pass" https://$es_host:$es_port/_cat/indices | grep "20221006"| ...``` 以此示例，你将删除在 2022 年 10 月 6 日创建的所有索引。
 {{</callout>}}
 
 {{<callout note "Elasticsearch 选项">}}
-上面的命令假定纯 HTTP Elasticsearch 实例没有身份验证。除了适当设置 `<es_host>` 和 `<es_port>` 外，如果需要，您还需要通过向上面的 `curl` 命令提供 `-u <es_user>:<es_pass>` 来添加基本认证，或者如果需要，将模式设置为 `https`。
+上面的命令假定纯 HTTP Elasticsearch 实例没有身份验证。除了适当设置 `<es_host>` 和 `<es_port>` 外，如果需要，你还需要通过向上面的 `curl` 命令提供 `-u <es_user>:<es_pass>` 来添加基本认证，或者如果需要，将模式设置为 `https`。
 {{</callout>}}
 
 
@@ -64,7 +64,7 @@ kubectl -n ${MANAGEMENT_NAMESPACE} scale deployment oap --replicas=1
 **密切关注管理平面命名空间中新的 OAP 容器的日志，如果没有错误并且容器正常运行，可以继续执行下一步。**
 
 {{<callout warning "OAP 可用性">}}
-确保管理平面中的 OAP 在继续执行此过程之前能够正确启动。该组件的管理平面 pod 会创建系统所需的索引模板和索引，因此在继续扩展控制平面组件之前，您需要确保 OAP 正常运行。
+确保管理平面中的 OAP 在继续执行此过程之前能够正确启动。该组件的管理平面 pod 会创建系统所需的索引模板和索引，因此在继续扩展控制平面组件之前，你需要确保 OAP 正常运行。
 {{</callout>}}
 
 **5. 增加控制平面命名空间中的 `oap-deployment` 部署的副本数。**

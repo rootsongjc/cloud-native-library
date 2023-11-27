@@ -1,46 +1,38 @@
 ---
-title: Distributed Ingress Gateways
-description: Resilient Mesh with Distributed Ingress Gateways.
-weight: 8
+title: 分布式入口网关
+description: 使用分布式入口网关实现弹性网格。
+weight: 11
 ---
 
-For this scenario, you will need two clusters onboarded to configure round 
-robin - failover between them.
+对于此场景，你需要两个已入网的集群，以配置它们之间的轮询和故障切换。
 
-### Prerequisites
+### 先决条件
 
-Before you get started, make sure you: <br />
-✓ Familiarize yourself with [TSB concepts](../../concepts/toc) <br />
-✓ Install the [TSB demo](../../setup/self_managed/demo-installation) environment <br />
-✓ Create a [Tenant](../../quickstart/tenant) <br />
+在开始之前，请确保你已经：
+- 熟悉 [TSB 概念](../../../concepts/)
+- 安装了 [TSB 演示](../../../setup/self_managed/demo-installation) 环境
+- 创建了 [租户](../../../quickstart/tenant)
 
-### Create workspace and gateway group
+### 创建工作区和网关组
 
-The following YAML file has two objects; a `Workspace` for the application, and
-a `Gateway` group so that you can configure the application ingress.
+以下 YAML 文件包含两个对象：一个用于应用程序的 `工作区`，以及一个 `网关` 组，以便你可以配置应用程序的入口。
 
-<CodeBlock className="language-yaml">
-  {httpBinMgmtYAML}
-</CodeBlock>
-
-Store as [`httpbin-mgmt.yaml`](../../assets/howto/httpbin-mgmt.yaml), and apply with tctl:
+将其保存为 [`httpbin-mgmt.yaml`](../../../assets/howto/httpbin-mgmt.yaml)，然后使用 tctl 应用：
 
 ```bash
 tctl apply -f httpbin-mgmt.yaml
 ```
 
-### Deploy httpbin
+### 部署 httpbin
 
-The following configurations should be applied to both clusters; to deploy your
-application, start by creating the namespace and enable the Istio sidecar
-injection.
+以下配置应该应用于两个集群，以部署你的应用程序，首先创建命名空间并启用 Istio sidecar 注入。
 
 ```bash
 kubectl create namespace httpbin
 kubectl label namespace httpbin istio-injection=enabled
 ```
 
-Then deploy your application.
+然后部署你的应用程序。
 
 ```bash
 kubectl apply -f \
@@ -48,11 +40,9 @@ kubectl apply -f \
     -n httpbin
 ```
 
-### Configure ingress gateway
+### 配置入口网关
 
-In this example, you're going to expose the application using simple TLS at the
-gateway. You'll need to provide it with a TLS certificate stored in a Kubernetes
-secret.
+在这个示例中，你将使用入口处的简单 TLS 暴露应用程序。你需要提供一个存储在 Kubernetes 密钥中的 TLS 证书。
 
 ```bash
 kubectl create secret tls -n httpbin httpbin-cert \
@@ -60,40 +50,27 @@ kubectl create secret tls -n httpbin httpbin-cert \
     --key /path/to/some/key.pem
 ```
 
-Now you can deploy the ingress gateway.
+现在，你可以部署入口网关。
 
-<CodeBlock className="language-yaml">
-  {httpBinIngressYAML}
-</CodeBlock>
-
-Save as [`httpbin-ingress.yaml`](../../assets/howto/httpbin-ingress.yaml), and apply with `kubectl`:
+另存为 [`httpbin-ingress.yaml`](../../../assets/howto/httpbin-ingress.yaml)，然后使用 `kubectl` 应用：
 
 ```bash
 kubectl apply -f httpbin-ingress.yaml
 ```
 
-Applying above configurations to both clusters, will create the same environment
-for both of them, now we will deploy the gateway and virtual services.
+将上述配置应用于两个集群，将为它们创建相同的环境，现在我们将部署网关和虚拟服务。
 
-The TSB data plane operator in the cluster will pick up this configuration and
-deploy the gateway's resources in your application namespace. All that is left
-to do is configure the gateway so that it routes traffic to your application.
+集群中的 TSB 数据面运算符将获取此配置并在应用程序命名空间中部署网关的资源。剩下的工作就是配置网关，以便它将流量路由到你的应用程序。
 
-<CodeBlock className="language-yaml">
-  {httpBinGWYAML}
-</CodeBlock>
-
-Save as [`httpbin-gw.yaml`](../../assets/howto/httpbin-gw.yaml), and apply with `tctl`:
+另存为 [`httpbin-gw.yaml`](../../../assets/howto/httpbin-gw.yaml)，然后使用 `tctl` 应用：
 
 ```bash
 tctl apply -f httpbin-gw.yaml
 ```
 
-Now, you can configure both ingress gateway service IP to your DNS entry and
-configure ROUND ROBIN between them, or just configure one IP and use the other
-cluster as failover.
+现在，你可以将两个入口网关服务的 IP 配置为你的 DNS 条目，并在它们之间配置轮询，或者只配置一个 IP 并将另一个集群用作故障切换。
 
-You can test that both ingress gateway are working by running:
+你可以通过运行以下命令测试两个入口网关是否正常工作：
 
 ```bash
 curl -s -o /dev/null --insecure -w "%{http_code}" \
@@ -106,4 +83,3 @@ curl -s -o /dev/null --insecure -w "%{http_code}" \
     "https://httpbin.tetrate.com" \
     --resolve "httpbin.tetrate.com:443:$CLUSTER2_IP"
 ```
-

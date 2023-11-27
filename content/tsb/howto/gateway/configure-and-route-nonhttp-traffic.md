@@ -1,40 +1,33 @@
 ---
-title: Configure and route HTTP, non-HTTP (multi-protocol) and multi-port service traffic in TSB
-description: Guide to configure HTTP and non-HTTP (multi-port, multi-protocol) servers at the gateway.
-weight: 9
+title: 配置和路由 TSB 中的 HTTP、非 HTTP（多协议）和多端口服务流量
+description: 配置使用 TSB 的非 HTTP 服务器的指南，以及在网关中配置 HTTP 和非 HTTP（多端口、多协议）服务器。
+weight: 12
 ---
 
-This how-to document will show you how to configure non-HTTP servers with TSB. After
-reading this document you should be familiar with the usage of the TCP section in
-`IngressGateway` and `Tier1Gateway` API.
+本操作指南将向你展示如何配置 TSB 中的非 HTTP 服务器。阅读本文档后，你应该熟悉在 `IngressGateway` 和 `Tier1Gateway` API 中使用 TCP 部分的方法。
 
-## Summary
-Workflow is exactly the same as configuring HTTP servers in `IngressGateway` and
-`Tier1Gateway`. However, multi-port services are supported for non-HTTP. 
+## 概要
+工作流程与配置 `IngressGateway` 和 `Tier1Gateway` 中的 HTTP 服务器完全相同。但是，非 HTTP 支持多端口服务。
 
-Before you get started, make sure you: <br />
-✓ Familiarize yourself with [TSB concepts](../../concepts/toc) <br />
-✓ Familiarize yourself with [onboarding clusters](../../setup/self_managed/onboarding-clusters) <br />
-✓ Create a [Tenant](../../quickstart/tenant) <br />
+在开始之前，请确保你已经：
+- 熟悉 [TSB 概念](../../../concepts/)
+- 熟悉 [入网集群](../../../setup/self-managed/onboarding-clusters)
+- 创建了 [租户](../../../quickstart/tenant)
 
-## Setup
-* Four clusters with TSB installed - Management plane, Tier-1 and Tier-2 edge clusters.
-* In Tier-2 clusters, deploy Tier-2 gateways in `echo` namespace
-* In Tier-1 cluster, deploy Tier-1 gateway in `tier1` namespace
-* In both the gateways, the ports `8080` and `9999` should be available (for simplicity, we consider the service
-  and the target ports to be the same). For installing gateways, see [here](../../quickstart/ingress_gateway)
-* Deploy apps in Tier-2 cluster which work with HTTP and non-HTTP traffic. In this demo, you will deploy
-  applications from the Istio's samples directory into the echo namespace.
-    * `helloworld` is used for HTTP traffic. [Manifests here](https://github.com/istio/istio/blob/master/samples/helloworld/helloworld.yaml)
-    * `tcp-echo` is used for non-HTTP traffic. [Manifests here](https://github.com/istio/istio/blob/master/samples/tcp-echo/tcp-echo.yaml)
-* Make sure you have the required privileges to deploy the gateway configurations.
+## 设置
+* 安装了 TSB 的四个集群 - 管理平面、Tier-1 和 Tier-2 边缘集群。
+* 在 Tier-2 集群中，在 `echo` 命名空间部署了 Tier-2 网关。
+* 在 Tier-1 集群中，在 `tier1` 命名空间部署了 Tier-1 网关。
+* 在两个网关中，端口 `8080` 和 `9999` 应可用（为简单起见，我们认为服务和目标端口相同）。要安装网关，请参阅[此处](../../../quickstart/ingress-gateway)。
+* 在 Tier-2 集群中部署与 HTTP 和非 HTTP 流量配合使用的应用程序。在此演示中，你将部署 Istio 示例目录中的应用程序到 echo 命名空间中。
+    * `helloworld` 用于 HTTP 流量。[清单在这里](https://github.com/istio/istio/blob/master/samples/helloworld/helloworld.yaml)
+    * `tcp-echo` 用于非 HTTP 流量。[清单在这里](https://github.com/istio/istio/blob/master/samples/tcp-echo/tcp-echo.yaml)
+* 确保你具有部署网关配置所需的权限。
 
-## TSB configuration
+## TSB 配置
 
-### Configuring workspace and groups
-First create the workspace. Here, we assume that the clusters were onboarded as `cluster-0`, `cluster-1`,
-`cluster-2` and `cluster-3`. It is also assumed that `cluster-3` is Tier-1, `cluster-0` has TSB management
-plane installed. 
+### 配置工作区和组
+首先创建工作区。在这里，我们假设集群已作为 `cluster-0`、`cluster-1`、`cluster-2` 和 `cluster-3` 入网。还假设 `cluster-3` 是 Tier-1，`cluster-0` 安装了 TSB 管理平面。
 ```yaml
 apiVersion: api.tsb.tetrate.io/v2
 kind: Workspace
@@ -50,7 +43,7 @@ spec:
      - "cluster-3/tier1"
 ```
 
-Separate groups are configured for Tier-1 and Tier-2 gateways
+为 Tier-1 和 Tier-2 网关分别配置不同的组。
 ```yaml
 apiVersion: gateway.tsb.tetrate.io/v2
 kind: Group
@@ -78,27 +71,26 @@ spec:
    names:
    - "cluster-3/tier1"
 ```
-### Provisioning certificates and keys for the gateways
-You have to create two secrets in the namespaces where gateway workloads are deployed
-* `hello-tlscred` for the Helloworld application
-* `echo-tlscred` for the TCP-echo application
+### 为网关提供证书和密钥
+你必须在部署网关工作负载所在的命名空间中创建两个密钥。
+* `hello-tlscred` 用于 Helloworld 应用程序
+* `echo-tlscred` 用于 TCP-echo 应用程序
 
-You can provision certificates with tools like `openssl` and create secrets as follows.
+你可以使用工具如 `openssl` 为证书提供密钥并创建密钥，如下所示。
 ```bash
-# Create secrets for the helloworld application. Here the certificate and
-# the keys are provisioned in helloworld.crt and helloworld.key
+# 为 helloworld 应用程序创建密钥。这里证书和密钥被提供在 helloworld.crt 和 helloworld.key 中
 kubectl --context=<kube-cluster-context> -n <gateway-ns> create secret tls hello-tlscred \
           --cert=helloworld.crt --key=helloworld.key
 
-# Create secrets for the tcp-echo application
+# 为 tcp-echo 应用程序创建密钥
 kubectl --context=<kube-cluster-context> -n <gateway-ns> create secret tls echo-tlscred \
           --cert=echo.crt --key=echo.key
 ```
 
-### Configuring Ingress Gateway at Tier-2 clusters
-A few notes
-* For the configuration of port 8080, TLS is required and the hostnames must be different. Otherwise, it is an error.
-* The credentials are stored as secret in the namespace where gateway workloads are running. In Tier-2, it is the `echo` namespace and in Tier-1 it is the `tier1` namespace.
+### 配置 Tier-2 集群中的 Ingress Gateway
+一些注意事项：
+* 针对端口 8080 的配置需要 TLS，主机名必须不同。否则，将会出错。
+* 凭据存储为命名空间中运行网关工作负载的秘密。在 Tier-2 中，它是 `echo` 命名空间，在 Tier-1 中是 `tier1` 命名空间。
 
 ```yaml
 apiVersion: gateway.tsb.tetrate.io/v2
@@ -127,15 +119,12 @@ spec:
          host: echo/helloworld.echo.svc.cluster.local
          port: 5000
  tcp:
- # echo.tetrate.io:8080 receives non-HTTP traffic. There
- # is also hello.tetrate.io:8080 receiving HTTP traffic on
- # this port. To distinguish between the two services, you
- # need to have different hostnames with TLS so that the
- # clients can use different SNI to distinguish between them.
- # This is the "multi-protocol"/"multiple traffic type" part.
+ # echo.tetrate.io:8080 接收非 HTTP 流量。还有 hello.tetrate.io:8080 接收此端口上的 HTTP 流量。
+ # 为了区分两个服务，你需要具有不同的主机名和 TLS，以便客户端可以使用不同的 SNI 来区分它们。这是“多协议”/“多流量类型”的一部分。
+
+
  - name: tcp-echo
-   port: 8080 # Same port as the previous HTTP server,
-              # but different hostname.
+   port: 8080 # 与前一个 HTTP 服务器相同的端口，但主机名不同。
    hostname: echo.tetrate.io
    tls:
      mode: SIMPLE
@@ -144,9 +133,7 @@ spec:
      host: echo/tcp-echo.echo.svc.cluster.local
      port: 9000
 
- # There is already a service called echo.tetrate.io defined
- # port 8080. There can be another TCP service with the same
- # hostname on a different port. This is the "multi-port" part.
+ # 已经定义了一个名为 echo.tetrate.io 的服务，端口为 8080。还可以有另一个 TCP 服务，使用相同的主机名但在不同端口上。这是“多端口”部分。
  - name: tcp-echo-2
    port: 9999
    hostname: echo.tetrate.io
@@ -155,9 +142,8 @@ spec:
      port: 9001
 ```
 
-### Configuring Tier-1 gateway
-The host:port defined here should match exactly with the host:port and the traffic type should
-match exactly with the ones defined in `IngressGateway` before
+### 配置 Tier-1 网关
+此处定义的主机：端口应与 `IngressGateway` 中定义的主机：端口完全匹配，流量类型也应与在 `IngressGateway` 中定义的流量类型完全匹配。
 ```yaml
 apiVersion: gateway.tsb.tetrate.io/v2
 kind: Tier1Gateway
@@ -173,8 +159,8 @@ spec:
    labels:
      app: tsb-gateway-tier1
  externalServers:
- # This matches with the HTTP server hello.tetrate.io:8080
- # defined in the Tier-2 gateway configuration 
+ # 这与 Tier-2 网关配置中定义的 hello.tetrate.io:8080 相匹配
+ # 注意：配置之间的名称不需要相同，但主机名必须匹配。
  - name: http-hello
    hostname: hello.tetrate.io
    port: 8080
@@ -182,8 +168,7 @@ spec:
      mode: SIMPLE
      secretName: hello-tlscred
  tcpExternalServers:
- # This matches with echo.tetrate.io:8080. The names need not
- # be the same between the configs, but hostname must match.
+ # 这与 echo.tetrate.io:8080 相匹配。配置之间的名称不需要相同，但主机名必须匹配。
  - name: tcp-echo
    hostname: echo.tetrate.io
    port: 8080
@@ -191,39 +176,38 @@ spec:
      mode: SIMPLE
      secretName: echo-tlscred
 
- # This matches with echo.tetrate.io:9999 in Tier-2 configs.
+ # 这与 Tier-2 配置中的 echo.tetrate.io:9999 相匹配。
  - name: tcp-echo-2
    hostname: echo.tetrate.io
    port: 9999
 ```
 
-## Routing traffic between clusters
+## 集群之间的流量路由
 
-### North-south (From Tier-1 to Tier-2 clusters)
-First, find out the external IP address of the Tier-1 gateway and save it in `TIER1_IP` variable
+### 南北流量（从 Tier-1 到 Tier-2 集群）
+首先，找到 Tier-1 网关的外部 IP 地址，并将其保存在 `TIER1_IP` 变量中。
 ```bash
 $ export TIER1_IP=<tier1-gateway-ip>
 ```
-#### Routing HTTPS traffic
+#### 路由 HTTPS 流量
 ```bash
 $ curl -svk --resolve hello.tetrate.io:8080:$TIER1_IP https://hello.tetrate.io:8080/hello
 ```
-**NOTE**: Don't use `-k` flag unless it is for testing purposes. It skips server certificate verification and is insecure
+**注意**：除非用于测试目的，否则不要使用 `-k` 标志。它会跳过服务器证书验证，不安全。
 
-#### Routing non-HTTP traffic
-1. TLS traffic - There could be some warnings related to the server certificates. As this is a demo, they
-can be ignored.
+#### 路由非 HTTP 流量
+1. TLS 流量 - 可能会出现与服务器证书相关的一些警告。由于这是演示，可以忽略它们。
 ```bash
 $ openssl s_client -connect $TIER1_IP:8080 -servername echo.tetrate.io
 ```
 
-2. Plain TCP traffic
+2. 普通 TCP 流量
 ```bash
 $ echo hello | nc -v $TIER1_IP 9999
 ```
 
-### East-west (Between Tier-2 clusters)
-DNS names defined in the `hostname` field is used for routing east-west traffic. Exec into an Istio sidecar-injected pod from where you would like to send the traffic and run `nc` for non-HTTP (but TCP) traffic. No need to initiate TLS here as TLS origination is done by the sidecar. 
+### 东西流量（在 Tier-2 集群之间）
+在路由东西流量时，将使用在 `hostname` 字段中定义的 DNS 名称。从你希望发送流量的已注入 Istio sidecar 的 pod 中执行 `nc` 来进行非 HTTP（但是 TCP）流量的路由。此处不需要在此处启动 TLS，因为 TLS 发起是由 sidecar 执行的。
 
 ```bash
 kubectl -n echo exec -it <pod-name> -c app -- sh -c "echo hello | nc -v echo.tetrate.io 8080"

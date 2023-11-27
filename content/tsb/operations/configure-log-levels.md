@@ -1,26 +1,25 @@
 ---
-title: Configure Log Levels
-description: Configure Log Levels for TSB components
+title: 配置日志级别
+description: 配置 TSB 组件的日志级别。
 weight: 7
 ---
 
-This document describes how to adjust log levels for the different components in TSB, including platform components, Envoy sidecars and ingress gateways at runtime, as well as the procedure to view the logs.
+本文档介绍了如何在 TSB 中调整不同组件的日志级别，包括平台组件、Envoy Sidecar 和入口网关的运行时，以及查看日志的过程。
 
-Before you get started make sure:
+在开始之前，请确保：
 
-- You have installed and configured TSB properly.
-- You have installed and configured `kubectl` to access the application cluster.
+- 你已正确安装和配置了 TSB。
+- 你已安装和配置了`kubectl`以访问应用程序集群。
 
-For the example commands we assume that you have some applications deployed in a `helloworld` namespace.
+对于示例命令，我们假设你在`helloworld`命名空间中部署了一些应用程序。
 
-:::warning TSB Components Produce Lots of Logs
-Be careful enabling debug logging across all of TSB's scopes for extended periods of time - TSB components produces a lot of logs! You may be faced with large log ingestion bills due to automatic log ingestion combined with turning up log levels across TSB or Sidecars.
-:::
+{{<callout warning "TSB 组件产生大量日志">}}
+小心在较长时间内启用 TSB 的各个范围的调试日志 - TSB 组件产生大量日志！由于自动日志摄取与 TSB 或 Sidecar 的日志级别提高相结合，可能会面临大额的日志摄取费用。
+{{</callout>}}
 
-## List the available components
+## 列出可用的组件
 
-In order to change each components' log level you will need to know which components are available. For that, there is utility command in `tctl` that will leverage the current `kubectl` connection information
-(context) and list the available components in that cluster.
+为了更改每个组件的日志级别，你需要知道哪些组件可用。为此，在`tctl`中有一个实用命令，它将利用当前的`kubectl`连接信息（上下文）并列出该集群中可用的组件。
 
 ```bash
 $ tctl experimental debug list-components 
@@ -54,173 +53,175 @@ data          httpbin-gateway           httpbin/httpbin-gateway
 data          tier1                     tier1/tier1
 ```
 
-As seen in the output above, this command will list all available components in the cluster and sort them by plane (management, control or data plane). It will also show the Kubernetes deployments that build up every
-component. The `PLANE` and `COMPONENT` columns in the output is what will need to be used with the command to set the log level below. For instance, to change the `mpc` component log level, you will need to refer to it
-with `management/mpc`.
+如上所示，此命令将列出集群中的所有可用组件，并按平面（管理、控制或数据平面）对其进行排序。它还将显示构建每个组件的 Kubernetes 部署。输出中的`PLANE`和`COMPONENT`列是下面用于设置日志级别的命令中需要使用的内容。例如，要更改`mpc`组件的日志级别，你需要使用`management/mpc`来引用它。
 
-## TSB platform components (management and control planes)
+## TSB 平台组件（管理和控制平面）
 
-TSB components are able to adjust the log levels for the different existing loggers at runtime without restarting the pod. For that, a new command in `tctl` CLI has been added.
+TSB 组件能够在不重新启动 Pod 的情况下在运行时调整不同现有记录器的日志级别。为此，已添加了`tctl` CLI 中的新命令。
 
-In order to check the available loggers for a component and check the current levels, run the command without any flag.
+为了检查组件的可用记录器以及检查当前级别，运行不带任何标志的命令。
 
 ```bash
 tctl experimental debug log-level management/iamserver
-Configuring the logging levels:
-    POST /logging?level=value	  -> Configures all levels globally
-    POST /logging?logger=value	  -> Configures the logging level for 'logger'
+配置日志级别：
+    POST /logging?level=value	  -> 配置全局级别
+    POST /logging?logger=value	  -> 配置'logger'的日志级别
 
-Current logging levels:
+当前的日志级别：
 
-admin                info    Administration server logs
-auth                 info    Authentication messages server
-config               info    Messages from the config system
-credentials/basic    info    Credentials parsing provider for basic http
-credentials/jwt      info    Credentials parsing provider for JWT bearer
-default              info    Unscoped logging messages.
-dynadsn              info    Messages from dynamic db conn pool
-envoy-filter         info    Envoy filter messages
-exchange             info    Messages from token exchange
-grpc                 info    Messages from the gRPC layer
-health               info    Messages from health check service
-iam-server           info    Messages from the RunGroup handler
-iam/http             info    Messages from http-server
-jwt                  info    Messages from the LDAP provider
-keyvalue/tx          info    Messages from the transaction system
-ldap                 info    LDAP integration messages
-local                info    Messages from the local authentication provider
-migrations           info    Database migration messages
-oauth                info    Messages from the Server Extensions
-oauth2               info    OAuth2 messages
-oidc                 info    Messages from the OIDC provider
-root                 info    Messages from the root credentials package
-server               info    Messages from service main
+admin                info    管理服务器日志
+auth                 info    认证消息服务器
+config               info    来自配置系统的消息
+credentials/basic    info    基本HTTP凭证解析提供程序
+credentials/jwt      info    JWT负载凭证解析提供程序
+default              info    无作用域的日志消息。
+dynadsn              info    来自动态数据库连接池的消息
+envoy-filter         info    Envoy过滤器消息
+exchange             info    令牌交换消息
+grpc                 info    来自gRPC层的消息
+health               info    健康检查服务的消息
+iam-server           info    RunGroup处理程序的消息
+iam/http             info    来自http服务器的消息
+jwt                  info    LDAP提供程序的消息
+keyvalue/tx          info    事务系统的消息
+ldap                 info    LDAP集成消息
+local                info    来自本地认证提供程序的消息
+migrations           info    数据库迁移消息
+oauth                info    服务器扩展的消息
+oauth2               info    OAuth2消息
+oidc                 info    OIDC提供程序的消息
+root                 info    来自根凭证包的消息
+server               info    来自服务主要的消息
 ```
 
-In the output above, the leftmost column shows the logger name, the middle column shows the current log level configured for that given logger, and the last column shows a brief description of the kind of messages that logger shows.
+在上面的输出中，最左边的列显示记录器名称，中间的列显示为该给定记录器配置的当前日志级别，最后一列显示记录器显示的消息类型的简要描述。
 
-In order to change the log levels, there are multiple ways to accomplish that, with different combinations of the `level` flag.
+要更改日志级别，有多种方法可以完成，具体取决于`level`标志的不同组合。
 
-### Change a single logger
+### 更改单个记录器
 
-Changing a single logger is possible by providing a logger name followed by a colon (`:`), followed by the desired level. For example:
+可以通过提供记录器名称，后跟冒号（`:`），然后是所需的级别来更改单个记录器。例如：
 
 ```bash
 tctl experimental debug log-level management/iamserver --level ldap:debug
-Configuring the logging levels:
-    POST /logging?level=value	  -> Configures all levels globally
-    POST /logging?logger=value	  -> Configures the logging level for 'logger'
+配置日志级别：
+    POST /logging?level=value	  -> 配置全局级别
+    POST /logging?logger=value	  -> 配置'logger'的日志级别
 
-Current logging levels:
+当前的日志级别：
 
-admin                info     Administration server logs
-auth                 info     Authentication messages server
-config               info     Messages from the config system
-credentials/basic    info     Credentials parsing provider for basic http
-credentials/jwt      info     Credentials parsing provider for JWT bearer
-default              info     Unscoped logging messages.
-dynadsn              info     Messages from dynamic db conn pool
-envoy-filter         info     Envoy filter messages
-exchange             info     Messages from token exchange
-grpc                 info     Messages from the gRPC layer
-health               info     Messages from health check service
-iam-server           info     Messages from the RunGroup handler
-iam/http             info     Messages from http-server
-jwt                  info     Messages from the LDAP provider
-keyvalue/tx          info     Messages from the transaction system
-ldap                 debug    LDAP integration messages
-local                info     Messages from the local authentication provider
-migrations           info     Database migration messages
-oauth                info     Messages from the Server Extensions
-oauth2               info     OAuth2 messages
-oidc                 info     Messages from the OIDC provider
-root                 info     Messages from the root credentials package
-server               info     Messages from service main
+admin                info     管理服务器日志
+auth                 info     认证消息服务器
+config               info     来自配置系统的消息
+credentials/basic    info     基本HTTP凭
+
+证解析提供程序
+credentials/jwt      info     JWT负载凭证解析提供程序
+default              info     无作用域的日志消息。
+dynadsn              info     来自动态数据库连接池的消息
+envoy-filter         info     Envoy过滤器消息
+exchange             info     令牌交换消息
+grpc                 info     来自gRPC层的消息
+health               info     健康检查服务的消息
+iam-server           ldap     RunGroup处理程序的消息
+iam/http             info     来自http服务器的消息
+jwt                  info     LDAP提供程序的消息
+keyvalue/tx          info     事务系统的消息
+ldap                 info     LDAP集成消息
+local                info     来自本地认证提供程序的消息
+migrations           info     数据库迁移消息
+oauth                info     服务器扩展的消息
+oauth2               info     OAuth2消息
+oidc                 info     OIDC提供程序的消息
+root                 info     来自根凭证包的消息
+server               info     来自服务主要的消息
 ```
 
-You can see by the output received that the `ldap` logger has changed its level to `debug`, raising its verbosity level.
+如上所示，通过指定`--level`标志并提供`logger:level`的格式，你可以更改单个记录器的日志级别。在这个例子中，我们将`iamserver`的日志级别更改为`ldap:debug`。
 
-### Change multiple loggers
+### 更改多个记录器
 
-Changing multiple loggers at once is possible by providing a comma (`,`) separated list of logger name and level pairs. Items within a pair are separated by a colon (`:`). For example:
+要更改多个记录器的日志级别，可以使用逗号分隔它们，并将它们列在`--level`标志的值中。例如：
 
 ```bash
-tctl experimental debug log-level management/iamserver --level jwt:error,auth:warn,health:error
-Configuring the logging levels:
-    POST /logging?level=value	  -> Configures all levels globally
-    POST /logging?logger=value	  -> Configures the logging level for 'logger'
+tctl experimental debug log-level management/iamserver --level ldap:debug,auth:info
+配置日志级别：
+    POST /logging?level=value	  -> 配置全局级别
+    POST /logging?logger=value	  -> 配置'logger'的日志级别
 
-Current logging levels:
+当前的日志级别：
 
-admin                info     Administration server logs
-auth                 warn     Authentication messages server
-config               info     Messages from the config system
-credentials/basic    info     Credentials parsing provider for basic http
-credentials/jwt      info     Credentials parsing provider for JWT bearer
-default              info     Unscoped logging messages.
-dynadsn              info     Messages from dynamic db conn pool
-envoy-filter         info     Envoy filter messages
-exchange             info     Messages from token exchange
-grpc                 info     Messages from the gRPC layer
-health               error    Messages from health check service
-iam-server           info     Messages from the RunGroup handler
-iam/http             info     Messages from http-server
-jwt                  error    Messages from the LDAP provider
-keyvalue/tx          info     Messages from the transaction system
-ldap                 debug    LDAP integration messages
-local                info     Messages from the local authentication provider
-migrations           info     Database migration messages
-oauth                info     Messages from the Server Extensions
-oauth2               info     OAuth2 messages
-oidc                 info     Messages from the OIDC provider
-root                 info     Messages from the root credentials package
-server               info     Messages from service main
+admin                info     管理服务器日志
+auth                 info     认证消息服务器
+config               info     来自配置系统的消息
+credentials/basic    info     基本HTTP凭证解析提供程序
+credentials/jwt      info     JWT负载凭证解析提供程序
+default              info     无作用域的日志消息。
+dynadsn              info     来自动态数据库连接池的消息
+envoy-filter         info     Envoy过滤器消息
+exchange             info     令牌交换消息
+grpc                 info     来自gRPC层的消息
+health               info     健康检查服务的消息
+iam-server           ldap     RunGroup处理程序的消息
+iam/http             info     来自http服务器的消息
+jwt                  info     LDAP提供程序的消息
+keyvalue/tx          info     事务系统的消息
+ldap                 debug    LDAP集成消息
+local                info     来自本地认证提供程序的消息
+migrations           info     数据库迁移消息
+oauth                info     服务器扩展的消息
+oauth2               info     OAuth2消息
+oidc                 info     OIDC提供程序的消息
+root                 info     来自根凭证包的消息
+server               info     来自服务主要的消息
 ```
 
-You can see how only the selected loggers have changed to the specified levels.
+在这个示例中，我们将`iamserver`的日志级别更改为`ldap:debug`，同时将`auth`的日志级别更改为`info`。
 
-### Change all loggers at once
+### 更改全局级别
 
-You can also change all loggers at once to a given level by just providing the level name, for instance:
+要更改全局日志级别，你可以使用`POST /logging?level=value`命令。例如，要将全局日志级别设置为`debug`，请运行以下命令：
 
 ```bash
-tctl experimental debug log-level management/iamserver --level info
-Configuring the logging levels:
-    POST /logging?level=value	  -> Configures all levels globally
-    POST /logging?logger=value	  -> Configures the logging level for 'logger'
+tctl experimental debug log-level management/iamserver --level debug
+配置日志级别：
+    POST /logging?level=value	  -> 配置全局级别
+    POST /logging?logger=value	  -> 配置'logger'的日志级别
 
-Current logging levels:
+当前的日志级别：
 
-admin                info    Administration server logs
-auth                 info    Authentication messages server
-config               info    Messages from the config system
-credentials/basic    info    Credentials parsing provider for basic http
-credentials/jwt      info    Credentials parsing provider for JWT bearer
-default              info    Unscoped logging messages.
-dynadsn              info    Messages from dynamic db conn pool
-envoy-filter         info    Envoy filter messages
-exchange             info    Messages from token exchange
-grpc                 info    Messages from the gRPC layer
-health               info    Messages from health check service
-iam-server           info    Messages from the RunGroup handler
-iam/http             info    Messages from http-server
-jwt                  info    Messages from the LDAP provider
-keyvalue/tx          info    Messages from the transaction system
-ldap                 info    LDAP integration messages
-local                info    Messages from the local authentication provider
-migrations           info    Database migration messages
-oauth                info    Messages from the Server Extensions
-oauth2               info    OAuth2 messages
-oidc                 info    Messages from the OIDC provider
-root                 info    Messages from the root credentials package
-server               info    Messages from service main
+admin                debug    管理服务器日志
+auth                 debug    认证消息服务器
+config               debug    来自配置系统的消息
+credentials/basic    debug    基本HTTP凭证解析提供程序
+credentials/jwt      debug    JWT负载凭证解析提供程序
+default              debug    无作用域的日志消息。
+dynadsn              debug    来自动态数据库连接池的消息
+envoy-filter         debug    Envoy过滤器消息
+exchange             debug    令牌交换消息
+grpc                 debug    来自gRPC层的消息
+health               debug    健康检查服务的消息
+iam-server           debug    RunGroup处理程序的消息
+iam/http             debug    来自http服务器的消息
+jwt                  debug    LDAP提供程序的消息
+keyvalue/tx          debug    事务系统的消息
+ldap                 debug    LDAP集成消息
+local                debug    来自本地认证提供程序的消息
+migrations           debug    数据库迁移消息
+oauth                debug    服务器扩展的消息
+oauth2               debug    OAuth2消息
+oidc                 debug    OIDC提供程序的消息
+root                 debug    来自根凭证包的消息
+server               debug    来自服务主要的消息
 ```
 
-All of the loggers have been changed to the `info` level with a single command.
+如上所示，运行此命令将更改所有记录器的日志级别为`debug`。这将导致 TSB 组件记录更多详细的日志信息。
 
-### Change loggers using the operator
+以下是使用 Operator 更改记录器的内容：
 
-All the management and control planes components can be also configured by using the MP/CP CRs. For example, to modify the `xcp-operator-edge`, you can modify the CP CR to use the following configuration:
+### 使用 Operator 更改记录器
+
+管理和控制平面的所有组件也可以通过使用MP/CP CRs 进行配置。例如，要修改`xcp-operator-edge`，你可以修改 CP CR 以使用以下配置：
 
 ```yaml
 spec:
@@ -238,7 +239,7 @@ spec:
           value: all:error
 ```
 
-Bear in mind that there are components which are deployed by another operator, like `edge` in the control plane. In order to modify these components, you will need to do an overlay of the operator like the following:
+请注意，有些组件是由其他 Operator 部署的，比如控制平面中的`edge`。要修改这些组件，你需要对 Operator 进行叠加，如下所示：
 
 ```yaml
 spec:
@@ -254,7 +255,7 @@ spec:
             value: --log_output_level
           - path: spec.template.spec.containers.[name:xcp-operator].args[-1]
             value: all:error
-        # Add the overlay for edge
+        # 添加 edge 的叠加
         - apiVersion: install.xcp.tetrate.io/v1alpha1
           kind: EdgeXcp
           name: edge-xcp
@@ -269,7 +270,7 @@ spec:
                 value: all:error
 ```
 
-The same happens if you want to modify `istiod` or all the gateways from the istio operator, you will need to do an overlay from the `istio-operator` which is the component that deploys `istiod`:
+如果要修改`istiod`或 istioOperator 的所有网关的日志记录器，你需要从部署`istiod`的组件`istio-operator`进行叠加：
 
 ```yaml
 spec:
@@ -287,11 +288,12 @@ spec:
             value: default:warn
 ```
 
-Above examples will work for all the components deployed by the management or control plane operators, but if you want to modify the loggers for the operators itself, you will need to manually edit the operator deployment. For example, let's change the loggers for the control plane operator deployment:
+上述示例适用于管理或控制平面 Operator 部署的所有组件，但如果要修改 Operator 本身的记录器日志级别，你需要手动编辑 Operator 部署。例如，让我们更改控制平面 Operator 部署的记录器的日志级别：
 
 ```bash
 kubectl edit deployment tsb-operator-control-plane -n istio-system
 ```
+
 ```yaml
 spec:
   template:
@@ -301,15 +303,15 @@ spec:
         - control-plane
         - --deployment-name
         - tsb-operator-control-plane
-        # Add below the changes
+        # 在以下更改之后添加
         - --log-output-level
         - default:info,tsboperator/kubernetes:error
 ```
 
-### Configure loggers using Install APIs
+### 使用安装 API 配置记录器
 
-Most of the components are provided with knobs to choose the log level for a particular component. This can be done using Install APIs CRs like MP or CP. Following are the examples:
-For example in CP CR:
+大多数组件都提供了选择特定组件的日志级别的旋钮。可以使用 Install API CRs（如 MP 或 CP）来执行此操作。以下是示例：
+例如，在 CP CR 中：
 
 ```bash
 kubectl edit deployment tsb-operator-control-plane -n istio-system
@@ -328,24 +330,26 @@ spec:
         all: trace
 ```
 
-Moreover default log level can also be set for all the components. Since there could be different log levels for different components, the default log level will only be rendered for components that uses the particular log level.
-For example in CP CR:
+此外，还可以为所有组件设置默认日志级别。由于不同组件可能具有不同的日志级别，因此默认日志级别仅对使用特定日志级别的组件进行呈现。
+例如，在 CP CR 中：
 
 ```yaml
 spec:
   defaultLogLevel: info
 ```
 
-Similarly, this could be done for MP as well.
+类似地，也可以在 MP 中执行此操作。
 
-Take a look at different components and log levels supported by the components in the MP and CP CRs:
+查看 MP 和 CP CR 中支持的不同组件和日志级别的组件的详细信息：
 
-[Control Plane Install API Reference Docs](../refs/install/controlplane/v1alpha1/spec).<br/>
-[ManagementPlane Plane Install API Reference Docs](../refs/install/managementplane/v1alpha1/spec).
+- [控制平面 Install API 参考文档](../../refs/install/controlplane/v1alpha1/spec)。
+- [管理平面 Install API 参考文档](../../refs/install/managementplane/v1alpha1/spec)。
 
-## Configure log levels for ingress gateways
+## 配置入口网关的日志级别
 
-In order to change the gateways log levels, the same procedure described above can be used. Note that the `list-components` command output also includes the gateways deployed in the current cluster under the `data` plane.
+要更改网关的日志级别，可以使用上面描述的
+
+相同过程。请注意，`list-components`命令的输出还包括当前集群中部署的网关，位于`data`平面下。
 
 ```bash
 $ tctl experimental debug list-components  | egrep ^data
@@ -358,7 +362,7 @@ data          httpbin-gateway           httpbin/httpbin-gateway
 data          tier1                     tier1/tier1
 ```
 
-The procedure to change the log level for a gateway will be the same as for the rest of the components. For instance, to verify the `bookinfo-gateway` log levels, the following command can be run:
+更改网关的日志级别的过程与其他组件相同。例如，要验证`bookinfo-gateway`的日志级别，请运行以下命令：
 
 ```bash
 $ tctl experimental debug log-level data/bookinfo-gateway
@@ -413,7 +417,7 @@ active loggers:
   wasm: trace
 ```
 
-And the log levels can be adjusted using the same procedure, for instance to turn all logger to `info` level, the following command can be used:
+然后，可以使用相同的过程调整日志级别，例如，将所有记录器设置为`info`级别，可以使用以下命令：
 
 ```bash
 $ tctl experimental debug log-level data/bookinfo-gateway --level info
@@ -468,43 +472,43 @@ active loggers:
   wasm: info
 ```
 
-This will adjust the log levels to all replica pods of the gateway deployment.
+这将调整网关部署的所有副本 Pod 的日志级别。
 
-## Using `istioctl` to configure log levels of the data plane
+## 使用`istioctl`配置数据平面的日志级别
 
-Services that have been deployed in the service mesh can have their logging controlled dynamically. There are a few ways to change these levels, but the easiest is using the [`istioctl proxy-config log`](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-log) command.
+已部署在服务网格中的服务可以在运行时动态控制其日志记录。可以使用多种方式更改这些级别，但最简单的方式是使用[`istioctl proxy-config log`](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-log)命令。
 
 ```bash
 istioctl proxy-config log <pod-name[.namespace]> --level <arguments>
 ```
 
-The `arguments` can be in either of the following forms: `level=<name>` or `<logger>=<name>`.
+`arguments`可以采用以下两种形式之一：`level=<name>`或`<logger>=<name>`。
 
-When using the `level=<name>` form, all applicable components are set to the log level specified by `name`. When using the `<logger>=<name>` form, the log level on the particular logger specified by the `logger` is changed. Finally, you can list many loggers in a single command, like `<logger1>=<name1>,<logger2>=<name2>,<logger3>=<name3>`.
+使用`level=<name>`形式时，所有适用的组件将被设置为`name`指定的日志级别。使用`<logger>=<name>`形式时，将更改由`logger`指定的特定记录器的日志级别。最后，可以在单个命令中列出多个记录器，例如`<logger1>=<name1>,<logger2>=<name2>,<logger3>=<name3>`。
 
-The following names are allowed: `none`, `default`, `debug`, `info`, `warn`, or `error`
+允许以下名称：`none`、`default`、`debug`、`info`、`warn`或`error`。
 
-For details on the different log levels and loggers available, please refer to the documentation of [`istioctl proxy-config log`](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-log)
+有关不同日志级别和可用的记录器的详细信息，请参阅[`istioctl proxy-config log`](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-log)的文档。
 
-:::note You can view log levels directly with kubectl too!
+{{<callout note "你还可以直接使用 kubectl 查看日志级别！">}}
 
-Services that have been deployed in the service mesh will contain the `pilot-agent` command in the sidecar container. It's primary responsibility is to bootstrap the Envoy proxy, but it can also be used to configure logging levels at runtime among other things.
+已部署在服务网格中的服务将包含`pilot-agent`命令在 sidecar 容器中。它的主要责任是引导 Envoy 代理，但它也可以用于在运行时配置日志级别，以及其他任务。
 
-The `pilot-agent` command may be invoked to update the logging level through `kubectl` in the following way:
+`pilot-agent`命令可以通过`kubectl`在 sidecar 上执行以更新日志级别，如下所示：
 
 ```bash
 kubectl exec <pod-name> -c istio-proxy -- \
   pilot-agent request POST 'logging?<arguments>'
 ```
 
-`pod-name` refers to the target Kubernetes pod. Notice we are using `-c istio-proxy` option to explicitly specify that we are executing the `pilot-agent` command in the sidecar of the service that is deployed in `pod-name`
-:::
+`pod-name`是目标 Kubernetes Pod。请注意，我们使用了`-c istio-proxy`选项来明确指定我们正在 sidecar 中执行`pilot-agent`命令，该 sidecar 位于`pod-name`中
+{{</callout>}}
 
-## Configure log levels for application sidecars
+## 为应用程序 sidecar 配置日志级别
 
-### Verify the deployed application pods
+### 验证已部署的应用程序 Pod
 
-Verify that `istio-proxy` sidecars are properly deployed:
+验证`istio-proxy` sidecar 是否正确部署：
 
 ```bash
 kubectl get pods -n helloworld -o jsonpath="{.items[*].spec.containers[*].name}" | \
@@ -514,15 +518,15 @@ kubectl get pods -n helloworld -o jsonpath="{.items[*].spec.containers[*].name}"
   grep istio-proxy
 ```
 
-This should print a text resembling the following output:
+这应该输出类似以下的文本：
 
 ```
   2 istio-proxy
 ```
 
-### Adjust the log level
+### 调整日志级别
 
-For this example we assume that the following applications have already been deployed and onboarded into TSB:
+在这个示例中，我们假设以下应用程序已经部署并加入了 TSB：
 
 ```
 NAME                             READY   STATUS    RESTARTS   AGE
@@ -530,54 +534,55 @@ helloworld-v1-776f57d5f6-2h8dq   2/2     Running   0          5h49m
 helloworld-v2-54df5f84b-v2wv6    2/2     Running   0          5h49m
 ```
 
+要调整日志级别，可以运行以下命令：
+
 ```bash
 istioctl proxy-config log helloworld-v1-776f57d5f6-2h8d --level debug
 ```
 
-:::warning
-It is recommended that you do NOT turn on `debug` log level for production workloads or workloads for high volume traffic systems. They may print excessive information that could overwhelm your application(s), or at the very least cost you a lot of money in log ingestion fees!
-:::
+{{<callout warning 注意>}}
+建议不要在生产工作负载或高流量系统的工作负载上启用`debug`日志级别。它们可能会打印大量信息，可能会压倒你的应用程序，或者至少会让你花费大量的日志摄取费用！
+{{</callout>}}
 
-Once the above command takes effect, you will be able to view the debug logs from the sidecars using `kubectl`:
+一旦上述命令生效，你将能够使用`kubectl`查看 sidecar 的调试日志：
 
 ```bash
 kubectl logs -f helloworld-v1-776f57d5f6-2h8dq -c istio-proxy
 ```
 
-If you would like to apply the same change to the log level to other sidecars on your application, you will have to repeat the process for each pod that you are interested in.
+如果你希望将相同的更改应用于应用程序的其他 sidecar，请必须对你感兴趣的每个 Pod 重复此过程。
 
-:::note Changing Log Levels with Kubectl
-The `istio-proxy` sidecar in the application pod contains the `pilot-agent` command.
+{{<callout note "使用 kubectl 更改日志级别">}}
+应用程序 Pod 中的`istio-proxy` sidecar 包含`pilot-agent`命令。
 
-Run the following command via `kubectl` on the sidecar to configure the log level:
+可以使用`kubectl`在 sidecar 上执行以下命令配置日志级别：
 ```bash
 kubectl -n helloworld exec helloworld-v1-776f57d5f6-2h8dq -c istio-proxy -- \
   pilot-agent request POST 'logging?level=debug'
 ```
-:::
+{{</callout>}}
 
-### Resetting the log levels
+### 重置日志级别
 
-Once you are done inspecting the logs, always make sure to adjust the log level back again. This will also have to be done for each of the sidecars whose log levels you have adjusted.
+在查看日志后，一定要确保再次调整日志级别。这也必须针对已调整日志级别的每个 sidecar 进行。
 
-`istioctl` has a shortcut for this:
+`istioctl`有一个快捷方式来执行此操作：
 
 ```bash
 istioctl proxy-config log helloworld-v1-776f57d5f6-2h8dq --reset
 ```
 
-:::note Reset shortcut not available for `kubectl`
-Unfortunately there's not a shortcut for resetting the log levels via `kubectl`. You need to `kubectl exec` a command that restores all of the logs you changed using a list of log scopes and levels, like:
+{{<callout note "对于`kubectl`，没有用于重置日志级别的快捷方式">}}
+不幸的是，`kubectl`没有用于通过`kubectl`重置日志级别的快捷方式。你需要使用`kubectl exec`命令执行一个命令，该命令将还原你使用一系列日志范围和级别更改的所有日志，例如：
 ```bash
 kubectl -n helloworld exec helloworld-v1-776f57d5f6-2h8dq -c istio-proxy -- \
   pilot-agent request POST 'logging?h2=debug,http=info,grpc=error'
 ```
-:::
+{{</callout>}}
 
-## Using configuration to change log levels
+## 使用配置更改日志级别
 
-The `tctl` command line utility includes another way to configure the log levels, which is using a file containing the actual configuration objects used to configure traffic flows. For instance, for
-a given `IngressGateway`:
+`tctl`命令行实用程序包括另一种配置日志级别的方式，即使用包含用于配置流量流的实际配置对象的文件。例如，对于给定的`IngressGateway`：
 
 ```yaml
 apiVersion: gateway.tsb.tetrate.io/v2
@@ -606,24 +611,19 @@ spec:
           host: ns1/productpage.ns1.svc.cluster.local
 ```
 
-The `tctl` command would adjust log levels for the pods matching the `workloadSelector`, plus those pods that service the destination service `productpage.ns1.svc.cluster.local`. This also works when using
-direct mode inspecting the equivalent objects (`Gateway`, `VirtualService`, etc.). This is useful to troubleshoot data path for ingress or east/west traffic, where you can leverage the `tctl get all` command output
-to configure the appropriate pods that are in the data path for a request to a given hostname.
+`tctl`命令将调整与`workloadSelector`匹配的 Pod 的日志级别，以及服务目标为`productpage.ns1.svc.cluster.local`的 Pod 的日志级别。这也适用于直接模式，检查等效对象（`Gateway`、`VirtualService`等）。这对于排查入口或东/西流量的数据路径非常有用，你可以利用`tctl get all`命令的输出来配置在请求给定主机名时处于数据路径中的适当 Pod。
 
 ```bash
 tctl get all --fqdn bookinfo.com > /tmp/bookinfo-config.yaml
 tctl experimental debug log-levels -f /tmp/bookinfo-config.yaml --level=trace
 ```
 
-The above commands for instance, would query TSB and get all the config objects that refer the hostname `bookinfo.com`, saving them to the file `/tmp/bookinfo-config.yaml`. The second command would then
-configure the log level to `trace` for all pods in the data path for the `bookinfo.com` host name. Once troubleshooting has finished, you can revert back the log level to more reasonable values.
+上述命令会查询 TSB 并获取所有引用主机名 `bookinfo.com` 的配置对象，将它们保存到文件 `/tmp/bookinfo-config.yaml` 中。第二个命令会为 `bookinfo.com` 主机名的数据路径中的所有 Pod 将日志级别配置为 `trace`。一旦故障排除完成，你可以将日志级别恢复为更合理的值。
 
 ```bash
 tctl experimental debug log-levels -f /tmp/bookinfo-config.yaml --level=info
 ```
 
-:::note Multi-cluster
-The commands to adjust log levels use the currently configured `kubectl` config file and context, while your configuration might expand multiple clusters. For instance, you could have in the same file the Tier1 and
-Tier2 configuration. `tctl` will display which pods matched and ask for confirmation before proceeding. If you need to use multiple clusters, you will need to run the command once while targeting each cluster with
-`kubectl`.
-:::
+{{<callout note 多集群>}}
+调整日志级别的命令使用当前配置的 `kubectl` 配置文件和上下文，而你的配置可能扩展到多个集群。例如，你可以在同一个文件中包含 Tier1 和 Tier2 的配置。`tctl`将显示匹配的 Pod，并在继续之前要求确认。如果需要使用多个集群，你需要使用 `kubectl` 针对每个集群运行一次命令。
+{{</callout>}}

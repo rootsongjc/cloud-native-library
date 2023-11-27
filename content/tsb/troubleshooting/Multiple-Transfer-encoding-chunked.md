@@ -1,26 +1,27 @@
 ---
-title: Multiple Transfer Encoding Chunked
-Description: How TSB handles the multiple Transfer-encoding chunked in both request and response header
+title: 多重传输编码块处理
+description: TSB 如何处理请求和响应标头中的多重“transfer-encoding:chunked”，以及如何确定问题是源自还是目的地。
+weight: 7
 ---
 
-This document describes how TSB will handle the request/response if the header has multiple `transfer-encoding:chunked`  and also helps you in identifying whether the problem is from the source or the destination.
+本文描述了当标头中包含多个`transfer-encoding:chunked`时，TSB 将如何处理请求/响应，并帮助你确定问题是来自源还是目标。
 
-What we recommend to resolve this issue is to make sure that there is only one `transfer-encoding:chunked` in both the request and the response header, otherwise Envoy will reject the request.
+我们建议解决此问题的方法是确保请求头和响应头中都只有一个`transfer-encoding:chunked`，否则 Envoy 将拒绝请求。
 
-Before you get started, make sure you: <br />
-✓ Familiarize yourself with [TSB concepts](../concepts/toc) <br />
-✓ Install the [TSB demo](../setup/self_managed/demo-installation) environment <br />
-✓ Deploy the [Istio Bookinfo](../quickstart/deploy_sample_app) sample app <br />
+在开始之前，请确保你已经：
+- 熟悉[TSB 概念](../../concepts/)
+- 安装[TSB 演示](../../setup/self-managed/demo-installation)环境
+- 部署[Istio Bookinfo](../../quickstart/deploy-sample-app)示例应用程序
 
-Note: For the response section, the application we used here deliberately generates multiple `transfer-encoding:chunked` headers and it’s used for only documentation purpose.
+注意：对于响应部分，我们在这里使用的应用程序特意生成了多个`transfer-encoding:chunked`标头，仅用于文档目的。
 
-We have often seen that the header of the request/response contains multiple `transfer-encoding:chunked` and this is not a valid header as Envoy rejects such request. In the bookinfo application that we have installed we can take a deeper look at how envoy will reject with specific error code for a simple request.
+我们经常看到请求/响应的标头包含多个`transfer-encoding:chunked`，这不是有效的标头，因为 Envoy 会拒绝这种请求。在我们安装的 bookinfo 应用程序中，我们可以更深入地看一看当 Envoy 拒绝简单请求时，它将以特定的错误代码拒绝。
 
-## Request header with "Transfer-Encoding: chunked,chunked"
+## 带有"Transfer-Encoding: chunked,chunked"的请求头
 
-For our bookinfo app we will create a simple request using curl to send a multiple `transfer-encoding:chunked` and we will observe how the envoy gateway will respond.
+对于我们的 bookinfo 应用程序，我们将使用 curl 创建一个简单的请求，发送多个`transfer-encoding:chunked`，并观察 envoy 网关的响应。
 
-```
+```bash
 $ curl  -kv "http://bookinfo.tetrate.com/productpage" -H "Transfer-Encoding: chunked" -H "Transfer-Encoding: chunked" 
 [ ... ]
 > GET /productpage HTTP/1.1
@@ -42,19 +43,19 @@ $ curl  -kv "http://bookinfo.tetrate.com/productpage" -H "Transfer-Encoding: chu
 Not Implemented%
 ```
 
-At the same time the gateway envoy logs show the failure with the below snippet and the error code as `501 DPE (Downstream Protocol Error)`
+同时，网关 envoy 日志显示以下片段以及错误代码为`501 DPE（下游协议错误）`的失败。
+
 ```
 kubectl logs ${GWPOD} -n bookinfo 
 [2022-09-07T08:17:38.936Z] "- - HTTP/1.1" 501 DPE http1.invalid_transfer_encoding - "-" 0 15 0 - "-" "-" "-" "-" "-" - - 10.0.2.20:8080 10.128.0.74:23365 - -
 ```
 
-## Response header with "Transfer-Encoding: chunked,chunked"
+## 带有"Transfer-Encoding: chunked,chunked"的响应头
 
-The response header can be manipulated within the application itself and could trigger the multiple chunks as well. In these cases the envoy sidecar of that application will reject the response.
-To demonstrate the response we used a simple application which will generate multiple transfer-chunked as a default behavior,We will send a curl request from the [Debug-container](./debug-container) with default values as shown below.
+响应头可以在应用程序内部进行操作，并可能触发多个块。在这些情况下，该应用程序的 envoy sidecar 将拒绝响应。为了演示响应，我们使用了一个简单的应用程序，它将生成多个传输块作为默认行为，我们将从[Debug-container](../debug-container)发送 curl 请求，使用默认值如下所示。
 
-```
-$curl -v http://transfer:8080/test
+```bash
+$ curl -v http://transfer:8080/test
 [ ... ]
 > GET /test HTTP/1.1
 > Host: transfer:8080
@@ -73,14 +74,17 @@ $curl -v http://transfer:8080/test
 upstream connect error or disconnect/reset before headers. reset reason: protocol error/ 
 ```
 
-When we look at the sidecar envoy log we can see the rejection with the error message `502 UPE (Upstream Protocol Error)`
+当我们查看 sidecar envoy 日志时，我们可以看到拒绝的详细信息，错误消息为`502 UPE（上游协议错误）`
 
 ```
 kubectl logs transfer-58c6c67c56-d8wzk  -n test 
-[2022-09-13T11:17:13.471Z] "GET /test HTTP/1.1" 502 UPE upstream_reset_before_response_started{protocol_error} - "-" 0 87 1 - "-" "curl/7.83.1" "fbcd5bff-1981-40a5-a2c8-fd6133161976" "transfer:8080" "10.0.2.7:8080" inbound|8080|| 127.0.0.6:53799 10.0.2.7:8080 10.0.0.21:59960 outbound_.8080_._.transfer.test.svc.cluster.local default
+[2022-09-13T11:17:13.471Z] "GET /test HTTP/1.1" 502 UPE upstream_reset_before_response_started{protocol_error} - "-" 0 87 1
+
+ - "-" "curl/7.83.1" "fbcd5bff-1981-40a5-a2c8-fd6133161976" "transfer:8080" "10.0.2.7:8080" inbound|8080|| 127.0.0.6:53799 10.0.2.7:8080 10.0.0.21:59960 outbound_.8080_._.transfer.test.svc.cluster.local default
 ```
 
-If we enable the debug log for sidecar of the application we can see the error in details as 
+如果我们为应用程序的 sidecar 启用调试日志，我们可以看到详细错误信息如下：
+
 ```
 2022-09-13T12:46:48.497388Z     debug   envoy client    [C2912] Error dispatching received data: http/1.1 protocol error: unsupported transfer encoding
 ```

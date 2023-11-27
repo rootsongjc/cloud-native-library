@@ -1,37 +1,36 @@
 ---
-title: Using The Debug Container
-Description: How to run and use the  debug container
+title: 使用调试容器
+Description: 如何运行和使用调试容器。
+weight: 4
 ---
 
-import vars from "../_vars.json";
+Tetrate Service Bridge (TSB) 是一个由各种协议相互连接的复杂组件集合。对于部署在 TSB 提供的服务网格上的应用程序来说，情况可能也是如此。在许多情况下，你需要检查、测试和验证各种 TSB 组件之间的网络连通性，以确保系统按预期工作。
 
-Tetrate Service Bridge (TSB) is a complex collection of components that are interconnected using various protocols. This is probably also true for your applications deployed over the service mesh that TSB provides. In many cases you will need to check, test, and verify the network connectivity within the various TSB components to make sure that the system is working as expected.
+为了为你节省在 Kubernetes 集群中创建调试环境的时间，Tetrate 提供了一个调试容器，其中已经安装了大多数用于验证网络状态的工具集。例如，诸如 `ping`、`curl`、`gpcurl`、`dig` 等工具已经在此容器中安装。
 
-To save you some time to create a debugging environment in the Kubernetes clusters, Tetrate provides a debug container that comes with most of the toolsets needed to validate the network status already installed. For example, tools such as `ping`, `curl`, `gpcurl`, `dig`, etc are already installed in this container.
+## 使用调试容器
 
-## Using the debug container
+只要可以访问适当的镜像仓库来下载容器镜像，这个调试容器就可以部署到任何集群中。
 
-This debug container can be deployed to any cluster as long as the appropriate image registry can be reached to download the container image.
+容器镜像包含在 TSB 发行版中，并且将与运行 [`tctl install image-sync` 命令](../../setup/requirements-and-download#sync-tetrate-service-bridge-images) 时的其余镜像一起同步到你的仓库中。
 
-The container image is included in the TSB distribution and will be synced to your registry along with the rest of the images when you run the [`tctl install image-sync` command](../setup/requirements-and-download#sync-tetrate-service-bridge-images).
+要部署调试容器，请运行以下命令。将 `<registry-location>` 替换为你同步了 TSB 镜像的仓库 URL。
 
-To deploy the debug container, run the following command. Replace `<registry-location>` with the registry URL where you synced the TSB images.
+```bash
+kubectl run debug-container --image <registry-location>/tetrate-troubleshoot:${vars.versionNumber} -it -- ash
+```
 
-<pre><code>
-{`kubectl run debug-container --image <registry-location>/tetrate-troubleshoot:${vars.versionNumber} -it -- ash`}
-</code></pre>
+一旦创建了 Pod，你将被置于调试容器内的 shell 中，并且你可以运行必要的故障排除命令。
 
-Once the pod is created, you will be placed in a shell within the debug container and you will be able to run necessary commands for troubleshooting.
+### 检查网络连通性
 
-### Checking the network connectivity
-
-If you want to check the network connectivity from the TSB cluster to the datastore you use (we assume PostgreSQL for this example), you can run the following command:
+如果你想要检查 TSB 集群到你使用的数据存储（我们假设在此示例中是 PostgreSQL）的网络连通性，你可以运行以下命令：
 
 ```bash
 curl -v telnet://<postgres_IP>:5432
 ```
 
-Or use the PostgreSQL client command `psql` to validate the credentials.
+或者使用 PostgreSQL 客户端命令 `psql` 来验证凭据。
 
 ```bash
 psql -h my.postgres.local -P 5432 -U myUser

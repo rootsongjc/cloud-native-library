@@ -1,67 +1,57 @@
 ---
-title: Setting Up an External Rate Limiting Server
-description: How to configure TSB Ingress Gateway to use external rate limiting server
+title: 配置外部速率限制服务器
 weight: 5
 ---
 
-TSB supports using external rate limiting servers. This document will describe how to configure [Envoy rate limit service](https://github.com/envoyproxy/ratelimit) and use it as external rate limiting server in TSB's Ingress Gateway through an example.
+TSB 支持使用外部速率限制服务器。本文档将通过一个示例描述如何配置 [Envoy rate limit service](https://github.com/envoyproxy/ratelimit) 并将其用作 TSB Ingress Gateway 中的外部速率限制服务器。
 
-Before you get started, make sure you: <br />
-✓ Familiarize yourself with [TSB concepts](../../concepts/toc) <br />
-✓ Install the TSB environment. You can use [TSB demo](../../setup/self_managed/demo-installation) for quick install<br />
-✓ Completed [TSB usage quickstart](../../quickstart). This document assumes you already created Tenant and are familiar with Workspace and Config Groups. Also you need to configure tctl to your TSB environment.<br/>
+在开始之前，请确保你已经完成以下准备工作：
+- 熟悉 [TSB 概念](../../../concepts/)
+- 安装 TSB 环境。你可以使用 [TSB 演示](../../../setup/self-managed/demo-installation) 进行快速安装
+- 完成 [TSB 快速入门](../../../quickstart)。本文档假定你已经创建了租户并熟悉工作区和配置组。还需要将 tctl 配置到你的 TSB 环境中。
 
-:::note
-While this document will only describe how to apply rate limiting using an external server for Ingress Gateway, you can do the same for Tier-1 Gateways and service-to-service (through TSB Traffic Settings) using a similar configuration.
-:::
+{{<callout note 注意>}}
+虽然本文档只描述了如何为 Ingress Gateway 应用外部服务器的速率限制，但你可以使用类似的配置方式对 Tier-1 网关和服务对服务（通过 TSB 流量设置）应用相同的速率限制。
+{{</callout>}}
 
-## Create the Namespace
+## 创建命名空间
 
-In this example we will install the external rate limit service in `ext-ratelimit` namespace.
-Create the namespace if not already present in the target cluster by running the following command:
+在本示例中，我们将在 `ext-ratelimit` 命名空间中安装外部速率限制服务。如果目标集群中尚未存在该命名空间，请运行以下命令创建它：
 
 ```bash
 kubectl create namespace ext-ratelimit
 ```
 
-### Configure Rate Limit Service
+### 配置速率限制服务
 
-:::note
-Please read the [Envoy rate limit documentation](https://github.com/envoyproxy/ratelimit#configuration) to learn the details about the concept of domains and descriptors.
-:::
+{{<callout note 注意>}}
+请阅读 [Envoy rate limit 文档](https://github.com/envoyproxy/ratelimit#configuration) 以了解关于域和描述符概念的详细信息。
+{{</callout>}}
 
-Create a file name [`ext-ratelimit-config.yaml`](../../assets/howto/rate_limiting/ext-ratelimit-config.yaml) with the following content. This configuration specifies that requests to every unique request path should be limited to 4 requests/minute.
+创建名为 [`ext-ratelimit-config.yaml`](../../../assets/howto/rate_limiting/ext-ratelimit-config.yaml) 的文件，其内容如下。此配置指定对每个唯一的请求路径的请求应限制为每分钟 4 次。
 
-<CodeBlock className="language-yaml">
-  {extRateLimitConfigYAML}
-</CodeBlock>
-
-Then create a `ConfigMap` using the file you created:
+然后使用你创建的文件创建一个 `ConfigMap`：
 
 ```bash
 kubectl -n ext-ratelimit apply -f ext-ratelimit-config.yaml
 ```
 
-### Deploy Rate Limit Server and Redis
+### 部署速率限制服务器和 Redis
 
-Deploy Redis and `envoyproxy/ratelimit`. Create a file called [`redis-ratelimit.yaml`](../../assets/howto/rate_limiting/redis-ratelimit.yaml) with the following contents:
-
-<CodeBlock className="language-yaml">
-  {redisRateLimitYAML}
-</CodeBlock>
+部署 Redis 和 `envoyproxy/ratelimit`。创建一个名为 [`redis-ratelimit.yaml`](../../../assets/howto/rate_limiting/redis-ratelimit.yaml) 的文件，其内容如下：
 
 ```bash
 kubectl -f redis-ratelimit.yaml
 ```
 
-If everything is successful, you should have a working rate limit server. 
-Make sure that Redis and the rate limit server are running by executing the following command:
+如果一切正常，你应该有一个正常工作的速率限制服务器。
+通过执行以下命令来确保 Redis 和速率限制服务器正在运行：
 
 ```bash
 kubectl get pods -n ext-ratelimit
 ```
 
-You should see an output resembling the following:
+你应该会看到类似以下的输出：
 
 ```
 NAME                        READY   STATUS    RESTARTS   AGE
@@ -69,36 +59,32 @@ ratelimit-d5c5b64ff-m87dt   1/1     Running   0          14s
 redis-7d757c948f-42sxg      1/1     Running   0          14s
 ```
 
-## Configure Ingress Gateway
+## 配置 Ingress Gateway
 
-This example assumes that you are applying rate limit to the [`httpbin`](../../reference/samples/httpbin) workload. If you have not already done so, deploy the `httpbin` service, create `httpbin` Workspace and Config Groups and expose the service through an Ingress Gateway.
+本示例假定你正在对 [`httpbin`](../../../reference/samples/httpbin) 工作负载应用速率限制。如果尚未完成，请部署 `httpbin` 服务，创建 `httpbin` 工作区和配置组，并通过 Ingress Gateway 公开服务。
 
-The following sample sets rate limiting on requests in the `httpbin-ratelimit` domain. The request path is stored in `descriptorKey` named `request-path`, which is then used by the rate limit server.
+以下示例设置了 `httpbin-ratelimit` 域中的请求速率限制。请求路径存储在名为 `request-path` 的 `descriptorKey` 中，然后由速率限制服务器使用。
 
-<CodeBlock className="language-yaml">
-  {extRateLimitIngressGatewayYAML}
-</CodeBlock>
-
-Save this to a file named [`ext-ratelimit-ingress-gateway.yaml`](../../assets/howto/rate_limiting/ext-ratelimit-ingress-gateway.yaml), and apply it using `tctl`:
+将此内容保存到一个名为 [`ext-ratelimit-ingress-gateway.yaml`](../../../assets/howto/rate_limiting/ext-ratelimit-ingress-gateway.yaml) 的文件中，并使用 `tctl` 应用它：
 
 ```bash
 tctl apply -f ext-ratelimit-ingress-gateway.yaml
 ```
 
-### Testing
+### 测试
 
-You can test the rate limiting by sending HTTP requests from an external machine or your local environment to the httpbin Ingress Gateway, and observe the rate limiting take effect after a certain number of requests.
+你可以通过从外部计算机或本地环境向 httpbin Ingress Gateway 发送 HTTP 请求来测试速率限制，并在一定数量的请求之后观察速率限制生效。
 
-In the following example, since you do not control httpbin.tetrate.com, you will have to trick curl into thinking that httpbin.tetrate.com resolves to the IP address of the Ingress Gateway.
+在以下示例中，由于你不能控制 httpbin.tetrate.com，你需要欺骗 curl，使其认为 httpbin.tetrate.com 解析为 Ingress Gateway 的 IP 地址。
 
-Obtain the IP address of the Ingress Gateway that you previously created using the following command.
+使用以下命令获取之前创建的 Ingress Gateway 的 IP 地址。
 
 ```bash
 kubectl -n httpbin get service httpbin-ingress-gateway \
   -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
 
-Then execute the following command to send HTTP requests to the httpbin service through the Ingress Gateway. Replace the gateway-ip with the value you obtained in the previous step.
+然后执行以下命令，通过 Ingress Gateway 向 httpbin 服务发送 HTTP 请求。将 gateway-ip 替换为你在前一步骤中获取的值。
 
 ```bash
 curl -k "http://httpbin.tetrate.com/get" \
@@ -108,9 +94,9 @@ curl -k "http://httpbin.tetrate.com/get" \
     -w "%{http_code}\n"
 ```
 
-For the first 4 requests you should see "200" on your screen. After that, you should start seeing "429" instead.
+在前 4 个请求中，你应该在屏幕上看到 "200"。之后，你应该开始看到 "429"。
 
-You can change the request path to another unique value to get a successful response.
+你可以将请求路径更改为另一个唯一值以获取成功的响应。
 
 ```bash
 curl -k "http://httpbin.tetrate.com/headers" \
@@ -120,13 +106,15 @@ curl -k "http://httpbin.tetrate.com/headers" \
     -w "%{http_code}\n"
 ```
 
-After 4 requests, you should start seeing "429" again, until you change the request path.
+在 4 次请求后，你应该再次开始看到 "429"，直到更改请求路径为止。
 
-## Considerations for Using Rate Limiting Server over Multiple Clusters
+## 多集群使用速率限制服务器的考虑事项
 
-In case you would like to share the same rate limiting rules against multiple cluster, there are two possible choices:
+如果你想要在多个集群中共享相同的速率限制规则，有两种可能的选择：
 
-* Deploy a single rate limit service in one cluster, and make it reachable from all other clusters that share the rules, or
-* Deploy rate limit services in each cluster, but make them all use the same Redis backend.
+* 在一个集群中部署单个速率限制服务，并使其可以从所有共享规则的其他集群访问，或者
+* 在每个集群中部署
 
-In the second scenario, you will have to make Redis accessible from all clusters. Each rate limit server should also use the same domain value.
+速率限制服务，但让它们都使用相同的 Redis 后端。
+
+在第二种情况下，你将需要让 Redis 可以从所有集群访问。每个速率限制服务器还应该使用相同的域值。

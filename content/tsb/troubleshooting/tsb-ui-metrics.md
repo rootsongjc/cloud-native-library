@@ -1,81 +1,67 @@
 ---
-title: UI Metrics Troubleshooting
-Description: Troubleshooting in TSB when metrics are not visible.
+title: UI 指标故障排除
+Description: 在 TSB 中当指标不可见时进行故障排除。
+weight: 5
 ---
 
-TSB's UI displays metrics and health of your services. However, if there are no
-metrics or traces displayed, then you may be facing an issue with either your
-services, or with TSB.
+TSB 的用户界面显示了你服务的指标和健康状态。然而，如果没有显示任何指标或跟踪信息，那么你可能面临的问题可能是与你的服务或 TSB 中的某个指标组件之一有关。
 
-This guide will walk you through how to determine whether the issue is with a
-service, or with one of the metrics components within TSB.
+本指南将引导你了解问题是与服务还是与 TSB 中的某个指标组件有关的方法。
 
-## Metrics
+## 指标
 
-If you don't see the metrics, use this section of the guide to troubleshoot.
+如果你看不到指标，请使用本指南的本节进行故障排除。
 
-First, make sure that you have traffic flowing in your application. You need
-traffic to generate metrics.
+首先，请确保你的应用程序中有流量流动。你需要流量来生成指标。
 
-Check that the time range window you've set in TSB is correct, and there was
-traffic during that period.
+检查你在 TSB 中设置的时间范围窗口是否正确，并且在该期间是否有流量。
 
-![](../assets/023f435-Tetrate_Service_Bridge.png)
+![](../../assets/023f435-Tetrate_Service_Bridge.png)
 
+检查在浏览器中运行 UI 查询是否返回状态。使用浏览器的 `inspect` 命令并检查请求/响应详细信息。
 
-Check if running a UI query in your browser returns a status. Use your browser
-`inspect` command and check the request/response details.
+从检查器中选择 `Network` 选项卡，然后从 TSB 用户界面中打开你的应用程序。你应该看到浏览器和 TSB 后端之间的所有请求列表。
 
-From the inspector, select the `Network` tab and open your application from the
-TSB UI. You should see a list of all the requests between your browser and the
-TSB backend.
+搜索最后一个 `graphql` 请求。
 
-Search for the last `graphql` request.
+![](../../assets/71914d4-DevTools_-_35_247_59_43_8443_applications_prune-tenant_dev_bookinfo.png)
 
-![](../assets/71914d4-DevTools_-_35_247_59_43_8443_applications_prune-tenant_dev_bookinfo.png)
+![](../../assets/47326cc-DevTools_-_35_247_59_43_8443_applications_prune-tenant_dev_bookinfo-2.png)
 
+如果你看不到查询，这可能表明你的应用程序没有处理任何流量，或者你在 OAP 部署方面存在问题。
 
-![](../assets/47326cc-DevTools_-_35_247_59_43_8443_applications_prune-tenant_dev_bookinfo-2.png)
+要检查 OAP，请执行以下步骤：
 
-If you don't see the query, it may indicate that your application is not
-handling any traffic, or you're having a problem with the OAP deployment.
-
-To inspect OAP, use the following steps:
-
-Check if the `OAP` Pod in the `tsb` Namespace is up and running by confirming
-whether there are any errors in the pod's log:
+通过确认`tsb`命名空间中的`OAP` Pod 是否正在运行来检查`OAP` Pod 是否正常运行，并检查 Pod 的日志中是否有任何错误：
 
 ```bash
 kubectl -n tsb logs -l app=oap
 ```
 
-The errors from the logs will help you triage the problem.
+来自日志的错误将帮助你排查问题。
 
-If the issue is related to Elasticsearch, check if OAP in the control plane
-namespace (istio-system) is receiving Access Log Service (ALS) data from various
-Envoys by forwarding the monitoring port of the OAP pods to your local computer,
-and querying some metrics using the following steps:
+如果问题与 Elasticsearch 有关，请检查控制平面命名空间（istio-system）中的 OAP 是否通过将 OAP Pod 的监视端口转发到你的本地计算机来接收来自各种 Envoy 的访问日志服务（ALS）数据，并使用以下步骤查询一些指标：
 
-Start a port-forward to OAP in a shell:
+在一个 shell 中启动到 OAP 的端口转发：
 
 ```bash
 kubectl -n istio-system port-forward deployment/oap-deployment 1234
 ```
 
-If there is no issue, you should see:
+如果没有问题，你应该会看到：
 
 ```text
 Forwarding from 127.0.0.1:1234 -> 1234
 Forwarding from [::1]:1234 -> 1234
 ```
 
-In a different shell, curl the metrics with the command below:
+在另一个 shell 中，使用以下命令获取指标：
 
 ```bash
 curl -s http://localhost:1234/ | grep "envoy_als_in_count"
 ```
 
-You should see something similar to this example output:
+你应该会看到类似于以下示例输出：
 
 ```text
 envoy_als_in_count{id="router~10.28.0.25~tsb-gateway-7b7fbcdfb7-726bf.bookinfo~bookinfo.svc.cluster.local",cluster="tsb-gateway",} 67492.0
@@ -87,73 +73,65 @@ envoy_als_in_count{id="sidecar~10.28.0.20~ratings-v1-744894fbdb-ctvpd.bookinfo~b
 envoy_als_in_count{id="sidecar~10.28.0.21~reviews-v1-f7c7c7b45-8v2sf.bookinfo~bookinfo.svc.cluster.local",cluster="reviews.bookinfo",} 11249.0
 ```
 
-You should see the numbers on the right-hand side increase if your application
-is in use.
+如果应用程序正在使用，右侧的数字应该会增加。
 
-If you don't see any metrics, or the metrics do not change over time, check if
-your application sidecars (Envoy) are sending ALS metrics to the control plane
-OAP by performing a`port-forward` of the Istio Sidecar on port 15000 and query
-the `envoy_accesslog_service` metric. The standard number of  `cx_active`
-metrics (i.e. the number of current connections) is two.
+如果你看不到任何指标，或者指标随时间不变化，请检查你的应用程序 Sidecar（Envoy）是否通过执行 Istio Sidecar 的`port-forward`在端口 15000 上将 ALS 指标发送到控制平面 OAP，然后查询`envoy_accesslog_service`指标。 `cx_active`指标（即当前连接数）的标准数量是两个。
 
-The below example uses the `productpage` service of the `bookinfo` application:
-
+下面的示例使用`bookinfo`应用程序的`productpage`服务：
 
 ```bash
-# start the port-forward in a shell
+# 在一个shell中启动端口转发
 kubectl -n bookinfo port-forward deployment/productpage-v1 15000
 Forwarding from 127.0.0.1:15000 -> 15000
 Forwarding from [::1]:15000 -> 15000
 
-# curl the config in another shell
+# 在另一个shell中使用curl获取配置
 curl -s http://localhost:15000/clusters | grep "envoy_accesslog_service" | grep cx_active
 envoy_accesslog_service::10.31.243.206:11800::cx_active::2
 ```
 
-If the counters aren't what you expect, add `debug` logging level to OAP by
-editing the OAP's `config.yml` with the following command:
+如果计数器不符合你的预期，请通过编辑 OAP 的`config.yml`文件，使用以下命令将`debug`日志级别添加到 OAP 中：
 
 ```bash
 kubectl -n istio-system edit cm oap-config
 ```
 
-Search for the following lines and remove the comments around it:
+搜索以下行并去掉注释：
 
 ```xml
 <!-- uncomment following line when need to debug ALS raw data
-   <logger name="io.tetrate.spm.user.receiver.envoy" level="DEBUG"/>
+   <logger name="io.tetrate.spm.user.receiver
+
+.envoy" level="DEBUG"/>
 -->
 ```
 
-So that it becomes:
+以使其变成：
 
 ```xml
 <logger name="io.tetrate.spm.user.receiver.envoy" level="DEBUG"/>
 ```
 
-Then, restart OAP for the configuration change to take effect:
+然后，重新启动 OAP 以使配置更改生效：
 
 ```bash
 kubectl -n istio-system delete pod -l app=oap
 ```
 
-Now you can search the logs for `downstream_remote_address`. If you have
-searchable logs, it  means that the metrics are reaching the OAP service.
+现在，你可以搜索`downstream_remote_address`的日志。如果你有可搜索的日志，这意味着指标已经到达了 OAP 服务。
 
-- search in the Elasticsearch back-end<br/>
-  Metrics are kept in Elasticsearch (ES) indices. You can check the status and
-  health of the ES by sending some queries.<br/>
+- 在 Elasticsearch 后端中搜索<br/>
+  指标存储在 Elasticsearch（ES）索引中。你可以通过发送一些查询来检查 ES 的状态和健康状况。<br/>
 
-As the ES server is not managed by TSB, please refer to your documentation for
-the correct connection string.<br/>
+由于 ES 服务器不受 TSB 管理，请参考你的文档以获取正确的连接字符串。<br/>
 
-In the example, we set a port-forward to the ES pod inside the `tsb` namespace.
+在示例中，我们将端口转发到`tsb`命名空间中的 ES Pod：
 
 ```bash
-# port forward to ES server
+# 端口转发到ES服务器
 kubectl -n tsb port-forward statefulset/elasticsearch 9200
 
-# check cluster health
+# 检查集群健康状况
 curl -s  'http://localhost:9200/_cluster/health?pretty=true'
 {
     "cluster_name" : "elasticsearch",
@@ -174,17 +152,14 @@ curl -s  'http://localhost:9200/_cluster/health?pretty=true'
 }
 ```
 
-The `status` line should be green or yellow. If it's red, then the issue is
-with the ES cluster. You should check the indices' status using the command:
+`status` 行应该是绿色或黄色的。如果是红色的，那么问题就出在 ES 集群上。你可以使用以下命令检查索引的状态：
 
 ```bash
-# Indices status for the 26 March 2020
+# 查询2020年3月26日的索引状态
 curl -H'Content-Type: application/json' -s -XGET 'http://localhost:9200/_cat/shards/*20200326
 ```
 
-You should see a list of all the indices. They should all be in the `STARTED`
-state. Next columns hold the number of documents and the size of the index. By
-running the command at different times, you should see these numbers increasing.
+你应该会看到所有索引的列表。它们都应该处于`STARTED`状态。下一列包含文档数和索引大小。通过在不同时间运行该命令，你应该会看到这些数字增加。
 
 ```
 service_5xx-20200326                                 0 p STARTED  31236   1.4mb 10.28.1.12 elasticsearch-0

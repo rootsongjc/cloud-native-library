@@ -1,33 +1,33 @@
 ---
-title: Multi-cluster traffic routing using Tier-2 gateway
-description: Shift traffic between clusters using a Tier-2 gateway
-weight: 4
+title: 使用 Tier-2 网关进行多集群流量路由
+description: 使用 Tier-2 网关在集群之间切换流量。
+weight: 6
 ---
 
-Tier-2 gateway or IngressGateway configures a workload to act as a gateway for traffic entering the mesh. The ingress gateway also provides basic API gateway functionalities such as JWT token validation and request authorization.
+Tier-2 网关或 IngressGateway 配置工作负载以充当进入网格的流量网关。入口网关还提供基本的 API 网关功能，如 JWT 令牌验证和请求授权。
 
-In this guide, you'll: <br />
-✓ Deploy [bookinfo application](https://istio.io/latest/docs/examples/bookinfo/) split in two different clusters configured as Tier-2, having `productpage` in one and reviews, details and rating in the other.<br />
+在本指南中，你将会：
+- 部署 [bookinfo 应用程序](https://istio.io/latest/docs/examples/bookinfo/) 分为两个不同的集群，配置为 Tier-2，一个集群中有 `productpage`，另一个集群中有 reviews、details 和 rating。
 
-Before you get started, make sure that you: <br />
-✓ You have already deployed `productpage` in `cluster 1` and details, ratings and reviews in `cluster 2`. For this demo we are assuming you have bookinfo deployed and configured in TSB. <br />
-✓ The control planes in all components need to be sharing the same [root of trust](https://istio.io/latest/docs/tasks/security/cert-management/plugin-ca-cert/). <br />
+在开始之前，请确保你已经在 `cluster 1` 中部署了 `productpage`，并在 `cluster 2` 中部署了 details、ratings 和 reviews。对于此演示，我们假设你已经在 TSB 中部署和配置了 Bookinfo。
 
-## Scenario
+- 所有组件中的控制平面都需要共享相同的[信任根](https://istio.io/latest/docs/tasks/security/cert-management/plugin-ca-cert/)。
 
-In this scenario we will have two control plane clusters configured as Tier-2 (`tsb-tier2gcp1` and `tsb-tier2gcp2`). We are going to deploy bookinfo in both Tier-2 clusters, `tsb-tier2gcp1` will have `productpage` installed and `tsb-tier2gcp2` will have reviews, details and ratings installed.
+## 场景
 
-So the scenario for Tier-2 clusters (once configured) should look like the following:
+在这个场景中，我们将配置两个配置为 Tier-2 的控制平面集群（`tsb-tier2gcp1` 和 `tsb-tier2gcp2`）。我们将在两个 Tier-2 集群中都部署 Bookinfo，`tsb-tier2gcp1` 中将安装 `productpage`，而 `tsb-tier2gcp2` 中将安装 reviews、details 和 ratings。
 
-![](../../assets/howto/bookinfo-tier2-tier2-diagram.png)
+因此，Tier-2 集群的场景（一旦配置完成）应如下所示：
 
-Make sure that both clusters are sharing the same root of trust. You must populate the `cacerts` with the correct certificates before deploying the Control Planes in both clusters. Please refer to the Istio docs on [Plugin CA Certificates](https://istio.io/latest/docs/tasks/security/cert-management/plugin-ca-cert/) for more detail.
+![](../../../assets/howto/bookinfo-tier2-tier2-diagram.png)
 
-## Configuration
-### Configure TSB objects
-For this example, it is assumed that you already have an Organization called `tetrate`, a tenant called `test`, and two control plane clusters configured with Tier-2 gateways.
+请确保两个集群都共享相同的信任根。在部署两个集群的控制平面之前，你必须填充正确的证书到 `cacerts` 中。有关更多详细信息，请参阅 Istio 文档中的 [Plugin CA 证书](https://istio.io/latest/docs/tasks/security/cert-management/plugin-ca-cert/)。
 
-First, create the workspace and the gateway group:
+## 配置
+### 配置 TSB 对象
+在此示例中，假定你已经有一个名为 `tetrate` 的组织、一个名为 `test` 的租户，以及已经配置了 Tier-2 网关的两个控制平面集群。
+
+首先，创建工作区和网关组：
 ```yaml
 apiversion: api.tsb.tetrate.io/v2
 kind: Workspace
@@ -58,23 +58,23 @@ spec:
       - "*/bookinfo-back"
 ```
 
-And apply it:
+然后应用它：
 ```bash
 tctl apply -f mgmt-bookinfo.yaml
 ```
 
-In the example above, a wild-card ("*") notation is used to select the namespaces `bookinfo-front` and `bookinfo-back` across all onboarded clusters. If you would like to target a specific cluster, you can do so by replacing the "*" with the cluster name that you would like to use.
+在上面的示例中，使用通配符 ("*") 表示选择所有已登记集群中的 `bookinfo-front` 和 `bookinfo-back` 命名空间。如果你想要针对特定集群进行目标定位，可以将 "*" 替换为你希望使用的集群名称。
 
-### Deploy the ingress gateways
-Now, if the namespaces are not created, we will create them and enable sidecar injection in both. In `tsb-tier2gcp1` we will create `bookinfo-front` namespace and deploy `productpage`, and in `tsb-tier2gcp2` we will create `bookinfo-back` namespace and deploy reviews, ratings and details.
+### 部署入口网关
+现在，如果命名空间尚未创建，我们将在两者中创建它们并在两者中启用 Sidecar 注入。在 `tsb-tier2gcp1` 中，我们将创建 `bookinfo-front` 命名空间并部署 `productpage`，在 `tsb-tier2gcp2` 中，我们将创建 `bookinfo-back` 命名空间并部署 reviews、ratings 和 details。
 
-Create a certificate in the `bookinfo-front` so that services in the namespace can be exposed using HTTPS.
+在 `bookinfo-front` 中创建证书，以便命名空间中的服务可以使用 HTTPS 进行公开。
 
 ```bash
 kubectl create secret tls bookinfo-cert -n bookinfo-front --cert cert.pem --key key.pem
 ```
 
-Once this is done,  create a `IngressGateway`  deployment in each cluster:
+完成后，在每个集群中创建一个 `IngressGateway` 部署：
 ```yaml
 apiVersion: install.tetrate.io/v1alpha1
 kind: IngressGateway
@@ -117,24 +117,26 @@ spec:
       type: LoadBalancer
 ```
 
-And apply them:
+然后应用它们：
 ```bash
 kubectl apply -f bookinfo-<front|back>-ingress.yaml
 ```
 
-Obtain the IP address for both services:
+获取这两个服务的 IP 地址：
 ```bash
 FRONT=$(kubectl get svc -n bookinfo-front bookinfo-front-gw -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 BACK=$(kubectl get svc -n bookinfo-back bookinfo-back-gw -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 ```
 
-And configure the DNS to reach using the following configuration:
+并配置 DNS 以使用以下配置进行访问：
 ```text
 FRONT → bookinfo.tetrate.com
-BACK → bookinfo-back.tetrate.com (could be the name you prefer).
+BACK → bookinfo-back.tetrate.com（可以是你喜欢的名称）。
 ```
 
-At this point it is important to add the following lines inside `productpage` deployment spec for the deployment to be able to know where details and reviews are hosted:
+在这一点上，很重要的是在 `productpage` 部署规范中添加以下行
+
+，以便部署能够知道 details 和 reviews 存储在哪里：
 ```yaml
         env:
         - name: DETAILS_HOSTNAME
@@ -142,16 +144,16 @@ At this point it is important to add the following lines inside `productpage` de
         - name: REVIEWS_HOSTNAME
           value: bookinfo-back.tetrate.com:80
 ```
-:::note
-With the default `productpage` image this won't work because the default port is hard coded to 9080, this is just an example, but you can modify it to get also the port and not only the hostname.
-:::
+{{<callout note 注意>}}
+对于默认的 `productpage` 映像，这不会起作用，因为默认端口硬编码为 9080，这只是一个示例，但你可以修改它以获取端口和主机名。
+{{</callout>}}
 
-### Configure Ingress Gateway Routing
-Now we can configure the deployed ingress gateways by creating the Tier-2 gateway configuration. This can be done by creating an `IngressGateway` gateway resource.
+### 配置 Ingress Gateway 路由
+现在，我们可以通过创建 Tier-2 网关配置来配置已部署的入口网关。这可以通过创建 `IngressGateway` 网关资源来完成。
 
-:::note
-Notice that the `apiVersion` is different from the previous one, because the first is to install the ingress gateway, and the second is to configure the gateway and virtual service using BRIDGED API.
-:::
+{{<callout note 注意>}}
+请注意，`apiVersion` 与之前的不同，因为第一个是用于安装入口网关，第二个是用于配置使用 BRIDGED API 的网关和虚拟服务。
+{{</callout>}}
 
 ```yaml
 apiVersion: gateway.tsb.tetrate.io/v2
@@ -213,19 +215,22 @@ spec:
           port: 9080
 ```
 
-### Verification
-With this configuration, `bookinfo.tetrate.com` using HTTPS is exposed using HTTPS, and `bookinfo-back.tetrate.com` using HTTP.
+### 验证
 
-At this point you can test if it works by executing the following:
+通过此配置，`bookinfo.tetrate.com` 使用 HTTPS 公开，而 `bookinfo-back.tetrate.com` 使用 HTTP。
+
+在此时，你可以通过执行以下命令来测试它是否有效：
+
 ```bash
 $ curl -I https://bookinfo.tetrate.com/productpage
 ```
 
-:::note
-The `productpage` service is configured to send traffic to the details and reviews services through port 80. However, after we have configured the TSB objects, there's a service entry created that will redirect this port 80 to 15443 (which is configured for mTLS), and also a destination rule to use mTLS.
-:::
+{{<callout note 注意>}}
+`productpage` 服务被配置为通过端口 80 发送流量到 details 和 reviews 服务。然而，在我们配置了 TSB 对象之后，将创建一个服务条目，该服务条目将重定向此端口 80 到 15443（已配置为 mTLS），还将创建一个使用 mTLS 的目标规则。
+{{</callout>}}
 
-You can see both by running the command below, and looking at both bookinfo related service entries and destination rules:
+你可以通过运行以下命令来查看这两者，并查看与 bookinfo 相关的服务条目和目标规则：
+
 ```bash
 kubectl get dr,se -n xcp-multicluster
 ```

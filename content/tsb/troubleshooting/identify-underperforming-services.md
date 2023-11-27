@@ -1,24 +1,25 @@
 ---
-title: Identify Underperforming Services
-description: Export traffic metrics and traces, and analyse for underperforming services
+title: 识别性能不佳的服务
+description: 导出流量指标和跟踪信息，并分析性能不佳的服务。
+weight: 8
 ---
 
-Service performance degradations can be very difficult to understand and isolate:
-- There is far too much data to dig through to identify the cause of the performance issue
-- The experts in the application's behavior (the dev team) typically do not have access to the running cluster
+服务性能降级可能非常难以理解和隔离：
+- 数据太多，难以查找性能问题的原因
+- 应用程序行为的专家（开发团队）通常无法访问运行中的集群
 
-Tetrate Service Bridge provides a set of tools to:
-- Enable the TSB operator to retrieve an archive of service performance data from a running cluster
-- Enable application developers to query this data to identify the slowest transactions (or those with errors) and determine the call graph associated with the slow response.
+Tetrate Service Bridge 提供了一组工具，可以：
+- 允许 TSB 操作员从运行中的集群中检索服务性能数据的存档
+- 允许应用程序开发人员查询此数据以识别最慢的事务（或带有错误的事务）并确定与慢响应相关的调用图。
 
-Before you get started, make sure you: <br />
-✓ Familiarize yourself with [TSB concepts](../concepts/toc) <br />
-✓ Install the [TSB demo](../setup/self_managed/demo-installation) environment <br />
-✓ Deploy the [Istio Bookinfo](../quickstart/deploy_sample_app) sample app <br />
+在开始之前，请确保你已经：
+- 熟悉[TSB 概念](../../concepts/)
+- 安装[TSB 演示](../../setup/self-managed/demo-installation)环境
+- 部署[Istio Bookinfo](../../quickstart/deploy-sample-app)示例应用程序
 
-## Collecting data
+## 收集数据
 
-The TSB operator can use `tctl` to collect the cluster state. This state includes proxy logs from the workloads, Istio controlplane information, node information, `istioctl analyze` and other runtime information. Data is exported as a tar file.
+TSB 操作员可以使用 `tctl` 收集集群状态。该状态包括来自工作负载的代理日志、Istio 控制平面信息、节点信息、`istioctl analyze` 和其他运行时信息。数据导出为一个 tar 文件。
 
 ```sh
 Usage:
@@ -26,31 +27,30 @@ Usage:
 
 Examples:
 
-# Collect without any obfuscation or redaction
+# 收集数据，不进行任何模糊处理或删除
 tctl collect
 
-# Collect without archiving results (useful for local debugging)
+# 收集数据但不存档结果（用于本地调试）
 tctl collect --disable-archive
 
-# Collect and redact with user-provided regex
+# 收集数据并使用用户提供的正则表达式进行模糊处理
 tctl collect --redact-regexes <regex-one>,<regex-two>
 
-# Collect and redact with presets
+# 收集数据并使用预设进行模糊处理
 tctl collect --redact-presets networking
 ```
 
-Running `tctl collect` requires admin permissions. The resulting tar file can be shared with application teams for analysis and interpretation, using `tctl troubleshoot`.
+运行 `tctl collect` 需要管理员权限。生成的 tar 文件可以与应用程序团队共享，以供分析和解释，使用 `tctl troubleshoot`。
 
+## 分析数据
 
-## Analysing Data
+然后，任何用户都可以运行 `tctl troubleshoot` 来检查收集的 tar 文件，并生成有关文件中记录的事务的各种报告：
+- 转储集群信息以识别工作负载
+- 分析对命名工作负载的请求，以识别最慢的响应和错误响应
+- 区分 sidecar 性能和应用程序性能
+- 获取请求 ID，然后为这些请求生成完整的跟踪（调用图）
 
-Any user can then run `tctl troubleshoot` to inspect the collected tar file and generate a range of reports on the transactions recorded within the file:
-- Dump the cluster information to identify workloads
-- Analyse requests to named workloads to identify slowest responses and error responses
-- Discriminate between sidecar performance and application performance
-- Obtain request IDs, and then generate full traces for these requests (call graph)
-
-### Analyzing Cluster data
+### 分析集群数据
 
 ```sh
 Usage:
@@ -60,12 +60,12 @@ Examples:
   tctl experimental troubleshoot log-explorer cluster [tar file]
 
 Flags:
-  -h, --help               help for cluster
-  -n, --namespace string   List details of only specified namespace
-      --workspace string   List details of only specified workspace
+  -h, --help               帮助
+  -n, --namespace string   仅列出指定命名空间的详细信息
+      --workspace string   仅列出指定的工作空间的详细信息
 ```
 
-`troubleshoot log-explorer cluster` provides details of all workloads running in the cluster. Users can get a subset of the entire cluster state by applying filters like `--workspace` or `--namespace`.
+`troubleshoot log-explorer cluster` 提供了有关在集群中运行的所有工作负载的详细信息。用户可以通过应用筛选器（如 `--workspace` 或 `--namespace`）获取整个集群状态的子集。
 
 ```sh
 $: tctl experimental troubleshoot log-explorer cluster tctl-debug-1664467971183386000.tar.gz --workspace organizations/tetrate/tenants/payment/workspaces/payment-ws
@@ -103,7 +103,7 @@ workspaces:
 - organizations/tetrate/tenants/payment/workspaces/payment-ws
 ```
 
-### Analyzing Service data
+### 分析服务数据
 
 ```sh
 Usage:
@@ -113,20 +113,20 @@ Examples:
   tctl experimental log-explorer service [tar file] [service]
 
 Flags:
-      --all                Show all requests instead of just the longest ones and those with errors.
-      --full-log           Print the full Envoy access log instead of a summary.
-  -h, --help               help for service
-      --limit int          Number of requests to show (defaults to 10)
-  -n, --namespace string   The namespace containing the service.
+      --all                显示所有请求，而不仅仅是最长的请求和带有错误的请求。
+      --full-log           打印完整的 Envoy 访问日志，而不是摘要。
+  -h, --help               帮助
+      --limit int          要显示的请求数量（默认为 10）
+  -n, --namespace string   包含服务的命名空间。
 ```
 
-`troubleshoot log-explorer service` provides details about the 10 longest requests.  It outputs a summary of time elapsed within the envoy sidecar and within the application service. 
- 
-[![tctl troubleshoot log-explorer service](../assets/tctl-service.png)](../assets/tctl-service.png)
+`troubleshoot log-explorer service` 提供了有关 10 个最长请求的详细信息。它输出了 Envoy sidecar 内部和应用程序服务内部消耗的时间的摘要。
 
-With this report, users can obtain the Request IDs of the longest time consuming requests, for analysis in the next step. The `--full-log` flag can also be used to access the Envoy request log information.
+![tctl troubleshoot log-explorer service](../../assets/tctl-service.png)
 
-### Analyzing Request data
+通过此报告，用户可以获取消耗时间最长的请求的请求 ID，以便在下一步进行分析。也可以使用 `--full-log` 标志访问 Envoy 请求日志信息。
+
+### 分析请求数据
 
 ```sh
  Usage:
@@ -136,10 +136,12 @@ Examples:
   tctl experimental log-explorer request [tar file] [requestID]
 
 Flags:
-  -h, --help                 help for request
-  -o, --output-type string   Select the output type, available formats json and yaml, default format is yaml (default "yaml")
+  -h, --help                 帮助
+  -o, --output-type string   选择输出类型，可用格式为 json 和 yaml，默认格式为 yaml（默认为 "yaml"）
 ```
 
-`troubleshoot log-explorer request` reports the trace for a single request identified by the provided `requestID`. It outputs the chain of requests, starting from the IngressGateway Pod IP to the final application workload. The report presents the total time spent by the Envoy sidecar, and the Application services along with details like `requestType` to indicate whether a request is `inbound` or `outbound`, namespace and name of the workload and `calledBy` IP & Port etc.
+`tr
 
-[![tctl troubleshoot log-explorer request](../assets/tctl-request.png)](../assets/tctl-request.png)
+oubleshoot log-explorer request` 报告了由提供的 `requestID` 标识的单个请求的跟踪。它输出了从 IngressGateway Pod IP 到最终应用工作负载的请求链，报告了 Envoy sidecar 和应用服务消耗的总时间，以及诸如 `requestType`（指示请求是 `inbound` 还是 `outbound`）、工作负载的命名空间和名称以及 `calledBy` IP 和端口等详细信息。
+
+![tctl 问题排查 log-explorer 请求](../../assets/tctl-request.png)

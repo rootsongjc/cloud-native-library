@@ -1,24 +1,25 @@
 ---
-title: Configuring Authz for proxy-protocol
-description: How to configure generation of authorization policies at service port instead of workload port by default
-draft: true
+title: 配置 Authz 以支持代理协议
+description: 如何配置默认情况下在服务端口而不是工作负载端口生成授权策略。
+weight: 8
 ---
 
-By default, the authorization policies are created using workload port of the server to match the traffic. However in some cases like when using curl with `--haproxy-protocol`, envoy proxy tries to match the incoming traffic at service port instead of the workload port. This document provides a way for users to allow that.
+默认情况下，授权策略是使用服务器的工作负载端口来匹配流量的。但是在某些情况下，比如使用 curl 时使用 `--haproxy-protocol`，Envoy 代理会尝试在服务端口而不是工作负载端口上匹配传入的流量。本文档提供了一种允许用户执行此操作的方法。
 
-Before you get started, make sure you: <br />
-✓ Familiarize yourself with [TSB concepts](../../concepts/toc) <br />
-✓ Install the [TSB demo](../../setup/self_managed/demo-installation) environment <br />
-✓ Deploy the [Istio Bookinfo](../../quickstart/deploy_sample_app) sample app <br />
-✓ Create a [Tenant](../../quickstart/tenant) <br />
-✓ Create a [Workspace](../../quickstart/workspace) <br />
-✓ Create [Config Groups](../../quickstart/config_groups) <br />
-✓ Configure [Permissions](../../quickstart/permissions) <br />
-✓ Configure [Ingress Gateway](../../quickstart/ingress_gateway)
+在开始之前，请确保你已经做了以下准备：
+- 熟悉 [TSB 概念](../../../concepts/)
+- 安装 [TSB 演示](../../../setup/self-managed/demo-installation) 环境
+- 部署 [Istio Bookinfo](../../../quickstart/deploy-sample-app) 示例应用程序
+- 创建一个 [Tenant](../../../quickstart/tenant)
+- 创建一个 [Workspace](../../../quickstart/workspace)
+- 创建 [Config Groups](../../../quickstart/config-groups)
+- 配置 [Permissions](../../../quickstart/permissions)
+- 配置 [Ingress Gateway](../../../quickstart/ingress-gateway)
 
-## Apply haproxy-protocol EnvoyFilter
+## 应用 haproxy-protocol EnvoyFilter
 
-Enable haproxy-protocol on listener. Create the following `haproxy-filter.yaml`
+在监听器上启用 haproxy-protocol。创建以下 `haproxy-filter.yaml` 文件：
+
 ```
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
@@ -43,14 +44,16 @@ spec:
           typed_config:
             "@type": "type.googleapis.com/envoy.extensions.filters.listener.tls_inspector.v3.TlsInspector"
 ```
-Apply with `kubectl`
+
+使用 `kubectl` 应用：
+
 ```bash
 kubectl apply -f haproxy-filter.yaml
 ```
 
-## Configure TSB Gateway
+## 配置 TSB 网关
 
-Update the `gateway.yaml` file to the following:
+更新 `gateway.yaml` 文件如下：
 
 ```
 apiVersion: gateway.tsb.tetrate.io/v2
@@ -79,14 +82,15 @@ spec:
               host: "bookinfo/productpage.bookinfo.svc.cluster.local"
 ```
 
-Apply with `tctl`
+使用 `tctl` 应用：
+
 ```bash
 tctl apply -f gateway.yaml
 ```
 
-## Configure Ingress Gateway object
+## 配置 Ingress Gateway 对象
 
-To enable authorization on the service port instead of workload port update your `ingress.yaml`:
+要在服务端口而不是工作负载端口上启用授权，请更新你的 `ingress.yaml` 文件：
 
 ```
 apiVersion: install.tetrate.io/v1alpha1
@@ -99,17 +103,18 @@ spec:
     service:
       type: LoadBalancer
       annotations:
-        xcp.tetrate.io/authz-ports: "443" # This annotation prevents TSB translation for this port to workload port when creating istio authorization policies
+        xcp.tetrate.io/authz-ports: "443" # 此注释防止 TSB 在创建 Istio 授权策略时将此端口翻译为工作负载端口
 ```
 
-Apply with `kubectl`
+使用 `kubectl` 应用：
+
 ```bash
 kubectl apply -f ingress.yaml
 ```
 
-## Testing
+## 测试
 
-To test if your ingress is working correctly with haproxy-protocol try the following curl curl request:
+要测试你的 Ingress 是否正确使用 haproxy-protocol，请尝试以下 curl 请求：
 
 ```bash
 curl -k -s --connect-to bookinfo.tetrate.com:443:$GATEWAY_IP \

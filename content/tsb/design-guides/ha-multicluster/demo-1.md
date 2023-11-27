@@ -1,106 +1,79 @@
 ---
-title: Demonstration Environment
+title: 演示环境
+weight: 1
 ---
 
-# Building the Demonstration Environment
+创建一个简单的示例，包括两个工作负载集群和一个边缘网关集群。
 
-_A simple worked example, with two workload clusters and one edge gateway cluster_
+在这个示例中，我们将配置三个 Kubernetes 集群：
 
-In this worked example, we'll configure three Kubernetes clusters:
+ * 集群 **cluster-1** 和 **cluster-2** 将作为工作负载集群，每个集群都有一个 **bookinfo** 应用程序实例和一个 **Ingress Gateway** 用于公开应用程序
+ * 集群 **cluster-edge** 将托管前端边缘（"Tier-1"）网关，该网关将接收流量并分发到工作负载集群中的 Ingress Gateway
 
- * Clusters **cluster-1** and **cluster-2** will function as workload clusters, each with an instance of the **bookinfo** application and an **Ingress Gateway** to expose the application
- * Cluster **cluster-edge** will host a front-end Edge ("Tier-1") Gateway, which will receive traffic and distribute across the Ingress Gateways in the workload clusters
+![边缘和工作负载负载均衡](../images/edge-workload.png)
 
-| [![Edge and Workload Load Balancing](images/edge-workload.png "Edge and Workload Load Balancing")](images/edge-workload.png) _Edge and Workload Load Balancing_ |
-|  :--:  |
+#### 开始之前
 
-
-#### Before you Begin
-
-There are a number of moving parts in the configuration, so it's helpful to identify and name each part before proceeding:
+在配置中有一些移动部分，因此在继续之前，识别并命名每个部分会很有帮助：
 
 |                        | **cluster-1** | **cluster-2** | **cluster-edge** |
 | ---------------------- | ------------- | ------------- | ---------------- |
-| AWS Region:            | eu-west-1     | eu-west-2     | eu-west-1        |
-| Namespace:             | bookinfo      | bookinfo      | edge             |
-| Workspace:             | bookinfo-ws   | bookinfo-ws   | edge-ws          |
-| Networks:              | app-network   | app-network   | edge-network     |
-| Gateway Group:         | bookinfo-gwgroup-1 | bookinfo-gwgroup-2 | edge-gwgroup |
-| Ingress Gateway:       | ingressgw-1   | ingressgw-2   | edgegw           |
-| Gateway resource:      | bookinfo-ingress-1 | bookinfo-ingress-2 | bookinfo-edge |
-| Kubectl context alias: | `k1`          | `k2`          | `k3`             |
+| AWS 区域：             | eu-west-1     | eu-west-2     | eu-west-1        |
+| 命名空间：              | bookinfo      | bookinfo      | edge             |
+| 工作区：               | bookinfo-ws   | bookinfo-ws   | edge-ws          |
+| 网络：                  | app-network   | app-network   | edge-network     |
+| 网关组：                | bookinfo-gwgroup-1 | bookinfo-gwgroup-2 | edge-gwgroup |
+| Ingress 网关：          | ingressgw-1   | ingressgw-2   | edgegw           |
+| 网关资源：              | bookinfo-ingress-1 | bookinfo-ingress-2 | bookinfo-edge |
+| Kubectl 上下文别名：   | `k1`          | `k2`          | `k3`             |
 
-Ensure that **cluster-1** and **cluster-edge** are located in one region, and **cluster-2** is located in a different region; this will prove useful when testing [cluster failover](cluster-failover).
+确保 **cluster-1** 和 **cluster-edge** 位于同一个区域，而 **cluster-2** 位于另一个区域；在测试集群故障转移时，这将会很有用。
 
-In this worked example, we will use organization **tse** and tenant **tse**.  If you are using Tetrate Service Bridge (TSB), modify the Tetrate configurations to match your organizational hierarchy.
+在这个示例中，我们将使用组织 **tse** 和租户 **tse**。如果你使用 Tetrate Service Bridge (TSB)，请修改 Tetrate 配置以匹配你的组织层次结构。
 
-:::tip Managing Multiple Clusters
+{{<callout note "管理多个集群">}}
 
-When working with multiple Kubernetes clusters, it can be useful to create an alias for the **kubectl** command for each cluster.  For example, with AWS contexts, you might do something like:
+在处理多个 Kubernetes 集群时，为每个集群的 **kubectl** 命令创建一个别名可能很有用。例如，对于 AWS 上下文，你可以执行以下操作：
 
 ```bash
 alias k1='kubectl --context arn:aws:eks:eu-west-1:901234567890:cluster/my-cluster-1'
 ```
 
-You don't need to do this when applying Tetrate configuration, which is applied either using `tctl` or against any Kubernetes cluster with GitOps integration.
+在应用 Tetrate 配置时，不需要执行此操作，Tetrate 配置可以使用 `tctl` 应用，或者与支持 GitOps 集成的任何 Kubernetes 集群。
+{{</callout>}}
 
-:::
+### 先决条件
 
-### Prerequisites
+我们将假设以下初始配置：
 
-We'll assume the following initial configuration:
+ * 集群 **cluster-1**、**cluster-2** 和 **cluster-edge** 已经加入 Tetrate 平台，无论是 TSE 还是 TSB
+ * 在每个集群上部署了任何必要的集成（例如 AWS 负载均衡控制器）
+ * 如果使用 Tetrate Service Express，已在 **cluster-edge** 上部署了 **Route 53 控制器**
 
- * Clusters **cluster-1**, **cluster-2** and **cluster-edge** are onboarded to the Tetrate platform, either TSE or TSB
- * Any necessary integrations (e.g. AWS Load Balancer Controller) are deployed on each cluster
- * If using Tetrate Service Express, the **Route 53 Controller** is deployed on **cluster-edge**
+步骤：
 
+1. 创建 Tetrate 配置：创建 Tetrate 工作区、网络和网关组
+2. 在 cluster-1 中部署 bookinfo：在第一个集群中部署 bookinfo。部署一个 Ingress Gateway 和一个 Gateway 资源。
+3. 在 cluster-2 中部署 bookinfo：重复，在第二个集群中部署 bookinfo。部署一个 Ingress Gateway 和一个 Gateway 资源。
+4. 配置 Edge Gateway：在 Edge 集群中部署 Edge Gateway 和一个 Gateway 资源。如有必要，配置 DNS 并测试结果。
 
-<Steps headingDepth={4}>
+## 创建演示环境
 
-<ol>
-<li>
+### 创建 Tetrate 配置
 
-#### [Create the Tetrate Configuration](#create-the-tetrate-configuration-1)
-Create the Tetrate Workspaces, Networks and Gateway Groups 
+我们将：
 
-</li>
-<li>
-
-#### [Deploy bookinfo in cluster-1](#deploy-bookinfo-in-cluster-1-1)
-Deploy bookinfo into the first cluster.  Deploy an Ingress Gateway and a Gateway resource.
-
-</li>
-<li>
-
-#### [Deploy bookinfo in cluster-2](#deploy-bookinfo-in-cluster-2-1)
-Repeat, deploying bookinfo into the second cluster.  Deploy an Ingress Gateway and a Gateway resource.
-</li>
-<li>
-
-#### [Configure the Edge Gateway](#configure-the-edge-gateway-1)
-Deploy an Edge Gateway into the Edge cluster, and a Gateway resource.  Configure DNS if necessary and test the result.
-
-</li>
-</ol>
-</Steps>
-
-## Create the Demo Environment
-
-### Create the Tetrate Configuration
-
-We will:
-
- 1. Create a Workspace for the two workload clusters, with a gateway group for each cluster
- 1. Create a Workspace and Gateway Group for the edge cluster
- 1. Configure **cluster-edge** to be a Tier-1 cluster
- 1. Define the Tetrate Networks and the Reachability configuration
+ 1. 为两个工作负载集群创建一个工作区，每个集群都有一个网关组
+ 1. 为边缘集群创建一个工作区和网关组
+ 1. 配置 **cluster-edge** 为 Tier-1 集群
+ 1. 定义 Tetrate 网络和可达性配置
 
 <details>
-<summary>How we do it...</summary>
+<summary>我们如何做...</summary>
 
-#### Create the configuration for the Workload Clusters
+#### 创建工作负载集群的配置
 
-Create a Workspace **bookinfo-ws** that spans both workload clusters, and a Gateway Group for each cluster.
+创建一个横跨两个工作负载集群的工作区 **bookinfo-ws**，以及每个集群的网关组。
 
 ```bash
 cat <<EOF > bookinfo-ws.yaml
@@ -156,9 +129,9 @@ EOF
 tctl apply -f bookinfo-gwgroup-2.yaml
 ```
 
-#### Create the configuration for the Edge Cluster
+#### 创建边缘集群的配置
 
-Create a Workspace **edge-ws** and a Gateway Group for the Edge cluster:
+创建一个工作区 **edge-ws** 和一个边缘集群的网关组：
 
 ```bash
 cat <<EOF > edge-ws.yaml
@@ -194,29 +167,17 @@ EOF
 tctl apply -f edge-gwgroup.yaml
 ```
 
-#### Configure the Edge cluster to be a Tier-1 cluster
+#### 配置边缘集群为 Tier-1 集群
 
-Set the "Is Tier 1" flag for the Edge cluster.
+设置 Edge 集群的 "Is Tier 1" 标志。
 
-It's generally easier to configure Cluster settings using the Tetrate UI:
+通常，使用 Tetrate UI 更容易配置集群设置：
 
-<Tabs 
-  defaultValue="ui"
-  values={[
-    {label: 'Tetrate UI', value: 'ui'},
-    {label: 'YAML API', value: 'api'}
-  ]}>
-  <TabItem value="ui">
+导航到 **Clusters**。编辑 **cluster-edge** 并将 '**Tier 1 Cluster?**' 字段设置为 **Yes**。保存更改：
 
-Navigate to **Clusters**.  Edit **cluster-edge** and set the '**Tier 1 Cluster?**' field to **Yes**.  Save the changes:
+![配置 cluster-edge 为 Tier-1 集群](../images/edge-tier1.png)
 
-| [![Configure **cluster-edge** to be a Tier-1 cluster](images/edge-tier1.png "Configure **cluster-edge** to be a Tier-1 cluster")](images/edge-tier1.png) _Configure **cluster-edge** to be a Tier-1 cluster_ |
-|  :--:  |
-
-</TabItem>
-<TabItem value="api">
-
-Update the **Cluster** configuration for **cluster-edge** , adding the key `spec: tier1Cluster: ` as follows:
+更新 **cluster-edge** 的 **Cluster** 配置，添加键 `spec: tier1Cluster: ` 如下所示：
 
 ```yaml
 apiVersion: api.tsb.tetrate.io/v2
@@ -229,53 +190,37 @@ spec:
   tier1Cluster: true
 ```
 
-</TabItem>
-</Tabs>
+#### 配置网络和可达性设置
 
-#### Configure Network and Reachability Settings
+Tetrate 平台使用网络设置来分组一组集群并定义访问控制列表。如果一个集群没有分配到网络，那么任何其他集群都可以访问该集群。在大规模操作时，网络设置提供了一种高级方式来标识一组集群并定义允许的流量。
 
-The Tetrate platform uses Network settings to group sets of clusters and define access control lists.  If a cluster is not assigned to a network, this cluster can be reached by any other cluster.  When operating at scale, Network settings provide a high-level way of identifying sets of clusters and defining permitted flows.
+我们将：
 
-We will:
+ 1. 将 **cluster-edge** 分配给网络 **Edge-Network**
+ 1. 将 **cluster-1** 和 **cluster-2** 分配给网络 **App-Network**
+ 1. 定义可达性设置，以便 **Edge-Network** 可以向 **App-Network** 发送流量
 
- 1. Assign **cluster-edge** to the Network **Edge-Network**
- 1. Assign **cluster-1** and **cluster-2** to the Network **App-Network**
- 1. Define reachability settings so that **Edge-Network** can send traffic to **App-Network**
+通常，使用 Tetrate UI 配置网络设置更容易：
 
-It's generally easier to configure Network settings using the Tetrate UI:
+#### 分配网络
 
-<Tabs 
-  defaultValue="ui"
-  values={[
-    {label: 'Tetrate UI', value: 'ui'},
-    {label: 'YAML API', value: 'api'}
-  ]}>
-  <TabItem value="ui">
+导航到 **Clusters**。编辑 **cluster-edge** 并将 **Network** 字段设置为值 **Edge-Network**。保存更改：
 
-#### Assign Networks
+![将 cluster-edge 分配到网络 Edge-Network](../images/edge-network.png)
 
-Navigate to **Clusters**.  Edit **cluster-edge** and set the **Network** field to the value **Edge-Network**.  Save the changes:
+对于集群 **cluster-1** 和 **cluster-2**，重复此步骤，将它们分配到网络 **App-Network**。
 
-| [![Assign **cluster-edge** to the Network **Edge-Network**](images/edge-network.png "Assign **cluster-edge** to the Network **Edge-Network**")](images/edge-network.png) _Assign **cluster-edge** to the Network **Edge-Network**_ |
-|  :--:  |
+#### 定义可达性
 
-Repeat for clusters **cluster-1** and **cluster-2**, assigning them to the network **App-Network**.
+导航到 **Settings** 和 **Network Reachability**。指定 **Edge-Network** 允许连接（发送流量到）**App-Network**：
 
-#### Define Reachability
+![定义可达性设置，以便 Edge-Network 可以发送流量到 App-Network](../images/reachability.png)
 
-Navigate to **Settings** and **Network Reachability**.  Specify that **Edge-Network** is permitted to reach (send traffic to) **App-Network**:
+保存更改。
 
-| [![Define reachability settings so that **Edge-Network** can send traffic to **App-Network**](images/reachability.png "Define reachability settings so that **Edge-Network** can send traffic to **App-Network**")](images/reachability.png) _Define reachability settings so that **Edge-Network** can send traffic to **App-Network**_ |
-|  :--:  |
+#### 分配网络
 
-Save the changes.
-
-</TabItem>
-<TabItem value="api">
-
-#### Assign Networks
-
-Update each **Cluster** configuration, adding the key `spec: network: ` as follows:
+更新每个 **Cluster** 配置，添加键 `spec: network: ` 如下所示：
 
 ```yaml
 apiVersion: api.tsb.tetrate.io/v2
@@ -288,9 +233,9 @@ spec:
   network: edge-network
 ```
 
-#### Define Reachability
+#### 定义可达性
 
-Update the **OrganizationSettings** configuration, adding the networkReachability stanza as below:
+更新 **OrganizationSettings** 配置，添加如下的 networkReachability 部分：
 
 ```yaml
 apiVersion: api.tsb.tetrate.io/v2
@@ -313,42 +258,37 @@ spec:
 # highlight-end
 ```
 
-The **OrganizationSettings** resource is an internal object; you can obtain it using `tctl get organizationsettings -o yaml`.  Remove any **resourceVersion** or **etag** values before submitting an update.
-</TabItem>
-</Tabs>
+**OrganizationSettings** 资源是一个内部对象；你可以使用 `tctl get organizationsettings -o yaml` 获取它。在提交更新之前，删除任何 **resourceVersion** 或 **etag** 值。
 
 </details>
 
-#### Review your changes
+#### 检查你的更改
 
-Once you have completed your changes, the cluster page in the UI should resemble the following:
+完成更改后，UI 中的集群页面应如下所示：
 
-| [![Cluster summary](images/cluster-summary.png "Cluster summary")](images/cluster-summary.png) _Cluster summary_ |
-|  :--:  |
+![集群摘要](../images/cluster-summary.png)
 
-Note the **Network** and **Is Tier1** columns and values for each cluster.
+请注意每个集群的 **Network** 和 **Is Tier1** 列以及其值。
 
-In addition, you'll have created Workspaces and Gateway Groups for each cluster, and defined the Reachability Settings so that **Edge-Network** can reach **App-Network**.
+此外，你将为每个集群创建了工作区和网关组，并定义了可达性设置，以使 **Edge-Network** 可以访问 **App-Network**。
 
+### 在 cluster-1 中部署 Bookinfo
 
-### Deploy bookinfo in cluster-1
+![在 Cluster 1 中的 BookInfo](../images/cluster-1-config.png)
 
-| [![BookInfo in Cluster 1](images/cluster-1-config.png "BookInfo in Cluster 1")](images/cluster-1-config.png) _BookInfo in Cluster 1_ |
-|  :--:  |
+我们将：
 
-We will:
- 
- 1. Create the **bookinfo** namespace and deploy the **BookInfo** application
- 1. Deploy an **Ingress Gateway** in the cluster
- 1. Publish a **Gateway** resource to expose the **productpage.bookinfo** service
- 1. Verify that the service is functioning correctly 
+1. 创建 **bookinfo** 命名空间并部署 **BookInfo** 应用程序
+2. 在集群中部署一个 **Ingress Gateway**
+3. 发布一个 **Gateway** 资源以暴露 **productpage.bookinfo** 服务
+4. 验证服务是否正常运行
 
-Remember to set the kubectl context or use your context alias to point to **cluster-1**.
+请记住设置 kubectl 上下文或使用你的上下文别名来指向 **cluster-1**。
 
 <details>
-<summary>How we do it...</summary>
+<summary>操作步骤...</summary>
 
-#### Create the bookinfo namespace and deploy the Bookinfo application:
+#### 创建 bookinfo 命名空间并部署 Bookinfo 应用程序：
 
 ```bash
 kubectl create namespace bookinfo
@@ -361,11 +301,11 @@ kubectl exec "$(kubectl get pod -n bookinfo -l app=ratings -o jsonpath='{.items[
    -n bookinfo -c ratings -- curl -s productpage:9080/productpage
 ```
 
-Note: the final shell command verifies that the **BookInfo** application is correctly deployed and functioning.
+注意：最后一个 shell 命令验证 **BookInfo** 应用程序是否正确部署和运行。
 
-#### Deploy an Ingress Gateway in the cluster
+#### 在集群中部署 Ingress Gateway
 
-We'll provision an Ingress Gateway **ingressgw-1** in the **bookinfo** namespace in the cluster:
+我们将在集群的 **bookinfo** 命名空间中部署一个 Ingress Gateway **ingressgw-1**：
 
 ```bash
 cat <<EOF > ingressgw-1.yaml
@@ -383,19 +323,11 @@ EOF
 kubectl apply -f ingressgw-1.yaml
 ```
 
-#### Publish a Gateway resource to expose productpage.bookinfo
+#### 发布一个 Gateway 资源以暴露 productpage.bookinfo
 
-We will publish a Gateway resource into the Gateway Group on the cluster, referencing the Ingress Gateway we just provisioned. 
+我们将在集群中的 Gateway 组中发布一个 Gateway 资源，引用我们刚刚部署的 Ingress Gateway。
 
-Use **tctl** or **kubectl** (if GitOps is enabled on that cluster):
-
-<Tabs 
-  defaultValue="tctl"
-  values={[
-    {label: 'tctl', value: 'tctl'},
-    {label: 'kubectl (GitOps)', value: 'kubectl'}
-  ]}>
-  <TabItem value="tctl">
+使用 **tctl** 或 **kubectl**（如果在该集群上启用了 GitOps）：
 
 ```bash
 cat <<EOF > bookinfo-ingress-1.yaml
@@ -428,9 +360,6 @@ EOF
 tctl apply -f bookinfo-ingress-1.yaml
 ```
 
-</TabItem>
-<TabItem value="kubectl">
-
 ```bash
 cat <<EOF > bookinfo-ingress-1.yaml
 apiVersion: gateway.tsb.tetrate.io/v2
@@ -461,14 +390,12 @@ EOF
 
 kubectl apply -f bookinfo-ingress-1.yaml
 ```
-</TabItem>
-</Tabs>
 
 </details>
 
-#### Verify that the service is functioning correctly 
+#### 验证服务是否正常运行
 
-Check that the service on **cluster-1** is functioning by sending an HTTP request through the Ingress Gateway to the **productpage** service:
+通过 Ingress Gateway 发送 HTTP 请求来检查 **cluster-1** 上的服务是否正常运行到 **productpage** 服务：
 
 ```bash
 export GATEWAY_IP=$(kubectl -n bookinfo get service ingressgw-1 -o jsonpath="{.status.loadBalancer.ingress[0]['hostname','ip']}")
@@ -478,22 +405,21 @@ curl -s --connect-to bookinfo.tse.tetratelabs.io:80:$GATEWAY_IP \
     "http://bookinfo.tse.tetratelabs.io/productpage" 
 ```
 
-Note: The Ingress Gateway may need a cloud load balancer, and you may need to allow several minutes for the cloud load balancer to finish provisioning. 
+注意：Ingress Gateway 可能需要一个云负载均衡器，并且你可能需要等待几分钟以完成云负载均衡器的配置。
 
 
-### Deploy bookinfo in cluster-2
+### 在 cluster-2 中部署 Bookinfo
 
-| [![BookInfo in Cluster 2](images/cluster-2-config.png "BookInfo in Cluster 2")](images/cluster-2-config.png) _BookInfo in Cluster 2_ |
-|  :--:  |
+![在 Cluster 2 中的 BookInfo](../images/cluster-2-config.png)
 
-We will repeat the above steps for **cluster-2**, making sure to reference the **cluster-2** **GatewayGroup**, **IngressGateway** and **Gateway** resource.
+我们将重复上述步骤来针对 **cluster-2** 进行操作，确保参考了 **cluster-2** 的 **GatewayGroup**、**IngressGateway** 和 **Gateway** 资源。
 
-Remember to set the kubectl context or use your context alias to point to **cluster-2**.
+请记住设置 kubectl 上下文或使用你的上下文别名来指向 **cluster-2**。
 
 <details>
-<summary>How we do it...</summary>
+<summary>操作步骤...</summary>
 
-#### Create the bookinfo namespace and deploy the Bookinfo application:
+#### 创建 bookinfo 命名空间并部署 Bookinfo 应用程序：
 
 ```bash
 kubectl create namespace bookinfo
@@ -504,7 +430,7 @@ kubectl exec "$(kubectl get pod -n bookinfo -l app=ratings -o jsonpath='{.items[
    -n bookinfo -c ratings -- curl -s productpage:9080/productpage
 ```
 
-#### Deploy an Ingress Gateway in the cluster
+#### 在集群中部署 Ingress Gateway
 
 ```bash
 cat <<EOF > ingressgw-2.yaml
@@ -522,15 +448,7 @@ EOF
 kubectl apply -f ingressgw-2.yaml
 ```
 
-#### Publish a Gateway resource to expose productpage.bookinfo
-
-<Tabs 
-  defaultValue="tctl"
-  values={[
-    {label: 'tctl', value: 'tctl'},
-    {label: 'kubectl (GitOps)', value: 'kubectl'}
-  ]}>
-  <TabItem value="tctl">
+#### 发布一个 Gateway 资源以暴露 productpage.bookinfo
 
 ```bash
 cat <<EOF > bookinfo-ingress-2.yaml
@@ -563,9 +481,6 @@ EOF
 tctl apply -f bookinfo-ingress-2.yaml
 ```
 
-</TabItem>
-<TabItem value="kubectl">
-
 ```bash
 cat <<EOF > bookinfo-ingress-2.yaml
 apiVersion: gateway.tsb.tetrate.io/v2
@@ -596,14 +511,11 @@ EOF
 
 kubectl apply -f bookinfo-ingress-2.yaml
 ```
-</TabItem>
-</Tabs>
-
 </details>
 
-#### Verify that the service is functioning correctly 
+#### 验证服务是否正常运行 
 
-Test against **cluster-2** as follows:
+对 **cluster-2** 进行如下测试：
 
 ```bash
 export GATEWAY_IP=$(kubectl -n bookinfo get service ingressgw-2 -o jsonpath="{.status.loadBalancer.ingress[0]['hostname','ip']}")
@@ -614,33 +526,32 @@ curl -s --connect-to bookinfo.tse.tetratelabs.io:80:$GATEWAY_IP \
 ```
 
 
-### Configure the Edge Gateway
+### 配置 Edge Gateway
 
-| [![Edge Gateway in Edge Cluster](images/edge-config.png "Edge Gateway in Edge Cluster")](images/edge-config.png) _Edge Gateway in Edge Cluster_ |
-|  :--:  |
+![Edge Cluster 中的 Edge Gateway](../images/edge-config.png)
 
-We will:
+我们将：
 
- * Create the **edge** namespace
- * Deploy an **Edge Gateway** in the cluster
- * Publish a **Gateway** resource that balances traffic across the workload clusters
- * Verify that the service is functioning correctly 
+* 创建 **edge** 命名空间
+* 在集群中部署一个 **Edge Gateway**
+* 发布一个 **Gateway** 资源来均衡流量跨工作负载集群
+* 验证服务是否正常运行
 
-If you're using TSE's **Route 53 Controller** to automatically manage DNS, remember to first enable it on this cluster.  Any public DNS should point to the Edge Gateway on this cluster.
+如果你正在使用 TSE 的 **Route 53 Controller** 来自动管理 DNS，请记住首先在此集群上启用它。任何公共 DNS 应指向此集群上的 Edge Gateway。
 
-Remember to set the kubectl context or use your context alias to point to **cluster-edge**.
+请记住设置 kubectl 上下文或使用你的上下文别名来指向 **cluster-edge**。
 
 <details>
-<summary>How we do it...</summary>
+<summary>操作步骤...</summary>
 
-#### Create the edge namespace
+#### 创建 edge 命名空间
 
 ```bash
 kubectl create namespace edge
 kubectl label namespace edge istio-injection=enabled
 ```
 
-#### Deploy an Edge Gateway in the cluster
+#### 在集群中部署 Edge Gateway
 
 ```bash
 cat <<EOF > edgegw.yaml
@@ -658,15 +569,7 @@ EOF
 kubectl apply -f edgegw.yaml
 ```
 
-#### Publish a Gateway resource to balance traffic across the workload clusters
-
-<Tabs 
-  defaultValue="tctl"
-  values={[
-    {label: 'tctl', value: 'tctl'},
-    {label: 'kubectl (GitOps)', value: 'kubectl'}
-  ]}>
-  <TabItem value="tctl">
+#### 发布一个 Gateway 资源来均衡流量跨工作负载集群
 
 ```bash
 cat <<EOF > bookinfo-edge.yaml
@@ -682,7 +585,9 @@ spec:
   workloadSelector:
     namespace: edge
     labels:
-      app: edgegw
+      app
+
+: edgegw
   http:
     - name: bookinfo
       port: 80
@@ -695,9 +600,6 @@ EOF
 
 tctl apply -f bookinfo-edge.yaml
 ```
-
-</TabItem>
-<TabItem value="kubectl">
 
 ```bash
 cat <<EOF > bookinfo-edge..yaml
@@ -728,14 +630,11 @@ EOF
 kubectl apply -f bookinfo-edge.yaml
 ```
 
-</TabItem>
-</Tabs>
-
 </details>
 
-#### Verify that the service is functioning correctly 
+#### 验证服务是否正常运行
 
-We will send test traffic to the Edge Gateway on **cluster-edge**:
+我们将发送测试流量到 **cluster-edge** 上的 Edge Gateway：
 
 ```bash
 export GATEWAY_IP=$(kubectl -n edge get service edgegw -o jsonpath="{.status.loadBalancer.ingress[0]['hostname','ip']}")
@@ -745,15 +644,15 @@ curl -s --connect-to bookinfo.tse.tetratelabs.io:80:$GATEWAY_IP \
     "http://bookinfo.tse.tetratelabs.io/productpage" 
 ```
 
-If you have configured DNS to point to the Edge Gateway (for example, using TSE's Route 53 Controller), you can test the service directly:
+如果你已经配置了 DNS 以指向 Edge Gateway（例如，使用 TSE 的 Route 53 Controller），你可以直接测试服务：
 
 ```bash
 curl http://bookinfo.tse.tetratelabs.io/productpage
 ```
 
-Remember that you may need to allow several minutes for the cloud load balancer to finish provisioning. 
+请记住你可能需要等待几分钟，直到云负载均衡器完成配置。
 
 
-## Next Steps
+## 下一步
 
-You're now ready to experiment with [workload cluster failover](cluster-failover) behaviour.
+你现在可以尝试 [工作负载集群故障转移](../cluster-failover) 行为。
