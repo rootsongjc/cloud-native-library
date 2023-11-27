@@ -13,133 +13,28 @@
     </image>
     
     <item>
-      <title>Install Tetrate Service Bridge from the AWS Container Marketplace</title>
-      <link>https://lib.jimmysong.io/tsb/setup/aws/container-marketplace/</link>
-      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
-      <guid>https://lib.jimmysong.io/tsb/setup/aws/container-marketplace/</guid>
-      <description>&lt;p&gt;This document describes how to install Tetrate Service Bridge (TSB) in your Amazon Kubernetes (EKS) cluster through the AWS Container Marketplace.&lt;/p&gt;
-&lt;p&gt;:::note
-This document is intended for users who have purchased Tetrate&amp;rsquo;s AWS Container Marketplace offering.
-It will not work if you have not subscribed to the Tetrate Container Marketplace offering.
-Please contact Tetrate if you&amp;rsquo;re interested in an AWS Marketplace Private Offer.
-:::&lt;/p&gt;
-&lt;h2 id=&#34;overview-of-the-tetrate-operator&#34;&gt;Overview of the Tetrate Operator&lt;/h2&gt;
-&lt;p&gt;The Tetrate Operator is a Kubernetes Operator from Tetrate that makes it easier to install, deploy, and upgrade TSB. The AWS Container Marketplace offering for Tetrate Service Bridge installs a version of the Tetrate Operator in an EKS cluster. After that, TSB can be installed in any namespace in your EKS cluster.
-Throughout this document, it is assumed that  the TSB will be installed in the &lt;code&gt;tsb&lt;/code&gt; namespace.&lt;/p&gt;
-&lt;p&gt;Prerequisites for using the Tetrate Operator
-To use the Marketplace&amp;rsquo;s Tetrate offering, make sure you meet the following requirements:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;You have access to an EKS cluster (Kubernetes 1.16 or above) configured with IAM roles for service accounts.&lt;/li&gt;
-&lt;li&gt;You have cluster-admin access on the EKS cluster.&lt;/li&gt;
-&lt;li&gt;You have set up an EKS cluster, and you have &lt;code&gt;kubectl&lt;/code&gt; setup.&lt;/li&gt;
-&lt;li&gt;You have &lt;a href=&#34;../../reference/cli/guide/index#installation&#34;&gt;downloaded &lt;code&gt;tctl&lt;/code&gt;&lt;/a&gt;
-Installation&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;create-and-configure-the-aws-iam-roles-for-your-kubernetes-cluster&#34;&gt;Create and configure the AWS IAM roles for your Kubernetes cluster&lt;/h2&gt;
-&lt;p&gt;AWS IAM permissions are granted to Tetrate through the use of AWS&amp;rsquo;s IAM roles for Kubernetes Service Accounts. This feature must be enabled at the cluster level.
-Create an IAM role for the Tetrate Operator pod named &lt;code&gt;eks-tsb-operator&lt;/code&gt;, and &lt;a href=&#34;https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-service.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;configure it for use by EC2 per AWS guide&lt;/a&gt;. You will replace the trust relationship later.
-Then grant AWS managed policy &lt;code&gt;AWSMarketplaceMeteringRegisterUsage&lt;/code&gt; to &lt;code&gt;eks-tsb-operator&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;Create the trust relationship on the IAM role. Use the following template and replace &lt;code&gt;AWS_ACCOUNT_ID&lt;/code&gt; and &lt;code&gt;OIDC_PROVIDER&lt;/code&gt; with appropriate values.&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;AWS_ACCOUNT_ID&lt;/code&gt; should be replaced with your AWS account ID.&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;OIDC_PROVIDER&lt;/code&gt; should be replaced with the OpenID Connect Provider URL for your Kubernetes cluster. You must remove the &lt;code&gt;https://&lt;/code&gt; prefix from the URL before replacement&lt;/p&gt;
-&lt;p&gt;For more details on IAM OIDC providers for EKS clusters, please refer to &lt;a href=&#34;https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;the official documentation&lt;/a&gt;&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;Version&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;2012-10-17&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;Statement&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;nt&#34;&gt;&amp;#34;Effect&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;Allow&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;nt&#34;&gt;&amp;#34;Principal&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;nt&#34;&gt;&amp;#34;Federated&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;arn:aws:iam::AWS_ACCOUNT_ID:oidc-provider/OIDC_PROVIDER&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;nt&#34;&gt;&amp;#34;Action&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;sts:AssumeRoleWithWebIdentity&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;nt&#34;&gt;&amp;#34;Condition&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;nt&#34;&gt;&amp;#34;StringEquals&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;          &lt;span class=&#34;nt&#34;&gt;&amp;#34;OIDC_PROVIDER:sub&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;system:serviceaccount::tsb:tsb-operator-management-plane&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;install-the-tetrate-operator-and-tsb-management-plane&#34;&gt;Install the Tetrate Operator and TSB Management Plane&lt;/h2&gt;
-&lt;p&gt;Using the Tetrate CLI (&lt;code&gt;tctl&lt;/code&gt;), generate the Kubernetes manifest for Tetrate Operator and install it into your Kubernetes cluster.&lt;/p&gt;
-&lt;p&gt;Generate the CRDs for TSB Management plane using the following command:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl install manifest management-plane-operator &lt;span class=&#34;se&#34;&gt;\
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;   --registry 709825985650.dkr.ecr.us-east-1.amazonaws.com/tetrate-io &amp;gt; managementplaneoperator.yaml
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Open the file &lt;code&gt;managementplaneoperator.yaml&lt;/code&gt; you made above, and locate the &lt;code&gt;ServiceAccount&lt;/code&gt; definition for &lt;code&gt;tsb-operator-management-plane&lt;/code&gt;. Inside the YAML definition for the &lt;code&gt;ServiceAccount&lt;/code&gt;, add the &lt;code&gt;annotation&lt;/code&gt; section with the IAM role information so that the ServiceAccount can access it. Replace the &lt;code&gt;AWS_ACCOUNT_ID&lt;/code&gt; in the annotation with your AWS account ID:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ServiceAccount&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;labels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;platform.tsb.tetrate.io/application&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;tsb-operator-managementplane&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;platform.tsb.tetrate.io/component&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;tsb-operator&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;platform.tsb.tetrate.io/plane&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;management&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;tsb-operator-management-plane&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;tsb&amp;#39;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;eks.amazonaws.com/role-arn&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;arn:aws:iam::AWS_ACCOUNT_ID:role/eks-tsb-operator &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Deploy the operator using &lt;code&gt;kubectl&lt;/code&gt;, making sure that your Kubernetes context is pointed to the correct cluster:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -f managementplaneoperator.yaml
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Deploying the Tetrate Operator may take a little bit of time. You can monitor its status by running the following command:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n tsb get pod -owide
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You should see some text resembling the example below. The operator is ready when the READY and STATUS columns have the values &lt;code&gt;1/1&lt;/code&gt; and &lt;code&gt;Running&lt;/code&gt; respectively.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n tsb get pod -owide
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;NAME                                             READY   STATUS    RESTARTS   AGE   IP               NODE                                              NOMINATED NODE   READINESS GATES
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tsb-operator-management-plane-68c98756d5-n44d7   1/1     Running   &lt;span class=&#34;m&#34;&gt;0&lt;/span&gt;          71s   192.168.17.234   ip-192-168-24-207.ca-central-1.compute.internal   &amp;lt;none&amp;gt;          &amp;lt;none&amp;gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Follow the instructions on &lt;a href=&#34;../self_managed/management-plane-installation#management-plane-installation&#34;&gt;Management Plane installation&lt;/a&gt; and finish installing the Management Plane].&lt;/p&gt;
-&lt;h2 id=&#34;accessing-tsb-ui&#34;&gt;Accessing TSB UI&lt;/h2&gt;
-&lt;p&gt;Obtain the ELB address assigned to the Management Plane by executing the following command:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n tsb get svc -l&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;envoy
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;NAME    TYPE           CLUSTER-IP       EXTERNAL-IP                                                                 PORT&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;S&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;                                         AGE
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy   LoadBalancer   10.100.157.254   a72dd70af1bf64e7d86a7352a9568ea1-952780637.ca-central-1.elb.amazonaws.com   8443:32457/TCP,9443:30475/TCP,42422:32238/TCP   10m
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Assign a DNS record pointing to your ELB. Please refer to &lt;a href=&#34;https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-creating.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;the official documentation&lt;/a&gt; for details.&lt;/p&gt;
-&lt;p&gt;Once you have the DNS records setup, you can access the Web UI using the URL &lt;code&gt;https://&amp;lt;DNS Name&amp;gt;:8443&lt;/code&gt;.&lt;/p&gt;
-&lt;h2 id=&#34;next-steps&#34;&gt;Next steps&lt;/h2&gt;
-&lt;p&gt;Please &lt;a href=&#34;https://tetrate.io&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;contact us&lt;/a&gt; if you have further questions.&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Install Tetrate Service Bridge In AWS</title>
+      <title>在 AWS 安装 TSB</title>
       <link>https://lib.jimmysong.io/tsb/setup/aws/vpc/</link>
       <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/tsb/setup/aws/vpc/</guid>
-      <description>&lt;p&gt;This document describes how to install TSB in AWS in a single VPC.&lt;/p&gt;
-&lt;p&gt;Before you get started, make sure you: &lt;br /&gt;
-✓ Familiarize yourself with &lt;a href=&#34;../../concepts/toc&#34;&gt;TSB concepts&lt;/a&gt; &lt;br /&gt;
-✓ Install &lt;a href=&#34;../../setup/requirements-and-download#download&#34;&gt;tctl&lt;/a&gt; and &lt;a href=&#34;../../reference/cli/reference/install#tctl-install-image-sync&#34;&gt;sync your tctl images&lt;/a&gt;&lt;br /&gt;
-✓ Install &lt;a href=&#34;https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;EKS CLI&lt;/a&gt;&lt;br /&gt;
-✓ Install &lt;a href=&#34;https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;AWS CLI&lt;/a&gt;&lt;/p&gt;
-&lt;h1 id=&#34;installing-tsb-with-a-single-vpc&#34;&gt;Installing TSB With A Single VPC&lt;/h1&gt;
-&lt;p&gt;In this scenario, you will need to have 3 EKS clusters, Elasticsearch, and Postgres running in your AWS account.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  &gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/setup/aws/single-vpc.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;/figure&gt;
-&lt;/p&gt;
-&lt;p&gt;Please follow the corresponding AWS guides for more detail on how to setup these:&lt;/p&gt;
+      <description>&lt;p&gt;本文档描述了如何在 AWS 单一 VPC 中安装 TSB。&lt;/p&gt;
+&lt;p&gt;在开始之前，请确保你已经：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://docs.aws.amazon.com/cli/latest/reference/eks/create-cluster.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Creating an EKS cluster&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://docs.aws.amazon.com/opensearch-service/latest/developerguide/gsgcreate-domain.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Getting Started with Amazon OpenSearch Service&lt;/a&gt; (&lt;a href=&#34;https://docs.aws.amazon.com/cli/latest/reference/es/create-elasticsearch-domain.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CLI reference&lt;/a&gt;)&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_GettingStarted.CreatingConnecting.PostgreSQL.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Creating a PostgreSQL DB instance&lt;/a&gt; (&lt;a href=&#34;https://docs.aws.amazon.com/cli/latest/reference/rds/create-db-instance.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CLI reference&lt;/a&gt;)&lt;/li&gt;
+&lt;li&gt;熟悉 &lt;a href=&#34;../../../concepts/&#34;&gt;TSB 概念&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;安装 &lt;a href=&#34;../../../setup/requirements-and-download#download&#34;&gt;tctl&lt;/a&gt; 并 &lt;a href=&#34;../../../reference/cli/reference/install#tctl-install-image-sync&#34;&gt;同步你的 tctl 镜像&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;安装 &lt;a href=&#34;https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;EKS CLI&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;安装 &lt;a href=&#34;https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;AWS CLI&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;First, create the Management Plane cluster using the following command template.
-Since a VPC is not explicitly defined in the command, a new VPC will be created for you.&lt;/p&gt;
+&lt;h1 id=&#34;使用单一-vpc-安装-tsb&#34;&gt;使用单一 VPC 安装 TSB&lt;/h1&gt;
+&lt;p&gt;在这种情况下，你将需要在你的 AWS 帐户中运行 3 个 EKS 集群，以及运行 Elasticsearch 和 Postgres。&lt;/p&gt;
+&lt;p&gt;请按照相应的 AWS 指南进行更详细的设置：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.aws.amazon.com/cli/latest/reference/eks/create-cluster.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;创建 EKS 集群&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.aws.amazon.com/opensearch-service/latest/developerguide/gsgcreate-domain.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;开始使用 Amazon OpenSearch 服务&lt;/a&gt;（&lt;a href=&#34;https://docs.aws.amazon.com/cli/latest/reference/es/create-elasticsearch-domain.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CLI 参考&lt;/a&gt;）&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_GettingStarted.CreatingConnecting.PostgreSQL.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;创建 PostgreSQL DB 实例&lt;/a&gt;（&lt;a href=&#34;https://docs.aws.amazon.com/cli/latest/reference/rds/create-db-instance.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CLI 参考&lt;/a&gt;）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;首先，使用以下命令模板创建管理平面集群。
+由于命令中没有明确定义 VPC，将为你创建一个新的 VPC。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ eksctl create cluster &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --name &amp;lt;NAME&amp;gt; &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --version &amp;lt;VERSION&amp;gt; &lt;span class=&#34;se&#34;&gt;\
@@ -148,8 +43,8 @@ Since a VPC is not explicitly defined in the command, a new VPC will be created 
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --nodes &amp;lt;NUM&amp;gt; &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --node-type &amp;lt;TYPE&amp;gt; &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --managed
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Once the Management Plane cluster and nodes, as well as VPC, are ready, take note of that sub-VPC names and proceed with the Tier 1 and Control Plane clusters.&lt;/p&gt;
-&lt;p&gt;For Tier 1 and Control Plane clusters, you will need to specify the VPC network information on top of the previous command template. Use the following command template to create two clusters, one for Tier 1 and one for the Control Plane.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;一旦管理平面集群、节点和 VPC 准备就绪，请记录下子 VPC 名称，并继续进行 Tier 1 和控制平面集群的设置。&lt;/p&gt;
+&lt;p&gt;对于 Tier 1 和控制平面集群，你需要在前面的命令模板之上指定 VPC 网络信息。使用以下命令模板创建两个集群，一个用于 Tier 1，另一个用于控制平面。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ eksctl create cluster &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --name &amp;lt;NAME&amp;gt; &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --version &amp;lt;VERSION&amp;gt;&lt;span class=&#34;se&#34;&gt;\
@@ -160,18 +55,17 @@ Since a VPC is not explicitly defined in the command, a new VPC will be created 
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --managed &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --vpc-private-subnets &amp;lt;VPCNAMES&amp;gt; &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --vpc-public-subnets &amp;lt;VPCNAMES&amp;gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Once the EKS clusters are ready, make sure to setup OpenSearch and PostgreSQL following the links provided.&lt;/p&gt;
-&lt;h2 id=&#34;deploying-the-management-plane&#34;&gt;Deploying the Management Plane&lt;/h2&gt;
-&lt;p&gt;Point to the cluster created for Management Plane installation, and follow the instructions in &lt;a href=&#34;../../setup/self_managed/management-plane-installation&#34;&gt;Management Plane Installation&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;However, make sure to specify extra information about Elasticsearch and PostgreSQL.&lt;/p&gt;
-&lt;p&gt;The user name and password for Elasticsearch and PostgreSQL should be specified when creating Management Plane secrets:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;一旦 EKS 集群准备就绪，请确保根据提供的链接设置 OpenSearch 和 PostgreSQL。&lt;/p&gt;
+&lt;h2 id=&#34;部署管理平面&#34;&gt;部署管理平面&lt;/h2&gt;
+&lt;p&gt;指向为管理平面安装创建的集群，并按照 &lt;a href=&#34;../../../setup/self-managed/management-plane-installation&#34;&gt;管理平面安装&lt;/a&gt; 中的说明操作。&lt;/p&gt;
+&lt;p&gt;但是，请确保在创建管理平面密钥时指定 Elasticsearch 和 PostgreSQL 的额外信息：&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ tctl install manifest management-plane-secrets  \
   --elastic-username &amp;lt;USER&amp;gt; \
   --elastic-password &amp;lt;PASS&amp;gt; \
   --postgres-username &amp;lt;USER&amp;gt; \
   --postgres-password &amp;lt;PASS&amp;gt; \
   ... other options ...
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Also, the &lt;a href=&#34;../../refs/install/managementplane/v1alpha1/spec&#34;&gt;ManagementPlane&lt;/a&gt; custom resource should point to the correct PostgreSQL and OpenSearch endpoints:&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;此外，&lt;a href=&#34;../../../refs/install/managementplane/v1alpha1/spec&#34;&gt;ManagementPlane&lt;/a&gt; 自定义资源应该指向正确的 PostgreSQL 和 OpenSearch 端点：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# &amp;lt;snip&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;dataStore&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;   &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;postgres&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -183,18 +77,18 @@ Since a VPC is not explicitly defined in the command, a new VPC will be created 
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;elastic-port&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;version&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;elastic-version&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# &amp;lt;snip&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Once you have setup the Management Plane, you should be able to obtain the external host name using the following command (make sure to have your kubernetes context pointing to the appropriate cluster):&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;安装管理平面后，你应该能够使用以下命令获取外部主机名（确保你的 Kubernetes 上下文指向适当的集群）：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ kubectl get svc -n tsb
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;From the output of the above command you should be able to find a hostname that looks like &lt;code&gt;ab940458d752c4e0c80830e9eb89a99d-1487971349.&amp;lt;Region&amp;gt;.elb.amazonaws.com&lt;/code&gt;. This is the endpoint that you will use when configuring the Tier 1 and Control Plane configuration YAML files.&lt;/p&gt;
-&lt;h2 id=&#34;deploying-tier-1-and-control-plane-tier2-clusters&#34;&gt;Deploying Tier 1 and Control Plane (Tier2) Clusters&lt;/h2&gt;
-&lt;p&gt;For Tier 1 and CP clusters, follow these instructions:&lt;/p&gt;
-&lt;p&gt;Check these links for more information regarding the &lt;a href=&#34;../../refs/tsb/gateway/v2/tier1_gateway&#34;&gt;Tier1 Gateway&lt;/a&gt; and the &lt;a href=&#34;../../concepts/operators/control_plane&#34;&gt;Control Plane&lt;/a&gt;&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;从上述命令的输出中，你应该能够找到一个主机名，类似于 &lt;code&gt;ab940458d752c4e0c80830e9eb89a99d-1487971349.&amp;lt;Region&amp;gt;.elb.amazonaws.com&lt;/code&gt;。这是在配置 Tier 1 和控制平面配置 YAML 文件时要使用的端点。&lt;/p&gt;
+&lt;h2 id=&#34;部署-tier-1-和控制平面tier2集群&#34;&gt;部署 Tier 1 和控制平面（Tier2）集群&lt;/h2&gt;
+&lt;p&gt;对于 Tier 1 和 CP 集群，请按照以下说明进行操作：&lt;/p&gt;
+&lt;p&gt;查看以下链接以获取有关 &lt;a href=&#34;../../../refs/tsb/gateway/v2/tier1-gateway&#34;&gt;Tier1 网关&lt;/a&gt; 和 &lt;a href=&#34;../../../concepts/operators/control-plane&#34;&gt;控制平面&lt;/a&gt; 的更多信息。&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;../../setup/self_managed/onboarding-clusters#deploy-operators&#34;&gt;Deploy Control Plane operators&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;../../setup/self_managed/onboarding-clusters#secrets&#34;&gt;Install Control Plane secrets&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;Apply &lt;code&gt;ControlPlane&lt;/code&gt; CRs to &lt;a href=&#34;../../setup/self_managed/onboarding-clusters#installation&#34;&gt;install TSB control plane components&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;../../../setup/self-managed/onboarding-clusters#deploy-operators&#34;&gt;部署控制平面操作员&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;../../../setup/self-managed/onboarding-clusters#secrets&#34;&gt;安装控制平面密钥&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;应用 &lt;code&gt;ControlPlane&lt;/code&gt; CR 来 &lt;a href=&#34;../../../setup/self-managed/onboarding-clusters#installation&#34;&gt;安装 TSB 控制平面组件&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;After you have setup these clusters, add the following annotation to Edge XCP in both Tier 1 and Tier 2 to enable &lt;a href=&#34;../../concepts/traffic_management#multi-cluster-routing&#34;&gt;multi-cluster routing&lt;/a&gt; and apply the settings.&lt;/p&gt;
+&lt;p&gt;设置这些集群后，在 Tier 1 和 Tier 2 中的 Edge XCP 中添加以下注释以启用 &lt;a href=&#34;../../../concepts/traffic-management#multi-cluster-routing&#34;&gt;多集群路由&lt;/a&gt; 并应用这些设置。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# &amp;lt;snip&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;components&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;xcp&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -215,9 +109,10 @@ Since a VPC is not explicitly defined in the command, a new VPC will be created 
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;            &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;metadata.annotations&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;              &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;traffic.istio.io/nodeSelector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;beta.kubernetes.io/arch&amp;#34;:&amp;#34;amd64&amp;#34;}&amp;#39;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;When the clusters are setup, you can follow &lt;a href=&#34;../../quickstart/deploy_sample_app#deploy-bookinfo&#34;&gt;the instructions to deploy the bookinfo app&lt;/a&gt; to proceed with a demo workload.&lt;/p&gt;
-&lt;h1 id=&#34;installing-tsb-using-multiple-vpcs&#34;&gt;Installing TSB Using Multiple VPCs&lt;/h1&gt;
-&lt;p&gt;For this installation you should have already running &lt;a href=&#34;#installing-tsb-with-a-single-vpc&#34;&gt;TSB in a single VPC&lt;/a&gt;.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;集群设置完成后，你可以按照 &lt;a href=&#34;../../../quickstart/deploy-sample-app#deploy-bookinfo&#34;&gt;部署 bookinfo 应用程序的说明&lt;/a&gt; 继续进行演示工作负载。&lt;/p&gt;
+&lt;h1 id=&#34;使用多个-vpc-安装-tsb&#34;&gt;使用多个 VPC 安装 TSB&lt;/h1&gt;
+&lt;p&gt;对于此安装，你应该已经在&lt;/p&gt;
+&lt;p&gt;单个 VPC 中运行了 TSB。&lt;/p&gt;
 &lt;p&gt;
 
 
@@ -236,11 +131,11 @@ Since a VPC is not explicitly defined in the command, a new VPC will be created 
 
 &lt;figure  &gt;
   &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/setup/aws/multiple-vpc2.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../../assets/setup/aws/multiple-vpc2.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
   &lt;/div&gt;&lt;/figure&gt;
 &lt;/p&gt;
-&lt;p&gt;The infrastructure in this scenario is similar to that of the case using a single VPC, but the cluster hosting the Control Plane (Tier2) belongs in a different VPC from the clusters for Management Plane and the Tier 1 gateway. The VPCs will need to be configured to be able to communicate with each other. Please read the &lt;a href=&#34;https://docs.aws.amazon.com/vpc/latest/peering/what-is-vpc-peering.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;guide on VPC peering in AWS&lt;/a&gt; and the relevant &lt;a href=&#34;https://docs.aws.amazon.com/cli/latest/reference/ec2/create-vpc-peering-connection.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;section in the CLI reference&lt;/a&gt; for more details.&lt;/p&gt;
-&lt;p&gt;First create a cluster and a new VPC for the control plane. You can use the same command template as when you created your first EKS cluster for Single VPC case.&lt;/p&gt;
+&lt;p&gt;此情景中的基础架构与使用单个 VPC 的情况类似，但托管控制平面（Tier2）的集群位于与管理平面和 Tier 1 网关的集群不同的 VPC 中。这些 VPC 需要配置以能够相互通信。请阅读 AWS 中有关 &lt;a href=&#34;https://docs.aws.amazon.com/vpc/latest/peering/what-is-vpc-peering.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;VPC 对等连接&lt;/a&gt; 的指南以及 CLI 参考中的相关部分，以获取更多详细信息。&lt;/p&gt;
+&lt;p&gt;首先创建一个集群和控制平面的新 VPC。你可以使用与为单个 VPC 案例创建第一个 EKS 集群时相同的命令模板。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ eksctl create cluster &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --name &amp;lt;NAME&amp;gt; &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --version &amp;lt;VERSION&amp;gt; &lt;span class=&#34;se&#34;&gt;\
@@ -249,24 +144,23 @@ Since a VPC is not explicitly defined in the command, a new VPC will be created 
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --nodes &amp;lt;NUM &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --node-type &amp;lt;TYPE&amp;gt; &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --managed 
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;configuring-the-vpc&#34;&gt;Configuring the VPC&lt;/h2&gt;
-&lt;p&gt;You will need to retrieve VPC information to continue configuring. Use the following command to get the necessary information:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;配置-vpc&#34;&gt;配置 VPC&lt;/h2&gt;
+&lt;p&gt;你需要检索 VPC 信息以继续配置。使用以下命令获取必要信息：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ aws ec2 --output text &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;          --query &lt;span class=&#34;s1&#34;&gt;&amp;#39;Vpcs[*].{VpcId:VpcId,Name:Tags[?Key==`Name`].Value|[0],CidrBlock:CidrBlock}&amp;#39;&lt;/span&gt; describe-vpcs
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Find the ID for each VPC that will be participating, and execute &lt;a href=&#34;https://docs.aws.amazon.com/cli/latest/reference/ec2/create-vpc-peering-connection.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;aws ec2 create-vpc-peering-connection&lt;/code&gt;&lt;/a&gt; command to create a VPC peering
-to allow the VPCs to talk to each other:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;找到将要参与的每个 VPC 的 ID，并使用 &lt;a href=&#34;https://docs.aws.amazon.com/cli/latest/reference/ec2/create-vpc-peering-connection.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;aws ec2 create-vpc-peering-connection&lt;/code&gt;&lt;/a&gt; 命令创建 VPC 对等连接，以允许这些 VPC 互相通信：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ aws ec2 create-vpc-peering-connection &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;          --vpc-id &amp;lt;VPC-ID1&amp;gt; &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;          --peer-vpc-id &amp;lt;VPC-ID2&amp;gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Take note the field &lt;code&gt;VpcPeeringConnectionId&lt;/code&gt; from the output of the above command. You will need this value to accept the peering request.&lt;/p&gt;
-&lt;p&gt;Using this ID, accept the peering connection using &lt;a href=&#34;https://docs.aws.amazon.com/cli/latest/reference/ec2/accept-vpc-peering-connection.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;aws ec2 accept-vpc-peering-connection&lt;/code&gt;&lt;/a&gt; command:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请注意从上述命令的输出中获取 &lt;code&gt;VpcPeeringConnectionId&lt;/code&gt; 字段的值。你将需要此值来接受对等连接请求。&lt;/p&gt;
+&lt;p&gt;使用此 ID，使用 &lt;a href=&#34;https://docs.aws.amazon.com/cli/latest/reference/ec2/accept-vpc-peering-connection.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;aws ec2 accept-vpc-peering-connection&lt;/code&gt;&lt;/a&gt; 命令接受对等连接：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ aws ec2 accept-vpc-peering-connection --vpc-peering-connection-id &amp;lt;PEERID&amp;gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;When the above command is successfully executed, the VPCs should be able to communicate with each other.&lt;/p&gt;
-&lt;h2 id=&#34;configuring-the-control-plane-cluster&#34;&gt;Configuring the Control Plane Cluster&lt;/h2&gt;
-&lt;p&gt;In order to connect to the Control Plane cluster, you will need to update your &lt;code&gt;kubeconfig&lt;/code&gt;. Run the following command with the appropriate values:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当上述命令成功执行时，这些 VPC 应该能够相互通信。&lt;/p&gt;
+&lt;h2 id=&#34;配置控制平面集群&#34;&gt;配置控制平面集群&lt;/h2&gt;
+&lt;p&gt;为了连接到控制平面集群，你需要更新你的 &lt;code&gt;kubeconfig&lt;/code&gt;。使用适当的值运行以下命令：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ aws eks --region &amp;lt;REGION&amp;gt; update-kubeconfig --name &amp;lt;NAME&amp;gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The onboard the Control Plane. The general instructions are the same as &lt;a href=&#34;../../setup/self_managed/onboarding-clusters&#34;&gt;Onboarding Clusters guide&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;Your cluster definition for the Control Plane should look like the following. Note the extra fields in the &lt;code&gt;spec&lt;/code&gt; component.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;启动控制平面。一般的设置与 &lt;a href=&#34;../../../setup/self-managed/onboarding-clusters&#34;&gt;Onboarding Clusters 指南&lt;/a&gt; 中的相同。&lt;/p&gt;
+&lt;p&gt;你的控制平面的集群定义应如下所示。注意 &lt;code&gt;spec&lt;/code&gt; 组件中的额外字段。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;api.tsb.tetrate.io/v2&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Cluster&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -275,7 +169,7 @@ to allow the VPCs to talk to each other:&lt;/p&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;displayName&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;Control Plane Remote&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;network&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;tier2&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;When you are &lt;a href=&#34;../../setup/self_managed/onboarding-clusters#installation&#34;&gt;ready to install the Control Plane Custom Resources&lt;/a&gt;, modify the definition from the guide and set appropriate values using the following YAML as a guide:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当你准备好 &lt;a href=&#34;../../../setup/self-managed/onboarding-clusters#installation&#34;&gt;安装控制平面自定义资源&lt;/a&gt; 时，从指南中修改定义，并使用以下 YAML 作为指南设置适当的值：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;install.tetrate.io/v1alpha1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ControlPlane&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -318,7 +212,96 @@ to allow the VPCs to talk to each other:&lt;/p&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;              &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;path&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;metadata.annotations&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;traffic.istio.io/nodeSelector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;{&amp;#34;beta.kubernetes.io/arch&amp;#34;:&amp;#34;amd64&amp;#34;}&amp;#39;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If everything is configured correctly, you should be able to deploy workloads on the new cluster.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果一切配置正确，你应该能够在新集群上部署工作负载。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>从 AWS 容器市场安装 TSB</title>
+      <link>https://lib.jimmysong.io/tsb/setup/aws/container-marketplace/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/setup/aws/container-marketplace/</guid>
+      <description>&lt;p&gt;本文档介绍了如何通过 AWS 容器市场在你的 Amazon Kubernetes (EKS) 集群中安装 Tetrate Service Bridge (TSB)。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;注意&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    本文档适用于已经购买了 Tetrate 的 AWS 容器市场提供的用户。
+如果你没有订阅 Tetrate 容器市场提供的服务，本文档将不起作用。
+如果你对 AWS 市场的私有报价感兴趣，请联系 Tetrate。
+&lt;/div&gt;
+
+&lt;h2 id=&#34;tetrate-operator-概述&#34;&gt;Tetrate Operator 概述&lt;/h2&gt;
+&lt;p&gt;Tetrate Operator 是 Tetrate 提供的 Kubernetes Operator，它使安装、部署和升级 TSB 更加简单。Tetrate Service Bridge 的 AWS 容器市场提供安装了 Tetrate Operator 的一个版本到 EKS 集群中。之后，TSB 可以安装在你 EKS 集群中的任何命名空间中。
+在本文档中，假定 TSB 将安装在 &lt;code&gt;tsb&lt;/code&gt; 命名空间中。&lt;/p&gt;
+&lt;p&gt;使用 Tetrate Operator 的先决条件
+要使用市场上的 Tetrate 提供，确保满足以下要求：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;你可以访问配置了服务帐户的 EKS 集群（Kubernetes 版本 1.16 或更高）。&lt;/li&gt;
+&lt;li&gt;你在 EKS 集群上具有集群管理员访问权限。&lt;/li&gt;
+&lt;li&gt;你已经设置了 EKS 集群，并且已经设置了 &lt;code&gt;kubectl&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;你已经&lt;a href=&#34;../../../../reference/cli/guide/index#installation&#34;&gt;下载了 &lt;code&gt;tctl&lt;/code&gt;&lt;/a&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;安装步骤&#34;&gt;安装步骤&lt;/h2&gt;
+&lt;h3 id=&#34;创建和配置-kubernetes-集群的-aws-iam-角色&#34;&gt;创建和配置 Kubernetes 集群的 AWS IAM 角色&lt;/h3&gt;
+&lt;p&gt;AWS IAM 权限是通过 AWS 的 Kubernetes 服务帐户 IAM 角色授予 Tetrate 的。此功能必须在集群级别启用。
+创建一个名为 &lt;code&gt;eks-tsb-operator&lt;/code&gt; 的 IAM 角色，用于 Tetrate Operator pod，并根据 AWS 指南&lt;a href=&#34;https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-service.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;为 EC2 配置它&lt;/a&gt;。稍后将替换信任关系。
+然后授予 AWS 管理策略 &lt;code&gt;AWSMarketplaceMeteringRegisterUsage&lt;/code&gt; 给 &lt;code&gt;eks-tsb-operator&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;创建 IAM 角色的信任关系。使用以下模板，并将 &lt;code&gt;AWS_ACCOUNT_ID&lt;/code&gt; 和 &lt;code&gt;OIDC_PROVIDER&lt;/code&gt; 替换为适当的值。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;AWS_ACCOUNT_ID&lt;/code&gt; 应替换为你的 AWS 帐户 ID。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;OIDC_PROVIDER&lt;/code&gt; 应替换为你的 Kubernetes 集群的 OpenID Connect 提供程序 URL。在替换之前，你必须删除 URL 中的 &lt;code&gt;https://&lt;/code&gt; 前缀。&lt;/p&gt;
+&lt;p&gt;有关 EKS 集群的 IAM OIDC 提供程序的详细信息，请参阅&lt;a href=&#34;https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;官方文档&lt;/a&gt;。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;Version&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;2012-10-17&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nt&#34;&gt;&amp;#34;Statement&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;nt&#34;&gt;&amp;#34;Effect&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;Allow&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;nt&#34;&gt;&amp;#34;Principal&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;nt&#34;&gt;&amp;#34;Federated&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;arn:aws:iam::AWS_ACCOUNT_ID:oidc-provider/OIDC_PROVIDER&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;p&#34;&gt;},&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;nt&#34;&gt;&amp;#34;Action&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;sts:AssumeRoleWithWebIdentity&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;nt&#34;&gt;&amp;#34;Condition&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;nt&#34;&gt;&amp;#34;StringEquals&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;          &lt;span class=&#34;nt&#34;&gt;&amp;#34;OIDC_PROVIDER:sub&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;system:serviceaccount::tsb:tsb-operator-management-plane&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;安装-tetrate-operator-和-tsb-管理平面&#34;&gt;安装 Tetrate Operator 和 TSB 管理平面&lt;/h3&gt;
+&lt;p&gt;使用 Tetrate CLI (&lt;code&gt;tctl&lt;/code&gt;)，生成 Tetrate Operator 的 Kubernetes 清单，并将其安装到你的 Kubernetes 集群中。&lt;/p&gt;
+&lt;p&gt;使用以下命令生成 TSB 管理平面的 CRDs：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl install manifest management-plane-operator &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;   --registry 709825985650.dkr.ecr.us-east-1.amazonaws.com/tetrate-io &amp;gt; managementplaneoperator.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;打开上面创建的 &lt;code&gt;managementplaneoperator.yaml&lt;/code&gt; 文件，找到 &lt;code&gt;tsb-operator-management-plane&lt;/code&gt; 的 &lt;code&gt;ServiceAccount&lt;/code&gt; 定义。在 &lt;code&gt;ServiceAccount&lt;/code&gt; 的 YAML 定义内部，添加 &lt;code&gt;annotation&lt;/code&gt; 部分，包含 IAM 角色信息，以便 ServiceAccount 可以访问它。将注释中的 &lt;code&gt;AWS_ACCOUNT_ID&lt;/code&gt; 替换为你的 AWS 帐户 ID：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ServiceAccount&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;labels&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;platform.tsb.tetrate.io/application&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;tsb-operator-managementplane&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;platform.tsb.tetrate.io/component&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;tsb-operator&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;platform.tsb.tetrate.io/plane&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;management&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;tsb-operator-management-plane&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;tsb&amp;#39;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;annotations&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;eks.amazonaws.com/role-arn&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;arn:aws:iam::AWS_ACCOUNT_ID:role/eks-tsb-operator &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;使用 &lt;code&gt;kubectl&lt;/code&gt; 部署操作员，确保你的 Kubernetes 上下文指向正确的集群：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -f managementplaneoperator.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;部署 Tetrate Operator 可能需要一些时间。你可以通过运行以下命令来监视其状态：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n tsb get pod -owide
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;你应该会看到类似以下示例的文本。当 READY 和 STATUS 列的值分别为 &lt;code&gt;1/1&lt;/code&gt; 和 &lt;code&gt;Running&lt;/code&gt; 时，操作员已准备就绪。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n tsb get pod -owide
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;NAME                                             READY   STATUS    RESTARTS   AGE   IP               NODE                                              NOMINATED NODE   READINESS GATES
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tsb-operator-management-plane-68c98756d5-n44d7   1/1     Running   &lt;span class=&#34;m&#34;&gt;0&lt;/span&gt;          71s   192.168.17.234   ip-192-168-24-207.ca-central-1.compute.internal   &amp;lt;none&amp;gt;          &amp;lt;none&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请按照 &lt;a href=&#34;../../../self-managed/management-plane-installation#management-plane-installation&#34;&gt;管理平面安装&lt;/a&gt; 中的说明完成安装管理平面的步骤。&lt;/p&gt;
+&lt;h2 id=&#34;访问-tsb-用户界面&#34;&gt;访问 TSB 用户界面&lt;/h2&gt;
+&lt;p&gt;执行以下命令获取分配给管理平面的 ELB 地址：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n tsb get svc -l&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;envoy
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;为你的 EL&lt;/p&gt;
+&lt;p&gt;B 分配一个 DNS 记录。有关详细信息，请参阅&lt;a href=&#34;https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-creating.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;官方文档&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;设置 DNS 记录后，你可以使用 URL &lt;code&gt;https://&amp;lt;DNS Name&amp;gt;:8443&lt;/code&gt; 访问 Web 用户界面。&lt;/p&gt;
+&lt;h2 id=&#34;下一步&#34;&gt;下一步&lt;/h2&gt;
+&lt;p&gt;如果你有进一步的问题，请&lt;a href=&#34;https://tetrate.io&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;联系我们&lt;/a&gt;。&lt;/p&gt;
 </description>
     </item>
     

@@ -735,121 +735,397 @@ ZWN0X251bWJlchIOGgw3MjIxNDUyMjA2ODcKHgoNV09SS0xPQURfTkFNRRINGgtmYXVsdHktaHR0cA==
     </item>
     
     <item>
-      <title>Cluster onboarding troubleshooting</title>
-      <link>https://lib.jimmysong.io/tsb/troubleshooting/cluster-onboarding/</link>
+      <title>使用调试容器</title>
+      <link>https://lib.jimmysong.io/tsb/troubleshooting/debug-container/</link>
       <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
-      <guid>https://lib.jimmysong.io/tsb/troubleshooting/cluster-onboarding/</guid>
-      <description>&lt;p&gt;This document explains most common issues when onboarding new control planes into TSB.&lt;/p&gt;
-&lt;h2 id=&#34;connectivity&#34;&gt;Connectivity&lt;/h2&gt;
-&lt;p&gt;The deployment &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; needs to have connectivity with the management plane URL. Communication is performed to
-the &lt;code&gt;front-envoy&lt;/code&gt; component in the &lt;code&gt;tsb&lt;/code&gt; namespace, which is served by the &lt;code&gt;envoy&lt;/code&gt; service.&lt;/p&gt;
-&lt;p&gt;Make sure that the control plane can reach it and it&amp;rsquo;s not blocked by network policies, security groups or any firewall.&lt;/p&gt;
-&lt;h2 id=&#34;troubleshooting&#34;&gt;Troubleshooting&lt;/h2&gt;
-&lt;p&gt;Once you&amp;rsquo;ve applied the &lt;a href=&#34;../setup/helm/controlplane#secrets-configuration&#34;&gt;necessary secrets&lt;/a&gt;, installed the control plane operator
-and created the control plane CR, if there&amp;rsquo;s some misconfiguration, some pods won&amp;rsquo;t be able to start. Always check for &lt;code&gt;tsb-operator-control-plane&lt;/code&gt;
-logs, as it will give more information about what could be wrong.&lt;/p&gt;
-&lt;h3 id=&#34;service-account-issues&#34;&gt;Service account issues&lt;/h3&gt;
-&lt;p&gt;If the service account to generate the tokens is not created, you&amp;rsquo;ll get the following error:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;error	controlplane	token rotation failed, retrying in 15m0s: secret istio-system/cluster-service-account not found: Secret &lt;span class=&#34;s2&#34;&gt;&amp;#34;cluster-service-account&amp;#34;&lt;/span&gt; not found &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;scope&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;controlplane&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Or it can also happen that it is not correctly configured:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;error	controlplane	token rotation failed, retrying in 15m0s: cluster has been configured with incorrect service account secret. ControlPlane CR has cluster name &lt;span class=&#34;s2&#34;&gt;&amp;#34;demo&amp;#34;&lt;/span&gt;, but service account secret has &lt;span class=&#34;s2&#34;&gt;&amp;#34;organizations/tetrate/clusters/not-demo&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;scope&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;controlplane&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;In this example, we&amp;rsquo;ve created a cluster object called &lt;code&gt;demo&lt;/code&gt;, but in the CP we&amp;rsquo;re generating the service account for a cluster called &lt;code&gt;not-demo&lt;/code&gt;.
-To fix this issue you&amp;rsquo;ll need to add the cluster name and service account token to the &lt;code&gt;values.yaml&lt;/code&gt; file to install the CP. First generate the token:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl install cluster-service-account --cluster demo &amp;gt; /tmp/demo.jwk
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;And then configure the &lt;code&gt;values.yaml&lt;/code&gt; file with the cluster name and the JWK file:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;secrets&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tsb&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;clusterServiceAccount&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;clusterFQN&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;organizations/tetrate/clusters/demo&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;JWK&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;sd&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;{{ .Secrets.ClusterServiceAccount.JWK }}&amp;#39;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The cluster name needs to match with the cluster name added in the control plane CR under &lt;code&gt;spec.managementPlane.clusterName&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;:::note
-Remember to restart the &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; pod to generate the secrets, and once generated, restart the control plane pods.
-:::&lt;/p&gt;
-&lt;h3 id=&#34;control-plane-certificate-issues&#34;&gt;Control plane certificate issues&lt;/h3&gt;
-&lt;p&gt;If the certificate &lt;code&gt;tsb-certs&lt;/code&gt; configured in the management plane don&amp;rsquo;t contain the correct URI SAN which is configured in
-the control plane CR under &lt;code&gt;spec.managementPlane.host&lt;/code&gt;, or both &lt;code&gt;tsb-certs&lt;/code&gt; in &lt;code&gt;tsb&lt;/code&gt; namespace and &lt;code&gt;mp-cert&lt;/code&gt; in &lt;code&gt;istio-system&lt;/code&gt;
-namespace doesn&amp;rsquo;t contain the same URI SAN, or are not signed by the same root/intermediate CA you&amp;rsquo;ll get the following error:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;error	controlplane	token rotation failed, retrying in 7.153870785s: generate tokens: rpc error: &lt;span class=&#34;nv&#34;&gt;code&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; Unavailable &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; connection error: &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;transport: authentication handshake failed: tls: failed to verify certificate: x509: certificate is valid for demo.tsb.tetrate.io, not tsb.tetrate.io&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;scope&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;controlplane&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You can update the &lt;code&gt;mp-cert&lt;/code&gt; by configuring the value &lt;code&gt;secrets.tsb.cacert&lt;/code&gt; in your control plane &lt;code&gt;values.yaml&lt;/code&gt; file, or update
-the &lt;code&gt;tsb-certs&lt;/code&gt; by configuring the values &lt;code&gt;secrets.tsb.cert&lt;/code&gt; and &lt;code&gt;secrets.tsb.key&lt;/code&gt; in the management plane &lt;code&gt;values.yaml&lt;/code&gt; file.&lt;/p&gt;
-&lt;p&gt;If the certificate provided in &lt;code&gt;tsb-certs&lt;/code&gt; is signed by a public CA such as Digicert or Let’s Encrypt you can let the default values
-for the control plane CR, but if this certificate is signed by an internal CA or it&amp;rsquo;s self signed you can get the following error:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;error	controlplane	token rotation failed, retrying in 1.661766738s: generate tokens: rpc error: &lt;span class=&#34;nv&#34;&gt;code&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; Unavailable &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; connection error: &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;transport: authentication handshake failed: x509: certificate signed by unknown authority&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;scope&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;controlplane&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If that&amp;rsquo;s the case, you&amp;rsquo;ll need to modify the control plane CR to set &lt;code&gt;spec.managementPlane.selfSigned&lt;/code&gt; to &lt;code&gt;true&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;:::note
-Remember to restart the &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; pod to generate the secrets, and once generated, restart the control plane pods.
-:::&lt;/p&gt;
-&lt;h3 id=&#34;xcp-connection-issues&#34;&gt;XCP connection issues&lt;/h3&gt;
-&lt;p&gt;If the newly onboarded cluster it&amp;rsquo;s not reporting the cluster status or new configurations applied are not being created in the cluster,
-check the &lt;code&gt;edge&lt;/code&gt; pod logs in &lt;code&gt;istio-system&lt;/code&gt; namespace, as even if the pod is running, it is possible that it&amp;rsquo;s having some issues. For example:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;warn	stream	error getting stream. retrying in 21.72809085s: rpc error: &lt;span class=&#34;nv&#34;&gt;code&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; Unavailable &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; connection error: &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;transport: authentication handshake failed: tls: failed to verify certificate: x509: certificate is valid for xcp.tetrate.io, not tsb.tetrate.io&amp;#34;&lt;/span&gt;	&lt;span class=&#34;nv&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;configs-4d116fd6
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;In this case the &lt;code&gt;xcp-central-cert&lt;/code&gt; in &lt;code&gt;tsb&lt;/code&gt; namespace is configured for &lt;code&gt;xcp.tetrate.io&lt;/code&gt; but the host configured in the control plane
-CR is &lt;code&gt;tsb.tetrate.io&lt;/code&gt;. To update the certificate, you&amp;rsquo;ll need to update the management plane &lt;code&gt;values.yaml&lt;/code&gt; &lt;a href=&#34;../setup/helm/managementplane#xcp-secrets-configuration&#34;&gt;accordingly to this&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;If &lt;code&gt;edge&lt;/code&gt; is unable to start you can describe to pod in order to get more information. Sometimes it couldn&amp;rsquo;t start due to:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  Warning  FailedMount  7m15s &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;x7 over 7m47s&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;  kubelet            MountVolume.SetUp failed &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; volume &lt;span class=&#34;s2&#34;&gt;&amp;#34;xcp-central-auth-jwt&amp;#34;&lt;/span&gt; : secret &lt;span class=&#34;s2&#34;&gt;&amp;#34;xcp-edge-central-auth-token&amp;#34;&lt;/span&gt; not found
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  Warning  FailedMount  5m44s                  kubelet            Unable to attach or mount volumes: unmounted &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;xcp-central-auth-ca&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;, unattached &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;config-map-volume xcp-central-auth-jwt xcp-central-auth-ca xcp-edge-webhook-ca kube-api-access-hxk8l webhook-certs&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;: timed out waiting &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; the condition
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  Warning  FailedMount  3m26s                  kubelet            Unable to attach or mount volumes: unmounted &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;xcp-central-auth-ca&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;, unattached &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;xcp-edge-webhook-ca kube-api-access-hxk8l webhook-certs config-map-volume xcp-central-auth-jwt xcp-central-auth-ca&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;: timed out waiting &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; the condition
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  Warning  FailedMount  95s &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;x11 over 7m47s&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;   kubelet            MountVolume.SetUp failed &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; volume &lt;span class=&#34;s2&#34;&gt;&amp;#34;xcp-central-auth-ca&amp;#34;&lt;/span&gt; : secret &lt;span class=&#34;s2&#34;&gt;&amp;#34;xcp-central-ca-bundle&amp;#34;&lt;/span&gt; not found
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  Warning  FailedMount  69s                    kubelet            Unable to attach or mount volumes: unmounted &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;xcp-central-auth-ca&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;, unattached &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;kube-api-access-hxk8l webhook-certs config-map-volume xcp-central-auth-jwt xcp-central-auth-ca xcp-edge-webhook-ca&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;: timed out waiting &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; the condition
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This error is because the secret &lt;code&gt;xcp-central-ca-bundle&lt;/code&gt; in &lt;code&gt;istio-system&lt;/code&gt; namespace don&amp;rsquo;t exist. This secret must contain the same URI SAN and must
-be signed by the same root/intermediate CA as &lt;code&gt;xcp-central-cert&lt;/code&gt; in &lt;code&gt;tsb&lt;/code&gt; namespace. In order to configure this secret, you&amp;rsquo;ll need to update the value
-&lt;code&gt;secrets.xcp.rootca&lt;/code&gt; from your control plane &lt;code&gt;values.yaml&lt;/code&gt; file.&lt;/p&gt;
-&lt;p&gt;:::note
-Remember to restart the &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; pod to generate the secrets, and once generated, restart the edge pod.
-:::&lt;/p&gt;
-</description>
+      <guid>https://lib.jimmysong.io/tsb/troubleshooting/debug-container/</guid>
+      <description>&lt;p&gt;Tetrate Service Bridge (TSB) 是一个由各种协议相互连接的复杂组件集合。对于部署在 TSB 提供的服务网格上的应用程序来说，情况可能也是如此。在许多情况下，你需要检查、测试和验证各种 TSB 组件之间的网络连通性，以确保系统按预期工作。&lt;/p&gt;
+&lt;p&gt;为了为你节省在 Kubernetes 集群中创建调试环境的时间，Tetrate 提供了一个调试容器，其中已经安装了大多数用于验证网络状态的工具集。例如，诸如 &lt;code&gt;ping&lt;/code&gt;、&lt;code&gt;curl&lt;/code&gt;、&lt;code&gt;gpcurl&lt;/code&gt;、&lt;code&gt;dig&lt;/code&gt; 等工具已经在此容器中安装。&lt;/p&gt;
+&lt;h2 id=&#34;使用调试容器&#34;&gt;使用调试容器&lt;/h2&gt;
+&lt;p&gt;只要可以访问适当的镜像仓库来下载容器镜像，这个调试容器就可以部署到任何集群中。&lt;/p&gt;
+&lt;p&gt;容器镜像包含在 TSB 发行版中，并且将与运行 &lt;a href=&#34;../../setup/requirements-and-download#sync-tetrate-service-bridge-images&#34;&gt;&lt;code&gt;tctl install image-sync&lt;/code&gt; 命令&lt;/a&gt; 时的其余镜像一起同步到你的仓库中。&lt;/p&gt;
+&lt;p&gt;要部署调试容器，请运行以下命令。将 &lt;code&gt;&amp;lt;registry-location&amp;gt;&lt;/code&gt; 替换为你同步了 TSB 镜像的仓库 URL。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl run debug-container --image &amp;lt;registry-location&amp;gt;/tetrate-troubleshoot:&lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;vars&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.versionNumber&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt; -it -- ash
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;一旦创建了 Pod，你将被置于调试容器内的 shell 中，并且你可以运行必要的故障排除命令。&lt;/p&gt;
+&lt;h3 id=&#34;检查网络连通性&#34;&gt;检查网络连通性&lt;/h3&gt;
+&lt;p&gt;如果你想要检查 TSB 集群到你使用的数据存储（我们假设在此示例中是 PostgreSQL）的网络连通性，你可以运行以下命令：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -v telnet://&amp;lt;postgres_IP&amp;gt;:5432
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;或者使用 PostgreSQL 客户端命令 &lt;code&gt;psql&lt;/code&gt; 来验证凭据。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;psql -h my.postgres.local -P &lt;span class=&#34;m&#34;&gt;5432&lt;/span&gt; -U myUser
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
     </item>
     
     <item>
-      <title>Identify Underperforming Services</title>
+      <title>UI 指标故障排除</title>
+      <link>https://lib.jimmysong.io/tsb/troubleshooting/tsb-ui-metrics/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/troubleshooting/tsb-ui-metrics/</guid>
+      <description>&lt;p&gt;TSB 的用户界面显示了你服务的指标和健康状态。然而，如果没有显示任何指标或跟踪信息，那么你可能面临的问题可能是与你的服务或 TSB 中的某个指标组件之一有关。&lt;/p&gt;
+&lt;p&gt;本指南将引导你了解问题是与服务还是与 TSB 中的某个指标组件有关的方法。&lt;/p&gt;
+&lt;h2 id=&#34;指标&#34;&gt;指标&lt;/h2&gt;
+&lt;p&gt;如果你看不到指标，请使用本指南的本节进行故障排除。&lt;/p&gt;
+&lt;p&gt;首先，请确保你的应用程序中有流量流动。你需要流量来生成指标。&lt;/p&gt;
+&lt;p&gt;检查你在 TSB 中设置的时间范围窗口是否正确，并且在该期间是否有流量。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/023f435-Tetrate_Service_Bridge.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;检查在浏览器中运行 UI 查询是否返回状态。使用浏览器的 &lt;code&gt;inspect&lt;/code&gt; 命令并检查请求/响应详细信息。&lt;/p&gt;
+&lt;p&gt;从检查器中选择 &lt;code&gt;Network&lt;/code&gt; 选项卡，然后从 TSB 用户界面中打开你的应用程序。你应该看到浏览器和 TSB 后端之间的所有请求列表。&lt;/p&gt;
+&lt;p&gt;搜索最后一个 &lt;code&gt;graphql&lt;/code&gt; 请求。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/71914d4-DevTools_-_35_247_59_43_8443_applications_prune-tenant_dev_bookinfo.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  &gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/47326cc-DevTools_-_35_247_59_43_8443_applications_prune-tenant_dev_bookinfo-2.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;如果你看不到查询，这可能表明你的应用程序没有处理任何流量，或者你在 OAP 部署方面存在问题。&lt;/p&gt;
+&lt;p&gt;要检查 OAP，请执行以下步骤：&lt;/p&gt;
+&lt;p&gt;通过确认&lt;code&gt;tsb&lt;/code&gt;命名空间中的&lt;code&gt;OAP&lt;/code&gt; Pod 是否正在运行来检查&lt;code&gt;OAP&lt;/code&gt; Pod 是否正常运行，并检查 Pod 的日志中是否有任何错误：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n tsb logs -l &lt;span class=&#34;nv&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;oap
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;来自日志的错误将帮助你排查问题。&lt;/p&gt;
+&lt;p&gt;如果问题与 Elasticsearch 有关，请检查控制平面命名空间（istio-system）中的 OAP 是否通过将 OAP Pod 的监视端口转发到你的本地计算机来接收来自各种 Envoy 的访问日志服务（ALS）数据，并使用以下步骤查询一些指标：&lt;/p&gt;
+&lt;p&gt;在一个 shell 中启动到 OAP 的端口转发：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n istio-system port-forward deployment/oap-deployment &lt;span class=&#34;m&#34;&gt;1234&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果没有问题，你应该会看到：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Forwarding from 127.0.0.1:1234 -&amp;gt; 1234
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Forwarding from [::1]:1234 -&amp;gt; 1234
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在另一个 shell 中，使用以下命令获取指标：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -s http://localhost:1234/ &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep &lt;span class=&#34;s2&#34;&gt;&amp;#34;envoy_als_in_count&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;你应该会看到类似于以下示例输出：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;router~10.28.0.25~tsb-gateway-7b7fbcdfb7-726bf.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;tsb-gateway&amp;#34;,} 67492.0
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.19~details-v1-94d5d794-kt76x.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;details.bookinfo&amp;#34;,} 33747.0
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.23~reviews-v3-5556b6949-pvqfn.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;reviews.bookinfo&amp;#34;,} 22500.0
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.24~productpage-v1-665ddb5664-ts6pz.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;productpage.bookinfo&amp;#34;,} 101240.0
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.22~reviews-v2-6cb744f8ff-mf8s6.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;reviews.bookinfo&amp;#34;,} 22498.0
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.20~ratings-v1-744894fbdb-ctvpd.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;ratings.bookinfo&amp;#34;,} 22499.0
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.21~reviews-v1-f7c7c7b45-8v2sf.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;reviews.bookinfo&amp;#34;,} 11249.0
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果应用程序正在使用，右侧的数字应该会增加。&lt;/p&gt;
+&lt;p&gt;如果你看不到任何指标，或者指标随时间不变化，请检查你的应用程序 Sidecar（Envoy）是否通过执行 Istio Sidecar 的&lt;code&gt;port-forward&lt;/code&gt;在端口 15000 上将 ALS 指标发送到控制平面 OAP，然后查询&lt;code&gt;envoy_accesslog_service&lt;/code&gt;指标。 &lt;code&gt;cx_active&lt;/code&gt;指标（即当前连接数）的标准数量是两个。&lt;/p&gt;
+&lt;p&gt;下面的示例使用&lt;code&gt;bookinfo&lt;/code&gt;应用程序的&lt;code&gt;productpage&lt;/code&gt;服务：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 在一个shell中启动端口转发&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n bookinfo port-forward deployment/productpage-v1 &lt;span class=&#34;m&#34;&gt;15000&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Forwarding from 127.0.0.1:15000 -&amp;gt; &lt;span class=&#34;m&#34;&gt;15000&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Forwarding from &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;::1&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;:15000 -&amp;gt; &lt;span class=&#34;m&#34;&gt;15000&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 在另一个shell中使用curl获取配置&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -s http://localhost:15000/clusters &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep &lt;span class=&#34;s2&#34;&gt;&amp;#34;envoy_accesslog_service&amp;#34;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep cx_active
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_accesslog_service::10.31.243.206:11800::cx_active::2
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果计数器不符合你的预期，请通过编辑 OAP 的&lt;code&gt;config.yml&lt;/code&gt;文件，使用以下命令将&lt;code&gt;debug&lt;/code&gt;日志级别添加到 OAP 中：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n istio-system edit cm oap-config
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;搜索以下行并去掉注释：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;&amp;lt;!-- uncomment following line when need to debug ALS raw data
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;   &amp;lt;logger name=&amp;#34;io.tetrate.spm.user.receiver
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;.envoy&amp;#34; level=&amp;#34;DEBUG&amp;#34;/&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;--&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;以使其变成：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;&amp;lt;logger&lt;/span&gt; &lt;span class=&#34;na&#34;&gt;name=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;io.tetrate.spm.user.receiver.envoy&amp;#34;&lt;/span&gt; &lt;span class=&#34;na&#34;&gt;level=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;DEBUG&amp;#34;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;/&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;然后，重新启动 OAP 以使配置更改生效：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n istio-system delete pod -l &lt;span class=&#34;nv&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;oap
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;现在，你可以搜索&lt;code&gt;downstream_remote_address&lt;/code&gt;的日志。如果你有可搜索的日志，这意味着指标已经到达了 OAP 服务。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;在 Elasticsearch 后端中搜索&lt;br/&gt;
+指标存储在 Elasticsearch（ES）索引中。你可以通过发送一些查询来检查 ES 的状态和健康状况。&lt;br/&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;由于 ES 服务器不受 TSB 管理，请参考你的文档以获取正确的连接字符串。&lt;br/&gt;&lt;/p&gt;
+&lt;p&gt;在示例中，我们将端口转发到&lt;code&gt;tsb&lt;/code&gt;命名空间中的 ES Pod：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 端口转发到ES服务器&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n tsb port-forward statefulset/elasticsearch &lt;span class=&#34;m&#34;&gt;9200&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 检查集群健康状况&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -s  &lt;span class=&#34;s1&#34;&gt;&amp;#39;http://localhost:9200/_cluster/health?pretty=true&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;cluster_name&amp;#34;&lt;/span&gt; : &lt;span class=&#34;s2&#34;&gt;&amp;#34;elasticsearch&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;status&amp;#34;&lt;/span&gt; : &lt;span class=&#34;s2&#34;&gt;&amp;#34;yellow&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;timed_out&amp;#34;&lt;/span&gt; : false,
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;number_of_nodes&amp;#34;&lt;/span&gt; : 1,
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;number_of_data_nodes&amp;#34;&lt;/span&gt; : 1,
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;active_primary_shards&amp;#34;&lt;/span&gt; : 64,
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;active_shards&amp;#34;&lt;/span&gt; : 64,
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;relocating_shards&amp;#34;&lt;/span&gt; : 0,
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;initializing_shards&amp;#34;&lt;/span&gt; : 0,
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;unassigned_shards&amp;#34;&lt;/span&gt; : 5,
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;delayed_unassigned_shards&amp;#34;&lt;/span&gt; : 0,
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;number_of_pending_tasks&amp;#34;&lt;/span&gt; : 0,
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;number_of_in_flight_fetch&amp;#34;&lt;/span&gt; : 0,
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;task_max_waiting_in_queue_millis&amp;#34;&lt;/span&gt; : 0,
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;active_shards_percent_as_number&amp;#34;&lt;/span&gt; : 92.7536231884058
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;status&lt;/code&gt; 行应该是绿色或黄色的。如果是红色的，那么问题就出在 ES 集群上。你可以使用以下命令检查索引的状态：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 查询2020年3月26日的索引状态&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -H&lt;span class=&#34;s1&#34;&gt;&amp;#39;Content-Type: application/json&amp;#39;&lt;/span&gt; -s -XGET &lt;span class=&#34;err&#34;&gt;&amp;#39;&lt;/span&gt;http://localhost:9200/_cat/shards/*20200326
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;你应该会看到所有索引的列表。它们都应该处于&lt;code&gt;STARTED&lt;/code&gt;状态。下一列包含文档数和索引大小。通过在不同时间运行该命令，你应该会看到这些数字增加。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;service_5xx-20200326                                 0 p STARTED  31236   1.4mb 10.28.1.12 elasticsearch-0
+service_instance_relation_client_call_sla-20200326   0 p STARTED  53791   5.1mb 10.28.1.12 elasticsearch-0
+endpoint_percentile-20200326                         0 p STARTED 128707  12.7mb 10.28.1.12 elasticsearch-0
+endpoint_2xx-20200326                                0 p STARTED 123131   7.4mb 10.28.1.12 elasticsearch-0
+...
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>请求头大小超限</title>
+      <link>https://lib.jimmysong.io/tsb/troubleshooting/maximum-header-size-exceed/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/troubleshooting/maximum-header-size-exceed/</guid>
+      <description>&lt;p&gt;本文将介绍在从 Istio 入口网关或边车转发到应用程序时，TSB 和 Istio 代理如何处理标头。&lt;/p&gt;
+&lt;p&gt;在开始之前，请确保你已经：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;熟悉&lt;a href=&#34;../../concepts/&#34;&gt;TSB 概念&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;安装了 TSB 环境。你可以使用&lt;a href=&#34;../../setup/self-managed/demo-installation&#34;&gt;TSB 演示&lt;/a&gt;进行快速安装&lt;/li&gt;
+&lt;li&gt;完成了&lt;a href=&#34;../quickstart&#34;&gt;TSB 使用快速入门&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;安装了示例应用程序&lt;a href=&#34;../../reference/samples/httpbin&#34;&gt;httpbin&lt;/a&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;envoyistio-proxy中的请求标头大小&#34;&gt;Envoy（istio-proxy）中的请求标头大小&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy&lt;/a&gt;或 istio-proxy 可以处理相当大的标头。传入连接的默认最大请求标头大小为 60 KiB。&lt;/p&gt;
+&lt;p&gt;在这种情况下，对于大多数应用程序来说，这不会成为问题，并且传入连接的请求标头将通过 istio-proxy 代理。但是，根据每个 Web 服务器的标头大小配置，你的应用程序可能会有限制。&lt;/p&gt;
+&lt;p&gt;例如：
+在&lt;a href=&#34;https://www.baeldung.com/spring-boot-max-http-header-size&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Spring Boot 2&lt;/a&gt;和&lt;a href=&#34;https://docs.gunicorn.org/en/stable/settings.html#limit-request-field-size&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Gunicorn&lt;/a&gt;中，默认的最大标头大小为 8 KiB。如果需要，你可以覆盖默认设置。&lt;/p&gt;
+&lt;h2 id=&#34;调试请求标头大小&#34;&gt;调试请求标头大小&lt;/h2&gt;
+&lt;p&gt;对于此实验，你需要在集群中部署&lt;a href=&#34;../../reference/samples/httpbin&#34;&gt;httpbin&lt;/a&gt;示例应用程序。你将执行两个请求，一个请求的标头大小低于最大值，另一个请求的标头大小超出应用程序容器的限制。&lt;/p&gt;
+&lt;h3 id=&#34;低于最大值的标头&#34;&gt;低于最大值的标头&lt;/h3&gt;
+&lt;p&gt;你的标头可以是任何内容，只需确保低于 8 KiB，你可以将其导出为变量并执行请求：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -k  https://httpbin.example.io/response-headers -X POST -H &lt;span class=&#34;s2&#34;&gt;&amp;#34;X-MyHeader: &lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$SMALL&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; -sI
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;HTTP/2 &lt;span class=&#34;m&#34;&gt;200&lt;/span&gt; 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;server: istio-envoy
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;date: Wed, &lt;span class=&#34;m&#34;&gt;19&lt;/span&gt; Oct &lt;span class=&#34;m&#34;&gt;2022&lt;/span&gt; 20:13:49 GMT
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;content-type: application/json
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;content-length: &lt;span class=&#34;m&#34;&gt;68&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;access-control-allow-origin: *
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;access-control-allow-credentials: &lt;span class=&#34;nb&#34;&gt;true&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;x-envoy-upstream-service-time: &lt;span class=&#34;m&#34;&gt;5&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;超出最大值的标头&#34;&gt;超出最大值的标头&lt;/h3&gt;
+&lt;p&gt;现在，使用可以超出 8 KiB 的标头执行请求：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -k  https://httpbin.example.io/response-headers -X POST -H &lt;span class=&#34;s2&#34;&gt;&amp;#34;X-MyHeader: &lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$LONG&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; -sI
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;HTTP/2 &lt;span class=&#34;m&#34;&gt;400&lt;/span&gt; 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;content-type: text/html
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;content-length: &lt;span class=&#34;m&#34;&gt;189&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;x-envoy-upstream-service-time: &lt;span class=&#34;m&#34;&gt;6&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;date: Wed, &lt;span class=&#34;m&#34;&gt;19&lt;/span&gt; Oct &lt;span class=&#34;m&#34;&gt;2022&lt;/span&gt; 20:17:37 GMT
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;server: istio-envoy
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果请求标头超过最大标头大小，你将收到一个 HTTP 400 错误，表示坏请求。&lt;/p&gt;
+&lt;h2 id=&#34;修改-istio-proxy-中的标头大小&#34;&gt;修改 istio-proxy 中的标头大小&lt;/h2&gt;
+&lt;p&gt;正如你在上面学到的，你可以在各种 Web 服务器中限制标头大小。你可以在 istio-proxy 中进行相同的修改。&lt;/p&gt;
+&lt;p&gt;默认的标头大小应该足够，或者你可能希望减小默认大小。&lt;/p&gt;
+&lt;h3 id=&#34;在-istio-proxy-中减小默认标头大小&#34;&gt;在 istio-proxy 中减小默认标头大小&lt;/h3&gt;
+&lt;p&gt;为了减小默认请求标头的大小，你需要创建一个&lt;a href=&#34;https://istio.io/latest/docs/reference/config/networking/envoy-filter/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoyfilter&lt;/a&gt;，允许你修改 istio-proxy 的配置。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;networking.istio.io/v1alpha3&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;EnvoyFilter&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;max-request-headers&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;namespace&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;istio-system&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;spec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;configPatches&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;applyTo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;NETWORK_FILTER&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# http connection manager is a filter in Envoy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;match&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;context&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ANY&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;listener&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;filterChain&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;filter&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;            &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;envoy.filters.network.http_connection_manager&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;patch&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;operation&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;MERGE&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;typed_config&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;@type&amp;#34;: &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;max_request_headers_kb&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;10&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;将此应用于你的集群后，请再次尝试请求，一个标头较小，另一个标头较大。&lt;/p&gt;
+&lt;h3 id=&#34;在-istio-proxy-中低于最大值的标头&#34;&gt;在 istio-proxy 中低于最大值的标头&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -k  https://httpbin.example.io/response-headers -X POST -H &lt;span class=&#34;s2&#34;&gt;&amp;#34;X-MyHeader: &lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$SMALL&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; -sI
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;HTTP/2 &lt;span class=&#34;m&#34;&gt;200&lt;/span&gt; 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;server: istio-envoy
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;date: Wed, &lt;span class=&#34;m&#34;&gt;19&lt;/span&gt; Oct &lt;span class=&#34;m&#34;&gt;2022&lt;/span&gt; 20:36:43 GMT
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;content-type: application/json
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;content-length: &lt;span class=&#34;m&#34;&gt;68&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;access-control-allow-origin: *
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;access-control-allow-credentials: &lt;span class=&#34;nb&#34;&gt;true&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;x-envoy-upstream-service-time: &lt;span class=&#34;m&#34;&gt;5&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;由于标头低于 10 KiB 的最大值，你可以看到请求成功。&lt;/p&gt;
+&lt;h3 id=&#34;在-istio-proxy-中超出最大值的标头&#34;&gt;在 istio-proxy 中超出最大值的标头&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -k  https://httpbin.example.io/response-headers -X POST -H &lt;span class=&#34;s2&#34;&gt;&amp;#34;X-MyHeader: &lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$LONG&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; -sI
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;你可以从 curl 中删除-s 标志并查看输出。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -k  https://httpbin.example.io/response-headers -X POST -H &lt;span class=&#34;s2&#34;&gt;&amp;#34;X-MyHeader: &lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$LONG&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; -I
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl: &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;92&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt; HTTP/2 stream &lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; was not closed cleanly: INTERNAL_ERROR &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;err 2&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;请求没有返回任何内容，只有一个错误。你可以在日志中查看发生了什么。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl logs &lt;span class=&#34;nv&#34;&gt;$GWPOD&lt;/span&gt; -n tier1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;2022-10-19T20:39:58.081Z&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;- - HTTP/2&amp;#34;&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; - http2.too_many_headers - &lt;span class=&#34;s2&#34;&gt;&amp;#34;-&amp;#34;&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;0&lt;/span&gt; - &lt;span class=&#34;s2&#34;&gt;&amp;#34;-&amp;#34;&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;-&amp;#34;&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;-&amp;#34;&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;-&amp;#34;&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;-&amp;#34;&lt;/span&gt; - - 10.211.129.34:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;m&#34;&gt;8443&lt;/span&gt; 10.240.0.38:63077 httpbin.example.io -
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    
+    <item>
+      <title>多重传输编码块处理</title>
+      <link>https://lib.jimmysong.io/tsb/troubleshooting/multiple-transfer-encoding-chunked/</link>
+      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
+      <guid>https://lib.jimmysong.io/tsb/troubleshooting/multiple-transfer-encoding-chunked/</guid>
+      <description>&lt;p&gt;本文描述了当标头中包含多个&lt;code&gt;transfer-encoding:chunked&lt;/code&gt;时，TSB 将如何处理请求/响应，并帮助你确定问题是来自源还是目标。&lt;/p&gt;
+&lt;p&gt;我们建议解决此问题的方法是确保请求头和响应头中都只有一个&lt;code&gt;transfer-encoding:chunked&lt;/code&gt;，否则 Envoy 将拒绝请求。&lt;/p&gt;
+&lt;p&gt;在开始之前，请确保你已经：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;熟悉&lt;a href=&#34;../../concepts/&#34;&gt;TSB 概念&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;安装&lt;a href=&#34;../../setup/self-managed/demo-installation&#34;&gt;TSB 演示&lt;/a&gt;环境&lt;/li&gt;
+&lt;li&gt;部署&lt;a href=&#34;../../quickstart/deploy-sample-app&#34;&gt;Istio Bookinfo&lt;/a&gt;示例应用程序&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;注意：对于响应部分，我们在这里使用的应用程序特意生成了多个&lt;code&gt;transfer-encoding:chunked&lt;/code&gt;标头，仅用于文档目的。&lt;/p&gt;
+&lt;p&gt;我们经常看到请求/响应的标头包含多个&lt;code&gt;transfer-encoding:chunked&lt;/code&gt;，这不是有效的标头，因为 Envoy 会拒绝这种请求。在我们安装的 bookinfo 应用程序中，我们可以更深入地看一看当 Envoy 拒绝简单请求时，它将以特定的错误代码拒绝。&lt;/p&gt;
+&lt;h2 id=&#34;带有transfer-encoding-chunkedchunked的请求头&#34;&gt;带有&amp;quot;Transfer-Encoding: chunked,chunked&amp;quot;的请求头&lt;/h2&gt;
+&lt;p&gt;对于我们的 bookinfo 应用程序，我们将使用 curl 创建一个简单的请求，发送多个&lt;code&gt;transfer-encoding:chunked&lt;/code&gt;，并观察 envoy 网关的响应。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ curl  -kv &lt;span class=&#34;s2&#34;&gt;&amp;#34;http://bookinfo.tetrate.com/productpage&amp;#34;&lt;/span&gt; -H &lt;span class=&#34;s2&#34;&gt;&amp;#34;Transfer-Encoding: chunked&amp;#34;&lt;/span&gt; -H &lt;span class=&#34;s2&#34;&gt;&amp;#34;Transfer-Encoding: chunked&amp;#34;&lt;/span&gt; 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt; ... &lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; GET /productpage HTTP/1.1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; Host: bookinfo.tetrate.com
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; User-Agent: curl/7.79.1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; Accept: */*
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; Transfer-Encoding: chunked
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; Transfer-Encoding: chunked
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;* Mark bundle as not supporting multiuse
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt; HTTP/1.1 &lt;span class=&#34;m&#34;&gt;501&lt;/span&gt; Not Implemented
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt; content-length: &lt;span class=&#34;m&#34;&gt;15&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt; content-type: text/plain
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt; date: Tue, &lt;span class=&#34;m&#34;&gt;13&lt;/span&gt; Sep &lt;span class=&#34;m&#34;&gt;2022&lt;/span&gt; 11:08:56 GMT
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt; server: istio-envoy
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt; connection: close
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt; 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;* Closing connection &lt;span class=&#34;m&#34;&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Not Implemented%
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;同时，网关 envoy 日志显示以下片段以及错误代码为&lt;code&gt;501 DPE（下游协议错误）&lt;/code&gt;的失败。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl logs ${GWPOD} -n bookinfo 
+[2022-09-07T08:17:38.936Z] &amp;#34;- - HTTP/1.1&amp;#34; 501 DPE http1.invalid_transfer_encoding - &amp;#34;-&amp;#34; 0 15 0 - &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; - - 10.0.2.20:8080 10.128.0.74:23365 - -
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;带有transfer-encoding-chunkedchunked的响应头&#34;&gt;带有&amp;quot;Transfer-Encoding: chunked,chunked&amp;quot;的响应头&lt;/h2&gt;
+&lt;p&gt;响应头可以在应用程序内部进行操作，并可能触发多个块。在这些情况下，该应用程序的 envoy sidecar 将拒绝响应。为了演示响应，我们使用了一个简单的应用程序，它将生成多个传输块作为默认行为，我们将从&lt;a href=&#34;../debug-container&#34;&gt;Debug-container&lt;/a&gt;发送 curl 请求，使用默认值如下所示。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$ curl -v http://transfer:8080/test
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt; ... &lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; GET /test HTTP/1.1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; Host: transfer:8080
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; User-Agent: curl/7.83.1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; Accept: */*
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;* Mark bundle as not supporting multiuse
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt; HTTP/1.1 &lt;span class=&#34;m&#34;&gt;502&lt;/span&gt; Bad Gateway
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt; content-length: &lt;span class=&#34;m&#34;&gt;87&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt; content-type: text/plain
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt; date: Tue, &lt;span class=&#34;m&#34;&gt;13&lt;/span&gt; Sep &lt;span class=&#34;m&#34;&gt;2022&lt;/span&gt; 11:17:13 GMT
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt; server: envoy
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt; x-envoy-upstream-service-time: &lt;span class=&#34;m&#34;&gt;2&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;lt; 
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;* Connection &lt;span class=&#34;c1&#34;&gt;#0 to host transfer left intact&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;upstream connect error or disconnect/reset before headers. reset reason: protocol error/ 
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当我们查看 sidecar envoy 日志时，我们可以看到拒绝的详细信息，错误消息为&lt;code&gt;502 UPE（上游协议错误）&lt;/code&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl logs transfer-58c6c67c56-d8wzk  -n test 
+[2022-09-13T11:17:13.471Z] &amp;#34;GET /test HTTP/1.1&amp;#34; 502 UPE upstream_reset_before_response_started{protocol_error} - &amp;#34;-&amp;#34; 0 87 1
+
+ - &amp;#34;-&amp;#34; &amp;#34;curl/7.83.1&amp;#34; &amp;#34;fbcd5bff-1981-40a5-a2c8-fd6133161976&amp;#34; &amp;#34;transfer:8080&amp;#34; &amp;#34;10.0.2.7:8080&amp;#34; inbound|8080|| 127.0.0.6:53799 10.0.2.7:8080 10.0.0.21:59960 outbound_.8080_._.transfer.test.svc.cluster.local default
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果我们为应用程序的 sidecar 启用调试日志，我们可以看到详细错误信息如下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2022-09-13T12:46:48.497388Z     debug   envoy client    [C2912] Error dispatching received data: http/1.1 protocol error: unsupported transfer encoding
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>识别性能不佳的服务</title>
       <link>https://lib.jimmysong.io/tsb/troubleshooting/identify-underperforming-services/</link>
       <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/tsb/troubleshooting/identify-underperforming-services/</guid>
-      <description>&lt;p&gt;Service performance degradations can be very difficult to understand and isolate:&lt;/p&gt;
+      <description>&lt;p&gt;服务性能降级可能非常难以理解和隔离：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;There is far too much data to dig through to identify the cause of the performance issue&lt;/li&gt;
-&lt;li&gt;The experts in the application&amp;rsquo;s behavior (the dev team) typically do not have access to the running cluster&lt;/li&gt;
+&lt;li&gt;数据太多，难以查找性能问题的原因&lt;/li&gt;
+&lt;li&gt;应用程序行为的专家（开发团队）通常无法访问运行中的集群&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;Tetrate Service Bridge provides a set of tools to:&lt;/p&gt;
+&lt;p&gt;Tetrate Service Bridge 提供了一组工具，可以：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Enable the TSB operator to retrieve an archive of service performance data from a running cluster&lt;/li&gt;
-&lt;li&gt;Enable application developers to query this data to identify the slowest transactions (or those with errors) and determine the call graph associated with the slow response.&lt;/li&gt;
+&lt;li&gt;允许 TSB 操作员从运行中的集群中检索服务性能数据的存档&lt;/li&gt;
+&lt;li&gt;允许应用程序开发人员查询此数据以识别最慢的事务（或带有错误的事务）并确定与慢响应相关的调用图。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;Before you get started, make sure you: &lt;br /&gt;
-✓ Familiarize yourself with &lt;a href=&#34;../concepts/toc&#34;&gt;TSB concepts&lt;/a&gt; &lt;br /&gt;
-✓ Install the &lt;a href=&#34;../setup/self_managed/demo-installation&#34;&gt;TSB demo&lt;/a&gt; environment &lt;br /&gt;
-✓ Deploy the &lt;a href=&#34;../quickstart/deploy_sample_app&#34;&gt;Istio Bookinfo&lt;/a&gt; sample app &lt;br /&gt;&lt;/p&gt;
-&lt;h2 id=&#34;collecting-data&#34;&gt;Collecting data&lt;/h2&gt;
-&lt;p&gt;The TSB operator can use &lt;code&gt;tctl&lt;/code&gt; to collect the cluster state. This state includes proxy logs from the workloads, Istio controlplane information, node information, &lt;code&gt;istioctl analyze&lt;/code&gt; and other runtime information. Data is exported as a tar file.&lt;/p&gt;
+&lt;p&gt;在开始之前，请确保你已经：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;熟悉&lt;a href=&#34;../../concepts/&#34;&gt;TSB 概念&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;安装&lt;a href=&#34;../../setup/self-managed/demo-installation&#34;&gt;TSB 演示&lt;/a&gt;环境&lt;/li&gt;
+&lt;li&gt;部署&lt;a href=&#34;../../quickstart/deploy-sample-app&#34;&gt;Istio Bookinfo&lt;/a&gt;示例应用程序&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;收集数据&#34;&gt;收集数据&lt;/h2&gt;
+&lt;p&gt;TSB 操作员可以使用 &lt;code&gt;tctl&lt;/code&gt; 收集集群状态。该状态包括来自工作负载的代理日志、Istio 控制平面信息、节点信息、&lt;code&gt;istioctl analyze&lt;/code&gt; 和其他运行时信息。数据导出为一个 tar 文件。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Usage:
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  tctl collect &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;flags&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Examples:
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# Collect without any obfuscation or redaction&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 收集数据，不进行任何模糊处理或删除&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl collect
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# Collect without archiving results (useful for local debugging)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 收集数据但不存档结果（用于本地调试）&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl collect --disable-archive
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# Collect and redact with user-provided regex&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 收集数据并使用用户提供的正则表达式进行模糊处理&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl collect --redact-regexes &amp;lt;regex-one&amp;gt;,&amp;lt;regex-two&amp;gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# Collect and redact with presets&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 收集数据并使用预设进行模糊处理&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl collect --redact-presets networking
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Running &lt;code&gt;tctl collect&lt;/code&gt; requires admin permissions. The resulting tar file can be shared with application teams for analysis and interpretation, using &lt;code&gt;tctl troubleshoot&lt;/code&gt;.&lt;/p&gt;
-&lt;h2 id=&#34;analysing-data&#34;&gt;Analysing Data&lt;/h2&gt;
-&lt;p&gt;Any user can then run &lt;code&gt;tctl troubleshoot&lt;/code&gt; to inspect the collected tar file and generate a range of reports on the transactions recorded within the file:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;运行 &lt;code&gt;tctl collect&lt;/code&gt; 需要管理员权限。生成的 tar 文件可以与应用程序团队共享，以供分析和解释，使用 &lt;code&gt;tctl troubleshoot&lt;/code&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;分析数据&#34;&gt;分析数据&lt;/h2&gt;
+&lt;p&gt;然后，任何用户都可以运行 &lt;code&gt;tctl troubleshoot&lt;/code&gt; 来检查收集的 tar 文件，并生成有关文件中记录的事务的各种报告：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Dump the cluster information to identify workloads&lt;/li&gt;
-&lt;li&gt;Analyse requests to named workloads to identify slowest responses and error responses&lt;/li&gt;
-&lt;li&gt;Discriminate between sidecar performance and application performance&lt;/li&gt;
-&lt;li&gt;Obtain request IDs, and then generate full traces for these requests (call graph)&lt;/li&gt;
+&lt;li&gt;转储集群信息以识别工作负载&lt;/li&gt;
+&lt;li&gt;分析对命名工作负载的请求，以识别最慢的响应和错误响应&lt;/li&gt;
+&lt;li&gt;区分 sidecar 性能和应用程序性能&lt;/li&gt;
+&lt;li&gt;获取请求 ID，然后为这些请求生成完整的跟踪（调用图）&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h3 id=&#34;analyzing-cluster-data&#34;&gt;Analyzing Cluster data&lt;/h3&gt;
+&lt;h3 id=&#34;分析集群数据&#34;&gt;分析集群数据&lt;/h3&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Usage:
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  tctl experimental troubleshoot log-explorer cluster &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;flags&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
@@ -857,10 +1133,10 @@ Remember to restart the &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; pod 
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  tctl experimental troubleshoot log-explorer cluster &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;tar file&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Flags:
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -h, --help               &lt;span class=&#34;nb&#34;&gt;help&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; cluster
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -n, --namespace string   List details of only specified namespace
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      --workspace string   List details of only specified workspace
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;troubleshoot log-explorer cluster&lt;/code&gt; provides details of all workloads running in the cluster. Users can get a subset of the entire cluster state by applying filters like &lt;code&gt;--workspace&lt;/code&gt; or &lt;code&gt;--namespace&lt;/code&gt;.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -h, --help               帮助
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -n, --namespace string   仅列出指定命名空间的详细信息
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      --workspace string   仅列出指定的工作空间的详细信息
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;troubleshoot log-explorer cluster&lt;/code&gt; 提供了有关在集群中运行的所有工作负载的详细信息。用户可以通过应用筛选器（如 &lt;code&gt;--workspace&lt;/code&gt; 或 &lt;code&gt;--namespace&lt;/code&gt;）获取整个集群状态的子集。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;$: tctl experimental troubleshoot log-explorer cluster tctl-debug-1664467971183386000.tar.gz --workspace organizations/tetrate/tenants/payment/workspaces/payment-ws
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;namespaces:
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    payment-channel:
@@ -894,7 +1170,7 @@ Remember to restart the &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; pod 
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- gke-cp-cluster-1-default-pool-e090b6ac-trp
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;workspaces:
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;- organizations/tetrate/tenants/payment/workspaces/payment-ws
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;analyzing-service-data&#34;&gt;Analyzing Service data&lt;/h3&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;分析服务数据&#34;&gt;分析服务数据&lt;/h3&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Usage:
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  tctl experimental troubleshoot log-explorer service &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;flags&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
@@ -902,13 +1178,13 @@ Remember to restart the &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; pod 
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  tctl experimental log-explorer service &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;tar file&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;service&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Flags:
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      --all                Show all requests instead of just the longest ones and those with errors.
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      --full-log           Print the full Envoy access log instead of a summary.
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -h, --help               &lt;span class=&#34;nb&#34;&gt;help&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; service
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      --limit int          Number of requests to show &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;defaults to 10&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -n, --namespace string   The namespace containing the service.
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;troubleshoot log-explorer service&lt;/code&gt; provides details about the 10 longest requests.  It outputs a summary of time elapsed within the envoy sidecar and within the application service.&lt;/p&gt;
-&lt;p&gt;&lt;a href=&#34;../assets/tctl-service.png&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      --all                显示所有请求，而不仅仅是最长的请求和带有错误的请求。
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      --full-log           打印完整的 Envoy 访问日志，而不是摘要。
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -h, --help               帮助
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      --limit int          要显示的请求数量（默认为 10）
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -n, --namespace string   包含服务的命名空间。
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;troubleshoot log-explorer service&lt;/code&gt; 提供了有关 10 个最长请求的详细信息。它输出了 Envoy sidecar 内部和应用程序服务内部消耗的时间的摘要。&lt;/p&gt;
+&lt;p&gt;
 
 
 
@@ -926,13 +1202,13 @@ Remember to restart the &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; pod 
 
 &lt;figure  id=&#34;figure-tctl-troubleshoot-log-explorer-service&#34;&gt;
   &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../assets/tctl-service.png&#34; alt=&#34;tctl troubleshoot log-explorer service&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/tctl-service.png&#34; alt=&#34;tctl troubleshoot log-explorer service&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
   &lt;/div&gt;&lt;figcaption&gt;
       tctl troubleshoot log-explorer service
     &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;With this report, users can obtain the Request IDs of the longest time consuming requests, for analysis in the next step. The &lt;code&gt;--full-log&lt;/code&gt; flag can also be used to access the Envoy request log information.&lt;/p&gt;
-&lt;h3 id=&#34;analyzing-request-data&#34;&gt;Analyzing Request data&lt;/h3&gt;
+&lt;/p&gt;
+&lt;p&gt;通过此报告，用户可以获取消耗时间最长的请求的请求 ID，以便在下一步进行分析。也可以使用 &lt;code&gt;--full-log&lt;/code&gt; 标志访问 Envoy 请求日志信息。&lt;/p&gt;
+&lt;h3 id=&#34;分析请求数据&#34;&gt;分析请求数据&lt;/h3&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; Usage:
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  tctl experimental troubleshoot log-explorer request &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;flags&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
@@ -940,10 +1216,11 @@ Remember to restart the &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; pod 
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  tctl experimental log-explorer request &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;tar file&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;requestID&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Flags:
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -h, --help                 &lt;span class=&#34;nb&#34;&gt;help&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; request
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -o, --output-type string   Select the output type, available formats json and yaml, default format is yaml &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;default &lt;span class=&#34;s2&#34;&gt;&amp;#34;yaml&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;troubleshoot log-explorer request&lt;/code&gt; reports the trace for a single request identified by the provided &lt;code&gt;requestID&lt;/code&gt;. It outputs the chain of requests, starting from the IngressGateway Pod IP to the final application workload. The report presents the total time spent by the Envoy sidecar, and the Application services along with details like &lt;code&gt;requestType&lt;/code&gt; to indicate whether a request is &lt;code&gt;inbound&lt;/code&gt; or &lt;code&gt;outbound&lt;/code&gt;, namespace and name of the workload and &lt;code&gt;calledBy&lt;/code&gt; IP &amp;amp; Port etc.&lt;/p&gt;
-&lt;p&gt;&lt;a href=&#34;../assets/tctl-request.png&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -h, --help                 帮助
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  -o, --output-type string   选择输出类型，可用格式为 json 和 yaml，默认格式为 yaml（默认为 &lt;span class=&#34;s2&#34;&gt;&amp;#34;yaml&amp;#34;&lt;/span&gt;）
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;`tr&lt;/p&gt;
+&lt;p&gt;oubleshoot log-explorer request&lt;code&gt;报告了由提供的&lt;/code&gt;requestID&lt;code&gt;标识的单个请求的跟踪。它输出了从 IngressGateway Pod IP 到最终应用工作负载的请求链，报告了 Envoy sidecar 和应用服务消耗的总时间，以及诸如&lt;/code&gt;requestType&lt;code&gt;（指示请求是 &lt;/code&gt;inbound&lt;code&gt;还是&lt;/code&gt;outbound&lt;code&gt;）、工作负载的命名空间和名称以及 &lt;/code&gt;calledBy` IP 和端口等详细信息。&lt;/p&gt;
+&lt;p&gt;
 
 
 
@@ -959,376 +1236,85 @@ Remember to restart the &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; pod 
 
 
 
-&lt;figure  id=&#34;figure-tctl-troubleshoot-log-explorer-request&#34;&gt;
+&lt;figure  id=&#34;figure-tctl-问题排查-log-explorer-请求&#34;&gt;
   &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../assets/tctl-request.png&#34; alt=&#34;tctl troubleshoot log-explorer request&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../../assets/tctl-request.png&#34; alt=&#34;tctl 问题排查 log-explorer 请求&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
   &lt;/div&gt;&lt;figcaption&gt;
-      tctl troubleshoot log-explorer request
+      tctl 问题排查 log-explorer 请求
     &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/a&gt;&lt;/p&gt;
+&lt;/p&gt;
 </description>
     </item>
     
     <item>
-      <title>Maximum Header Size Exceed</title>
-      <link>https://lib.jimmysong.io/tsb/troubleshooting/maximum-header-size-exceed/</link>
+      <title>集群入职故障排除</title>
+      <link>https://lib.jimmysong.io/tsb/troubleshooting/cluster-onboarding/</link>
       <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
-      <guid>https://lib.jimmysong.io/tsb/troubleshooting/maximum-header-size-exceed/</guid>
-      <description>&lt;p&gt;This article will cover how TSB and istio-proxy handle headers when forwarding from Istio ingress gateways or sidecars to applications.&lt;/p&gt;
-&lt;p&gt;Before you get started, make sure you:&lt;br /&gt;
-✓ Familiarize yourself with &lt;a href=&#34;../concepts/toc&#34;&gt;TSB concepts&lt;/a&gt; &lt;br /&gt;
-✓ Install the TSB environment. You can use &lt;a href=&#34;../setup/self_managed/demo-installation&#34;&gt;TSB demo&lt;/a&gt; for quick install&lt;br /&gt;
-✓ Completed &lt;a href=&#34;../quickstart&#34;&gt;TSB usage quickstart&lt;/a&gt;.&lt;br /&gt;
-✓ Install sample application &lt;a href=&#34;../reference/samples/httpbin&#34;&gt;httpbin&lt;/a&gt;.&lt;/p&gt;
-&lt;h2 id=&#34;request-header-size-in-envoy-istio-proxy&#34;&gt;Request header size in Envoy (istio-proxy)&lt;/h2&gt;
-&lt;p&gt;&lt;a href=&#34;https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoy&lt;/a&gt; or istio-proxy can handle headers that are considerably larger. The default maximum request headers size for incoming connections is 60 KiB&lt;/p&gt;
-&lt;p&gt;In this case, it will not be an issue for the majority of applications, and the request headers that incoming connections will be proxied through istio-proxy. However, your application might have restrictions based on the configuration of the header size for each web server.&lt;/p&gt;
-&lt;p&gt;For example:
-In &lt;a href=&#34;https://www.baeldung.com/spring-boot-max-http-header-size&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Spring Boot 2&lt;/a&gt; and &lt;a href=&#34;https://docs.gunicorn.org/en/stable/settings.html#limit-request-field-size&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Gunicorn&lt;/a&gt; the default max header size is 8 KiB. You can override the default if needed.&lt;/p&gt;
-&lt;h2 id=&#34;debug-request-headers-size&#34;&gt;Debug request headers size&lt;/h2&gt;
-&lt;p&gt;For this experiment, you will need the &lt;a href=&#34;../reference/samples/httpbin&#34;&gt;httpbin&lt;/a&gt; sample application deployed in your cluster. You will perform two requests, one with a header size below the maximum and another one that exceeds the limit by the app container.&lt;/p&gt;
-&lt;h3 id=&#34;header-below-the-maximum&#34;&gt;Header below the maximum&lt;/h3&gt;
-&lt;p&gt;Your header can be anything just make sure is below 8 KiB you can export it as a variable and perform the request:&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -k  https://httpbin.example.io/response-headers -X POST -H &amp;#34;X-MyHeader: $SMALL&amp;#34; -sI
-HTTP/2 200 
-server: istio-envoy
-date: Wed, 19 Oct 2022 20:13:49 GMT
-content-type: application/json
-content-length: 68
-access-control-allow-origin: *
-access-control-allow-credentials: true
-x-envoy-upstream-service-time: 5
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;header-above-the-maximum&#34;&gt;Header above the maximum&lt;/h3&gt;
-&lt;p&gt;Now perform the request with a header that can exceed the maximum of 8 KiB&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -k  https://httpbin.example.io/response-headers -X POST -H &amp;#34;X-MyHeader: $LONG&amp;#34; -sI
-HTTP/2 400 
-content-type: text/html
-content-length: 189
-x-envoy-upstream-service-time: 6
-date: Wed, 19 Oct 2022 20:17:37 GMT
-server: istio-envoy
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;If the request header exceed the maximum header size, you will receive a bad request following a 400 HTTP code.&lt;/p&gt;
-&lt;h2 id=&#34;modify-header-size-in-istio-proxy&#34;&gt;Modify header size in istio-proxy&lt;/h2&gt;
-&lt;p&gt;As you learned above, you can limit the header size in a variety of web servers. You can do the same modifications in istio-proxy.&lt;/p&gt;
-&lt;p&gt;The default header size should be just enough, or you may want to decrease the default size.&lt;/p&gt;
-&lt;h3 id=&#34;decreasing-the-default-size-of-the-header-in-istio-proxy&#34;&gt;Decreasing the default size of the header in istio-proxy&lt;/h3&gt;
-&lt;p&gt;In order to decrease the size of the default request header you will need to create an &lt;a href=&#34;https://istio.io/latest/docs/reference/config/networking/envoy-filter/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Envoyfilter&lt;/a&gt; that allows you to modify the istio-proxy configuration.&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;apiVersion: networking.istio.io/v1alpha3
-kind: EnvoyFilter
-metadata:
-  name: max-request-headers
-  namespace: istio-system
-spec:
-  configPatches:
-  - applyTo: NETWORK_FILTER # http connection manager is a filter in Envoy
-    match:
-      context: ANY
-      listener:
-        filterChain:
-          filter:
-            name: &amp;#34;envoy.filters.network.http_connection_manager&amp;#34;
-    patch:
-      operation: MERGE
-      value:
-        typed_config:
-          &amp;#34;@type&amp;#34;: &amp;#34;type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager&amp;#34;
-          max_request_headers_kb: 10
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Once this is applied in your cluster, try again the request with an small header and a larger one.&lt;/p&gt;
-&lt;h3 id=&#34;header-below-the-maximum-in-istio-proxy&#34;&gt;Header below the maximum in istio-proxy&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -k  https://httpbin.example.io/response-headers -X POST -H &amp;#34;X-MyHeader: $SMALL&amp;#34; -sI
-HTTP/2 200 
-server: istio-envoy
-date: Wed, 19 Oct 2022 20:36:43 GMT
-content-type: application/json
-content-length: 68
-access-control-allow-origin: *
-access-control-allow-credentials: true
-x-envoy-upstream-service-time: 5
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You can see the request was successfully as the header was below the maximum of 10 KiB.&lt;/p&gt;
-&lt;h3 id=&#34;header-above-the-maximum-in-istio-proxy&#34;&gt;Header above the maximum in istio-proxy&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -k  https://httpbin.example.io/response-headers -X POST -H &amp;#34;X-MyHeader: $LONG&amp;#34; -sI
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You can remove the -s flag from curl and see the output.&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -k  https://httpbin.example.io/response-headers -X POST -H &amp;#34;X-MyHeader: $LONG&amp;#34; -I
-curl: (92) HTTP/2 stream 0 was not closed cleanly: INTERNAL_ERROR (err 2)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The request did not return anything but an error. You can see what happened in the logs.&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl logs $GWPOD -n tier1
+      <guid>https://lib.jimmysong.io/tsb/troubleshooting/cluster-onboarding/</guid>
+      <description>&lt;p&gt;本文档解释了将新的控制平面引入 TSB 时最常见的问题。&lt;/p&gt;
+&lt;h2 id=&#34;连接性&#34;&gt;连接性&lt;/h2&gt;
+&lt;p&gt;部署 &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; 需要与管理平面 URL 具有连接性。通信是通过 &lt;code&gt;tsb&lt;/code&gt; 命名空间中的 &lt;code&gt;front-envoy&lt;/code&gt; 组件执行的，由 &lt;code&gt;envoy&lt;/code&gt; 服务提供。&lt;/p&gt;
+&lt;p&gt;请确保控制平面可以访问它，且没有被网络策略、安全组或任何防火墙阻止。&lt;/p&gt;
+&lt;h2 id=&#34;故障排除&#34;&gt;故障排除&lt;/h2&gt;
+&lt;p&gt;一旦你已经应用了&lt;a href=&#34;../../setup/helm/controlplane#secrets-configuration&#34;&gt;必要的机密&lt;/a&gt;，安装了控制平面操作员，并创建了控制平面 CR，如果存在一些配置错误，一些 Pod 可能无法启动。始终检查 &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; 的日志，因为它将提供有关可能出错的详细信息。&lt;/p&gt;
+&lt;h3 id=&#34;服务帐号问题&#34;&gt;服务帐号问题&lt;/h3&gt;
+&lt;p&gt;如果未创建用于生成令牌的服务帐号，你将收到以下错误：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;error	controlplane	token rotation failed, retrying in 15m0s: secret istio-system/cluster-service-account not found: Secret &lt;span class=&#34;s2&#34;&gt;&amp;#34;cluster-service-account&amp;#34;&lt;/span&gt; not found &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;scope&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;controlplane&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;或者也可能发生配置不正确的情况：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;error	controlplane	token rotation failed, retrying in 15m0s: cluster has been configured with incorrect service account secret. ControlPlane CR has cluster name &lt;span class=&#34;s2&#34;&gt;&amp;#34;demo&amp;#34;&lt;/span&gt;, but service account secret has &lt;span class=&#34;s2&#34;&gt;&amp;#34;organizations/tetrate/clusters/not-demo&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;scope&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;controlplane&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在此示例中，我们创建了名为 &lt;code&gt;demo&lt;/code&gt; 的集群对象，但在 CP 中，我们正在为名为 &lt;code&gt;not-demo&lt;/code&gt; 的集群生成服务帐号。要解决此问题，你需要在 &lt;code&gt;values.yaml&lt;/code&gt; 文件中添加集群名称和服务帐号令牌以安装 CP。首先生成令牌：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl install cluster-service-account --cluster demo &amp;gt; /tmp/demo.jwk
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;然后在 &lt;code&gt;values.yaml&lt;/code&gt; 文件中配置集群名称和 JWK 文件：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;secrets&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tsb&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;clusterServiceAccount&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;clusterFQN&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;organizations/tetrate/clusters/demo&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;JWK&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;&lt;span class=&#34;sd&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;sd&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;{{ .Secrets.ClusterServiceAccount.JWK }}&amp;#39;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;集群名称必须与控制平面 CR 中的 &lt;code&gt;spec.managementPlane.clusterName&lt;/code&gt; 中添加的集群名称匹配。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;注意&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    记得重新启动 &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; Pod 以生成机密，一旦生成，重新启动控制平面 Pod。
+&lt;/div&gt;
 
-[2022-10-19T20:39:58.081Z] &amp;#34;- - HTTP/2&amp;#34; 0 - http2.too_many_headers - &amp;#34;-&amp;#34; 0 0 0 - &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; - - 10.211.129.34:8443 10.240.0.38:63077 httpbin.example.io -
-&lt;/code&gt;&lt;/pre&gt;</description>
-    </item>
-    
-    <item>
-      <title>Multiple Transfer Encoding Chunked</title>
-      <link>https://lib.jimmysong.io/tsb/troubleshooting/multiple-transfer-encoding-chunked/</link>
-      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
-      <guid>https://lib.jimmysong.io/tsb/troubleshooting/multiple-transfer-encoding-chunked/</guid>
-      <description>&lt;p&gt;This document describes how TSB will handle the request/response if the header has multiple &lt;code&gt;transfer-encoding:chunked&lt;/code&gt;  and also helps you in identifying whether the problem is from the source or the destination.&lt;/p&gt;
-&lt;p&gt;What we recommend to resolve this issue is to make sure that there is only one &lt;code&gt;transfer-encoding:chunked&lt;/code&gt; in both the request and the response header, otherwise Envoy will reject the request.&lt;/p&gt;
-&lt;p&gt;Before you get started, make sure you: &lt;br /&gt;
-✓ Familiarize yourself with &lt;a href=&#34;../concepts/toc&#34;&gt;TSB concepts&lt;/a&gt; &lt;br /&gt;
-✓ Install the &lt;a href=&#34;../setup/self_managed/demo-installation&#34;&gt;TSB demo&lt;/a&gt; environment &lt;br /&gt;
-✓ Deploy the &lt;a href=&#34;../quickstart/deploy_sample_app&#34;&gt;Istio Bookinfo&lt;/a&gt; sample app &lt;br /&gt;&lt;/p&gt;
-&lt;p&gt;Note: For the response section, the application we used here deliberately generates multiple &lt;code&gt;transfer-encoding:chunked&lt;/code&gt; headers and it’s used for only documentation purpose.&lt;/p&gt;
-&lt;p&gt;We have often seen that the header of the request/response contains multiple &lt;code&gt;transfer-encoding:chunked&lt;/code&gt; and this is not a valid header as Envoy rejects such request. In the bookinfo application that we have installed we can take a deeper look at how envoy will reject with specific error code for a simple request.&lt;/p&gt;
-&lt;h2 id=&#34;request-header-with-transfer-encoding-chunkedchunked&#34;&gt;Request header with &amp;ldquo;Transfer-Encoding: chunked,chunked&amp;rdquo;&lt;/h2&gt;
-&lt;p&gt;For our bookinfo app we will create a simple request using curl to send a multiple &lt;code&gt;transfer-encoding:chunked&lt;/code&gt; and we will observe how the envoy gateway will respond.&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ curl  -kv &amp;#34;http://bookinfo.tetrate.com/productpage&amp;#34; -H &amp;#34;Transfer-Encoding: chunked&amp;#34; -H &amp;#34;Transfer-Encoding: chunked&amp;#34; 
-[ ... ]
-&amp;gt; GET /productpage HTTP/1.1
-&amp;gt; Host: bookinfo.tetrate.com
-&amp;gt; User-Agent: curl/7.79.1
-&amp;gt; Accept: */*
-&amp;gt; Transfer-Encoding: chunked
-&amp;gt; Transfer-Encoding: chunked
-&amp;gt; 
-* Mark bundle as not supporting multiuse
-&amp;lt; HTTP/1.1 501 Not Implemented
-&amp;lt; content-length: 15
-&amp;lt; content-type: text/plain
-&amp;lt; date: Tue, 13 Sep 2022 11:08:56 GMT
-&amp;lt; server: istio-envoy
-&amp;lt; connection: close
-&amp;lt; 
-* Closing connection 0
-Not Implemented%
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;At the same time the gateway envoy logs show the failure with the below snippet and the error code as &lt;code&gt;501 DPE (Downstream Protocol Error)&lt;/code&gt;&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl logs ${GWPOD} -n bookinfo 
-[2022-09-07T08:17:38.936Z] &amp;#34;- - HTTP/1.1&amp;#34; 501 DPE http1.invalid_transfer_encoding - &amp;#34;-&amp;#34; 0 15 0 - &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; &amp;#34;-&amp;#34; - - 10.0.2.20:8080 10.128.0.74:23365 - -
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;response-header-with-transfer-encoding-chunkedchunked&#34;&gt;Response header with &amp;ldquo;Transfer-Encoding: chunked,chunked&amp;rdquo;&lt;/h2&gt;
-&lt;p&gt;The response header can be manipulated within the application itself and could trigger the multiple chunks as well. In these cases the envoy sidecar of that application will reject the response.
-To demonstrate the response we used a simple application which will generate multiple transfer-chunked as a default behavior,We will send a curl request from the &lt;a href=&#34;./debug-container&#34;&gt;Debug-container&lt;/a&gt; with default values as shown below.&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$curl -v http://transfer:8080/test
-[ ... ]
-&amp;gt; GET /test HTTP/1.1
-&amp;gt; Host: transfer:8080
-&amp;gt; User-Agent: curl/7.83.1
-&amp;gt; Accept: */*
-&amp;gt; 
-* Mark bundle as not supporting multiuse
-&amp;lt; HTTP/1.1 502 Bad Gateway
-&amp;lt; content-length: 87
-&amp;lt; content-type: text/plain
-&amp;lt; date: Tue, 13 Sep 2022 11:17:13 GMT
-&amp;lt; server: envoy
-&amp;lt; x-envoy-upstream-service-time: 2
-&amp;lt; 
-* Connection #0 to host transfer left intact
-upstream connect error or disconnect/reset before headers. reset reason: protocol error/ 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;When we look at the sidecar envoy log we can see the rejection with the error message &lt;code&gt;502 UPE (Upstream Protocol Error)&lt;/code&gt;&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;kubectl logs transfer-58c6c67c56-d8wzk  -n test 
-[2022-09-13T11:17:13.471Z] &amp;#34;GET /test HTTP/1.1&amp;#34; 502 UPE upstream_reset_before_response_started{protocol_error} - &amp;#34;-&amp;#34; 0 87 1 - &amp;#34;-&amp;#34; &amp;#34;curl/7.83.1&amp;#34; &amp;#34;fbcd5bff-1981-40a5-a2c8-fd6133161976&amp;#34; &amp;#34;transfer:8080&amp;#34; &amp;#34;10.0.2.7:8080&amp;#34; inbound|8080|| 127.0.0.6:53799 10.0.2.7:8080 10.0.0.21:59960 outbound_.8080_._.transfer.test.svc.cluster.local default
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;If we enable the debug log for sidecar of the application we can see the error in details as&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2022-09-13T12:46:48.497388Z     debug   envoy client    [C2912] Error dispatching received data: http/1.1 protocol error: unsupported transfer encoding
-&lt;/code&gt;&lt;/pre&gt;</description>
-    </item>
-    
-    <item>
-      <title>UI Metrics Troubleshooting</title>
-      <link>https://lib.jimmysong.io/tsb/troubleshooting/tsb-ui-metrics/</link>
-      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
-      <guid>https://lib.jimmysong.io/tsb/troubleshooting/tsb-ui-metrics/</guid>
-      <description>&lt;p&gt;TSB&amp;rsquo;s UI displays metrics and health of your services. However, if there are no
-metrics or traces displayed, then you may be facing an issue with either your
-services, or with TSB.&lt;/p&gt;
-&lt;p&gt;This guide will walk you through how to determine whether the issue is with a
-service, or with one of the metrics components within TSB.&lt;/p&gt;
-&lt;h2 id=&#34;metrics&#34;&gt;Metrics&lt;/h2&gt;
-&lt;p&gt;If you don&amp;rsquo;t see the metrics, use this section of the guide to troubleshoot.&lt;/p&gt;
-&lt;p&gt;First, make sure that you have traffic flowing in your application. You need
-traffic to generate metrics.&lt;/p&gt;
-&lt;p&gt;Check that the time range window you&amp;rsquo;ve set in TSB is correct, and there was
-traffic during that period.&lt;/p&gt;
-&lt;p&gt;
+&lt;h3 id=&#34;控制平面证书问题&#34;&gt;控制平面证书问题&lt;/h3&gt;
+&lt;p&gt;如果在管理平面中配置的 &lt;code&gt;tsb-certs&lt;/code&gt; 证书不包含与控制平面 CR 中的 &lt;code&gt;spec.managementPlane.host&lt;/code&gt; 配置的正确 URI SAN，或者 &lt;code&gt;tsb&lt;/code&gt; 命名空间中的 &lt;code&gt;tsb-certs&lt;/code&gt; 和 &lt;code&gt;istio-system&lt;/code&gt; 命名空间中的 &lt;code&gt;mp-cert&lt;/code&gt; 都不包含相同的 URI SAN，或者它们没有由相同的根/中间 CA 签名，你将收到以下错误：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;error	controlplane	token rotation failed, retrying in 7.153870785s: generate tokens: rpc error: &lt;span class=&#34;nv&#34;&gt;code&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; Unavailable &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; connection error: &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;transport: authentication handshake failed: tls: failed to verify certificate: x509: certificate is valid for demo.tsb.tetrate.io, not tsb.tetrate.io&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;scope&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;controlplane&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;你可以通过在控制平面 &lt;code&gt;values.yaml&lt;/code&gt; 文件中配置值 &lt;code&gt;secrets.tsb.cacert&lt;/code&gt; 来更新 &lt;code&gt;mp-cert&lt;/code&gt;，或者通过在管理平面 &lt;code&gt;values.yaml&lt;/code&gt; 文件中配置值 &lt;code&gt;secrets.tsb.cert&lt;/code&gt; 和 &lt;code&gt;secrets.tsb.key&lt;/code&gt; 来更新 &lt;code&gt;tsb-certs&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;如果在 &lt;code&gt;tsb-certs&lt;/code&gt; 中提供的证书由公共 CA（如 Digicert 或 Let’s Encrypt）签名，你可以让控制平面 CR 的默认值保持不变，但如果此证书由内部 CA 签名或者是自签名的，你可能会收到以下错误：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;error	controlplane	token rotation failed, retrying in 1.661766738s: generate tokens: rpc error: &lt;span class=&#34;nv&#34;&gt;code&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; Unavailable &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; connection error: &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;transport: authentication handshake failed: x509: certificate signed by unknown authority&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;scope&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;controlplane&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果是这种情况，你需要修改控制平面 CR 以将 &lt;code&gt;spec.managementPlane.selfSigned&lt;/code&gt; 设置为 &lt;code&gt;true&lt;/code&gt;。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;注意&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    记得重新启动 &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; Pod 以生成机密，一旦生成，重新启动控制平面 Pod。
+&lt;/div&gt;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  &gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../assets/023f435-Tetrate_Service_Bridge.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;/figure&gt;
-&lt;/p&gt;
-&lt;p&gt;Check if running a UI query in your browser returns a status. Use your browser
-&lt;code&gt;inspect&lt;/code&gt; command and check the request/response details.&lt;/p&gt;
-&lt;p&gt;From the inspector, select the &lt;code&gt;Network&lt;/code&gt; tab and open your application from the
-TSB UI. You should see a list of all the requests between your browser and the
-TSB backend.&lt;/p&gt;
-&lt;p&gt;Search for the last &lt;code&gt;graphql&lt;/code&gt; request.&lt;/p&gt;
-&lt;p&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  &gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../assets/71914d4-DevTools_-_35_247_59_43_8443_applications_prune-tenant_dev_bookinfo.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;/figure&gt;
-&lt;/p&gt;
-&lt;p&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  &gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../assets/47326cc-DevTools_-_35_247_59_43_8443_applications_prune-tenant_dev_bookinfo-2.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;/figure&gt;
-&lt;/p&gt;
-&lt;p&gt;If you don&amp;rsquo;t see the query, it may indicate that your application is not
-handling any traffic, or you&amp;rsquo;re having a problem with the OAP deployment.&lt;/p&gt;
-&lt;p&gt;To inspect OAP, use the following steps:&lt;/p&gt;
-&lt;p&gt;Check if the &lt;code&gt;OAP&lt;/code&gt; Pod in the &lt;code&gt;tsb&lt;/code&gt; Namespace is up and running by confirming
-whether there are any errors in the pod&amp;rsquo;s log:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n tsb logs -l &lt;span class=&#34;nv&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;oap
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The errors from the logs will help you triage the problem.&lt;/p&gt;
-&lt;p&gt;If the issue is related to Elasticsearch, check if OAP in the control plane
-namespace (istio-system) is receiving Access Log Service (ALS) data from various
-Envoys by forwarding the monitoring port of the OAP pods to your local computer,
-and querying some metrics using the following steps:&lt;/p&gt;
-&lt;p&gt;Start a port-forward to OAP in a shell:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n istio-system port-forward deployment/oap-deployment &lt;span class=&#34;m&#34;&gt;1234&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If there is no issue, you should see:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Forwarding from 127.0.0.1:1234 -&amp;gt; 1234
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Forwarding from [::1]:1234 -&amp;gt; 1234
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;In a different shell, curl the metrics with the command below:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -s http://localhost:1234/ &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep &lt;span class=&#34;s2&#34;&gt;&amp;#34;envoy_als_in_count&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You should see something similar to this example output:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;router~10.28.0.25~tsb-gateway-7b7fbcdfb7-726bf.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;tsb-gateway&amp;#34;,} 67492.0
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.19~details-v1-94d5d794-kt76x.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;details.bookinfo&amp;#34;,} 33747.0
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.23~reviews-v3-5556b6949-pvqfn.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;reviews.bookinfo&amp;#34;,} 22500.0
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.24~productpage-v1-665ddb5664-ts6pz.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;productpage.bookinfo&amp;#34;,} 101240.0
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.22~reviews-v2-6cb744f8ff-mf8s6.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;reviews.bookinfo&amp;#34;,} 22498.0
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.20~ratings-v1-744894fbdb-ctvpd.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;ratings.bookinfo&amp;#34;,} 22499.0
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_als_in_count{id=&amp;#34;sidecar~10.28.0.21~reviews-v1-f7c7c7b45-8v2sf.bookinfo~bookinfo.svc.cluster.local&amp;#34;,cluster=&amp;#34;reviews.bookinfo&amp;#34;,} 11249.0
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You should see the numbers on the right-hand side increase if your application
-is in use.&lt;/p&gt;
-&lt;p&gt;If you don&amp;rsquo;t see any metrics, or the metrics do not change over time, check if
-your application sidecars (Envoy) are sending ALS metrics to the control plane
-OAP by performing a&lt;code&gt;port-forward&lt;/code&gt; of the Istio Sidecar on port 15000 and query
-the &lt;code&gt;envoy_accesslog_service&lt;/code&gt; metric. The standard number of  &lt;code&gt;cx_active&lt;/code&gt;
-metrics (i.e. the number of current connections) is two.&lt;/p&gt;
-&lt;p&gt;The below example uses the &lt;code&gt;productpage&lt;/code&gt; service of the &lt;code&gt;bookinfo&lt;/code&gt; application:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# start the port-forward in a shell&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n bookinfo port-forward deployment/productpage-v1 &lt;span class=&#34;m&#34;&gt;15000&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Forwarding from 127.0.0.1:15000 -&amp;gt; &lt;span class=&#34;m&#34;&gt;15000&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Forwarding from &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;::1&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;:15000 -&amp;gt; &lt;span class=&#34;m&#34;&gt;15000&lt;/span&gt;
+&lt;h3 id=&#34;xcp-连接问题&#34;&gt;XCP 连接问题&lt;/h3&gt;
+&lt;p&gt;如果新引入的集群没有报告集群状态或新配置未在集群中创建，请检查 &lt;code&gt;istio-system&lt;/code&gt; 命名空间中的 &lt;code&gt;edge&lt;/code&gt; Pod 日志，即使 Pod 正在运行，也可能存在一些问题。例如：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;warn	stream	error getting stream. retrying in 21.72809085s: rpc error: &lt;span class=&#34;nv&#34;&gt;code&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; Unavailable &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; connection error: &lt;span class=&#34;nv&#34;&gt;desc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;transport: authentication handshake failed: tls: failed to verify certificate: x509: certificate is valid for xcp.tetrate.io, not tsb.tetrate.io&amp;#34;&lt;/span&gt;	&lt;span class=&#34;nv&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;configs-4d116fd6
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在这种情况下，&lt;code&gt;tsb&lt;/code&gt; 命名空间中的 &lt;code&gt;xcp-central-cert&lt;/code&gt; 配置为 &lt;code&gt;xcp.tetrate.io&lt;/code&gt;，但在控制平面 CR 中配置的主机是 &lt;code&gt;tsb.tetrate.io&lt;/code&gt;。要更新证书，你需要根据&lt;a href=&#34;../../../setup/helm/managementplane#xcp-secrets-configuration&#34;&gt;这个&lt;/a&gt;更新管理平面 &lt;code&gt;values.yaml&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;如果 &lt;code&gt;edge&lt;/code&gt; 无法启动，你可以描述 Pod 以获取更多信息。有时候无法启动是因为：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  Warning  FailedMount  7m15s &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;x7 over 7m47s&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;  kubelet            MountVolume.SetUp failed &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; volume &lt;span class=&#34;s2&#34;&gt;&amp;#34;xcp-central-auth-jwt&amp;#34;&lt;/span&gt; : secret &lt;span class=&#34;s2&#34;&gt;&amp;#34;xcp-edge-central-auth-token&amp;#34;&lt;/span&gt; not found
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  Warning  FailedMount  
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# curl the config in another shell&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -s http://localhost:15000/clusters &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep &lt;span class=&#34;s2&#34;&gt;&amp;#34;envoy_accesslog_service&amp;#34;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep cx_active
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;envoy_accesslog_service::10.31.243.206:11800::cx_active::2
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If the counters aren&amp;rsquo;t what you expect, add &lt;code&gt;debug&lt;/code&gt; logging level to OAP by
-editing the OAP&amp;rsquo;s &lt;code&gt;config.yml&lt;/code&gt; with the following command:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n istio-system edit cm oap-config
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Search for the following lines and remove the comments around it:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;&amp;lt;!-- uncomment following line when need to debug ALS raw data
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;   &amp;lt;logger name=&amp;#34;io.tetrate.spm.user.receiver.envoy&amp;#34; level=&amp;#34;DEBUG&amp;#34;/&amp;gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;--&amp;gt;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;So that it becomes:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;&amp;lt;logger&lt;/span&gt; &lt;span class=&#34;na&#34;&gt;name=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;io.tetrate.spm.user.receiver.envoy&amp;#34;&lt;/span&gt; &lt;span class=&#34;na&#34;&gt;level=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;DEBUG&amp;#34;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;/&amp;gt;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Then, restart OAP for the configuration change to take effect:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n istio-system delete pod -l &lt;span class=&#34;nv&#34;&gt;app&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;oap
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Now you can search the logs for &lt;code&gt;downstream_remote_address&lt;/code&gt;. If you have
-searchable logs, it  means that the metrics are reaching the OAP service.&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;search in the Elasticsearch back-end&lt;br/&gt;
-Metrics are kept in Elasticsearch (ES) indices. You can check the status and
-health of the ES by sending some queries.&lt;br/&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;As the ES server is not managed by TSB, please refer to your documentation for
-the correct connection string.&lt;br/&gt;&lt;/p&gt;
-&lt;p&gt;In the example, we set a port-forward to the ES pod inside the &lt;code&gt;tsb&lt;/code&gt; namespace.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# port forward to ES server&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n tsb port-forward statefulset/elasticsearch &lt;span class=&#34;m&#34;&gt;9200&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# check cluster health&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -s  &lt;span class=&#34;s1&#34;&gt;&amp;#39;http://localhost:9200/_cluster/health?pretty=true&amp;#39;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;cluster_name&amp;#34;&lt;/span&gt; : &lt;span class=&#34;s2&#34;&gt;&amp;#34;elasticsearch&amp;#34;&lt;/span&gt;,
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;status&amp;#34;&lt;/span&gt; : &lt;span class=&#34;s2&#34;&gt;&amp;#34;yellow&amp;#34;&lt;/span&gt;,
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;timed_out&amp;#34;&lt;/span&gt; : false,
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;number_of_nodes&amp;#34;&lt;/span&gt; : 1,
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;number_of_data_nodes&amp;#34;&lt;/span&gt; : 1,
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;active_primary_shards&amp;#34;&lt;/span&gt; : 64,
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;active_shards&amp;#34;&lt;/span&gt; : 64,
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;relocating_shards&amp;#34;&lt;/span&gt; : 0,
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;initializing_shards&amp;#34;&lt;/span&gt; : 0,
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;unassigned_shards&amp;#34;&lt;/span&gt; : 5,
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;delayed_unassigned_shards&amp;#34;&lt;/span&gt; : 0,
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;number_of_pending_tasks&amp;#34;&lt;/span&gt; : 0,
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;number_of_in_flight_fetch&amp;#34;&lt;/span&gt; : 0,
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;task_max_waiting_in_queue_millis&amp;#34;&lt;/span&gt; : 0,
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;s2&#34;&gt;&amp;#34;active_shards_percent_as_number&amp;#34;&lt;/span&gt; : 92.7536231884058
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;}&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The &lt;code&gt;status&lt;/code&gt; line should be green or yellow. If it&amp;rsquo;s red, then the issue is
-with the ES cluster. You should check the indices&amp;rsquo; status using the command:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# Indices status for the 26 March 2020&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -H&lt;span class=&#34;s1&#34;&gt;&amp;#39;Content-Type: application/json&amp;#39;&lt;/span&gt; -s -XGET &lt;span class=&#34;err&#34;&gt;&amp;#39;&lt;/span&gt;http://localhost:9200/_cat/shards/*20200326
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You should see a list of all the indices. They should all be in the &lt;code&gt;STARTED&lt;/code&gt;
-state. Next columns hold the number of documents and the size of the index. By
-running the command at different times, you should see these numbers increasing.&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;service_5xx-20200326                                 0 p STARTED  31236   1.4mb 10.28.1.12 elasticsearch-0
-service_instance_relation_client_call_sla-20200326   0 p STARTED  53791   5.1mb 10.28.1.12 elasticsearch-0
-endpoint_percentile-20200326                         0 p STARTED 128707  12.7mb 10.28.1.12 elasticsearch-0
-endpoint_2xx-20200326                                0 p STARTED 123131   7.4mb 10.28.1.12 elasticsearch-0
-...
-&lt;/code&gt;&lt;/pre&gt;</description>
-    </item>
-    
-    <item>
-      <title>Using The Debug Container</title>
-      <link>https://lib.jimmysong.io/tsb/troubleshooting/debug-container/</link>
-      <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
-      <guid>https://lib.jimmysong.io/tsb/troubleshooting/debug-container/</guid>
-      <description>&lt;p&gt;import vars from &amp;ldquo;../_vars.json&amp;rdquo;;&lt;/p&gt;
-&lt;p&gt;Tetrate Service Bridge (TSB) is a complex collection of components that are interconnected using various protocols. This is probably also true for your applications deployed over the service mesh that TSB provides. In many cases you will need to check, test, and verify the network connectivity within the various TSB components to make sure that the system is working as expected.&lt;/p&gt;
-&lt;p&gt;To save you some time to create a debugging environment in the Kubernetes clusters, Tetrate provides a debug container that comes with most of the toolsets needed to validate the network status already installed. For example, tools such as &lt;code&gt;ping&lt;/code&gt;, &lt;code&gt;curl&lt;/code&gt;, &lt;code&gt;gpcurl&lt;/code&gt;, &lt;code&gt;dig&lt;/code&gt;, etc are already installed in this container.&lt;/p&gt;
-&lt;h2 id=&#34;using-the-debug-container&#34;&gt;Using the debug container&lt;/h2&gt;
-&lt;p&gt;This debug container can be deployed to any cluster as long as the appropriate image registry can be reached to download the container image.&lt;/p&gt;
-&lt;p&gt;The container image is included in the TSB distribution and will be synced to your registry along with the rest of the images when you run the &lt;a href=&#34;../setup/requirements-and-download#sync-tetrate-service-bridge-images&#34;&gt;&lt;code&gt;tctl install image-sync&lt;/code&gt; command&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;To deploy the debug container, run the following command. Replace &lt;code&gt;&amp;lt;registry-location&amp;gt;&lt;/code&gt; with the registry URL where you synced the TSB images.&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
-{`kubectl run debug-container --image &lt;registry-location&gt;/tetrate-troubleshoot:${vars.versionNumber} -it -- ash`}
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Once the pod is created, you will be placed in a shell within the debug container and you will be able to run necessary commands for troubleshooting.&lt;/p&gt;
-&lt;h3 id=&#34;checking-the-network-connectivity&#34;&gt;Checking the network connectivity&lt;/h3&gt;
-&lt;p&gt;If you want to check the network connectivity from the TSB cluster to the datastore you use (we assume PostgreSQL for this example), you can run the following command:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;curl -v telnet://&amp;lt;postgres_IP&amp;gt;:5432
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Or use the PostgreSQL client command &lt;code&gt;psql&lt;/code&gt; to validate the credentials.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;psql -h my.postgres.local -P &lt;span class=&#34;m&#34;&gt;5432&lt;/span&gt; -U myUser
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; 5m44s                  kubelet            Unable to attach or mount volumes: unmounted &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;xcp-central-auth-ca&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;, unattached &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;config-map-volume xcp-central-auth-jwt xcp-central-auth-ca xcp-edge-webhook-ca kube-api-access-hxk8l webhook-certs&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;: timed out waiting &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; the condition
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  Warning  FailedMount   3m26s                  kubelet            Unable to attach or mount volumes: unmounted &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;xcp-central-auth-ca&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;, unattached &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;xcp-edge-webhook-ca kube-api-access-hxk8l webhook-certs config-map-volume xcp-central-auth-jwt xcp-central-auth-ca&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;: timed out waiting &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; the condition
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  Warning  FailedMount  95s &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;x11 over 7m47s&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;   kubelet            MountVolume.SetUp failed &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; volume &lt;span class=&#34;s2&#34;&gt;&amp;#34;xcp-central-auth-ca&amp;#34;&lt;/span&gt; : secret &lt;span class=&#34;s2&#34;&gt;&amp;#34;xcp-central-ca-bundle&amp;#34;&lt;/span&gt; not found
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  Warning  FailedMount  69s                    kubelet            Unable to attach or mount volumes: unmounted &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;xcp-central-auth-ca&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;, unattached &lt;span class=&#34;nv&#34;&gt;volumes&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=[&lt;/span&gt;kube-api-access-hxk8l webhook-certs config-map-volume xcp-central-auth-jwt xcp-central-auth-ca xcp-edge-webhook-ca&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;: timed out waiting &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; the condition
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;此错误是因为 &lt;code&gt;istio-system&lt;/code&gt; 命名空间中的秘密 &lt;code&gt;xcp-central-ca-bundle&lt;/code&gt; 不存在。此秘密必须包含相同的 URI SAN，并且必须由 &lt;code&gt;tsb&lt;/code&gt; 命名空间中的 &lt;code&gt;xcp-central-cert&lt;/code&gt; 签名，并且必须由相同的根/中间 CA 签名。要配置此秘密，你需要更新控制平面 &lt;code&gt;values.yaml&lt;/code&gt; 文件中的值 &lt;code&gt;secrets.xcp.rootca&lt;/code&gt;。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;注意&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    记得重新启动 &lt;code&gt;tsb-operator-control-plane&lt;/code&gt; Pod 以生成机密，一旦生成，重新启动 &lt;code&gt;edge&lt;/code&gt; Pod。
+&lt;/div&gt;
+
+</description>
     </item>
     
   </channel>
