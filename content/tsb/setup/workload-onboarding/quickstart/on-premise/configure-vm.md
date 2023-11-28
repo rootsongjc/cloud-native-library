@@ -1,156 +1,142 @@
 ---
-title: Configure the VM on-premise
+title: 配置本地虚拟机
+weight: 2
 ---
 
-## Install Bookinfo Ratings Application
+## 安装 Bookinfo Ratings 应用程序
 
-SSH into the VM on-premise and install the
-`ratings` application. Execute the following commands:
+SSH 进入本地虚拟机并安装 `ratings` 应用程序。执行以下命令：
 
 ```bash
-# Install the latest version of trusted CA certificates
+# 安装最新版本的可信 CA 证书
 sudo apt-get update -y
 sudo apt-get install -y ca-certificates
 
-# Add DEB repository with Node.js
+# 添加带有 Node.js 的 DEB 仓库
 curl --fail --silent --location https://deb.nodesource.com/setup_14.x | sudo bash -
 
-# Install Node.js
+# 安装 Node.js
 sudo apt-get install -y nodejs
 
-# Download DEB package of the Bookinfo Ratings app
+# 下载 Bookinfo Ratings 应用程序的 DEB 包
 curl -fLO https://dl.cloudsmith.io/public/tetrate/onboarding-examples/raw/files/bookinfo-ratings.deb
 
-# Install DEB package
+# 安装 DEB 包
 sudo apt-get install -y ./bookinfo-ratings.deb
 
-# Remove downloaded file
+# 删除下载的文件
 rm bookinfo-ratings.deb
 
-# Enable SystemD Unit
+# 启用 SystemD 单元
 sudo systemctl enable bookinfo-ratings
 
-# Start Bookinfo Ratings app
+# 启动 Bookinfo Ratings 应用程序
 sudo systemctl start bookinfo-ratings
 ```
 
-## Verify the `ratings` Application
+## 验证 `ratings` 应用程序
 
-Execute the following command to verify that the `ratings` application
-can now serve local requests:
+执行以下命令以验证 `ratings` 应用程序是否能够提供本地请求：
 
 ```bash
 curl -fsS http://localhost:9080/ratings/1
 ```
 
-You should get output similar to:
+你应该会得到类似于以下内容的输出：
 
 ```json
 {"id":1,"ratings":{"Reviewer1":5,"Reviewer2":4}}
 ```
 
-## Configure to Trust the Example CA
+## 配置信任示例 CA
 
-Remember that you have previously configured the Workload Onboarding Endpoint
-using a TLS certificate signed by a custom CA. As a result, any software that
-runs on the VM on-premise and attempts to connect to the
-Workload Onboarding Endpoint will not trust its certificate by default.
+请记住，你之前已使用由自定义 CA 签名的 TLS 证书配置了 Workload Onboarding 终端点。因此，运行在本地虚拟机上并尝试连接到 Workload Onboarding 终端点的任何软件默认不会信任其证书。
 
-Before proceeding further, you must configure the VM on-premise to trust your custom CA.
+在继续之前，你必须配置本地虚拟机以信任你的自定义 CA。
 
-First, update the `apt` package list:
+首先，更新 `apt` 软件包列表：
 
 ```bash
 sudo apt-get update -y
 ```
 
-Then install the `ca-certificates` package:
+然后安装 `ca-certificates` 软件包：
 
 ```bash
 sudo apt-get install -y ca-certificates
 ```
 
-Copy the contents of the file `example-ca.crt.pem` that you have 
-[created when you setup the certificates](../aws-ec2/enable-workload-onboarding#prepare-the-certificates),
-and place it under the location
-`/usr/local/share/ca-certificates/example-ca.crt` on the VM on-premise.
+将你在[设置证书时创建的文件](../../../aws-ec2/enable-workload-onboarding) `example-ca.crt.pem` 的内容复制并放置在本地虚拟机的位置 `/usr/local/share/ca-certificates/example-ca.crt`。
 
-Use your favorite tool to do this. If you have not installed any
-editors or tools, you could use the combination of `cat` and `dd` as follows:
+使用你喜欢的工具来执行此操作。如果你没有安装任何编辑器或工具，你可以使用以下 `cat` 和 `dd` 的组合：
 
-1. Execute `cat <<EOF | sudo dd of=/usr/local/share/ca-certificates/example-ca.crt`
-1. Copy the contents of `example-ca.crt.pem` and paste it in the terminal that you executed the previous step
-1. Type `EOF` and press `Enter` to finish the first command
+1. 执行 `cat <<EOF | sudo dd of=/usr/local/share/ca-certificates/example-ca.crt`
+1. 复制 `example-ca.crt.pem` 的内容并粘贴到你执行上一步的终端中
+1. 输入 `EOF` 并按 `Enter` 键完成第一个命令
 
-After you have placed the custom CA in the correct location, execute the following
-command:
+在将自定义 CA 放置在正确位置后，执行以下命令：
 
 ```bash
 sudo update-ca-certificates
 ```
 
-This will reload the list of trusted CAs, and it will include your custom CA.
+这将重新加载受信任的 CA 列表，并包括你的自定义 CA。
 
-## Install Istio Sidecar
+## 安装 Istio Sidecar
 
-Install the Istio sidecar by executing the following commands.
-Replace `ONBOARDING_ENDPOINT_ADDRESS` with
-[the value that you have obtained earlier](../aws-ec2/enable-workload-onboarding#verify-the-workload-onboarding-endpoint).
+通过执行以下命令安装 Istio sidecar。将 `ONBOARDING_ENDPOINT_ADDRESS` 替换为[之前获取的值](../../aws-ec2/enable-workload-onboarding)。
 
 ```bash
-# Download DEB package
+# 下载 DEB 包
 curl -fLO \
   --connect-to "onboarding-endpoint.example:443:${ONBOARDING_ENDPOINT_ADDRESS}:443" \
   "https://onboarding-endpoint.example/install/deb/amd64/istio-sidecar.deb"
 
-# Download checksum
+# 下载校验和
 curl -fLO \
   --connect-to "onboarding-endpoint.example:443:${ONBOARDING_ENDPOINT_ADDRESS}:443" \
   "https://onboarding-endpoint.example/install/deb/amd64/istio-sidecar.deb.sha256"
 
-# Verify the checksum
+# 验证校验和
 sha256sum --check istio-sidecar.deb.sha256
 
-# Install DEB package
+# 安装 DEB 包
 sudo apt-get install -y ./istio-sidecar.deb
 
-# Remove downloaded files
+# 删除下载的文件
 rm istio-sidecar.deb istio-sidecar.deb.sha256
 ```
 
-## Install Workload Onboarding Agent
+## 安装 Workload Onboarding Agent
 
-Install the Workload Onboarding Agent by executing the following commands.
-Replace `ONBOARDING_ENDPOINT_ADDRESS` with
-[the value that you have obtained earlier](../aws-ec2/enable-workload-onboarding#verify-the-workload-onboarding-endpoint).
+通过执行以下命令安装 Workload Onboarding Agent。将 `ONBOARDING_ENDPOINT_ADDRESS` 替换为[之前获取的值](../../aws-ec2/enable-workload-onboarding)。
 
 ```bash
-# Download DEB package
+# 下载 DEB 包
 curl -fLO \
   --connect-to "onboarding-endpoint.example:443:${ONBOARDING_ENDPOINT_ADDRESS}:443" \
   "https://onboarding-endpoint.example/install/deb/amd64/onboarding-agent.deb"
 
-# Download checksum
+# 下载校验和
 curl -fLO \
   --connect-to "onboarding-endpoint.example:443:${ONBOARDING_ENDPOINT_ADDRESS}:443" \
   "https://onboarding-endpoint.example/install/deb/amd64/onboarding-agent.deb.sha256"
 
-# Verify the checksum
+# 验证校验和
 sha256sum --check onboarding-agent.deb.sha256
 
-# Install DEB package
+# 安装 DEB 包
 sudo apt-get install -y ./onboarding-agent.deb
 
-# Remove downloaded files
+# 删除下载的文件
 rm onboarding-agent.deb onboarding-agent.deb.sha256
 ```
 
-## Install Sample JWT Credential Plugin
+## 安装示例 JWT 凭据插件
 
-For the purposes of this guide, you will be using `Sample JWT Credential Plugin`
-to provide your on-premise workload with a [JWT Token] credential.
+为了本指南的目的，你将使用 `Sample JWT Credential Plugin` 为本地虚拟机上的工作负载提供 [JWT 令牌] 凭据。
 
-Execute the following commands to install `Sample JWT Credential Plugin`:
+执行以下命令以安装 `Sample JWT Credential Plugin`：
 
 ```bash
 curl -fL "https://dl.cloudsmith.io/public/tetrate/onboarding-examples/raw/files/onboarding-agent-sample-jwt-credential-plugin_0.0.1_$(uname -s)_$(uname -m).tar.gz" \
@@ -158,31 +144,28 @@ curl -fL "https://dl.cloudsmith.io/public/tetrate/onboarding-examples/raw/files/
 sudo mv onboarding-agent-sample-jwt-credential-plugin /usr/local/bin/
 ```
 
-Copy the contents of the file `sample-jwt-issuer.jwk` that you have 
-[created earlier](./configure-workload-onboarding#allow-workloads-to-authenticate-themselves-by-means-of-a-jwt-token),
-and place it under the location
-`/var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/jwt-issuer.jwk` on the VM on-premise.
+复制你之前[创建的文件](../configure-workload-onboarding) `sample-jwt-issuer.jwk` 的内容，并将其放置在本地虚拟机上的位置 `/var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/jwt-issuer.jwk`。
 
-Use your favorite tool to do this. If you have not installed any
-editors or tools, you could use the combination of `cat` and `dd` as follows:
+使用你喜欢的工具来执行此操作。如果你没有安装任何编辑器或工具，你可以使用以下 `cat` 和 `dd` 的组合：
 
-1. Execute
+1. 执行
 ```bash
    sudo mkdir -p /var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/
-   cat <<EOF | sudo dd of=/var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/jwt-issuer.jwk
-   ```
-1. Copy the contents of `sample-jwt-issuer.jwk` and paste it in the terminal that you executed the previous step
-1. Type `EOF` and press `Enter` to finish the first command
-1. Execute
+   cat <<EOF | sudo dd of=/
+
+var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/jwt-issuer.jwk
+```
+1. 复制 `sample-jwt-issuer.jwk` 的内容并粘贴到你执行上一步的终端中
+1. 输入 `EOF` 并按 `Enter` 键完成第一个命令
+1. 执行
 ```bash
    sudo chmod 400 /var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/jwt-issuer.jwk
    sudo chown onboarding-agent: -R /var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/
-   ```
+```
 
-## Configure Workload Onboarding Agent
+## 配置 Workload Onboarding Agent
 
-Execute the following command to save [Agent Configuration](../../../../refs/onboarding/config/agent/v1alpha1/agent_configuration)
-into the file `/etc/onboarding-agent/agent.config.yaml`:
+执行以下命令将 [Agent Configuration](../../../../../refs/onboarding/config/agent/v1alpha1/agent-configuration) 保存到文件 `/etc/onboarding-agent/agent.config.yaml` 中：
 
 ```bash
 cat << EOF | sudo tee /etc/onboarding-agent/agent.config.yaml
@@ -208,8 +191,4 @@ host:
 EOF
 ```
 
-Through various environment variables, supported by the `Sample JWT Credential Plugin`,
-you have configured the desired contents of the [JWT Token].
-
-
-[JWT Token]: https://openid.net/specs/openid-connect-core-1_0.html#IDToken
+通过支持的 `Sample JWT Credential Plugin` 环境变量，你已经配置了所需内容的 JWT 令牌。

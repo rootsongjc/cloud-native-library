@@ -30,5 +30,5 @@ TSB Operator 配置为监督数据平面网关组件的生命周期，主动监�
 
 默认情况下，生成的 `IstioOperator` CR 启用了 `ingressGateway` 和 `egressGateway` 组件。所有其他 Istio 组件在 CR 中都被明确禁用。这种特殊的配置将网关升级的生命周期与控制平面升级分离。
 
-当用户在集群内的各个命名空间中创建和部署 `IngressGateway` 、 `Tier1Gateway` 和 `EgressGateway` 自定义资源 (CR) 时，TSB Operator 将转换这些资源并更新数据平面网关组件的命名空间中名为 `tsb-gateways` 的 `IstioOperator` CR。然后，部署在此命名空间中的 Istio Operator 将代表 TSB Operator 管理入口和出口 Envoy 网关的生命周期。这些特使网关对于处理 TSB 服务网格中托管的服务的入口和出口至关重要。
+当用户在集群内的各个命名空间中创建和部署 `IngressGateway` 、 `Tier1Gateway` 和 `EgressGateway` 自定义资源 (CR) 时，TSB Operator 将转换这些资源并更新数据平面网关组件的命名空间中名为 `tsb-gateways` 的 `IstioOperator` CR。然后，部署在此命名空间中的 Istio Operator 将代表 TSB Operator 管理入口和出口 Envoy 网关的生命周期。这些 Envoy 网关对于处理 TSB 服务网格中托管的服务的入口和出口至关重要。
 

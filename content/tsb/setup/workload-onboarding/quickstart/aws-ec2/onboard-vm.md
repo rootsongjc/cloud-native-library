@@ -1,11 +1,12 @@
 ---
-title: Onboard Workload from VM
+title: 虚拟机工作负载上线
+weight: 5
 ---
 
-## Start Workload Onboarding Agent
+## 启动 Workload Onboarding Agent
 
-Create the file `/etc/onboarding-agent/onboarding.config.yaml` with the following contents.
-Replace `ONBOARDING_ENDPOINT_ADDRESS` with [the value that you have obtained earlier](./enable-workload-onboarding#verify-the-workload-onboarding-endpoint).
+创建文件 `/etc/onboarding-agent/onboarding.config.yaml`，内容如下。
+将 `ONBOARDING_ENDPOINT_ADDRESS` 替换为 [你之前获取的值](../enable-workload-onboarding)。
 
 ```yaml
 apiVersion: config.agent.onboarding.tetrate.io/v1alpha1
@@ -25,40 +26,31 @@ settings:
   connectedOver: INTERNET                 # (4)
 ```
 
-This configuration instructs the Workload Onboarding Agent to connect
-to the Workload Onboarding Endpoint using one address, but validate
-the TLS certificate against the DNS name `onboarding-endpoint.example` (1).
+此配置指示 Workload Onboarding Agent 使用一个地址连接到 Workload Onboarding Endpoint，但对 DNS 名称 `onboarding-endpoint.example` 进行 TLS 证书验证（1）。
 
-The agent will attempt to join the `WorkloadGroup` you created earlier (2).
+代理将尝试加入你之前创建的 `WorkloadGroup`（2）。
 
-The extra label specified in (3) will be associated with the workload.
-It does not play a part in matching the workload with a `WorkloadGroup`.
+在（3）中指定的额外标签将与工作负载关联。它不会影响工作负载与 `WorkloadGroup` 的匹配。
 
-This configuration also instructs the Workload Onboarding Agent to
-notify that this workload is connected to the rest of the mesh over
-the `INTERNET` (rather than `VPC`). Other nodes in the mesh will
-attempt to connect to this workload using the workload's public IP.
-Since you have launched the Kubernetes cluster and the EC2 instance
-in separate networks, this is necessary.
+此配置还指示 Workload Onboarding Agent 通知此工作负载通过 `INTERNET` 连接到网格的其他部分（而不是 `VPC`）。网格中的其他节点将尝试使用工作负载的公共 IP 连接到此工作负载。由于你在不同网络中启动了 Kubernetes 集群和 EC2 实例，因此这是必需的。
 
-Once you have placed the above configuration file in the correct
-location, execute the following commands to start the Workload Onboarding Agent:
+在将上述配置文件放置在正确位置后，执行以下命令启动 Workload Onboarding Agent：
 
 ```bash
-# Enable
+# 启用
 sudo systemctl enable onboarding-agent
 
-# Start
+# 启动
 sudo systemctl start onboarding-agent
 ```
 
-Verify that `Istio Sidecar` is up by executing the following command:
+通过执行以下命令验证 `Istio Sidecar` 是否已启动：
 
 ```bash
 curl -f -i http://localhost:15000/ready
 ```
 
-You should get output similar to the following:
+你应该会得到类似以下的输出：
 
 ```bash
 HTTP/1.1 200 OK
@@ -68,33 +60,30 @@ server: envoy
 LIVE
 ```
 
-## Verify the Workload 
+## 验证工作负载 
 
-From your local machine, verify that the workload has been properly onboarded.
+从本地机器上，验证工作负载是否已正确加入。
 
-Execute the following command:
+执行以下命令：
 
 ```bash
 kubectl get war -n bookinfo 
 ```
 
-If the workload was properly onboarded, you should get an output similar to:
+如果工作负载已正确加入，你应该会得到类似以下的输出：
 
 ```bash
 NAMESPACE   NAME                                                              AGENT CONNECTED   AGE
 bookinfo    ratings-aws-aws-123456789012-us-east-2b-ec2-i-1234567890abcdef0   True              1m
 ```
 
-### Verify Traffic from Kubernetes to VM
+### 验证从 Kubernetes 到 VM 的流量
 
-To verify traffic from Kubernetes Pod(s) to AWS EC2 instance, create
-some load on the bookinfo application deployed on Kubernetes and confirm
-that requests get routed into the `ratings` application deployed on the
-AWS EC2 instance.
+为了验证从 Kubernetes Pod 到 AWS EC2 实例的流量，对 Kubernetes 上部署的 Bookinfo 应用程序创建一些负载，并确认请求是否被路由到部署在 AWS EC2 实例上的 `ratings` 应用程序。
 
-On your local machine, [set up port forwarding](./bookinfo) if you have not already done so.
+在本地机器上，[如果尚未这样做，请设置端口转发](../bookinfo)。
 
-Then run the following commands:
+然后运行以下命令：
 
 ```bash
 for i in `seq 1 9`; do
@@ -102,27 +91,25 @@ for i in `seq 1 9`; do
 done
 ```
 
-Two out of three times you should get a message `10 stars on the page`.
+其中两次中你应该会收到消息 `10 stars on the page`。
 
-Furthermore, you can verify that the VM is receiving the traffic by inspecting the 
-[access logs](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage)
-for the incoming HTTP requests proxied by the Istio sidecar.
+此外，你可以通过检查 Istio sidecar 代理传输的入站 HTTP 请求的[访问日志](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage)来验证 VM 是否接收流量。
 
-Execute the following command:
+执行以下命令：
 
 ```bash
 journalctl -u onboarding-agent -o cat
 ```
 
-You should see an output similar to:
+你应该会看到类似以下的输出：
 
 ```text
 [2021-10-25T11:06:13.553Z] "GET /ratings/0 HTTP/1.1" 200 - via_upstream - "-" 0 48 3 2 "-" "curl/7.68.0" "1928e798-dfe7-45a6-9020-d0f3a8641d03" "172.31.7.211:9080" "127.0.0.1:9080" inbound|9080|| 127.0.0.1:40992 172.31.7.211:9080 172.31.7.211:35470 - default
 ```
 
-### Verify Traffic from VM to Kubernetes
+### 验证从 VM 到 Kubernetes 的流量
 
-SSH into the AWS EC2 instance and execute the following commands:
+SSH 进入 AWS EC2 实例并执行以下命令：
 
 ```bash
 for i in `seq 1 5`; do
@@ -132,12 +119,12 @@ for i in `seq 1 5`; do
 done
 ```
 
-The above command will make `5` HTTP requests to Bookinfo `details` application.
-`curl` will resolve Kubernetes cluster-local DNS name `details.bookinfo`
-into the IP address of the `egress` listener of Istio proxy (`127.0.0.2` according
-to [the sidecar configuration you created earlier](./configure-workload-onboarding#create-the-sidecar-configuration)).
+上述命令将向 Bookinfo `details` 应用程序
 
-You should get an output similar to:
+发出 `5` 个 HTTP 请求。
+`curl` 将解析 Kubernetes 集群的本地 DNS 名称 `details.bookinfo`，将其解析为 Istio 代理的 `egress` 监听器的 IP 地址（根据[你之前创建的 sidecar 配置](../configure-workload-onboarding)为 `127.0.0.2`）。
+
+你应该会得到类似以下的输出：
 
 ```bash
 HTTP/1.1 200 OK

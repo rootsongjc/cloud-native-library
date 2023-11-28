@@ -3,13 +3,6 @@ title: Istio Direct Mode Gateway Service
 description: Service to manage gateway settings in Istio Direct mode.
 ---
 
-
-import {
-  PanelContent,
-  PanelContentCode,
-} from "@theme/Panel";
-
-
 <!-- WARNING: This page is generated. Please take a look at extensions/plugin-service-bridge-api-docs/src/files/doc/page.ejs -->
 
 Service to manage gateway settings in Istio Direct mode.

@@ -3,13 +3,6 @@ title: Organizations Service
 description: Service to manage Organizations in TSB
 ---
 
-
-import {
-  PanelContent,
-  PanelContentCode,
-} from "@theme/Panel";
-
-
 <!-- WARNING: This page is generated. Please take a look at extensions/plugin-service-bridge-api-docs/src/files/doc/page.ejs -->
 
 Service to manage Organizations in TSB

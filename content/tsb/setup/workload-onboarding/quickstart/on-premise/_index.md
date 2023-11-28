@@ -1,38 +1,28 @@
 ---
-slug: .
-title: Quickstart with Workloads on-premise
+title: 在本地快速入门工作负载
+weight: 3
 ---
 
-This guide will help you to get started with `Workload Onboarding` in practice.
+本指南将帮助你在实践中开始使用“工作负载上线”。
 
-As part of this guide, you will:
-1. Deploy [Istio Bookinfo](https://istio.io/latest/docs/examples/bookinfo/)
-   example into your Kubernetes cluster
-1. Deploy `ratings` application on a VM on-premise and onboard it into the
-   service mesh
-1. Verify traffic between Kubernetes Pod(s) and the VM on-premise
+作为这个指南的一部分，你将会：
+1. 将 [Istio Bookinfo](https://istio.io/latest/docs/examples/bookinfo/) 示例部署到你的 Kubernetes 集群中。
+1. 在本地虚拟机上部署 `ratings` 应用程序，并将其加入到服务网格中。
+1. 验证 Kubernetes Pod(s) 和本地虚拟机之间的流量。
 
-This guide is intended to be an easy-to-follow demonstration of the workload
-onboarding capabilities.
+本指南旨在演示工作负载上线功能的易于跟随的示例。
 
-To keep things simple, you are not required to configure the infrastructure the way
-you would do it in the case of a production deployment.
+为了保持简单，你无需像在生产部署的情况下那样配置基础设施。
 
-Specifically:
-* you are not required to set up routable DNS records
-* you are not required to use a trusted CA authority (such as [Let's Encrypt])
+具体来说：
+* 你无需设置可路由的 DNS 记录。
+* 你无需使用受信任的 CA 机构（例如 Let's Encrypt）。
 
-Before proceeding, please make sure to complete the following prerequisites:
-* Create a Kubernetes cluster to install TSB and example application(s) into
-* Follow the instructions in [TSB demo](../../../../setup/self_managed/demo-installation)
-  installation
-* Follow the instructions in [Installing the Bookinfo Example](./../aws-ec2/bookinfo)
-* Follow the instructions in [Enable Workload Onboarding](./../aws-ec2/enable-workload-onboarding)
-* Make sure that on-premise VM and Kubernetes cluster are on the same network or
-  on peered networks
+在继续之前，请确保完成以下先决条件：
+* 创建一个 Kubernetes 集群，以安装 TSB 和示例应用程序。
+* 按照 [TSB 演示](../../../../../setup/self-managed/demo-installation) 安装的说明进行操作。
+* 按照 [安装示例 Bookinfo](../../aws-ec2/bookinfo) 的说明进行操作。
+* 按照 [启用工作负载上线](../../aws-ec2/enable-workload-onboarding) 的说明进行操作。
+* 确保本地虚拟机和 Kubernetes 集群位于相同的网络或对等网络上。
 
-[Let's Encrypt]: https://letsencrypt.org/
-
-import DocCardList from '@theme/DocCardList';
-
-<DocCardList />
+{{< list_children show_summary="false">}}

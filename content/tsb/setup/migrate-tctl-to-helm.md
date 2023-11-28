@@ -50,9 +50,9 @@ kubectl -n tsb label managementplane managementplane "app.kubernetes.io/managed-
 kubectl -n tsb annotate managementplane managementplane "meta.helm.sh/release-name=mp" "meta.helm.sh/release-namespace=tsb"
 ```
 
-:::注意
+{{<callout note 注意>}}
 release-name 和 release-namespace 应该与 Helm 安装命令中使用的发行名称和命名空间匹配。
-:::
+{{</callout>}}
 
 在所有资源都正确标记后，然后继续安装发布：
 

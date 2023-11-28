@@ -4,12 +4,6 @@ description: Service to manage access roles in Service Bridge.
 ---
 
 
-import {
-  PanelContent,
-  PanelContentCode,
-} from "@theme/Panel";
-
-
 <!-- WARNING: This page is generated. Please take a look at extensions/plugin-service-bridge-api-docs/src/files/doc/page.ejs -->
 
 Service to manage access roles in Service Bridge.

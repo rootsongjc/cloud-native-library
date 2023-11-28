@@ -1,25 +1,22 @@
 ---
-title: Installing the Bookinfo Example
+title: 安装 Bookinfo 示例
+weight: 1
 ---
 
-In order to demonstrate how a workload deployed outside of Kubernetes integrates with
-the rest of the mesh, we need to have some other application(s) it could
-communicate with.
+为了演示在 Kubernetes 之外部署的工作负载如何与网格的其余部分集成，我们需要有其他应用程序可以与之通信。
 
-For the purposes of this guide, you need to deploy [Istio Bookinfo](https://istio.io/latest/docs/examples/bookinfo/) example.
+在本指南中，你需要部署 [Istio Bookinfo](https://istio.io/latest/docs/examples/bookinfo/) 示例到你的 Kubernetes 集群中。
 
-into your Kubernetes cluster.
+## 部署 Bookinfo 示例
 
-## Deploy Bookinfo example
-
-Create the namespace `bookinfo`, and add the proper labels:
+创建命名空间 `bookinfo`，并添加正确的标签：
 
 ```bash
 kubectl create namespace bookinfo
 kubectl label namespace bookinfo istio-injection=enabled
 ```
 
-Deploy the bookinfo application:
+部署 bookinfo 应用程序：
 
 ```bash
 cat <<EOF | kubectl apply -n bookinfo -f -
@@ -37,20 +34,19 @@ kubectl apply -n bookinfo -f https://raw.githubusercontent.com/istio/istio/maste
 kubectl wait --for=condition=Available -n bookinfo deployments --all
 ```
 
-In order to send requests into the `bookinfo` product page from your local
-environment, you will need to set up port forwarding.
+为了从本地环境向 `bookinfo` 产品页面发送请求，你需要设置端口转发。
 
-Run the following command in a separate terminal session:
+在单独的终端会话中运行以下命令：
 
 ```bash
 kubectl port-forward -n bookinfo service/productpage 9080
 ```
 
-The product page will become accessible on `http://localhost:9080`.
-To verify the product page visually, open `http://localhost:9080/productpage`
-in a browser. If you refresh the page multiple times, 2 out of 3 times you should see rating stars on the page.
+产品页面将在 `http://localhost:9080` 上可访问。
+要在可视上验证产品页面，请在浏览器中打开 `http://localhost:9080/productpage`。
+如果多次刷新页面，你应该在页面上看到 3 次中有 2 次出现评分星级。
 
-Alternatively, to verify from the command line, run:
+或者，要从命令行验证，请运行：
 
 ```bash
 for i in `seq 1 9`; do
@@ -58,7 +54,7 @@ for i in `seq 1 9`; do
 done
 ```
 
-2 out of 3 times you should get a message `10 stars on the page`:
+3 次中有 2 次应该会得到消息 `10 stars on the page`：
 
 ```bash
 10 stars on the page
@@ -66,14 +62,12 @@ done
 10 stars on the page
 ```
 
-## Scale the `ratings` Application Down
+## 缩减 `ratings` 应用程序
 
-In this guide you will deploy the `ratings` application through the
-VM via Workload Onboarding. In order to do this we must first
-"disable" the default `ratings` application deployed with the
-bookinfo sample.
+在本指南中，你将通过 VM 通过工作负载入网部署 `ratings` 应用程序。为了做到这一点，我们必须首先“禁用”与
+bookinfo 示例一起部署的默认 `ratings` 应用程序。
 
-Run the following commands and scale down the `ratings` application down to 0 replicas:
+运行以下命令并将 `ratings` 应用程序的副本数减少到 0：
 
 ```bash
 kubectl scale deployment ratings-v1 -n bookinfo --replicas=0
@@ -81,7 +75,4 @@ kubectl scale deployment ratings-v1 -n bookinfo --replicas=0
 kubectl wait --for=condition=Available -n bookinfo deployment/ratings-v1
 ```
 
-To verify that the `ratings` application has been scaled down and
-no longer appears on the product page, follow the instructions in the
-previous section and access the product page. Two out of three times
-you should see the message `Ratings service is currently unavailable`.  
+要验证 `ratings` 应用程序已经被缩减，并且不再显示在产品页面上，请按照上一节中的说明访问产品页面。三次中的两次应该会看到消息 `Ratings service is currently unavailable`。

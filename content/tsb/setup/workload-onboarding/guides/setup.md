@@ -285,9 +285,9 @@ spec:
 
 因此，当你的应用程序尝试发出对 `ratings.bookinfo.svc:8080` 或 `example.org:8080` 的请求时，你的应用程序将连接到 egress listener，该监听器将代理请求到它们各自的目的地。
 
-:::note
+{{<callout note 注意>}}
 或者，你可以考虑在 `http_proxy` 环境变量中指定 Istio 代理。
-:::
+{{</callout>}}
 
 ### Sidecar 资源配置
 

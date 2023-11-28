@@ -1,39 +1,31 @@
 ---
-title: Onboard AWS ECS task
+title: 加入 AWS ECS 任务
+weight: 2
 ---
 
-## Overview
+## 概述
 
-To onboard an AWS Elastic Container Service (ECS) task you need to follow
-these steps:
+要将 AWS 弹性容器服务（ECS）任务加入，你需要按照以下步骤操作：
 
-1. Create an
-   [AWS ECS cluster](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/clusters.html)
-1. Create an
-   [IAM role for the task](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html)
-1. Create a
-   [task execution IAM role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html)
-1. Create an
-   [AWS ECS task definition](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definitions.html)
-   with the Workload Onboarding Agent as a sidecar container
-1. Create a subnet for the tasks
-1. Create a security group
-1. Create an
-   [AWS ECS service](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_services.html)
-   with this task definition
+1. 创建 [AWS ECS 集群](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/clusters.html)
+1. 创建[任务的 IAM 角色](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html)
+1. 创建[任务执行 IAM 角色](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html)
+1. 创建一个包含 Workload Onboarding Agent 作为 sidecar 容器的 [AWS ECS 任务定义](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definitions.html)
+1. 创建任务的子网
+1. 创建安全组
+1. 使用此任务定义创建 [AWS ECS 服务](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_services.html)
 
-## Create an AWS ECS cluster
+## 创建 AWS ECS 集群
 
-Create an AWS ECS cluster called `bookinfo` using `FARGATE` as the capacity
-provider.
+使用 `FARGATE` 作为容量提供程序创建名为 `bookinfo` 的 AWS ECS 集群。
 
 ```bash
 aws ecs create-cluster --cluster-name bookinfo --capacity-providers FARGATE
 ```
 
-## Create an IAM role for the task
+## 为任务创建 IAM 角色
 
-Create an IAM role for the task with the following trust policy.
+创建任务的 IAM 角色，并使用以下信任策略。
 
 ```bash
 cat << EOF > task-role-trust-policy.json
@@ -56,10 +48,9 @@ aws iam create-role \
   --assume-role-policy-document file://task-role-trust-policy.json
 ```
 
-Configure this role with the following policy to allow
-[ECS Exec](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html).
-This is not required for the task to join the mesh, but is used later in the
-guide to verify traffic from the task to Kubernetes services.
+使用以下策略配置此角色，以允许
+[ECS Exec](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html)。
+这不是任务加入网格所必需的，但在后续的指南中用于验证任务到 Kubernetes 服务的流量。
 
 ```bash
 cat << EOF > ecs-exec-policy.json
@@ -86,12 +77,9 @@ aws iam put-role-policy \
   --policy-document file://ecs-exec-policy.json
 ```
 
-## Create a task execution IAM role
+## 创建任务执行 IAM 角色
 
-Create a task execution IAM role with the following trust policy and configure
-it to use the AWS managed `AmazonECSTaskExecutionRolePolicy` policy. This
-policy gives the task permissions to access images in your Elastic Container
-Registry (ECR) and to write logs.
+创建任务执行 IAM 角色，并使用以下信任策略，并配置使用 AWS 托管的 `AmazonECSTaskExecutionRolePolicy` 策略。此策略授予任务访问 Elastic Container Registry（ECR）中的镜像和写日志的权限。
 
 ```bash
 cat << EOF > task-exec-role-trust-policy.json
@@ -118,12 +106,9 @@ aws iam attach-role-policy \
   --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
 ```
 
-## Create an AWS ECS task definition
+## 创建 AWS ECS 任务定义
 
-Set the onboarding configuration as JSON in a shell variable, with spaces
-removed and quotes escaped so that it can be encoded in the ECS task container
-definition. Replace `ONBOARDING_ENDPOINT_ADDRESS` with
-[the value that you have obtained earlier](../aws-ec2/enable-workload-onboarding#verify-the-workload-onboarding-endpoint).
+将 Onboarding 配置设置为 JSON 形式的 shell 变量，去除空格并转义引号，以便可以编码在 ECS 任务容器定义中。将 `<ONBOARDING_ENDPOINT_ADDRESS>` 替换为你之前获取的值。
 
 ```bash
 ONBOARDING_CONFIG=$(jq --compact-output . <<'EOF' | sed 's/"/\\"/g'
@@ -149,20 +134,18 @@ ONBOARDING_CONFIG=$(jq --compact-output . <<'EOF' | sed 's/"/\\"/g'
   }
 }
 EOF
+
+
 )
 ```
 
-Set the self-signed root certificate used for signing the onboarding plane TLS
-certificate in a shell variable, with the line breaks escaped so that it can
-be encoded in the ECS task container definition. `example-ca.crt.pem` is the
-self-signed cert created earlier when
-[enabling workload onboarding](../aws-ec2/enable-workload-onboarding#prepare-the-certificates).
+将用于签名 Onboarding 平面 TLS 证书的自签名根证书设置为 shell 变量，并转义换行符，以便可以编码在 ECS 任务容器定义中。`example-ca.crt.pem` 是在[启用工作负载加入](../../aws-ec2/enable-workload-onboarding)时创建的自签名证书。
 
 ```bash
 ONBOARDING_AGENT_ROOT_CERTS=$(awk '{printf "%s\\n", $0}' example-ca.crt.pem)
 ```
 
-Now create the ECS task definition with the following command:
+现在，使用以下命令创建 ECS 任务定义：
 
 ```bash
 AWS_REGION=$(aws configure get region)
@@ -218,21 +201,17 @@ aws ecs register-task-definition \
 ]'
 ```
 
-This configures the task to write logs using the
-[awslogs driver](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html)
-to the `/ecs/bookinfo_ratings` log group. Create this group with the following
-command:
+这将配置任务使用 [awslogs 驱动程序](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html)将日志写入 `/ecs/bookinfo_ratings` 日志组。使用以下命令创建此日志组：
 
 ```bash
 aws logs create-log-group --log-group-name "/ecs/bookinfo_ratings"
 ```
 
-## Create a subnet
+## 创建子网
 
-### Ensure that there is a NAT gateway in your VPC
+### 确保 VPC 中存在 NAT 网关
 
-Ensure that there is a NAT gateway in your VPC by running commands below,
-replacing `EKS_CLUSTER_NAME` with the name of your EKS cluster.
+通过运行以下命令，确保 VPC 中存在 NAT 网关，将 `EKS_CLUSTER_NAME` 替换为你的 EKS 集群名称。
 
 ```bash
 VPC_ID=$(aws eks describe-cluster --name <EKS_CLUSTER_NAME> --query 'cluster.resourcesVpcConfig.vpcId' --output text)
@@ -240,9 +219,7 @@ VPC_ID=$(aws eks describe-cluster --name <EKS_CLUSTER_NAME> --query 'cluster.res
 aws ec2 describe-nat-gateways --filter Name=vpc-id,Values=${VPC_ID}
 ```
 
-If the returned list is empty, create a public subnet and NAT gateway using
-the commands below, replacing `CIDR_BLOCK` with the desired CIDR block to use
-for the subnet, e.g. `10.0.3.0/24`.
+如果返回的列表为空，请使用以下命令创建具有 NAT 网关的公共子网，并将 NAT 网关替换为上面找到或创建的 NAT 网关，使用以下命令，将 CIDR 块替换为用于子网的所需 CIDR 块，例如 `10.0.3.0/24`。
 
 ```bash
 INTERNET_GATEWAY_ID=$(aws ec2 describe-internet-gateways --filters Name=attachment.vpc-id,Values=${VPC_ID} --query 'InternetGateways[0].InternetGatewayId' --output text)
@@ -279,19 +256,15 @@ aws ec2 create-nat-gateway \
   --allocation-id "${NAT_GW_EIP_ID}"
 ```
 
-### Create a subnet for the ECS tasks
+创建 ECS 任务的子网
 
-If you already have a private subnet configured with a NAT gateway that you
-want to use for deploying tasks, set its ID in the shell variable `SUBNET_ID`,
-i.e.
+如果你已经配置了一个带有 NAT 网关的私有子网，并希望将其用于部署任务，请将其 ID 设置为 shell 变量 `SUBNET_ID`，如下所示：
 
 ```bash
 SUBNET_ID=<YOUR_SUBNET_ID>
 ```
 
-Otherwise, create a subnet using the NAT gateway found or created above using
-the commands below, replacing `CIDR_BLOCK` with the desired CIDR block to use
-for the subnet, e.g. `10.0.4.0/24`.
+否则，使用以下命令创建一个子网，使用上面找到或创建的 NAT 网关，替换 `CIDR_BLOCK` 为所需的子网 CIDR 块，例如 `10.0.4.0/24`。
 
 ```bash
 NAT_GATEWAY_ID=$(aws ec2 describe-nat-gateways --filter Name=vpc-id,Values=${VPC_ID} --query 'NatGateways[0].NatGatewayId' --output text)
@@ -319,10 +292,9 @@ aws ec2 associate-route-table \
   --subnet-id "${SUBNET_ID}"
 ```
 
-## Create a security group
+## 创建安全组
 
-A security group is needed with a rule allowing ingress traffic to port 9080
-for Istio to use. Create one using the commands below:
+需要创建一个安全组，并设置一个允许入站流量到端口 9080 的规则，以供 Istio 使用。使用以下命令创建一个安全组：
 
 ```bash
 aws ec2 create-security-group \
@@ -339,12 +311,9 @@ aws ec2 authorize-security-group-ingress \
     --cidr 0.0.0.0/0
 ```
 
-## Create an AWS ECS service
+## 创建 AWS ECS 服务
 
-Create an AWS ECS service in your cluster that uses the task definition,
-subnet and security group using the following command. If you created
-multiple task definition versions, update the version passed in the
-`--task-definition` flag.
+在集群中创建一个 AWS ECS 服务，该服务使用任务定义、子网和安全组，使用以下命令。如果创建了多个任务定义版本，请在 `--task-definition` 标志中传递所需的版本。
 
 ```bash
 aws ecs create-service \
@@ -358,35 +327,30 @@ aws ecs create-service \
   --enable-execute-command
 ```
 
-Once you create this service, it will create an ECS task that will join the
-mesh.
+创建此服务后，将创建一个 ECS 任务，该任务将加入网格。
 
-## Verify the Workload
+## 验证工作负载
 
-Verify that the workload has been properly onboarded by executing the
-following command:
+通过执行以下命令验证工作负载是否已正确加入：
 
 ```bash
 kubectl get war -n bookinfo
 ```
 
-If the workload was properly onboarded, you should get an output similar to:
+如果工作负载已正确加入，你应该会得到类似以下的输出：
 
 ```bash
 NAME                                                                                    AGENT CONNECTED   AGE
 ratings-aws-aws-123456789012-us-east-1a-ecs-bookinfo-3a151358f03a4e32bf8cd401c1c74653   True              1m
 ```
 
-### Verify Traffic from Kubernetes to the task
+### 验证从 Kubernetes 到任务的流量
 
-To verify traffic from Kubernetes Pod(s) to the AWS ECS task, create
-some load on the bookinfo application deployed on Kubernetes and confirm
-that requests get routed into the `ratings` application deployed on the
-AWS ECS task.
+要验证从 Kubernetes Pod 到 AWS ECS 任务的流量，请对 Kubernetes 上部署的 Bookinfo 应用程序创建一些负载，并确认请求被路由到 AWS ECS 任务上部署的 `ratings` 应用程序。
 
-[Set up port forwarding](../aws-ec2/bookinfo) if you have not already done so.
+[如果尚未完成，请设置端口转发](../../aws-ec2/bookinfo)。
 
-Then run the following commands:
+然后运行以下命令：
 
 ```bash
 for i in `seq 1 9`; do
@@ -394,42 +358,41 @@ for i in `seq 1 9`; do
 done
 ```
 
-Two out of three times you should get a message `10 stars on the page`.
+其中的两次之中，你应该会得到消息 `10 stars on the page`。
 
-Furthermore, you can verify that the task is receiving the traffic by
-inspecting the
-[access logs](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage)
-for the incoming HTTP requests proxied by the Istio sidecar.
+此外，你可以通过检查 Istio sidecar 代理代理的入站 HTTP 请求的
+[访问日志](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage)来验证任务是否正在接收流量。
 
-Execute the following command using the `ecs-cli` tool that can be
-[downloaded and installed here](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html):
+使用可以在[此处下载和安装的 ecs-cli 工具](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html)执行以下命令：
 
 ```bash
-# Get the task ID from the WorkloadAutoRegistration resource
+# 从 WorkloadAutoRegistration 资源获取任务 ID
 TASK_ID=$(kubectl get war -n bookinfo -o jsonpath="{.items[0].spec.identity.aws.ecs.taskId}")
 
 ecs-cli logs --cluster bookinfo --task-id ${TASK_ID} --container-name onboarding-agent --follow
 ```
 
-You should see an output similar to:
+你应该会看到类似以下的输出：
 
 ```text
 [2021-10-25T11:06:13.553Z] "GET /ratings/0 HTTP/1.1" 200 - via_upstream - "-" 0 48 3 2 "-" "curl/7.68.0" "1928e798-dfe7-45a6-9020-d0f3a8641d03" "172.31.7.211:9080" "127.0.0.1:9080" inbound|9080|| 127.0.0.1:40992 172.31.7.211:9080 172.31.7.211:35470 - default
 ```
 
-### Verify Traffic from the task to Kubernetes
+### 验证从任务到 Kubernetes 的流量
 
-Start a shell in the task by running the following commands:
+通过运行以下命令，在任务中启动一个 shell：
 
 ```bash
-# Get the task ID from the WorkloadAutoRegistration resource
-TASK_ID=$(kubectl get war -n bookinfo -o jsonpath="{.items[0].spec.identity.aws.ecs.taskId}")
+# 从 WorkloadAutoRegistration 资源获取任务 ID
+TASK_ID=$(kubectl get war -n bookinfo -o jsonpath="{.items[
 
-# Start a shell
+0].spec.identity.aws.ecs.taskId}")
+
+# 启动一个 shell
 aws ecs execute-command --cluster bookinfo --task ${TASK_ID} --container onboarding-agent --interactive --command bash
 ```
 
-Then execute the following commands:
+然后执行以下命令：
 
 ```bash
 for i in `seq 1 5`; do
@@ -439,12 +402,12 @@ for i in `seq 1 5`; do
 done
 ```
 
-The above command will make `5` HTTP requests to Bookinfo `details` application.
-`curl` will resolve Kubernetes cluster-local DNS name `details.bookinfo`
-into the IP address of the `egress` listener of Istio proxy (`127.0.0.2` according
-to [the sidecar configuration you created earlier](./configure-workload-onboarding#create-the-sidecar-configuration)).
+上述命令将发出 `5` 个 HTTP 请求到 Bookinfo `details` 应用程序。
+`curl` 将 Kubernetes 集群本地 DNS 名称 `details.bookinfo`
+解析为 Istio 代理的 `egress` 监听器的 IP 地址（根据你之前创建的
+ [Sidecar 配置](../configure-workload-onboarding)为 `127.0.0.2`）。
 
-You should get an output similar to:
+你应该会得到类似以下的输出：
 
 ```bash
 HTTP/1.1 200 OK
@@ -454,6 +417,4 @@ server: envoy
 {"id":0,"author":"William Shakespeare","year":1595,"type":"paperback",   "pages":200,"publisher":"PublisherA","language":"English",   "ISBN-10":"1234567890","ISBN-13":"123-1234567890"}
 ```
 
-If this returns an HTTP 503 error, ensure the security group for your EKS
-cluster is set to allow traffic on port 9080 from the
-`BookinfoECSSecurityGroup` that the ECS tasks created here use.
+如果返回 HTTP 503 错误，请确保你的 EKS 集群的安全组设置允许来自这里创建的 ECS 任务使用的 `BookinfoECSSecurityGroup` 的端口 9080 的流量。

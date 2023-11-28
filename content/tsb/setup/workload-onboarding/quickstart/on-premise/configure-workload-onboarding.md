@@ -1,13 +1,13 @@
 ---
-title: Configure WorkloadGroup and Sidecar for the Workload on-premise
+title: 配置本地 WorkloadGroup 和 Sidecar
+weight: 1
 ---
 
-You will deploy the `ratings` application on a VM on-premise
-and onboard it into the service mesh.
+你将在本地虚拟机上部署 `ratings` 应用程序并将其加入服务网格。
 
-## Create a WorkloadGroup
+## 创建工作负载组
 
-Execute the following command to create a `WorkloadGroup`:
+执行以下命令以创建一个 `WorkloadGroup`：
 
 ```bash
 cat <<EOF | kubectl apply -f -
@@ -27,17 +27,13 @@ spec:
 EOF
 ```
 
-The field `spec.template.network` is omitted to indicate to the Istio control
-plane that the VM on-premise has direct connectivity to the Kubernetes Pods.
+字段 `spec.template.network` 被省略，以指示 Istio 控制平面虚拟机在本地具有直接连接到 Kubernetes Pod 的能力。
 
-The field `spec.template.serviceAccount` declares that the workload have the
-identity of the service account `bookinfo-ratings` within the Kubernetes cluster.
-The service account `bookinfo-ratings` was created during the
-[deployment of the Istio bookinfo example earlier](../aws-ec2/bookinfo)
+字段 `spec.template.serviceAccount` 声明工作负载具有 Kubernetes 集群内服务账号 `bookinfo-ratings` 的身份。此服务账号是在之前的 Istio bookinfo 示例部署期间创建的（../../aws-ec2/bookinfo）。
 
-## Create the Sidecar Configuration
+## 创建 Sidecar 配置
 
-Execute the following command to create a new sidecar configuration:
+执行以下命令以创建新的 Sidecar 配置：
 
 ```bash
 cat <<EOF | kubectl apply -f -
@@ -66,48 +62,38 @@ spec:
 EOF
 ```
 
-The above sidecar configuration will only apply to workloads that have the
-labels `app=ratings` and `class=vm` (1). The `WorkloadGroup` you have created
-has these labels.
+以上 Sidecar 配置仅适用于具有标签 `app=ratings` 和 `class=vm`（1）的工作负载。你创建的 `WorkloadGroup` 具有这些标签。
 
-Istio proxy will be configured to listen on `<host IP>:9080` (3) and will
-forward *incoming* requests to the application that listens on `127.0.0.1:9080` (2).
+Istio 代理将配置为侦听 `<host IP>:9080`（3），并将 *传入* 请求转发到侦听 `127.0.0.1:9080`（2）的应用程序。
 
-And finally the proxy will be configured to listen on `127.0.0.2:9080` (4) (5) to
-proxy *outgoing* requests out of the application to other services (6) that have port `9080` (5).
+最后，代理将配置为侦听 `127.0.0.2:9080`（4）（5），以将 *传出* 请求代理到其他服务的应用程序（6），这些服务使用端口 `9080`（5）。
 
-## Allow Workloads to authenticate themselves by means of a JWT Token
+## 允许工作负载通过 JWT 令牌进行身份验证
 
-For the purposes of this guide, you will be using `Sample JWT Credential Plugin`
-to provide your on-premise workload with a [JWT Token] credential.
+在本指南中，你将使用 `Sample JWT Credential Plugin` 来为你的本地工作负载提供 [JWT 令牌] 凭据。
 
-In this section you will configure `Workload Onboarding Plane` to trust [JWT Token]s
-issued by the `Sample JWT Credential Plugin`.
+在此部分中，你将配置 `Workload Onboarding Plane` 来信任由 `Sample JWT Credential Plugin` 颁发的 JWT 令牌。
 
-Execute the following command to download `Sample JWT Credential Plugin` locally:
+执行以下命令将 `Sample JWT Credential Plugin` 下载到本地：
 
 ```bash
 curl -fL "https://dl.cloudsmith.io/public/tetrate/onboarding-examples/raw/files/onboarding-agent-sample-jwt-credential-plugin_0.0.1_$(uname -s)_$(uname -m).tar.gz" \
   | tar -xz onboarding-agent-sample-jwt-credential-plugin
 ```
 
-Execute the following command to generate a unique signing key for use by the
-`Sample JWT Credential Plugin`:
+执行以下命令生成供 `Sample JWT Credential Plugin` 使用的唯一签名密钥：
 
 ```bash
 ./onboarding-agent-sample-jwt-credential-plugin generate key \
   -o ./sample-jwt-issuer
 ```
 
-The above command will generate 2 files:
+上述命令将生成两个文件：
 
-* `./sample-jwt-issuer.jwk` - signing key (secret part) - for configuring
-  `Sample JWT Credential Plugin` on the VM on-premise
-* `./sample-jwt-issuer.jwks` - JWKS document (public part) - for configuring
-  `Workload Onboarding Plane`
+* `./sample-jwt-issuer.jwk` - 签名密钥（秘密部分） - 用于配置本地虚拟机上的 `Sample JWT Credential Plugin`
+* `./sample-jwt-issuer.jwks` - JWKS 文档（公共部分） - 用于配置 `Workload Onboarding Plane`
 
-Execute the following command to configure `Workload Onboarding Plane` to trust
-[JWT Token]s signed by the key generated above:
+执行以下命令将配置 `Workload Onboarding Plane` 以信任由上述生成的密钥签名的 [JWT 令牌]：
 
 ```bash
 cat << EOF > controlplane.patch.yaml
@@ -130,14 +116,13 @@ EOF
 kubectl patch controlplane controlplane -n istio-system --type merge --patch-file controlplane.patch.yaml
 ```
 
-NOTE: For the above command to work, you need to use `kubectl` `v1.20+`.
+注意：为了使上述命令正常工作，你需要使用 `kubectl` 的版本 `v1.20+`。
 
-## Allow Workloads to Join the WorkloadGroup
+## 允许工作负载加入工作负载组
 
-You will need to create an [`OnboardingPolicy`](../../guides/setup#allow-workloads-to-join-workloadgroup)
-resource to explicitly authorize workloads deployed outside of Kubernetes to join the mesh.
+你需要创建一个 [`OnboardingPolicy`](../../../guides/setup) 资源来明确授权在 Kubernetes 之外部署的工作负载加入网格。
 
-Execute the following command:
+执行以下命令：
 
 ```bash
 cat << EOF | kubectl apply -f -
@@ -156,10 +141,4 @@ spec:
 EOF
 ```
 
-The above policy applies to any `on-premise` workload that authenticates
-itself by means of a [JWT Token] issued by an issuer with ID
-`https://sample-jwt-issuer.example` (2), and allows them to join any
-`WorkloadGroup` (3) in the namespace `bookinfo` (1)
-
-
-[JWT Token]: https://openid.net/specs/openid-connect-core-1_0.html#IDToken
+以上策略适用于通过由 ID 为 `https://sample-jwt-issuer.example` 的发行者颁发的 [JWT 令牌]（2）进行身份验证的任何 `本地` 工作负载，并允许它们加入 `bookinfo` 命名空间（1）中的任何 `WorkloadGroup`（3）。

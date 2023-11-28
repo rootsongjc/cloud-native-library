@@ -17,14 +17,14 @@ cascade:
 
 ## 对于应用程序开发人员
 
-作为使用 TSB 将应用程序部署到环境中的应用程序开发人员，你将体验到简化的过程。首先使用 [Sidecar 代理](./concepts/terminology#sidecar-proxy)部署你的应用程序。然后，深入研究高级配置，例如将流量路由到应用程序、实施速率限制或在虚拟机和 Kubernetes 应用程序之间划分流量以实现逐步现代化。
+作为使用 TSB 将应用程序部署到环境中的应用程序开发人员，你将体验到简化的过程。首先使用 [Sidecar 代理](./concepts/terminology)部署你的应用程序。然后，深入研究高级配置，例如将流量路由到应用程序、实施速率限制或在虚拟机和 Kubernetes 应用程序之间划分流量以实现逐步现代化。
 
 ### 1. 理解关键概念
 
 1. [掌握服务网格架构](./concepts/service-mesh)
 2. [探索 TSB 的架构](./concepts/architecture)
 3. [高效的交通管理](./concepts/traffic-management)
-4. [TSB 的全球可观测性](./concepts/observability)
+4. [TSB 的全局可观测性](./concepts/observability)
 
 ### 2. 部署和配置应用程序
 
@@ -41,8 +41,8 @@ cascade:
 1. [将流量引导至应用程序](./howto/gateway/app-ingress)
 2. [实施速率限制](./howto/rate-limiting/toc)
 3. [ 逐步金丝雀发布](./howto/traffic/canary-releases)
-4. [将虚拟机流量迁移到 Kubernetes](./howto/traffic/migrating-VM-monoliths)
-5. [跨集群故障转移](./howto/gateway/multi-cluster-traffic-shifting#traffic-shifting)
+4. [将虚拟机流量迁移到 Kubernetes](./howto/traffic/migrating-vm-monoliths)
+5. [跨集群故障转移](./howto/gateway/multi-cluster-traffic-shifting)
 
 ###  5. 有价值的参考资料
 
@@ -51,7 +51,7 @@ cascade:
 
 ##  对于平台运营商
 
-对于使用 TSB 将集群转变为统一网格的平台运营商来说，旅程从[安装 TSB 的管理平面](./setup/self-managed/management-plane-installation)开始。你还将加入应用程序集群以实现可观察性和控制，并通过[演示应用程序部署](./quickstart/introduction)掌握应用程序部署过程。
+对于使用 TSB 将集群转变为统一网格的平台运营商来说，旅程从[安装 TSB 的管理平面](./setup/self-managed/management-plane-installation)开始。你还将加入应用程序集群以实现可观测性和控制，并通过[演示应用程序部署](./quickstart/introduction)掌握应用程序部署过程。
 
 ### 1.掌握基本概念
 
@@ -108,22 +108,22 @@ cascade:
 
    #### 应用程序运行时安全
 
-   1. [了解服务身份](./concepts/security#service-identities-at-runtime)
+   1. [了解服务身份](./concepts/security)
    2. [实施服务到服务授权](https://istio.io/latest/docs/concepts/security/#authorization)（TSB 上的薄层）
    3. [使用网格对最终用户进行身份验证](./howto/gateway/end-user-auth-keycloak)
 
 ### 2. 对应用程序实施控制
 
-1. [在各处强制实施 (m)TLS](./quickstart/security#create-security-setting)
-2. [应用服务到服务的身份验证和授权](./quickstart/security#create-security-setting)
+1. [在各处强制实施 (m)TLS](./quickstart/security)
+2. [应用服务到服务的身份验证和授权](./quickstart/security)
 3. [管理到外部服务的出站](./howto/gateway/egress-gateways)
-4. [实施最终用户身份验证](./howto/gateway/end-user-auth-keycloak#enabling-authentication-and-authorization-at-ingress)
+4. [实施最终用户身份验证](./howto/gateway/end-user-auth-keycloak)
 5. [配置 Envoy 的外部授权 API](./howto/authorization/toc)
 
 ### 3. 确保控制措施得到执行
 
 1. [通过全局可观测性监控服务间流量](./concepts/observability)
-2. [审核日志概述和 API](./concepts/security#auditability)
+2. [审核日志概述和 API](./concepts/security)
 
 ### 4. TSB 的访问管理
 

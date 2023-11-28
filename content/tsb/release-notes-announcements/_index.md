@@ -25,7 +25,7 @@ TSB 1.6 专注于通过将远程集群更紧密地结合在一起以简化管理
 
 ### 红帽 OpenShift 集成
 
-- Red Hat OpenShift 上的可用性：TSB 1.6 可通过 Red Hat 生态系统目录在 Red Hat OpenShift 上使用。获得多集群 OpenShift 环境的可观察性、安全性和流量管理。
+- Red Hat OpenShift 上的可用性：TSB 1.6 可通过 Red Hat 生态系统目录在 Red Hat OpenShift 上使用。获得多集群 OpenShift 环境的可观测性、安全性和流量管理。
 
 ###  面向未来的安全
 

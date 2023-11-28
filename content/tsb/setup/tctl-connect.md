@@ -9,7 +9,7 @@ weight: 7
 在开始之前：
 - [安装 TSB 管理平面](../../setup/self-managed/management-plane-installation) (仅自管理)
 - [下载](../../setup/requirements-and-download#download) Tetrate Service Bridge CLI (`tctl`)
-- 获取你的 TSB 的 `organization` 名称 - 你可以在 TSB UI 中找到，或在 TSB `ManagementPlane` CR 的安装时配置
+- 获取 TSB 的 `organization` 名称 - 你可以在 TSB UI 中找到，或在 TSB `ManagementPlane` CR 的安装时配置
 
 TSB 提供了一个用户界面，但本站点中的大多数示例 - 以及大多数脚本和自动化 - 将使用 `tctl` CLI。本文档将涵盖如何登录，以便你可以使用 CLI，并提供更新凭据的步骤。
 
@@ -125,7 +125,7 @@ Login Successful!
 
 ## 从 TSB 下载 `tctl` 配置
 
-`tctl` 使用一个配置文件与 TSB 实例连接，类似于使用 kubeconfig 连接到 Kubernetes API 服务器。通过从 TSB UI 下载该配置文件，你可以使用 `tctl` 轻松连接。要访问这些凭据，请在浏览器中登录到 TSB UI，然后在右上角单击你的用户名，选择 `操作` > `显示令牌信息` > `下载 tctl 配置`。这将下载一个名为 `tctl-<your username>.config.yaml` 的文件。然后，你可以将其导入到 `tctl` 中，以永久保存：
+`tctl` 使用一个配置文件与 TSB 实例连接，类似于使用 kubeconfig 连接到 Kubernetes API 服务器。通过从 TSB UI 下载该配置文件，你可以使用 `tctl` 轻松连接。要访问这些凭据，请在浏览器中登录到 TSB UI，然后在右上角单击用户名，选择 `操作` > `显示令牌信息` > `下载 tctl 配置`。这将下载一个名为 `tctl-<your username>.config.yaml` 的文件。然后，你可以将其导入到 `tctl` 中，以永久保存：
 
 ```bash
 tctl config profiles import /path/to/tctl-<your username>.config.yaml
@@ -144,7 +144,7 @@ tctl config profiles set-current <your username>-tsb
 
 要使用 `tctl` 登录，首先必须配置 *cluster* (`tctl config clusters`)，然后是 *user* (`tctl config users`)，然后将两者结合到 *profile* 中，你将能够使用它来连接到 TSB 实例，就像使用 kubeconfig profile 一样 (`tctl config profiles set-current ...`)。有了这个 *profile*，你就可以使用 `tctl login` 命令配置凭据，并将这些凭据持久保存到磁盘上，以便将来连接到 TSB。
 
-### 为你的 profile 选择一个名称
+### 为 profile 选择一个名称
 
 `tctl` 有一个 *default* profile，就像 `kubectl` 一样，你可以在下面的命令中使用它，或者你可以选择自己的 profile 名称。在此演示中，创建一个名为 *`tsb-how-to`* 的 profile（但任何名称都可以，包括 *default*）。
 
@@ -287,7 +287,7 @@ tctl config users set tsb-how-to-user \
 最后，由于这是用户名和密码登录，你需要运行 `tctl login` 以交换密码以获取将来的访问令牌，并确保密码不会保存到磁盘。
 {{</callout>}}
 
-### 创建你的 `tctl` 配置文件
+### 创建 `tctl` 配置文件
 
 *配置文件* 将 *集群* 和 *用户* 绑定在一起，以便它们可以用于连接到 TSB 实例。将刚刚创建的 *集群* 和 *用户* 连接在一起，形成一个 *配置文件*：
 
@@ -318,9 +318,9 @@ CURRENT   NAME         CLUSTER             ACCOUNT
 *         tsb-how-to   tsb-how-to-cluster  tsb-how-to-user
 ```
 
-### 使用 `tctl` 查找你的租户
+### 使用 `tctl` 查找租户
 
-你可以通过 `tctl` 询问 TSB 哪些租户存在，以使你在 `tenant` 中更轻松地设置。对于大多数用户，将返回一个结果 - 这是你想要使用的租户。对于具有多个租户的用户，你需要与你的平台团队交流，确定哪个对你来说是正确的。
+你可以通过 `tctl` 询问 TSB 哪些租户存在，以使你在 `tenant` 中更轻松地设置。对于大多数用户，将返回一个结果 - 这是你想要使用的租户。对于具有多个租户的用户，你需要与平台团队交流，确定哪个对你来说是正确的。
 
 ```bash
 tctl get tenants
@@ -330,7 +330,7 @@ NAME          DISPLAY NAME    DESCRIPTION
 tetrate       Tetrate         默认租户
 ```
 
-有了你的租户，你可以将其保存到你的用户中：
+有了租户，你可以将其保存到你的用户中：
 
 ```bash
 tctl config users set tsb-how-to-user --tenant <your tenant>
@@ -338,7 +338,7 @@ tctl config users set tsb-how-to-user --tenant <your tenant>
 
 ### 使用 `tctl` 登录
 
-当使用用户名和密码登录时，两者都会被保存到磁盘。这是不可取的，因为你的密码以明文形式存储。为了从 `tctl` 的配置文件中删除密码，你可以使用 [`tctl login`](../../reference/cli/reference/login)，它将交换你的凭据以获取一组 OAuth 令牌，并将这些令牌写入磁盘。
+当使用用户名和密码登录时，两者都会被保存到磁盘。这是不可取的，因为密码以明文形式存储。为了从 `tctl` 的配置文件中删除密码，你可以使用 [`tctl login`](../../reference/cli/reference/login)，它将交换凭据以获取一组 OAuth 令牌，并将这些令牌写入磁盘。
 
 ```bash
 tctl login

@@ -17,7 +17,7 @@ weight: 5
 如果需要更灵活地设置更精细的采样率、使用不同的跟踪仪器或将跨度数据发送到不同的后端，本文将为你提供所需的上下文信息以进行必要的更改。
 
 ## Istio Telemetry API
-Istio Telemetry API 通过使用作用域限定的`Telemetry`对象在运行时提供了调整可观察性信号的精细和灵活的方法。在 Istio Telemetry API 之前，需要调整 TSB 控制平面和数据平面运算符配置对象来配置具有固定采样率的单个分布式跟踪器。
+Istio Telemetry API 通过使用作用域限定的`Telemetry`对象在运行时提供了调整可观测性信号的精细和灵活的方法。在 Istio Telemetry API 之前，需要调整 TSB 控制平面和数据平面运算符配置对象来配置具有固定采样率的单个分布式跟踪器。
 
 通过 TSB 控制平面运算符配置对象启用 Istio Telemetry API 的跟踪[扩展提供程序](https://istio.io/v1.17/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider)后，可以使用 Istio Telemetry 对象为不同的命名空间设置具有不同采样率的特定跟踪器。
 

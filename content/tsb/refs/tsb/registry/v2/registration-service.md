@@ -3,13 +3,6 @@ title: Servive Registry Registration Service
 description: Service to manage registration of services in the TSB Service Registry.
 ---
 
-
-import {
-  PanelContent,
-  PanelContentCode,
-} from "@theme/Panel";
-
-
 <!-- WARNING: This page is generated. Please take a look at extensions/plugin-service-bridge-api-docs/src/files/doc/page.ejs -->
 
 Service to manage registration of services in the TSB Service Registry.

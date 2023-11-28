@@ -3,13 +3,6 @@ title: Status Service
 description: Service to retrieve the status for TSB resources
 ---
 
-
-import {
-  PanelContent,
-  PanelContentCode,
-} from "@theme/Panel";
-
-
 <!-- WARNING: This page is generated. Please take a look at extensions/plugin-service-bridge-api-docs/src/files/doc/page.ejs -->
 
 Service to retrieve the status for TSB resources

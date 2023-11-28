@@ -103,9 +103,9 @@ tctl install manifest cluster-operators \
     --registry <your-docker-registry> \
     > clusteroperators.yaml
 ```
-:::note 自定义
+{{<callout note 自定义>}}
 clusteroperators.yaml 文件现在可用于你的集群升级。如果你的现有控制平面和数据平面具有标准配置之上的特定调整，你应该将它们复制到模板中。
-:::
+{{</callout>}}
 
 ### 查看 tier1gateways 和 ingressgateways
 

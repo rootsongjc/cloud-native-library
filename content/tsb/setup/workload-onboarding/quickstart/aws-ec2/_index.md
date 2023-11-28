@@ -1,36 +1,28 @@
 ---
-slug: .
-title: Quickstart with Workloads on AWS EC2
+title: 在 AWS EC2 上快速上线工作负载
+weight: 1
 ---
 
-This guide will help you to get started with `Workload Onboarding` in practice.
+本指南将帮助你实际开始使用“工作负载上线”。
 
-As part of this guide, you will:
-1. Deploy [Istio Bookinfo](https://istio.io/latest/docs/examples/bookinfo/) example into your Kubernetes cluster
-1. Deploy `ratings` application on an AWS EC2 instance and onboard
-   it into the service mesh
-1. Verify traffic between Kubernetes Pod(s) and AWS EC2 instances
-1. Deploy `ratings` application on an AWS Auto Scaling Group and
-   onboard it into the service mesh
+作为本指南的一部分，你将：
+1. 在你的 Kubernetes 集群中部署 [Istio Bookinfo](https://istio.io/latest/docs/examples/bookinfo/) 示例
+1. 在 AWS EC2 实例上部署 `ratings` 应用程序并将其上线到服务网格
+1. 验证 Kubernetes Pod(s) 与 AWS EC2 实例之间的流量
+1. 在 AWS Auto Scaling Group 上部署 `ratings` 应用程序并将其上线到服务网格
 
-This guide is intended to be an easy-to-follow demonstration of the workload
-onboarding capabilities.
+本指南旨在演示工作负载上线功能，易于跟随。
 
-To keep things simple, you are not required to configure the infrastructure the way
-you would do it in the case of a production deployment.
+为了保持简单，你无需配置基础设施，就像在生产部署的情况下所需的那样。
 
-Specifically:
-* you are not required to set up routable DNS records
-* you are not required to use a trusted CA authority (such as [Let's Encrypt])
-* you are not required to put Kubernetes cluster and AWS EC2 instances on the same
-  network or peered networks
+具体来说：
+* 你无需设置可路由的 DNS 记录
+* 你无需使用受信任的 CA 授权（如 Let's Encrypt）
+* 你无需将 Kubernetes 集群和 AWS EC2 实例放在同一网络或对等网络上
 
-Before proceeding, please make sure to complete the following prerequisites:
-* Create a Kubernetes cluster to install TSB and example application(s) into
-* Follow the instructions in [TSB demo](../../../../setup/self_managed/demo-installation) installation
-* Create an AWS account to launch an EC2 instance, deploy a workload there and
-  onboard it into the service mesh
+在继续之前，请确保完成以下先决条件：
+* 创建一个 Kubernetes 集群，以安装 TSB 和示例应用程序
+* 按照 [TSB 演示](../../../../setup/self-managed/demo-installation) 安装说明操作
+* 创建一个 AWS 帐户以启动 EC2 实例，在那里部署工作负载，并将其上线到服务网格。
 
-import DocCardList from '@theme/DocCardList';
-
-<DocCardList />
+{{< list_children show_summary="false">}}

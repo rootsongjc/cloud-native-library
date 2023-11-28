@@ -7,7 +7,7 @@ description: TSB Operator 概念介绍。
 
 {{<callout note "Kubernetes 知识">}}
 
-如果你不熟悉 Kubernetes 命名空间、运算符、清单和自定义资源，建议你熟悉这些概念。此背景将极大地增强你对 TSB Operator 的理解以及维护 TSB 服务网格的能力。
+如果你不熟悉 Kubernetes 命名空间、Operator、清单和自定义资源，建议你熟悉这些概念。此背景将极大地增强你对 TSB Operator 的理解以及维护 TSB 服务网格的能力。
 
 你可以查阅 [Kubernetes 文档](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)来了解有关 Operator 模式的更多信息。
 
@@ -17,7 +17,7 @@ TSB Operator 在控制 TSB 管理、控制和数据平面组件的安装、升�
 
 为了有效管理 TSB 生命周期，TSB Operator 与 `tctl` CLI 工具密切协作。使用 `tctl` ，你可以生成跨管理、控制和数据平面安装和配置 TSB Operator 所需的初始 TSB Operator 清单。
 
-每架飞机都需要其 TSB Operator 实例。安装后，TSB Operator 将配置为监控特定平面的相关 CR。TSB 运营商的行为受到多种因素的影响，包括：
+每个平面都需要其 TSB Operator 实例。安装后，TSB Operator 将配置为监控特定平面的相关 CR。TSB Operator 的行为受到多种因素的影响，包括：
 
 - 捆绑的 TSB 组件在 TSB Operator 中体现。
 - 在 TSB Operator 监视的命名空间中检测到的 CR 内容。
@@ -28,7 +28,7 @@ TSB Operator 在控制 TSB 管理、控制和数据平面组件的安装、升�
 以下是与 TSB Operator 生命周期操作相关的要点：
 
 - CR 的可用性向 TSB Operator 表明，应使用 CR 中指定的配置来部署固定 TSB 版本的所有组件。
-- CR 缺失会提示 TSB Operator 确保没有 TSB 组件正在运行。TSB 运营商将删除在其控制下部署的任何组件。
+- CR 缺失会提示 TSB Operator 确保没有 TSB 组件正在运行。TSB Operator 将删除在其控制下部署的任何组件。
 - 如果 CR 已可用，则使用较新版本的 Operator 更新 TSB Operator 引导清单会触发 TSB 升级。
 - 更新 CR 会导致现有 TSB 安装重新配置以采用新的配置详细信息。
 - 运行与 Operator 嵌入式清单中列出的版本不同的 TSB 组件将自动删除，以支持指定版本。

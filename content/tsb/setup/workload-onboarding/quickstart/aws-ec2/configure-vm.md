@@ -1,159 +1,152 @@
 ---
-title: Configure the VM
+title: 配置虚拟机
+weight: 4
 ---
 
-## Launch an AWS EC2 Instance
+## 启动 AWS EC2 实例
 
-Launch an AWS EC2 instance with the following configuration:
+使用以下配置启动 AWS EC2 实例：
 
-1. Choose `64-bit (x86)` AMI image with `Ubuntu Server` (DEB)
-1. Choose a minimal `Instance Type`, e.g. `t2.micro` (1x vCPU, 1 GiB RAM)
-   or `t2.nano` (1x vCPU, 0.5 GiB RAM)
-1. Choose the default VPC (for your instance to have public IP)
-1. Set `Auto-assign Public IP` to `Enable`
-1. Configure `SecurityGroup` to allow `incoming` traffic to port `9080` from `0.0.0.0/0`
+1. 选择带有 `Ubuntu Server`（DEB）的 `64 位 (x86)` AMI 镜像。
+1. 选择最小的 `实例类型`，例如 `t2.micro`（1 个 vCPU，1 GiB RAM）
+   或 `t2.nano`（1 个 vCPU，0.5 GiB RAM）
+1. 选择默认 VPC（以使你的实例具有公共 IP）
+1. 将 `自动分配公共 IP` 设置为 `启用`
+1. 配置 `安全组`，允许从 `0.0.0.0/0` 的端口 `9080` 接收流量
 
-For the purposes of this guide, you will be creating an EC2 instance with a public IP
-for ease of configuration.
+为了本指南的目的，你将创建一个具有公共 IP 的 EC2 实例，以便进行配置。
 
-:::warning
-This is *NOT* recommended for production scenarios. For production scenarios, you should
-do the opposite and place the Kubernetes cluster and the EC2 instances on the same network,
-or peered networks, and not give your VMs public IPs.
-:::
+{{<callout warning 注意>}}
+这不建议用于生产场景。对于生产场景，你应该做相反的操作，将 Kubernetes 集群和 EC2 实例放在同一网络上，或进行网络对等连接，并不为你的虚拟机分配公共 IP。
+{{</callout>}}
 
-## Install Bookinfo Ratings Application
+## 安装 Bookinfo Ratings 应用程序
 
-SSH into the AWS EC2 instance you have created, and install the
-`ratings` application. Execute the following commands:
+SSH 进入你创建的 AWS EC2 实例，并安装 `ratings` 应用程序。执行以下命令：
 
 ```bash
-# Install the latest version of trusted CA certificates
+# 安装最新版本的受信任 CA 证书
 sudo apt-get update -y
 sudo apt-get install -y ca-certificates
 
-# Add DEB repository with Node.js
+# 添加具有 Node.js 的 DEB 仓库
 curl --fail --silent --location https://deb.nodesource.com/setup_14.x | sudo bash -
 
-# Install Node.js
+# 安装 Node.js
 sudo apt-get install -y nodejs
 
-# Download DEB package of the Bookinfo Ratings app
+# 下载 Bookinfo Ratings 应用程序的 DEB 包
 curl -fLO https://dl.cloudsmith.io/public/tetrate/onboarding-examples/raw/files/bookinfo-ratings.deb
 
-# Install DEB package
+# 安装 DEB 包
 sudo apt-get install -y ./bookinfo-ratings.deb
 
-# Remove downloaded file
+# 删除已下载的文件
 rm bookinfo-ratings.deb
 
-# Enable SystemD Unit
+# 启用 SystemD 单元
 sudo systemctl enable bookinfo-ratings
 
-# Start Bookinfo Ratings app
+# 启动 Bookinfo Ratings 应用程序
 sudo systemctl start bookinfo-ratings
 ```
 
-## Verify the `ratings` Application
+## 验证 `ratings` 应用程序
 
-Execute the following command to verify that the `ratings` application
-can now serve local requests:
+执行以下命令验证 `ratings` 应用程序现在可以提供本地请求：
 
 ```bash
 curl -fsS http://localhost:9080/ratings/1
 ```
 
-You should get output similar to:
+你应该会得到类似以下的输出：
 
 ```json
 {"id":1,"ratings":{"Reviewer1":5,"Reviewer2":4}}
 ```
 
-## Configure to Trust the Example CA
+## 配置信任示例 CA
 
-Remember that you have previously configured the Workload Onboarding Endpoint using a TLS certificate signed by a custom CA. As a result, any software that runs on the AWS EC2 instance and attempts to connect to the Workload Onboarding Endpoint will not trust its certificate by default.
+请记住，你之前使用自定义 CA 签名的 TLS 证书配置了 Workload Onboarding Endpoint。因此，运行在 AWS EC2 实例上并尝试连接到 Workload Onboarding Endpoint 的任何软件默认不信任其证书。
 
-Before proceeding further, you must configure the EC2 instance to trust your custom CA.
+在继续之前，你必须配置 EC2 实例以信任你的自定义 CA。
 
-First, update the `apt` package list:
+首先，更新 `apt` 包列表：
 
 ```bash
 sudo apt-get update -y
 ```
 
-Then install the `ca-certificates` package:
+然后安装 `ca-certificates` 包：
 
 ```bash
 sudo apt-get install -y ca-certificates
 ```
 
-Copy the contents of the file `example-ca.crt.pem` that you have 
-[created when you setup the certificates](./enable-workload-onboarding#prepare-the-certificates),
-and place it under the location
-`/usr/local/share/ca-certificates/example-ca.crt` on the EC2 instance.
+将你在[设置证书时创建的文件](../enable-workload-onboarding)中的 `example-ca.crt.pem` 文件的内容复制并放置在 EC2 实例上的路径 `/usr/local/share/ca-certificates/example-ca.crt` 下。
 
-Use your favorite tool to do this. If you have not installed any
-editors or tools, you could use the combination of `cat` and `dd` as follows:
+可以使用你喜欢的工具来执行此操作。如果你尚未安装任何编辑器或工具，你可以使用以下步骤组合 `cat` 和 `dd`：
 
-1. Execute `cat <<EOF | sudo dd of=/usr/local/share/ca-certificates/example-ca.crt`
-1. Copy the contents of `example-ca.crt.pem` and paste it in the terminal that you executed the previous step
-1. Type `EOF` and press `Enter` to finish the first command
+1. 执行 `cat <<EOF | sudo dd of=/usr/local/share/ca-certificates/example-ca.crt`
+1. 复制 `example-ca.crt.pem` 的内容，并粘贴到执行上一步的终端中
+1. 输入 `EOF` 并按 `Enter` 完成第一个命令
 
-After you have placed the custom CA in the correct location, execute the following
-command:
+将自定义 CA 放在正确位置后，执行以下命令：
 
 ```bash
 sudo update-ca-certificates
 ```
 
-This will reload the list of trusted CAs, and it will include your custom CA.
+这将重新加载可信 CA 的列表，并包括你的自定义 CA。
 
-## Install Istio Sidecar
+## 安装 Istio Sidecar
 
-Install the Istio sidecar by executing the following commands. Replace `ONBOARDING_ENDPOINT_ADDRESS` with [the value that you have obtained earlier](./enable-workload-onboarding#verify-the-workload-onboarding-endpoint).
+通过执行以下命令安装 Istio sidecar。将 `ONBOARDING_ENDPOINT_ADDRESS` 替换为 [你之前获取
+
+的值](../enable-workload-onboarding#verify-the-workload-onboarding-endpoint)。
 
 ```bash
-# Download DEB package
+# 下载 DEB 包
 curl -fLO \
   --connect-to "onboarding-endpoint.example:443:${ONBOARDING_ENDPOINT_ADDRESS}:443" \
   "https://onboarding-endpoint.example/install/deb/amd64/istio-sidecar.deb"
 
-# Download checksum
+# 下载校验和
 curl -fLO \
   --connect-to "onboarding-endpoint.example:443:${ONBOARDING_ENDPOINT_ADDRESS}:443" \
   "https://onboarding-endpoint.example/install/deb/amd64/istio-sidecar.deb.sha256"
 
-# Verify the checksum
+# 验证校验和
 sha256sum --check istio-sidecar.deb.sha256
 
-# Install DEB package
+# 安装 DEB 包
 sudo apt-get install -y ./istio-sidecar.deb
 
-# Remove downloaded files
+# 删除已下载的文件
 rm istio-sidecar.deb istio-sidecar.deb.sha256
 ```
 
-## Install Workload Onboarding Agent
+## 安装 Workload Onboarding Agent
 
-Install the Workload Onboarding Agent by executing the following commands. Replace `ONBOARDING_ENDPOINT_ADDRESS` with [the value that you have obtained earlier](./enable-workload-onboarding#verify-the-workload-onboarding-endpoint).
+通过执行以下命令安装 Workload Onboarding Agent。将 `ONBOARDING_ENDPOINT_ADDRESS` 替换为 [你之前获取的值](../../enable-workload-onboarding)。
 
 ```bash
-# Download DEB package
+# 下载 DEB 包
 curl -fLO \
   --connect-to "onboarding-endpoint.example:443:${ONBOARDING_ENDPOINT_ADDRESS}:443" \
   "https://onboarding-endpoint.example/install/deb/amd64/onboarding-agent.deb"
 
-# Download checksum
+# 下载校验和
 curl -fLO \
   --connect-to "onboarding-endpoint.example:443:${ONBOARDING_ENDPOINT_ADDRESS}:443" \
   "https://onboarding-endpoint.example/install/deb/amd64/onboarding-agent.deb.sha256"
 
-# Verify the checksum
+# 验证校验和
 sha256sum --check onboarding-agent.deb.sha256
 
-# Install DEB package
+# 安装 DEB 包
 sudo apt-get install -y ./onboarding-agent.deb
 
-# Remove downloaded files
+# 删除已下载的文件
 rm onboarding-agent.deb onboarding-agent.deb.sha256
 ```

@@ -6,7 +6,7 @@ description: "配置在 TSB 中的数据流。"
 
 Tetrate Service Bridge (TSB) 采用结构化数据流机制来确保配置更改和更新在整个服务网格基础设施中高效、准确地传播。这个复杂的过程涉及各种组件，包括管理平面、全局控制平面（XCP Central）和本地控制平面（XCP Edge），每个组件在配置生命周期中都发挥着关键作用。
 
-![Simplified data flow from user input through TSB, XCP, to local control planes.](../../assets/concepts/tsb-data-flow.svg)
+![简化数据流从用户输入通过 TSB、XCP 到本地控制平面。](../../assets/concepts/tsb-data-flow.svg)
 
 ## 管理平面
 

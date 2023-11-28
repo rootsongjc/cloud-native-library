@@ -1,5 +1,5 @@
 ---
-title: 工作负载上线
+title: 工作负载上线指南
 description: 自动化在 Kubernetes 之外部署的工作负载的上线。
 weight: 1
 ---
@@ -20,3 +20,5 @@ weight: 1
 * 作为 `AWS ECS` 任务部署的工作负载
 * 部署在本地环境的工作负载
 {{</callout>}}
+
+{{< list_children show_summary="false">}}

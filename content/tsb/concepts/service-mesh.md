@@ -14,7 +14,7 @@ Service Mesh 架构已得到广泛采用，Tetrate 的团队由一些最早开�
 
 ### 数据平面
 
-这些代理被称为“sidecar 代理”，因为它们与每个应用程序实例一起部署，构成了服务网格的[数据平面](../terminology#data-plane)。它们在运行时处理应用程序流量。Tetrate Service Bridge 采用 Envoy 作为数据平面实现。Envoy 提供了大量的安全、流量策略和遥测功能，包括：
+这些代理被称为“sidecar 代理”，因为它们与每个应用程序实例一起部署，构成了服务网格的数据平面。它们在运行时处理应用程序流量。Tetrate Service Bridge 采用 Envoy 作为数据平面实现。Envoy 提供了大量的安全、流量策略和遥测功能，包括：
 
 - 服务发现
 - 弹性机制（重试、熔断、异常值检测）

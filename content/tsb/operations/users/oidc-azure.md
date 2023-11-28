@@ -148,9 +148,9 @@ spec:
         tenantId: <应用程序租户 ID>
 ```
 
-:::note Helm 安装
+{{<callout note "Helm 安装">}}
 本文档提供的所有有关更新`ManagementPlane` CR 的示例也适用于 Helm 安装。你可以编辑管理平面 Helm 值文件中的`identityProvider.oidc`。
-:::
+{{</callout>}}
 
 ## 最终用户 TCTL 配置
 

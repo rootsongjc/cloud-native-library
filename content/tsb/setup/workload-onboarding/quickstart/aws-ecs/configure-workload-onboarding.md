@@ -1,13 +1,13 @@
 ---
-title: Configure WorkloadGroup and Sidecar for the AWS ECS workloads
+title: 配置 AWS ECS 工作负载的 WorkloadGroup 和 Sidecar
+weight: 1
 ---
 
-You will deploy the `ratings` application as an AWS ECS task and onboard it
-into the service mesh.
+你将部署 `ratings` 应用程序作为 AWS ECS 任务，并将其加入服务网格。
 
-## Create a WorkloadGroup
+## 创建 WorkloadGroup
 
-Execute the following command to create a `WorkloadGroup`:
+执行以下命令创建一个 `WorkloadGroup`：
 
 ```shell
 cat <<EOF | kubectl apply -f -
@@ -28,14 +28,11 @@ spec:
 EOF
 ```
 
-The field `spec.template.serviceAccount` declares that the workload have the
-identity of the service account `bookinfo-ratings` within the Kubernetes cluster.
-The service account `bookinfo-ratings` was created during the
-[deployment of the Istio bookinfo example earlier](../aws-ec2/bookinfo)
+字段 `spec.template.serviceAccount` 声明了工作负载将具有 Kubernetes 集群内的服务账号 `bookinfo-ratings` 的身份。服务账号 `bookinfo-ratings` 是在[之前部署 Istio bookinfo 示例](../../aws-ec2/bookinfo)时创建的。
 
-## Create the Sidecar configuration
+## 创建 Sidecar 配置
 
-Execute the following command to create a new sidecar configuration:
+执行以下命令创建一个新的 Sidecar 配置：
 
 ```shell
 cat <<EOF | kubectl apply -f -
@@ -64,35 +61,25 @@ spec:
 EOF
 ```
 
-The above sidecar configuration will only apply to workloads that have the
-labels `app=ratings` and `class=ecs` (1). The `WorkloadGroup` you have created
-has these labels.
+上述 Sidecar 配置仅适用于具有标签 `app=ratings` 和 `class=ecs`（1）的工作负载。你已经创建的 `WorkloadGroup` 具有这些标签。
 
-Istio proxy will be configured to listen on `<host IP>:9080` (3) and will
-forward *incoming* requests to the application that listens on `127.0.0.1:9080` (2).
+Istio 代理将配置为侦听 `<主机 IP>:9080`（3），并将 *传入* 请求转发到侦听 `127.0.0.1:9080`（2）的应用程序。
 
-And finally the proxy will be configured to listen on `127.0.0.2:9080` (4) (5) to
-proxy *outgoing* requests out of the application to other services (6) that have port `9080` (5).
+最后，代理将配置为侦听 `127.0.0.2:9080`（4）（5），以将应用程序的 *传出* 请求代理到其他服务（6），这些服务使用端口 `9080`（5）。
 
-## Allow Workloads to Join the `WorkloadGroup`
+## 允许工作负载加入 `WorkloadGroup`
 
-You will need to create an [`OnboardingPolicy`](../../guides/setup#allow-workloads-to-join-workloadgroup)
-resource to explicitly authorize workloads deployed outside of Kubernetes to join the mesh.
+你需要创建一个 [`OnboardingPolicy`](../../../guides/setup) 资源，以明确授权在 Kubernetes 外部部署的工作负载加入网格。
 
-First, obtain your [AWS Account ID](https://docs.aws.amazon.com/general/latest/gr/acct-identifiers.html).
-If you do not know your AWS Account ID, see the [AWS Account Docs](https://docs.aws.amazon.com/IAM/latest/UserGuide/console_account-alias.html) for more details on how to find your ID.
+首先，获取你的 [AWS 帐户 ID](https://docs.aws.amazon.com/general/latest/gr/acct-identifiers.html)。如果不知道你的 AWS 帐户 ID，请参阅 [AWS 帐户文档](https://docs.aws.amazon.com/IAM/latest/UserGuide/console_account-alias.html) 以获取有关如何查找你的 ID 的更多详细信息。
 
-If you already have your [`aws` CLI](https://aws.amazon.com/cli/) setup, you can
-execute the following command:
+如果已经设置了你的 [`aws` CLI](https://aws.amazon.com/cli/)，可以执行以下命令：
 
 ```bash
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ```
 
-Then create an `OnboardingPolicy` to allow any AWS ECS task from your
-AWS Account ID to join any `WorkloadGroup` in the `bookinfo` namespace
-by executing the following command. Replace `AWS_ACCOUNT_ID` with the
-appropriate value.
+然后，通过执行以下命令，创建一个 `OnboardingPolicy`，以允许你 AWS 帐户 ID 拥有的任何 AWS ECS 任务加入 `bookinfo` 命名空间中的任何 `WorkloadGroup`。将 `<AWS_ACCOUNT_ID>` 替换为适当的值。
 
 ```bash
 cat <<EOF | kubectl apply -f -
@@ -113,6 +100,4 @@ spec:
 EOF
 ```
 
-The above policy applies to any AWS ECS tasks (3) owned by the account
-specified in (2), and allows them to join any `WorkloadGroup` (4) in the
-namespace `bookinfo` (1)
+上述策略适用于由 (2) 中指定的帐户拥有的任何 AWS ECS 任务 (3)，并允许它们加入 `bookinfo` 命名空间 (1) 中的任何 `WorkloadGroup` (4)。
