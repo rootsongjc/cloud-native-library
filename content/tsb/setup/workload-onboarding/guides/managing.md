@@ -1,5 +1,5 @@
 ---
-title: 管理已登记的工作负载
+title: 管理已载入的工作负载
 weight: 4
 ---
 
@@ -7,7 +7,7 @@ weight: 4
 
 加入到 mesh 中的工作负载由 Kubernetes 资源 [`WorkloadAutoRegistration`](../../../refs/onboarding/config/runtime/v1alpha1/registration) 表示。
 
-当新的工作负载加入到 mesh 中并加入到给定的 [`WorkloadGroup`](https://istio.io/latest/docs/reference/config/networking/workload-group/) 时，工作负载登记端点会在该 `WorkloadGroup` 的命名空间中创建一个 `WorkloadAutoRegistration` 资源。
+当新的工作负载加入到 mesh 中并加入到给定的 [`WorkloadGroup`](https://istio.io/latest/docs/reference/config/networking/workload-group/) 时，工作负载载入端点会在该 `WorkloadGroup` 的命名空间中创建一个 `WorkloadAutoRegistration` 资源。
 
 每个 `WorkloadAutoRegistration` 资源都被分配一个唯一的名称，格式为：
 
@@ -27,9 +27,9 @@ aws-<aws-partition>-<aws-account>-<aws-zone>-ec2-<aws-ec2-instance-id>
 ratings-aws-aws-123456789012-us-east-2b-ec2-i-1234567890abcdef0
 ```
 
-## 列出已登记的工作负载
+## 列出已载入的工作负载
 
-要列出已登记的工作负载，请对 `war` 资源发出 `kubectl get` 命令。`war` 是 `WorkloadAutoRegistration` 的别名。
+要列出已载入的工作负载，请对 `war` 资源发出 `kubectl get` 命令。`war` 是 `WorkloadAutoRegistration` 的别名。
 
 以下命令将列出在所有 Kubernetes 命名空间中注册的工作负载：
 
@@ -44,11 +44,11 @@ NAMESPACE   NAME                                                              AG
 bookinfo    ratings-aws-aws-123456789012-us-east-2b-ec2-i-1234567890abcdef0   True              1m
 ```
 
-`AGENT CONNECTED` 列显示了工作负载登记代理的状态。如果值为 `True`，则代理当前已连接到工作负载登记端点，并且工作负载被视为健康。如果值为 `False`，则代理不再连接。工作负载本身可能健康也可能不健康。
+`AGENT CONNECTED` 列显示了工作负载载入代理的状态。如果值为 `True`，则代理当前已连接到工作负载载入端点，并且工作负载被视为健康。如果值为 `False`，则代理不再连接。工作负载本身可能健康也可能不健康。
 
-## 描述已登记的工作负载
+## 描述已载入的工作负载
 
-要查看已登记工作负载的详细信息，请运行 `kubectl describe war` 命令：
+要查看已载入工作负载的详细信息，请运行 `kubectl describe war` 命令：
 
 ```
 kubectl describe war <war-name>
@@ -93,11 +93,11 @@ Status:
     Type:                  AgentConnected
 ```
 
-`Spec.Identity` 部分（1）描述了工作负载的*已验证身份*，在这种情况下是工作负载正在运行的 VM 的身份。这些信息可能对于验证已登记的工作负载的来源很有用，而不是信任工作负载本身报告的信息。
+`Spec.Identity` 部分（1）描述了工作负载的*已验证身份*，在这种情况下是工作负载正在运行的 VM 的身份。这些信息可能对于验证已载入的工作负载的来源很有用，而不是信任工作负载本身报告的信息。
 
 ## 检查 Istio Sidecar 的状态
 
-你可以使用 `istioctl proxy-status` 命令来检查已登记工作负载的 Istio sidecar 的状态。
+你可以使用 `istioctl proxy-status` 命令来检查已载入工作负载的 Istio sidecar 的状态。
 
 运行：
 
@@ -117,17 +117,17 @@ ratings-aws-aws-123456789012-us-east-2b-ec2-i-1234567890abcdef0.bookinfo     SYN
 
 侧车的名称将与工作负载的名称相同。
 
-## 自动删除已登记的工作负载
+## 自动删除已载入的工作负载
 
-工作负载登记端点组件不知道通过工作负载登记代理注册的工作负载的生命周期。例如，如果运行工作负载的 AWS EC2 实例被终止，工作负载登记端点只知道工作负载登记代理不再连接
+工作负载载入端点组件不知道通过工作负载载入代理注册的工作负载的生命周期。例如，如果运行工作负载的 AWS EC2 实例被终止，工作负载载入端点只知道工作负载载入代理不再连接
 
 到它。
 
-为了避免无限期保留悬挂的工作负载登记，工作负载登记端点在工作负载登记代理断开连接并且在预先配置的宽限期内没有重新连接时，将工作负载视为不再活动。此宽限期的默认值为 5 分钟。
+为了避免无限期保留悬挂的工作负载载入，工作负载载入端点在工作负载载入代理断开连接并且在预先配置的宽限期内没有重新连接时，将工作负载视为不再活动。此宽限期的默认值为 5 分钟。
 
 ## 更新 WorkloadGroups
 
-在工作负载登记功能中使用的 Istio [WorkloadGroup](https://istio.io/latest/docs/reference/config/networking/workload-group/) 扮演着类似于 Kubernetes Deployment 的角色。`WorkloadGroup` 用于定义在组中的每个单独实例中使用的配置模板。
+在工作负载载入功能中使用的 Istio [WorkloadGroup](https://istio.io/latest/docs/reference/config/networking/workload-group/) 扮演着类似于 Kubernetes Deployment 的角色。`WorkloadGroup` 用于定义在组中的每个单独实例中使用的配置模板。
 
 Kubernetes Deployments 和 `WorkloadGroup` 之间有一个重要的区别。前者由一个控制逻辑支持，该逻辑知道如何逐渐使用新配置替换 Pod 并推出对 Deployment 资源所做的更改，而后者则没有这样的功能。
 
@@ -155,4 +155,4 @@ Kubernetes Deployments 和 `WorkloadGroup` 之间有一个重要的区别。前�
 kubectl delete war <war-name> 
 ```
 
-删除 `WorkloadAutoRegistration` 资源将导致 Workload 登记代理再次执行 Workload 登记流程，进而重新创建 `WorkloadAutoRegistration`。这将捕获 `WorkloadGroup` 配置的最新版本。
+删除 `WorkloadAutoRegistration` 资源将导致 Workload 载入代理再次执行 Workload 载入流程，进而重新创建 `WorkloadAutoRegistration`。这将捕获 `WorkloadGroup` 配置的最新版本。

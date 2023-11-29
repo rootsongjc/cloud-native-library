@@ -1,5 +1,5 @@
 ---
-title: 配置工作负载组和 Sidecar
+title: 配置 WorkloadGroup 和 Sidecar
 weight: 3
 ---
 

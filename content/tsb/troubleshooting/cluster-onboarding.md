@@ -1,6 +1,6 @@
 ---
-title: 集群入职故障排除
-description: 如何排除控制平面入职问题。
+title: 集群载入故障排除
+description: 如何排除控制平面载入问题。
 weight: 9
 ---
 

@@ -11,7 +11,7 @@ weight: 3
 - 检查 [要求](../../requirements-and-download)
 - [安装 TSB 管理平面](../management-plane-installation) 或 [演示安装](../demo-installation)
 - 使用 tctl 登录管理平面（[tctl 连接](../../tctl-connect)）
-- 检查 [TSB 控制平面组件](../../components#control-plane)
+- 检查 [TSB 控制平面组件](../../components)
 
 {{<callout note "隔离边界">}}
 TSB 1.6 引入了隔离边界，允许你在 Kubernetes 集群内或跨多个集群中拥有多个 TSB 管理的 Istio 环境。隔离边界的一个好处是你可以执行控制平面的金丝雀升级。
@@ -51,7 +51,7 @@ tctl apply -f new-cluster.yaml
 
 接下来，你需要在集群中安装必要的组件，以加入集群并将其连接到管理平面。
 
-你必须部署两个运营商。首先是控制平面运营商，负责管理 Istio、SkyWalking 和其他各种组件。其次是数据平面运营商，负责管理网关。
+你必须部署两个 Operator。首先是控制平面 Operator，负责管理 Istio、SkyWalking 和其他各种组件。其次是数据平面 Operator，负责管理网关。
 
 ```bash
 tctl install manifest cluster-operators \
@@ -60,7 +60,7 @@ tctl install manifest cluster-operators \
 
 **标准**
 
-`install manifest cluster-operators` 命令将输出所需运营商的 Kubernetes 清单。然后，我们可以将其添加到源代码控制或应用到集群中：
+`install manifest cluster-operators` 命令将输出所需 Operator 的 Kubernetes 清单。然后，我们可以将其添加到源代码控制或应用到集群中：
 
 ```bash
 kubectl apply -f clusteroperators.yaml
@@ -68,14 +68,14 @@ kubectl apply -f clusteroperators.yaml
 
 **OpenShift**
 
-`install manifest cluster-operators` 命令将输出所需运营商的 Kubernetes 清单。然后，我们可以将其添加到源代码控制或应用到集群中：
+`install manifest cluster-operators` 命令将输出所需 Operator 的 Kubernetes 清单。然后，我们可以将其添加到源代码控制或应用到集群中：
 
 ```bash
 oc apply -f clusteroperators.yaml
 ```
 
 {{<callout note "注意">}}
-对于下面的 [配置密钥](#configuring-secrets) 和 [控制平面安装](#control-plane-installation) 步骤，你必须为每个集群单独创建密钥和自定义资源的 YAML 文件。
+对于下面的配置密钥和控制平面安装步骤，你必须为每个集群单独创建密钥和自定义资源的 YAML 文件。
 换句话说，对每个集群重复这些步骤，并确保传递上面设置的 `<cluster-name-in-tsb>` 值，然后将两个 YAML 文件应用到正确的集群。
 {{</callout>}}
 
@@ -105,7 +105,7 @@ tctl install secrets cluster-secrets > cluster-secrets.yaml
 2. 使用文本编辑器打开 `cluster-secrets.yaml` 文件，将以下字段替换为集群的实际值：
 
 - `cluster_name`: 替换为集群名称。
-- `tsb_operator_namespace`: 替换为 Istio 运营商的命名空间。
+- `tsb_operator_namespace`: 替换为 Istio Operator 的命名空间。
 - `tsb_control_plane_namespace`: 替换为 TSB 控制平面的命名空间。
 - `elastic_username` 和 `elastic_password`: 替换为 Elasticsearch 的用户名和密码。
 - `redis_password`: 替换为 Redis 的密码。
@@ -157,14 +157,3 @@ kubectl apply -f controlplane.yaml
 ```
 
 这将在集群中安装 Istio 和相关组件，并将其连接到管理平面。完成后，你的 Kubernetes 集群将成功加入 Tetrate Service Bridge 环境。
-
-## 后续步骤
-
-一旦集群成功加入 TSB，你可以继续执行其他操作，例如：
-
-- [为应用程序配置网关](../../gateway-configuration)。
-- [为应用程序添加流量管理规则](../../traffic-management)。
-- [监视和跟踪应用程序](../../observability)。
-- [在多个集群之间配置服务网格](../../multicluster)。
-
-这些操作将帮助你在 Tetrate Service Bridge 中有效地管理和操作微服务应用程序。

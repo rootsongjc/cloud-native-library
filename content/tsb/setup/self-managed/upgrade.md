@@ -8,7 +8,7 @@ weight: 5
 
 在开始之前，请确保你已完成以下操作：
 
-- 检查新版本的 [要求](../../requirements-and-download#requirements)
+- 检查新版本的 [要求](../../requirements-and-download)
 
 基于 Operator 的版本之间的升级过程相对简单。一旦 Operator 的 Pod 使用新的发布映像进行了更新，新生成的 Operator Pod 将升级所有必要的组件以适应新版本。
 
@@ -40,13 +40,13 @@ kubectl get managementplane -n tsb -o yaml > mp-backup.yaml
 
 #### 备份 PostgreSQL 数据库
 
-[创建 PostgreSQL 数据库的备份](../../../operations/postgresql#create-a-backup-of-tsb-configuration)。
+[创建 PostgreSQL 数据库的备份](../../../operations/postgresql)。
 
 连接到数据库的确切过程可能因你的环境而异，请参考你的环境的文档。
 
 ### 备份控制平面自定义资源
 
-通过在每个已上线集群上执行以下命令，创建所有 `ControlPlane` CR 的备份：
+通过在每个已载入集群上执行以下命令，创建所有 `ControlPlane` CR 的备份：
 
 ```
 kubectl get controlplane -n istio-system -o yaml > cp-backup.yaml
@@ -56,9 +56,9 @@ kubectl get controlplane -n istio-system -o yaml > cp-backup.yaml
 
 ### 下载 `tctl` 和同步映像
 
-现在你已经创建了备份，请 [下载新版本的 `tctl` 二进制文件](../../requirements-and-download#download)，然后获取新的 TSB 容器映像。
+现在你已经创建了备份，请 [下载新版本的 `tctl` 二进制文件](../../requirements-and-download)，然后获取新的 TSB 容器映像。
 
-有关如何执行此操作的详细信息在 [要求和下载页面](../../requirements-and-download#sync-tetrate-service-bridge-images) 中有描述。
+有关如何执行此操作的详细信息在 [要求和下载页面](../../requirements-and-download) 中有描述。
 
 ### 创建管理平面 Operator
 
@@ -181,7 +181,7 @@ kubectl delete istiooperator -n istio-gateway --all
 
 ### 创建集群 Operator，回滚 ControlPlane CR
 
-使用之前版本的 `tctl` 二进制文件，按照 [创建集群 Operator 的说明](#create-the-control-and-data-planes) 进行操作。
+使用之前版本的 `tctl` 二进制文件，按照创建集群 Operator 的说明进行操作。
 
 然后应用 `ControlPlane` CR 的备份：
 
@@ -201,7 +201,7 @@ kubectl scale deployment tsb iam -n tsb --replicas=0
 
 #### 恢复 PostgreSQL
 
-从备份中 [恢复 PostgreSQL 数据库](../../../operations/postgresql#restore-a-backup)。连接到数据库的确切过程可能因你的环境而异，请参考你的环境的文档。
+从备份中 [恢复 PostgreSQL 数据库](../../../operations/postgresql)。连接到数据库的确切过程可能因你的环境而异，请参考你的环境的文档。
 
 #### 恢复 `tctl` 并创建管理平面 Operator
 

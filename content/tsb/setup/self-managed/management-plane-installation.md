@@ -9,14 +9,14 @@ weight: 2
 在开始之前，请确保你已经：
 
 - 检查了[要求](../../requirements-and-download)
-- 检查了[TSB 管理平面组件](../../components#management-plane)
+- 检查了[TSB 管理平面组件](../../components)
 - 检查了[证书类型](../../certificate/certificate-setup)和[内部证书要求](../../certificate/certificate-requirements)
 
 - 检查了[防火墙信息](../../firewall_information)
 
 - 如果你正在升级以前的版本，请还要检查[PostgreSQL 备份和还原](../../../operations/postgresql)
-- [下载](../../requirements-and-download#download)了 Tetrate Service Bridge CLI（`tctl`）
-- [同步](../../requirements-and-download#sync-tetrate-service-bridge-images)了 Tetrate Service Bridge 镜像
+- [下载](../../requirements-and-download)了 Tetrate Service Bridge CLI（`tctl`）
+- [同步](../../requirements-and-download)了 Tetrate Service Bridge 镜像
 
 ## 管理平面 Operator
 
@@ -47,7 +47,7 @@ kubectl apply -f managementplaneoperator.yaml
 kubectl get pod -n tsb
 ```
 
-{{<callout note "RedHat 生态系统目录">}}}
+{{<callout note "RedHat 生态系统目录">}}
 TSB 已在 RedHat 生态系统目录上获得了认证并列出。可以按照以下说明或通过[此处](https://catalog.redhat.com/software/container-stacks/detail/63224dc0bc45b8cf6605f7e8)在 OpenShift 平台上安装 TSB。
 {{</callout>}}
 
@@ -201,4 +201,4 @@ Password: *****
 Login Successful!
 ```
 
-查看[使用 tctl 连接到 TSB](../../tctl_connect)以获取有关如何配置 tctl 的更多详细信息。
+查看[使用 tctl 连接到 TSB](../../tctl-connect)以获取有关如何配置 tctl 的更多详细信息。

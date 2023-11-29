@@ -6,7 +6,7 @@ description: "TSB 演示应用安装。"
 
 本指南将引导你完成 TSB 演示配置文件的安装，该配置文件旨在快速概述 TSB 的功能。演示配置文件包括 PostgreSQL、Elasticsearch 和 LDAP，所有这些都在 Kubernetes 集群上进行编排。为了确保无缝体验，你的集群应包含 3-6 个节点，每个节点至少配备 4 个 vCPU 和 16 GB 内存。集群还必须建立默认存储类，并能够为 Elasticsearch 和 PostgreSQL 创建最小容量为 100 GB 的持久卷声明。
 
-在继续之前，请参阅 [TSB 支持政策](../../../release-notes-announcements/support-policy#kubernetes-versions)来验证与你的 Kubernetes 版本的兼容性。
+在继续之前，请参阅 [TSB 支持政策](../../../release-notes-announcements/support-policy)来验证与你的 Kubernetes 版本的兼容性。
 
 ## 先决条件
 
@@ -14,7 +14,7 @@ description: "TSB 演示应用安装。"
 
 ### 1. 获取 `tctl` 并同步镜像
 
-首先按照[下载部分](../../requirements-and-download#download)中概述的步骤下载 `tctl` 。此外，按照同步容器镜像中所述[同步所需的容器镜像](../../requirements-and-download#sync-tetrate-service-bridge-images)。
+首先按照[下载部分](../../requirements-and-download)中概述的步骤下载 `tctl` 。此外，按照同步容器镜像中所述[同步所需的容器镜像](../../requirements-and-download)。
 
 ### 2. 设置 Kubernetes 集群
 
@@ -25,7 +25,7 @@ description: "TSB 演示应用安装。"
 如果你使用 [kind](https://kind.sigs.k8s.io/) 集群进行安装，请按照以下步骤操作：
 
 1. 创建类型集群后，安装 [MetalLB](https://metallb.universe.tf/) 以使 TSB 能够使用 `LoadBalancer` 类型的服务。
-2. 配置[第 2 层配置](https://metallb.universe.tf/configuration/#layer-2-configuration)，指定 `kind` Docker 网络 IP 范围内的 IP 地址范围。
+2. 配置 [L2 网络](https://metallb.universe.tf/configuration/#layer-2-configuration)，指定 `kind` Docker 网络 IP 范围内的 IP 地址范围。
 
 ##  安装
 

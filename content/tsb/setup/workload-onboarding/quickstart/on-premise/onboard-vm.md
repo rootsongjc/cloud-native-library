@@ -1,9 +1,9 @@
 ---
-title: 从本地虚拟机上进行工作负载上线
+title: 从本地虚拟机上进行工作负载载入
 weight: 3
 ---
 
-## 启动工作负载上线代理
+## 启动工作负载载入代理
 
 创建文件 `/etc/onboarding-agent/onboarding.config.yaml`，并填入以下内容。将 `<ONBOARDING_ENDPOINT_ADDRESS>` 替换为[之前获取的值](../../aws-ec2/enable-workload-onboarding)。
 
@@ -23,7 +23,7 @@ workload:
     version: v5                           # (3)
 ```
 
-此配置指示工作负载上线代理使用一个地址连接到工作负载上线终端点，但对 DNS 名称 `onboarding-endpoint.example` 验证 TLS 证书 (1)。
+此配置指示工作负载载入代理使用一个地址连接到工作负载载入终端点，但对 DNS 名称 `onboarding-endpoint.example` 验证 TLS 证书 (1)。
 
 代理将尝试加入你之前创建的 `WorkloadGroup` (2)。
 
@@ -31,7 +31,7 @@ workload:
 
 此配置暗示 Kubernetes 集群和本地虚拟机位于同一网络或已连接的网络中。
 
-将上述配置文件放置在正确的位置后，执行以下命令以启动工作负载上线代理：
+将上述配置文件放置在正确的位置后，执行以下命令以启动工作负载载入代理：
 
 ```bash
 # 启用
@@ -59,7 +59,7 @@ LIVE
 
 ## 验证工作负载
 
-从你的本地机器上，验证工作负载是否已正确上线。
+从你的本地机器上，验证工作负载是否已正确载入。
 
 执行以下命令：
 
@@ -67,7 +67,7 @@ LIVE
 kubectl get war -n bookinfo 
 ```
 
-如果工作负载已正确上线，你应该会得到类似于以下内容的输出：
+如果工作负载已正确载入，你应该会得到类似于以下内容的输出：
 
 ```bash
 NAMESPACE   NAME                                                           AGENT CONNECTED   AGE

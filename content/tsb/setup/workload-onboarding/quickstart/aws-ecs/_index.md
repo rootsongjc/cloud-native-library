@@ -1,9 +1,10 @@
 ---
 title: 在 AWS ECS 上使用工作负载快速入门
+linktitle: AWS ECS
 weight: 2
 ---
 
-本指南将帮助你快速入门实际中的“工作负载上线”。
+本指南将帮助你快速入门实际中的“工作负载载入”。
 
 在本指南的一部分中，你将会：
 1. 将 [Istio Bookinfo](https://istio.io/latest/docs/examples/bookinfo/) 示例部署到 Elastic Kubernetes Service (EKS) 集群中。

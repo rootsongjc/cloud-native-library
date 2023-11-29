@@ -5,7 +5,7 @@ weight: 5
 
 ## 工作负载无法加入 mesh
 
-如果新的工作负载未出现在已登记的工作负载列表中，请按照以下步骤操作。
+如果新的工作负载未出现在已载入的工作负载列表中，请按照以下步骤操作。
 
 ### 检查 `Workload Onboarding Agent` 的状态
 
@@ -29,11 +29,11 @@ systemctl status onboarding-agent
            ├─3520 onboarding-agent --agent-config /etc/onboarding-agent/agent.config.yaml --onboarding-config /etc/onboarding-agent/onboarding.config.yaml
 ```
 
-如果 `onboarding-agent.service` 单元的状态不是 `Active`（1），请再次检查是否按照工作负载登记说明进行操作。
+如果 `onboarding-agent.service` 单元的状态不是 `Active`（1），请再次检查是否按照工作负载载入说明进行操作。
 
 例如，返回到：
-* [从 VM 登记工作负载](../onboarding)
-* [从 VM 自动扩展组登记工作负载](../onboarding)
+* [从 VM 载入工作负载](../onboarding)
+* [从 VM 自动扩展组载入工作负载](../onboarding)
 
 #### AWS ECS 工作负载
 
@@ -43,7 +43,7 @@ systemctl status onboarding-agent
 aws ecs describe-services --cluster <ECS cluster name> --services <ECS service name>
 ```
 
-如果存在任何问题，请仔细检查是否按照 [登记 AWS ECS 工作负载](../ecs-workloads) 说明进行操作。
+如果存在任何问题，请仔细检查是否按照 [载入 AWS ECS 工作负载](../ecs-workloads) 说明进行操作。
 
 有关进一步的 ECS 故障排除，请参阅 [AWS 故障排除指南](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/troubleshooting.html)。
 
@@ -85,7 +85,7 @@ error   agent   RPC failed: rpc error: code = Unavailable desc = connection erro
 * DNS 名称可解析
 
 你可能需要返回到：
-* [启用 Workload 登记](../setup)
+* [启用 Workload 载入](../setup)
 
 #### 工作负载未被授权加入 mesh
 

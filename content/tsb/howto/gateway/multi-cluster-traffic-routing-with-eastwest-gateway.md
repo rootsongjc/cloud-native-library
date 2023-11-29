@@ -23,9 +23,9 @@ weight: 5
 
 当本地客户端尝试访问服务时，它将被路由到本地服务实例。如果本地服务失败并且远程集群中存在具有东西网关的备用实例，TSB 将路由客户端流量到远程东西网关。服务发现、健康检查和故障转移路由完全自动化，对服务的开发人员或最终用户是透明的。
 
-## 上线集群
+## 载入集群
 
-要使用东西路由，你需要上线至少两个集群到 TSB 中。这两个集群必须位于不同的可用区或不同的区域。有关如何上线集群的更多详细信息，请参见[集群上线](../../../setup/self-managed/onboarding-clusters)。
+要使用东西路由，你需要载入至少两个集群到 TSB 中。这两个集群必须位于不同的可用区或不同的区域。有关如何载入集群的更多详细信息，请参见[集群载入](../../../setup/self-managed/onboarding-clusters)。
 
 确保这两个集群共享相同的信任根。在部署两个集群的控制平面之前，你必须在 `cacerts` 中填充正确的证书。有关详细信息，请参阅 Istio 文档中的 [Plugin CA Certificates](https://istio.io/latest/docs/tasks/security/cert-management/plugin-ca-cert/)。
 

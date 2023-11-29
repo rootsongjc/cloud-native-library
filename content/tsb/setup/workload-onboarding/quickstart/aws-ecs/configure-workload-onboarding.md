@@ -1,5 +1,6 @@
 ---
 title: 配置 AWS ECS 工作负载的 WorkloadGroup 和 Sidecar
+linktitle: 配置工作负载的 WorkloadGroup 和 Sidecar
 weight: 1
 ---
 

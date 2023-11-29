@@ -5,7 +5,7 @@ weight: 7
 
 该文档描述了如何使用工作负载载入功能将 AWS Elastic Container Service (ECS) 任务载入到 TSB。
 
-在继续之前，请确保你已完成 [设置工作负载载入文档](./setup) 中描述的步骤。如果你不计划载入虚拟机，可以跳过配置本地仓库和安装软件包的步骤，因为 ECS 任务的流程略有不同。
+在继续之前，请确保你已完成 [设置工作负载载入文档](../setup) 中描述的步骤。如果你不计划载入虚拟机，可以跳过配置本地仓库和安装软件包的步骤，因为 ECS 任务的流程略有不同。
 
 ## 背景
 
@@ -83,13 +83,13 @@ spec:
 
 1. 配置 [任务 IAM 角色](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html)。这是任务将用于加入 mesh 的身份。
 2. 将网络模式设置为 `awsvpc`。不支持其他网络模式。
-3. 配置 [任务执行 IAM 角色](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html)。如果镜像仓库是 Elastic Container Registry (ECR)，则此角色应具有从中拉取图像的权限。
+3. 配置 [任务执行 IAM 角色](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html)。如果镜像仓库是 Elastic Container Registry (ECR)，则此角色应具有从中拉取镜像的权限。
 
 ### 配置 Workload Onboarding Agent Sidecar
 
 按照以下步骤将 Workload Onboarding Agent 容器添加到任务定义中，与应用程序容器一起。
 
-该容器映像将添加到安装 Tetrate Service Bridge 到你的 Kubernetes 集群时使用的容器仓库中。要使用不同的容器仓库，请通过 [按照这些说明同步 Tetrate Service Bridge 镜像](../../../requirements-and-download#sync-tetrate-service-bridge-images)。
+该容器映像将添加到安装 Tetrate Service Bridge 到你的 Kubernetes 集群时使用的容器仓库中。要使用不同的容器仓库，请通过 [按照这些说明同步 Tetrate Service Bridge 镜像](../../../requirements-and-download)。
 
 1. 容器名称：`onboarding-agent`
 2. 映像：`<your docker registry>/onboarding-agent:<tag>`
@@ -110,11 +110,11 @@ spec:
    123456789012.dkr.ecr.us-east-1.amazonaws.com/registry/onboarding-agent:1.5.0
    ```
 3. 用户必须设置为 root 用户，使用 UID 为 `0`。
-4. 提供 [载入配置](../../../../refs/onboarding/config/agent/v1alpha1/onboarding_configuration)。
+4. 提供 [载入配置](../../../../refs/onboarding/config/agent/v1alpha1/onboarding-configuration)。
 
    使用以下内容设置一个名为 `ONBOARDING_CONFIG` 的环境变量。将其中的 `onboarding-endpoint-d
 
-ns-name` 替换为要连接的 Workload Onboarding Endpoint，`workload-group-namespace` 和 `workload-group-name` 替换为 Istio [WorkloadGroup](https://istio.io/latest/docs/reference/config/networking/workload-group/) 的命名空间和名称。
+`ns-name` 替换为要连接的 Workload Onboarding Endpoint，`workload-group-namespace` 和 `workload-group-name` 替换为 Istio [WorkloadGroup](https://istio.io/latest/docs/reference/config/networking/workload-group/) 的命名空间和名称。
 
    ```yaml
    apiVersion: config.agent.onboarding.tetrate.io/v1alpha1
@@ -126,7 +126,7 @@ ns-name` 替换为要连接的 Workload Onboarding Endpoint，`workload-group-na
      name: <workload-group-name>
    ```
 
-   假定 Workload Onboarding Endpoint 可以在 `https://<onboarding-endpoint-dns-name>:15443` 上访问，并且使用为适当的 DNS 名称颁发的 TLS 证书。有关更多配置选项，请参考 [载入配置](../../../../refs/onboarding/config/agent/v1alpha1/onboarding_configuration) 文档。
+   假定 Workload Onboarding Endpoint 可以在 `https://<onboarding-endpoint-dns-name>:15443` 上访问，并且使用为适当的 DNS 名称颁发的 TLS 证书。有关更多配置选项，请参考 [载入配置](../../../../refs/onboarding/config/agent/v1alpha1/onboarding-configuration) 文档。
 
    为了不包含换行符，可能更容易将配置指定为 JSON 而不是 YAML。在这种情况下，上述配置将采用以下形式：
 
@@ -154,7 +154,7 @@ ns-name` 替换为要连接的 Workload Onboarding Endpoint，`workload-group-na
    ```
 
    请注意，此环境变量不能通过 AWS 控制台配置，因为它会替换换行符。相反，应使用 AWS CLI 工具或基础架构即代码工具（例如 Terraform 或 CloudFormation）进行配置。
-6. 如果需要，提供 [代理配置](../../../../refs/onboarding/config/agent/v1alpha1/agent_configuration)。在大多数情况下，默认值将起作用，此步骤是可选的。
+6. 如果需要，提供 [代理配置](../../../../refs/onboarding/config/agent/v1alpha1/agent-configuration)。在大多数情况下，默认值将起作用，此步骤是可选的。
 
    如果使用 [Istio 隔离边界](../../../../setup/isolation-boundaries) 安装 TSB，并且工作负载应连接到非默认修订版本，则需要此步骤。例如，要配置工作负载连接到 `canary` 修订版，设置一个名为 `AGENT_CONFIG` 的环境变量，其内容如下：
 

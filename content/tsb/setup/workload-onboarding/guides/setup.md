@@ -1,20 +1,20 @@
 ---
-title: 设置工作负载上线
-description: 如何设置工作负载上线。
+title: 设置工作负载载入
+description: 如何设置工作负载载入。
 weight: 2
 ---
 
 ## 步骤
 
-1. 启用工作负载上线
+1. 启用工作负载载入
 2. 创建 WorkloadGroup
 3. 允许工作负载加入 WorkloadGroup
 4. 创建 Sidecar 配置
-5. 在 VM 上安装工作负载上线代理
+5. 在 VM 上安装工作负载载入代理
 
-## 启用工作负载上线
+## 启用工作负载载入
 
-要在给定的 Kubernetes 集群中启用工作负载上线，你需要编辑 TSB [ControlPlane](../../../refs/install/controlplane/v1alpha1/spec) 资源或 Helm 配置，如下所示：
+要在给定的 Kubernetes 集群中启用工作负载载入，你需要编辑 TSB [ControlPlane](../../../../refs/install/controlplane/v1alpha1/spec) 资源或 Helm 配置，如下所示：
 
 ```yaml
 spec:
@@ -33,10 +33,10 @@ spec:
 
 然后：
 
-1. 要在给定的 Kubernetes 集群中启用工作负载上线，你需要编辑 `spec.meshExpansion.onboarding` 部分，并为所有强制性字段提供值
+1. 要在给定的 Kubernetes 集群中启用工作负载载入，你需要编辑 `spec.meshExpansion.onboarding` 部分，并为所有强制性字段提供值
 2. 你必须为 Workload Onboarding Endpoint 提供一个 DNS 名称，例如 `onboarding-endpoint.your-company.corp`
 3. 你必须提供保存 Workload Onboarding Endpoint 的 TLS 证书的 Kubernetes Secret 的名称
-4. 你可以选择自定义上线令牌的过期时间，默认为 `1 小时`
+4. 你可以选择自定义载入令牌的过期时间，默认为 `1 小时`
 5. 你可以选择部署 Workload Onboarding Agent 和 Istio sidecar 的 DEB/RPM 软件包的本地副本
 
 ## Workload Onboarding Endpoint
@@ -179,9 +179,9 @@ spec:
 
 在 Kubernetes 集群之外运行的工作负载除非经过明确授权，否则不能加入到 mesh 中。
 
-为了进行登记，工作负载被视为运行在其上的主机的身份。例如，如果一个工作负载运行在 AWS EC2 实例上，它被认为具有该 AWS EC2 实例的身份。
+为了进行载入，工作负载被视为运行在其上的主机的身份。例如，如果一个工作负载运行在 AWS EC2 实例上，它被认为具有该 AWS EC2 实例的身份。
 
-为了允许工作负载加入特定的集群，用户必须在该集群中创建一个[登记策略](../../../refs/onboarding/config/authorization/v1alpha1/policy)。
+为了允许工作负载加入特定的集群，用户必须在该集群中创建一个[载入策略](../../../../refs/onboarding/config/authorization/v1alpha1/policy)。
 
 一个 OnboardingPolicy 是 Kubernetes 资源，授权具有特定身份的工作负载加入特定的 WorkloadGroup(s)。OnboardingPolicy 必须在适用于它的 WorkloadGroup(s) 相同的命名空间中创建。
 
@@ -209,7 +209,7 @@ spec:
 
 出于安全原因，AWS 帐户必须始终明确列出。由于这从不是一个良好的实践，你将无法指定与任何帐户关联的工作负载自由加入 mesh。
 
-尽管前面的示例可能是一个相当“宽松”的策略，但更严格的登记策略可能只允许从特定 AWS 区域和/或区域中的 AWS EC2 实例加入，带有特定 AWS IAM 角色等。它还可能只允许工作负载加入特定的 WorkloadGroups 子集。
+尽管前面的示例可能是一个相当“宽松”的策略，但更严格的载入策略可能只允许从特定 AWS 区域和/或区域中的 AWS EC2 实例加入，带有特定 AWS IAM 角色等。它还可能只允许工作负载加入特定的 WorkloadGroups 子集。
 
 以下是一个更严格策略的示例：
 
@@ -256,7 +256,7 @@ spec:
 
 ## 创建 Sidecar 配置
 
-目前，工作负载登记不支持使用 `Iptables` 进行流量重定向。因此，你需要配置 Istio Sidecar 资源，并根据需要重新配置应用程序和/或主机环境。
+目前，工作负载载入不支持使用 `Iptables` 进行流量重定向。因此，你需要配置 Istio Sidecar 资源，并根据需要重新配置应用程序和/或主机环境。
 
 ### 工作负载配置（入口）
 
@@ -328,7 +328,7 @@ spec:
 
 ## 在 VM 上安装 Workload Onboarding Agent
 
-你需要在要进行登记的 VM 上安装以下组件：
+你需要在要进行载入的 VM 上安装以下组件：
 
 1. Workload Onboarding Agent
 1. Istio Sidecar
@@ -403,7 +403,7 @@ rm istio-sidecar.rpm istio-sidecar.rpm.sha256
 
 ### 为 Revisioned Istio 安装 Istio Sidecar
 
-如果启用了 [Istio 隔离边界](../../isolation-boundaries)，你需要使用带有 Istio 修订版名称的包下载路径来下载 DEB 或 RPM 包。将 `<istio-revision>` 替换为你想要使用的 Istio 修订版名称。
+如果启用了 [Istio 隔离边界](../../../isolation-boundaries)，你需要使用带有 Istio 修订版名称的包下载路径来下载 DEB 或 RPM 包。将 `<istio-revision>` 替换为你想要使用的 Istio 修订版名称。
 
 DEB 包的修订版链接。
 ```

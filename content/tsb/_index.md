@@ -1,6 +1,7 @@
 ---
 weight: 1
 title: Tetrate Service Bridge 手册
+linktitle: TSB 手册
 summary: "Tetrate Service Bridge（TSB）中文文档：安装、使用和升级。"
 type: book
 icon: book
@@ -13,7 +14,7 @@ cascade:
   type: book
 ---
 
-探索此开发人员中心以访问全面的指南和文档，这将加快你对 TSB 的熟悉程度。无论你是应用程序开发人员、平台运营商还是安全管理员，我们都会定制内容来满足你的需求。如果你遇到任何障碍，请放心，我们随时提供支持。
+探索此开发人员中心以访问全面的指南和文档，这将加快你对 TSB 的熟悉程度。无论你是应用程序开发人员、平台运维者，我们都会定制内容来满足你的需求。如果你遇到任何障碍，请放心，我们随时提供支持。
 
 ## 对于应用程序开发人员
 
@@ -44,14 +45,14 @@ cascade:
 4. [将虚拟机流量迁移到 Kubernetes](./howto/traffic/migrating-vm-monoliths)
 5. [跨集群故障转移](./howto/gateway/multi-cluster-traffic-shifting)
 
-###  5. 有价值的参考资料
+### 5. 有价值的参考资料
 
 1. [TSB 常见问题解答](./knowledge-base/faq)
 2. [Istio 官方文档](https://istio.io/latest/docs/)
 
-##  对于平台运营商
+## 对于平台运维者
 
-对于使用 TSB 将集群转变为统一网格的平台运营商来说，旅程从[安装 TSB 的管理平面](./setup/self-managed/management-plane-installation)开始。你还将加入应用程序集群以实现可观测性和控制，并通过[演示应用程序部署](./quickstart/introduction)掌握应用程序部署过程。
+对于使用 TSB 将集群转变为统一网格的平台运维者来说，旅程从[安装 TSB 的管理平面](./setup/self-managed/management-plane-installation)开始。你还将加入应用程序集群以实现可观测性和控制，并通过[演示应用程序部署](./quickstart/introduction)掌握应用程序部署过程。
 
 ### 1.掌握基本概念
 

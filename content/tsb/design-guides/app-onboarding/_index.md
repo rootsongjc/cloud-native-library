@@ -1,10 +1,10 @@
 ---
-title: 应用上线最佳实践
-description: "本指南描述了为应用上线准备 Tetrate 管理的平台的基本建议。适用于 Tetrate Service Express (TSE) 和 Tetrate Service Bridge (TSB)。"
+title: 应用载入最佳实践
+description: "本指南描述了为应用载入准备 Tetrate 管理的平台的基本建议。适用于 Tetrate Service Express (TSE) 和 Tetrate Service Bridge (TSB)。"
 weight: 1
 ---
 
-本指南描述了为应用上线准备 Tetrate 管理的平台的基本建议。适用于 Tetrate Service Express (TSE) 和 Tetrate Service Bridge (TSB)。
+本指南描述了为应用载入准备 Tetrate 管理的平台的基本建议。适用于 Tetrate Service Express (TSE) 和 Tetrate Service Bridge (TSB)。
 
 为简单起见，本文档仅考虑在 Kubernetes 集群上部署的服务。
 

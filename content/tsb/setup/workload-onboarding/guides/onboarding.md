@@ -67,6 +67,6 @@ runcmd:
 - sudo systemctl start onboarding-agent
 ```
 
-上述 [cloud-init] 配置提供了 Workload 载入代理的配置文件，并在 VM 启动流程的一部分启动了 Workload 载入代理。
+上述 cloud-init 配置提供了 Workload 载入代理的配置文件，并在 VM 启动流程的一部分启动了 Workload 载入代理。
 
 如果一切配置正确，你的 VM 应该会自动加入到 mesh 中。

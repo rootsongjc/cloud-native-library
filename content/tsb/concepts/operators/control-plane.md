@@ -22,7 +22,7 @@ TSB Operator 配置为监督控制平面组件的生命周期，主动监控部�
 | xcpOperator | xcp-operator-edge                                 | xcp-operator-edge                                            |
 | xcpEdge     | xcp-edge                                          | edge                                                         |
 
-由运营商编排和安装的组件包括：
+由 Operator 编排和安装的组件包括：
 
 - istio：开源 Istio Operator，TSB Operator 利用它来管理开源 Istio 组件。
 - oap：负责收集和聚合网格和 Envoy 网关 RED 指标和跟踪数据。
@@ -32,7 +32,7 @@ TSB Operator 配置为监督控制平面组件的生命周期，主动监控部�
 
 ### Istio 作为 TSB 组件
 
-在控制平面的上下文中，TSB  Operator 安装开源 Istio  Operator。Istio 及其运营商被认为是 TSB 控制平面组件的组成部分，在 TSB 运营商的直接管理下运行。需要注意的是，Istio 不是由用户直接配置的。相反，与 Istio 的交互始终通过 TSB Operator 的 `ControlPlane` CR 进行。
+在控制平面的上下文中，TSB  Operator 安装开源 Istio  Operator。Istio 及其 Operator 被认为是 TSB 控制平面组件的组成部分，在 TSB Operator 的直接管理下运行。需要注意的是，Istio 不是由用户直接配置的。相反，与 Istio 的交互始终通过 TSB Operator 的 `ControlPlane` CR 进行。
 
 负责控制平面管理的 TSB  Operator 在控制平面的命名空间内创建一个名为 `tsb-istiocontrolplane` 的 IstioOperator CR。该 CR 指导 Istio  Operator 监督必要的 Istio（子）组件的部署。对于 TSB 控制平面，启用以下（子）组件： `pilot` 、 `cni` 和 `ingressGateway` 。
 

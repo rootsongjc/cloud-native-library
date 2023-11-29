@@ -6,11 +6,11 @@ weight: 2
 
 此 Chart 安装 TSB 管理平面 Operator，还允许你使用 [TSB `ManagementPlane` CR](../../../refs/install/managementplane/v1alpha1/spec) 安装 TSB 管理平面组件以及使其完全运行所需的所有秘密。
 
-在开始之前，请确保你已经查看了 [Helm 安装过程](../helm#installation-process)。
+在开始之前，请确保你已经查看了 [Helm 安装过程](../helm)。
 
 ## 安装概述
 
-1. 创建一个 `values.yaml` 文件并使用所需的配置进行编辑。你可以在下面的 [配置](#configuration) 部分中找到有关可用 Helm 配置的更多详细信息。有关 `spec` 部分的完整参考，请参阅 [TSB `ManagementPlane` CR](../../../refs/install/managementplane/v1alpha1/spec#tetrateio-api-install-managementplane-v1alpha1-managementplanespec)。
+1. 创建一个 `values.yaml` 文件并使用所需的配置进行编辑。你可以在下面的配置部分中找到有关可用 Helm 配置的更多详细信息。有关 `spec` 部分的完整参考，请参阅 [TSB `ManagementPlane` CR](../../../refs/install/managementplane/v1alpha1/spec#tetrateio-api-install-managementplane-v1alpha1-managementplanespec)。
 
 2. 使用 `helm install` 命令安装 TSB 管理平面。确保将 `image.registry` 和 `version` 设置为正确的注册表位置和 TSB 版本。
 

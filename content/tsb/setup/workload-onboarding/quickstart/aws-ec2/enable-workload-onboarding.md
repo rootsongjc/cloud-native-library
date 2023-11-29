@@ -1,11 +1,11 @@
 ---
-title: 启用工作负载上线
+title: 启用工作负载载入
 weight: 2
 ---
 
-为了启用工作负载上线，你需要以下信息：
+为了启用工作负载载入，你需要以下信息：
 
-* 用于分配工作负载上线端点的 DNS 名称
+* 用于分配工作负载载入端点的 DNS 名称
 * 该 DNS 名称的 TLS 证书
 
 在本示例中，你将使用 DNS 名称 `onboarding-endpoint.example`，因为我们不希望你使用可路由的 DNS 名称。
@@ -45,7 +45,7 @@ EOF
 ```
 
 然后，通过执行以下命令创建证书签名请求（`onboarding-endpoint.example.csr.pem`）和
-工作负载上线端点的私钥（`onboarding-endpoint.example.key.pem`）：
+工作负载载入端点的私钥（`onboarding-endpoint.example.key.pem`）：
 
 ```bash
 openssl req \
@@ -96,9 +96,9 @@ kubectl create secret tls onboarding-endpoint-tls-cert \
   --key=onboarding-endpoint.example.key.pem
 ```
 
-## 启用工作负载上线
+## 启用工作负载载入
 
-一旦 TLS 证书准备好，你可以通过执行以下命令启用工作负载上线：
+一旦 TLS 证书准备好，你可以通过执行以下命令启用工作负载载入：
 
 ```bash
 cat <<EOF | kubectl apply -f -
@@ -118,9 +118,7 @@ spec:
 EOF
 ```
 
-上述命
-
-令指定了应使用 DNS 名称 `onboarding-endpoint.example` 设置工作负载上线端点，使用在 secret `onboarding-endpoint-tls-cert` 中可用的证书。
+上述命令指定了应使用 DNS 名称 `onboarding-endpoint.example` 设置工作负载载入端点，使用在 secret `onboarding-endpoint-tls-cert` 中可用的证书。
 
 它还指定应部署一个本地存储库，其中包含用于 Workload Onboarding 代理和 Istio Sidecar 的 DEB/RPM 包。
 
@@ -133,9 +131,9 @@ kubectl wait --for=condition=Available -n istio-system \
   deployment/onboarding-repository
 ```
 
-## 验证工作负载上线端点
+## 验证工作负载载入端点
 
-由于你未使用可路由的 DNS 名称，因此需要找出已公开的工作负载上线端点的地址。
+由于你未使用可路由的 DNS 名称，因此需要找出已公开的工作负载载入端点的地址。
 
 执行以下命令以获取地址（DNS 名称或 IP 地址）：
 

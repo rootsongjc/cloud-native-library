@@ -10,7 +10,7 @@ weight: 5
 
 在开始之前，请确保你已经：
 
-- 检查新版本的 [要求](../../requirements-and-download#requirements)
+- 检查新版本的 [要求](../../requirements-and-download)
 
 ## 先决条件
 
@@ -35,7 +35,7 @@ weight: 5
 
 ### 备份 PostgreSQL 数据库
 
-[创建 PostgreSQL 数据库的备份](../../../operations/postgresql#create-a-backup-of-tsb-configuration)。
+[创建 PostgreSQL 数据库的备份](../../../operations/postgresql)。
 
 根据你的环境，连接到数据库的确切过程可能会有所不同，请参考你环境的文档。
 
@@ -77,6 +77,7 @@ helm history cp -n istio-system
 ```
 
 然后，你可以回滚到以前的版本：
+
 ```bash
 helm rollback cp <REVISION> -n istio-system
 ```
@@ -93,7 +94,7 @@ kubectl scale deployment tsb iam -n tsb --replicas=0
 
 #### 恢复 PostgreSQL
 
-[从备份中恢复你的 PostgreSQL 数据库](../../../operations/postgresql#restore-a-backup)。
+[从备份中恢复你的 PostgreSQL 数据库](../../../operations/postgresql)。
 根据你的环境，连接到数据库的确切过程可能会有所不同，请参考你环境的文档。
 
 #### 恢复管理平面

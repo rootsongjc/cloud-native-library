@@ -66,7 +66,7 @@ sudo apt-get update -y
 sudo apt-get install -y ca-certificates
 ```
 
-将你在[设置证书时创建的文件](../../../aws-ec2/enable-workload-onboarding) `example-ca.crt.pem` 的内容复制并放置在本地虚拟机的位置 `/usr/local/share/ca-certificates/example-ca.crt`。
+将你在[设置证书时创建的文件](../../aws-ec2/enable-workload-onboarding) `example-ca.crt.pem` 的内容复制并放置在本地虚拟机的位置 `/usr/local/share/ca-certificates/example-ca.crt`。
 
 使用你喜欢的工具来执行此操作。如果你没有安装任何编辑器或工具，你可以使用以下 `cat` 和 `dd` 的组合：
 

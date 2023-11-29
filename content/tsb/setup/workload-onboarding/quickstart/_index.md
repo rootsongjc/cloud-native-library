@@ -1,5 +1,6 @@
 ---
-title: 工作负载快速上线
+title: 工作负载快速载入
+linktitle: 快速载入
 weight: 2
 ---
 

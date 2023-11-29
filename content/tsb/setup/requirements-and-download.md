@@ -103,7 +103,7 @@ TSB 使用 kubernetes CSR 资源为各种 Webhook 颁发证书。如果你的配
 
 ## 同步 Tetrate Service Bridge 镜像
 
-安装了`tctl`之后，你可以检索必要的容器镜像并将它们上传到你的私有 Docker 注册表。`tctl`工具通过`image-sync`命令简化了此过程，该命令下载与当前`tctl`版本对应的图像版本，并将其推送到你的 Docker 注册表。使用你的 Tetrate 存储库帐户凭据和指定你的私有 Docker 注册表的`registry`参数使用`username`和`apikey`参数。
+安装了`tctl`之后，你可以检索必要的容器镜像并将它们上传到你的私有 Docker 注册表。`tctl`工具通过`image-sync`命令简化了此过程，该命令下载与当前`tctl`版本对应的 镜像版本，并将其推送到你的 Docker 注册表。使用你的 Tetrate 存储库帐户凭据和指定你的私有 Docker 注册表的`registry`参数使用`username`和`apikey`参数。
 
 ```bash
 tctl install image-sync --username <user-name> \    --apikey <api-key> --registry <registry-location>

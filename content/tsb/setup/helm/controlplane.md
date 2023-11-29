@@ -4,25 +4,25 @@ description: 如何使用 Helm 安装控制平面组件。
 weight: 3
 ---
 
-此 Chart 安装 TSB 控制平面 Operator 以将集群引入。与[管理平面 Helm Chart](../managementplane)类似，它还允许你使用[TSB `ControlPlane` CR](../../refs/install/controlplane/v1alpha1/spec)安装 TSB 控制平面组件，以及使其正常运行所需的所有密钥。
+此 Chart 安装 TSB 控制平面 Operator 以将集群引入。与[管理平面 Helm Chart](../managementplane)类似，它还允许你使用[TSB `ControlPlane` CR](../../../refs/install/controlplane/v1alpha1/spec)安装 TSB 控制平面组件，以及使其正常运行所需的所有密钥。
 
 在开始之前，请确保你已完成以下操作：
 
-- 检查 [Helm 安装过程](../helm#installation-process)
+- 检查 [Helm 安装过程](../helm)
 - [已安装 TSB 管理平面](../managementplane)
-- [使用 tctl 登录到管理平面](../tctl_connect)
+- [使用 tctl 登录到管理平面](../../tctl-connect)
 - 安装 [yq](https://github.com/mikefarah/yq#install)。这将用于从创建集群响应中获取 Helm 值。
 
 {{<callout note  "隔离边界">}}
 TSB 1.6 引入了隔离边界，允许你在 Kubernetes 集群内或跨多个集群中拥有多个 TSB 管理的 Istio 环境。隔离边界的好处之一是你可以执行控制平面的金丝雀升级。
 
 要启用隔离边界，你必须使用环境变量 `ISTIO_ISOLATION_BOUNDARIES=true` 更新 Operator 部署，并在控制平面 CR 中包括 `isolationBoundaries` 字段。
-有关更多信息，请参见[隔离边界](../isolation-boundaries)。
+有关更多信息，请参见[隔离边界](../../isolation-boundaries)。
 {{</callout>}}
 
 ## 先决条件
 
-在开始之前，你需要创建一个 [集群对象](../../refs/tsb/v2/cluster) 在 TSB 中表示你将安装 TSB 控制平面的集群。将 `<cluster-name-in-tsb>` 和 `<organization-name>` 替换为你的环境中的正确值：
+在开始之前，你需要创建一个 [集群对象](../../../refs/tsb/v2/cluster) 在 TSB 中表示你将安装 TSB 控制平面的集群。将 `<cluster-name-in-tsb>` 和 `<organization-name>` 替换为你的环境中的正确值：
 
 ```yaml
 apiVersion: api.tsb.tetrate.io/v2
@@ -55,7 +55,7 @@ helm install cp tetrate-tsb-helm/controlplane \
   --set image.registry=<registry-location>
 ```
 
-等待 TSB 控制平面组件成功部署。要验证安装是否成功，你可以尝试登录到 TSB UI 或使用 [tctl](../tctl_connect) 连接到 TSB，然后检查集群列表，看看是否已经加入了集群。
+等待 TSB 控制平面组件成功部署。要验证安装是否成功，你可以尝试登录到 TSB UI 或使用 [tctl](../../tctl-connect) 连接到 TSB，然后检查集群列表，看看是否已经加入了集群。
 
 ## 故障排除
 
@@ -82,7 +82,7 @@ helm install cp tetrate-tsb-helm/controlplane \
 
 ### 控制平面资源配置
 
-这是一个 **可选** 字段。你可以在 Helm 值文件中设置 [TSB `ControlPlane` CR](../../refs/install/controlplane/v1alpha1/spec)，以使 TSB 控制平面正常运行。
+这是一个 **可选** 字段。你可以在 Helm 值文件中设置 [TSB `ControlPlane` CR](../../../refs/install/controlplane/v1alpha1/spec)，以使 TSB 控制平面正常运行。
 
 | 名称   | 描述                                  | 默认值 |
 | ------ | ------------------------------------- | ------ |
@@ -138,8 +138,8 @@ XCP 使用 JWT 进行 Edge 和 Central 之间的身份验证。
 | `operator.deployment.replicaCount`             | 部署管理的副本数                                             |        |
 | `operator.deployment.strategy`                 | 要使用的部署策略                                             |        |
 | `operator.deployment.tolerations`              | 适用于 Pod 调度的耐受性集合                                  |        |
-| `operator.deployment.podSecurityContext`       | 应用于 Pod 的 [SecurityContext](../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-podsecuritycontext) 属性 |        |
-| `operator.deployment.containerSecurityContext` | 应用于 Pod 的容器的 [SecurityContext](../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-securitycontext) 属性 |       |
+| `operator.deployment.podSecurityContext`       | 应用于 Pod 的 [SecurityContext](../../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-podsecuritycontext) 属性 |        |
+| `operator.deployment.containerSecurityContext` | 应用于 Pod 的容器的 [SecurityContext](../../../refs/install/kubernetes/k8s#tetrateio-api-install-kubernetes-securitycontext) 属性 |       |
 | `operator.service.annotations`                 | 要添加到服务的自定义注释集                   |       |
 | `operator.serviceAccount.annotations`          | 要添加到服务帐户的自定义注释集               |       |
 | `operator.serviceAccount.imagePullSecrets`     | 从注册表拉取镜像所需的密钥名称集合            |       |
