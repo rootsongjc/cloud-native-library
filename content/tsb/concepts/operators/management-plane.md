@@ -4,7 +4,7 @@ description: TSB Operator 和管理平面生命周期。
 weight: "1"
 ---
 
-本页深入介绍了 TSB 操作员如何配置管理平面组件，并概述了 TSB 操作员管理的各种组件。
+本页深入介绍了 TSB Operator 如何配置管理平面组件，并概述了 TSB Operator 管理的各种组件。
 
 TSB Operator 配置为监督管理平面组件的生命周期，主动监视部署的同一命名空间内的 `ManagementPlane` 自定义资源 (CR)。默认情况下，管理平面驻留在 `tsb` 命名空间中。你可以参阅[管理平面安装 API](../../../refs/install/managementplane/v1alpha1/spec) 参考文档，了解有关自定义资源 API 的全面详细信息。
 

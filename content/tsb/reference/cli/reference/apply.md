@@ -1,9 +1,7 @@
 ---
-id: apply
 title: tctl apply
 description: Apply command
 ---
-## tctl apply
 
 Apply a configuration to a resource by filename or stdin
 

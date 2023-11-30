@@ -62,7 +62,7 @@ spec:
 
 管理平面集群可以将配置推送到整个组织，而无需在该平面中授予任何特殊权限，一旦在该平面启用了 GitOps。
 
-在对 `ManagementPlane` CR 应用更改后，TSB 操作员将为集群激活该功能，并开始响应应用的 TSB K8s 资源。
+在对 `ManagementPlane` CR 应用更改后，TSB Operator 将为集群激活该功能，并开始响应应用的 TSB K8s 资源。
 
 ### 在控制平面中启用 GitOps
 
@@ -97,7 +97,7 @@ $ tctl x gitops grant demo
 $ tctl x gitops grant --help
 ```
 
-在对 `ControlPlane` CR 应用更改后，TSB 操作员将为集群激活该功能，并开始响应应用的 TSB K8s 资源。
+在对 `ControlPlane` CR 应用更改后，TSB Operator 将为集群激活该功能，并开始响应应用的 TSB K8s 资源。
 
 ## 监控 GitOps 健康状况
 

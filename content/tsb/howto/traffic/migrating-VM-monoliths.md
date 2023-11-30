@@ -10,7 +10,7 @@ weight: 2
 在开始之前：
 - [安装 TSB 管理平面](../../../setup/self-managed/management-plane-installation)
 - 载入了一个[集群](../../../setup/self-managed/onboarding-clusters)
-- [安装数据面操作员](../../../concepts/operators/data-plane)
+- [安装数据面 Operator](../../../concepts/operators/data-plane)
 - 配置一个虚拟机以运行在 TSB 工作负载中（本指南假定使用 Ubuntu 20.04）。
 
 第一步是安装 Docker。

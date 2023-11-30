@@ -1,9 +1,7 @@
 ---
-id: get
 title: tctl get
 description: Get command
 ---
-## tctl get
 
 Get one or multiple objects
 

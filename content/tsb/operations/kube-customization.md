@@ -4,22 +4,22 @@ Description: 说明如何在 Kubernetes 中配置 TSB 组件，包括使用覆�
 weight: 12
 ---
 
-本文描述了如何自定义 Kubernetes 部署的 TSB 组件，包括使用覆盖来执行由 Tetrate Service Bridge (TSB) 操作员部署的资源的高级配置，使用示例说明。
+本文描述了如何自定义 Kubernetes 部署的 TSB 组件，包括使用覆盖来执行由 Tetrate Service Bridge (TSB) Operator 部署的资源的高级配置，使用示例说明。
 
 ## 背景
 
-TSB 广泛使用[操作员（Operator）](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)模式在 Kubernetes 中部署和配置所需的部分。
+TSB 广泛使用[Operator（Operator）](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)模式在 Kubernetes 中部署和配置所需的部分。
 
-通常，通过操作员来进行自定义和微调参数，操作员负责创建必要的资源并控制其生命周期。
+通常，通过 Operator 来进行自定义和微调参数，Operator 负责创建必要的资源并控制其生命周期。
 
-例如，当你创建一个 IngressGateway CR 时，TSB 操作员会获取此信息并部署和/或更新相关资源，如 Kubernetes Service 对象，通过创建清单并应用它们。清单将使用你提供的某些参数，以及由 TSB 计算的其他默认值。
+例如，当你创建一个 IngressGateway CR 时，TSB Operator会获取此信息并部署和/或更新相关资源，如 Kubernetes Service 对象，通过创建清单并应用它们。清单将使用你提供的某些参数，以及由 TSB 计算的其他默认值。
 
 然而，TSB 并不一定会暴露用于微调 Service 对象的所有参数。如果 TSB 提供了所有用于配置 Service 对象的钩子，那么 TSB 将不得不实际上复制整个 Kubernetes API，这在现实中既不可行也不可取。
 
 这就是我们使用覆盖的地方，它允许你覆盖并应用于正在部署的资源的自定义配置。有关覆盖工作原理的更多详细信息，请阅读[参考文档中关于覆盖的文档](../../refs/install/kubernetes/k8s)。
 
 {{<callout warning 注意>}}
-覆盖作为 TSB 功能的一种逃生机制提供，应谨慎使用。当前可能通过覆盖可用的配置很可能会在未来通过 TSB 操作员来执行。
+覆盖作为 TSB 功能的一种逃生机制提供，应谨慎使用。当前可能通过覆盖可用的配置很可能会在未来通过 TSB Operator 来执行。
 {{</callout>}}
 
 ## 示例说明
@@ -315,7 +315,7 @@ spec:
 
 ### 在 TSB 组件中设置环境变量
 
-有时候，你需要设置 TSB 组件的任意环境变量 - 例如，对于包含 Log4j（版本 2.10 或更高版本）的 Java 二进制文件，为了应对与 Log4j 相关的安全漏洞，可以将 `LOG4J_FORMAT_MSG_NO_LOOKUPS` 环境变量设置为 `true`。为此，你可以使用 TSB 操作员配置中 Kubernetes 组件规范的 `env` 部分。
+有时候，你需要设置 TSB 组件的任意环境变量 - 例如，对于包含 Log4j（版本 2.10 或更高版本）的 Java 二进制文件，为了应对与 Log4j 相关的安全漏洞，可以将 `LOG4J_FORMAT_MSG_NO_LOOKUPS` 环境变量设置为 `true`。为此，你可以使用 TSB Operator 配置中 Kubernetes 组件规范的 `env` 部分。
 
 要设置 Management Plane（TSB）集群的值，你需要更新 `ManagementPlane` CR：
 

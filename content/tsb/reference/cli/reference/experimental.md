@@ -1,9 +1,7 @@
 ---
-id: experimental
 title: tctl experimental
 description: Experimental command
 ---
-## tctl experimental
 
 Experimental commands that may be modified or deprecated
 

@@ -21,7 +21,7 @@ _网关部署_ 是一组真正运行的 Envoy，而 _Istio 网关 API 资源_ �
 
 ![TSB 允许将多个网关设置和网关 API 资源配置到单个网关部署中。](../../../assets/howto/gateway/gateway-deploy-vs-config.svg)
 
-在本文中，我们只会关注 TSB 应用入口网关，而不是应用边缘网关（有关 "[_网关术语_](../../../concepts/terminology#gateway)" 和 "[_TSB 中的网关_](../../../concepts/traffic-management##gateways-in-tsb)" 的更多信息）。
+在本文中，我们只会关注 TSB 应用入口网关，而不是应用边缘网关（有关 "[网关术语](../../../concepts/glossary)" 和 "[TSB 中的网关](../../../concepts/traffic-management)" 的更多信息）。
 
 ## 在 TSB 中创建共享网关
 

@@ -22,6 +22,47 @@ description: 使用 TSB 进行金丝雀发布的指南。
 
 以下 YAML 文件包含三个对象 - 用于应用程序的工作区、用于配置应用程序入口的网关组以及用于配置金丝雀发布过程的流量组。将其存储为[`ws-groups.yaml`](../../../assets/howto/ws-groups.yaml)。
 
+<details>
+<summary>ws-groups.yaml</summary>
+
+```yaml
+apiVersion: api.tsb.tetrate.io/v2
+kind: Workspace
+metadata:
+  name: helloworld
+  organization: tetrate
+  tenant: tetrate
+spec:
+  namespaceSelector:
+    names:
+      - '*/helloworld'
+---
+apiVersion: traffic.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  name: helloworld-traffic
+  workspace: helloworld
+  organization: tetrate
+  tenant: tetrate
+spec:
+  namespaceSelector:
+    names:
+      - '*/helloworld'
+---
+apiVersion: gateway.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  name: helloworld-gateway
+  workspace: helloworld
+  organization: tetrate
+  tenant: tetrate
+spec:
+  namespaceSelector:
+    names:
+      - '*/helloworld'
+```
+</details>
+
 使用 tctl 应用：
 
 ```bash
@@ -39,6 +80,49 @@ kubectl label namespace helloworld istio-injection=enabled
 
 将文件存储为[`helloworld.yaml`](../../../assets/howto/helloworld.yaml)，并使用`kubectl`应用：
 
+<details>
+<summary>helloworld.yaml</summary>
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helloworld-v1
+  namespace: helloworld
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: helloworld
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: helloworld
+        version: v1
+    spec:
+      containers:
+        - name: hello
+          image: 'gcr.io/google-samples/hello-app:1.0'
+          env:
+            - name: 'PORT'
+              value: '8080'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: helloworld
+  namespace: helloworld
+spec:
+  selector:
+    app: helloworld
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: 8080
+```
+</details>
+
 ```bash
 kubectl apply -f helloworld.yaml
 ```
@@ -46,6 +130,29 @@ kubectl apply -f helloworld.yaml
 在继续之前，你应确保没有流量被意外地定向到应用程序的任何新版本。然后，在你之前创建的流量组中创建一个`ServiceRoute`，以便所有`helloworld`流量仅发送到版本`v1`。
 
 将文件存储为`serviceroute.yaml`，并使用`tctl`应用：
+
+<details>
+<summary>serviceroute.yaml</summary>
+
+
+```yaml
+apiVersion: traffic.tsb.tetrate.io/v2
+kind: ServiceRoute
+metadata:
+  name: helloworld-canary
+  group: helloworld-traffic
+  workspace: helloworld
+  organization: tetrate
+  tenant: tetrate
+spec:
+  service: helloworld/helloworld.helloworld.svc.cluster.local
+  subsets:
+    - name: v1
+      labels:
+        version: v1
+      weight: 100
+```
+</details>
 
 ```bash
 tctl apply -f serviceroute.yaml
@@ -65,13 +172,60 @@ kubectl create secret tls -n helloworld helloworld-certs \
 
 将文件存储为[`hello-ingress.yaml`](../../../assets/howto/hello-ingress.yaml)，并使用`kubectl`应用：
 
+<details>
+<summary>hello-ingress.yaml</summary>
+
+```yaml
+apiVersion: install.tetrate.io/v1alpha1
+kind: IngressGateway
+metadata:
+  name: tsb-gateway-helloworld
+  namespace: helloworld
+spec:
+  kubeSpec:
+    service:
+      type: LoadBalancer
+```
+</details>
+
 ```bash
 kubectl apply -f hello-ingress.yaml
 ```
 
-集群中的 TSB 数据平面操作员将获取此配置并在你的应用程序命名空间中部署网关的资源。现在所剩的就是配置网关，以便将流量路由到你的应用程序。
+集群中的 TSB 数据平面 Operator 将获取此配置并在你的应用程序命名空间中部署网关的资源。现在所剩的就是配置网关，以便将流量路由到你的应用程序。
 
 将文件存储为[`helloworld-gateway.yaml`](../../../assets/howto/hello-gateway.yaml)，并使用`tctl`应用：
+
+<details>
+<summary>helloworld-gateway.yaml</summary>
+
+```yaml
+apiVersion: gateway.tsb.tetrate.io/v2
+kind: IngressGateway
+metadata:
+  name: helloworld-ingress
+  group: helloworld-gateway
+  workspace: helloworld
+  organization: tetrate
+  tenant: tetrate
+spec:
+  workloadSelector:
+    namespace: helloworld
+    labels:
+      app: tsb-gateway-helloworld
+  http:
+    - name: helloworld
+      port: 443
+      hostname: helloworld.tetrate.com
+      tls:
+        mode: SIMPLE
+        secretName: helloworld-certs
+      routing:
+        rules:
+          - route:
+              host: helloworld/helloworld.helloworld.svc.cluster.local
+```
+</details>
 
 ```bash
 tctl apply -f helloworld-gateway.yaml
@@ -87,6 +241,35 @@ curl -k -s --connect-to helloworld.tetrate.com:443:$GATEWAY_IP "https://hellowor
 
 将文件存储为[`helloworld-v2.yaml`](../../../assets/howto/helloworld-v2.yaml)，并使用`kubectl`应用：
 
+<details>
+<summary>helloworld-v2.yaml</summary>
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helloworld-v2
+  namespace: helloworld
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: helloworld
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: helloworld
+        version: v2
+    spec:
+      containers:
+        - name: hello
+          image: 'gcr.io/google-samples/hello-app:2.0'
+          env:
+            - name: 'PORT'
+              value: '8080'
+```
+</details>
+
 ```bash
 kubectl apply -f helloworld-v2.yaml
 ```
@@ -94,6 +277,32 @@ kubectl apply -f helloworld-v2.yaml
 由于你创建了一个针对所有流量发送到版本`v1`的服务路由。在此时，版本`v2`将不会收到任何请求。通过修改服务路由，以将 80% 的流量发送到我们已知的稳定版本`v1`，并将 20% 的流量发送到版本`v2`，开始进行金丝雀发布。
 
 将文件存储为[`serviceroute-20.yaml`](../../../assets/howto/serviceroute-20.yaml)，并使用`tctl`应用：
+
+<details>
+<summary>serviceroute-20.yaml</summary>
+
+```yaml
+apiVersion: traffic.tsb.tetrate.io/v2
+kind: ServiceRoute
+metadata:
+  name: helloworld-canary
+  group: helloworld-traffic
+  workspace: helloworld
+  organization: tetrate
+  tenant: tetrate
+spec:
+  service: helloworld/helloworld.helloworld.svc.cluster.local
+  subsets:
+    - name: v1
+      labels:
+        version: v1
+      weight: 80
+    - name: v2
+      labels:
+        version: v2
+      weight: 20
+```
+</details>
 
 ```bash
 tctl apply -f serviceroute-20.yaml

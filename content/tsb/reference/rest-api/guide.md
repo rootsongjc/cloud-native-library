@@ -1,65 +1,53 @@
 ---
-title: REST API Guide
-menu-title: Guide
-description: Guide describing how to use our REST API for communication with TSB.
+title: REST API 指南
+weight: 1
+description: 介绍如何使用我们的 REST API 与 TSB 进行通信的指南。
 ---
 
-In this guide you'll learn how to use the TSB REST API to perform common
-operations on the platform. The examples in this guide use `curl`, because it's
-a popular command used to perform HTTP requests, however, any tool that can do
-HTTP will work.
+在本指南中，您将学习如何使用 TSB REST API 执行常见操作。本指南中的示例使用 `curl`，因为它是用于执行 HTTP 请求的常用命令，但任何可以执行 HTTP 请求的工具都可以使用。
 
-## Authentication
+## 身份验证
 
-TSB has two main authentication mechanisms: basic authentication and JWT token
-authentication.
+TSB 有两种主要的身份验证机制：基本身份验证和 JWT 令牌身份验证。
 
-### Basic Auth
+### 基本身份验证
 
-[Basic HTTP authentication](https://tools.ietf.org/html/rfc7617) is done by
-sending the HTTP `Authorization` header with the credentials encoded in the
-header value. The basic format of the header is:
+[基本 HTTP 身份验证](https://tools.ietf.org/html/rfc7617) 通过在 HTTP `Authorization` 头中发送编码在头值中的凭据来完成。头的基本格式如下：
 
 ```text
 Authorization: Basic base64(username:password)
 ```
 
-For example:
+例如：
 
 ```text
 Authorization: Basic dGVzdDoxMjPCow==
 ```
 
-### JWT Token Auth
+### JWT 令牌身份验证
 
-JWT Token authentication is header-based, and it's configured by setting a JWT
-token in the `x-tetrate-token` header. For example:
+JWT 令牌身份验证是基于头的，并通过在 `x-tetrate-token` 头中设置 JWT 令牌来配置。例如：
 
 ```text
 x-tetrate-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
 ```
 
-## HTTP verbs
+## HTTP 动词
 
-The TSB REST API uses the common HTTP verbs to model all the operations that you
-can make on the different TSB resources:
+TSB REST API 使用常见的 HTTP 动词来建模对不同 TSB 资源进行的所有操作：
 
-- **GET** requests are used to get lists of resources or get the details of
-  specific objects.
-- **POST** requests are used to create new resources.
-- **PUT** requests are used to modify existing resources.
-- **DELETE** requests are used to delete resources and their children.
+- **GET** 请求用于获取资源列表或获取特定对象的详细信息。
+- **POST** 请求用于创建新资源。
+- **PUT** 请求用于修改现有资源。
+- **DELETE** 请求用于删除资源及其子资源。
 
-### Example: common resource CRUD operations
+### 示例：常见资源 CRUD 操作
 
-The following examples show how to use the common CRUD operations on TSB
-resources using the REST API:
+以下示例显示了如何使用 REST API 对 TSB 资源执行常见的 CRUD 操作：
 
-#### Resource creation
+#### 创建资源
 
-In this example, you'll create a tenant in an existing organization.
-You do this by sending the corresponding POST requests to the TSB rest API and
-using Basic Authentication:
+在此示例中，您将在现有组织中创建一个租户。您可以通过向 TSB REST API 发送相应的 POST 请求并使用基本身份验证来执行此操作：
 
 ```bash
 $ curl -u username:password \
@@ -75,28 +63,23 @@ $ curl -u username:password \
 EOF
 ```
 
-Output:
+输出：
 
 ```json
 {"fqn":"organizations/myorg/tenants/mytenant","displayName":"My tenant","etag":"\"hhO8m7WN3LM=\"","description":"Tenant created using the TSB REST API"}
 ```
 
-### Modify a resource
+### 修改资源
 
-Resources are modified by sending an updated object in a PUT request.
+通过在 PUT 请求中发送更新后的对象来修改资源。
 
-In order to update an object, you need to have the last copy of it. TSB has
-mechanisms to prevent concurrent updates and avoid conflicting versions of the
-same objects. To this end, TSB assigns an etag to every object and updates it
-every time the object is updated. It is mandatory to send the last etag for the
-object in PUT requests, to tell TSB that you are modifying the most recent
-version of the object.
+要更新对象，您需要拥有它的最新副本。TSB 具有防止并发更新和避免相同对象的冲突版本的机制。为此，TSB 为每个对象分配一个 etag，并在每次对象更新时更新它。在 PUT 请求中，必须发送对象的最新 etag，以告诉 TSB 您正在修改对象的最新版本。
 
-In this example you'll:
+在此示例中，您将执行以下操作：
 
-✓ Send a GET request first, to get the last version of the object (updated with the latest etag).<br />
-✓ Locally modify the returned JSON.<br />
-✓ Send back the modified JSON document in a PUT request.
+✓ 首先发送 GET 请求，以获取对象的最新版本（使用最新的 etag 更新）。<br />
+✓ 在返回的 JSON 中进行本地修改。<br />
+✓ 将修改后的 JSON 文档发送回以 PUT 请求。
 
 ```bash
 curl -u username:password \
@@ -105,7 +88,7 @@ curl -u username:password \
 
 ```
 
-Output:
+输出：
 ```json
 {
   "fqn": "organizations/myorg/tenants/mytenant",
@@ -115,8 +98,7 @@ Output:
 }
 ```
 
-Modify the JSON document and send it back. It is important to keep the etag
-field:
+修改 JSON 文档并将其发送回。重要的是要保留 etag 字段：
 
 ```bash
 curl -u username:password \
@@ -131,17 +113,15 @@ curl -u username:password \
 EOF
 ```
 
-Output:
+输出：
 
 ```json
 {"fqn":"organizations/myorg/tenants/mytenant","displayName":"My Modified tenant","etag":"\"BhsObrdJUWI=\"","description":"Modified description"}
 ```
 
-### Delete a resource
+### 删除资源
 
-Resources are deleted by sending the corresponding DELETE requests to the
-resource's URL. If a request is sent to a parent resource, then all child
-resources will be deleted as well.
+通过向资源的 URL 发送相应的 DELETE 请求来删除资源。如果将请求发送到父资源，则还将删除所有子资源。
 
 ```bash
 curl -u username:password \

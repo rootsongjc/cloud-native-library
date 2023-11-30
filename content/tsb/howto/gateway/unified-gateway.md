@@ -8,9 +8,9 @@ description: "本文介绍了 Tetrate Service Bridge（TSB）生态系统中统�
 
 ## 简介
 
-统一网关是在 TSB 1.7.0 中引入的关键功能，它将[Tier1Gateway](https://docs.tetrate.io/service-bridge/next/refs/tsb/gateway/v2/tier1_gateway)和[IngressGateway](https://docs.tetrate.io/service-bridge/next/refs/tsb/gateway/v2/ingress_gateway)的功能合并到一个称为[Gateway](https://docs.tetrate.io/service-bridge/next/refs/tsb/gateway/v2/gateway)的公共资源中。这种统一简化了网关管理过程，并提供了更一致的体验。
+统一网关是在 TSB 1.7.0 中引入的关键功能，它将[Tier1Gateway](../../../refs/tsb/gateway/v2/tier1-gateway)和[IngressGateway](../../../refs/tsb/gateway/v2/ingress_gateway)的功能合并到一个称为[Gateway](../../../refs/tsb/gateway/v2/gateway)的公共资源中。这种统一简化了网关管理过程，并提供了更一致的体验。
 
-从 TSB 1.7.0 开始，Tier1Gateway 和 IngressGateway 资源将被弃用，我们强烈建议使用 Gateway 资源满足你的所有网关需求。前 Tier1 Gateway 现在将被统称为[Edge Gateway](https://docs.tetrate.io/service-bridge/next/concepts/glossary/#edge-gateway)。
+从 TSB 1.7.0 开始，Tier1Gateway 和 IngressGateway 资源将被弃用，我们强烈建议使用 Gateway 资源满足你的所有网关需求。前 Tier1 Gateway 现在将被统称为[Edge Gateway](../../../concepts/glossary/#edge-gateway)。
 
 统一网关选项卡无缝集成到 TSB UI 中，使得任何网关的配置都变得容易，不管它是作为 Tier 1 还是 Tier 2 网关工作。
 
@@ -42,7 +42,7 @@ description: "本文介绍了 Tetrate Service Bridge（TSB）生态系统中统�
 
 统一网关不仅仅是网关，而是赋能。新老客户都可以通过直连模式发挥网关 API 的全部功能，从而对其网格基础设施获得无与伦比的控制和自定义。
 
-### 与开放 API 策略相符
+### 与 Open API 策略相符
 
 我们相信开放标准的力量。统一网关与我们的开放 API 策略完美契合，使你可以使用标准化的 Open API 规范配置统一网关。这种方法促进了一致性，并简化了与现有工具链的集成。
 

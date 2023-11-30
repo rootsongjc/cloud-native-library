@@ -1,9 +1,7 @@
 ---
-id: index
 title: tctl 
 description: Tctl command
 ---
-## tctl
 
 tctl
 

@@ -14,7 +14,7 @@ weight: 9
 
 ## 故障排除
 
-一旦你已经应用了[必要的机密](../../setup/helm/controlplane#secrets-configuration)，安装了控制平面操作员，并创建了控制平面 CR，如果存在一些配置错误，一些 Pod 可能无法启动。始终检查 `tsb-operator-control-plane` 的日志，因为它将提供有关可能出错的详细信息。
+一旦你已经应用了[必要的机密](../../setup/helm/controlplane#secrets-configuration)，安装了控制平面 Operator，并创建了控制平面 CR，如果存在一些配置错误，一些 Pod 可能无法启动。始终检查 `tsb-operator-control-plane` 的日志，因为它将提供有关可能出错的详细信息。
 
 ### 服务帐号问题
 

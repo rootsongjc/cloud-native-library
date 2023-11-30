@@ -1,204 +1,193 @@
 ---
-title: Failure Scenarios
+title: 故障场景
+weight: 2
 ---
 
-# Failure Scenarios for the Tetrate Management Plane
+我们将考虑以下故障场景：
 
+- 工作负载集群
+- 边缘控制平面
+- 从管理到工作负载的连接丢失
+- 中央控制平面
+- 管理平面
+- 管理集群
 
-We will consider the following failure scenarios:
+并评估故障对以下操作的影响：
 
- - Workload Cluster
- - Edge Control Plane
- - Loss of connectivity from Management to Workload
- - Central Control Plane
- - Management Plane
- - Management Cluster
+- **运行生产负载** - 生产负载的可用性、安全性和正确运行
+- **本地集群操作** - 包括直接修改集群配置（如 kubectl 操作）和间接修改（即由本地边缘控制平面进行的更改以应用 TSB 策略或更新服务发现终端点）
+- **指标收集** - 来自远程工作负载集群的指标的集中收集和存储
+- **管理操作** - 由 GitOps、API 或管理 UI 执行的 TSB 配置更改
 
-... and evaluate the effect of the failure on the following operations:
+我们将研究典型的恢复情况，当失败组件恢复或被恢复时。
 
- - **Running production workloads** - the availability, security and correct operation of production workloads
- - **Local Cluster operations** - this includes the direct modification of cluster configuration such as kubectl actions, and indirect modification (i.e. changes made by the local Edge Control Plane to apply TSB policies or update service discovery endpoints)
- - **Metrics Collection** - the central collection and storage of metrics from remote workload clusters
- - **Management Operations** - TSB configuration changes, performed by GitOps, API or Management UI
+## 架构和术语
 
-We will look at the typical recovery scenario when a failed component recovers or is restored.
+在本指南中，我们将使用以下架构描述：
 
+![简化架构图，显示主要配置和指标流](../images/ha-dr-overview.png)
 
-## Architecture and Terms
+- **工作负载集群**：工作负载集群是托管生产工作负载的 Kubernetes 集群。
+- **生产工作负载**：生产工作负载是在工作负载集群中运行的应用程序或服务。为了避免疑虑，'生产工作负载' 还包括非生产工作负载。
+- **数据平面**：数据平面是部署在工作负载集群中的本地 Istio 实例。
+- **边缘控制平面**：边缘控制平面是部署在工作负载集群中的 Tetrate 软件组件（位于 istio-system 和其他命名空间中，如 cert-manager、xcp-multicluster）。它配置本地 Istio 数据平面，并向中央控制平面报告状态。
+- **管理集群**：管理集群是托管 Tetrate 管理平面组件（管理平面、中央控制平面）的 Kubernetes 集群。
+- **中央控制平面**：中央控制平面是 Tetrate 软件组件，它接受来自管理平面的配置以及来自边缘控制平面的状态信息。它评估整个配置，然后将必要的配置更新分发给每个边缘控制平面。
+- **管理平面**：管理平面是 Tetrate 软件组件，实体（GitOps、API 客户端、UI 客户端）与之交互。它提供 RBAC 访问控制，以控制哪些实体可以对哪些配置进行 CRUD 操作。配置存储在本地，并同步到中央控制平面。
 
-In this guide, we’ll use the following Architecture description:
+有关更多信息，请参阅 Tetrate 架构文档。
 
-| [![Simplified Architecture Diagram, showing primary configuration and metrics flows](images/ha-dr-overview.png)](images/ha-dr-overview.png) _Simplified Architecture Diagram, showing primary configuration and metrics flows_ |
-| :--: |
+### 术语
 
- - **Workload Cluster**: A Workload Cluster is a kubernetes cluster that hosts production workloads
- - **Production Workload**: A Production Workload is an app or service running in a Workload Cluster.  For avoidance of doubt, ‘Production Workload’ also includes non-production workloads 
- - **Data Plane**: The Data Plane is the local Istio instance, deployed in the Workload Cluster
- - **Edge Control Plane**: The Edge Control Plane is the Tetrate software component installed in the istio-system and other namespaces (e.g. cert-manager, xcp-multicluster) in the Workload Cluster.  It configures the local Istio dataplane, and reports state to the Central Control Plane
- - **Management Cluster**: The Management Cluster is the kubernetes cluster that hosts the Tetrate management plane components (Management Plane, Central Control Plane).
- - **Central Control Plane**: The Central Control Plane is the Tetrate software component that accepts configuration from the Management Plane and status information from Edge Control Planes.  It evaluates the entire configuration, then distributes necessary configuration updates to each Edge Control Plane
- - **Management Plane**: The Management Plane is the Tetrate software component that entities (GitOps, API clients, UI clients) interact with.  It provides RBAC access control to control which entities can CRUD which configuration.  Configuration is stored locally, and synced to the Central Control Plane
+- 故障（Failure）意味着相关组件不可用
+- 恢复（Recovery）意味着重新获得相关组件的可用性，通常使用过时的配置或状态
+- 修复（Restoration）意味着重新安装失败的组件，无法恢复组件
+- ✅ 组件或服务不受影响
+- ⚠️ 发生了有限的服务中断。
+- ❌ 发生了受影响组件的完全服务中断
 
-For more information, please refer to the Tetrate Architecture Documentation.
+## 工作负载集群故障
 
-### Terms
+**场景**：单个工作负载集群发生灾难性故障。
 
- - "_Failure_" means loss of availability of the relevant component
- - "_Recovery_" means regaining availability of the relevant component, likely with out-of-date configuration or status
- - "_Restoring_" means reinstalling a failed component, where it’s not possible to recover the component
- - ✅ A component or service is not affected
- - ⚠️ A limited loss-of-service occurs.
- - ❌ A total loss-of-service in the affected component occurs
+![单个工作负载集群的灾难性故障](../images/ha-dr-edgecluster.png)
 
+### 影响
 
-## Failure of Workload Cluster
-
-**Scenario**: There is a catastrophic failure of a single Workload Cluster. 
-
-| [![Catastrophic failure of a single Workload Cluster](images/ha-dr-edgecluster.png)](images/ha-dr-edgecluster.png) _Catastrophic failure of a single Workload Cluster_ |
-| :--: |
-
-### Impacts
-
-| Operations | Impact |  |
+| 操作 | 影响 |  |
 | ---------- | ------ | -- |
-| Running Workloads | Local workloads are unavailable.<br/><br/>Workloads on other clusters are unaffected. Workload HA (Tier1 and EW gateways) ensures no interruption in service. | ⚠️ |
-| Local Cluster Ops | Local cluster changes cannot be made.<br/><br/>Other clusters are unaffected. | ⚠️ |
-| Metrics Collection | Metrics cannot be collected from the local cluster.<br/><br/>Other cluster metric collection unaffected. | ⚠️ |
-| Management Ops | Changes to the affected Workload Cluster are queued, and applied when the cluster recovers.<br/><br/>All other management operations are unaffected. | ✅ |
+| 运行工作负载 | 本地工作负载不可用。<br/><br/>其他集群上的工作负载不受影响。工作负载 HA（Tier1 和 EW 网关）确保不中断服务。 | ⚠️ |
+| 本地集群操作 | 无法进行本地集群更改。<br/><br/>其他集群不受影响。 | ⚠️ |
+| 指标收集 | 无法从本地集群收集指标。<br/><br/>其他集群的指标收集不受影响。 | ⚠️ |
+| 管理操作 | 针对受影响的工作负载集群的更改将排队，并在集群恢复时应用。<br/><br/>所有其他管理操作不受影响。 | ✅ |
 
-### Recovery
+### 恢复
 
-If the local cluster recovers, configuration will be quickly updated and metrics collection will resume.
+如果本地集群恢复，配置将迅速更新，并且指标收集将恢复。
 
-### Restoration
+### 修复
 
-If necessary, the Tetrate Edge Control Plane can be re-installed.  When the cluster is re-introduced to the management plane, it will sync to the correct configuration.
+如果需要，可以重新安装 Tetrate 边缘控制平面。当集群重新引入管理平面时，它将同步到正确的配置。
 
-## Failure of Edge Control Plane
+## 边缘控制平面故障
 
-**Scenario**: There is a catastrophic failure of the Edge Control Plane in a single Workload Cluster. 
+**场景**：单个工作负载集群中的边缘控制平面发生灾难性故障。
 
-| [![Catastrophic failure of the Edge Control Plane in a single Workload Cluster](images/ha-dr-edgecp.png)](images/ha-dr-edgecp.png) _Catastrophic failure of the Edge Control Plane in a single Workload Cluster_ |
-| :--: |
+![单个工作负载集群中边缘控制平面的灾难性故障](../images/ha-dr-edgecp.png)
 
-### Impacts
+### 影响
 
-| Operations | Impact |  |
+| 操作 | 影响 |  |
 | ---------- | ------ | -- |
-| Running Workloads | Running Workloads in local or remote clusters are not affected. | ✅ |
-| Local Cluster Ops | Local cluster changes (kubectl) are unaffected. You can continue to push updates to the cluster.<br/><br/>Depending on the nature of the failure:<ul><li>New workloads may run partially configured until the edge control plane is restored. They may acquire global cluster policies that are already in the cluster but may lack the namespace-targeted and fine-grained policies.</li><li>Local service discovery endpoints for remote services might not be updated (local workload clusters are not aware of service changes on remote clusters).</li><li>GitOps integrations may be interrupted.</li></ul> | ⚠️ |
-| Metrics Collection | Metrics are collected locally, reduced, then forwarded to Management Plane ElasticSearch.  If collector services are unavailable, metrics might not be collected. | ⚠️ |
-| Management Ops | Changes to the affected Workload Cluster are queued and applied when Edge Control Plane recovers.<br/><br/>All other management operations are unaffected. | ✅ |
+| 运行工作负载 | 本地或远程集群中的运行工作负载不受影响。 | ✅ |
+| 本地集群操作 | 本地集群更改（kubectl）不受影响。您可以继续向集群推送更新。<br/><br/>根据故障的性质：<ul><li>新工作负载可能部分配置运行，直到边缘控制平面恢复。它们可能获取已存在于集群中但可能缺少命名空间定向和细粒度策略的全局集群策略。</li><li>远程服务的本地服务发现终端点可能不会更新（本地工作负载集群不知道远程集群上的服务更改）。</li><li>GitOps 集成可能会中断。</li></ul> | ⚠️ |
+| 指标收集 | 指标在本地进行收集，然后转发到管理平面的 ElasticSearch。如果收集器服务不可用，可能无法收集指标。 | ⚠️ |
+| 管理操作 | 针对受影响的工作负载集群的更改将排队，并在边缘控制平面恢复时应用。<br/><br/>所有其他管理操作不受影响。 | ✅ |
 
-### Recovery
+### 恢复
 
-If the local cluster recovers, configuration will be quickly updated and metrics collection will resume.
+如果本地集群恢复，配置将迅速更新，并且指标收集将恢复。
 
-### Restoration
+### 修复
 
-If necessary, the Tetrate Edge Control Plane can be re-installed.  When the cluster is re-introduced to the management plane, it will sync to the correct configuration.
+如果需要，可以重新安装 Tetrate 边缘控制平面。当集群重新引入管理平面时，它将同步到正确的配置。
 
-## Loss of Connectivity - Workload to Management Cluster
+## 连接丢失 - 工作负载到管理集群
 
-**Scenario**: There is a loss of connectivity between the Workload Cluster and the central Management Cluster. 
+**场景**：工作负载集群与中央管理集群之间的连接丢失。
 
-| [![Loss of connectivity between  Workload Cluster and central Management Cluster](images/ha-dr-network.png)](images/ha-dr-network.png) _Loss of connectivity between Workload Cluster and central Management Cluster_ |
-| :--: |
+![工作负载集群与中央管理集群之间的连接丢失](../images/ha-dr-network.png)
 
-### Impacts
+### 影响
 
-| Operations | Impact |  |
+| 操作 | 影响 |  |
 | ---------- | ------ | -- |
-| Running Workloads | Running Workloads in local or remote clusters are not affected. | ✅ |
-| Local Cluster Ops | Local cluster changes (kubectl) are unaffected.<br/><br/>New workloads may run partially configured until connectivity is restored. They may acquire global cluster policies that are already in the cluster but will lack namespace-targeted and fine-grained policies.<br/>Local service discovery endpoints for remote services are not updated.<br/>GitOps operations may be interrupted. | ⚠️ |
-| Metrics Collection | Metrics are collected and queued in affected Workload Clusters.  Long-term connectivity loss will result in some loss of metrics. | ⚠️ |
-| Management Ops | Changes to the affected Workload Cluster(s) are queued and applied when connectivity is restored.<br/><br/>All other management operations are unaffected. | ✅ |
+| 运行工作负载 | 运行本地或远程集群中的工作负载不受影响。 | ✅ |
+| 本地集群操作 | 本地集群更改（kubectl）不受影响。<br/><br/>新工作负载可能部分配置运行，直到恢复连接。它们可能获取已存在于集群中但缺少命名空间定向和细粒度策略的全局集群策略。<br/>远程服务的本地服务发现终端点不会更新。<br/>GitOps 操作可能会中断。 | ⚠️ |
+| 指标收集 | 指标在受影响的工作负载集群中进行收集并排队。长时间失去连接将导致一些指标丢失。 | ⚠️ |
+| 管理操作 | 针对受影响的工作负载集群的更改将排队，并在恢复连接时应用。<br/><br/>所有其他管理操作不受影响。 | ✅ |
 
-### Recovery
+### 恢复
 
-When connectivity is restored, configuration will be quickly updated and metrics collection will resume.
+恢复连接后，配置将迅速更新，并且指标收集将恢复。
 
-## Failure of Central Control Plane
+## 中央控制平面故障
 
-**Scenario**: The Central Control Plane component fails. 
+**场景**：中央控制平面组件发生故障。
 
-| [![Central Control Plane fails](images/ha-dr-centralcp.png)](images/ha-dr-centralcp.png) _Central Control Plane fails_ |
-| :--: |
+![中央控制平面故障](../images/ha-dr-centralcp.png)
 
-### Impacts
+### 影响
 
-| Operations | Impact |  |
+| 操作 | 影响 |  |
 | ---------- | ------ | -- |
-| Running Workloads | Running Workloads in local or remote clusters are not affected. | ✅ |
-| Local Cluster Ops | Local cluster changes (kubectl) are unaffected.<br/><br/>New workloads may run partially configured until the central control plane is restored. They may acquire global cluster policies that are already in the cluster but will lack namespace-targeted and fine-grained policies.<br/>Local service discovery endpoints for remote services are not updated. | ⚠️ |
-| Metrics Collection | Metrics collection is unaffected. | ✅ |
-| Management Ops | Configuration reads, dashboard (metrics) unaffected.<br/>Configuration updates are queued. | ✅ |
+| 运行工作负载 | 运行本地或远程集群中的工作负载不受影响。 | ✅ |
+| 本地集群操作 | 本地集群更改（kubectl）不受影响。<br/><br/>新工作负载可能部分配置运行，直到中央控制平面恢复。它们可能获取已存在于集群中但缺少命名空间定向和细粒度策略的全局集群策略。<br/>远程服务的本地服务发现终端点不会更新。 | ⚠️ |
+| 指标收集 | 指标收集不受影响。 | ✅ |
+| 管理操作 | 配置读取、仪表板（指标）不受影响。<br/>配置更新排队。 | ✅ |
 
-### Recovery
+### 恢复
 
-When Central Control Plane recovers, its local configuration cache is automatically restored, typically within 1-2 minutes.  Remote cluster configuration is then updated.  No configuration changes or data is lost.
+当中央控制平面恢复时，其本地配置缓存会自动恢复，通常在 1-2 分钟内完成。然后会更新远程集群配置。不会丢失任何配置更改或数据。
 
-### Restoration
+### 修复
 
-The Central Control Plane component can be re-installed if necessary with assistance from [Tetrate technical support](https://tetrate.io/contact-us/). No backups are required
+如果需要，可以在[Tetrate 技术支持](https://tetrate.io/contact-us/)的帮助下重新安装中央控制平面组件。不需要备份。
 
-## Failure of Management Plane
+## 管理平面故障
 
-**Scenario**: The Management Plane component fails. 
+**场景**：管理平面组件故障。
 
-| [![Management Plane fails](images/ha-dr-managementp.png)](images/ha-dr-managementp.png) _Management Plane fails_ |
-| :--: |
+![管理平面故障](../images/ha-dr-managementp.png)
 
-### Impacts
+### 影响
 
-| Operations | Impact |  |
-| ---------- | ------ | -- |
-| Running Workloads | Running Workloads in local or remote clusters are not affected. | ✅ |
-| Local Cluster Ops | Local cluster changes (kubectl) are unaffected.<br/><br/>New workloads may run partially configured until the management plane is restored. They may acquire global cluster policies that are already in the cluster but will lack namespace-targeted and fine-grained policies.<br/>Central and Local Control Planes maintain service discovery endpoints. | ✅ |
-| Metrics Collection | Metrics collection is affected if the ElasticSearch database is unavailable to Workload Clusters. | ⚠️ |
-| Management Ops | TSB configuration changes cannot be made.  UI, API and GitOps actions are not available. | ❌ |
+| 操作       | 影响                                                         |     |
+| ---------- | ------------------------------------------------------------ | --- |
+| 运行工作负载 | 本地或远程集群中运行的工作负载不受影响。 | ✅  |
+| 本地集群操作 | 本地集群更改（kubectl）不受影响。<br/><br/>新的工作负载可能会部分配置，直到管理平面恢复。它们可能会获取全局集群策略，但会缺少针对命名空间和细粒度策略的配置。<br/>中央和本地控制平面维护服务发现端点。 | ✅  |
+| 指标收集 | 如果 ElasticSearch 数据库对工作负载集群不可用，将影响指标收集。 | ⚠️  |
+| 管理操作 | 无法进行 TSB 配置更改。UI、API 和 GitOps 操作不可用。 | ❌  |
 
-TSB configuration is stored in a customer-provisioned PostgreSQL database, and in some ancillary services - cert-manager for PKI management, the tsb namespace for other secrets. 
+TSB 配置存储在客户提供的 PostgreSQL 数据库中，还存储在一些辅助服务中 - 用于 PKI 管理的 cert-manager，tsb 命名空间中的其他密钥。
 
-### Recovery
+### 恢复
 
-If the management plane recovers without data loss, operations proceed as before and no configuration loss should occur.
+如果管理平面在不丢失数据的情况下恢复，操作将如之前一样继续进行，不应发生配置丢失。
 
-### Restoration
+### 恢复
 
-The Management Control Plane component can be re-built from a backup of the PostgreSQL database and the **iam-signing-key**, with assistance from [Tetrate technical support](https://tetrate.io/contact-us/).  There's an overview of the process in the [Management Plane DR](dr-managementplane) document.
+可以从 PostgreSQL 数据库的备份和 **iam-signing-key** 重新构建管理控制平面组件，需要[Tetrate 技术支持](https://tetrate.io/contact-us/)的协助。有关该过程的概述，请参阅[管理平面灾难恢复](../dr-managementplane)文档。
 
-## Failure of Management Cluster
+## 管理集群故障
 
-**Scenario**: The Kubernetes Management Cluster fails. 
+**场景**：Kubernetes 管理集群故障。
 
-| [![Management Cluster fails](images/ha-dr-managementcluster.png)](images/ha-dr-managementcluster.png) _Management Cluster fails_ |
-| :--: |
+![管理集群故障](../images/ha-dr-managementcluster.png)
 
-### Impacts
+### 影响
 
-| Operations | Impact |  |
-| ---------- | ------ | -- |
-| Running Workloads | Running Workloads in local or remote clusters are not affected. | ✅ |
-| Local Cluster Ops | Local cluster changes (kubectl) are unaffected. Central TSB policies (e.g. default settings for new namespaces) are applied to new configurations.<br/><br/>Local service discovery endpoints for remote services are not updated. | ⚠️ |
-| Metrics Collection | Metrics cannot be collected from any Workload Clusters. | ❌ |
-| Management Ops | TSB configuration changes cannot be made.  UI, API and GitOps actions are not available. | ❌ |
+| 操作       | 影响                                                         |     |
+| ---------- | ------------------------------------------------------------ | --- |
+| 运行工作负载 | 本地或远程集群中运行的工作负载不受影响。 | ✅  |
+| 本地集群操作 | 本地集群更改（kubectl）不受影响。中央 TSB 策略（例如新命名空间的默认设置）适用于新配置。<br/><br/>远程服务的本地服务发现端点不会更新。 | ⚠️  |
+| 指标收集 | 无法从任何工作负载集群中收集指标。 | ❌  |
+| 管理操作 | 无法进行 TSB 配置更改。UI、API 和 GitOps 操作不可用。 | ❌  |
 
-### Recovery
+### 恢复
 
-If the management plane recovers without data loss, operations proceed as before and no configuration loss should occur.
+如果管理平面在不丢失数据的情况下恢复，操作将如之前一样继续进行，不应发生配置丢失。
 
-### Restoration
+### 修复
 
-The Management Control Plane component can be re-built from a backup of the PostgreSQL database and the **iam-signing-key**, with assistance from [Tetrate technical support](https://tetrate.io/contact-us/).  There's an overview of the process in the [Management Plane DR](dr-managementplane) document.
+可以从 PostgreSQL 数据库的备份和 **iam-signing-key** 重新构建管理控制平面组件，需要[Tetrate 技术支持](https://tetrate.io/contact-us/)的协助。有关该过程的概述，请参阅[管理平面灾难恢复](../dr-managementplane)文档。
 
-## Recommendations
+## 建议
 
-To prepare for unexpected failure of the Management components, we recommend that you consider the following recommendations:
+为了应对管理组件的意外故障，我们建议考虑以下建议：
 
- * Either maintain the Postgres database in a reliable, redundant cluster, or (in the case of TSE), make use of the [regular Postgres backups](https://docs.tetrate.io/service-express/administration/postgres).
- * Maintain a backup of the **iam-signing-key**
- * If preserving metrics is important, maintain the ElasticSearch database in a reliable, redundant cluster, or make regular backups so that it can be restored if necessary.
+* 要么在可靠的冗余集群中维护 Postgres 数据库，要么（在 TSE 的情况下）利用[定期的 Postgres 备份](https://docs.tetrate.io/service-express/administration/postgres)。
+* 保留 **iam-signing-key** 的备份
+* 如果保留指标很重要，请在可靠的冗余集群中维护 ElasticSearch 数据库，或定期备份，以便在必要时进行恢复。
 
-There's an overview of the process to restore a failed Management Plane component in the [Management Plane DR](dr-managementplane) document.
+有关恢复故障管理平面组件的过程概述，请参阅[管理平面灾难恢复](../dr-managementplane)文档。

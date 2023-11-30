@@ -13,7 +13,7 @@ Istio 隔离边界可以在 Kubernetes 集群内或跨多个集群中运行多�
 ## 安装
 
 {{<callout note 升级>}}
-要从非修订的控制平面升级到修订的控制平面，请按照 [非修订到修订的升级](../../upgrades/non-revisioned-to-revisioned) 中提到的步骤进行操作。
+要从非修订的控制平面升级到修订的控制平面，请按照 [非修订版到修订版的升级](../upgrades/non-revisioned-to-revisioned) 中提到的步骤进行操作。
 {{</callout>}}
 
 {{<callout note OpenShift>}}
@@ -29,7 +29,7 @@ Istio 隔离边界可以在 Kubernetes 集群内或跨多个集群中运行多�
 
 ### 使用 Helm 安装
 
-按照 [使用 Helm 安装控制平面](../../setup/helm/controlplane#installation) 中的说明，使用以下 Helm 值来启用 Istio 隔离边界。
+按照 [使用 Helm 安装控制平面](../../setup/helm/controlplane) 中的说明，使用以下 Helm 值来启用 Istio 隔离边界。
 
 ```yaml
 operator:
@@ -143,7 +143,7 @@ spec:
 ```
 
 使用这些配置，会部署两个修订的控制平面，使用相应的 TSB 发布的 Istio 镜像。
-在单个隔离边界中具有多个修订有助于从一个 `tsbVersion` 升级到另一个 `tsbVersion` 中的特定隔离边界的工作负载。有关更多详细信息，请参阅 [修订到修订的升级](../../upgrades/revisioned-to-revisioned)。
+在单个隔离边界中具有多个修订有助于从一个 `tsbVersion` 升级到另一个 `tsbVersion` 中的特定隔离边界的工作负载。有关更多详细信息，请参阅 [已修订版本间的升级](../upgrades/revisioned-to-revisioned)。
 
 如果将 `tsbVersion` 字段留空，则 `ControlPlane` 资源将默认为当前 TSB 发布的版本。
 
@@ -171,13 +171,13 @@ metadata:
 
 这些命名空间中的应用程序 Pod 将被注入 Istio 代理配置，使它们能够连接到相应的修订 Istio 控制平面。
 
-### VM 工作负载入网
+### VM 工作负载载入
 
 {{<callout note 单一隔离边界>}}
-[工作负载入网](../../workload-onboarding/guides) 仅支持单一隔离边界。多个隔离边界的支持将在后续版本中提供。
+[工作负载载入](../workload-onboarding/guides) 仅支持单一隔离边界。多个隔离边界的支持将在后续版本中提供。
 {{</callout>}}
 
-默认情况下，工作负载入网将使用非修订的 Istio 控制平面。要使用修订的控制平面，你需要使用 [修订链接](../../workload-onboarding/guides/setup#installing-istio-sidecar-for-revisioned-istio) 从 TSB 工作负载入网存储库下载 Istio Sidecar。
+默认情况下，工作负载入网将使用非修订的 Istio 控制平面。要使用修订的控制平面，你需要使用 [修订链接](../workload-onboarding/guides/setup) 从 TSB 工作负载入网存储库下载 Istio Sidecar。
 
 你还需要在 VM 的 `/etc/onboarding-agent/agent.config.yaml` 中更新 [代理配置](../../refs/onboarding/config/agent/v1alpha1/agent-configuration) 以添加修订值。
 
@@ -444,6 +444,6 @@ NAME                                                        DOMAINS             
 - 隔离边界的最大数量由 TSB 控制平面配置决定。有关详细信息，请参阅控制平面配置。
 - 修订的控制平面的可用性与非修订的控制平面一样，通过删除对应的 TSB 控制平面资源来禁用。
 - 默认情况下，每个 Istio 控制平面版本都使用相同的内部 CA。将 Istio 控制平面升级到新版本时，可能会创建新的 CA。如果你有运行中的 mTLS 流量，请确保进行测试以验证在 CA 更改后是否仍然能够正常工作。有关详细信息，请参阅修订到修订的升级。
-- 如果你想跨隔离边界运行 mTLS 流量，则需要确保 TSB 控制平面支持跨隔离边界的 mTLS 流量。这需要将跨边界服务的根证书添加到 TSB 控制平面的根证书存储库中。有关详细信息，请参阅部署资源的数据平面和 [部署证书](../../setup/self-managed/deploy-certs)。
+- 如果你想跨隔离边界运行 mTLS 流量，则需要确保 TSB 控制平面支持跨隔离边界的 mTLS 流量。这需要将跨边界服务的根证书添加到 TSB 控制平面的根证书存储库中。
 - 如果你要在生产环境中使用 Istio 隔离边界，请在生产环境之前仔细测试你的配置。Istio 隔离边界是一个强大的功能，但也复杂，需要精心设计和配置以满足你的需求。
 - 如果你使用的是 Istio 1.9.0 版本或更高版本，请注意 Istio 资源中的一些字段名称可能发生了变化。请查看 Istio 的官方文档，以了解与你使用的 Istio 版本相关的详细信息。

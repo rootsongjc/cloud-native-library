@@ -17,7 +17,7 @@ weight: 1
 
 下面的图片显示了这些证书及其与 TSB 组件和你的应用程序的关系。
 
-![](../../../assets/setup/certificates-in-tsb.svg)
+![TSB 组件中的证书](../../../assets/setup/certificates-in-tsb.svg)
 
 ## TSB 内部证书
 

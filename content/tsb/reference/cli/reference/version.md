@@ -1,9 +1,7 @@
 ---
-id: version
 title: tctl version
 description: Version command
 ---
-## tctl version
 
 Show the version of tctl and TSB
 

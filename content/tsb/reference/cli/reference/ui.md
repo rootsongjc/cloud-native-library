@@ -1,9 +1,7 @@
 ---
-id: ui
 title: tctl ui
 description: Ui command
 ---
-## tctl ui
 
 Opens the TSB console in the browser
 

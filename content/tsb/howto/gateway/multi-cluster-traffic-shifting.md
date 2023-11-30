@@ -28,7 +28,7 @@ weight: 7
 
 首先，默认情况下，*部署了 Tier-1 网关的集群不能包含其他网关或工作负载*。你必须使用专用集群进行 Tier-1 部署。从 TSB 1.6 开始，你可以通过允许在任何工作负载集群中部署 Tier-1 网关来放宽此要求。参见 [在应用程序集群中运行 Tier1 网关](../../../operations/features/tier1-in-app-cluster)。
 
-*在部署 Tier-1 和应用程序的集群上运行的 Istio 必须共享相同的根 CA*。有关如何为多个集群上的 Istio 设置根和中间 CA，请参阅 Istio 文档中的 [插入 CA 证书](https://istio.io/latest/docs/tasks/security/cert-management/plugin-ca-cert/)。TSB 控制平面操作员将部署 Istio，并且 Istio 的 CA 将从插入 CA 证书步骤中描述的 secrets-mount 文件中读取证书。
+*在部署 Tier-1 和应用程序的集群上运行的 Istio 必须共享相同的根 CA*。有关如何为多个集群上的 Istio 设置根和中间 CA，请参阅 Istio 文档中的 [插入 CA 证书](https://istio.io/latest/docs/tasks/security/cert-management/plugin-ca-cert/)。TSB 控制平面 Operator 将部署 Istio，并且 Istio 的 CA 将从插入 CA 证书步骤中描述的 secrets-mount 文件中读取证书。
 
 *应用程序必须在两个集群中的相同命名空间中部署*。这是因为你将为两个应用程序集群使用相同的 Ingress 网关配置。
 

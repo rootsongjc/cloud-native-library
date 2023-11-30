@@ -42,7 +42,7 @@ cert-manager 1.4.0 是使用 TSB 1.5 所需的最低版本。它具有特性标�
 
 {{</callout>}}
 
-当运行自托管时，你的组织可能会对上述环境和应用程序施加额外的（安全）限制、可用性和灾难恢复要求。有关如何调整 TSB 安装和配置的详细信息，请参阅操作员参考指南以及我们的文档中的[操作任务](../../howto/)部分，在其中可以找到有关配置选项、常见部署方案和解决方案的描述。
+当运行自托管时，你的组织可能会对上述环境和应用程序施加额外的（安全）限制、可用性和灾难恢复要求。有关如何调整 TSB 安装和配置的详细信息，请参阅 Operator 参考指南以及我们的文档中的[操作任务](../../howto/)部分，在其中可以找到有关配置选项、常见部署方案和解决方案的描述。
 
 ### 身份标识提供者
 
@@ -85,7 +85,7 @@ TSB 支持`cert-manager`作为其中一个受支持的提供者。它可以为�
 
 {{<callout note "现有的 cert-manager 安装">}}
 
-如果你已经使用 cert-manager 作为集群的一部分，则可以将`ManagementPlane`或`ControlPlane` CR 中的`managed`字段设置为`EXTERNAL`，使 TSB 利用现有的 cert-manager 安装。如果将`managed`字段设置为`INTERNAL`，则 TSB 操作员会在找到已安装的 cert-manager 时失败，以确保它不覆盖现有的 cert-manager 安装。
+如果你已经使用 cert-manager 作为集群的一部分，则可以将`ManagementPlane`或`ControlPlane` CR 中的`managed`字段设置为`EXTERNAL`，使 TSB 利用现有的 cert-manager 安装。如果将`managed`字段设置为`INTERNAL`，则 TSB Operator 会在找到已安装的 cert-manager 时失败，以确保它不覆盖现有的 cert-manager 安装。
 
 {{</callout>}}
 

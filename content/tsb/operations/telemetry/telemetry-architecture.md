@@ -8,7 +8,7 @@ weight: 1
 本页面详细介绍了如何收集 Tetrate Service Bridge 运营所需的遥测数据，而不是由 Tetrate Service Bridge 管理的应用程序。
 {{</callout>}}
 
-Tetrate Service Bridge 使用 [Open Telemetry Collector](https://github.com/open-telemetry/opentelemetry-collector) 来简化指标收集。标准部署包括管理平面中的一个 Collector，以及每个已接入的控制平面旁边都有一个 Collector。使用 Collector 使 Tetrate Service Bridge 能够通过只需操作员抓取一个组件而不是所有组件，从而简化每个集群的遥测数据收集。
+Tetrate Service Bridge 使用 [Open Telemetry Collector](https://github.com/open-telemetry/opentelemetry-collector) 来简化指标收集。标准部署包括管理平面中的一个 Collector，以及每个已接入的控制平面旁边都有一个 Collector。使用 Collector 使 Tetrate Service Bridge 能够通过只需 Operator 抓取一个组件而不是所有组件，从而简化每个集群的遥测数据收集。
 
 ![](../../../assets/collector_architecture.svg)
 

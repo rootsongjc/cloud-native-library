@@ -1,9 +1,7 @@
 ---
-id: validate
 title: tctl validate
 description: Validate command
 ---
-## tctl validate
 
 Offline validates a configuration from filename or stdin
 

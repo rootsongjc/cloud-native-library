@@ -1,9 +1,7 @@
 ---
-id: delete
 title: tctl delete
 description: Delete command
 ---
-## tctl delete
 
 Delete an object
 

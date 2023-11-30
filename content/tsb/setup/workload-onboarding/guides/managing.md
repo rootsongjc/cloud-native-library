@@ -115,7 +115,7 @@ ratings-aws-aws-123456789012-us-east-2b-ec2-i-1234567890abcdef0.bookinfo     SYN
 
 `istioctl proxy-status` 命令显示了当前连接到 Istio 控制平面的所有 Istio 代理（包括 sidecar 和网关）的状态。
 
-侧车的名称将与工作负载的名称相同。
+ Sidecar的名称将与工作负载的名称相同。
 
 ## 自动删除已载入的工作负载
 

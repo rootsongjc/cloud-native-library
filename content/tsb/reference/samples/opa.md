@@ -1,45 +1,45 @@
 ---
-title: Installing Open Policy Agent
-description: How to Install Open Policy Agent
+title: 安装 Open Policy Agent
+weight: 2
 ---
 
-[Open Policy Agent](https://www.openpolicyagent.org/) (OPA) is an open source, general-purpose policy engine that provides a high-level declarative language that lets you specify policy as code. OPA also offers simple APIs to offload policy decision-making from your software. 
+[Open Policy Agent](https://www.openpolicyagent.org/) (OPA) 是一个开源的通用策略引擎，提供了一种高级声明性语言，允许您将策略定义为代码。OPA 还提供了简单的 API，用于从您的软件中卸载策略决策。
 
-This document describes a simplified version of the configuring OPA in TSB, to accompany sections where it is used as the external authorization (`ext-authz`) service. In your actual application there may be differences that require tweaking.
+本文档描述了在 TSB 中配置 OPA 的简化版本，以配合使用它作为外部授权 (`ext-authz`) 服务的部分，您的实际应用程序可能存在需要进行调整的差异。
 
-:::note OPA support
-Tetrate does not offer support for OPA. Please look elsewhere if you need support for your use case.
-:::
+{{<callout note "OPA 支持">}}
+Tetrate 不提供对 OPA 的支持。如果您需要支持，请在其他地方寻找。
+{{</callout>}}
 
-For more detailed explanation of the configurations described below, please refer to [the official documentation](https://www.openpolicyagent.org/docs/latest).
+有关下面所述的配置的更详细解释，请参考[官方文档](https://www.openpolicyagent.org/docs/latest)。
 
-## Preparing a Policy
+## 准备策略
 
-OPA requires a policy file written using [OPA's policy language](https://www.openpolicyagent.org/docs/latest/policy-language/) to decide if requests should be authorized. Since the actual policy will differ significantly from example to example, details on how to write this file will not be covered in this document. Please refer to [the documents in OPA website](https://www.openpolicyagent.org/docs/latest) for details.
+OPA 需要使用[OPA的策略语言](https://www.openpolicyagent.org/docs/latest/policy-language/)编写策略文件以决定是否应授权请求。由于实际策略将因示例而异，因此本文档不会涵盖如何编写此文件的详细信息。请参考[OPA网站上的文档](https://www.openpolicyagent.org/docs/latest)以获取详细信息。
 
-One thing to note is the package name specified in the policy file. If you have a policy file that has the following package declaration, you will be using the value `helloworld.authz` in the container configuration later.
+需要注意的一点是策略文件中指定的包名称。如果您的策略文件具有以下包声明，您将在稍后的容器配置中使用值 `helloworld.authz`。
 
 ```
 package helloworld.authz
 ```
 
-### Example: Policy with Basic Authentication
+### 示例：具有基本身份验证的策略
 
-This example shows a policy that only allows users `alice` and `bob` to be authenticated via Basic Authentication. If the user is authorized, the user name will be stored in the HTTP header named `x-user`.
+此示例显示了一个策略，仅允许用户 `alice` 和 `bob` 通过基本身份验证进行身份验证。如果用户被授权，用户名称将存储在名为 `x-user` 的 HTTP 标头中。
 
 ```
 package example.basicauth
 
 default allow = false
 
-# username and password database
+# 用户名和密码数据库
 user_passwords = {
     "alice": "password",
     "bob": "password"
 }
 
 allow = response {
-    # check if password from header is same as in database for the specific user
+    # 检查标头中的密码是否与特定用户的数据库中的密码相同
     basic_auth.password == user_passwords[basic_auth.user_name]
     response := {
       "allowed": true,
@@ -55,29 +55,29 @@ basic_auth := {"user_name": user_name, "password": password} {
 }
 ```
 
-### Storing the Policy in Kubernetes
+### 将策略存储在 Kubernetes 中
 
-Assuming your policy is stored in a file named `policy.rego`, you will need to store the file in a Kubernetes Secret or a ConfigMap.
+假设您的策略存储在名为 `policy.rego` 的文件中，您需要将文件存储在 Kubernetes 的 Secret 或 ConfigMap 中。
 
-To create a Secret, execute the following command, replacing `namespace` with the appropriate value:
+要创建一个 Secret，请执行以下命令，将 `namespace` 替换为适当的值：
 
 ```bash
 kubectl create secret generic opa-policy -n <namespace> \
   --from-file policy.rego
 ```
 
-If you are using a ConfigMap, execute the following command in the same manner:
+如果使用 ConfigMap，请以相同的方式执行以下命令：
 
 ```bash
 kubectl create configmap opa-policy -n <namespace> \
   --from-file policy.rego
 ```
 
-The name of the resource (`opa-policy`) may be changed if necessary.
+资源的名称（`opa-policy`）可以根据需要更改。
 
-## Basic Deployment
+## 基本部署
 
-The following manifest shows an example that can be used to deploy an OPA service, and an OPA agent with mostly default settings. Remember to replace the `package` and `namespace` in the configuration with the proper values.
+以下清单显示了一个示例，可用于部署一个 OPA 服务和大部分默认设置的 OPA 代理。请记住将配置中的 `package` 和 `namespace` 替换为正确的值。
 
 ```yaml
 apiVersion: v1
@@ -124,7 +124,9 @@ spec:
           - "--server"
           - "--addr=localhost:8181"
           - "--diagnostic-addr=0.0.0.0:8282"
-          - "--set=plugins.envoy_ext_authz_grpc.addr=:9191"
+          - "--set=plugins.envoy_ext_authz_grpc.addr
+
+=:9191"
           - "--set=plugins.envoy_ext_authz_grpc.query=data.<package>.allow"
           - "--set=decision_logs.console=true"
           - "--ignore=.*"
@@ -149,25 +151,25 @@ spec:
           name: opa-policy
 ```
 
-Assuming you have saved the above manifest in a file named `opa.yaml`, execute the following command to deploy:
+假设您已将上述清单保存在名为 `opa.yaml` 的文件中，请执行以下命令进行部署：
 
 ```bash
 kubectl apply -f opa.yaml
 ```
 
-## Terminating TLS
+## 终止 TLS
 
-In order to secure communications between the ext-authz services (where we use OPA as example) and its clients (gateways and sidecars), you can enable TLS verification. As example, here we will use the Envoy sidecar proxy to terminate TLS also verify TLS certificate coming from the client.
+为了保障 ext-authz 服务（我们在这里使用 OPA 作为示例）与其客户端（网关和 sidecar）之间的通信，您可以启用 TLS 验证。作为示例，在这里我们将使用 Envoy sidecar 代理来终止 TLS 并验证来自客户端的 TLS 证书。
 
-:::note
-The settings in the following samples are for testing purposes only. Please consult your security requirements and craft a different configuration for your production use case
-:::
+{{<callout note "注意">}}
+以下示例中的设置仅用于测试目的。请根据您的生产用例的安全需求进行不同配置。
+{{</callout>}}
 
-### Prepare Certificate
+### 准备证书
 
-Either use a certificate that was provided by your administrators, or use a self-signed certificate for testing. You may be able to leverage [the instructions in the quickstart](../../quickstart/ingress_gateway#certificate-for-gateway) to create a self-signed certificate.
+可以使用管理员提供的证书，也可以使用自签名证书进行测试。您可以利用[快速入门指南中的说明](../../../quickstart/ingress-gateway)创建自签名证书。
 
-If you have not already done so, create the Secret to contain the certificates. The secret will be named `opa-certs`, and will be used later. Assuming you have generated the files `opa.key` and `opa.crt`, execute the command below to create the Secret.  Replace the value for `namespace` with an appropriate value.
+如果您尚未这样做，请创建一个包含证书的 Secret。Secret 将命名为 `opa-certs`，稍后将使用它。假设您已生成了文件 `opa.key` 和 `opa.crt`，请执行以下命令创建 Secret。将 `namespace` 的值替换为适当的值。
 
 ```bash
 kubectl -n <namespace> create secret tls opa-certs \
@@ -175,9 +177,9 @@ kubectl -n <namespace> create secret tls opa-certs \
   --cert opa.crt
 ```
 
-### Create Envoy Configuration File
+### 创建 Envoy 配置文件
 
-Create a file named `config.yaml` with the following contents.  Replace the value for `namespace` with an appropriate value. This configuration assumes that the admin port is at port `10250`, an "insecure" `grpc` at port `18080`, and a `grpc` port with TLS termination at port `18443`.
+创建一个名为 `config.yaml` 的文件，具有以下内容。将 `namespace` 的值替换为适当的值。此配置假定管理员端口位于端口 `10250`，端口 `18080` 上有一个 "不安全" 的 `grpc`，端口 `18443` 上有一个带 TLS 终止的 `grpc`。
 
 ```yaml
 admin:
@@ -188,7 +190,7 @@ admin:
 
 static_resources:
   listeners:
-    # Insecure GRPC listener
+    # 不安全的 GRPC 监听器
     - name: grpc-insecure
       address:
         socket_address:
@@ -207,7 +209,7 @@ static_resources:
                 cluster: grpc_rlserver
                 stat_prefix: grpc_insecure
 
-    # Secured by TLS
+    # 通过 TLS 进行安全保护
     - name: grpc-simple-tls
       address:
         socket_address:
@@ -235,16 +237,16 @@ static_resources:
                     private_key: { filename: /certs/tls.key }
 ```
 
-Create a `ConfigMap` to store the configuration in Kubernetes. Replace the value for `namespace` with an appropriate value.
+创建一个 `ConfigMap`，将配置存储在 Kubernetes 中。将 `namespace` 的值替换为适当的值。
 
 ```bash
 kubectl create configmap -n <namespace> opa-proxy \
   --from-file=config.yaml
 ```
 
-### Deploy Service
+### 部署服务
 
-Create a file named `opa-tls.yaml` with the following contents. Replace the value for `namespace` with an appropriate value.
+创建一个名为 `opa-tls.yaml` 的文件，具有以下内容。将 `namespace` 的值替换为适当的值。
 
 ```yaml
 apiVersion: v1
@@ -347,10 +349,12 @@ spec:
         name: opa-proxy
 ```
 
-Apply `opa-tls.yaml` using kubectl:
+
+
+使用以下命令使用 kubectl 应用 `opa-tls.yaml`：
 
 ```bash
 kubectl apply -f opa-tls.yaml
 ```
 
-Once the above deployment is ready, you should set up the client side appropriately to use `grpcs://opa-tls.<namespace>.svc.cluster.local:18443`. 
+一旦上述部署准备好，您应该适当地设置客户端端以使用 `grpcs://opa-tls.<namespace>.svc.cluster.local:18443`。

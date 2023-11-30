@@ -86,7 +86,7 @@ metadata:
     eks.amazonaws.com/role-arn: arn:aws:iam::AWS_ACCOUNT_ID:role/eks-tsb-operator 
 ```
 
-使用 `kubectl` 部署操作员，确保你的 Kubernetes 上下文指向正确的集群：
+使用 `kubectl` 部署 Operator，确保你的 Kubernetes 上下文指向正确的集群：
 
 ```bash
 kubectl apply -f managementplaneoperator.yaml
@@ -98,7 +98,7 @@ kubectl apply -f managementplaneoperator.yaml
 kubectl -n tsb get pod -owide
 ```
 
-你应该会看到类似以下示例的文本。当 READY 和 STATUS 列的值分别为 `1/1` 和 `Running` 时，操作员已准备就绪。
+你应该会看到类似以下示例的文本。当 READY 和 STATUS 列的值分别为 `1/1` 和 `Running` 时，Operator 已准备就绪。
 
 ```bash
 kubectl -n tsb get pod -owide
@@ -106,7 +106,7 @@ NAME                                             READY   STATUS    RESTARTS   AG
 tsb-operator-management-plane-68c98756d5-n44d7   1/1     Running   0          71s   192.168.17.234   ip-192-168-24-207.ca-central-1.compute.internal   <none>          <none>
 ```
 
-请按照 [管理平面安装](../../../self-managed/management-plane-installation#management-plane-installation) 中的说明完成安装管理平面的步骤。
+请按照 [管理平面安装](../../../self-managed/management-plane-installation) 中的说明完成安装管理平面的步骤。
 
 ## 访问 TSB 用户界面
 

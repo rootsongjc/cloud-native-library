@@ -8,7 +8,7 @@ weight: 1
 在开始之前，请确保你已经：
 
 - 熟悉 [TSB 概念](../../../concepts/)
-- 安装 [tctl](../../../setup/requirements-and-download#download) 并 [同步你的 tctl 镜像](../../../reference/cli/reference/install#tctl-install-image-sync)
+- 安装 [tctl](../../../setup/requirements-and-download) 并 [同步你的 tctl 镜像](../../../reference/cli/reference/install#tctl-install-image-sync)
 - 安装 [EKS CLI](https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html)
 - 安装 [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 
@@ -100,11 +100,11 @@ $ kubectl get svc -n tsb
 
 查看以下链接以获取有关 [Tier1 网关](../../../refs/tsb/gateway/v2/tier1-gateway) 和 [控制平面](../../../concepts/operators/control-plane) 的更多信息。
 
-* [部署控制平面操作员](../../../setup/self-managed/onboarding-clusters#deploy-operators)
-* [安装控制平面密钥](../../../setup/self-managed/onboarding-clusters#secrets)
-* 应用 `ControlPlane` CR 来 [安装 TSB 控制平面组件](../../../setup/self-managed/onboarding-clusters#installation)
+* [部署控制平面 Operator](../../../setup/self-managed/onboarding-clusters)
+* [安装控制平面密钥](../../../setup/self-managed/onboarding-clusters)
+* 应用 `ControlPlane` CR 来 [安装 TSB 控制平面组件](../../../setup/self-managed/onboarding-clusters)
 
-设置这些集群后，在 Tier 1 和 Tier 2 中的 Edge XCP 中添加以下注释以启用 [多集群路由](../../../concepts/traffic-management#multi-cluster-routing) 并应用这些设置。
+设置这些集群后，在 Tier 1 和 Tier 2 中的 Edge XCP 中添加以下注释以启用 [多集群路由](../../../concepts/traffic-management) 并应用这些设置。
 
 ```yaml
 # <snip>
@@ -129,7 +129,7 @@ components:
                 traffic.istio.io/nodeSelector: '{"beta.kubernetes.io/arch":"amd64"}'
 ```
 
-集群设置完成后，你可以按照 [部署 bookinfo 应用程序的说明](../../../quickstart/deploy-sample-app#deploy-bookinfo) 继续进行演示工作负载。
+集群设置完成后，你可以按照 [部署 bookinfo 应用程序的说明](../../../quickstart/deploy-sample-app) 继续进行演示工作负载。
 
 # 使用多个 VPC 安装 TSB
 
@@ -204,7 +204,7 @@ spec:
   network: tier2
 ```
 
-当你准备好 [安装控制平面自定义资源](../../../setup/self-managed/onboarding-clusters#installation) 时，从指南中修改定义，并使用以下 YAML 作为指南设置适当的值：
+当你准备好 [安装控制平面自定义资源](../../../setup/self-managed/onboarding-clusters) 时，从指南中修改定义，并使用以下 YAML 作为指南设置适当的值：
 
 ```yaml
 apiVersion: install.tetrate.io/v1alpha1

@@ -1,50 +1,49 @@
 ---
-title: Installing httpbin
-description: Guide on how to install the `httpbin` workload that is used in various examples.
+title: 安装 httpbin
+weight: 1
 ---
 
-[`httpbin`](https://httpbin.org) is a simple HTTP request and response service that is used for testing.
+[`httpbin`](https://httpbin.org) 是一个简单的 HTTP 请求和响应服务，用于测试。
 
-The `httpbin` service is used in many examples in the TSB documentation. This document provides the basic installation procedure for this service.
+在 TSB 文档中的许多示例中都使用了 `httpbin` 服务。本文档提供了该服务的基本安装过程。
 
-Please make sure to refer to each TSB documentation for specific caveats or customizations that are required for the examples to work, as this document describes the most generic installation steps. 
+请确保参考每个 TSB 文档，以了解特定的注意事项或所需的自定义，以使示例正常工作，因为本文档描述了最通用的安装步骤。
 
-The following examples assume that you have already setup TSB, and that you have onboarded Kubernetes clusters to install the `httpbin` workload to.
+以下示例假设你已经设置了 TSB，并且已经将 Kubernetes 集群注册到要安装 `httpbin` 工作负载的 TSB 上。
 
-Unless otherwise stated, the examples that use the `kubectl` command must be pointed to the same cluster. Make sure that your `kubeconfig` is pointing to the desired cluster before running these commands.
+除非另有说明，使用 `kubectl` 命令的示例必须指向相同的集群。在运行这些命令之前，请确保你的 `kubeconfig` 指向所需的集群。
 
-## Namespace
+## 命名空间
 
-Unless otherwise stated, the `httpbin` service is assumed to be installed in the `httpbin` namespace. If not already present, this namespace must be created in the target cluster.
+除非另有说明，假定 `httpbin` 服务已安装在 `httpbin` 命名空间中。如果尚未存在，请在目标集群中创建此命名空间。
 
-Run the following command to create the namespace if not already present:
+运行以下命令以创建命名空间（如果尚不存在）：
 
 ```bash
 kubectl create namespace httpbin
 ```
 
-The `httpbin` pod in this namespace must have an Istio sidecar proxy running in it. To automatically enable the injection of this sidecar for all pods, execute the following:
+此命名空间中的 `httpbin` pod 必须运行 Istio sidecar 代理。要自动启用此 sidecar 对所有 pod 的注入，请执行以下操作：
 
 ```bash
 kubectl label namespace httpbin istio-injection=enabled --overwrite=true
 ```
 
-This will let Istio know that it needs to inject the sidecar to the pod that you will create later.
+这将告诉 Istio 需要向稍后创建的 pod 注入 sidecar。
 
-## Deploy the `httpbin` Pod and Service
+## 部署 `httpbin` Pod 和服务
 
-Download the [`httpbin.yaml`](https://raw.githubusercontent.com/istio/istio/master/samples/httpbin/httpbin.yaml) manifest found in the Istio repository. 
+下载在 Istio 存储库中找到的 [`httpbin.yaml`](https://raw.githubusercontent.com/istio/istio/master/samples/httpbin/httpbin.yaml) 清单。
 
-Run the following command to deploy the `httpbin` service in the `httpbin` namespace:
+运行以下命令，在 `httpbin` 命名空间中部署 `httpbin` 服务：
 
 ```bash
 kubectl apply -n httpbin -f httpbin.yaml
 ```
 
-## Expose the `httpbin` Service
+## 暴露 `httpbin` 服务
 
-This next step may or may not be necessary depending on the usage scenario. 
-If an Ingress Gateway is required, create a file called `httpbin-ingress-gateway.yaml` with the following contents.
+下一步可能需要根据使用情况进行或不进行，如果需要 Ingress Gateway，则创建一个名为 `httpbin-ingress-gateway.yaml` 的文件，其中包含以下内容。
 
 ```
 apiVersion: install.tetrate.io/v1alpha1
@@ -58,18 +57,17 @@ spec:
       type: LoadBalancer
 ```
 
-Then deploy it using `kubectl`:
+然后使用 `kubectl` 部署它：
 
 ```bash
 kubectl apply -f httpbin-ingress-gateway.yaml
 ```
 
-## Create Certificates
+## 创建证书
 
-This next step may or may not be necessary depending on the usage scenario. 
-If a TLS certificate is required, you can prepare them by following these steps.
+下一步可能需要根据使用情况进行或不进行，如果需要 TLS 证书，可以按照以下步骤准备它们。
 
-Download the script [`gen-cert.sh`](../../assets/quickstart/gen-cert.sh) and execute the following to generate the necessary files. Refer to [this document](../../quickstart/ingress_gateway#certificate-for-gateway) for more details.
+下载脚本 [`gen-cert.sh`](../../../assets/quickstart/gen-cert.sh) 并执行以下操作以生成必要的文件。有关更多详细信息，请参阅[此文档](../../../quickstart/ingress-gateway)。
 
 ```bash
 chmod +x ./gen-cert.sh
@@ -77,9 +75,9 @@ mkdir certs
 ./gen-cert.sh httpbin httpbin.tetrate.com certs
 ```
 
-The above assumes that you have exposed the `httpbin` service as `httpbin.tetrate.com`. Change its value accordingly, if necessary.
+上述假设你已将 `httpbin` 服务公开为 `httpbin.tetrate.com`。如果需要，请相应更改其值。
 
-Once you have the necessary files generated in the `certs` directory, create the Kubernetes secret.
+一旦你在 `certs` 目录中生成了必要的文件，请创建 Kubernetes 密钥。
 
 ```bash
 kubectl -n httpbin create secret tls httpbin-certs \
@@ -87,18 +85,17 @@ kubectl -n httpbin create secret tls httpbin-certs \
   --cert certs/httpbin.crt
 ```
 
-## Create a `httpbin` Workspace
+## 创建 `httpbin` 工作区
 
-This next step may or may not be necessary depending on the usage scenario. 
-If you are creating a TSB Workspace, follow the steps below to create one.
+下一步可能需要根据使用情况进行或不进行，如果要创建 TSB 工作区，则按照以下步骤操作。
 
-In this example we assume that you have already created a tenant in your organization. If you have not created one, read the [examples in documentation and create one](../../quickstart/tenant).
+在此示例中，我们假设你已经在组织中创建了一个租户。如果尚未创建，请阅读[文档中的示例并创建一个](../../../quickstart/tenant)。
 
-Create a file called `httpbin-workspace.yaml` with contents similar to the sample below. Make sure to replace the organization, tenant, and cluster names to appropriate values.
+创建名为 `httpbin-workspace.yaml` 的文件，其中包含类似以下示例的内容。请确保将组织、租户和集群名称替换为适当的值。
 
-:::note
-If you have [installed the `demo` profile](../../setup/self_managed/demo-installation), an organization named `tetrate` and a cluster already onboarded named `demo` already exist.
-:::
+{{<callout note 注意>}}
+如果你已经[安装了 `demo` 配置文件](../../../setup/self-managed/demo-installation)，则已经存在名为 `tetrate` 的组织和一个名为 `demo` 的集群。
+{{</callout>}}
 
 ```
 apiversion: api.tsb.tetrate.io/v2
@@ -114,20 +111,19 @@ spec:
       - "<cluster>/httpbin"
 ```
 
-Apply the manifest using `tctl`:
+使用 `tctl` 应用清单：
 
 ```bash
 tctl apply -f httpbin-workspace.yaml
 ```
 
-## Create Config Groups
+## 创建配置组
 
-This next step may or may not be necessary depending on the usage scenario. 
-If you are creating Config Groups for this service, follow the steps below to create them.
+下一步可能需要根据使用情况进行或不进行，如果要为此服务创建配置组，则按照以下步骤操作。
 
-In this example we assume that you have already created a tenant and a workspace in your organization. If you have not created one, read the [examples in documentation and create one](../../quickstart/tenant), as well as [the instructions on creating a `httpbin` Workspace](#create-a-httpbin-workspace)
+在此示例中，我们假设你已经在组织中创建了一个租户和一个工作区。如果尚未创建，请阅读[文档中的示例并创建一个](../../../quickstart/tenant)，以及创建 `httpbin` 工作区中的说明。
 
-Create a file called `httpbin-groups.yaml` with contents similar to the sample below. Make sure to replace the organization, tenant, workspace, and cluster names to appropriate values.
+创建名为 `httpbin-groups.yaml` 的文件，其中包含类似以下示例的内容。请确保将组织、租户、工作区和集群名称替换为适当的值。
 
 ```yaml
 apiVersion: gateway.tsb.tetrate.io/v2
@@ -158,6 +154,8 @@ spec:
 ---
 apiVersion: security.tsb.tetrate.io/v2
 kind: Group
+
+
 Metadata:
   organization: <organization>
   tenant: <tenant>
@@ -170,22 +168,21 @@ spec:
   configMode: BRIDGED
 ```
 
-Apply the manifest using `tctl`:
+使用 `tctl` 应用清单：
 
 ```
 tctl apply -f httpbin-groups.yaml
 ```
 
-After this you should end up with 3 groups, a [Gateway Group](../../refs/tsb/gateway/v2/gateway_group) (`httpbin-gateway`), a [Traffic Group](../../refs/tsb/traffic/v2/traffic_group) (`httpbin-traffic`), and a [Security Group](../../refs/tsb/security/v2/security_group) (`httpbin-security`).
+完成后，你应该得到 3 个组，一个[网关组](../../../refs/tsb/gateway/v2/gateway_group) (`httpbin-gateway`)，一个[流量组](../../../refs/tsb/traffic/v2/traffic-group) (`httpbin-traffic`) 和一个[安全组](../../../refs/tsb/security/v2/security-group) (`httpbin-security`)。
 
-## Onboard `httpbin` Application
+## 注册 `httpbin` 应用程序
 
-This next step may or may not be necessary depending on the usage scenario. 
-If you are creating a TSB Application, follow the steps below to create one.
+下一步可能需要根据使用情况进行或不进行，如果要创建 TSB 应用程序，则按照以下步骤操作。
 
-First, make sure that you have already [created the `httpbin` workspace](#create-a-httpbin-workspace).
+首先，确保你已经创建了 `httpbin` 工作区。
 
-Create an application in this workspace. Create a file called `httpbin-application.yaml` with contents similar to the sample below. Make sure to replace the organization and tenant names to appropriate values.
+在此工作区中创建一个应用程序。创建名为 `httpbin-application.yaml` 的文件，其中包含类似以下示例的内容。请确保将组织和租户名称替换为适当的值。
 
 ```
 apiVersion: application.tsb.tetrate.io/v2
@@ -200,7 +197,7 @@ spec:
   gatewayGroup: organizations/<organization>/tenants/<tenant>/workspaces/httpbin/gatewaygroups/httpbin-gateway
 ```
 
-Apply the manifest using `tctl`:
+使用 `tctl` 应用清单：
 
 ```bash
 tctl apply -f httpbin-application.yaml

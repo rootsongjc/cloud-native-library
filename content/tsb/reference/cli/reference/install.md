@@ -1,9 +1,7 @@
 ---
-id: install
 title: tctl install
 description: Install command
 ---
-## tctl install
 
 Generates install manifests and applies it to a cluster
 

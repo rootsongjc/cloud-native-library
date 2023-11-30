@@ -8,7 +8,7 @@ weight: 10
 
 **安全域（Security Domains）** 允许你在配置层次结构的任何位置 - [租户](../../refs/tsb/v2/tenant#tetrateio-api-tsb-v2-tenant)、[工作区](../../refs/tsb/v2/workspace#tetrateio-api-tsb-v2-workspace) 或 [安全组](../../refs/tsb/security/v2/security-group#tetrateio-api-tsb-security-v2-group) - 创建跨 [TSB 层次结构](../../concepts/security#tenancy) 的配置分组。将 `securityDomain` 视为可以附加到这些 TSB 资源中的名称，然后可以在 TSB 规则中使用它们。
 
-一旦资源被标识为具有 `securityDomain`，就可以在创建规则时将安全域用作源或目标。这允许操作员在新对象创建时在 **Tetrate Service Bridge (TSB)** 层次结构中持续建立一组要求。
+一旦资源被标识为具有 `securityDomain`，就可以在创建规则时将安全域用作源或目标。这允许 Operator 在新对象创建时在 **Tetrate Service Bridge (TSB)** 层次结构中持续建立一组要求。
 
 ## 何时应该使用安全域（Security Domains）？
 

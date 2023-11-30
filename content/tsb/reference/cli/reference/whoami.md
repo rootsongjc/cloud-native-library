@@ -1,9 +1,7 @@
 ---
-id: whoami
 title: tctl whoami
 description: Whoami command
 ---
-## tctl whoami
 
 Show the current user info
 

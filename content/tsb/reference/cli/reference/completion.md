@@ -1,9 +1,7 @@
 ---
-id: completion
 title: tctl completion
 description: Completion command
 ---
-## tctl completion
 
 Generates tab completion scripts
 

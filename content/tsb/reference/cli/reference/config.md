@@ -1,9 +1,7 @@
 ---
-id: config
 title: tctl config
 description: Config command
 ---
-## tctl config
 
 Manages CLI configuration.
 

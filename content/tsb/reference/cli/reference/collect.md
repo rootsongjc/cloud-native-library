@@ -1,9 +1,7 @@
 ---
-id: collect
 title: tctl collect
 description: Collect command
 ---
-## tctl collect
 
 Collect the state of a Kubernetes cluster for debugging.
 

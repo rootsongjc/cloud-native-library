@@ -1,9 +1,7 @@
 ---
-id: login
 title: tctl login
 description: Login command
 ---
-## tctl login
 
 Configures the credentials for the given user
 

@@ -9,7 +9,7 @@ weight: 12
 
 ## 同步镜像
 
-TSB 镜像位于 Tetrate 的仓库中，只能复制到你的仓库（不允许直接在任何环境中下载）。第一步是将镜像传输到你的仓库。要同步镜像，你需要按照 [文档](../../setup/requirements-and-download#sync-tetrate-service-bridge-images) 使用 `tctl install image-sync`（需要 Tetrate 提供的许可密钥）。
+TSB 镜像位于 Tetrate 的仓库中，只能复制到你的仓库（不允许直接在任何环境中下载）。第一步是将镜像传输到你的仓库。要同步镜像，你需要按照 [文档](../../setup/requirements-and-download) 使用 `tctl install image-sync`（需要 Tetrate 提供的许可密钥）。
 
 ## 获取私有仓库的 JSON 密钥
 

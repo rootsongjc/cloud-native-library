@@ -16,7 +16,7 @@ weight: 3
 {{<callout note "隔离边界">}}
 TSB 1.6 引入了隔离边界，允许你在 Kubernetes 集群内或跨多个集群中拥有多个 TSB 管理的 Istio 环境。隔离边界的一个好处是你可以执行控制平面的金丝雀升级。
 
-要启用隔离边界，你必须使用环境变量 `ISTIO_ISOLATION_BOUNDARIES=true` 更新操作员部署，并在控制平面 CR 中包含 `isolationBoundaries` 字段。
+要启用隔离边界，你必须使用环境变量 `ISTIO_ISOLATION_BOUNDARIES=true` 更新 Operator 部署，并在控制平面 CR 中包含 `isolationBoundaries` 字段。
 有关更多信息，请参阅 [隔离边界](../../isolation-boundaries)。
 {{</callout>}}
 

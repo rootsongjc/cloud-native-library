@@ -1,9 +1,7 @@
 ---
-id: edit
 title: tctl edit
 description: Edit command
 ---
-## tctl edit
 
 Edit one or multiple objects
 

@@ -8,7 +8,7 @@ weight: 7
 
 在开始之前：
 - [安装 TSB 管理平面](../../setup/self-managed/management-plane-installation) (仅自管理)
-- [下载](../../setup/requirements-and-download#download) Tetrate Service Bridge CLI (`tctl`)
+- [下载](../../setup/requirements-and-download) Tetrate Service Bridge CLI (`tctl`)
 - 获取 TSB 的 `organization` 名称 - 你可以在 TSB UI 中找到，或在 TSB `ManagementPlane` CR 的安装时配置
 
 TSB 提供了一个用户界面，但本站点中的大多数示例 - 以及大多数脚本和自动化 - 将使用 `tctl` CLI。本文档将涵盖如何登录，以便你可以使用 CLI，并提供更新凭据的步骤。

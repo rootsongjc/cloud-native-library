@@ -55,7 +55,7 @@ spec:
 
 ### 网关升级
 
-默认情况下，网关将自动升级以使用最新的`tsbVersion`。有关网关升级行为的更多详细信息，请参阅[网关升级](./gateway-upgrade)。
+默认情况下，网关将自动升级以使用最新的`tsbVersion`。有关网关升级行为的更多详细信息，请参阅[网关升级](../gateway-upgrade)。
 
 ### 应用程序升级
 
@@ -67,7 +67,7 @@ kubectl rollout restart deployment -n workload-ns
 
 ### VM 工作负载升级
 
-要升级 VM 工作负载，请使用[修订链接](../../workload_onboarding/guides/setup#installing-istio-sidecar-for-revisioned-istio)从你的上机平面下载最新的 Istio sidecar，然后在 VM 上重新安装 Istio sidecar。
+要升级 VM 工作负载，请使用[修订链接](../../workload-onboarding/guides/setup)从你的上机平面下载最新的 Istio sidecar，然后在 VM 上重新安装 Istio sidecar。
 
 然后重新启动在 VM 上运行的`onboarding-agent`。
 
@@ -115,11 +115,10 @@ istiod-1-6-1           1/1     1            1            2分钟
 
 ### 网关升级
 
-要升级网关，请[更新`spec.revision`](../../isolation-boundaries#gateway-deployment)在`Ingress/Egress/Tier1Gateway`资源中。这将协调现有的网关
-
-Pod 以连接到新的修订 Istio 控制平面。TSB 默认配置了带有`RollingUpdate`策略的网关安装资源，以确保零停机时间。
+要升级网关，请[更新`spec.revision`](../../isolation-boundaries)在`Ingress/Egress/Tier1Gateway`资源中。这将协调现有的网关 Pod 以连接到新的修订 Istio 控制平面。TSB 默认配置了带有`RollingUpdate`策略的网关安装资源，以确保零停机时间。
 
 你还可以通过修补网关 CR 来更新`spec.revision`。
+
 ```bash
 kubectl patch ingressgateway.install <name> -n <namespace> --type=json --patch '[{"op": "replace","path": "/spec/revision","value": "1-6-1"}]'; \
 ```
@@ -139,9 +138,9 @@ kubectl rollout restart deployment -n workload-ns
 
 ### VM 工作负载升级
 
-要升级 VM 工作负载，请使用[修订链接](../../workload_onboarding/guides/setup#installing-istio-sidecar-for-revisioned-istio)从你的上机平面下载最新的 Istio sidecar，然后在 VM 上重新安装 Istio sidecar。
+要升级 VM 工作负载，请使用[修订链接](../../workload-onboarding/guides/setup)从你的上机平面下载最新的 Istio sidecar，然后在 VM 上重新安装 Istio sidecar。
 
-在`onboarding-agent`配置中[更新`revision`值](../../isolation-boundaries#vm-workload-onboarding)，然后重新启动`onboarding-agent`。
+在`onboarding-agent`配置中[更新`revision`值](../../isolation-boundaries)，然后重新启动`onboarding-agent`。
 
 ## 升级后清理
 
