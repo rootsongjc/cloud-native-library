@@ -339,7 +339,7 @@
         content="2023-08-09T12:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2023-11-30T19:41:38&#43;08:00">
+    <meta property="article:modified_time" content="2023-11-30T21:38:09&#43;08:00">
   
 
   
@@ -1069,7 +1069,7 @@
 
 
 
-  <li class="child level "><a href="/tsb/setup/self-managed/onboarding-clusters/">加入集群</a></li>
+  <li class="child level "><a href="/tsb/setup/self-managed/onboarding-clusters/">载入集群</a></li>
 
 
 
@@ -4259,7 +4259,7 @@
   <ul>
     <li><a href="#tier-1-网关">Tier-1 网关</a></li>
     <li><a href="#准备集群">准备集群</a></li>
-    <li><a href="#入网-tier-1-网关和应用程序集群">入网 Tier-1 网关和应用程序集群</a>
+    <li><a href="#载入-tier-1-网关和应用程序集群">载入 Tier-1 网关和应用程序集群</a>
       <ul>
         <li><a href="#网络可达性">网络可达性</a></li>
         <li><a href="#在集群中安装控制平面组件">在集群中安装控制平面组件</a></li>
@@ -4373,12 +4373,12 @@
           <h1>使用 Tier-1 网关进行多集群流量切换</h1>
 
           <div class="article-style">
-            <p>本文档描述了如何使用 <a href="../../../concepts/terminology/#gateway">Tier-1 网关</a> 进行多集群流量切换。你将创建一个用于 Tier-1 网关部署的集群，以及两个用于运行 <a href="../../../quickstart/deploy-sample-app#deploying-a-demo-application">bookinfo 应用程序</a> 的集群。</p>
-<p>每个应用程序集群都将配置一个 <a href="../../../concepts/terminology/#gateway">入口网关</a>，用于将流量路由到 bookinfo 应用程序。最后，你将配置 Tier-1 网关，将流量从一个集群上运行的应用程序切换到另一个集群上运行的应用程序。</p>
+            <p>本文档描述了如何使用 <a href="../../../concepts/glossary/">Tier-1 网关</a> 进行多集群流量切换。你将创建一个用于 Tier-1 网关部署的集群，以及两个用于运行 <a href="../../../quickstart/deploy-sample-app">bookinfo 应用程序</a> 的集群。</p>
+<p>每个应用程序集群都将配置一个 <a href="../../../concepts/glossary/">入口网关</a>，用于将流量路由到 bookinfo 应用程序。最后，你将配置 Tier-1 网关，将流量从一个集群上运行的应用程序切换到另一个集群上运行的应用程序。</p>
 <p>在开始之前，请确保你已经：</p>
 <ul>
 <li>熟悉了 <a href="../../../concepts/">TSB 概念</a></li>
-<li>熟悉了 <a href="../../../concepts/terminology/#management-plane">TSB 管理平面</a> 和 <a href="../../../setup/self-managed/onboarding-clusters">集群入网</a>。以下场景将假定你已经安装了 TSB 管理平面，并且已经将 <code>tctl</code> 配置为正确的管理平面。</li>
+<li>熟悉了 <a href="../../../concepts/glossary/">TSB 管理平面</a> 和 <a href="../../../setup/self-managed/onboarding-clusters">集群载入</a>。以下场景将假定你已经安装了 TSB 管理平面，并且已经将 <code>tctl</code> 配置为正确的管理平面。</li>
 </ul>
 <div class="alert-note-title">
     <p>Kubernetes 供应商</p>
@@ -4430,11 +4430,44 @@
     <p>应用程序集群中的 Tier1 网关</p>
 </div>
 <div class="alert alert-note">
-    如果启用了 <a href="../../../operations/features/tier1-in-app-cluster">在应用程序集群中运行 Tier1 网关</a>，你只能有两个集群。你需要调整后续步骤中的入网集群 YAML 和 <code>tier1</code> 工作区的命名空间选择器以适应这种情况。如果你选择将相同的网络分配给你的集群，网络可达性可能不相关。
+    如果启用了 <a href="../../../operations/features/tier1-in-app-cluster">在应用程序集群中运行 Tier1 网关</a>，你只能有两个集群。你需要调整后续步骤中的载入集群 YAML 和 <code>tier1</code> 工作区的命名空间选择器以适应这种情况。如果你选择将相同的网络分配给你的集群，网络可达性可能不相关。
 </div>
 
-<h2 id="入网-tier-1-网关和应用程序集群">入网 Tier-1 网关和应用程序集群</h2>
+<h2 id="载入-tier-1-网关和应用程序集群">载入 Tier-1 网关和应用程序集群</h2>
 <p>创建一个名为 <a href="../../../assets/howto/traffic-shifting-clusters.yaml">traffic-shifting-clusters.yaml</a> 的文件，其中包含以下内容。这将为我们的使用创建集群资源：Tier-1 集群命名为 <code>t1</code>，应用程序集群命名为 <code>c1</code> 和 <code>c2</code>。稍后在 TSB 配置对象中引用它们时，你将需要使用这些名称。</p>
+<details>
+<summary>traffic-shifting-clusters.yaml</summary>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="c"># Application cluster 1.</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">api.tsb.tetrate.io/v2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Cluster</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">c1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">organization</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">displayName</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;Cluster 1&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">network</span><span class="p">:</span><span class="w"> </span><span class="l">tier2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">---</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c"># Application cluster 2.</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">api.tsb.tetrate.io/v2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Cluster</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">c2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">organization</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">displayName</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;Cluster 2&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">network</span><span class="p">:</span><span class="w"> </span><span class="l">tier2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">---</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c"># Tier-1 cluster</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">api.tsb.tetrate.io/v2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Cluster</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">t1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">organization</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">displayName</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;Tier-1 Cluster&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">network</span><span class="p">:</span><span class="w"> </span><span class="l">tier1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">tier1Cluster</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span></span></span></code></pre></div></details>
 <p>使用 <code>tctl</code> 应用这些内容：</p>
 <pre tabindex="0"><code>tctl apply -f traffic-shifting-clusters.yaml
 </code></pre><h3 id="网络可达性">网络可达性</h3>
@@ -4442,11 +4475,25 @@
 <p>你的集群位于不同的网络中，则必须适当配置它们，以使它们可以相互访问。</p>
 <p>请注意，在你创建的集群资源中，Tier-1 集群和应用程序集群已分配了不同的网络：Tier-1 集群的网络是 <code>tier1</code>，而两个应用程序集群的网络是 <code>tier2</code>。</p>
 <p>你将使用这些网络名称来告诉 TSB <code>tier1</code> 和 <code>tier2</code> 是可达的。创建一个名为 <a href="../../../assets/howto/traffic-shifting-organization-settings.yaml">organization-settings.yaml</a> 的文件，其中包含以下内容。</p>
+<details>
+<summary>organization-settings.yaml</summary>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">api.tsb.tetrate.io/v2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">OrganizationSetting</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate-settings</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">organization</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">networkSettings</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">networkReachability</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="c"># clusters that belong to tier1 networks can reach</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="c"># clusters that belong to tier2 networks.</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">tier1</span><span class="p">:</span><span class="w"> </span><span class="l">tier2</span><span class="w">
+</span></span></span></code></pre></div></details>
 <p>使用 <code>tctl</code> 应用这些内容：</p>
 <pre tabindex="0"><code>tctl apply -f organization-settings.yaml
 </code></pre><h3 id="在集群中安装控制平面组件">在集群中安装控制平面组件</h3>
-<p>此时，集群已经注册到 TSB，但尚未入网。要入网这些集群，请按照使用 <a href="../../../setup/helm/controlplane">Helm</a> 或 <a href="../../../setup/self-managed/onboarding-clusters">tctl</a> 的方法进行集群入网步骤。</p>
-<p>当所有集群都正确入网时，你应该在 TSB UI 中看到以下信息。请注意，集群正在报告 Istio 和 TSB 代理的版本。</p>
+<p>此时，集群已经注册到 TSB，但尚未载入。要载入这些集群，请按照使用 <a href="../../../setup/helm/controlplane">Helm</a> 或 <a href="../../../setup/self-managed/onboarding-clusters">tctl</a> 的方法进行集群载入步骤。</p>
+<p>当所有集群都正确载入时，你应该在 TSB UI 中看到以下信息。请注意，集群正在报告 Istio 和 TSB 代理的版本。</p>
 <p>
 
 
@@ -4471,10 +4518,24 @@
 <h2 id="部署应用程序和-ingress-网关到应用程序集群">部署应用程序和 Ingress 网关到应用程序集群</h2>
 <p>对于两个应用程序集群，执行以下操作：</p>
 <ol>
-<li>部署 <a href="../../../quickstart/deploy-sample-app#deploying-a-demo-application">bookinfo 应用程序</a></li>
+<li>部署 <a href="../../../quickstart/deploy-sample-app">bookinfo 应用程序</a></li>
 <li>部署 Ingress 网关</li>
 </ol>
 <p>要部署 Ingress 网关，请创建一个名为 <a href="../../../assets/howto/traffic-shifting-bookinfo-ingress-deploy.yaml"><code>bookinfo-ingress-deploy.yaml</code></a> 的文件，其中包含以下内容：</p>
+<details>
+<summary>bookinfo-ingress-deploy.yaml</summary>
+```yaml
+apiVersion: install.tetrate.io/v1alpha1
+kind: IngressGateway
+metadata:
+  name: tsb-gateway-bookinfo
+  namespace: bookinfo
+spec:
+  kubeSpec:
+    service:
+      type: LoadBalancer
+```
+</details>
 <p>使用 <code>kubectl</code> 应用这些内容：</p>
 <pre tabindex="0"><code>kubectl apply -f bookinfo-ingress-deploy.yaml
 </code></pre><p>确保在应用 YAML 文件时将 <code>kubectl</code> 指向正确的集群。</p>
@@ -4495,28 +4556,200 @@
 </div>
 
 <h2 id="租户和工作区">租户和工作区</h2>
-<p>在这个示例中，你将把 Tier-1 网关关联到一个 <a href="../../../concepts/terminology/#workspace">工作区</a>，将两个 Ingress 网关关联到另一个工作区。你应该确保工作区和工作区所属的 <a href="../../../concepts/terminology/#tenant">租户</a> 都已经正确配置。</p>
+<p>在这个示例中，你将把 Tier-1 网关关联到一个 <a href="../../../concepts/glossary/">工作区</a>，将两个 Ingress 网关关联到另一个工作区。你应该确保工作区和工作区所属的 <a href="../../../concepts/glossary/">租户</a> 都已经正确配置。</p>
 <h3 id="创建租户">创建租户</h3>
 <p>如果你已经在 TSB 中配置了一个租户，可以跳过此部分。</p>
 <p>创建一个名为 <a href="../../../assets/howto/traffic-shifting-tenant.yaml"><code>traffic-shifting-tenant.yaml</code></a> 的文件，其中包含以下内容。</p>
+<details>
+<summary>traffic-shifting-tenant.yaml</summary>
+```yaml
+apiVersion: api.tsb.tetrate.io/v2
+kind: Tenant
+metadata:
+  organization: tetrate
+  name: tetrate
+```
+</details>
 <p>使用 <code>tctl</code> 应用这些内容：</p>
 <pre tabindex="0"><code>tctl apply -f traffic-shifting-tenant.yaml
 </code></pre><h2 id="创建工作区">创建工作区</h2>
 <p>创建工作区以关联网关。创建一个名为 <a href="../../../assets/howto/traffic-shifting-workspaces.yaml"><code>traffic-shifting-workspaces.yaml</code></a> 的文件。</p>
+<details>
+<summary>traffic-shifting-workspaces.yaml</summary>
+```yaml
+# workspace for bookinfo
+apiversion: api.tsb.tetrate.io/v2
+kind: Workspace
+metadata:
+  tenant: tetrate
+  organization: tetrate
+  name: bookinfo-workspace
+spec:
+  description: for bookinfo
+  displayName: bookinfo
+  namespaceSelector:
+    names:
+      - 'c1/bookinfo'
+      - 'c2/bookinfo'
+---
+# workspace for tier-1
+apiversion: api.tsb.tetrate.io/v2
+kind: Workspace
+metadata:
+  tenant: tetrate
+  organization: tetrate
+  name: tier1-workspace
+spec:
+  description: for tier1
+  displayName: tier1
+  namespaceSelector:
+    names:
+      - 't1/tier1'
+```
+</details>
 <p>使用 <code>tctl</code> 应用这些内容：</p>
 <pre tabindex="0"><code>tctl apply -f traffic-shifting-workspaces.yaml
 </code></pre><p>如果要使用现有的工作区，可以更新工作区以包括你刚刚创建的集群和命名空间，方法是更新工作区命名空间选择器。</p>
 <h2 id="配置-ingress-网关">配置 Ingress 网关</h2>
 <p>接下来，你将配置 Ingress 网关以接收两个应用程序集群中的 bookinfo 应用程序的流量。</p>
-<p>在配置 Ingress 网关之前，请使用 <a href="../../../quickstart/ingress-gateway#certificate-for-gateway">此脚本</a> 创建一个 TLS 证书。确保在两个应用程序集群的 <code>bookinfo</code> 命名空间中创建这些证书的 secrets。</p>
+<p>在配置 Ingress 网关之前，请使用 <a href="../../../quickstart/ingress-gateway">此脚本</a> 创建一个 TLS 证书。确保在两个应用程序集群的 <code>bookinfo</code> 命名空间中创建这些证书的 secrets。</p>
 <p>创建一个名为 <a href="../../../assets/howto/traffic-shifting-bookinfo-ingress-config.yaml"><code>traffic-shifting-bookinfo-ingress-config.yaml</code></a> 的文件。</p>
+<details>
+<summary>traffic-shifting-bookinfo-ingress-config.yaml</summary>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">gateway.tsb.tetrate.io/v2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">tenant</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">organization</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">workspace</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo-workspace</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo-gateway-group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">displayName</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo-gateway-group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l">for bookinfo-gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespaceSelector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">names</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="s1">&#39;c1/bookinfo&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="s1">&#39;c2/bookinfo&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">configMode</span><span class="p">:</span><span class="w"> </span><span class="l">BRIDGED</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">---</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">gateway.tsb.tetrate.io/v2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">IngressGateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo-gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo-gateway-group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">workspace</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo-workspace</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">tenant</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">organization</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">workloadSelector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">tsb-gateway-bookinfo</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">http</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo-gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">443</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo.tetrate.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">tls</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l">SIMPLE</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c"># make sure to use correct secret name that you created previously</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">secretName</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo-certs</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">routing</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">rules</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span>- <span class="nt">route</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;bookinfo/productpage.bookinfo.svc.cluster.local&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">              </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">9080</span><span class="w">
+</span></span></span></code></pre></div></details>
 <pre tabindex="0"><code>tctl apply -f traffic-shifting-bookinfo-ingress-config.yaml
 </code></pre><p>Ingress 网关配置将自动推送到两个应用程序集群，因为上面的配置在 <code>Group</code> 对象的 <code>namespaceSelector</code> 部分指定了集群。</p>
 <h2 id="部署和配置-tier-1-网关">部署和配置 Tier-1 网关</h2>
 <p>创建一个名为 <a href="../../../assets/howto/traffic-shifting-tier1-deploy.yaml"><code>traffic-shifting-tier1-deploy.yaml</code></a> 的文件，其中包含以下内容。</p>
+<details>
+<summary>traffic-shifting-tier1-deploy.yaml</summary>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">gateway.tsb.tetrate.io/v2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">tenant</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">organization</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">workspace</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-workspace</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-gateway-group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">displayName</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-gateway-group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l">for tier1-gateway-group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespaceSelector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">names</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="s1">&#39;t1/tier1&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">configMode</span><span class="p">:</span><span class="w"> </span><span class="l">BRIDGED</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">---</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">gateway.tsb.tetrate.io/v2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Tier1Gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-gateway-group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">workspace</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-workspace</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">tenant</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">organization</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">workloadSelector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">tier1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">externalServers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo.tetrate.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">443</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">tls</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l">SIMPLE</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c"># make sure to use correct secret name that you created previously</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">secretName</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo-certs</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">clusters</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">c1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="m">100</span><span class="w">
+</span></span></span></code></pre></div></details>
 <p>使用 <code>kubectl</code> 部署这些内容：</p>
 <pre tabindex="0"><code>kubectl apply -f traffic-shifting-tier1-deploy.yaml
 </code></pre><p>创建一个名为 <a href="../../../assets/howto/traffic-shifting-tier1-config.yaml"><code>traffic-shifting-tier1-config.yaml</code></a> 的文件，其中包含以下内容。</p>
+<details>
+<summary>traffic-shifting-tier1-config.yaml</summary>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">gateway.tsb.tetrate.io/v2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">tenant</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">organization</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">workspace</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-workspace</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-gateway-group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">displayName</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-gateway-group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l">for tier1-gateway-group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespaceSelector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">names</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="s1">&#39;t1/tier1&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">configMode</span><span class="p">:</span><span class="w"> </span><span class="l">BRIDGED</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">---</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">gateway.tsb.tetrate.io/v2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Tier1Gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-gateway-group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">workspace</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-workspace</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">tenant</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">organization</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">workloadSelector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">tier1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">externalServers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo.tetrate.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">443</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">tls</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l">SIMPLE</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c"># make sure to use correct secret name that you created previously</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">secretName</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo-certs</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">clusters</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">c1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="m">100</span><span class="w">
+</span></span></span></code></pre></div></details>
 <p>你将使用之前为 Ingress 网关创建的相同的 bookinfo TLS 证书。在以下的 YAML 中，你将所有传入的流量路由到第一个应用程序集群，这个集群在前面的步骤中命名为 <code>c1</code>。</p>
 <p>使用 <code>tctl</code> 配置 Tier-1 网关：</p>
 <pre tabindex="0"><code>tctl apply -f traffic-shifting-tier1-config.yaml
@@ -4529,6 +4762,50 @@
 <p>在之前的配置中，来自 Tier-1 网关的所有流量都被路由到运行在集群 <code>c1</code> 中的 bookinfo 应用程序的 Ingress 网关。假设你有一个更新版本的 bookinfo 应用程序，它运行在另一个集群 <code>c2</code> 中。</p>
 <p>在这种情况下，通常希望配置只将少量流量路由到新的集群 <code>c2</code>，以便你可以测试并观察新集群中的应用程序是否按预期工作。当你验证没有问题后，可以逐渐增加路由到 <code>c2</code> 的流量百分比，直到所有流量都路由到 <code>c2</code> 为止。然后，可以安全地停用 <code>c1</code>。</p>
 <p>要将应用程序流量从集群 <code>c1</code> 切换到集群 <code>c2</code>，创建一个名为 <a href="../../../assets/howto/traffic-shifting-tier1-config2.yaml"><code>traffic-shifting-tier1-config2.yaml</code></a>（或者你可以编辑之前的配置文件），然后使用 <code>tctl</code> 应用。</p>
+<details>
+<summary>traffic-shifting-tier1-config2.yaml</summary>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">gateway.tsb.tetrate.io/v2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">tenant</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">organization</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">workspace</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-workspace</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-gateway-group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">displayName</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-gateway-group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l">for tier1-gateway-group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespaceSelector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">names</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="s1">&#39;t1/tier1&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">configMode</span><span class="p">:</span><span class="w"> </span><span class="l">BRIDGED</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">---</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">gateway.tsb.tetrate.io/v2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Tier1Gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-gateway-group</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">workspace</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-workspace</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">tenant</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">organization</span><span class="p">:</span><span class="w"> </span><span class="l">tetrate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">workloadSelector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">tier1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">tier1-gateway</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">externalServers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo.tetrate.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">443</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">tls</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l">SIMPLE</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c"># make sure to use correct secret name that you created previously</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">secretName</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo-certs</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">clusters</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">c1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="m">90</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">c2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="m">10</span><span class="w">
+</span></span></span></code></pre></div></details>
 <p>下面是原始 YAML 和新 YAML 之间的差异。请注意，<code>Group</code> 定义已再次包含在其中，但可以省略。</p>
 <pre tabindex="0"><code>@@ -36,4 +36,6 @@
        secretName: bookinfo-certs

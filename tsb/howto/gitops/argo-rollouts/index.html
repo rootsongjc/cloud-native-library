@@ -339,7 +339,7 @@
         content="2023-08-09T12:00:00&#43;08:00"
       />
     
-    <meta property="article:modified_time" content="2023-11-30T19:41:38&#43;08:00">
+    <meta property="article:modified_time" content="2023-11-30T21:38:09&#43;08:00">
   
 
   
@@ -1069,7 +1069,7 @@
 
 
 
-  <li class="child level "><a href="/tsb/setup/self-managed/onboarding-clusters/">加入集群</a></li>
+  <li class="child level "><a href="/tsb/setup/self-managed/onboarding-clusters/">载入集群</a></li>
 
 
 
@@ -4260,6 +4260,21 @@
     <li><a href="#从-git-仓库创建应用程序">从 Git 仓库创建应用程序</a></li>
     <li><a href="#应用程序设置">应用程序设置</a></li>
     <li><a href="#tsb-配置设置">TSB 配置设置</a></li>
+    <li><a href="#验证应用程序">验证应用程序</a></li>
+    <li><a href="#设置-argo-rollout">设置 Argo Rollout</a></li>
+    <li><a href="#使用-skywalking-配置金丝雀分析模板">使用 SkyWalking 配置金丝雀分析模板</a></li>
+    <li><a href="#创建-rollout">创建 Rollout</a></li>
+    <li><a href="#触发金丝雀部署">触发金丝雀部署</a></li>
+    <li><a href="#监控金丝雀部署">监控金丝雀部署</a></li>
+    <li><a href="#生成流量">生成流量</a></li>
+    <li><a href="#在-tsb-中监视性能指标">在 TSB 中监视性能指标</a></li>
+    <li><a href="#金丝雀分析和自动升级">金丝雀分析和自动升级</a>
+      <ul>
+        <li><a href="#金丝雀分析期间">金丝雀分析期间</a></li>
+        <li><a href="#成功升级后">成功升级后</a></li>
+      </ul>
+    </li>
+    <li><a href="#手动升级金丝雀部署">手动升级金丝雀部署</a></li>
   </ul>
 </nav>
 
@@ -4371,79 +4386,397 @@
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">argocd app create bookinfo-app --repo https://github.com/tetrateio/tsb-gitops-demo.git --path application --dest-server https://kubernetes.default.svc --dest-namespace bookinfo --sync-policy automated --self-heal
 </span></span></code></pre></div><p>检查应用程序的状态</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">argocd app get bookinfo-app
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">名称：               bookinfo-app
-</span></span><span class="line"><span class="cl">项目：              默认
-</span></span><span class="line"><span class="cl">服务器：            https://kubernetes.default.svc
-</span></span><span class="line"><span class="cl">命名空间：          bookinfo
-</span></span><span class="line"><span class="cl">URL：                https://localhost:8080/applications/bookinfo-app
-</span></span><span class="line"><span class="cl">仓库：               https://github.com/tetrateio/tsb-gitops-demo.git
-</span></span><span class="line"><span class="cl">目标：
-</span></span><span class="line"><span class="cl">路径：               argo/app
-</span></span><span class="line"><span class="cl">同步窗口：         允许同步
-</span></span><span class="line"><span class="cl">同步策略：         自动
-</span></span><span class="line"><span class="cl">同步状态：         已同步到（1ba8e2d）
-</span></span><span class="line"><span class="cl">健康状态：         健康
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">Name:               bookinfo-app
+</span></span><span class="line"><span class="cl">Project:            default
+</span></span><span class="line"><span class="cl">Server:             https://kubernetes.default.svc
+</span></span><span class="line"><span class="cl">Namespace:          bookinfo
+</span></span><span class="line"><span class="cl">URL:                https://localhost:8080/applications/bookinfo-app
+</span></span><span class="line"><span class="cl">Repo:               https://github.com/tetrateio/tsb-gitops-demo.git
+</span></span><span class="line"><span class="cl">Target:             
+</span></span><span class="line"><span class="cl">Path:               argo/app
+</span></span><span class="line"><span class="cl">SyncWindow:         Sync Allowed
+</span></span><span class="line"><span class="cl">Sync Policy:        Automated
+</span></span><span class="line"><span class="cl">Sync Status:        Synced to <span class="o">(</span>1ba8e2d<span class="o">)</span>
+</span></span><span class="line"><span class="cl">Health Status:      Healthy
 </span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl">组    类型                 命名空间  名称                    状态          健康  钩子  消息
-</span></span><span class="line"><span class="cl">       命名空间       bookinfo   bookinfo                运行中   已同步           命名空间/bookinfo 已创建
-</span></span><span class="line"><span class="cl">       ServiceAccount   bookinfo   bookinfo-details       已同步               serviceaccount/bookinfo-details 已创建
-</span></span><span class="line"><span class="cl">       ServiceAccount   bookinfo   bookinfo-productpage   已同步               serviceaccount/bookinfo-productpage 已创建
-</span></span><span class="line"><span class="cl">       ServiceAccount   bookinfo   bookinfo-ratings       已同步               serviceaccount/bookinfo-ratings 已创建
-</span></span><span class="line"><span class="cl">       ServiceAccount   bookinfo   bookinfo-reviews       已同步               serviceaccount/bookinfo-reviews 已创建
-</span></span><span class="line"><span class="cl">       Service            bookinfo   productpage            已同步   健康           service/productpage 已创建
-</span></span><span class="line"><span class="cl">       Service            bookinfo   details                已同步   健康           service/details 已创建
-</span></span><span class="line"><span class="cl">       Service            bookinfo   ratings                已同步   健康           service/ratings 已创建
-</span></span><span class="line"><span class="cl">       Service            bookinfo   reviews                已同步   健康           service/reviews 已创建
-</span></span><span class="line"><span class="cl">apps   Deployment         bookinfo   ratings-v1             已同步   健康           deployment.apps/ratings-v1 已创建
-</span></span><span class="line"><span class="cl">apps   Deployment         bookinfo   productpage-v1         已同步   健康           deployment.apps/productpage-v1 已创建
-</span></span><span class="line"><span class="cl">apps   Deployment         bookinfo   reviews                不同步   健康           deployment.apps/reviews 已创建
-</span></span><span class="line"><span class="cl">apps   Deployment         bookinfo   details-v1             已同步   健康           deployment.apps/details-v1 已创建
-</span></span><span class="line"><span class="cl">       命名空间                     bookinfo                已同步
+</span></span><span class="line"><span class="cl">GROUP  KIND            NAMESPACE  NAME                  STATUS     HEALTH   HOOK  MESSAGE
+</span></span><span class="line"><span class="cl">       Namespace       bookinfo   bookinfo              Running    Synced         namespace/bookinfo created
+</span></span><span class="line"><span class="cl">       ServiceAccount  bookinfo   bookinfo-details      Synced                    serviceaccount/bookinfo-details created
+</span></span><span class="line"><span class="cl">       ServiceAccount  bookinfo   bookinfo-productpage  Synced                    serviceaccount/bookinfo-productpage created
+</span></span><span class="line"><span class="cl">       ServiceAccount  bookinfo   bookinfo-ratings      Synced                    serviceaccount/bookinfo-ratings created
+</span></span><span class="line"><span class="cl">       ServiceAccount  bookinfo   bookinfo-reviews      Synced                    serviceaccount/bookinfo-reviews created
+</span></span><span class="line"><span class="cl">       Service         bookinfo   productpage           Synced     Healthy        service/productpage created
+</span></span><span class="line"><span class="cl">       Service         bookinfo   details               Synced     Healthy        service/details created
+</span></span><span class="line"><span class="cl">       Service         bookinfo   ratings               Synced     Healthy        service/ratings created
+</span></span><span class="line"><span class="cl">       Service         bookinfo   reviews               Synced     Healthy        service/reviews created
+</span></span><span class="line"><span class="cl">apps   Deployment      bookinfo   ratings-v1            Synced     Healthy        deployment.apps/ratings-v1 created
+</span></span><span class="line"><span class="cl">apps   Deployment      bookinfo   productpage-v1        Synced     Healthy        deployment.apps/productpage-v1 created
+</span></span><span class="line"><span class="cl">apps   Deployment      bookinfo   reviews               OutOfSync  Healthy        deployment.apps/reviews created
+</span></span><span class="line"><span class="cl">apps   Deployment      bookinfo   details-v1            Synced     Healthy        deployment.apps/details-v1 created
+</span></span><span class="line"><span class="cl">       Namespace                  bookinfo              Synced
 </span></span></code></pre></div><h2 id="应用程序设置">应用程序设置</h2>
 <p>如果你已经为部署和服务资源创建了 Kubernetes 清单，你可以选择保留相同的对象以及 Argo <code>Rollout</code> 对象，以便实现金丝雀部署。
 你可以对 <code>Rollout</code> 对象和 Istio VirtualService/DestinationRule 的 TSB 网格配置进行必要的更改，以实现所需的结果。</p>
 <h2 id="tsb-配置设置">TSB 配置设置</h2>
-<p>由于 Argo Rollout 要求你根据 Istio 的金丝雀部署策略约定对 Istio <code>VirtualService</code> 和 <code>DestinationRule</code> 对象进行一些修改，因此你可以使用 TSB <code>DIRECT</code> 模式配置来实现所需的结果。</p>
+<p>由于 Argo Rollout 要求你根据其 Istio 的金丝雀部署策略约定对 Istio 的 <code>VirtualService</code> 和 <code>DestinatrionRule</code> 对象进行一些修改，你可以使用 TSB 的 <code>DIRECT</code> 模式配置来实现所需的结果。</p>
 <ul>
-<li>根据 Argo Rollout 约定，需要在 TSB 直接模式资源（如 <code>VirtualService</code> 和 <code>DestinationRule</code>）中配置 2 个子集，分别命名为 <code>stable</code> 和 <code>canary</code>，并添加必要的标签，以识别 <code>canary</code> 和 <code>stable</code> pod。</li>
-<li>请确保根据 Istio 约定为 TSB 配置识别子集并在服务仪表板中</li>
+<li>根据 Argo Rollout 的约定，需要在 TSB 直接模式资源（如 <code>VirtualService</code> 和 <code>DestinationRule</code>）中配置 2 个子集，分别命名为 <code>stable</code> 和 <code>canary</code>，并添加必要的标签，以标识 <code>canary</code> 和 <code>stable</code> 的 Pod。</li>
+<li>请确保版本标签（例如：<code>version: canary/stable</code>）已根据 Istio 的约定进行配置，以便 TSB 可识别子集并在服务仪表板中绘制指标。</li>
+<li>在使用 TSB 直接模式资源与 GitOps 时，需要为资源添加一个额外的标签 <code>istio.io/rev: &quot;tsb&quot;</code>。有关更多详细信息，请参阅<a href="./gitops.md">此处</a>。</li>
 </ul>
-<p>启用指标。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">networking.istio.io/v1alpha3</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">VirtualService</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo-vs</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">hosts</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="l">bookinfo</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">http</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">route</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">destination</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">subset</span><span class="p">:</span><span class="w"> </span><span class="l">stable</span><span class="w"> </span><span class="c"># 将 stable 子集设置为稳定版本</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="m">100</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">destination</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">subset</span><span class="p">:</span><span class="w"> </span><span class="l">canary</span><span class="w"> </span><span class="c"># 将 canary 子集设置为金丝雀版本</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="m">0</span><span class="w">
-</span></span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">networking.istio.io/v1alpha3</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">DestinationRule</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo-dr</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l">bookinfo</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">subsets</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">stable</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">labels</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l">stable</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">canary</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">labels</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l">canary</span><span class="w">
-</span></span></span></code></pre></div><p>配置完成后，你可以使用 Argo Rollout 控制金丝雀部署并监控 SkyWalking 提供的指标。</p>
-<p>这就是如何在 Argo Rollout 和 SkyWalking 的帮助下实现金丝雀分析和渐进式交付的基本步骤。希望这对你有所帮助！如果你有任何问题或需要进一步的指导，请随时提问。</p>
+<p>通过从 <a href="https://github.com/tetrateio/tsb-gitops-demo/blob/main/argo/tsb/conf.yaml" target="_blank" rel="noopener">tsb-gitops-demo/argo/tsb/conf.yaml</a> 导入 TSB 配置来创建一个名为 <code>bookinfo-tsb-conf</code> 的应用。你也可以选择将其保存在同一存储库中。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">argocd app create bookinfo-tsb-conf --repo https://github.com/tetrateio/tsb-gitops-demo.git --path argo/tsb --dest-server https://kubernetes.default.svc --dest-namespace bookinfo --sync-policy automated --self-heal
+</span></span></code></pre></div><p>检查 TSB 资源的状态</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">argocd app get bookinfo-tsb-conf
+</span></span></code></pre></div><p>结果：</p>
+<pre tabindex="0"><code>Name:               bookinfo-tsb-conf
+Project:            default
+Server:             https://kubernetes.default.svc
+Namespace:          bookinfo
+URL:                https://localhost:8080/applications/bookinfo-tsb-conf
+Repo:               https://github.com/tetrateio/tsb-gitops-demo.git
+Target:             
+Path:               argo/tsb
+SyncWindow:         Sync Allowed
+Sync Policy:        Automated
+Sync Status:        Synced to (1ba8e2d)
+Health Status:      Healthy
 
+GROUP                    KIND             NAMESPACE     NAME                               STATUS     HEALTH  HOOK  MESSAGE
+networking.istio.io      VirtualService   bookinfo      bookinfo                           Synced                   virtualservice.networking.istio.io/bookinfo created
+tsb.tetrate.io           Tenant           bookinfo      bookinfo                           Synced                   tenant.tsb.tetrate.io/bookinfo unchanged
+networking.istio.io      Gateway          bookinfo      bookinfo-gateway                   Synced                   gateway.networking.istio.io/bookinfo-gateway unchanged
+traffic.tsb.tetrate.io   Group            bookinfo      bookinfo-traffic                   Synced                   group.traffic.tsb.tetrate.io/bookinfo-traffic unchanged
+security.tsb.tetrate.io  Group            bookinfo      bookinfo-security                  Synced                   group.security.tsb.tetrate.io/bookinfo-security unchanged
+gateway.tsb.tetrate.io   Group            bookinfo      bookinfo-gateway                   Synced                   group.gateway.tsb.tetrate.io/bookinfo-gateway unchanged
+tsb.tetrate.io           Workspace        bookinfo      bookinfo-ws                        Synced                   workspace.tsb.tetrate.io/bookinfo-ws unchanged
+networking.istio.io      VirtualService   bookinfo      details                            Synced                   virtualservice.networking.istio.io/details unchanged
+networking.istio.io      DestinationRule  bookinfo      productpage                        Synced                   destinationrule.networking.istio.io/productpage unchanged
+networking.istio.io      DestinationRule  bookinfo      details                            Synced                   destinationrule.networking.istio.io/details unchanged
+networking.istio.io      VirtualService   bookinfo      ratings                            Synced                   virtualservice.networking.istio.io/ratings unchanged
+networking.istio.io      DestinationRule  bookinfo      reviews                            Synced                   destinationrule.networking.istio.io/reviews unchanged
+networking.istio.io      DestinationRule  bookinfo      ratings                            Synced                   destinationrule.networking.istio.io/ratings unchanged
+networking.istio.io      VirtualService   bookinfo      reviews                            Synced                   virtualservice.networking.istio.io/reviews unchanged
+install.tetrate.io       IngressGateway   bookinfo      tsb-gateway-bookinfo               Synced                   ingressgateway.install.tetrate.io/tsb-gateway-bookinfo unchanged
+</code></pre><h2 id="验证应用程序">验证应用程序</h2>
+<p>运行以下命令以导出 <code>tsb-gateway-bookinfo</code> 的负载均衡 IP 地址。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">GATEWAY_IP</span><span class="o">=</span><span class="k">$(</span>kubectl -n bookinfo get service tsb-gateway-bookinfo -o <span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.status.loadBalancer.ingress[0].ip}&#39;</span><span class="k">)</span>
+</span></span></code></pre></div><p>确认你可以访问 bookinfo 应用程序。如你在响应中所见，我们当前部署的 <code>review v1</code> 服务不会调用 <code>ratings</code> 服务。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -v <span class="s2">&#34;http://bookinfo.tetrate.com/api/v1/products/1/reviews&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --resolve <span class="s2">&#34;bookinfo.tetrate.com:80:</span><span class="nv">$GATEWAY_IP</span><span class="s2">&#34;</span>
+</span></span></code></pre></div><pre tabindex="0"><code>* Mark bundle as not supporting multiuse
+&lt; HTTP/1.1 200 OK
+&lt; content-type: application/json
+&lt; content-length: 361
+&lt; server: istio-envoy
+&lt; date: Mon, 22 Aug 2022 06:36:52 GMT
+&lt; x-envoy-upstream-service-time: 782
+&lt;
+* Connection #0 to host bookinfo.tetrate.com left intact
+{&#34;id&#34;: &#34;1&#34;, &#34;podname&#34;: &#34;reviews-rollout-56ff4b868c-74d8t&#34;, &#34;clustername&#34;: &#34;null&#34;, &#34;reviews&#34;: [{&#34;reviewer&#34;: &#34;Reviewer1&#34;, &#34;text&#34;: &#34;An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!&#34;}, {&#34;reviewer&#34;: &#34;Reviewer2&#34;, &#34;text&#34;: &#34;Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare.&#34;}]}
+</code></pre><h2 id="设置-argo-rollout">设置 Argo Rollout</h2>
+<p>Argo Rollout 提供了多种选项，可将你现有的 Kubernetes 部署对象迁移到 Argo 的 <code>Rollout</code> 对象中。你可以将现有的 Kubernetes 部署对象转换为 <code>Rollout</code>，或者可以使用 <code>workloadRef</code> 从 <code>Rollout</code> 对象中引用你现有的 Kubernetes 部署。在本示例中，我们将使用后一种方法。</p>
+<p>在此示例中，我们将进行 <code>reviews</code> 服务的金丝雀部署，以演示 <code>Rollout</code> 对象的配置以及如何将流量转移至 <code>reviews</code> 服务的主要部署和金丝雀部署。</p>
+<ul>
+<li>创建一个 <code>Rollout</code> 资源，并使用 <code>workloadRef</code> 引用你现有的部署。</li>
+<li>确保 <code>matchLabels</code> 选择器已根据你的 Kubernetes 应用程序部署清单进行配置。</li>
+<li>将策略配置为 <code>canary</code>，并配置子集级别的流量分配。</li>
+<li>配置 <code>canaryMetadata</code> 和 <code>stableMetadata</code>，以在 <code>canary</code> 和 <code>stable</code> Pod 上注入标签和注释。</li>
+<li>请确保 <code>canaryMetadata</code> 和 <code>stableMetadata</code> 的标签与 TSB 直接模式配置<a href="https://github.com/tetrateio/tsb-gitops-demo/blob/main/argo/tsb/conf.yaml#L157-L165" target="_blank" rel="noopener">此处</a>一致。</li>
+<li>根据 TSB 直接模式配置，在 <code>trafficRouting</code> 下配置 Istio 的 <code>virtualService</code> 和 <code>destinationRule</code>。</li>
+</ul>
+<p>创建 <code>Rollout</code> 对象后，它将与 Kubernetes 部署 Pod 并排运行所需数量的 Pod。
+在所有 <code>Rollout</code> Pod 启动并运行后，你可以通过更改副本数将现有的 Kubernetes 部署缩减到 <code>0</code>，从而将流量切换到由 <code>Rollout</code> 对象管理的 Pod。 <code>Rollout</code> 对象不会修改你现有的 Kubernetes 部署，在 <code>VirtualService</code> 中更新子集后，流量将被转移到由 <code>Rollout</code> 对象管理的 Pod 上。</p>
+<details>
+<summary>reviews-rollout.yaml</summary>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">argoproj.io/v1alpha1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Rollout</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">reviews-rollout</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">replicas</span><span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">reviews</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">workloadRef</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Deployment</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">reviews</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">strategy</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">canary</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">analysis</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">templates</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">templateName</span><span class="p">:</span><span class="w"> </span><span class="l">apdex</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">startingStep</span><span class="p">:</span><span class="w"> </span><span class="m">2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">args</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">service-name</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l">canary|reviews|bookinfo|cp-cluster-1|-</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">canaryMetadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">annotations</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l">canary</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l">canary</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">service.istio.io/canonical-revision</span><span class="p">:</span><span class="w"> </span><span class="l">canary</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">stableMetadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">annotations</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l">stable</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l">stable</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">service.istio.io/canonical-revision</span><span class="p">:</span><span class="w"> </span><span class="l">stable</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">trafficRouting</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">istio</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">virtualService</span><span class="p">:</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">reviews</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">destinationRule</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">reviews    </span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">canarySubsetName</span><span class="p">:</span><span class="w"> </span><span class="l">canary  </span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nt">stableSubsetName</span><span class="p">:</span><span class="w"> </span><span class="l">stable</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">steps</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">setWeight</span><span class="p">:</span><span class="w"> </span><span class="m">10</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">pause</span><span class="p">:</span><span class="w"> </span>{<span class="nt">duration</span><span class="p">:</span><span class="w"> </span><span class="l">10m}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">setWeight</span><span class="p">:</span><span class="w"> </span><span class="m">20</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">pause</span><span class="p">:</span><span class="w"> </span>{<span class="nt">duration</span><span class="p">:</span><span class="w"> </span><span class="l">10m}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">setWeight</span><span class="p">:</span><span class="w"> </span><span class="m">40</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">pause</span><span class="p">:</span><span class="w"> </span>{<span class="nt">duration</span><span class="p">:</span><span class="w"> </span><span class="l">10m}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">setWeight</span><span class="p">:</span><span class="w"> </span><span class="m">60</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">pause</span><span class="p">:</span><span class="w"> </span>{<span class="nt">duration</span><span class="p">:</span><span class="w"> </span><span class="l">10m}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">setWeight</span><span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">pause</span><span class="p">:</span><span class="w"> </span>{<span class="nt">duration</span><span class="p">:</span><span class="w"> </span><span class="l">10m}</span><span class="w">
+</span></span></span></code></pre></div></details>
+<h2 id="使用-skywalking-配置金丝雀分析模板">使用 SkyWalking 配置金丝雀分析模板</h2>
+<p><a href="https://skywalking.apache.org/" target="_blank" rel="noopener">SkyWalking</a>，一个捆绑在 TSB 中的可观察性组件，可以作为度量提供程序来支持金丝雀部署分析，从而实现自动升级或回滚操作。有关更多详细信息，请参阅<a href="https://argoproj.github.io/argo-rollouts/features/analysis/" target="_blank" rel="noopener">Argo Rollout 中的分析与渐进式交付</a>以及如何使用<a href="https://argoproj.github.io/argo-rollouts/analysis/skywalking/" target="_blank" rel="noopener">SkyWalking</a>作为度量提供程序的内容。</p>
+<ul>
+<li>使用 <code>skywalking</code> 作为度量提供程序创建金丝雀 <code>AnalysisTemplate</code>，以驱动基于部署分析的自动升级/回滚操作。</li>
+<li>可以通过连接到 <code>OAP</code> 服务 GraphQL 端点，即安装在 TSB 控制平面集群上的 <code>http://oap.istio-system:12800</code> 来获取 SkyWalking 度量。</li>
+<li>成功条件是使用 Apdex 分数派生的。有关更多详细信息，请阅读<a href="https://tetrate.io/blog/the-apdex-score-for-measuring-service-mesh-health/" target="_blank" rel="noopener">用于衡量服务网格健康的 Apdex 分数</a>。</li>
+<li>金丝雀部署的子集</li>
+</ul>
+<p>名称需要配置为 <code>analysis</code> 模板中的参数 <code>service-name</code>。</p>
+<ul>
+<li>SkyWalking 中 TSB 服务名称的格式为 <code>subset|service name|namespace name|cluster name|-</code>。由于我们使用 <code>reviews</code> 服务，请在 Rollout 资源的 <code>service-name</code> 值中使用 <code>canary|reviews|bookinfo|cp-cluster-1|-</code>。</li>
+</ul>
+<p>在 <code>Rollout</code> 对象中的金丝雀 <code>analysis</code> 中配置相同的 <code>AnalysisTemplate</code> 详细信息。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">argoproj.io/v1alpha1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">AnalysisTemplate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">apdex</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">args</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">service-name</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">metrics</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">apdex</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">interval</span><span class="p">:</span><span class="w"> </span><span class="l">5m</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">successCondition</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;all(result.service_apdex.values.values, {asFloat(.value) &gt;= 9900})&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">failureLimit</span><span class="p">:</span><span class="w"> </span><span class="m">3</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">skywalking</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">interval</span><span class="p">:</span><span class="w"> </span><span class="l">3m</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l">http://oap.istio-system:12800</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">query</span><span class="p">:</span><span class="w"> </span><span class="p">|</span><span class="sd">
+</span></span></span><span class="line"><span class="cl"><span class="sd">          query queryData($duration: Duration!) {
+</span></span></span><span class="line"><span class="cl"><span class="sd">            service_apdex: readMetricsValues(
+</span></span></span><span class="line"><span class="cl"><span class="sd">              condition: { name: &#34;service_apdex&#34;, entity: { scope: Service, serviceName: &#34;{{ args.service-name }}&#34;, normal: true } },
+</span></span></span><span class="line"><span class="cl"><span class="sd">              duration: $duration) {
+</span></span></span><span class="line"><span class="cl"><span class="sd">                label values { values { value } }
+</span></span></span><span class="line"><span class="cl"><span class="sd">              }
+</span></span></span><span class="line"><span class="cl"><span class="sd">          }</span><span class="w">          
+</span></span></span></code></pre></div><h2 id="创建-rollout">创建 Rollout</h2>
+<p>运行以下命令以创建一个 rollout 应用程序。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">argocd app create reviews-rollout --repo https://github.com/tetrateio/tsb-gitops-demo.git --path argo/rollout --dest-server https://kubernetes.default.svc --dest-namespace bookinfo --sync-policy automated --self-heal
+</span></span></code></pre></div><p>检查状态</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">argocd app get reviews-rollout
+</span></span></code></pre></div><p>结果：</p>
+<pre tabindex="0"><code>Name:               reviews-rollout
+Project:            default
+Server:             https://kubernetes.default.svc
+Namespace:          bookinfo
+URL:                https://localhost:8080/applications/reviews-rollout
+Repo:               https://github.com/tetrateio/tsb-gitops-demo.git
+Target:             
+Path:               argo/rollout
+SyncWindow:         Sync Allowed
+Sync Policy:        Automated
+Sync Status:        Synced to (1ba8e2d)
+Health Status:      Healthy
+
+GROUP        KIND              NAMESPACE  NAME             STATUS  HEALTH   HOOK  MESSAGE
+argoproj.io  AnalysisTemplate  bookinfo   apdex            Synced                 analysistemplate.argoproj.io/apdex created
+argoproj.io  Rollout           bookinfo   reviews-rollout  Synced  Healthy        rollout.argoproj.io/reviews-rollout created
+</code></pre><h2 id="触发金丝雀部署">触发金丝雀部署</h2>
+<p>将 <code>reviews</code> 服务的部署图像更新为 <code>v2</code> 版本，这将立即触发 <code>reviews v2</code> 的金丝雀部署，并将流量百分比更改为 <code>90/10</code>。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl argo rollouts <span class="nb">set</span> image reviews-rollout <span class="nv">reviews</span><span class="o">=</span>docker.io/istio/examples-bookinfo-reviews-v2:1.16.4 -n bookinfo
+</span></span></code></pre></div><h2 id="监控金丝雀部署">监控金丝雀部署</h2>
+<p>运行以下命令以监控你的金丝雀部署。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl argo rollouts get rollout reviews-rollout --watch -n bookinfo
+</span></span></code></pre></div><p>结果</p>
+<pre tabindex="0"><code>Name:            reviews-rollout
+Namespace:       bookinfo
+Status:          ॥ Paused
+Message:         CanaryPauseStep
+Strategy:        Canary
+  Step:          1/10
+  SetWeight:     10
+  ActualWeight:  10
+Images:          docker.io/istio/examples-bookinfo-reviews-v1:1.16.4 (stable)
+                 docker.io/istio/examples-bookinfo-reviews-v2:1.16.4 (canary)
+Replicas:
+  Desired:       5
+  Current:       6
+  Updated:       1
+  Ready:         6
+  Available:     6
+
+NAME                                         KIND        STATUS     AGE    INFO
+⟳ reviews-rollout                            Rollout     ॥ Paused   6m13s
+├──# revision:2
+│  └──⧉ reviews-rollout-867b9c9bcb           ReplicaSet  ✔ Healthy  21s    canary
+│     └──□ reviews-rollout-867b9c9bcb-86mbt  Pod         ✔ Running  19s    ready:2/2
+└──# revision:1
+   └──⧉ reviews-rollout-5d9dc876c9           ReplicaSet  ✔ Healthy  6m13s  stable
+      ├──□ reviews-rollout-5d9dc876c9-27mth  Pod         ✔ Running  6m12s  ready:2/2
+      ├──□ reviews-rollout-5d9dc876c9-8qqpx  Pod         ✔ Running  6m11s  ready:2/2
+      ├──□ reviews-rollout-5d9dc876c9-9bqbv  Pod         ✔ Running  6m11s  ready:2/2
+      ├──□ reviews-rollout-5d9dc876c9-cgxgd  Pod         ✔ Running  6m11s  ready:2/2
+      └──□ reviews-rollout-5d9dc876c9-d447w  Pod         ✔ Running  6m11s  ready:2/2
+</code></pre><h2 id="生成流量">生成流量</h2>
+<p>运行以下命令以向 bookinfo 应用程序发送一些请求。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="k">while</span> true<span class="p">;</span> <span class="k">do</span> curl -m <span class="m">5</span> -v <span class="s2">&#34;http://bookinfo.tetrate.com/api/v1/products/1/reviews&#34;</span> --resolve <span class="s2">&#34;bookinfo.tetrate.com:80:</span><span class="nv">$GATEWAY_IP</span><span class="s2">&#34;</span><span class="p">;</span>  sleep <span class="m">2</span> <span class="p">;</span> <span class="k">done</span> <span class="p">;</span>
+</span></span></code></pre></div><p>正如你所见，部分响应将包含来自 <code>ratings</code> 服务的响应，因为 <code>reviews-v2</code> 调用了 <code>ratings</code> 服务。</p>
+<pre tabindex="0"><code>&gt; GET /api/v1/products/1/reviews HTTP/1.1
+&gt; Host: bookinfo.tetrate.com
+&gt; User-Agent: curl/7.79.1
+&gt; Accept: */*
+&gt; Content-Length: 0
+&gt; Content-Type: application/x-www-form-urlencoded
+&gt;
+* Mark bundle as not supporting multiuse
+&lt; HTTP/1.1 200 OK
+&lt; content-type: application/json
+&lt; content-length: 437
+&lt; server: istio-envoy
+&lt; date: Mon, 22 Aug 2022 06:53:14 GMT
+&lt; x-envoy-upstream-service-time: 45
+&lt;
+* Connection #0 to host bookinfo.tetrate.com left intact
+{&#34;id&#34;: &#34;1&#34;, &#34;podname&#34;: &#34;reviews-66f8dddb8c-84pk6&#34;, &#34;clustername&#34;: &#34;null&#34;, &#34;reviews&#34;: [{&#34;reviewer&#34;: &#34;Reviewer1&#34;, &#34;text&#34;: &#34;An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!&#34;, &#34;rating&#34;: {&#34;stars&#34;: 5, &#34;color&#34;: &#34;black&#34;}}, {&#34;reviewer&#34;: &#34;Reviewer2&#34;, &#34;text&#34;: &#34;Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare.&#34;, &#34;rating&#34;: {&#34;stars&#34;: 4, &#34;color&#34;: &#34;black&#34;}}]}
+</code></pre><h2 id="在-tsb-中监视性能指标">在 TSB 中监视性能指标</h2>
+<p>你可以从 TSB 服务仪表板监视金丝雀和稳定 Pod 的每个服务实例的健康状况。</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-显示稳定和金丝雀子集的服务仪表板">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img src="../../../assets/howto/gitops/subsets.png" alt="显示稳定和金丝雀子集的服务仪表板" loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      显示稳定和金丝雀子集的服务仪表板
+    </figcaption></figure>
+</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-子集金丝雀和稳定的服务实例度量">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img src="../../../assets/howto/gitops/service-metrics.png" alt="子集金丝雀和稳定的服务实例度量" loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      子集金丝雀和稳定的服务实例度量
+    </figcaption></figure>
+</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<figure  id="figure-显示只有-reviews-canary-调用-ratings-v1-服务的服务拓扑图">
+  <div class="d-flex justify-content-center">
+    <div class="w-100" ><img src="../../../assets/howto/gitops/topology.png" alt="显示只有 reviews-canary 调用 ratings-v1 服务的服务拓扑图" loading="lazy" data-zoomable /></div>
+  </div><figcaption>
+      显示只有 reviews-canary 调用 ratings-v1 服务的服务拓扑图
+    </figcaption></figure>
+</p>
+<h2 id="金丝雀分析和自动升级">金丝雀分析和自动升级</h2>
+<p>正如我们在 <code>rollout</code> 对象中配置的，金丝雀 <code>analysis</code> 将从第二阶段开始运行，因为它等待第一阶段在 10 分钟内完成以构建一些度量标准。从第二阶段开始，将执行 <code>AnalysisRun</code>，即 <code>AnalysisTemplate</code> 的一个实例化，根据配置的 <code>interval</code>。对于每次完成的运行，根据 <code>AnalysisTemplate</code> 中配置的最大 <code>failureLimit</code> 的状态，Argo 决定是否升级/回滚金丝雀部署。</p>
+<h3 id="金丝雀分析期间">金丝雀分析期间</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl argo rollouts promote reviews-rollout --full -n bookinfo
+</span></span></code></pre></div><p>结果</p>
+<pre tabindex="0"><code>Name:            reviews-rollout
+Namespace:       bookinfo
+Status:          ॥ Paused
+Message:         CanaryPauseStep
+Strategy:        Canary
+  Step:          5/10
+  SetWeight:     40
+  ActualWeight:  40
+Images:          docker.io/istio/examples-bookinfo-reviews-v1:1.16.4 (stable)
+                 docker.io/istio/examples-bookinfo-reviews-v2:1.16.4 (canary)
+Replicas:
+  Desired:       5
+  Current:       7
+  Updated:       2
+  Ready:         7
+  Available:     7
+
+NAME                                         KIND         STATUS     AGE   INFO
+⟳ reviews-rollout                            Rollout      ॥ Paused   24m
+├──# revision:2
+│  ├──⧉ reviews-rollout-867b9c9bcb           ReplicaSet   ✔ Healthy  18m   canary
+│  │  ├──□ reviews-rollout-867b9c9bcb-86mbt  Pod          ✔ Running  18m   ready:2/2
+│  │  └──□ reviews-rollout-867b9c9bcb-9ghh2  Pod          ✔ Running  3m4s  ready:2/2
+│  └──α reviews-rollout-867b9c9bcb-2         AnalysisRun  ◌ Running  8m4s  ✔ 2
+└──# revision:1
+   └──⧉ reviews-rollout-5d9dc876c9           ReplicaSet   ✔ Healthy  24m   stable
+      ├──□ reviews-rollout-5d9dc876c9-27mth  Pod          ✔ Running  24m   ready:2/2
+      ├──□ reviews-rollout-5d9dc876c9-8qqpx  Pod          ✔ Running  24m   ready:2/2
+      ├──□ reviews-rollout-5d9dc876c9-9bqbv  Pod          ✔ Running  24m   ready:2/2
+      ├──□ reviews-rollout-5d9dc876c9-cgxgd  Pod          ✔ Running  24m   ready:2/2
+      └──□ reviews-rollout-5d9dc876c9-d447w  Pod          ✔ Running  24m   ready:2/2
+</code></pre><h3 id="成功升级后">成功升级后</h3>
+<p>一旦所有步骤都以 <code>successfull</code> 的分析运行方式执行完毕，Argo 将完全将图像升级到版本 <code>v2</code> 并将其标记为 <code>stable</code>。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl argo rollouts get rollout reviews-rollout --watch -n bookinfo
+</span></span></code></pre></div><h2 id="手动升级金丝雀部署">手动升级金丝雀部署</h2>
+<p>你可以执行逐步升级，这将按照 Rollout 中列出的下一步骤进行操作，并最终完全升级新版本，或者你可以执行完整升级到所需版本，跳过分析、暂停和步骤。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 逐步升级</span>
+</span></span><span class="line"><span class="cl">kubectl argo rollouts promote reviews-rollout -n bookinfo
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 完整升级</span>
+</span></span><span class="line"><span class="cl">kubectl argo rollouts promote reviews-rollout --full -n bookinfo
+</span></span></code></pre></div>
           </div>
 
           
