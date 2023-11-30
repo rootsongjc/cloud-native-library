@@ -10,7 +10,7 @@ weight: 11
 
 在开始之前，请确保你已经：
 - 熟悉 [TSB 概念](../../../concepts/)
-- 安装了 [TSB 演示](../../../setup/self_managed/demo-installation) 环境
+- 安装了 [TSB 演示](../../../setup/self-managed/demo-installation) 环境
 - 创建了 [租户](../../../quickstart/tenant)
 
 ### 创建工作区和网关组

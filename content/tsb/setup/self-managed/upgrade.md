@@ -10,7 +10,7 @@ weight: 5
 
 - 检查新版本的 [要求](../../requirements-and-download)
 
-基于 Operator 的版本之间的升级过程相对简单。一旦 Operator 的 Pod 使用新的发布映像进行了更新，新生成的 Operator Pod 将升级所有必要的组件以适应新版本。
+基于 Operator 的版本之间的升级过程相对简单。一旦 Operator 的 Pod 使用新的发布镜像进行了更新，新生成的 Operator Pod 将升级所有必要的组件以适应新版本。
 
 ## 创建备份
 
@@ -20,7 +20,7 @@ weight: 5
 
 #### 备份 `tctl` 二进制文件
 
-由于每个新的 `tctl` 二进制文件可能都附带了新的 Operator 和配置来部署和配置 TSB，因此你应该备份当前正在使用的 `tctl` 二进制文件。请在同步新映像之前执行此操作。
+由于每个新的 `tctl` 二进制文件可能都附带了新的 Operator 和配置来部署和配置 TSB，因此你应该备份当前正在使用的 `tctl` 二进制文件。请在同步新镜像之前执行此操作。
 
 将带有版本后缀的 `tctl` 二进制文件（例如 `-1.3.0`）复制到一个位置，以便在需要时快速还原旧版本。
 
@@ -54,9 +54,9 @@ kubectl get controlplane -n istio-system -o yaml > cp-backup.yaml
 
 ## 升级过程
 
-### 下载 `tctl` 和同步映像
+### 下载 `tctl` 和同步镜像
 
-现在你已经创建了备份，请 [下载新版本的 `tctl` 二进制文件](../../requirements-and-download)，然后获取新的 TSB 容器映像。
+现在你已经创建了备份，请 [下载新版本的 `tctl` 二进制文件](../../requirements-and-download)，然后获取新的 TSB 容器镜像。
 
 有关如何执行此操作的详细信息在 [要求和下载页面](../../requirements-and-download) 中有描述。
 

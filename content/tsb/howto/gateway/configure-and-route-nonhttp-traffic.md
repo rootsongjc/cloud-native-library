@@ -11,7 +11,7 @@ weight: 12
 
 在开始之前，请确保你已经：
 - 熟悉 [TSB 概念](../../../concepts/)
-- 熟悉 [入网集群](../../../setup/self-managed/onboarding-clusters)
+- 熟悉 [载入集群](../../../setup/self-managed/onboarding-clusters)
 - 创建了 [租户](../../../quickstart/tenant)
 
 ## 设置
@@ -27,7 +27,7 @@ weight: 12
 ## TSB 配置
 
 ### 配置工作区和组
-首先创建工作区。在这里，我们假设集群已作为 `cluster-0`、`cluster-1`、`cluster-2` 和 `cluster-3` 入网。还假设 `cluster-3` 是 Tier-1，`cluster-0` 安装了 TSB 管理平面。
+首先创建工作区。在这里，我们假设集群已作为 `cluster-0`、`cluster-1`、`cluster-2` 和 `cluster-3` 载入。还假设 `cluster-3` 是 Tier-1，`cluster-0` 安装了 TSB 管理平面。
 ```yaml
 apiVersion: api.tsb.tetrate.io/v2
 kind: Workspace

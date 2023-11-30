@@ -4,7 +4,7 @@ description: 本文将重点介绍如何创建和使用 TSB 服务账号，以�
 weight: 9
 ---
 
-TSB 服务账号可以在平台内部用于管理集群入网 [tctl install cluster-service-account](../../setup/self-managed/onboarding-clusters#secrets) 和 [GitOps](../../howto/gitops) 功能，也可以在外部用于第三方系统执行各种 TSB 功能的配置，利用 TSB API 接口。本文将重点介绍如何创建和使用 TSB 服务账号，以及如何利用 `tctl` 实用工具作为处理程序。
+TSB 服务账号可以在平台内部用于管理集群载入 [tctl install cluster-service-account](../../setup/self-managed/onboarding-clusters#secrets) 和 [GitOps](../../howto/gitops) 功能，也可以在外部用于第三方系统执行各种 TSB 功能的配置，利用 TSB API 接口。本文将重点介绍如何创建和使用 TSB 服务账号，以及如何利用 `tctl` 实用工具作为处理程序。
 
 ## 使用 `tctl` 实用工具处理 TSB 服务账号
 

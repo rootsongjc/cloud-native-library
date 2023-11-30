@@ -237,7 +237,7 @@ kubectl create -n observability -f \
 这不是生产就绪的 Jaeger 配置。
 {{</callout>}}
 
-成功安装 Jaeger 运算符后，你可以创建所需的 Jaeger 部署配置。在此示例中，我们将使用内存存储的演示全合一映像，并启用 Jaeger 的 Zipkin 收集器。
+成功安装 Jaeger 运算符后，你可以创建所需的 Jaeger 部署配置。在此示例中，我们将使用内存存储的演示全合一镜像，并启用 Jaeger 的 Zipkin 收集器。
 
 ```yaml
 apiVersion: jaegertracing.io/v1

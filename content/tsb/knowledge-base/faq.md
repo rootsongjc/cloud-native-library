@@ -79,11 +79,11 @@ tctl config users set "gke-user" \
 
 ## 是否可以在多个集群之间共享单个 TSB 实例？
 
-是的。单个 TSB [管理平面](../../concepts/terminology/#management-plane) 能够管理大量集群。你需要将要关联到同一管理平面的每个集群都加入。此外，请参阅文档 [TSB 资源消耗和容量规划](../../setup/resource_planning) 以获取有关随着参与集群数量增加可能需要的资源量的详细信息。
+是的。单个 TSB [管理平面](../../concepts/glossary/) 能够管理大量集群。你需要将要关联到同一管理平面的每个集群都加入。此外，请参阅文档 [TSB 资源消耗和容量规划](../../setup/resource_planning) 以获取有关随着参与集群数量增加可能需要的资源量的详细信息。
 
-如果需要为每个集群配置不同的权限或团队，请使用 [工作区](../../concepts/terminology/#workspace) 和 [组](../../concepts/terminology/#group) 进行逻辑分区。
+如果需要为每个集群配置不同的权限或团队，请使用 [工作区](../../concepts/glossary/) 和 [组](../../concepts/glossary/) 进行逻辑分区。
 
-请查看我们的安装指南，了解如何将集群加入 [TSB](../../setup/self_managed/onboarding-clusters)。
+请查看我们的安装指南，了解如何将集群加入 [TSB](../../setup/self-managed/onboarding-clusters)。
 
 ## 使用自定义证书时出现 "OPENSSL_VERIFY 失败" 错误。
 

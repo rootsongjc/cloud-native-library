@@ -7,7 +7,7 @@ weight: 4
 
 本文档解释了如何在 TSB 中启用和利用身份传播，从而实现将消费者身份传播到远程服务、在不同集群之间实施详细的访问控制以及将访问控制规则应用于故障转移目标等场景。
 
-在继续之前，假定你熟悉 TSB 的[概念](../../../concepts)和术语，如[入口网关、Tier-1 网关和东西网关](../../../concepts/terminology#gateway)。
+在继续之前，假定你熟悉 TSB 的[概念](../../../concepts)和术语，如[入口网关、Tier-1 网关和东西网关](../../../concepts/glossary/)。
 
 {{<callout note "GitOps">}}
 本文档中的示例使用了 TSB 的 GitOps 功能，允许你使用 kubectl 应用 TSB 配置。要在你的 TSB 环境中启用 GitOps，请参见[启用 GitOps](../../../operations/features/configure-gitops)，并了解如何在 TSB 中使用 GitOps 工作流程的详细信息[GitOps 工作原理](../../../howto/gitops/gitops)。
@@ -80,27 +80,16 @@ kubectl get deployment edge -n istio-system -o yaml | grep ENABLE_HTTP_MESH_INTE
 在此用例中，我们关注在东西网关设置中的服务故障转移期间传播源身份。
 
 1. 在`cluster-1` 中，为`Client`和`Bookinfo`租户创建命名空间。在`bookinfo-ns`中部署`bookinfo`和`bookinfo-gateway`服务。
-
 2. 在`cluster-2` 中，为`Bookinfo`租户创建`bookinfo-ns`。在`bookinfo-ns`中部署`bookinfo`和`bookinfo-gateway`服务。
-
 3. 使用`defaultEastWestGatewaySettings`配置`bookinfo-ns`/`bookinfo-gateway`以进行东西故障转移。
-
 4. 实施`允许`和`拒绝`规则以控制不同租户和服务之间的通信。
-
-5. 验证`Client`租户中的客户端
-
-是否可以访问适当的服务，同时强制执行访问控制。
-
+5. 验证`Client`租户中的客户端是否可以访问适当的服务，同时强制执行访问控制。
 6. 在服务故障转移场景中观察身份传播的行为。
 
 ## 故障排除
 
 1. 确保`ControlPlane` CR 的`xcp`组件中正确设置了`enableHttpMeshInternalIdentityPropagation`。
-
 2. 验证`ControlPlane` CR 中是否配置了`imagePullSecret`，以允许拉取必要的 WASM 扩展。
-
 3. 确认已成功安装所需的 WASM 扩展在 Istio 环境中。
-
 4. 确保 XFCC 标头传播正常工作。
-
 5. 如果遇到问题，请参阅本页面末尾的故障排除部分以获取进一步的指导。

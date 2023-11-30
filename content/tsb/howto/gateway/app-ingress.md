@@ -25,7 +25,7 @@ kubectl create namespace httpbin-appingress
 
 你将在同一个命名空间中安装工作负载和应用程序入口。
 
-在此示例中，工作负载将是 `httpbin` 服务。[按照这些说明安装 `httpbin`](../../../reference/samples/httpbin#deploy-the-httpbin-pod-and-service)。
+在此示例中，工作负载将是 `httpbin` 服务。[按照这些说明安装 `httpbin`](../../../reference/samples/httpbin)。
 
 使用以下命令安装应用程序入口。
 

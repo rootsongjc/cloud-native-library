@@ -145,7 +145,7 @@ BACK → bookinfo-back.tetrate.com（可以是你喜欢的名称）。
           value: bookinfo-back.tetrate.com:80
 ```
 {{<callout note 注意>}}
-对于默认的 `productpage` 映像，这不会起作用，因为默认端口硬编码为 9080，这只是一个示例，但你可以修改它以获取端口和主机名。
+对于默认的 `productpage` 镜像，这不会起作用，因为默认端口硬编码为 9080，这只是一个示例，但你可以修改它以获取端口和主机名。
 {{</callout>}}
 
 ### 配置 Ingress Gateway 路由

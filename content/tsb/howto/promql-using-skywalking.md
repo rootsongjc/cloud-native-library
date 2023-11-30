@@ -9,7 +9,7 @@ Third-party systems or visualization platforms that already support PromQL (such
 
 Before you get started, make sure you: <br />
 ✓ Familiarize yourself with [TSB concepts](../concepts/toc) <br />
-✓ Install the [TSB demo](../setup/self_managed/demo-installation) environment <br />
+✓ Install the [TSB demo](../setup/self-managed/demo-installation) environment <br />
 ✓ Deploy the [Istio Bookinfo](../quickstart/deploy_sample_app) sample app <br />
 
 ## API Address

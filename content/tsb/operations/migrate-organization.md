@@ -4,7 +4,7 @@ description: 将所有配置、用户和组从一个组织迁移到一个新创�
 weight: 10
 ---
 
-本文描述了如何将所有配置、用户和组从一个[组织](../../concepts/terminology/#organization)迁移到一个新创建的组织。
+本文描述了如何将所有配置、用户和组从一个[组织](../../concepts/glossary/)迁移到一个新创建的组织。
 
 ## 获取数据
 

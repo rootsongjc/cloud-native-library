@@ -14,7 +14,7 @@ TSB 中 GitOps 支持的主要思想是允许：
 
 为了实现这一点，所有 TSB 配置对象都存在于 Kubernetes 自定义资源定义（CRD）中，以便可以轻松应用于集群。如下图所示，一旦资源应用到集群中，它们将被自动协调并转发到管理平面。
 
-![](../../../assets/operations/gitops.png)
+![TSB 中基于 Flux 的 GitOps 示意图](../../../assets/operations/gitops.svg)
 
 ## TSB Kubernetes 自定义资源
 

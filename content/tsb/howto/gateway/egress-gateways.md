@@ -30,7 +30,7 @@ kubectl create namespace sleep-one
 kubectl create namespace sleep-two
 ```
 
-然后按照["在 TSB 中安装 `sleep` Workload"](../../../reference/samples/sleep-service#create-a-sleep-workspace)文档中的说明，在 `demo` 集群中安装两个 `sleep` 服务。将服务 `sleep-one` 安装在命名空间 `sleep-one` 中，将服务 `sleep-two` 安装在命名空间 `sleep-two` 中。
+然后按照["在 TSB 中安装 `sleep` Workload"](../../../reference/samples/sleep-service)文档中的说明，在 `demo` 集群中安装两个 `sleep` 服务。将服务 `sleep-one` 安装在命名空间 `sleep-one` 中，将服务 `sleep-two` 安装在命名空间 `sleep-two` 中。
 
 你**无需**创建 Workspace，因为你将在本示例中稍后创建。
 

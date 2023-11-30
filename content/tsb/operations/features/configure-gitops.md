@@ -21,7 +21,7 @@ TSB 中的 GitOps 集成允许你与应用程序打包和部署的生命周期�
 可以通过 `ManagementPlane` 或 `ControlPlane` CR 或 Helm 值为每个集群配置 GitOps 组件。
 
 {{<callout note "注意">}}
-在同时在管理平面和控制平面中启用 GitOps 时，如果两个平面部署在同一个集群中（通常用于小型环境或[演示安装](../../setup/self_managed/demo-installation)），则只有两者之一会生效。具体来说，控制平面将是唯一启用的平面。这是为了避免两个平面多次推送相同的资源。
+在同时在管理平面和控制平面中启用 GitOps 时，如果两个平面部署在同一个集群中（通常用于小型环境或[演示安装](../../setup/self-managed/demo-installation)），则只有两者之一会生效。具体来说，控制平面将是唯一启用的平面。这是为了避免两个平面多次推送相同的资源。
 {{</callout>}}
 
 `ManagementPlane` 和 `ControlPlane` CR 都有一个名为 `gitops` 的组件，设置 `enabled: true` 将激活该集群的 GitOps。

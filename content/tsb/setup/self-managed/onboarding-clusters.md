@@ -1,5 +1,5 @@
 ---
-title: 加入集群
+title: 载入集群
 description: 在 Kubernetes 上部署 Istio 控制平面并将其连接到 TSB。
 weight: 3
 ---
@@ -49,7 +49,7 @@ tctl apply -f new-cluster.yaml
 
 ## 部署 Operator
 
-接下来，你需要在集群中安装必要的组件，以加入集群并将其连接到管理平面。
+接下来，你需要在集群中安装必要的组件，以载入集群并将其连接到管理平面。
 
 你必须部署两个 Operator。首先是控制平面 Operator，负责管理 Istio、SkyWalking 和其他各种组件。其次是数据平面 Operator，负责管理网关。
 

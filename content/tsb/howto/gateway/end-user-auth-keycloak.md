@@ -9,7 +9,7 @@ weight: 9
 在开始之前，请确保你已经：
 
 - 安装了 [TSB 管理平面](../../../setup/self-managed/management-plane-installation)
-- 接入了一个 [集群](../../../setup/self-managed/onboarding-clusters)
+- 载入了一个 [集群](../../../setup/self-managed/onboarding-clusters)
 - 安装了启用了 HTTPS 的 [Keycloak](https://www.keycloak.org/)
 
 {{<callout note 注意>}}

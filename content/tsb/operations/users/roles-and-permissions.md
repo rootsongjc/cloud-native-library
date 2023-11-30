@@ -4,7 +4,7 @@ description: 如何设置与 TSB 资源相关的角色和权限。
 weight: 5
 ---
 
-TSB 提供了细粒度的权限管理，以控制对 TSB 资源的访问。你可以授予对资源（如[组织](../../../concepts/terminology#organization)、[租户](../../../concepts/terminology#tenant)、[工作空间](../../../concepts/terminology#workspace)等）的访问权限。一组权限可以放入[角色](../../../refs/tsb/rbac/v2/role#role)中，然后可以重复使用这些角色来分配权限给适当的资源，例如用户或团队。一旦定义了角色，就可以使用[访问绑定](../../../refs/tsb/rbac/v2/yaml)对象将角色绑定到一组用户或团队。
+TSB 提供了细粒度的权限管理，以控制对 TSB 资源的访问。你可以授予对资源（如[组织](../../../concepts/glossary/)、[租户](../../../concepts/glossary/)、[工作空间](../../../concepts/glossary/)等）的访问权限。一组权限可以放入[角色](../../../refs/tsb/rbac/v2/role#role)中，然后可以重复使用这些角色来分配权限给适当的资源，例如用户或团队。一旦定义了角色，就可以使用[访问绑定](../../../refs/tsb/rbac/v2/yaml)对象将角色绑定到一组用户或团队。
 
 ## 资源模型
 

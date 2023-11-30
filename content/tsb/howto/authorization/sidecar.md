@@ -4,7 +4,7 @@ weight: 1
 description: 演示如何使用 OPA 授权服务到服务的流量。
 ---
 
-[Tetrate Service Bridge (TSB)](../../../concepts/terminology##tetrate-service-bridge-tsb) 提供了授权功能，用于授权来自另一个服务的每个 HTTP 请求（"服务到服务"请求）。
+[Tetrate Service Bridge (TSB)](../../../concepts/glossary/) 提供了授权功能，用于授权来自另一个服务的每个 HTTP 请求（"服务到服务"请求）。
 
 TSB 支持*本地*授权，使用 JWT 声明，以及*外部*授权，后者使用在外部运行的服务来确定是否应允许或拒绝请求。外部授权可以用于网关和工作负载（通过它们的 Sidecar）。
 
@@ -20,7 +20,7 @@ Tetrate 不提供对 OPA 的支持。如果你需要针对你的用例支持，�
 
 - 熟悉 [TSB 概念](../../../concepts/)
 - 安装 TSB 环境。你可以使用 [TSB 演示](../../../setup/self-managed/demo-installation) 进行快速安装
-- 完成了 TSB 使用快速入门。本文假设你已经创建了一个租户，并熟悉 [工作空间](../../../concepts/terminology#workspace) 和配置组。还需要将 `tctl` 配置到你的 TSB 环境。
+- 完成了 TSB 使用快速入门。本文假设你已经创建了一个租户，并熟悉 [工作空间](../../../concepts/glossary/) 和配置组。还需要将 `tctl` 配置到你的 TSB 环境。
 
 ## 概述
 

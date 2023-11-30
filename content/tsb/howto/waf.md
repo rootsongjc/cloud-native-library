@@ -46,7 +46,7 @@ Tetrate WAF 在应用程序内部运行，以非常精细的方式保护个别�
 ## 示例
 在开始之前，请确保你已经：
 ✓ 熟悉 [TSB 概念](../../concepts/toc)。
-✓ 安装 TSB 环境。你可以使用 [TSB 演示](../../setup/self_managed/demo-installation) 进行快速安装。
+✓ 安装 TSB 环境。你可以使用 [TSB 演示](../../setup/self-managed/demo-installation) 进行快速安装。
 ✓ 完成 TSB [快速入门](../../quickstart)。本文假定你已经创建了一个租户，并熟悉工作区和配置组。此外，你需要将 tctl 配置到
 
 你的 TSB 环境。

@@ -89,23 +89,23 @@ spec:
 
 按照以下步骤将 Workload Onboarding Agent 容器添加到任务定义中，与应用程序容器一起。
 
-该容器映像将添加到安装 Tetrate Service Bridge 到你的 Kubernetes 集群时使用的容器仓库中。要使用不同的容器仓库，请通过 [按照这些说明同步 Tetrate Service Bridge 镜像](../../../requirements-and-download)。
+该容器镜像将添加到安装 Tetrate Service Bridge 到你的 Kubernetes 集群时使用的容器仓库中。要使用不同的容器仓库，请通过 [按照这些说明同步 Tetrate Service Bridge 镜像](../../../requirements-and-download)。
 
 1. 容器名称：`onboarding-agent`
-2. 映像：`<your docker registry>/onboarding-agent:<tag>`
+2. 镜像：`<your docker registry>/onboarding-agent:<tag>`
 
-   这应该与集群中其他 TSB 映像使用的映像仓库和标签匹配，你可以通过首先使用 `kubectl` 提取映像来找到正确的映像：
+   这应该与集群中其他 TSB 镜像使用的镜像仓库和标签匹配，你可以通过首先使用 `kubectl` 提取镜像来找到正确的镜像：
 
 ```bash
    kubectl get deploy -n istio-system onboarding-plane -o jsonpath="{.spec.template.spec.containers[0].image}"
 ```
 
-   这将返回一个映像，例如：
+   这将返回一个镜像，例如：
    ```
    123456789012.dkr.ecr.us-east-1.amazonaws.com/registry/onboarding-plane-server:1.5.0
    ```
 
-   相应的 Workload Onboarding Agent 映像将是：
+   相应的 Workload Onboarding Agent 镜像将是：
    ```
    123456789012.dkr.ecr.us-east-1.amazonaws.com/registry/onboarding-agent:1.5.0
    ```

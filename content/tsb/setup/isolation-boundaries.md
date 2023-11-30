@@ -177,7 +177,7 @@ metadata:
 [工作负载载入](../workload-onboarding/guides) 仅支持单一隔离边界。多个隔离边界的支持将在后续版本中提供。
 {{</callout>}}
 
-默认情况下，工作负载入网将使用非修订的 Istio 控制平面。要使用修订的控制平面，你需要使用 [修订链接](../workload-onboarding/guides/setup) 从 TSB 工作负载入网存储库下载 Istio Sidecar。
+默认情况下，工作负载载入将使用非修订的 Istio 控制平面。要使用修订的控制平面，你需要使用 [修订链接](../workload-onboarding/guides/setup) 从 TSB 工作负载载入存储库下载 Istio Sidecar。
 
 你还需要在 VM 的 `/etc/onboarding-agent/agent.config.yaml` 中更新 [代理配置](../../refs/onboarding/config/agent/v1alpha1/agent-configuration) 以添加修订值。
 
@@ -189,13 +189,13 @@ sidecar:
     revision: dev-stable
 ```
 
-然后重新启动入网代理。
+然后重新启动载入代理。
 
 ```bash
 systemctl restart onboarding-agent
 ```
 
-如果你使用 cloud-init 来配置 VM，请在 cloud-init 文件中添加上述 `AgentConfiguration`。由于文件 `/etc/onboarding-agent/agent.config.yaml` 可能提前创建，因此对于基于 Debian 的操作系统，需要在非交互式安装时安装入网代理时传递 `-o Dpkg::Options::="--force-confold"`。
+如果你使用 cloud-init 来配置 VM，请在 cloud-init 文件中添加上述 `AgentConfiguration`。由于文件 `/etc/onboarding-agent/agent.config.yaml` 可能提前创建，因此对于基于 Debian 的操作系统，需要在非交互式安装时安装载入代理时传递 `-o Dpkg::Options::="--force-confold"`。
 
 ```bash
 sudo apt-get install -y -o Dpkg::Options::="--force-confold" ./onboarding-agent.deb

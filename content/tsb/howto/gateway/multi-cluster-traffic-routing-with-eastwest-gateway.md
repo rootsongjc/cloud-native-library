@@ -238,7 +238,7 @@ while true; do kubectl exec deployment/sleep -n sleep -c sleep -- curl -s http:/
 
 打开 TSB 仪表板，将 `Timerange` 设置为 5 分钟，并启用每 10 秒自动刷新。
 
-![Traffic is running locally in Cluster 1 (c1) before details service is terminated](../../../assets/howto/eastwest-1.png)
+![在 details 服务终止之前，流量在集群 1 (c1）中本地运行](../../../assets/howto/eastwest-1.png)
 
 经过几分钟后，打开另一个终端标签页，将集群 1 中的 `details` 服务缩容，保持流量继续。
 
@@ -248,17 +248,17 @@ kubectl scale deployment details-v1 -n bookinfo --replicas=0
 
 返回到 TSB 仪表板，你将看到 `Cluster 1` 中的 `productpage` 正在向 `Cluster 2` 中的 `details` 服务发送请求。
 
-![productpage service in Cluster 1 (c1) is sending request to details service in Cluster 2 (c2)](../../../assets/howto/eastwest-2.png)
+![集群1 (c1）中的 productpage 服务正在向集群2 (c2)中的 details 服务发送请求](../../../assets/howto/eastwest-2.png)
 
 经过几分钟后，你将看到 `Cluster 1` 中的 `details` 服务从拓扑视图中消失。
 
-![details service in Cluster 1 (c1) is removed from topology view](../../../assets/howto/eastwest-3.png)
+![集群1（c1）中的 details 服务已从拓扑视图上移除](../../../assets/howto/eastwest-3.png)
 
 ### 基于子集的路由和故障转移
 
 以 Bookinfo 应用程序为例，如果你启用了使用 [ServiceRoute](../../../quickstart/traffic-shifting) 或直接模式的 [VirtualService](https://istio.io/latest/docs/tasks/traffic-management/request-routing/) 进行子集路由，以将请求路由到 `reviews` 服务的 `v2` 版本，当你将 `Cluster 1` 中的 `reviews-v2` 部署缩减为 0 时，故障转移将发生到 `Cluster 2` 中的 `reviews-v2`。
 
-![在 Cluster 1（c1）中，reviews-v2 和 details-v1 服务被缩减为零](../../../assets/howto/eastwest-4.png)
+![在集群1（c1）中，reviews-v2 和 details-v1 服务被缩减为零](../../../assets/howto/eastwest-4.png)
 
 即使服务不在本地，也支持基于子集（或版本）的路由。再次以 Bookinfo 为例，如果你希望将 `reviews` 服务一起部署到与 productpage 不同的集群中，子集路由仍将受到尊重。
 
