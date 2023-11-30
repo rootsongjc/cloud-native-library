@@ -13,29 +13,28 @@
     </image>
     
     <item>
-      <title>Installing httpbin</title>
+      <title>安装 httpbin</title>
       <link>https://lib.jimmysong.io/tsb/reference/samples/httpbin/</link>
       <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/tsb/reference/samples/httpbin/</guid>
-      <description>&lt;p&gt;&lt;a href=&#34;https://httpbin.org&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;httpbin&lt;/code&gt;&lt;/a&gt; is a simple HTTP request and response service that is used for testing.&lt;/p&gt;
-&lt;p&gt;The &lt;code&gt;httpbin&lt;/code&gt; service is used in many examples in the TSB documentation. This document provides the basic installation procedure for this service.&lt;/p&gt;
-&lt;p&gt;Please make sure to refer to each TSB documentation for specific caveats or customizations that are required for the examples to work, as this document describes the most generic installation steps.&lt;/p&gt;
-&lt;p&gt;The following examples assume that you have already setup TSB, and that you have onboarded Kubernetes clusters to install the &lt;code&gt;httpbin&lt;/code&gt; workload to.&lt;/p&gt;
-&lt;p&gt;Unless otherwise stated, the examples that use the &lt;code&gt;kubectl&lt;/code&gt; command must be pointed to the same cluster. Make sure that your &lt;code&gt;kubeconfig&lt;/code&gt; is pointing to the desired cluster before running these commands.&lt;/p&gt;
-&lt;h2 id=&#34;namespace&#34;&gt;Namespace&lt;/h2&gt;
-&lt;p&gt;Unless otherwise stated, the &lt;code&gt;httpbin&lt;/code&gt; service is assumed to be installed in the &lt;code&gt;httpbin&lt;/code&gt; namespace. If not already present, this namespace must be created in the target cluster.&lt;/p&gt;
-&lt;p&gt;Run the following command to create the namespace if not already present:&lt;/p&gt;
+      <description>&lt;p&gt;&lt;a href=&#34;https://httpbin.org&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;httpbin&lt;/code&gt;&lt;/a&gt; 是一个简单的 HTTP 请求和响应服务，用于测试。&lt;/p&gt;
+&lt;p&gt;在 TSB 文档中的许多示例中都使用了 &lt;code&gt;httpbin&lt;/code&gt; 服务。本文档提供了该服务的基本安装过程。&lt;/p&gt;
+&lt;p&gt;请确保参考每个 TSB 文档，以了解特定的注意事项或所需的自定义，以使示例正常工作，因为本文档描述了最通用的安装步骤。&lt;/p&gt;
+&lt;p&gt;以下示例假设你已经设置了 TSB，并且已经将 Kubernetes 集群注册到要安装 &lt;code&gt;httpbin&lt;/code&gt; 工作负载的 TSB 上。&lt;/p&gt;
+&lt;p&gt;除非另有说明，使用 &lt;code&gt;kubectl&lt;/code&gt; 命令的示例必须指向相同的集群。在运行这些命令之前，请确保你的 &lt;code&gt;kubeconfig&lt;/code&gt; 指向所需的集群。&lt;/p&gt;
+&lt;h2 id=&#34;命名空间&#34;&gt;命名空间&lt;/h2&gt;
+&lt;p&gt;除非另有说明，假定 &lt;code&gt;httpbin&lt;/code&gt; 服务已安装在 &lt;code&gt;httpbin&lt;/code&gt; 命名空间中。如果尚未存在，请在目标集群中创建此命名空间。&lt;/p&gt;
+&lt;p&gt;运行以下命令以创建命名空间（如果尚不存在）：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create namespace httpbin
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The &lt;code&gt;httpbin&lt;/code&gt; pod in this namespace must have an Istio sidecar proxy running in it. To automatically enable the injection of this sidecar for all pods, execute the following:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;此命名空间中的 &lt;code&gt;httpbin&lt;/code&gt; pod 必须运行 Istio sidecar 代理。要自动启用此 sidecar 对所有 pod 的注入，请执行以下操作：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl label namespace httpbin istio-injection&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;enabled --overwrite&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;true&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This will let Istio know that it needs to inject the sidecar to the pod that you will create later.&lt;/p&gt;
-&lt;h2 id=&#34;deploy-the-httpbin-pod-and-service&#34;&gt;Deploy the &lt;code&gt;httpbin&lt;/code&gt; Pod and Service&lt;/h2&gt;
-&lt;p&gt;Download the &lt;a href=&#34;https://raw.githubusercontent.com/istio/istio/master/samples/httpbin/httpbin.yaml&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;httpbin.yaml&lt;/code&gt;&lt;/a&gt; manifest found in the Istio repository.&lt;/p&gt;
-&lt;p&gt;Run the following command to deploy the &lt;code&gt;httpbin&lt;/code&gt; service in the &lt;code&gt;httpbin&lt;/code&gt; namespace:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;这将告诉 Istio 需要向稍后创建的 pod 注入 sidecar。&lt;/p&gt;
+&lt;h2 id=&#34;部署-httpbin-pod-和服务&#34;&gt;部署 &lt;code&gt;httpbin&lt;/code&gt; Pod 和服务&lt;/h2&gt;
+&lt;p&gt;下载在 Istio 存储库中找到的 &lt;a href=&#34;https://raw.githubusercontent.com/istio/istio/master/samples/httpbin/httpbin.yaml&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;code&gt;httpbin.yaml&lt;/code&gt;&lt;/a&gt; 清单。&lt;/p&gt;
+&lt;p&gt;运行以下命令，在 &lt;code&gt;httpbin&lt;/code&gt; 命名空间中部署 &lt;code&gt;httpbin&lt;/code&gt; 服务：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -n httpbin -f httpbin.yaml
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;expose-the-httpbin-service&#34;&gt;Expose the &lt;code&gt;httpbin&lt;/code&gt; Service&lt;/h2&gt;
-&lt;p&gt;This next step may or may not be necessary depending on the usage scenario.
-If an Ingress Gateway is required, create a file called &lt;code&gt;httpbin-ingress-gateway.yaml&lt;/code&gt; with the following contents.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;暴露-httpbin-服务&#34;&gt;暴露 &lt;code&gt;httpbin&lt;/code&gt; 服务&lt;/h2&gt;
+&lt;p&gt;下一步可能需要根据使用情况进行或不进行，如果需要 Ingress Gateway，则创建一个名为 &lt;code&gt;httpbin-ingress-gateway.yaml&lt;/code&gt; 的文件，其中包含以下内容。&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;apiVersion: install.tetrate.io/v1alpha1
 kind: IngressGateway
 metadata:
@@ -45,28 +44,30 @@ spec:
   kubeSpec:
     service:
       type: LoadBalancer
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Then deploy it using &lt;code&gt;kubectl&lt;/code&gt;:&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;然后使用 &lt;code&gt;kubectl&lt;/code&gt; 部署它：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -f httpbin-ingress-gateway.yaml
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;create-certificates&#34;&gt;Create Certificates&lt;/h2&gt;
-&lt;p&gt;This next step may or may not be necessary depending on the usage scenario.
-If a TLS certificate is required, you can prepare them by following these steps.&lt;/p&gt;
-&lt;p&gt;Download the script &lt;a href=&#34;../../assets/quickstart/gen-cert.sh&#34;&gt;&lt;code&gt;gen-cert.sh&lt;/code&gt;&lt;/a&gt; and execute the following to generate the necessary files. Refer to &lt;a href=&#34;../../quickstart/ingress_gateway#certificate-for-gateway&#34;&gt;this document&lt;/a&gt; for more details.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;创建证书&#34;&gt;创建证书&lt;/h2&gt;
+&lt;p&gt;下一步可能需要根据使用情况进行或不进行，如果需要 TLS 证书，可以按照以下步骤准备它们。&lt;/p&gt;
+&lt;p&gt;下载脚本 &lt;a href=&#34;../../../assets/quickstart/gen-cert.sh&#34;&gt;&lt;code&gt;gen-cert.sh&lt;/code&gt;&lt;/a&gt; 并执行以下操作以生成必要的文件。有关更多详细信息，请参阅&lt;a href=&#34;../../../quickstart/ingress-gateway&#34;&gt;此文档&lt;/a&gt;。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;chmod +x ./gen-cert.sh
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;mkdir certs
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;./gen-cert.sh httpbin httpbin.tetrate.com certs
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The above assumes that you have exposed the &lt;code&gt;httpbin&lt;/code&gt; service as &lt;code&gt;httpbin.tetrate.com&lt;/code&gt;. Change its value accordingly, if necessary.&lt;/p&gt;
-&lt;p&gt;Once you have the necessary files generated in the &lt;code&gt;certs&lt;/code&gt; directory, create the Kubernetes secret.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;上述假设你已将 &lt;code&gt;httpbin&lt;/code&gt; 服务公开为 &lt;code&gt;httpbin.tetrate.com&lt;/code&gt;。如果需要，请相应更改其值。&lt;/p&gt;
+&lt;p&gt;一旦你在 &lt;code&gt;certs&lt;/code&gt; 目录中生成了必要的文件，请创建 Kubernetes 密钥。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n httpbin create secret tls httpbin-certs &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --key certs/httpbin.key &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --cert certs/httpbin.crt
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;create-a-httpbin-workspace&#34;&gt;Create a &lt;code&gt;httpbin&lt;/code&gt; Workspace&lt;/h2&gt;
-&lt;p&gt;This next step may or may not be necessary depending on the usage scenario.
-If you are creating a TSB Workspace, follow the steps below to create one.&lt;/p&gt;
-&lt;p&gt;In this example we assume that you have already created a tenant in your organization. If you have not created one, read the &lt;a href=&#34;../../quickstart/tenant&#34;&gt;examples in documentation and create one&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;Create a file called &lt;code&gt;httpbin-workspace.yaml&lt;/code&gt; with contents similar to the sample below. Make sure to replace the organization, tenant, and cluster names to appropriate values.&lt;/p&gt;
-&lt;p&gt;:::note
-If you have &lt;a href=&#34;../../setup/self_managed/demo-installation&#34;&gt;installed the &lt;code&gt;demo&lt;/code&gt; profile&lt;/a&gt;, an organization named &lt;code&gt;tetrate&lt;/code&gt; and a cluster already onboarded named &lt;code&gt;demo&lt;/code&gt; already exist.
-:::&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;创建-httpbin-工作区&#34;&gt;创建 &lt;code&gt;httpbin&lt;/code&gt; 工作区&lt;/h2&gt;
+&lt;p&gt;下一步可能需要根据使用情况进行或不进行，如果要创建 TSB 工作区，则按照以下步骤操作。&lt;/p&gt;
+&lt;p&gt;在此示例中，我们假设你已经在组织中创建了一个租户。如果尚未创建，请阅读&lt;a href=&#34;../../../quickstart/tenant&#34;&gt;文档中的示例并创建一个&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;创建名为 &lt;code&gt;httpbin-workspace.yaml&lt;/code&gt; 的文件，其中包含类似以下示例的内容。请确保将组织、租户和集群名称替换为适当的值。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;注意&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    如果你已经&lt;a href=&#34;../../../setup/self-managed/demo-installation&#34;&gt;安装了 &lt;code&gt;demo&lt;/code&gt; 配置文件&lt;/a&gt;，则已经存在名为 &lt;code&gt;tetrate&lt;/code&gt; 的组织和一个名为 &lt;code&gt;demo&lt;/code&gt; 的集群。
+&lt;/div&gt;
+
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;apiversion: api.tsb.tetrate.io/v2
 kind: Workspace
 metadata:
@@ -78,13 +79,12 @@ spec:
   namespaceSelector:
     names:
       - &amp;#34;&amp;lt;cluster&amp;gt;/httpbin&amp;#34;
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Apply the manifest using &lt;code&gt;tctl&lt;/code&gt;:&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用 &lt;code&gt;tctl&lt;/code&gt; 应用清单：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl apply -f httpbin-workspace.yaml
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;create-config-groups&#34;&gt;Create Config Groups&lt;/h2&gt;
-&lt;p&gt;This next step may or may not be necessary depending on the usage scenario.
-If you are creating Config Groups for this service, follow the steps below to create them.&lt;/p&gt;
-&lt;p&gt;In this example we assume that you have already created a tenant and a workspace in your organization. If you have not created one, read the &lt;a href=&#34;../../quickstart/tenant&#34;&gt;examples in documentation and create one&lt;/a&gt;, as well as &lt;a href=&#34;#create-a-httpbin-workspace&#34;&gt;the instructions on creating a &lt;code&gt;httpbin&lt;/code&gt; Workspace&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;Create a file called &lt;code&gt;httpbin-groups.yaml&lt;/code&gt; with contents similar to the sample below. Make sure to replace the organization, tenant, workspace, and cluster names to appropriate values.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;创建配置组&#34;&gt;创建配置组&lt;/h2&gt;
+&lt;p&gt;下一步可能需要根据使用情况进行或不进行，如果要为此服务创建配置组，则按照以下步骤操作。&lt;/p&gt;
+&lt;p&gt;在此示例中，我们假设你已经在组织中创建了一个租户和一个工作区。如果尚未创建，请阅读&lt;a href=&#34;../../../quickstart/tenant&#34;&gt;文档中的示例并创建一个&lt;/a&gt;，以及创建 &lt;code&gt;httpbin&lt;/code&gt; 工作区中的说明。&lt;/p&gt;
+&lt;p&gt;创建名为 &lt;code&gt;httpbin-groups.yaml&lt;/code&gt; 的文件，其中包含类似以下示例的内容。请确保将组织、租户、工作区和集群名称替换为适当的值。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;gateway.tsb.tetrate.io/v2&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Group&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -113,6 +113,8 @@ If you are creating Config Groups for this service, follow the steps below to cr
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nn&#34;&gt;---&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;security.tsb.tetrate.io/v2&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Group&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;Metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;organization&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;organization&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tenant&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;&amp;lt;tenant&amp;gt;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -123,14 +125,13 @@ If you are creating Config Groups for this service, follow the steps below to cr
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;names&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;lt;cluster&amp;gt;/httpbin&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;configMode&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;BRIDGED&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Apply the manifest using &lt;code&gt;tctl&lt;/code&gt;:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;使用 &lt;code&gt;tctl&lt;/code&gt; 应用清单：&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;tctl apply -f httpbin-groups.yaml
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;After this you should end up with 3 groups, a &lt;a href=&#34;../../refs/tsb/gateway/v2/gateway_group&#34;&gt;Gateway Group&lt;/a&gt; (&lt;code&gt;httpbin-gateway&lt;/code&gt;), a &lt;a href=&#34;../../refs/tsb/traffic/v2/traffic_group&#34;&gt;Traffic Group&lt;/a&gt; (&lt;code&gt;httpbin-traffic&lt;/code&gt;), and a &lt;a href=&#34;../../refs/tsb/security/v2/security_group&#34;&gt;Security Group&lt;/a&gt; (&lt;code&gt;httpbin-security&lt;/code&gt;).&lt;/p&gt;
-&lt;h2 id=&#34;onboard-httpbin-application&#34;&gt;Onboard &lt;code&gt;httpbin&lt;/code&gt; Application&lt;/h2&gt;
-&lt;p&gt;This next step may or may not be necessary depending on the usage scenario.
-If you are creating a TSB Application, follow the steps below to create one.&lt;/p&gt;
-&lt;p&gt;First, make sure that you have already &lt;a href=&#34;#create-a-httpbin-workspace&#34;&gt;created the &lt;code&gt;httpbin&lt;/code&gt; workspace&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;Create an application in this workspace. Create a file called &lt;code&gt;httpbin-application.yaml&lt;/code&gt; with contents similar to the sample below. Make sure to replace the organization and tenant names to appropriate values.&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;完成后，你应该得到 3 个组，一个&lt;a href=&#34;../../../refs/tsb/gateway/v2/gateway_group&#34;&gt;网关组&lt;/a&gt; (&lt;code&gt;httpbin-gateway&lt;/code&gt;)，一个&lt;a href=&#34;../../../refs/tsb/traffic/v2/traffic-group&#34;&gt;流量组&lt;/a&gt; (&lt;code&gt;httpbin-traffic&lt;/code&gt;) 和一个&lt;a href=&#34;../../../refs/tsb/security/v2/security-group&#34;&gt;安全组&lt;/a&gt; (&lt;code&gt;httpbin-security&lt;/code&gt;)。&lt;/p&gt;
+&lt;h2 id=&#34;注册-httpbin-应用程序&#34;&gt;注册 &lt;code&gt;httpbin&lt;/code&gt; 应用程序&lt;/h2&gt;
+&lt;p&gt;下一步可能需要根据使用情况进行或不进行，如果要创建 TSB 应用程序，则按照以下步骤操作。&lt;/p&gt;
+&lt;p&gt;首先，确保你已经创建了 &lt;code&gt;httpbin&lt;/code&gt; 工作区。&lt;/p&gt;
+&lt;p&gt;在此工作区中创建一个应用程序。创建名为 &lt;code&gt;httpbin-application.yaml&lt;/code&gt; 的文件，其中包含类似以下示例的内容。请确保将组织和租户名称替换为适当的值。&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;apiVersion: application.tsb.tetrate.io/v2
 kind: Application
 metadata:
@@ -141,40 +142,44 @@ spec:
   displayName: httpbin
   workspace: organizations/&amp;lt;organization&amp;gt;/tenants/&amp;lt;tenant&amp;gt;/workspaces/httpbin
   gatewayGroup: organizations/&amp;lt;organization&amp;gt;/tenants/&amp;lt;tenant&amp;gt;/workspaces/httpbin/gatewaygroups/httpbin-gateway
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Apply the manifest using &lt;code&gt;tctl&lt;/code&gt;:&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用 &lt;code&gt;tctl&lt;/code&gt; 应用清单：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl apply -f httpbin-application.yaml
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
     </item>
     
     <item>
-      <title>Installing Open Policy Agent</title>
+      <title>安装 Open Policy Agent</title>
       <link>https://lib.jimmysong.io/tsb/reference/samples/opa/</link>
       <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/tsb/reference/samples/opa/</guid>
-      <description>&lt;p&gt;&lt;a href=&#34;https://www.openpolicyagent.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Open Policy Agent&lt;/a&gt; (OPA) is an open source, general-purpose policy engine that provides a high-level declarative language that lets you specify policy as code. OPA also offers simple APIs to offload policy decision-making from your software.&lt;/p&gt;
-&lt;p&gt;This document describes a simplified version of the configuring OPA in TSB, to accompany sections where it is used as the external authorization (&lt;code&gt;ext-authz&lt;/code&gt;) service. In your actual application there may be differences that require tweaking.&lt;/p&gt;
-&lt;p&gt;:::note OPA support
-Tetrate does not offer support for OPA. Please look elsewhere if you need support for your use case.
-:::&lt;/p&gt;
-&lt;p&gt;For more detailed explanation of the configurations described below, please refer to &lt;a href=&#34;https://www.openpolicyagent.org/docs/latest&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;the official documentation&lt;/a&gt;.&lt;/p&gt;
-&lt;h2 id=&#34;preparing-a-policy&#34;&gt;Preparing a Policy&lt;/h2&gt;
-&lt;p&gt;OPA requires a policy file written using &lt;a href=&#34;https://www.openpolicyagent.org/docs/latest/policy-language/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;OPA&amp;rsquo;s policy language&lt;/a&gt; to decide if requests should be authorized. Since the actual policy will differ significantly from example to example, details on how to write this file will not be covered in this document. Please refer to &lt;a href=&#34;https://www.openpolicyagent.org/docs/latest&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;the documents in OPA website&lt;/a&gt; for details.&lt;/p&gt;
-&lt;p&gt;One thing to note is the package name specified in the policy file. If you have a policy file that has the following package declaration, you will be using the value &lt;code&gt;helloworld.authz&lt;/code&gt; in the container configuration later.&lt;/p&gt;
+      <description>&lt;p&gt;&lt;a href=&#34;https://www.openpolicyagent.org/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Open Policy Agent&lt;/a&gt; (OPA) 是一个开源的通用策略引擎，提供了一种高级声明性语言，允许您将策略定义为代码。OPA 还提供了简单的 API，用于从您的软件中卸载策略决策。&lt;/p&gt;
+&lt;p&gt;本文档描述了在 TSB 中配置 OPA 的简化版本，以配合使用它作为外部授权 (&lt;code&gt;ext-authz&lt;/code&gt;) 服务的部分，您的实际应用程序可能存在需要进行调整的差异。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;OPA 支持&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    Tetrate 不提供对 OPA 的支持。如果您需要支持，请在其他地方寻找。
+&lt;/div&gt;
+
+&lt;p&gt;有关下面所述的配置的更详细解释，请参考&lt;a href=&#34;https://www.openpolicyagent.org/docs/latest&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;官方文档&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;准备策略&#34;&gt;准备策略&lt;/h2&gt;
+&lt;p&gt;OPA 需要使用&lt;a href=&#34;https://www.openpolicyagent.org/docs/latest/policy-language/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;OPA的策略语言&lt;/a&gt;编写策略文件以决定是否应授权请求。由于实际策略将因示例而异，因此本文档不会涵盖如何编写此文件的详细信息。请参考&lt;a href=&#34;https://www.openpolicyagent.org/docs/latest&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;OPA网站上的文档&lt;/a&gt;以获取详细信息。&lt;/p&gt;
+&lt;p&gt;需要注意的一点是策略文件中指定的包名称。如果您的策略文件具有以下包声明，您将在稍后的容器配置中使用值 &lt;code&gt;helloworld.authz&lt;/code&gt;。&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package helloworld.authz
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;example-policy-with-basic-authentication&#34;&gt;Example: Policy with Basic Authentication&lt;/h3&gt;
-&lt;p&gt;This example shows a policy that only allows users &lt;code&gt;alice&lt;/code&gt; and &lt;code&gt;bob&lt;/code&gt; to be authenticated via Basic Authentication. If the user is authorized, the user name will be stored in the HTTP header named &lt;code&gt;x-user&lt;/code&gt;.&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;示例具有基本身份验证的策略&#34;&gt;示例：具有基本身份验证的策略&lt;/h3&gt;
+&lt;p&gt;此示例显示了一个策略，仅允许用户 &lt;code&gt;alice&lt;/code&gt; 和 &lt;code&gt;bob&lt;/code&gt; 通过基本身份验证进行身份验证。如果用户被授权，用户名称将存储在名为 &lt;code&gt;x-user&lt;/code&gt; 的 HTTP 标头中。&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package example.basicauth
 
 default allow = false
 
-# username and password database
+# 用户名和密码数据库
 user_passwords = {
     &amp;#34;alice&amp;#34;: &amp;#34;password&amp;#34;,
     &amp;#34;bob&amp;#34;: &amp;#34;password&amp;#34;
 }
 
 allow = response {
-    # check if password from header is same as in database for the specific user
+    # 检查标头中的密码是否与特定用户的数据库中的密码相同
     basic_auth.password == user_passwords[basic_auth.user_name]
     response := {
       &amp;#34;allowed&amp;#34;: true,
@@ -188,17 +193,17 @@ basic_auth := {&amp;#34;user_name&amp;#34;: user_name, &amp;#34;password&amp;#34
     s := substring(v, count(&amp;#34;Basic &amp;#34;), -1)
     [user_name, password] := split(base64url.decode(s), &amp;#34;:&amp;#34;)
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;storing-the-policy-in-kubernetes&#34;&gt;Storing the Policy in Kubernetes&lt;/h3&gt;
-&lt;p&gt;Assuming your policy is stored in a file named &lt;code&gt;policy.rego&lt;/code&gt;, you will need to store the file in a Kubernetes Secret or a ConfigMap.&lt;/p&gt;
-&lt;p&gt;To create a Secret, execute the following command, replacing &lt;code&gt;namespace&lt;/code&gt; with the appropriate value:&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;将策略存储在-kubernetes-中&#34;&gt;将策略存储在 Kubernetes 中&lt;/h3&gt;
+&lt;p&gt;假设您的策略存储在名为 &lt;code&gt;policy.rego&lt;/code&gt; 的文件中，您需要将文件存储在 Kubernetes 的 Secret 或 ConfigMap 中。&lt;/p&gt;
+&lt;p&gt;要创建一个 Secret，请执行以下命令，将 &lt;code&gt;namespace&lt;/code&gt; 替换为适当的值：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create secret generic opa-policy -n &amp;lt;namespace&amp;gt; &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --from-file policy.rego
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If you are using a ConfigMap, execute the following command in the same manner:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果使用 ConfigMap，请以相同的方式执行以下命令：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create configmap opa-policy -n &amp;lt;namespace&amp;gt; &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --from-file policy.rego
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The name of the resource (&lt;code&gt;opa-policy&lt;/code&gt;) may be changed if necessary.&lt;/p&gt;
-&lt;h2 id=&#34;basic-deployment&#34;&gt;Basic Deployment&lt;/h2&gt;
-&lt;p&gt;The following manifest shows an example that can be used to deploy an OPA service, and an OPA agent with mostly default settings. Remember to replace the &lt;code&gt;package&lt;/code&gt; and &lt;code&gt;namespace&lt;/code&gt; in the configuration with the proper values.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;资源的名称（&lt;code&gt;opa-policy&lt;/code&gt;）可以根据需要更改。&lt;/p&gt;
+&lt;h2 id=&#34;基本部署&#34;&gt;基本部署&lt;/h2&gt;
+&lt;p&gt;以下清单显示了一个示例，可用于部署一个 OPA 服务和大部分默认设置的 OPA 代理。请记住将配置中的 &lt;code&gt;package&lt;/code&gt; 和 &lt;code&gt;namespace&lt;/code&gt; 替换为正确的值。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Service&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -243,7 +248,9 @@ basic_auth := {&amp;#34;user_name&amp;#34;: user_name, &amp;#34;password&amp;#34
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;--server&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;--addr=localhost:8181&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;--diagnostic-addr=0.0.0.0:8282&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;--set=plugins.envoy_ext_authz_grpc.addr=:9191&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;--set=plugins.envoy_ext_authz_grpc.addr
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s2&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s2&#34;&gt;=:9191&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;--set=plugins.envoy_ext_authz_grpc.query=data.&amp;lt;package&amp;gt;.allow&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;--set=decision_logs.console=true&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;- &lt;span class=&#34;s2&#34;&gt;&amp;#34;--ignore=.*&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -266,21 +273,25 @@ basic_auth := {&amp;#34;user_name&amp;#34;: user_name, &amp;#34;password&amp;#34
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;readOnly&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;mountPath&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;/policy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;opa-policy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Assuming you have saved the above manifest in a file named &lt;code&gt;opa.yaml&lt;/code&gt;, execute the following command to deploy:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;假设您已将上述清单保存在名为 &lt;code&gt;opa.yaml&lt;/code&gt; 的文件中，请执行以下命令进行部署：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -f opa.yaml
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;terminating-tls&#34;&gt;Terminating TLS&lt;/h2&gt;
-&lt;p&gt;In order to secure communications between the ext-authz services (where we use OPA as example) and its clients (gateways and sidecars), you can enable TLS verification. As example, here we will use the Envoy sidecar proxy to terminate TLS also verify TLS certificate coming from the client.&lt;/p&gt;
-&lt;p&gt;:::note
-The settings in the following samples are for testing purposes only. Please consult your security requirements and craft a different configuration for your production use case
-:::&lt;/p&gt;
-&lt;h3 id=&#34;prepare-certificate&#34;&gt;Prepare Certificate&lt;/h3&gt;
-&lt;p&gt;Either use a certificate that was provided by your administrators, or use a self-signed certificate for testing. You may be able to leverage &lt;a href=&#34;../../quickstart/ingress_gateway#certificate-for-gateway&#34;&gt;the instructions in the quickstart&lt;/a&gt; to create a self-signed certificate.&lt;/p&gt;
-&lt;p&gt;If you have not already done so, create the Secret to contain the certificates. The secret will be named &lt;code&gt;opa-certs&lt;/code&gt;, and will be used later. Assuming you have generated the files &lt;code&gt;opa.key&lt;/code&gt; and &lt;code&gt;opa.crt&lt;/code&gt;, execute the command below to create the Secret.  Replace the value for &lt;code&gt;namespace&lt;/code&gt; with an appropriate value.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;终止-tls&#34;&gt;终止 TLS&lt;/h2&gt;
+&lt;p&gt;为了保障 ext-authz 服务（我们在这里使用 OPA 作为示例）与其客户端（网关和 sidecar）之间的通信，您可以启用 TLS 验证。作为示例，在这里我们将使用 Envoy sidecar 代理来终止 TLS 并验证来自客户端的 TLS 证书。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;注意&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    以下示例中的设置仅用于测试目的。请根据您的生产用例的安全需求进行不同配置。
+&lt;/div&gt;
+
+&lt;h3 id=&#34;准备证书&#34;&gt;准备证书&lt;/h3&gt;
+&lt;p&gt;可以使用管理员提供的证书，也可以使用自签名证书进行测试。您可以利用&lt;a href=&#34;../../../quickstart/ingress-gateway&#34;&gt;快速入门指南中的说明&lt;/a&gt;创建自签名证书。&lt;/p&gt;
+&lt;p&gt;如果您尚未这样做，请创建一个包含证书的 Secret。Secret 将命名为 &lt;code&gt;opa-certs&lt;/code&gt;，稍后将使用它。假设您已生成了文件 &lt;code&gt;opa.key&lt;/code&gt; 和 &lt;code&gt;opa.crt&lt;/code&gt;，请执行以下命令创建 Secret。将 &lt;code&gt;namespace&lt;/code&gt; 的值替换为适当的值。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl -n &amp;lt;namespace&amp;gt; create secret tls opa-certs &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --key opa.key &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --cert opa.crt
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;create-envoy-configuration-file&#34;&gt;Create Envoy Configuration File&lt;/h3&gt;
-&lt;p&gt;Create a file named &lt;code&gt;config.yaml&lt;/code&gt; with the following contents.  Replace the value for &lt;code&gt;namespace&lt;/code&gt; with an appropriate value. This configuration assumes that the admin port is at port &lt;code&gt;10250&lt;/code&gt;, an &amp;ldquo;insecure&amp;rdquo; &lt;code&gt;grpc&lt;/code&gt; at port &lt;code&gt;18080&lt;/code&gt;, and a &lt;code&gt;grpc&lt;/code&gt; port with TLS termination at port &lt;code&gt;18443&lt;/code&gt;.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;创建-envoy-配置文件&#34;&gt;创建 Envoy 配置文件&lt;/h3&gt;
+&lt;p&gt;创建一个名为 &lt;code&gt;config.yaml&lt;/code&gt; 的文件，具有以下内容。将 &lt;code&gt;namespace&lt;/code&gt; 的值替换为适当的值。此配置假定管理员端口位于端口 &lt;code&gt;10250&lt;/code&gt;，端口 &lt;code&gt;18080&lt;/code&gt; 上有一个 &amp;ldquo;不安全&amp;rdquo; 的 &lt;code&gt;grpc&lt;/code&gt;，端口 &lt;code&gt;18443&lt;/code&gt; 上有一个带 TLS 终止的 &lt;code&gt;grpc&lt;/code&gt;。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;admin&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;address&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;socket_address&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -289,7 +300,7 @@ The settings in the following samples are for testing purposes only. Please cons
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;static_resources&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;listeners&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# Insecure GRPC listener&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 不安全的 GRPC 监听器&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;grpc-insecure&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;address&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;socket_address&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -308,7 +319,7 @@ The settings in the following samples are for testing purposes only. Please cons
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;cluster&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;grpc_rlserver&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;stat_prefix&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;grpc_insecure&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# Secured by TLS&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 通过 TLS 进行安全保护&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;grpc-simple-tls&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;address&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;socket_address&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -334,11 +345,11 @@ The settings in the following samples are for testing purposes only. Please cons
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tls_certificates&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                  &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;certificate_chain&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;{&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;filename&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;/certs/tls.crt }&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                    &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;private_key&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;{&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;filename&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;/certs/tls.key }&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Create a &lt;code&gt;ConfigMap&lt;/code&gt; to store the configuration in Kubernetes. Replace the value for &lt;code&gt;namespace&lt;/code&gt; with an appropriate value.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;创建一个 &lt;code&gt;ConfigMap&lt;/code&gt;，将配置存储在 Kubernetes 中。将 &lt;code&gt;namespace&lt;/code&gt; 的值替换为适当的值。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create configmap -n &amp;lt;namespace&amp;gt; opa-proxy &lt;span class=&#34;se&#34;&gt;\
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;  --from-file&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;config.yaml
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;deploy-service&#34;&gt;Deploy Service&lt;/h3&gt;
-&lt;p&gt;Create a file named &lt;code&gt;opa-tls.yaml&lt;/code&gt; with the following contents. Replace the value for &lt;code&gt;namespace&lt;/code&gt; with an appropriate value.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;部署服务&#34;&gt;部署服务&lt;/h3&gt;
+&lt;p&gt;创建一个名为 &lt;code&gt;opa-tls.yaml&lt;/code&gt; 的文件，具有以下内容。将 &lt;code&gt;namespace&lt;/code&gt; 的值替换为适当的值。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Service&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;metadata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
@@ -437,41 +448,44 @@ The settings in the following samples are for testing purposes only. Please cons
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;     &lt;/span&gt;- &lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;proxy-config&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;       &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;configMap&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;opa-proxy&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Apply &lt;code&gt;opa-tls.yaml&lt;/code&gt; using kubectl:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;使用以下命令使用 kubectl 应用 &lt;code&gt;opa-tls.yaml&lt;/code&gt;：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -f opa-tls.yaml
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Once the above deployment is ready, you should set up the client side appropriately to use &lt;code&gt;grpcs://opa-tls.&amp;lt;namespace&amp;gt;.svc.cluster.local:18443&lt;/code&gt;.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;一旦上述部署准备好，您应该适当地设置客户端端以使用 &lt;code&gt;grpcs://opa-tls.&amp;lt;namespace&amp;gt;.svc.cluster.local:18443&lt;/code&gt;。&lt;/p&gt;
 </description>
     </item>
     
     <item>
-      <title>Installing sleep</title>
+      <title>安装 sleep</title>
       <link>https://lib.jimmysong.io/tsb/reference/samples/sleep-service/</link>
       <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
       <guid>https://lib.jimmysong.io/tsb/reference/samples/sleep-service/</guid>
-      <description>&lt;p&gt;Sometimes it is convenient to have a workload that does nothing. In this example a container with &lt;code&gt;curl&lt;/code&gt; installed is used as the base for the &lt;code&gt;sleep&lt;/code&gt; service, so that testing is easier.&lt;/p&gt;
-&lt;p&gt;The &lt;code&gt;sleep&lt;/code&gt; service is used in multiple examples in the TSB documentation. This document provides the basic installation procedure for this service.&lt;/p&gt;
-&lt;p&gt;Please make sure to refer to each TSB documentation for specific caveats or customizations that are required for the examples to work, as this document describes the most generic installation steps.&lt;/p&gt;
-&lt;p&gt;The following examples assume that you have already setup TSB, and that you have onboarded Kubernetes clusters to install the &lt;code&gt;sleep&lt;/code&gt; workload to.&lt;/p&gt;
-&lt;p&gt;Unless otherwise stated, the examples that use the &lt;code&gt;kubectl&lt;/code&gt; command must be pointed to the same cluster. Make sure that your &lt;code&gt;kubeconfig&lt;/code&gt; is pointing to the desired cluster before running these commands.&lt;/p&gt;
-&lt;h2 id=&#34;namespace&#34;&gt;Namespace&lt;/h2&gt;
-&lt;p&gt;Unless otherwise stated, the &lt;code&gt;sleep&lt;/code&gt; service is assumed to be installed in the &lt;code&gt;sleep&lt;/code&gt; namespace. If not already present, this namespace must be created in the target cluster.&lt;/p&gt;
-&lt;p&gt;Run the following command to create the namespace if not already present:&lt;/p&gt;
+      <description>&lt;p&gt;有时候拥有一个什么都不做的工作负载是很方便的。在这个示例中，使用已安装 &lt;code&gt;curl&lt;/code&gt; 的容器作为 &lt;code&gt;sleep&lt;/code&gt; 服务的基础，以便更容易进行测试。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;sleep&lt;/code&gt; 服务在 TSB 文档中的多个示例中使用。本文档提供了该服务的基本安装步骤。&lt;/p&gt;
+&lt;p&gt;请确保查阅每个 TSB 文档，以获取示例正常运行所需的特定注意事项或自定义设置，因为本文档描述了最通用的安装步骤。&lt;/p&gt;
+&lt;p&gt;以下示例假设您已经设置好了 TSB，并且已经注册了要安装 &lt;code&gt;sleep&lt;/code&gt; 工作负载的 Kubernetes 集群。&lt;/p&gt;
+&lt;p&gt;除非另有说明，使用 &lt;code&gt;kubectl&lt;/code&gt; 命令的示例必须指向同一集群。在运行这些命令之前，请确保您的 &lt;code&gt;kubeconfig&lt;/code&gt; 指向所需的集群。&lt;/p&gt;
+&lt;h2 id=&#34;命名空间&#34;&gt;命名空间&lt;/h2&gt;
+&lt;p&gt;除非另有说明，假定 &lt;code&gt;sleep&lt;/code&gt; 服务安装在 &lt;code&gt;sleep&lt;/code&gt; 命名空间中。如果不存在，请在目标集群中创建此命名空间。&lt;/p&gt;
+&lt;p&gt;运行以下命令以创建命名空间（如果尚未存在）：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl create namespace sleep
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The &lt;code&gt;sleep&lt;/code&gt; pod in this namespace must have an Istio sidecar proxy running in it. To automatically enable the injection of this sidecar for all pods, execute the following:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;此命名空间中的 &lt;code&gt;sleep&lt;/code&gt; Pod 必须运行 Istio sidecar 代理。要自动启用对所有 Pod 的 sidecar 注入，请执行以下操作：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl label namespace sleep istio-injection&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;enabled --overwrite&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;true&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This will let Istio know that it needs to inject the sidecar to the pod that you will create later.&lt;/p&gt;
-&lt;h2 id=&#34;deploy-the-sleep-pod-and-service&#34;&gt;Deploy the &lt;code&gt;sleep&lt;/code&gt; Pod and Service&lt;/h2&gt;
-&lt;p&gt;Download the &lt;a href=&#34;../../assets/reference/sleep.yaml&#34;&gt;&lt;code&gt;sleep.yaml&lt;/code&gt;&lt;/a&gt; manifest found in the Istio repository.&lt;/p&gt;
-&lt;p&gt;Run the following command to deploy the &lt;code&gt;sleep&lt;/code&gt; service in the &lt;code&gt;sleep&lt;/code&gt; namespace:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;这将让 Istio 知道它需要将 sidecar 注入到稍后将创建的 Pod 中。&lt;/p&gt;
+&lt;h2 id=&#34;部署-sleep-pod-和服务&#34;&gt;部署 &lt;code&gt;sleep&lt;/code&gt; Pod 和服务&lt;/h2&gt;
+&lt;p&gt;下载在 Istio 存储库中找到的 &lt;a href=&#34;../../../assets/reference/sleep.yaml&#34;&gt;&lt;code&gt;sleep.yaml&lt;/code&gt;&lt;/a&gt; 清单。&lt;/p&gt;
+&lt;p&gt;运行以下命令以在 &lt;code&gt;sleep&lt;/code&gt; 命名空间中部署 &lt;code&gt;sleep&lt;/code&gt; 服务：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl apply -n sleep -f sleep.yaml
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;create-a-sleep-workspace&#34;&gt;Create a &lt;code&gt;sleep&lt;/code&gt; Workspace&lt;/h2&gt;
-&lt;p&gt;This next step may or may not be necessary depending on the usage scenario.
-If you are creating a TSB Workspace, follow the steps below to create one.&lt;/p&gt;
-&lt;p&gt;In this example we assume that you have already created a tenant in your organization. If you have not created one, read the &lt;a href=&#34;../../quickstart/tenant&#34;&gt;examples in documentation and create one&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;Create a workspace for &lt;code&gt;sleep&lt;/code&gt; that claims the namespace &lt;code&gt;sleep&lt;/code&gt;, if you have not already done so. Create a file called &lt;code&gt;sleep-workspace.yaml&lt;/code&gt; with contents similar to the sample below. Make sure to replace the organization, tenant, and cluster names to appropriate values.&lt;/p&gt;
-&lt;p&gt;:::note
-If you have &lt;a href=&#34;../../setup/self_managed/demo-installation&#34;&gt;installed the &lt;code&gt;demo&lt;/code&gt; profile&lt;/a&gt;, an organization named &lt;code&gt;tetrate&lt;/code&gt; and a cluster already onboarded named &lt;code&gt;demo&lt;/code&gt; already exist.
-:::&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;创建-sleep-工作空间&#34;&gt;创建 &lt;code&gt;sleep&lt;/code&gt; 工作空间&lt;/h2&gt;
+&lt;p&gt;根据使用情况，下一步可能需要也可能不需要。如果您要创建 TSB 工作空间，请按照以下步骤创建。&lt;/p&gt;
+&lt;p&gt;在此示例中，我们假设您已经在组织中创建了一个租户。如果尚未创建，请阅读&lt;a href=&#34;../../../quickstart/tenant&#34;&gt;文档中的示例并创建一个&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;如果您尚未执行此操作，请创建一个用于 &lt;code&gt;sleep&lt;/code&gt; 的工作空间，并声明命名空间 &lt;code&gt;sleep&lt;/code&gt;。创建一个名为 &lt;code&gt;sleep-workspace.yaml&lt;/code&gt; 的文件，其内容类似于下面的示例。确保将组织、租户和集群名称替换为适当的值。&lt;/p&gt;
+&lt;div class=&#34;alert-note-title&#34;&gt;
+    &lt;p&gt;注意&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-note&#34;&gt;
+    如果您已经&lt;a href=&#34;../../../setup/self-managed/demo-installation&#34;&gt;安装了 &lt;code&gt;demo&lt;/code&gt; 配置文件&lt;/a&gt;，则已经存在一个名为 &lt;code&gt;tetrate&lt;/code&gt; 的组织和一个名为 &lt;code&gt;demo&lt;/code&gt; 的集群。
+&lt;/div&gt;
+
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;apiversion: api.tsb.tetrate.io/v2
 kind: Workspace
 metadata:
@@ -483,7 +497,7 @@ spec:
   namespaceSelector:
     names:
       - &amp;#34;&amp;lt;cluster&amp;gt;/sleep&amp;#34;
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Apply the manifest using &lt;code&gt;tctl&lt;/code&gt;:&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用 &lt;code&gt;tctl&lt;/code&gt; 应用清单：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;tctl apply -f sleep-workspace.yaml
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
     </item>

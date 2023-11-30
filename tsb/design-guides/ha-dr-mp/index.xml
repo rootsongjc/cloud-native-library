@@ -13,601 +13,544 @@
     </image>
     
     <item>
-      <title>Failure Scenarios</title>
-      <link>https://lib.jimmysong.io/tsb/design-guides/ha-dr-mp/scenarios/</link>
+      <title>恢复失败的管理平面组件</title>
+      <link>https://lib.jimmysong.io/tsb/design-guides/ha-dr-mp/dr-managementplane/</link>
       <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
-      <guid>https://lib.jimmysong.io/tsb/design-guides/ha-dr-mp/scenarios/</guid>
-      <description>&lt;h1 id=&#34;failure-scenarios-for-the-tetrate-management-plane&#34;&gt;Failure Scenarios for the Tetrate Management Plane&lt;/h1&gt;
-&lt;p&gt;We will consider the following failure scenarios:&lt;/p&gt;
+      <guid>https://lib.jimmysong.io/tsb/design-guides/ha-dr-mp/dr-managementplane/</guid>
+      <description>&lt;p&gt;如果 Tetrate 管理平面失败，您需要恢复管理平面以恢复正常操作状态。本指南提供了一个流程概述，您应该在进行此过程时与 &lt;a href=&#34;https://tetrate.io/contact-us/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate 技术支持&lt;/a&gt; 协商。&lt;/p&gt;
+&lt;p&gt;为了应对管理组件的意外故障，我们建议考虑以下建议：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Workload Cluster&lt;/li&gt;
-&lt;li&gt;Edge Control Plane&lt;/li&gt;
-&lt;li&gt;Loss of connectivity from Management to Workload&lt;/li&gt;
-&lt;li&gt;Central Control Plane&lt;/li&gt;
-&lt;li&gt;Management Plane&lt;/li&gt;
-&lt;li&gt;Management Cluster&lt;/li&gt;
+&lt;li&gt;要么在可靠的冗余集群中维护 Postgres 数据库，要么（在 TSE 的情况下）利用&lt;a href=&#34;http://docs.tetrate.io/service-express/administration/postgres&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;定期的 Postgres 备份&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;保留 &lt;strong&gt;iam-signing-key&lt;/strong&gt; 的备份。&lt;/li&gt;
+&lt;li&gt;如果保留指标很重要，请在可靠的冗余集群中维护 ElasticSearch 数据库，或定期备份，以便在必要时进行恢复。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;&amp;hellip; and evaluate the effect of the failure on the following operations:&lt;/p&gt;
+&lt;h2 id=&#34;概述&#34;&gt;概述&lt;/h2&gt;
+&lt;p&gt;如果&lt;a href=&#34;../scenarios&#34;&gt;管理平面失败&lt;/a&gt;或&lt;a href=&#34;../scenarios&#34;&gt;托管管理平面的集群停止运行&lt;/a&gt;，您需要恢复管理平面以恢复正常运行状态。恢复是使用 helm 基础安装完成的。
+本方案将演示如何在新的管理集群上从失败的管理集群中恢复配置的任务。&lt;/p&gt;
+&lt;h3 id=&#34;先决条件&#34;&gt;先决条件&lt;/h3&gt;
+&lt;p&gt;本指南做出以下假设：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;strong&gt;Running production workloads&lt;/strong&gt; - the availability, security and correct operation of production workloads&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Local Cluster operations&lt;/strong&gt; - this includes the direct modification of cluster configuration such as kubectl actions, and indirect modification (i.e. changes made by the local Edge Control Plane to apply TSB policies or update service discovery endpoints)&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Metrics Collection&lt;/strong&gt; - the central collection and storage of metrics from remote workload clusters&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Management Operations&lt;/strong&gt; - TSB configuration changes, performed by GitOps, API or Management UI&lt;/li&gt;
+&lt;li&gt;PostgreSQL 数据库（配置）可用。要么数据库位于失败的集群之外，要么可以从备份中&lt;a href=&#34;http://docs.tetrate.io/service-express/administration/postgres&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;恢复（仅适用于 TSE）&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;ElasticSearch 数据库（指标）可用。要么数据库位于失败的集群之外，要么可以从备份中恢复，或者可以使用全新的（空的）ElasticSearch 数据库，并容忍指标丢失。&lt;/li&gt;
+&lt;li&gt;新管理平面集群的所有证书都使用与之前失败的集群相同的根证书颁发机构。&lt;/li&gt;
+&lt;li&gt;您可以更新用于发现管理平面的任何 DNS 记录。&lt;/li&gt;
+&lt;li&gt;您有 &lt;strong&gt;iam-signing-key&lt;/strong&gt; 的备份。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;We will look at the typical recovery scenario when a failed component recovers or is restored.&lt;/p&gt;
-&lt;h2 id=&#34;architecture-and-terms&#34;&gt;Architecture and Terms&lt;/h2&gt;
-&lt;p&gt;In this guide, we’ll use the following Architecture description:&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;&lt;a href=&#34;images/ha-dr-overview.png&#34;&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  id=&#34;figure-simplified-architecture-diagram-showing-primary-configuration-and-metrics-flows&#34;&gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;images/ha-dr-overview.png&#34; alt=&#34;Simplified Architecture Diagram, showing primary configuration and metrics flows&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;figcaption&gt;
-      Simplified Architecture Diagram, showing primary configuration and metrics flows
-    &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/a&gt; &lt;em&gt;Simplified Architecture Diagram, showing primary configuration and metrics flows&lt;/em&gt;&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;/table&gt;
+&lt;h2 id=&#34;流程&#34;&gt;流程&lt;/h2&gt;
+&lt;p&gt;请与&lt;a href=&#34;https://tetrate.io/contact-us/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate 技术支持&lt;/a&gt;合作，按照以下步骤操作：&lt;/p&gt;
+&lt;h3 id=&#34;部署新集群&#34;&gt;部署新集群&lt;/h3&gt;
+&lt;p&gt;部署新集群，将管理平面恢复到其中。&lt;/p&gt;
+&lt;h3 id=&#34;安装依赖项&#34;&gt;安装依赖项&lt;/h3&gt;
+&lt;p&gt;在集群中安装所需的依赖项。这些依赖项可能包括：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;strong&gt;Workload Cluster&lt;/strong&gt;: A Workload Cluster is a kubernetes cluster that hosts production workloads&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Production Workload&lt;/strong&gt;: A Production Workload is an app or service running in a Workload Cluster.  For avoidance of doubt, ‘Production Workload’ also includes non-production workloads&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Data Plane&lt;/strong&gt;: The Data Plane is the local Istio instance, deployed in the Workload Cluster&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Edge Control Plane&lt;/strong&gt;: The Edge Control Plane is the Tetrate software component installed in the istio-system and other namespaces (e.g. cert-manager, xcp-multicluster) in the Workload Cluster.  It configures the local Istio dataplane, and reports state to the Central Control Plane&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Management Cluster&lt;/strong&gt;: The Management Cluster is the kubernetes cluster that hosts the Tetrate management plane components (Management Plane, Central Control Plane).&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Central Control Plane&lt;/strong&gt;: The Central Control Plane is the Tetrate software component that accepts configuration from the Management Plane and status information from Edge Control Planes.  It evaluates the entire configuration, then distributes necessary configuration updates to each Edge Control Plane&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Management Plane&lt;/strong&gt;: The Management Plane is the Tetrate software component that entities (GitOps, API clients, UI clients) interact with.  It provides RBAC access control to control which entities can CRUD which configuration.  Configuration is stored locally, and synced to the Central Control Plane&lt;/li&gt;
+&lt;li&gt;Cert-Manager（如果您没有使用捆绑的 cert-manager 实例）及相关发行人/证书。确保使用相同的根 CA。&lt;/li&gt;
+&lt;li&gt;保存凭据/证书的任何密钥。&lt;/li&gt;
+&lt;li&gt;来自失败管理平面集群的 &lt;strong&gt;iam-signing-key&lt;/strong&gt; - 可选&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;For more information, please refer to the Tetrate Architecture Documentation.&lt;/p&gt;
-&lt;h3 id=&#34;terms&#34;&gt;Terms&lt;/h3&gt;
+&lt;p&gt;使用 &lt;code&gt;kubectl apply&lt;/code&gt; 安装 &lt;strong&gt;iam-signing-key&lt;/strong&gt; 密钥。如果无法执行此操作，您需要稍后在此过程中重新配置每个控制平面以使用全新的密钥。&lt;/p&gt;
+&lt;h3 id=&#34;准备配置&#34;&gt;准备配置&lt;/h3&gt;
+&lt;p&gt;使用与失败集群相同的 &lt;strong&gt;mp-values.yaml&lt;/strong&gt;，更新任何必要的字段，如 hub 或 registry，或者如果需要的话，更新任何其他环境相关字段。&lt;/p&gt;
+&lt;p&gt;如果使用外部 IP 端点，则无需更新 Elastic/Postgres 配置，但可能需要调整防火墙规则。&lt;/p&gt;
+&lt;h3 id=&#34;安装管理平面&#34;&gt;安装管理平面&lt;/h3&gt;
+&lt;p&gt;使用 &lt;strong&gt;mp-values.yaml&lt;/strong&gt; 执行管理平面的 helm 安装，并使用以下命令监视进度：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl get pod -n tsb
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl logs -f -n tse -l &lt;span class=&#34;nv&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;tsb-operator
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;对于 Tetrate Service Express（TSE），组件安装在 &lt;strong&gt;tse&lt;/strong&gt; 命名空间中（而不是 &lt;strong&gt;tsb&lt;/strong&gt;）。&lt;/p&gt;
+&lt;h3 id=&#34;获取管理平面地址&#34;&gt;获取管理平面地址&lt;/h3&gt;
+&lt;p&gt;安装完成后，请获取 &lt;strong&gt;front envoy&lt;/strong&gt; 的公共 IP 地址，例如：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl get svc -n tsb envoy
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;使用 Envoy IP 地址登录 UI：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;验证您的 Tetrate 配置是否在 Postgres 数据库中得以保留。&lt;/li&gt;
+&lt;li&gt;如果可用，检查 Elastic 历史数据。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;更新-dns&#34;&gt;更新 DNS&lt;/h3&gt;
+&lt;p&gt;使用在步骤 5 中获取的新 IP 地址更新用于定位管理平面的 DNS A 记录。远程控制平面集群将使用此 DNS 记录与管理平面进行通信。&lt;/p&gt;
+&lt;p&gt;传播可能需要一些时间。一旦更改传播完成，请验证您是否可以使用 FQDN 访问管理平面 UI。&lt;/p&gt;
+&lt;h3 id=&#34;验证控制平面操作&#34;&gt;验证控制平面操作&lt;/h3&gt;
+&lt;p&gt;在管理平面 UI 中，验证工作负载集群控制平面是否连接并与新的管理平面同步。&lt;/p&gt;
+&lt;div class=&#34;alert-warning-title&#34;&gt;
+    &lt;p&gt;刷新控制平面令牌&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;alert alert-warning&#34;&gt;
+    &lt;p&gt;&lt;strong&gt;iam-signing-key&lt;/strong&gt; 用于生成、验证和旋转令牌，这些令牌提供给控制平面集群，以与管理平面进行通信。&lt;/p&gt;
+&lt;p&gt;如果无法恢复和恢复原始的 &lt;strong&gt;iam-signing-key&lt;/strong&gt;，则需要在每个控制平面上手动刷新令牌：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;登录每个控制平面集群。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;删除旧令牌以旋转令牌：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete secret otel-token oap-token ngac-token xcp-edge-central-auth-token -n istio-system
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;验证控制平面现在是否连接到并与新的管理平面同步。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;/div&gt;
+
+&lt;p&gt;成功恢复新管理平面后，您将完全恢复故障，您的工作负载集群将由新的管理平面实例控制。&lt;/p&gt;
+&lt;h2 id=&#34;故障排除&#34;&gt;故障排除&lt;/h2&gt;
+&lt;p&gt;管理平面和控制平面安装由 Operator 管理。如果进行配置更改，可以监视 Operator 日志以查看进度并识别任何错误。&lt;/p&gt;
+&lt;h3 id=&#34;控制平面无法同步&#34;&gt;控制平面无法同步&lt;/h3&gt;
+&lt;p&gt;检查 ControlPlane Envoy 的日志，&lt;/p&gt;
+&lt;p&gt;查找与连接到管理平面或与令牌验证相关的错误：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl logs deploy/edge -n istio-system -f
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;按照上述描述的方法删除控制平面上的现有令牌，并验证这些令牌是否在控制平面上重新生成。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl get secrets otel-token oap-token ngac-token xcp-edge-central-auth-token -n istio-system
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;如果令牌未重新生成：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;&amp;ldquo;&lt;em&gt;Failure&lt;/em&gt;&amp;rdquo; means loss of availability of the relevant component&lt;/li&gt;
-&lt;li&gt;&amp;ldquo;&lt;em&gt;Recovery&lt;/em&gt;&amp;rdquo; means regaining availability of the relevant component, likely with out-of-date configuration or status&lt;/li&gt;
-&lt;li&gt;&amp;ldquo;&lt;em&gt;Restoring&lt;/em&gt;&amp;rdquo; means reinstalling a failed component, where it’s not possible to recover the component&lt;/li&gt;
-&lt;li&gt;✅ A component or service is not affected&lt;/li&gt;
-&lt;li&gt;⚠️ A limited loss-of-service occurs.&lt;/li&gt;
-&lt;li&gt;❌ A total loss-of-service in the affected component occurs&lt;/li&gt;
+&lt;li&gt;检查控制平面实例与新的管理平面实例之间的防火墙规则，并确保允许连接。&lt;/li&gt;
+&lt;li&gt;确保管理平面使用相同的根 CA。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h2 id=&#34;failure-of-workload-cluster&#34;&gt;Failure of Workload Cluster&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;Scenario&lt;/strong&gt;: There is a catastrophic failure of a single Workload Cluster.&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;&lt;a href=&#34;images/ha-dr-edgecluster.png&#34;&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  id=&#34;figure-catastrophic-failure-of-a-single-workload-cluster&#34;&gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;images/ha-dr-edgecluster.png&#34; alt=&#34;Catastrophic failure of a single Workload Cluster&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;figcaption&gt;
-      Catastrophic failure of a single Workload Cluster
-    &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/a&gt; &lt;em&gt;Catastrophic failure of a single Workload Cluster&lt;/em&gt;&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;/table&gt;
-&lt;h3 id=&#34;impacts&#34;&gt;Impacts&lt;/h3&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;Operations&lt;/th&gt;
-&lt;th&gt;Impact&lt;/th&gt;
-&lt;th&gt;&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;Running Workloads&lt;/td&gt;
-&lt;td&gt;Local workloads are unavailable.&lt;br/&gt;&lt;br/&gt;Workloads on other clusters are unaffected. Workload HA (Tier1 and EW gateways) ensures no interruption in service.&lt;/td&gt;
-&lt;td&gt;⚠️&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Local Cluster Ops&lt;/td&gt;
-&lt;td&gt;Local cluster changes cannot be made.&lt;br/&gt;&lt;br/&gt;Other clusters are unaffected.&lt;/td&gt;
-&lt;td&gt;⚠️&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Metrics Collection&lt;/td&gt;
-&lt;td&gt;Metrics cannot be collected from the local cluster.&lt;br/&gt;&lt;br/&gt;Other cluster metric collection unaffected.&lt;/td&gt;
-&lt;td&gt;⚠️&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Management Ops&lt;/td&gt;
-&lt;td&gt;Changes to the affected Workload Cluster are queued, and applied when the cluster recovers.&lt;br/&gt;&lt;br/&gt;All other management operations are unaffected.&lt;/td&gt;
-&lt;td&gt;✅&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;h3 id=&#34;recovery&#34;&gt;Recovery&lt;/h3&gt;
-&lt;p&gt;If the local cluster recovers, configuration will be quickly updated and metrics collection will resume.&lt;/p&gt;
-&lt;h3 id=&#34;restoration&#34;&gt;Restoration&lt;/h3&gt;
-&lt;p&gt;If necessary, the Tetrate Edge Control Plane can be re-installed.  When the cluster is re-introduced to the management plane, it will sync to the correct configuration.&lt;/p&gt;
-&lt;h2 id=&#34;failure-of-edge-control-plane&#34;&gt;Failure of Edge Control Plane&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;Scenario&lt;/strong&gt;: There is a catastrophic failure of the Edge Control Plane in a single Workload Cluster.&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;&lt;a href=&#34;images/ha-dr-edgecp.png&#34;&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  id=&#34;figure-catastrophic-failure-of-the-edge-control-plane-in-a-single-workload-cluster&#34;&gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;images/ha-dr-edgecp.png&#34; alt=&#34;Catastrophic failure of the Edge Control Plane in a single Workload Cluster&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;figcaption&gt;
-      Catastrophic failure of the Edge Control Plane in a single Workload Cluster
-    &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/a&gt; &lt;em&gt;Catastrophic failure of the Edge Control Plane in a single Workload Cluster&lt;/em&gt;&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;/table&gt;
-&lt;h3 id=&#34;impacts-1&#34;&gt;Impacts&lt;/h3&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;Operations&lt;/th&gt;
-&lt;th&gt;Impact&lt;/th&gt;
-&lt;th&gt;&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;Running Workloads&lt;/td&gt;
-&lt;td&gt;Running Workloads in local or remote clusters are not affected.&lt;/td&gt;
-&lt;td&gt;✅&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Local Cluster Ops&lt;/td&gt;
-&lt;td&gt;Local cluster changes (kubectl) are unaffected. You can continue to push updates to the cluster.&lt;br/&gt;&lt;br/&gt;Depending on the nature of the failure:&lt;ul&gt;&lt;li&gt;New workloads may run partially configured until the edge control plane is restored. They may acquire global cluster policies that are already in the cluster but may lack the namespace-targeted and fine-grained policies.&lt;/li&gt;&lt;li&gt;Local service discovery endpoints for remote services might not be updated (local workload clusters are not aware of service changes on remote clusters).&lt;/li&gt;&lt;li&gt;GitOps integrations may be interrupted.&lt;/li&gt;&lt;/ul&gt;&lt;/td&gt;
-&lt;td&gt;⚠️&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Metrics Collection&lt;/td&gt;
-&lt;td&gt;Metrics are collected locally, reduced, then forwarded to Management Plane ElasticSearch.  If collector services are unavailable, metrics might not be collected.&lt;/td&gt;
-&lt;td&gt;⚠️&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Management Ops&lt;/td&gt;
-&lt;td&gt;Changes to the affected Workload Cluster are queued and applied when Edge Control Plane recovers.&lt;br/&gt;&lt;br/&gt;All other management operations are unaffected.&lt;/td&gt;
-&lt;td&gt;✅&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;h3 id=&#34;recovery-1&#34;&gt;Recovery&lt;/h3&gt;
-&lt;p&gt;If the local cluster recovers, configuration will be quickly updated and metrics collection will resume.&lt;/p&gt;
-&lt;h3 id=&#34;restoration-1&#34;&gt;Restoration&lt;/h3&gt;
-&lt;p&gt;If necessary, the Tetrate Edge Control Plane can be re-installed.  When the cluster is re-introduced to the management plane, it will sync to the correct configuration.&lt;/p&gt;
-&lt;h2 id=&#34;loss-of-connectivity---workload-to-management-cluster&#34;&gt;Loss of Connectivity - Workload to Management Cluster&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;Scenario&lt;/strong&gt;: There is a loss of connectivity between the Workload Cluster and the central Management Cluster.&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;&lt;a href=&#34;images/ha-dr-network.png&#34;&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  id=&#34;figure-loss-of-connectivity-between--workload-cluster-and-central-management-cluster&#34;&gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;images/ha-dr-network.png&#34; alt=&#34;Loss of connectivity between  Workload Cluster and central Management Cluster&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;figcaption&gt;
-      Loss of connectivity between  Workload Cluster and central Management Cluster
-    &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/a&gt; &lt;em&gt;Loss of connectivity between Workload Cluster and central Management Cluster&lt;/em&gt;&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;/table&gt;
-&lt;h3 id=&#34;impacts-2&#34;&gt;Impacts&lt;/h3&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;Operations&lt;/th&gt;
-&lt;th&gt;Impact&lt;/th&gt;
-&lt;th&gt;&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;Running Workloads&lt;/td&gt;
-&lt;td&gt;Running Workloads in local or remote clusters are not affected.&lt;/td&gt;
-&lt;td&gt;✅&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Local Cluster Ops&lt;/td&gt;
-&lt;td&gt;Local cluster changes (kubectl) are unaffected.&lt;br/&gt;&lt;br/&gt;New workloads may run partially configured until connectivity is restored. They may acquire global cluster policies that are already in the cluster but will lack namespace-targeted and fine-grained policies.&lt;br/&gt;Local service discovery endpoints for remote services are not updated.&lt;br/&gt;GitOps operations may be interrupted.&lt;/td&gt;
-&lt;td&gt;⚠️&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Metrics Collection&lt;/td&gt;
-&lt;td&gt;Metrics are collected and queued in affected Workload Clusters.  Long-term connectivity loss will result in some loss of metrics.&lt;/td&gt;
-&lt;td&gt;⚠️&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Management Ops&lt;/td&gt;
-&lt;td&gt;Changes to the affected Workload Cluster(s) are queued and applied when connectivity is restored.&lt;br/&gt;&lt;br/&gt;All other management operations are unaffected.&lt;/td&gt;
-&lt;td&gt;✅&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;h3 id=&#34;recovery-2&#34;&gt;Recovery&lt;/h3&gt;
-&lt;p&gt;When connectivity is restored, configuration will be quickly updated and metrics collection will resume.&lt;/p&gt;
-&lt;h2 id=&#34;failure-of-central-control-plane&#34;&gt;Failure of Central Control Plane&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;Scenario&lt;/strong&gt;: The Central Control Plane component fails.&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;&lt;a href=&#34;images/ha-dr-centralcp.png&#34;&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  id=&#34;figure-central-control-plane-fails&#34;&gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;images/ha-dr-centralcp.png&#34; alt=&#34;Central Control Plane fails&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;figcaption&gt;
-      Central Control Plane fails
-    &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/a&gt; &lt;em&gt;Central Control Plane fails&lt;/em&gt;&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;/table&gt;
-&lt;h3 id=&#34;impacts-3&#34;&gt;Impacts&lt;/h3&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;Operations&lt;/th&gt;
-&lt;th&gt;Impact&lt;/th&gt;
-&lt;th&gt;&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;Running Workloads&lt;/td&gt;
-&lt;td&gt;Running Workloads in local or remote clusters are not affected.&lt;/td&gt;
-&lt;td&gt;✅&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Local Cluster Ops&lt;/td&gt;
-&lt;td&gt;Local cluster changes (kubectl) are unaffected.&lt;br/&gt;&lt;br/&gt;New workloads may run partially configured until the central control plane is restored. They may acquire global cluster policies that are already in the cluster but will lack namespace-targeted and fine-grained policies.&lt;br/&gt;Local service discovery endpoints for remote services are not updated.&lt;/td&gt;
-&lt;td&gt;⚠️&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Metrics Collection&lt;/td&gt;
-&lt;td&gt;Metrics collection is unaffected.&lt;/td&gt;
-&lt;td&gt;✅&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Management Ops&lt;/td&gt;
-&lt;td&gt;Configuration reads, dashboard (metrics) unaffected.&lt;br/&gt;Configuration updates are queued.&lt;/td&gt;
-&lt;td&gt;✅&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;h3 id=&#34;recovery-3&#34;&gt;Recovery&lt;/h3&gt;
-&lt;p&gt;When Central Control Plane recovers, its local configuration cache is automatically restored, typically within 1-2 minutes.  Remote cluster configuration is then updated.  No configuration changes or data is lost.&lt;/p&gt;
-&lt;h3 id=&#34;restoration-2&#34;&gt;Restoration&lt;/h3&gt;
-&lt;p&gt;The Central Control Plane component can be re-installed if necessary with assistance from &lt;a href=&#34;https://tetrate.io/contact-us/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate technical support&lt;/a&gt;. No backups are required&lt;/p&gt;
-&lt;h2 id=&#34;failure-of-management-plane&#34;&gt;Failure of Management Plane&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;Scenario&lt;/strong&gt;: The Management Plane component fails.&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;&lt;a href=&#34;images/ha-dr-managementp.png&#34;&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  id=&#34;figure-management-plane-fails&#34;&gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;images/ha-dr-managementp.png&#34; alt=&#34;Management Plane fails&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;figcaption&gt;
-      Management Plane fails
-    &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/a&gt; &lt;em&gt;Management Plane fails&lt;/em&gt;&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;/table&gt;
-&lt;h3 id=&#34;impacts-4&#34;&gt;Impacts&lt;/h3&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;Operations&lt;/th&gt;
-&lt;th&gt;Impact&lt;/th&gt;
-&lt;th&gt;&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;Running Workloads&lt;/td&gt;
-&lt;td&gt;Running Workloads in local or remote clusters are not affected.&lt;/td&gt;
-&lt;td&gt;✅&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Local Cluster Ops&lt;/td&gt;
-&lt;td&gt;Local cluster changes (kubectl) are unaffected.&lt;br/&gt;&lt;br/&gt;New workloads may run partially configured until the management plane is restored. They may acquire global cluster policies that are already in the cluster but will lack namespace-targeted and fine-grained policies.&lt;br/&gt;Central and Local Control Planes maintain service discovery endpoints.&lt;/td&gt;
-&lt;td&gt;✅&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Metrics Collection&lt;/td&gt;
-&lt;td&gt;Metrics collection is affected if the ElasticSearch database is unavailable to Workload Clusters.&lt;/td&gt;
-&lt;td&gt;⚠️&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Management Ops&lt;/td&gt;
-&lt;td&gt;TSB configuration changes cannot be made.  UI, API and GitOps actions are not available.&lt;/td&gt;
-&lt;td&gt;❌&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;TSB configuration is stored in a customer-provisioned PostgreSQL database, and in some ancillary services - cert-manager for PKI management, the tsb namespace for other secrets.&lt;/p&gt;
-&lt;h3 id=&#34;recovery-4&#34;&gt;Recovery&lt;/h3&gt;
-&lt;p&gt;If the management plane recovers without data loss, operations proceed as before and no configuration loss should occur.&lt;/p&gt;
-&lt;h3 id=&#34;restoration-3&#34;&gt;Restoration&lt;/h3&gt;
-&lt;p&gt;The Management Control Plane component can be re-built from a backup of the PostgreSQL database and the &lt;strong&gt;iam-signing-key&lt;/strong&gt;, with assistance from &lt;a href=&#34;https://tetrate.io/contact-us/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate technical support&lt;/a&gt;.  There&amp;rsquo;s an overview of the process in the &lt;a href=&#34;dr-managementplane&#34;&gt;Management Plane DR&lt;/a&gt; document.&lt;/p&gt;
-&lt;h2 id=&#34;failure-of-management-cluster&#34;&gt;Failure of Management Cluster&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;Scenario&lt;/strong&gt;: The Kubernetes Management Cluster fails.&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&#34;text-align:center&#34;&gt;&lt;a href=&#34;images/ha-dr-managementcluster.png&#34;&gt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-&lt;figure  id=&#34;figure-management-cluster-fails&#34;&gt;
-  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
-    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;images/ha-dr-managementcluster.png&#34; alt=&#34;Management Cluster fails&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
-  &lt;/div&gt;&lt;figcaption&gt;
-      Management Cluster fails
-    &lt;/figcaption&gt;&lt;/figure&gt;
-&lt;/a&gt; &lt;em&gt;Management Cluster fails&lt;/em&gt;&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;/table&gt;
-&lt;h3 id=&#34;impacts-5&#34;&gt;Impacts&lt;/h3&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;Operations&lt;/th&gt;
-&lt;th&gt;Impact&lt;/th&gt;
-&lt;th&gt;&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;Running Workloads&lt;/td&gt;
-&lt;td&gt;Running Workloads in local or remote clusters are not affected.&lt;/td&gt;
-&lt;td&gt;✅&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Local Cluster Ops&lt;/td&gt;
-&lt;td&gt;Local cluster changes (kubectl) are unaffected. Central TSB policies (e.g. default settings for new namespaces) are applied to new configurations.&lt;br/&gt;&lt;br/&gt;Local service discovery endpoints for remote services are not updated.&lt;/td&gt;
-&lt;td&gt;⚠️&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Metrics Collection&lt;/td&gt;
-&lt;td&gt;Metrics cannot be collected from any Workload Clusters.&lt;/td&gt;
-&lt;td&gt;❌&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;Management Ops&lt;/td&gt;
-&lt;td&gt;TSB configuration changes cannot be made.  UI, API and GitOps actions are not available.&lt;/td&gt;
-&lt;td&gt;❌&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;h3 id=&#34;recovery-5&#34;&gt;Recovery&lt;/h3&gt;
-&lt;p&gt;If the management plane recovers without data loss, operations proceed as before and no configuration loss should occur.&lt;/p&gt;
-&lt;h3 id=&#34;restoration-4&#34;&gt;Restoration&lt;/h3&gt;
-&lt;p&gt;The Management Control Plane component can be re-built from a backup of the PostgreSQL database and the &lt;strong&gt;iam-signing-key&lt;/strong&gt;, with assistance from &lt;a href=&#34;https://tetrate.io/contact-us/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate technical support&lt;/a&gt;.  There&amp;rsquo;s an overview of the process in the &lt;a href=&#34;dr-managementplane&#34;&gt;Management Plane DR&lt;/a&gt; document.&lt;/p&gt;
-&lt;h2 id=&#34;recommendations&#34;&gt;Recommendations&lt;/h2&gt;
-&lt;p&gt;To prepare for unexpected failure of the Management components, we recommend that you consider the following recommendations:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Either maintain the Postgres database in a reliable, redundant cluster, or (in the case of TSE), make use of the &lt;a href=&#34;https://docs.tetrate.io/service-express/administration/postgres&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;regular Postgres backups&lt;/a&gt;.&lt;/li&gt;
-&lt;li&gt;Maintain a backup of the &lt;strong&gt;iam-signing-key&lt;/strong&gt;&lt;/li&gt;
-&lt;li&gt;If preserving metrics is important, maintain the ElasticSearch database in a reliable, redundant cluster, or make regular backups so that it can be restored if necessary.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;There&amp;rsquo;s an overview of the process to restore a failed Management Plane component in the &lt;a href=&#34;dr-managementplane&#34;&gt;Management Plane DR&lt;/a&gt; document.&lt;/p&gt;
+&lt;h3 id=&#34;无法访问外部组件如-postgres&#34;&gt;无法访问外部组件，如 postgres&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;验证到 postgres 或任何其他外部组件的防火墙规则。&lt;/li&gt;
+&lt;li&gt;验证通过 helm 或在 &lt;strong&gt;mp-values.yaml&lt;/strong&gt; 中传递的凭据。&lt;/li&gt;
+&lt;/ol&gt;
 </description>
     </item>
     
     <item>
-      <title>Management Plane DR</title>
-      <link>https://lib.jimmysong.io/tsb/design-guides/ha-dr-mp/dr-managementplane/</link>
+      <title>故障场景</title>
+      <link>https://lib.jimmysong.io/tsb/design-guides/ha-dr-mp/scenarios/</link>
       <pubDate>Wed, 09 Aug 2023 12:00:00 +0800</pubDate>
-      <guid>https://lib.jimmysong.io/tsb/design-guides/ha-dr-mp/dr-managementplane/</guid>
-      <description>&lt;p&gt;import Steps from &amp;ldquo;@theme/Steps&amp;rdquo;;&lt;/p&gt;
-&lt;h1 id=&#34;restoring-a-failed-management-plane-component&#34;&gt;Restoring a failed Management Plane component&lt;/h1&gt;
-&lt;p&gt;&lt;em&gt;In the case that the Tetrate Management Plane fails, you will need to restore the Management Plane to resume normal operational status.  This guide provides an overview of the process, and you should refer to &lt;a href=&#34;https://tetrate.io/contact-us/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate Technical Support&lt;/a&gt; for assistance with this procedure.&lt;/em&gt;&lt;/p&gt;
-&lt;p&gt;To prepare for unexpected failure of the Management components, we recommend that you consider the following recommendations:&lt;/p&gt;
+      <guid>https://lib.jimmysong.io/tsb/design-guides/ha-dr-mp/scenarios/</guid>
+      <description>&lt;p&gt;我们将考虑以下故障场景：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Either maintain the Postgres database in a reliable, redundant cluster, or (in the case of TSE), make use of the &lt;a href=&#34;https://docs.tetrate.io/service-express/administration/postgres&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;regular Postgres backups&lt;/a&gt;.&lt;/li&gt;
-&lt;li&gt;Maintain a backup of the &lt;strong&gt;iam-signing-key&lt;/strong&gt;&lt;/li&gt;
-&lt;li&gt;If preserving metrics is important, maintain the ElasticSearch database in a reliable, redundant cluster, or make regular backups so that it can be restored if necessary.&lt;/li&gt;
+&lt;li&gt;工作负载集群&lt;/li&gt;
+&lt;li&gt;边缘控制平面&lt;/li&gt;
+&lt;li&gt;从管理到工作负载的连接丢失&lt;/li&gt;
+&lt;li&gt;中央控制平面&lt;/li&gt;
+&lt;li&gt;管理平面&lt;/li&gt;
+&lt;li&gt;管理集群&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h2 id=&#34;overview&#34;&gt;Overview&lt;/h2&gt;
-&lt;p&gt;Should the &lt;a href=&#34;scenarios#failure-of-management-plane&#34;&gt;Management Plane fail&lt;/a&gt; or the &lt;a href=&#34;scenarios#failure-of-management-cluster&#34;&gt;cluster hosting the Management plane become non-operational&lt;/a&gt;, you will need to restore the Management Plane to resume normal operation status.  The recovery is done using a helm base install.
-This scenario will walk through the task of restoring configuration from our failed Management Cluster on a new Management Cluster.&lt;/p&gt;
-&lt;h3 id=&#34;prerequisites&#34;&gt;Prerequisites&lt;/h3&gt;
-&lt;p&gt;This guide makes the following assumptions:&lt;/p&gt;
+&lt;p&gt;并评估故障对以下操作的影响：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;The PostgreSQL Database (configuration) is available.  Either, the database is external to failed cluster, or it can be &lt;a href=&#34;http://docs.tetrate.io/service-express/administration/postgres&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;restored from a backup (TSE only)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;The ElasticSearch Database (metrics) is available.  Either, the database is external to failed cluster, it can be restored from a backup, or a fresh (empty) ElasticSearch database can be used and loss-of-metrics tolerated&lt;/li&gt;
-&lt;li&gt;All Certificates for the new Management Plane cluster use the same Root Certificate Authority as previous failed cluster&lt;/li&gt;
-&lt;li&gt;You can update any DNS record used to discover the Management Plane&lt;/li&gt;
-&lt;li&gt;You have a backup of the iam-signing-key&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;运行生产负载&lt;/strong&gt; - 生产负载的可用性、安全性和正确运行&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;本地集群操作&lt;/strong&gt; - 包括直接修改集群配置（如 kubectl 操作）和间接修改（即由本地边缘控制平面进行的更改以应用 TSB 策略或更新服务发现终端点）&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;指标收集&lt;/strong&gt; - 来自远程工作负载集群的指标的集中收集和存储&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;管理操作&lt;/strong&gt; - 由 GitOps、API 或管理 UI 执行的 TSB 配置更改&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h2 id=&#34;procedure&#34;&gt;Procedure&lt;/h2&gt;
-&lt;p&gt;Please work with &lt;a href=&#34;https://tetrate.io/contact-us/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate Technical Support&lt;/a&gt; to go through the following procedure:&lt;/p&gt;
-&lt;Steps headingDepth={3}&gt;
-&lt;ol&gt;
-&lt;li&gt;
-&lt;h3 id=&#34;deploy-a-new-cluster&#34;&gt;Deploy a new cluster&lt;/h3&gt;
-&lt;p&gt;Deploy new cluster where the Management Plane will be restored to&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;h3 id=&#34;install-dependencies&#34;&gt;Install Dependencies&lt;/h3&gt;
-&lt;p&gt;Install the required dependencies into the cluster. These dependencies will likely include:&lt;/p&gt;
+&lt;p&gt;我们将研究典型的恢复情况，当失败组件恢复或被恢复时。&lt;/p&gt;
+&lt;h2 id=&#34;架构和术语&#34;&gt;架构和术语&lt;/h2&gt;
+&lt;p&gt;在本指南中，我们将使用以下架构描述：&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-简化架构图显示主要配置和指标流&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../images/ha-dr-overview.png&#34; alt=&#34;简化架构图，显示主要配置和指标流&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      简化架构图，显示主要配置和指标流
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Cert-Manager (if you&amp;rsquo;re not using the bundled cert-manager instance) and related issuers/certificates. Ensure you use the same root CA&lt;/li&gt;
-&lt;li&gt;Any secrets that hold credentials/certificates for the Management Plane&lt;/li&gt;
-&lt;li&gt;The &lt;strong&gt;iam-signing-key&lt;/strong&gt; from the failed Management Plane cluster - optional&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;工作负载集群&lt;/strong&gt;：工作负载集群是托管生产工作负载的 Kubernetes 集群。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;生产工作负载&lt;/strong&gt;：生产工作负载是在工作负载集群中运行的应用程序或服务。为了避免疑虑，&amp;lsquo;生产工作负载&amp;rsquo; 还包括非生产工作负载。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;数据平面&lt;/strong&gt;：数据平面是部署在工作负载集群中的本地 Istio 实例。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;边缘控制平面&lt;/strong&gt;：边缘控制平面是部署在工作负载集群中的 Tetrate 软件组件（位于 istio-system 和其他命名空间中，如 cert-manager、xcp-multicluster）。它配置本地 Istio 数据平面，并向中央控制平面报告状态。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;管理集群&lt;/strong&gt;：管理集群是托管 Tetrate 管理平面组件（管理平面、中央控制平面）的 Kubernetes 集群。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;中央控制平面&lt;/strong&gt;：中央控制平面是 Tetrate 软件组件，它接受来自管理平面的配置以及来自边缘控制平面的状态信息。它评估整个配置，然后将必要的配置更新分发给每个边缘控制平面。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;管理平面&lt;/strong&gt;：管理平面是 Tetrate 软件组件，实体（GitOps、API 客户端、UI 客户端）与之交互。它提供 RBAC 访问控制，以控制哪些实体可以对哪些配置进行 CRUD 操作。配置存储在本地，并同步到中央控制平面。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;Install the &lt;strong&gt;iam-signing-key&lt;/strong&gt; secret using &lt;code&gt;kubectl apply&lt;/code&gt;. If this is not possible, you will need to reconfigure each Control Plane with a fresh secret later in this procedure.&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;h3 id=&#34;prepare-the-configuration&#34;&gt;Prepare the configuration&lt;/h3&gt;
-&lt;p&gt;Using the same &lt;strong&gt;mp-values.yaml&lt;/strong&gt; as failed cluster, update any required fields such as hub or registry, or any other environment dependent fields if required.&lt;/p&gt;
-&lt;p&gt;There is no need to update the Elastic/Postgres configuration if using external IP endpoints, but may need to adjust firewall rules.&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;h3 id=&#34;install-the-management-plane&#34;&gt;Install the Management Plane&lt;/h3&gt;
-&lt;p&gt;Perform the helm install for Management Plane using &lt;strong&gt;mp-values.yaml&lt;/strong&gt;, and monitor progress using:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl get pod -n tsb
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl logs -f -n tse -l &lt;span class=&#34;nv&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;tsb-operator
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;In the case of Tetrate Service Express (TSE), the components are installed in the &lt;strong&gt;tse&lt;/strong&gt; namespace (not &lt;strong&gt;tsb&lt;/strong&gt;).&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;h3 id=&#34;get-the-management-plane-address&#34;&gt;Get the Management Plane address&lt;/h3&gt;
-&lt;p&gt;Once installation has completed, obtain the &lt;strong&gt;front envoy&lt;/strong&gt; public ip address, for example:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl get svc -n tsb envoy
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Log into the UI with Envoy IP Address:&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;Verify that your Tetrate configuration has been preserved in the Postgres DB&lt;/li&gt;
-&lt;li&gt;Check Elastic historical data if available&lt;/li&gt;
-&lt;/ol&gt;
-&lt;/li&gt;
-&lt;li&gt; 
-&lt;h3 id=&#34;update-dns&#34;&gt;Update DNS&lt;/h3&gt;
-&lt;p&gt;Update the DNS A Record used to locate the Management Plane with the new IP Address acquired in step 5.  Remote control plane clusters will use this DNS record to communicate with the Management Plane&lt;/p&gt;
-&lt;p&gt;Propagation may take time.  Once the change has propagated, verify that you can access the Management Plane UI using the FQDN&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;h3 id=&#34;verify-control-plane-operation&#34;&gt;Verify Control Plane operation&lt;/h3&gt;
-&lt;p&gt;In the Management Plane UI, verify that the workload cluster Control Planes are connecting and synchronising with the new Management Plane&lt;/p&gt;
-&lt;p&gt;:::warning Refresh the Control Plane tokens&lt;/p&gt;
-&lt;p&gt;The &lt;strong&gt;iam-signing-key&lt;/strong&gt; is used to generate, validate and rotate tokens that are given to the Control Plane Clusters for communication to the Management Plane.&lt;/p&gt;
-&lt;p&gt;If you could not recover and restore the original &lt;strong&gt;iam-signing-key&lt;/strong&gt;, you will need to refresh the tokens on each Control Plane manually:&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;
-&lt;p&gt;Log into each Control Plane cluster&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Rotate tokens by deleting the old tokens:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl delete secret otel-token oap-token ngac-token xcp-edge-central-auth-token -n istio-system
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Verify that the Control Planes are now connecting to and synchronising with the new Management Plane&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;:::&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;/Steps&gt;
-&lt;p&gt;With a successful restore of a new Management Plane, you will have fully recovered from the failure and your Workload Clusters will be under the control of the new Management Plane instance.&lt;/p&gt;
-&lt;h2 id=&#34;troubleshooting&#34;&gt;Troubleshooting&lt;/h2&gt;
-&lt;p&gt;The Management Plane and Control Plane installations are managed by operators.  If you make a configuration change, you can monitor the operator logs to watch progress and identify any errors.&lt;/p&gt;
-&lt;h3 id=&#34;the-control-planes-wont-synchronize&#34;&gt;The Control Planes won&amp;rsquo;t synchronize&lt;/h3&gt;
-&lt;p&gt;Check the logs of ControlPlane Envoy, looking for errors regarding connections to the Management Plane or errors regarding token validation:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl logs deploy/edge -n istio-system -f
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Delete the existing tokens on the Control Plane as described above, and verify that these tokens are re-generated on the Control Plane.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl get secrets otel-token oap-token ngac-token xcp-edge-central-auth-token -n istio-system
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If the tokens are not regenerated:&lt;/p&gt;
+&lt;p&gt;有关更多信息，请参阅 Tetrate 架构文档。&lt;/p&gt;
+&lt;h3 id=&#34;术语&#34;&gt;术语&lt;/h3&gt;
 &lt;ul&gt;
-&lt;li&gt;Check the firewall rules between the Control Pane instance and the new Management Plane instance, and ensure that connections are allowed&lt;/li&gt;
-&lt;li&gt;Ensure that the Management Plane is using the same Root CA&lt;/li&gt;
+&lt;li&gt;故障（Failure）意味着相关组件不可用&lt;/li&gt;
+&lt;li&gt;恢复（Recovery）意味着重新获得相关组件的可用性，通常使用过时的配置或状态&lt;/li&gt;
+&lt;li&gt;修复（Restoration）意味着重新安装失败的组件，无法恢复组件&lt;/li&gt;
+&lt;li&gt;✅ 组件或服务不受影响&lt;/li&gt;
+&lt;li&gt;⚠️ 发生了有限的服务中断。&lt;/li&gt;
+&lt;li&gt;❌ 发生了受影响组件的完全服务中断&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h3 id=&#34;cant-access-external-components-such-as-postgres&#34;&gt;Can’t Access external components such as postgres&lt;/h3&gt;
-&lt;ol&gt;
-&lt;li&gt;Validate the firewall rules to postgres or any other external component.&lt;/li&gt;
-&lt;li&gt;Verify the credentials passed via helm or in &lt;strong&gt;mp-values.yaml&lt;/strong&gt;&lt;/li&gt;
-&lt;/ol&gt;
+&lt;h2 id=&#34;工作负载集群故障&#34;&gt;工作负载集群故障&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;场景&lt;/strong&gt;：单个工作负载集群发生灾难性故障。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-单个工作负载集群的灾难性故障&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../images/ha-dr-edgecluster.png&#34; alt=&#34;单个工作负载集群的灾难性故障&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      单个工作负载集群的灾难性故障
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;影响&#34;&gt;影响&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;操作&lt;/th&gt;
+&lt;th&gt;影响&lt;/th&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;运行工作负载&lt;/td&gt;
+&lt;td&gt;本地工作负载不可用。&lt;br/&gt;&lt;br/&gt;其他集群上的工作负载不受影响。工作负载 HA（Tier1 和 EW 网关）确保不中断服务。&lt;/td&gt;
+&lt;td&gt;⚠️&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;本地集群操作&lt;/td&gt;
+&lt;td&gt;无法进行本地集群更改。&lt;br/&gt;&lt;br/&gt;其他集群不受影响。&lt;/td&gt;
+&lt;td&gt;⚠️&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;指标收集&lt;/td&gt;
+&lt;td&gt;无法从本地集群收集指标。&lt;br/&gt;&lt;br/&gt;其他集群的指标收集不受影响。&lt;/td&gt;
+&lt;td&gt;⚠️&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;管理操作&lt;/td&gt;
+&lt;td&gt;针对受影响的工作负载集群的更改将排队，并在集群恢复时应用。&lt;br/&gt;&lt;br/&gt;所有其他管理操作不受影响。&lt;/td&gt;
+&lt;td&gt;✅&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;恢复&#34;&gt;恢复&lt;/h3&gt;
+&lt;p&gt;如果本地集群恢复，配置将迅速更新，并且指标收集将恢复。&lt;/p&gt;
+&lt;h3 id=&#34;修复&#34;&gt;修复&lt;/h3&gt;
+&lt;p&gt;如果需要，可以重新安装 Tetrate 边缘控制平面。当集群重新引入管理平面时，它将同步到正确的配置。&lt;/p&gt;
+&lt;h2 id=&#34;边缘控制平面故障&#34;&gt;边缘控制平面故障&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;场景&lt;/strong&gt;：单个工作负载集群中的边缘控制平面发生灾难性故障。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-单个工作负载集群中边缘控制平面的灾难性故障&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../images/ha-dr-edgecp.png&#34; alt=&#34;单个工作负载集群中边缘控制平面的灾难性故障&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      单个工作负载集群中边缘控制平面的灾难性故障
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;影响-1&#34;&gt;影响&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;操作&lt;/th&gt;
+&lt;th&gt;影响&lt;/th&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;运行工作负载&lt;/td&gt;
+&lt;td&gt;本地或远程集群中的运行工作负载不受影响。&lt;/td&gt;
+&lt;td&gt;✅&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;本地集群操作&lt;/td&gt;
+&lt;td&gt;本地集群更改（kubectl）不受影响。您可以继续向集群推送更新。&lt;br/&gt;&lt;br/&gt;根据故障的性质：&lt;ul&gt;&lt;li&gt;新工作负载可能部分配置运行，直到边缘控制平面恢复。它们可能获取已存在于集群中但可能缺少命名空间定向和细粒度策略的全局集群策略。&lt;/li&gt;&lt;li&gt;远程服务的本地服务发现终端点可能不会更新（本地工作负载集群不知道远程集群上的服务更改）。&lt;/li&gt;&lt;li&gt;GitOps 集成可能会中断。&lt;/li&gt;&lt;/ul&gt;&lt;/td&gt;
+&lt;td&gt;⚠️&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;指标收集&lt;/td&gt;
+&lt;td&gt;指标在本地进行收集，然后转发到管理平面的 ElasticSearch。如果收集器服务不可用，可能无法收集指标。&lt;/td&gt;
+&lt;td&gt;⚠️&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;管理操作&lt;/td&gt;
+&lt;td&gt;针对受影响的工作负载集群的更改将排队，并在边缘控制平面恢复时应用。&lt;br/&gt;&lt;br/&gt;所有其他管理操作不受影响。&lt;/td&gt;
+&lt;td&gt;✅&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;恢复-1&#34;&gt;恢复&lt;/h3&gt;
+&lt;p&gt;如果本地集群恢复，配置将迅速更新，并且指标收集将恢复。&lt;/p&gt;
+&lt;h3 id=&#34;修复-1&#34;&gt;修复&lt;/h3&gt;
+&lt;p&gt;如果需要，可以重新安装 Tetrate 边缘控制平面。当集群重新引入管理平面时，它将同步到正确的配置。&lt;/p&gt;
+&lt;h2 id=&#34;连接丢失---工作负载到管理集群&#34;&gt;连接丢失 - 工作负载到管理集群&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;场景&lt;/strong&gt;：工作负载集群与中央管理集群之间的连接丢失。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-工作负载集群与中央管理集群之间的连接丢失&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../images/ha-dr-network.png&#34; alt=&#34;工作负载集群与中央管理集群之间的连接丢失&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      工作负载集群与中央管理集群之间的连接丢失
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;影响-2&#34;&gt;影响&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;操作&lt;/th&gt;
+&lt;th&gt;影响&lt;/th&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;运行工作负载&lt;/td&gt;
+&lt;td&gt;运行本地或远程集群中的工作负载不受影响。&lt;/td&gt;
+&lt;td&gt;✅&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;本地集群操作&lt;/td&gt;
+&lt;td&gt;本地集群更改（kubectl）不受影响。&lt;br/&gt;&lt;br/&gt;新工作负载可能部分配置运行，直到恢复连接。它们可能获取已存在于集群中但缺少命名空间定向和细粒度策略的全局集群策略。&lt;br/&gt;远程服务的本地服务发现终端点不会更新。&lt;br/&gt;GitOps 操作可能会中断。&lt;/td&gt;
+&lt;td&gt;⚠️&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;指标收集&lt;/td&gt;
+&lt;td&gt;指标在受影响的工作负载集群中进行收集并排队。长时间失去连接将导致一些指标丢失。&lt;/td&gt;
+&lt;td&gt;⚠️&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;管理操作&lt;/td&gt;
+&lt;td&gt;针对受影响的工作负载集群的更改将排队，并在恢复连接时应用。&lt;br/&gt;&lt;br/&gt;所有其他管理操作不受影响。&lt;/td&gt;
+&lt;td&gt;✅&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;恢复-2&#34;&gt;恢复&lt;/h3&gt;
+&lt;p&gt;恢复连接后，配置将迅速更新，并且指标收集将恢复。&lt;/p&gt;
+&lt;h2 id=&#34;中央控制平面故障&#34;&gt;中央控制平面故障&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;场景&lt;/strong&gt;：中央控制平面组件发生故障。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-中央控制平面故障&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../images/ha-dr-centralcp.png&#34; alt=&#34;中央控制平面故障&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      中央控制平面故障
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;影响-3&#34;&gt;影响&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;操作&lt;/th&gt;
+&lt;th&gt;影响&lt;/th&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;运行工作负载&lt;/td&gt;
+&lt;td&gt;运行本地或远程集群中的工作负载不受影响。&lt;/td&gt;
+&lt;td&gt;✅&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;本地集群操作&lt;/td&gt;
+&lt;td&gt;本地集群更改（kubectl）不受影响。&lt;br/&gt;&lt;br/&gt;新工作负载可能部分配置运行，直到中央控制平面恢复。它们可能获取已存在于集群中但缺少命名空间定向和细粒度策略的全局集群策略。&lt;br/&gt;远程服务的本地服务发现终端点不会更新。&lt;/td&gt;
+&lt;td&gt;⚠️&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;指标收集&lt;/td&gt;
+&lt;td&gt;指标收集不受影响。&lt;/td&gt;
+&lt;td&gt;✅&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;管理操作&lt;/td&gt;
+&lt;td&gt;配置读取、仪表板（指标）不受影响。&lt;br/&gt;配置更新排队。&lt;/td&gt;
+&lt;td&gt;✅&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;恢复-3&#34;&gt;恢复&lt;/h3&gt;
+&lt;p&gt;当中央控制平面恢复时，其本地配置缓存会自动恢复，通常在 1-2 分钟内完成。然后会更新远程集群配置。不会丢失任何配置更改或数据。&lt;/p&gt;
+&lt;h3 id=&#34;修复-2&#34;&gt;修复&lt;/h3&gt;
+&lt;p&gt;如果需要，可以在&lt;a href=&#34;https://tetrate.io/contact-us/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate 技术支持&lt;/a&gt;的帮助下重新安装中央控制平面组件。不需要备份。&lt;/p&gt;
+&lt;h2 id=&#34;管理平面故障&#34;&gt;管理平面故障&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;场景&lt;/strong&gt;：管理平面组件故障。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-管理平面故障&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../images/ha-dr-managementp.png&#34; alt=&#34;管理平面故障&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      管理平面故障
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;影响-4&#34;&gt;影响&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;操作&lt;/th&gt;
+&lt;th&gt;影响&lt;/th&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;运行工作负载&lt;/td&gt;
+&lt;td&gt;本地或远程集群中运行的工作负载不受影响。&lt;/td&gt;
+&lt;td&gt;✅&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;本地集群操作&lt;/td&gt;
+&lt;td&gt;本地集群更改（kubectl）不受影响。&lt;br/&gt;&lt;br/&gt;新的工作负载可能会部分配置，直到管理平面恢复。它们可能会获取全局集群策略，但会缺少针对命名空间和细粒度策略的配置。&lt;br/&gt;中央和本地控制平面维护服务发现端点。&lt;/td&gt;
+&lt;td&gt;✅&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;指标收集&lt;/td&gt;
+&lt;td&gt;如果 ElasticSearch 数据库对工作负载集群不可用，将影响指标收集。&lt;/td&gt;
+&lt;td&gt;⚠️&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;管理操作&lt;/td&gt;
+&lt;td&gt;无法进行 TSB 配置更改。UI、API 和 GitOps 操作不可用。&lt;/td&gt;
+&lt;td&gt;❌&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;TSB 配置存储在客户提供的 PostgreSQL 数据库中，还存储在一些辅助服务中 - 用于 PKI 管理的 cert-manager，tsb 命名空间中的其他密钥。&lt;/p&gt;
+&lt;h3 id=&#34;恢复-4&#34;&gt;恢复&lt;/h3&gt;
+&lt;p&gt;如果管理平面在不丢失数据的情况下恢复，操作将如之前一样继续进行，不应发生配置丢失。&lt;/p&gt;
+&lt;h3 id=&#34;恢复-5&#34;&gt;恢复&lt;/h3&gt;
+&lt;p&gt;可以从 PostgreSQL 数据库的备份和 &lt;strong&gt;iam-signing-key&lt;/strong&gt; 重新构建管理控制平面组件，需要&lt;a href=&#34;https://tetrate.io/contact-us/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate 技术支持&lt;/a&gt;的协助。有关该过程的概述，请参阅&lt;a href=&#34;../dr-managementplane&#34;&gt;管理平面灾难恢复&lt;/a&gt;文档。&lt;/p&gt;
+&lt;h2 id=&#34;管理集群故障&#34;&gt;管理集群故障&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;场景&lt;/strong&gt;：Kubernetes 管理集群故障。&lt;/p&gt;
+&lt;p&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;figure  id=&#34;figure-管理集群故障&#34;&gt;
+  &lt;div class=&#34;d-flex justify-content-center&#34;&gt;
+    &lt;div class=&#34;w-100&#34; &gt;&lt;img src=&#34;../images/ha-dr-managementcluster.png&#34; alt=&#34;管理集群故障&#34; loading=&#34;lazy&#34; data-zoomable /&gt;&lt;/div&gt;
+  &lt;/div&gt;&lt;figcaption&gt;
+      管理集群故障
+    &lt;/figcaption&gt;&lt;/figure&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;影响-5&#34;&gt;影响&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;操作&lt;/th&gt;
+&lt;th&gt;影响&lt;/th&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;运行工作负载&lt;/td&gt;
+&lt;td&gt;本地或远程集群中运行的工作负载不受影响。&lt;/td&gt;
+&lt;td&gt;✅&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;本地集群操作&lt;/td&gt;
+&lt;td&gt;本地集群更改（kubectl）不受影响。中央 TSB 策略（例如新命名空间的默认设置）适用于新配置。&lt;br/&gt;&lt;br/&gt;远程服务的本地服务发现端点不会更新。&lt;/td&gt;
+&lt;td&gt;⚠️&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;指标收集&lt;/td&gt;
+&lt;td&gt;无法从任何工作负载集群中收集指标。&lt;/td&gt;
+&lt;td&gt;❌&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;管理操作&lt;/td&gt;
+&lt;td&gt;无法进行 TSB 配置更改。UI、API 和 GitOps 操作不可用。&lt;/td&gt;
+&lt;td&gt;❌&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;恢复-6&#34;&gt;恢复&lt;/h3&gt;
+&lt;p&gt;如果管理平面在不丢失数据的情况下恢复，操作将如之前一样继续进行，不应发生配置丢失。&lt;/p&gt;
+&lt;h3 id=&#34;修复-3&#34;&gt;修复&lt;/h3&gt;
+&lt;p&gt;可以从 PostgreSQL 数据库的备份和 &lt;strong&gt;iam-signing-key&lt;/strong&gt; 重新构建管理控制平面组件，需要&lt;a href=&#34;https://tetrate.io/contact-us/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Tetrate 技术支持&lt;/a&gt;的协助。有关该过程的概述，请参阅&lt;a href=&#34;../dr-managementplane&#34;&gt;管理平面灾难恢复&lt;/a&gt;文档。&lt;/p&gt;
+&lt;h2 id=&#34;建议&#34;&gt;建议&lt;/h2&gt;
+&lt;p&gt;为了应对管理组件的意外故障，我们建议考虑以下建议：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;要么在可靠的冗余集群中维护 Postgres 数据库，要么（在 TSE 的情况下）利用&lt;a href=&#34;https://docs.tetrate.io/service-express/administration/postgres&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;定期的 Postgres 备份&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;保留 &lt;strong&gt;iam-signing-key&lt;/strong&gt; 的备份&lt;/li&gt;
+&lt;li&gt;如果保留指标很重要，请在可靠的冗余集群中维护 ElasticSearch 数据库，或定期备份，以便在必要时进行恢复。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;有关恢复故障管理平面组件的过程概述，请参阅&lt;a href=&#34;../dr-managementplane&#34;&gt;管理平面灾难恢复&lt;/a&gt;文档。&lt;/p&gt;
 </description>
     </item>
     
