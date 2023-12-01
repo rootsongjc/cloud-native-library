@@ -25,7 +25,7 @@ weight: 6
 
 :::注意 自签名证书
 为了示例的目的，你可以选择使用自签名证书。
-你可以使用[这里显示的脚本](../../../quickstart/ingress-gateway#certificate-for-gateway)生成自签名证书，但请确保根据需要调整输入参数。
+你可以使用[这里显示的脚本](../../../quickstart/ingress-gateway)生成自签名证书，但请确保根据需要调整输入参数。
 :::注意
 
 一旦你拥有证书文件，请使用服务器证书和私钥创建 Kubernetes 密钥对。
@@ -90,7 +90,7 @@ kubectl create configmap -n httpbin ratelimit-ca \
 kubectl apply -f httpbin-ingress-gateway.yaml
 ```
 
-最后，更新 [`ext-ratelimit-ingress-gateway.yaml`](../external-rate-limiting#configure-ingress-gateway) 中的 Ingress 网关配置，并启用 TLS 验证：
+最后，更新 [`ext-ratelimit-ingress-gateway.yaml`](../external-rate-limiting) 中的 Ingress 网关配置，并启用 TLS 验证：
 
 使用 tctl 应用
 
@@ -100,4 +100,4 @@ tctl apply -f ext-ratelimit-ingress-gateway-tls.yaml
 
 ## 测试
 
-要验证设置是否正常工作，你可以使用与[“设置外部速率限制服务器的测试步骤”](../external-rate-limiting#testing)中显示的相同的测试步骤。
+要验证设置是否正常工作，你可以使用与[“设置外部速率限制服务器的测试步骤”](../external-rate-limiting)中显示的相同的测试步骤。

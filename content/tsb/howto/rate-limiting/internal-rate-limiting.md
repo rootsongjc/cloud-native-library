@@ -9,7 +9,7 @@ TSB 带有每个控制平面集群的速率限制服务器组件。默认情况�
 
 ## 配置
 
-可以通过在 [ControlPlane Operator API](../../../refs/install/controlplane/v1alpha1/spec#controlplanecomponentset) 或 [Helm 值](../../../setup/helm/controlplane#installation) 中明确指定 `rateLimitServer` 组件的配置并将其应用于相关的控制平面集群来启用速率限制服务器。`rateLimitServer` 需要一个 Redis 后端来跟踪速率限制属性计数，并且其详细信息需要包含在配置中。
+可以通过在 [ControlPlane Operator API](../../../refs/install/controlplane/v1alpha1/spec#controlplanecomponentset) 或 [Helm 值](../../../setup/helm/controlplane) 中明确指定 `rateLimitServer` 组件的配置并将其应用于相关的控制平面集群来启用速率限制服务器。`rateLimitServer` 需要一个 Redis 后端来跟踪速率限制属性计数，并且其详细信息需要包含在配置中。
 
 你的 Control Plane Operator 配置可能如下所示：
 

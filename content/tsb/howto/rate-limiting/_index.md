@@ -18,7 +18,7 @@ TSB 支持两种流量限制模式：内部和外部。
 此模式在一个集群内或跨多个集群实现全局流量限制。
 在此模式中，你可以使用 [API](../../refs/tsb/gateway/v2/ingress-gateway#ratelimitsettings) 根据各种流量属性配置限制。
 
-![](../../assets/howto/rate_limiting_internal.png)
+![](../../assets/howto/rate_limiting_internal.svg)
 
 在幕后，TSB 的全局控制平面在每个集群部署一个速率限制服务器，该服务器作为一个全局服务，从多个 Envoy 代理接收元数据，并根据配置作出流量限制决策。
 
@@ -32,7 +32,7 @@ TSB 支持两种流量限制模式：内部和外部。
 
 在此模式中，你将部署一个实现 [Envoy 速率限制服务接口](https://www.envoyproxy.io/docs/envoy/latest/api-v3/traffic/ratelimit/v3/rls.proto) 的速率限制服务器，并配置 [API](../../refs/tsb/gateway/v2/ingress-gateway#externalratelimitservicesettings) 根据指定的标准将速率限制元数据发送到你的服务器。
 
-![](../../assets/howto/rate_limiting_external.png)
+![](../../assets/howto/rate_limiting_external.svg)
 
 外部速率限制服务器做出的决策将在 TSB 内的 Envoy 代理中强制执行。
 
@@ -47,3 +47,5 @@ TSB 支持两种流量限制模式：内部和外部。
 | [Tier1Gateway](./../rate-limiting/tier1-gateway) ([YAML](../../refs/tsb/gateway/v2/tier1-gateway#tier1externalserver)) | 根据源 IP 地址限制恶意流量                                   |
 | [IngressGateway / Tier2 Gateway / Application Gateway](./../rate-limiting/ingress-gateway) ([YAML](../../refs/tsb/gateway/v2/ingress-gateway)) | 基于业务逻辑实现流量限制，或保护你的应用程序免于过载         |
 | [TrafficSettings](./../rate-limiting/service-to-service) ([YAML](../../refs/tsb/traffic/v2/traffic-setting#trafficsetting)) | 对与 TrafficSettings 关联的命名空间中的所有代理应用流量限制。用于保护应用程序免于过载 |
+
+{{< list_children show_summary="false">}}

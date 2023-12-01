@@ -15,3 +15,5 @@ Ext-authz 可以在不同的上下文中进行配置，例如 [Tier-1 Gateways](
 | Tier-1 网关  | 可以配置 Tier-1 网关，仅接受带有有效 JWT 和经过身份验证 API 声明的请求，以及带有适当基本授权的请求等 |
 | Ingress 网关 | Ingress 网关 / Tier-2 网关 / 应用程序网关可以配置以实施基于用户权益限制 API 的业务逻辑 |
 | 交通设置     | 交通设置中的 Ext-authz 适用于关联命名空间中的所有代理。这在限制对服务 API 的部分访问方面特别有用 |
+
+{{< list_children show_summary="false">}}

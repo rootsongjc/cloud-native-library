@@ -24,9 +24,9 @@ Tetrate 不提供对 OPA 的支持。如果你需要针对你的用例支持，�
 
 ## 概述
 
-以下图表显示了在使用外部授权系统授权服务到服务请求时的请求和响应流程。
+下图显示了在使用外部授权系统授权服务间请求时的请求和响应流程。
 
-![](../../../assets/howto/service-to-service-authorization.png)
+![使用外部授权系统授权服务间请求时的请求和响应流程](../../../assets/howto/service-to-service-authorization.svg)
 
 期望的结果是能够从"Sleep 工作负载"向"`httpbin` with OPA 工作负载"发送请求，并通过 OPA 执行适当的授权检查。如果从"Sleep 工作负载"发出的请求被视为未经授权，则应返回`403` Forbidden。
 
