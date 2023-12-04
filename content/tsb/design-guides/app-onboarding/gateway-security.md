@@ -68,7 +68,7 @@ spec:
             host: ns1/productpage.ns1.svc.cluster.local
 ```
 
-有关详细信息，请查看 [Tetrate Service Bridge how-tos](https://docs.tetrate.io/service-bridge/howto/authorization/)，这也适用于 TSE。
+有关详细信息，请查看[外部授权](../../../howto/authorization/)，这也适用于 TSE。
 
 ## 应用程序：配置速率限制
 
@@ -142,4 +142,4 @@ spec:
  * 防止你的应用程序及其资源（如数据库）过载
  * 实施公平的业务逻辑，如为不同的用户组应用不同的 API 限制。
 
-有关详细信息，请查看 [Tetrate Service Bridge 速率限制文档](https://docs.tetrate.io/service-bridge/howto/rate_limiting/)，这也适用于 TSE。
+有关详细信息，请查看 [TSB 速率限制文档](../../../howto/rate-limiting/)，这也适用于 TSE。

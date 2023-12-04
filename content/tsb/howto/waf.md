@@ -24,7 +24,7 @@ Tetrate WAF 在应用程序内部运行，以非常精细的方式保护个别�
 - 基于你的基础设施和已知的易受攻击工作负载的灵活部署。
 
 ## TSB 中的 WAF
-可以配置 WAF 功能的组件包括：[组织](../../refs/tsb/v2/organization)、[租户](../../refs/tsb/v2/tenant)、[工作区](../../refs/tsb/v2/workspace)、[安全组](../../refs/tsb/security/v2/security_group)、[入口网关](../../refs/tsb/gateway/v2/ingress_gateway)、[出口网关](../../refs/tsb/gateway/v2/egress_gateway) 和 [Tier1 网关](../../refs/tsb/gateway/v2/tier1_gateway)。WAF 功能可以在 [组织设置](../../refs/tsb/v2/organization_setting)、[租户设置](../../refs/tsb/v2/tenant_setting)、[工作区设置](../../refs/tsb/v2/workspace_setting) 的 [`defaultSecuritySettings`](../../refs/tsb/security/v2/security_setting) 属性中指定，以及在 [SecuritySettings](../../refs/tsb/security/v2/security_setting) 的 `spec` 中指定。
+可以配置 WAF 功能的组件包括：[组织](../../refs/tsb/v2/organization)、[租户](../../refs/tsb/v2/tenant)、[工作区](../../refs/tsb/v2/workspace)、[安全组](../../refs/tsb/security/v2/security-group)、[入口网关](../../refs/tsb/gateway/v2/ingress-gateway)、[出口网关](../../refs/tsb/gateway/v2/egress-gateway) 和 [Tier1 网关](../../refs/tsb/gateway/v2/tier1-gateway)。WAF 功能可以在 [组织设置](../../refs/tsb/v2/organization-setting)、[租户设置](../../refs/tsb/v2/tenant-setting)、[工作区设置](../../refs/tsb/v2/workspace-setting) 的 [`defaultSecuritySettings`](../../refs/tsb/security/v2/security-setting) 属性中指定，以及在 [SecuritySettings](../../refs/tsb/security/v2/security-setting) 的 `spec` 中指定。
 
 ```yaml
   waf:
@@ -44,12 +44,11 @@ Tetrate WAF 在应用程序内部运行，以非常精细的方式保护个别�
     - 偏执级别：`PL1`（最低虚警数）。
 - `@owasp_crs`：包含规则文件的主 CRS 文件夹的别名。文件夹组织和文件名约定与官方 CRS 存储库保持一致。有关详细信息，可以在[此处](https://github.com/coreruleset/coreruleset/tree/v4.0.0-rc1/rules)找到。
 ## 示例
-在开始之前，请确保你已经：
-✓ 熟悉 [TSB 概念](../../concepts/toc)。
-✓ 安装 TSB 环境。你可以使用 [TSB 演示](../../setup/self-managed/demo-installation) 进行快速安装。
-✓ 完成 TSB [快速入门](../../quickstart)。本文假定你已经创建了一个租户，并熟悉工作区和配置组。此外，你需要将 tctl 配置到
 
-你的 TSB 环境。
+在开始之前，请确保你已经：
+- 熟悉 [TSB 概念](../../concepts/)。
+- 安装 TSB 环境。你可以使用 [TSB 演示](../../setup/self-managed/demo-installation) 进行快速安装。
+- 完成 TSB [快速入门](../../quickstart)。本文假定你已经创建了一个租户，并熟悉工作区和配置组。此外，你需要将 tctl 配置到你的 TSB 环境。
 
 在本示例中，将使用 `httpbin` 作为工作负载。发送到 Ingress GW 的请求将经过 WAF 过滤，如果检测到恶意攻击，将被拒绝。
 
@@ -59,7 +58,7 @@ Tetrate WAF 在应用程序内部运行，以非常精细的方式保护个别�
 接下来的命令将假定你有一个组织=`tetrate`、租户=`tetrate`、工作区=`httpbin`、网关组=`httpbin-gateway`。
 
 ### 启用 WAF
-创建一个名为 `waf-ingress-gateway.yaml` 的文件，其中包含 [IngressGateway](../../refs/tsb/gateway/v2/ingress_gateway) 的定义：
+创建一个名为 `waf-ingress-gateway.yaml` 的文件，其中包含 [IngressGateway](../../refs/tsb/gateway/v2/ingress-gateway) 的定义：
 
 ```yaml
 apiVersion: gateway.tsb.tetrate.io/v2

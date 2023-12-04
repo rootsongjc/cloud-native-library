@@ -1,10 +1,10 @@
 ---
-title: 利用 TSB 服务账号
+title: 使用 TSB 服务账号
 description: 本文将重点介绍如何创建和使用 TSB 服务账号，以及如何利用 `tctl` 实用工具作为处理程序。
 weight: 9
 ---
 
-TSB 服务账号可以在平台内部用于管理集群载入 [tctl install cluster-service-account](../../setup/self-managed/onboarding-clusters#secrets) 和 [GitOps](../../howto/gitops) 功能，也可以在外部用于第三方系统执行各种 TSB 功能的配置，利用 TSB API 接口。本文将重点介绍如何创建和使用 TSB 服务账号，以及如何利用 `tctl` 实用工具作为处理程序。
+TSB 服务账号可以在平台内部用于管理集群载入 [tctl install cluster-service-account](../../setup/self-managed/onboarding-clusters) 和 [GitOps](../../howto/gitops) 功能，也可以在外部用于第三方系统执行各种 TSB 功能的配置，利用 TSB API 接口。本文将重点介绍如何创建和使用 TSB 服务账号，以及如何利用 `tctl` 实用工具作为处理程序。
 
 ## 使用 `tctl` 实用工具处理 TSB 服务账号
 
@@ -58,10 +58,10 @@ $ tctl experimental service-account token pipeline-sa1 --key-path pipeline-sa1-j
 eyJhbGciOiJSUzI1NiIsImtpZCI6Inp1QWl3UEZRdTJlSTNHQUdkZGFTMVVIRzA4QTAxQkE0WFN0FjDdpUEiLCJ0eXAiOiJKV1QifQ.eyJleHAiOjE2NTcwNTIyNTksImlhdCI6MTY1NzA1MDQ1OSwic3ViIjoibXktc2EjenVBaXdQRlF1MmVJM0dBR2RkYVM1VUhHMDhBMDFCQTRYU3RGMkM0NXVpQSIsInRzYi50ZXRyYXRlLmlvL3VzZSI6InRjdGwifQ.PRN5noVwB5RT0kFL75XjBe8pO3l90QvqpeUrR-Cw_Wt3-I4jTEWOVZXwkg6BJp0sL3cdq4wBPOCjQ8FXKrd527bIujh8f0E0Cj0obhbbSGUmAFwJO2UrvovjfXr1Ra35KHsFY6HCnTjKRxFVZ_czdYAc4s3YbOYRhiz74v1O6U9nX5jgTLl_vg9dxDUxiYYeUn1gR9_Jf0APkM48JSiZa4Bz0Ly6oGKm_GkUY003xPl4PSMFhR-4i1rYrcFH2YYP_6uUieToTrCSNchPk8S6Mh3rnkMiKTazrUnAuO5Anc3C6UlbDw9-ax18dvyKKi47wdRcjeDNPxjCSX27Qe-ryA
 ```
 
-然后将该令牌配置到所需的 [tctl 用户配置文件](../../setup/tctl-connect#set-tctls-user) 中。你也可以一次完成所有操作：
+然后将该令牌配置到所需的 [tctl 用户配置文件](../../setup/tctl-connect) 中。你也可以一次完成所有操作：
 
 ```
 tctl config users set pipeline-sa1 --token $(tctl x sa token pipeline-sa1 --key-path pipeline-sa1-jwk-private-key.jwk --expiration 1h30m0s)
 ```
 
-有关如何使用 `tctl` 连接到 TSB 的详细信息，请参阅 [使用 tctl 连接到 TSB](../../setup/tctl-connect#set-tctls-user)。
+有关如何使用 `tctl` 连接到 TSB 的详细信息，请参阅 [使用 tctl 连接到 TSB](../../setup/tctl-connect)。

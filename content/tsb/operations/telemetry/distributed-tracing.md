@@ -12,7 +12,7 @@ weight: 5
 分布式跟踪不会自动工作，因为重要的是你的部署服务传播跟踪上下文。如果不在服务中启用上下文传播，你将遇到跟踪中断问题，并且在跟踪中看到大大降低的价值。我们建议至少支持传播 B3 和 W3C 跟踪上下文头，以及`x-request-id`以进行请求关联。另请参阅 Istio 文档中的[跟踪上下文传播解释](https://istio.io/v1.17/docs/tasks/observability/distributed-tracing/overview/#trace-context-propagation)。除了上下文传播，将`x-request-id`（以及分布式跟踪的`trace id`，如果有的话）包含在服务的所有请求绑定日志行中是一个很好的主意。这样可以在请求跟踪和服务日志之间实现几乎无需努力的关联，并加速故障排除。
 {{</callout>}}
 
-默认情况下，TSB 提供了一个基于[SkyWalking](https://skywalking.apache.org/)的分布式跟踪后端，与[Zipkin](https://zipkin.io/)兼容。在 TSB 控制下的所有[Envoy](https://www.envoyproxy.io/)入口网关和 sidecar 都具有其内部 Zipkin 跟踪仪器，用于将跨度数据直接发送到 TSB 的 SkyWalking 收集器。还可以通过 TSB 的[ControlPlane 资源对象](../../../../refs/install/controlplane/v1alpha1/spec)配置固定的全局采样率。
+默认情况下，TSB 提供了一个基于[SkyWalking](https://skywalking.apache.org/)的分布式跟踪后端，与[Zipkin](https://zipkin.io/)兼容。在 TSB 控制下的所有[Envoy](https://www.envoyproxy.io/)入口网关和 sidecar 都具有其内部 Zipkin 跟踪仪器，用于将跨度数据直接发送到 TSB 的 SkyWalking 收集器。还可以通过 TSB 的[ControlPlane 资源对象](../../../refs/install/controlplane/v1alpha1/spec)配置固定的全局采样率。
 
 如果需要更灵活地设置更精细的采样率、使用不同的跟踪仪器或将跨度数据发送到不同的后端，本文将为你提供所需的上下文信息以进行必要的更改。
 

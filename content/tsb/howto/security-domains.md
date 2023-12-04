@@ -22,7 +22,7 @@ weight: 10
 
 我们从一个简单的单集群 TSB 部署开始，其中有两个租户 `dev_US_East` 和 `stg_US_East`，代表开发和暂存环境。随着我们对 TSB 的使用增加，我们想要添加一个用于冗余的美国西部集群，这将需要我们创建两个新租户：`dev_US_West` 和 `stg_US_West`。
 
-![初始计划 - 安全域（Security Domains）](../../assets/security-domains-1.png)
+![初始计划 - 安全域（Security Domains）](../../assets/howto/security-domains-1.png)
 
 我们将使用安全域（Security Domains）来创建一个简单的、广泛的授权规则，允许来自所有 `stg` 暂存租户的流量到达所有 `dev` 开发租户。
 
@@ -102,16 +102,16 @@ spec:
 
 我们成功配置了我们的新 *US West* 租户，并将它们添加到了它们各自的安全域（Security Domains）`dev` 和 `stg` 中。随着我们添加更多的 `dev` 和 `stg` 租户对，我们可以将它们与适当的 `securityDomain` 关联起来。TSB 将自动扩展授权规则，以在所有租户上应用访问控制。
 
-![跨租户的安全域（Security Domains）](../../assets/security-domains-2.png)
+![跨租户的安全域（Security Domains）](../../assets/howto/security-domains-2.png)
 
 ### 安全域（Security Domains）的未来是什么？
 
-:::note 早期特性实施
+{{<callout note 早期特性实施>}}
 安全域（Security Domains）是 Tetrate Service Bridge 1.6 中的一项新功能。随着我们解锁其他用例和可视化，实现可能会在后续版本中得到扩展。
-:::
+{{</callout>}}
 
 上面的示例只是展示了使用 **安全域（Security Domains）** 可以实现的一小部分功能。虽然它们在简化大型环境中创建授权规则的任务方面取得了重大进展，但即使安全域关系也最终可能变得复杂。Tetrate 正在考虑通过 UI 可视化和其他扩展来使安全域更具可伸缩性和更容易准确配置，从而实现丰富的用例：
 
-![安全域的完整用例](../../assets/security-domains-3.png)
+![安全域的完整用例](../../assets/howto/security-domains-3.png)
 
 如果你正在使用安全域（Security Domains），Tetrate 非常愿意听取你的意见。请通过你的 Tetrate 帐户团队联系我们。

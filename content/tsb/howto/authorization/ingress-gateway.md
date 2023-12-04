@@ -6,9 +6,9 @@ description: 如何使用 Open Policy Agent（OPA）示例配置 Ingress Gateway
 
 在本文中，将使用 httpbin 作为工作负载。传入 Ingress GW 的请求将由 OPA 检查。如果请求被视为未经授权，那么将以 403（Forbidden）响应拒绝请求。
 
-以下图像显示了在使用外部授权系统时的请求和响应流程，你将部署 OPA 作为独立服务。
+下图显示了在使用外部授权系统时的请求和响应流程，你将部署 OPA 作为独立服务。
 
-![](../../../assets/howto/authorization/ingress_gateway_flow.png)
+![请求和响应流程](../../../assets/howto/authorization/ingress_gateway_flow.svg)
 
 ## 部署 `httpbin` 服务
 

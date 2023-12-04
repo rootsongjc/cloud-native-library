@@ -4,7 +4,7 @@ description: 如何在 XCP 边缘启用 DNS 解析。
 weight: 6
 ---
 
-如果在配置[东西向网关](../../../howto/gateway/multi_cluster_traffic_routing_with_eastwest_gateway)的[`cluster-external-addresses` 注释](../configure-cluster-external-addresses)时使用 DNS 主机名，你需要在 XCP 边缘启用 DNS 解析，以便 DNS 解析在 XCP 边缘发生。
+如果在配置[东西向网关](../../../howto/gateway/multi-cluster-traffic-routing-with-eastwest-gateway)的[`cluster-external-addresses` 注释](../configure-cluster-external-addresses)时使用 DNS 主机名，你需要在 XCP 边缘启用 DNS 解析，以便 DNS 解析在 XCP 边缘发生。
 
 ## 在 XCP 边缘启用 DNS 解析
 

@@ -54,7 +54,7 @@ TSB 附带了一些内置角色，具有一组最常见情况的权限：
 
 ## 访问绑定
 
-在 TSB 中，[访问绑定](../../../refs/tsb/rbac/v2/access_bindings)对象定义了一组[角色](../../../refs/tsb/rbac/v2/role)与特定TSB资源的一组用户/团队之间的绑定。下面显示了`AccessBinding`的示例。在指定目标资源、角色、用户和团队时，需要使用 FQN。
+在 TSB 中，[访问绑定](../../../refs/tsb/rbac/v2/access-bindings)对象定义了一组[角色](../../../refs/tsb/rbac/v2/role)与特定TSB资源的一组用户/团队之间的绑定。下面显示了`AccessBinding`的示例。在指定目标资源、角色、用户和团队时，需要使用 FQN。
 
 ```yaml
 apiVersion: rbac.tsb.tetrate.io/v2

@@ -26,7 +26,7 @@ TSB 提供了授权功能，用于授权来自公共网络的请求。本文将�
 kubectl create namespace opa
 ```
 
-按照[OPA 文档](../../../reference/samples/opa)中的说明创建[使用基本身份验证的 OPA 策略](../../../reference/samples/opa#example--policy-with-basic-authentication)，并在 `opa` 命名空间中部署 OPA 服务和代理。
+按照[OPA 文档](../../../reference/samples/opa)中的说明创建[使用基本身份验证的 OPA 策略](../../../reference/samples/opa)，并在 `opa` 命名空间中部署 OPA 服务和代理。
 
 ```
 kubectl apply -f opa.yaml
@@ -66,7 +66,7 @@ spec:
 
 ## 测试
 
-你可以按照["在 Ingress Gateways 中配置外部授权"](../ingress-gateway#testing)中的说明进行外部授权测试，但需要获取 Tier-1 网关地址而不是 Ingress 网关地址。
+你可以按照["在 Ingress Gateways 中配置外部授权"](../ingress-gateway)中的说明进行外部授权测试，但需要获取 Tier-1 网关地址而不是 Ingress 网关地址。
 
 要获取 Tier-1 网关地址，请执行以下命令：
 
@@ -75,4 +75,4 @@ kubectl -n tier1 get service tier1-gateway \
   -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
 
-然后按照[说明](../ingress-gateway#testing)操作，但请将 `gateway-ip` 的值替换为 Tier-1 网关的地址。
+然后按照[说明](../ingress-gateway)操作，但请将 `gateway-ip` 的值替换为 Tier-1 网关的地址。

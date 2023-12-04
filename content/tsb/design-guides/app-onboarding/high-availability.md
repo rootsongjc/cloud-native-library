@@ -27,7 +27,7 @@ weight: 7
 
 ## 选项 1：配置 Tetrate 的 Edge Gateway
 
-[Edge Gateway 解决方案](https://docs.tetrate.io/service-bridge/howto/gateway/multi-cluster-traffic-shifting) 在 [HA 设计指南](../ha-multicluster/) 中有详细说明。通过 Edge Gateway，你可以在工作负载或专用集群中部署边缘负载均衡器。这些网关的目的是接收流量并将其（负载平衡）转发到目标服务的工作中的 Ingress Gateway。
+[Edge Gateway 解决方案](../../../howto/gateway/multi-cluster-traffic-shifting) 在 [HA 设计指南](../../ha-multicluster/) 中有详细说明。通过 Edge Gateway，你可以在工作负载或专用集群中部署边缘负载均衡器。这些网关的目的是接收流量并将其（负载平衡）转发到目标服务的工作中的 Ingress Gateway。
 
 ### 背景信息
 
@@ -35,15 +35,15 @@ Edge Gateways 由 Tetrate 平台管理，考虑到稳定性和可靠性。它们
 
 请查看以下背景资源：
 
-* [Tetrate HA 设计指南](../ha-multicluster/)
+* [Tetrate HA 设计指南](../../ha-multicluster/)
 * 你的 GSLB 供应商的最佳实践指南
 
 ### 启动一个新应用程序
 
 当你使用 Tetrate 的 Edge Gateway 启动一个新应用程序时，需要在多个接触点配置流量流向：
 
-* 为工作负载集群上的 Ingress Gateways 的 Gateway 资源配置应用程序以从集群中发布应用程序。有关详细信息，请参阅 [部署服务](deploy-service) 内容。通常情况下，不需要为应用程序的工作负载集群实例配置 DNS
-* 为边缘集群上的 Edge Gateways 的 Gateway 资源配置应用程序，以从 Edge Gateway 中发布应用程序并将流量分发到正常工作的工作负载集群实例。有关如何执行此操作以及可能适用的高可用性考虑事项的详细信息，请参阅 [Tetrate HA 设计指南](../ha-multicluster/)。
+* 为工作负载集群上的 Ingress Gateways 的 Gateway 资源配置应用程序以从集群中发布应用程序。有关详细信息，请参阅 [部署服务](../deploy-service) 内容。通常情况下，不需要为应用程序的工作负载集群实例配置 DNS
+* 为边缘集群上的 Edge Gateways 的 Gateway 资源配置应用程序，以从 Edge Gateway 中发布应用程序并将流量分发到正常工作的工作负载集群实例。有关如何执行此操作以及可能适用的高可用性考虑事项的详细信息，请参阅 [Tetrate HA 设计指南](../../ha-multicluster/)。
 * 为应用程序的 FQDN 配置 DNS，以将流量定向到 Edge Gateway 的正常实例。通常情况下，可以使用第三方的基于 DNS 的 GSLB 服务（例如，由你的云提供商提供的 AWS Route 53）或诸如 NS1、CloudFlare 或 Akamai 等云中立解决方案执行此操作。
 
 具体的步骤由你选择的 Edge Gateway 配置和正在使用的 DNS GSLB 解决方案的性质密切定义。

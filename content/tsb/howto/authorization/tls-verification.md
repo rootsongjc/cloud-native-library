@@ -24,7 +24,7 @@ TSB 支持指定用于保护与外部授权服务器通信的[TLS 或 mTLS](../.
 如果你决定使用其他文件名，请在下面的示例中相应地替换它们。
 
 {{<callout note 自签名证书>}}
-出于示例目的，你可以使用此[脚本](../../../quickstart/ingress-gateway#certificate-for-gateway)创建自签名证书。
+出于示例目的，你可以使用此[脚本](../../../quickstart/ingress-gateway)创建自签名证书。
 {{</callout>}}
 
 拥有文件后，使用服务器证书和私钥创建 Kubernetes secret。
@@ -130,4 +130,4 @@ tctl apply -f ext-authz-ingress-gateway-tls.yaml
 
 ## 测试
 
-你可以使用与["在 Ingress Gateways 中配置外部授权"](../ingress-gateway#testing)中显示的相同测试步骤。
+你可以使用与["在 Ingress Gateways 中配置外部授权"](../ingress-gateway)中显示的相同测试步骤。

@@ -55,8 +55,8 @@ spec:
 
 下图显示了具有 sidecar 的服务的服务日志。你可以选择最多两个容器，因此将能够同时查看服务和 sidecar 日志。
 
-![](../../../assets/operations/streaming-log-service.png)
+![加油 Sidecar 的额服务的服务日志](../../../assets/operations/streaming-log-service.png)
 
 下图显示了 TSB 网关的服务日志。
 
-![](../../../assets/operations/streaming-log-gateway.png)
+![TSB 网关的服务日志](../../../assets/operations/streaming-log-gateway.png)
