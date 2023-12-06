@@ -2,8 +2,8 @@
 widget: experience
 headless: true
 weight: 70
-title: '关于云原生资料库'
-subtitle: "几米宋微信公众号"
+title: '关于本站'
+subtitle: "扫码联系站长"
 # Date format
 #   Refer to https://wowchemy.com/docs/customization/#date-format
 date_format: 2006 年 1 月 2 日
@@ -14,8 +14,8 @@ date_format: 2006 年 1 月 2 日
 #   Leave `date_end` empty if it's your current employer.
 #   Begin/end multi-line descriptions with `>-`.
 experience:
-  - title: '资料库建立'
-    company: 'Jimmy Song'
+  - title: '主理人'
+    company: '[Jimmy Song](https://jimmysong.io/about/)'
     location: ''
     date_start: '2022-05-01'
     date_end: ''
