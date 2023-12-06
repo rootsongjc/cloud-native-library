@@ -52,7 +52,7 @@ cc, err := grpc.DialContext(ctx, tsbAddress, opts...)
 // 从文件中读取自定义 CA 捆绑包
 ca, err := ioutil.ReadFile("custom-ca.crt")
 if err != nil {
-	return fmt.Errorf("加载 CA 文件失败: %w", err)
+	return fmt.Errorf("加载 CA 文件失败：%w", err)
 }
 // 将 CA 捆绑包加载到 x509 证书池中
 certs := x509.NewCertPool()

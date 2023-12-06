@@ -70,13 +70,16 @@ spec:
 
 **egress**：每个`NetworkPolicy` 包含了一个白名单 `ingress` 规则列表。每个规则只允许能够匹配上 `to` 和 `ports`配置段的流量。示例策略包含了单个规则，它匹配目的地 `10.0.0.0/24` 单个端口的流量。
 
-因此，上面示例的 NetworkPolicy：
+因此，此示例 NetworkPolicy：
 
-1. 在“default”Namespace 中 隔离了标签“role=db”的 Pod（如果他们还没有被隔离）
-2. 在“default”Namespace 中，允许任何具有“role=frontend”的 Pod，IP 范围在  172.17.0.0–172.17.0.255 和 172.17.2.0–172.17.255.255（整个 172.17.0.0/16 段，172.17.1.0/24 除外）连接到标签为“role=db”的 Pod 的 TCP 端口 6379
-3. 允许在 Namespace 中任何具有标签“project=myproject” ，IP 范围在 10.0.0.0/24 段的 Pod，连接到“default”Namespace 中标签为“role=db”的 Pod 的 TCP 端口 5978
+1. 针对入口和出口流量（如果尚未隔离）隔离了 `default` 命名空间中的 `role=db` pods。
+2. （入口规则）允许来自以下来源的 TCP 端口 6379 的 `default` 命名空间中具有标签 `role=db` 的所有 pods 的连接：
+   - `default` 命名空间中具有标签 `role=frontend` 的任何 pod
+   - 具有标签 `project=myproject` 的任何命名空间中的任何 pod
+   - IP 地址范围 `172.17.0.0`–`172.17.0.255` 和 `172.17.2.0`–`172.17.255.255` 中的 IP 地址（即，`172.17.0.0/16` 的所有地址，但不包括 `172.17.1.0/24`）
+3. （出口规则）允许具有标签 `role=db` 的 `default` 命名空间中的任何 pod 连接到 CIDR `10.0.0.0/24` 上的 TCP 端口 5978。
 
-查看 [NetworkPolicy 入门指南](https://kubernetes.io/docs/getting-started-guides/network-policy/walkthrough)给出的更进一步的例子。
+请参阅 [Declare Network Policy](https://kubernetes.io/docs/tasks/administer-cluster/declare-network-policy/) 教程以获取更多示例。
 
 ## 默认策略
 

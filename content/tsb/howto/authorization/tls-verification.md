@@ -45,7 +45,7 @@ kubectl create configmap -n httpbin authz-ca \
 
 ## 使用 TLS 证书部署授权服务
 
-按照["在 TSB 中安装 Open Policy Agent"](../../../reference/samples/opa#terminating-tls)中的说明设置带有终止 TLS 的 Sidecar代理的 OPA 实例。
+按照["在 TSB 中安装 Open Policy Agent"](../../../reference/samples/opa#terminating-tls)中的说明设置带有终止 TLS 的 Sidecar 代理的 OPA 实例。
 
 ## 修改 Ingress Gateway
 

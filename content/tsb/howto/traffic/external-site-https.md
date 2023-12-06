@@ -15,7 +15,7 @@ weight: 4
 
 考虑一个通过[ServiceEntry](https://istio.io/latest/docs/reference/config/networking/service-entry/)添加到网格中的外部应用程序。该应用程序监听 HTTPS，因此你将发送的流量预期使用简单的 TLS。
 
-网格内的应用程序客户端将发起 HTTP 请求，并在 Sidecar到外部应用程序主机的过程中将其转换为 HTTPS，例如`www.tetrate.io`。这是由于在 DestinationRule 中定义的出站流量策略实现的。
+网格内的应用程序客户端将发起 HTTP 请求，并在 Sidecar 到外部应用程序主机的过程中将其转换为 HTTPS，例如`www.tetrate.io`。这是由于在 DestinationRule 中定义的出站流量策略实现的。
 
 以下是你需要设置的内容，以实现客户端与外部主机之间的通信：
 
@@ -118,7 +118,7 @@ endpoints:
 
 ## 测试
 
-用于测试的客户端可以执行来自具有注入了 Sidecar的客户端的请求，此处将使用[netshoot](https://github.com/nicolaka/netshoot)或[sleep](../../../reference/samples/sleep-service) pod。
+用于测试的客户端可以执行来自具有注入了 Sidecar 的客户端的请求，此处将使用[netshoot](https://github.com/nicolaka/netshoot)或[sleep](../../../reference/samples/sleep-service) pod。
 
 首先，发送一个使用 HTTPS 的请求：
 
@@ -155,7 +155,7 @@ strict-transport-security: max-age=31536000
 
 你可以看到第一个 curl 命令成功了，因为它通过了直通代理（TCP 代理）。这意味着没有从 DestinationRule 或 VirtualService 应用规则。
 
-现在，执行一个请求，而不是发送 HTTPS，这将是一个普通的 HTTP 请求。请记住， Sidecar将按照我们在 DestinationRule 中指示的方式发起 HTTPS 请求。
+现在，执行一个请求，而不是发送 HTTPS，这将是一个普通的 HTTP 请求。请记住，Sidecar 将按照我们在 DestinationRule 中指示的方式发起 HTTPS 请求。
 
 ```
 curl -I http://www.tetrate.io

@@ -15,7 +15,7 @@ Tetrate 不提供对 OPA 的支持。如果您需要支持，请在其他地方�
 
 ## 准备策略
 
-OPA 需要使用[OPA的策略语言](https://www.openpolicyagent.org/docs/latest/policy-language/)编写策略文件以决定是否应授权请求。由于实际策略将因示例而异，因此本文档不会涵盖如何编写此文件的详细信息。请参考[OPA网站上的文档](https://www.openpolicyagent.org/docs/latest)以获取详细信息。
+OPA 需要使用[OPA 的策略语言](https://www.openpolicyagent.org/docs/latest/policy-language/)编写策略文件以决定是否应授权请求。由于实际策略将因示例而异，因此本文档不会涵盖如何编写此文件的详细信息。请参考[OPA 网站上的文档](https://www.openpolicyagent.org/docs/latest)以获取详细信息。
 
 需要注意的一点是策略文件中指定的包名称。如果您的策略文件具有以下包声明，您将在稍后的容器配置中使用值 `helloworld.authz`。
 
