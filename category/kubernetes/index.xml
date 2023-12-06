@@ -5726,13 +5726,19 @@ bar.foo.com --|                 |-&amp;gt; bar.foo.com s2:80
 &lt;p&gt;&lt;strong&gt;podSelector&lt;/strong&gt;：每个 &lt;code&gt;NetworkPolicy&lt;/code&gt; 包含一个 &lt;code&gt;podSelector&lt;/code&gt;，它可以选择一组应用了网络策略的 Pod。由于 &lt;code&gt;NetworkPolicy&lt;/code&gt; 当前只支持定义 &lt;code&gt;ingress&lt;/code&gt; 规则，这个 &lt;code&gt;podSelector&lt;/code&gt; 实际上为该策略定义了一组“目标 Pod”。示例中的策略选择了标签为“role=db”的 Pod。一个空的 &lt;code&gt;podSelector&lt;/code&gt; 选择了该 Namespace 中的所有 Pod。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;ingress&lt;/strong&gt;：每个&lt;code&gt;NetworkPolicy&lt;/code&gt; 包含了一个白名单 &lt;code&gt;ingress&lt;/code&gt; 规则列表。每个规则只允许能够匹配上 &lt;code&gt;from&lt;/code&gt; 和 &lt;code&gt;ports&lt;/code&gt;配置段的流量。示例策略包含了单个规则，它从这两个源中匹配在单个端口上的流量，第一个是通过&lt;code&gt;namespaceSelector&lt;/code&gt; 指定的，第二个是通过 &lt;code&gt;podSelector&lt;/code&gt; 指定的。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;egress&lt;/strong&gt;：每个&lt;code&gt;NetworkPolicy&lt;/code&gt; 包含了一个白名单 &lt;code&gt;ingress&lt;/code&gt; 规则列表。每个规则只允许能够匹配上 &lt;code&gt;to&lt;/code&gt; 和 &lt;code&gt;ports&lt;/code&gt;配置段的流量。示例策略包含了单个规则，它匹配目的地 &lt;code&gt;10.0.0.0/24&lt;/code&gt; 单个端口的流量。&lt;/p&gt;
-&lt;p&gt;因此，上面示例的 NetworkPolicy：&lt;/p&gt;
+&lt;p&gt;因此，此示例 NetworkPolicy：&lt;/p&gt;
 &lt;ol&gt;
-&lt;li&gt;在“default”Namespace 中 隔离了标签“role=db”的 Pod（如果他们还没有被隔离）&lt;/li&gt;
-&lt;li&gt;在“default”Namespace 中，允许任何具有“role=frontend”的 Pod，IP 范围在  172.17.0.0–172.17.0.255 和 172.17.2.0–172.17.255.255（整个 172.17.0.0/16 段，172.17.1.0/24 除外）连接到标签为“role=db”的 Pod 的 TCP 端口 6379&lt;/li&gt;
-&lt;li&gt;允许在 Namespace 中任何具有标签“project=myproject” ，IP 范围在 10.0.0.0/24 段的 Pod，连接到“default”Namespace 中标签为“role=db”的 Pod 的 TCP 端口 5978&lt;/li&gt;
+&lt;li&gt;针对入口和出口流量（如果尚未隔离）隔离了 &lt;code&gt;default&lt;/code&gt; 命名空间中的 &lt;code&gt;role=db&lt;/code&gt; pods。&lt;/li&gt;
+&lt;li&gt;（入口规则）允许来自以下来源的 TCP 端口 6379 的 &lt;code&gt;default&lt;/code&gt; 命名空间中具有标签 &lt;code&gt;role=db&lt;/code&gt; 的所有 pods 的连接：
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;default&lt;/code&gt; 命名空间中具有标签 &lt;code&gt;role=frontend&lt;/code&gt; 的任何 pod&lt;/li&gt;
+&lt;li&gt;具有标签 &lt;code&gt;project=myproject&lt;/code&gt; 的任何命名空间中的任何 pod&lt;/li&gt;
+&lt;li&gt;IP 地址范围 &lt;code&gt;172.17.0.0&lt;/code&gt;–&lt;code&gt;172.17.0.255&lt;/code&gt; 和 &lt;code&gt;172.17.2.0&lt;/code&gt;–&lt;code&gt;172.17.255.255&lt;/code&gt; 中的 IP 地址（即，&lt;code&gt;172.17.0.0/16&lt;/code&gt; 的所有地址，但不包括 &lt;code&gt;172.17.1.0/24&lt;/code&gt;）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;（出口规则）允许具有标签 &lt;code&gt;role=db&lt;/code&gt; 的 &lt;code&gt;default&lt;/code&gt; 命名空间中的任何 pod 连接到 CIDR &lt;code&gt;10.0.0.0/24&lt;/code&gt; 上的 TCP 端口 5978。&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;查看 &lt;a href=&#34;https://kubernetes.io/docs/getting-started-guides/network-policy/walkthrough&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;NetworkPolicy 入门指南&lt;/a&gt;给出的更进一步的例子。&lt;/p&gt;
+&lt;p&gt;请参阅 &lt;a href=&#34;https://kubernetes.io/docs/tasks/administer-cluster/declare-network-policy/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Declare Network Policy&lt;/a&gt; 教程以获取更多示例。&lt;/p&gt;
 &lt;h2 id=&#34;默认策略&#34;&gt;默认策略&lt;/h2&gt;
 &lt;p&gt;通过创建一个可以选择所有 Pod 但不允许任何流量的 NetworkPolicy，你可以为一个 Namespace 创建一个“默认的”隔离策略，如下所示：&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;apiVersion&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;networking.k8s.io/v1&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
