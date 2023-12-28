@@ -10,7 +10,7 @@ links:
   - icon: globe
     icon_pack: fa
     name: 原文
-    url: https://grafana.com/blog/2023/12/18/opentelemetry-best-practices-a-users-guide-to-getting-started-with-opentelemetry/
+    url: https://www.cncf.io/blog/2023/12/26/extending-gitops-effortless-continuous-integration-and-deployment-on-kubernetes/
 ---
 
 ## 介绍
