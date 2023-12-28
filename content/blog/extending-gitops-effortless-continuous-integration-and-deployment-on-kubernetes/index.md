@@ -3,7 +3,7 @@ title: "拓展 GitOps：在 Kubernetes 上轻松实现持续集成和部署"
 date: 2023-12-28T09:14:00+08:00
 draft: false
 authors: ["Levi Van Noort"]
-summary: "文章介绍了 OpenTelemetry 的概念和优势，以及如何使用 Grafana 的分发版进行自动和手动的仪表化、配置和导出数据。"
+summary: "本文介绍了如何使用 ArgoCD 在 Kubernetes 中实现 GitOps。"
 tags: ["GitOps", "Kubernetes"]
 categories: ["GitOps"]
 links:
