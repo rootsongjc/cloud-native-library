@@ -14,11 +14,11 @@ cta:
   label: 选择图书
   icon_pack: fas
   icon: book-open
-#cta_alt:
-#  url: "blog"
-#  label: 阅读译文
+cta_alt:
+  url: "https://jimmysong.io/blog"
+  label: 博客
 ---
 
-这是一个中文云原生知识平台，收录了 Jimmy 自 2017 年以来发布的各类电子书、教程和翻译资料。更多原创文章请查看 [云原生博客](https://jimmysong.io/blog/)。欢迎加入[云原生社区](https://cloudnative.to)，一起探索云原生技术并深入交流。
+这是一个中文云原生知识平台，收录了 Jimmy 自 2017 年以来发布的各类电子书、教程和翻译资料。更多原创文章请查看云原生博客。欢迎加入[云原生社区](https://cloudnative.to)，一起探索云原生技术并深入交流。
 
 </br>
