@@ -10,4 +10,8 @@
 - 出版物
 - 译文
 
-由 [Wowchemy](https://wowchemy.com/?utm_campaign=poweredby) 支持发布 —— 免费[开源](https://github.com/wowchemy/wowchemy-hugo-themes)网站，为创作者赋能。
+## 兼容性问题
+
+注意保持 Hugo 版本在 v1.222.0，经测试在 v1.123 及以上版本图书页面中的 `book-sidebar` 索引无法显示，原因不明。
+
+由 [Hugo Blox](https://hugoblox.com) 支持发布 —— 免费[开源](https://github.com/HugoBlox/hugo-blox-builder)网站，为创作者赋能。
